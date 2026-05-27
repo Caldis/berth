@@ -1,0 +1,155 @@
+{
+  "app": {
+    "name": "Berth",
+    "tagline": "AI Agent Asset Manager"
+  },
+  "nav": {
+    "overview": "Overview",
+    "agents": "AGENTS",
+    "claudeCode": "Claude Code",
+    "sessions": "Sessions",
+    "configuration": "CONFIGURATION",
+    "instructions": "Instructions",
+    "capabilities": "Capabilities",
+    "usage": "Usage",
+    "settings": "Settings"
+  },
+  "search": {
+    "placeholder": "Search assets...",
+    "shortcut": "⌘K",
+    "noResults": "No results found.",
+    "hint": "Search across all assets by name, type, or scope."
+  },
+  "overview": {
+    "title": "Overview",
+    "recentSessions": "Recent Sessions",
+    "costLast7Days": "Cost (last 7 days)",
+    "rateLimits": "Rate Limits",
+    "healthChecks": "Health Checks",
+    "noIssues": "All systems operational",
+    "timeRange": {
+      "7d": "Last 7 days",
+      "30d": "Last 30 days",
+      "all": "All time"
+    }
+  },
+  "sessions": {
+    "title": "Sessions",
+    "filter": "Filter sessions...",
+    "groupBy": "Group by",
+    "project": "Project",
+    "date": "Date",
+    "noSessions": "No sessions found.",
+    "duration": "Duration",
+    "cost": "Cost",
+    "tokens": "Tokens",
+    "model": "Model",
+    "loadedAssets": "Loaded Assets",
+    "artifacts": "Artifacts",
+    "skillsUsed": "Skills used",
+    "mcpConnected": "MCP servers connected",
+    "hooksFired": "Hooks fired"
+  },
+  "instructions": {
+    "title": "Instructions",
+    "tabs": {
+      "memories": "Memories",
+      "skills": "Skills",
+      "subagents": "Subagents",
+      "commands": "Commands",
+      "outputModes": "Output Modes",
+      "agentTeams": "Agent Teams"
+    },
+    "scope": "Scope",
+    "path": "Path",
+    "trigger": "Trigger",
+    "description": "Description",
+    "files": "Files",
+    "usedInSessions": "Used in sessions (last 30d)",
+    "viewFile": "View File",
+    "showInExplorer": "Show in Explorer"
+  },
+  "capabilities": {
+    "title": "Capabilities",
+    "tabs": {
+      "mcp": "MCP",
+      "hooks": "Hooks",
+      "plugins": "Plugins",
+      "statusLine": "Status Line",
+      "permissions": "Permissions",
+      "env": "Env"
+    },
+    "mcp": {
+      "effectiveConfig": "Effective configuration",
+      "mergedFrom": "merged from {{count}} sources",
+      "byScope": "By Scope",
+      "userScope": "User scope",
+      "projectScope": "Project scope",
+      "enterpriseScope": "Enterprise scope",
+      "mergeConflicts": "Merge conflicts"
+    },
+    "hooks": {
+      "events": "events",
+      "hookCount": "{{count}} hooks"
+    },
+    "permissions": {
+      "warning": "Warning",
+      "bypassEnabled": "bypassPermissions is enabled in {{scope}} scope. This skips ALL permission prompts.",
+      "allowList": "Allow list",
+      "denyList": "Deny list"
+    }
+  },
+  "usage": {
+    "title": "Usage",
+    "totalSpent": "Total Spent",
+    "tokensUsed": "Tokens Used",
+    "dailyCost": "Daily Cost",
+    "byModel": "By Model",
+    "byProject": "By Project",
+    "rateLimits": "Rate Limits",
+    "currentWindow": "Current Window",
+    "remaining": "remaining",
+    "resetsIn": "resets in",
+    "experimentalFlags": "Experimental Flags"
+  },
+  "settings": {
+    "title": "Settings",
+    "appearance": "Appearance",
+    "theme": "Theme",
+    "themeLight": "Light",
+    "themeDark": "Dark",
+    "themeSystem": "System",
+    "language": "Language",
+    "scanning": "Scanning",
+    "scanDirectories": "Scan Directories",
+    "fileWatching": "File Watching",
+    "fileWatchingDesc": "Automatically refresh when asset files change",
+    "advancedMode": "Advanced Mode",
+    "advancedModeDesc": "Show ephemeral, debug, and cache assets",
+    "about": "About",
+    "version": "Version"
+  },
+  "common": {
+    "scope": {
+      "user": "User",
+      "project": "Project",
+      "enterprise": "Enterprise",
+      "session": "Session"
+    },
+    "category": {
+      "instruction": "Instruction",
+      "capability": "Capability",
+      "state": "State",
+      "observability": "Observability",
+      "integration": "Integration"
+    },
+    "loading": "Loading...",
+    "error": "Something went wrong",
+    "retry": "Retry",
+    "empty": "Nothing here yet",
+    "back": "Back",
+    "close": "Close",
+    "viewRaw": "View Raw",
+    "sensitive": "Sensitive"
+  }
+}

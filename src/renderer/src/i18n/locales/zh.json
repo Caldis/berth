@@ -1,0 +1,155 @@
+{
+  "app": {
+    "name": "Berth",
+    "tagline": "AI Agent 资产管理器"
+  },
+  "nav": {
+    "overview": "总览",
+    "agents": "AGENTS",
+    "claudeCode": "Claude Code",
+    "sessions": "会话",
+    "configuration": "配置",
+    "instructions": "指令",
+    "capabilities": "能力",
+    "usage": "用量",
+    "settings": "设置"
+  },
+  "search": {
+    "placeholder": "搜索资产…",
+    "shortcut": "⌘K",
+    "noResults": "未找到结果。",
+    "hint": "按名称、类型或作用域搜索所有资产。"
+  },
+  "overview": {
+    "title": "总览",
+    "recentSessions": "最近会话",
+    "costLast7Days": "近 7 天费用",
+    "rateLimits": "速率限制",
+    "healthChecks": "健康检查",
+    "noIssues": "所有系统运行正常",
+    "timeRange": {
+      "7d": "近 7 天",
+      "30d": "近 30 天",
+      "all": "全部"
+    }
+  },
+  "sessions": {
+    "title": "会话",
+    "filter": "筛选会话…",
+    "groupBy": "分组",
+    "project": "项目",
+    "date": "日期",
+    "noSessions": "未找到会话。",
+    "duration": "时长",
+    "cost": "费用",
+    "tokens": "Token",
+    "model": "模型",
+    "loadedAssets": "加载的资产",
+    "artifacts": "产物",
+    "skillsUsed": "使用的 Skills",
+    "mcpConnected": "已连接的 MCP 服务",
+    "hooksFired": "触发的 Hooks"
+  },
+  "instructions": {
+    "title": "指令",
+    "tabs": {
+      "memories": "记忆",
+      "skills": "Skills",
+      "subagents": "子代理",
+      "commands": "命令",
+      "outputModes": "输出模式",
+      "agentTeams": "Agent Teams"
+    },
+    "scope": "作用域",
+    "path": "路径",
+    "trigger": "触发条件",
+    "description": "描述",
+    "files": "文件",
+    "usedInSessions": "近 30 天使用会话",
+    "viewFile": "查看文件",
+    "showInExplorer": "在资源管理器中显示"
+  },
+  "capabilities": {
+    "title": "能力",
+    "tabs": {
+      "mcp": "MCP",
+      "hooks": "Hooks",
+      "plugins": "插件",
+      "statusLine": "状态栏",
+      "permissions": "权限",
+      "env": "环境变量"
+    },
+    "mcp": {
+      "effectiveConfig": "生效配置",
+      "mergedFrom": "合并自 {{count}} 个来源",
+      "byScope": "按作用域",
+      "userScope": "用户级",
+      "projectScope": "项目级",
+      "enterpriseScope": "企业级",
+      "mergeConflicts": "合并冲突"
+    },
+    "hooks": {
+      "events": "事件",
+      "hookCount": "{{count}} 个钩子"
+    },
+    "permissions": {
+      "warning": "警告",
+      "bypassEnabled": "{{scope}} 级别已启用 bypassPermissions，将跳过所有权限提示。",
+      "allowList": "允许列表",
+      "denyList": "拒绝列表"
+    }
+  },
+  "usage": {
+    "title": "用量",
+    "totalSpent": "总花费",
+    "tokensUsed": "Token 用量",
+    "dailyCost": "每日花费",
+    "byModel": "按模型",
+    "byProject": "按项目",
+    "rateLimits": "速率限制",
+    "currentWindow": "当前窗口",
+    "remaining": "剩余",
+    "resetsIn": "重置倒计时",
+    "experimentalFlags": "实验性功能标志"
+  },
+  "settings": {
+    "title": "设置",
+    "appearance": "外观",
+    "theme": "主题",
+    "themeLight": "浅色",
+    "themeDark": "深色",
+    "themeSystem": "跟随系统",
+    "language": "语言",
+    "scanning": "扫描",
+    "scanDirectories": "扫描目录",
+    "fileWatching": "文件监听",
+    "fileWatchingDesc": "资产文件变化时自动刷新",
+    "advancedMode": "高级模式",
+    "advancedModeDesc": "显示临时、调试和缓存资产",
+    "about": "关于",
+    "version": "版本"
+  },
+  "common": {
+    "scope": {
+      "user": "用户级",
+      "project": "项目级",
+      "enterprise": "企业级",
+      "session": "会话级"
+    },
+    "category": {
+      "instruction": "指令",
+      "capability": "能力",
+      "state": "状态",
+      "observability": "可观测性",
+      "integration": "集成"
+    },
+    "loading": "加载中…",
+    "error": "出了点问题",
+    "retry": "重试",
+    "empty": "暂无内容",
+    "back": "返回",
+    "close": "关闭",
+    "viewRaw": "查看原始文件",
+    "sensitive": "敏感"
+  }
+}

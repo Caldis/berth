@@ -1,0 +1,27 @@
+node_modules/
+out/
+dist/
+.DS_Store
+Thumbs.db
+*.log
+*.swp
+*.swo
+
+# Build
+build/
+release/
+
+# IDE
+.idea/
+.vscode/
+*.code-workspace
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Testing
+coverage/
+test-results/
+playwright-report/
