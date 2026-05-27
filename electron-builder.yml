@@ -16,6 +16,7 @@ asarUnpack:
   - resources/**
 win:
   executableName: berth
+  sign: false
   target:
     - nsis
     - portable
