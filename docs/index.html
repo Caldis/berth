@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Berth — AI Agent Asset Manager</title>
+  <meta name="description" content="Local AI Agent asset visualization and management tool. See what you've installed, how it relates, and what it costs.">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwindcss.config = {
+      theme: {
+        extend: {
+          colors: {
+            navy: { 500: '#1e3a5f', 600: '#172e4d', 700: '#10223b' },
+            orange: { 500: '#f97316' }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    @keyframes fade-up { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+    .animate-fade-up { animation: fade-up 0.6s ease-out forwards; }
+    .delay-100 { animation-delay: 0.1s; opacity: 0; }
+    .delay-200 { animation-delay: 0.2s; opacity: 0; }
+    .delay-300 { animation-delay: 0.3s; opacity: 0; }
+    .delay-400 { animation-delay: 0.4s; opacity: 0; }
+  </style>
+</head>
+<body class="bg-white text-gray-900 antialiased">
+  <!-- Hero -->
+  <section class="relative overflow-hidden">
+    <div class="absolute inset-0 bg-gradient-to-b from-navy-700 to-navy-500"></div>
+    <div class="relative mx-auto max-w-5xl px-6 py-24 text-center text-white">
+      <div class="animate-fade-up inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-orange-500 text-3xl font-bold shadow-lg">B</div>
+      <h1 class="animate-fade-up delay-100 mt-6 text-4xl font-bold tracking-tight sm:text-5xl">Berth</h1>
+      <p class="animate-fade-up delay-200 mt-4 text-lg text-white/80 max-w-xl mx-auto">
+        See everything your AI agents have installed — skills, MCP servers, hooks, sessions, and costs — in one clean desktop app.
+      </p>
+      <div class="animate-fade-up delay-300 mt-8 flex justify-center gap-4">
+        <a href="https://github.com/Caldis/berth/releases" class="rounded-lg bg-orange-500 px-6 py-2.5 text-sm font-semibold text-white shadow-md transition hover:bg-orange-600">
+          Download
+        </a>
+        <a href="https://github.com/Caldis/berth" class="rounded-lg border border-white/30 px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-white/10">
+          GitHub
+        </a>
+      </div>
+      <p class="animate-fade-up delay-400 mt-4 text-xs text-white/50">macOS &amp; Windows · Read-only · No telemetry · MIT License</p>
+    </div>
+  </section>
+
+  <!-- Problem -->
+  <section class="mx-auto max-w-4xl px-6 py-20">
+    <h2 class="text-center text-2xl font-bold">Your AI agent assets are invisible</h2>
+    <p class="mt-3 text-center text-gray-500 max-w-2xl mx-auto">
+      Claude Code, Codex, and Cursor install skills, MCP servers, hooks, and configs as plain-text files scattered across your machine. They're powerful but invisible — installed and forgotten.
+    </p>
+    <div class="mt-12 grid grid-cols-1 gap-6 sm:grid-cols-3">
+      <div class="rounded-xl border border-gray-200 p-5">
+        <div class="text-2xl">👁️</div>
+        <h3 class="mt-3 font-semibold">Visibility</h3>
+        <p class="mt-1 text-sm text-gray-500">See all 25+ asset types at a glance. Skills, MCP servers, hooks, plugins, sessions, costs.</p>
+      </div>
+      <div class="rounded-xl border border-gray-200 p-5">
+        <div class="text-2xl">🔗</div>
+        <h3 class="mt-3 font-semibold">Relationships</h3>
+        <p class="mt-1 text-sm text-gray-500">Understand how assets connect. Which skills were used in a session? What does this plugin contain?</p>
+      </div>
+      <div class="rounded-xl border border-gray-200 p-5">
+        <div class="text-2xl">📊</div>
+        <h3 class="mt-3 font-semibold">Observability</h3>
+        <p class="mt-1 text-sm text-gray-500">Track token usage, costs per model, rate limits, and health checks across all your sessions.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section class="bg-gray-50 px-6 py-20">
+    <div class="mx-auto max-w-4xl">
+      <h2 class="text-center text-2xl font-bold">Features</h2>
+      <div class="mt-12 grid grid-cols-1 gap-8 sm:grid-cols-2">
+        <div>
+          <h3 class="font-semibold text-navy-500">🏠 Overview Dashboard</h3>
+          <p class="mt-1 text-sm text-gray-500">Stat cards, recent sessions, cost charts, and health checks in one view.</p>
+        </div>
+        <div>
+          <h3 class="font-semibold text-navy-500">💬 Session Browser</h3>
+          <p class="mt-1 text-sm text-gray-500">Browse all sessions grouped by project, with loaded skills, MCP servers, and artifacts.</p>
+        </div>
+        <div>
+          <h3 class="font-semibold text-navy-500">📝 Instructions</h3>
+          <p class="mt-1 text-sm text-gray-500">Skills, memories, commands, subagents, output modes, and agent teams — all in tabs.</p>
+        </div>
+        <div>
+          <h3 class="font-semibold text-navy-500">⚡ Capabilities</h3>
+          <p class="mt-1 text-sm text-gray-500">MCP servers with scope merge, hooks by event, plugins, permissions with bypass warnings.</p>
+        </div>
+        <div>
+          <h3 class="font-semibold text-navy-500">📈 Usage Analytics</h3>
+          <p class="mt-1 text-sm text-gray-500">Daily cost charts, token usage by model and project, rate limit monitoring.</p>
+        </div>
+        <div>
+          <h3 class="font-semibold text-navy-500">🔍 Global Search</h3>
+          <p class="mt-1 text-sm text-gray-500">⌘K to search across all assets by name, type, or scope. Full-text search powered by MiniSearch.</p>
+        </div>
+        <div>
+          <h3 class="font-semibold text-navy-500">🌐 i18n</h3>
+          <p class="mt-1 text-sm text-gray-500">Full English and Chinese interface support.</p>
+        </div>
+        <div>
+          <h3 class="font-semibold text-navy-500">🌓 Dark Mode</h3>
+          <p class="mt-1 text-sm text-gray-500">Light, dark, or system theme with navy + warm orange accent palette.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Quick Start -->
+  <section class="mx-auto max-w-4xl px-6 py-20">
+    <h2 class="text-center text-2xl font-bold">Quick Start</h2>
+    <div class="mt-8 mx-auto max-w-lg rounded-xl border border-gray-200 bg-gray-900 p-5 text-sm font-mono text-gray-300">
+      <div class="text-gray-500"># Clone and run</div>
+      <div>git clone https://github.com/Caldis/berth.git</div>
+      <div>cd berth</div>
+      <div>pnpm install</div>
+      <div>pnpm dev</div>
+    </div>
+    <p class="mt-4 text-center text-sm text-gray-500">
+      Or download the installer from <a href="https://github.com/Caldis/berth/releases" class="text-orange-500 hover:underline">Releases</a>.
+    </p>
+  </section>
+
+  <!-- Footer -->
+  <footer class="border-t border-gray-200 px-6 py-8 text-center text-sm text-gray-400">
+    <p>Built by <a href="https://github.com/Caldis" class="text-gray-600 hover:underline">Caldis</a> · <a href="https://github.com/Caldis/berth" class="text-gray-600 hover:underline">GitHub</a> · MIT License</p>
+  </footer>
+</body>
+</html>
