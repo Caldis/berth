@@ -27,6 +27,7 @@
     "rateLimits": "速率限制",
     "healthChecks": "健康检查",
     "noIssues": "所有系统运行正常",
+    "started": "开始时间",
     "timeRange": {
       "7d": "近 7 天",
       "30d": "近 30 天",
@@ -48,7 +49,11 @@
     "artifacts": "产物",
     "skillsUsed": "使用的 Skills",
     "mcpConnected": "已连接的 MCP 服务",
-    "hooksFired": "触发的 Hooks"
+    "hooksFired": "触发的 Hooks",
+    "plans": "计划",
+    "todos": "待办",
+    "fileHistory": "文件历史检查点",
+    "started": "开始时间"
   },
   "instructions": {
     "title": "指令",
@@ -65,6 +70,10 @@
     "trigger": "触发条件",
     "description": "描述",
     "files": "文件",
+    "tools": "工具",
+    "agents": "代理",
+    "model": "模型",
+    "importChain": "导入链",
     "usedInSessions": "近 30 天使用会话",
     "viewFile": "查看文件",
     "showInExplorer": "在资源管理器中显示"
@@ -86,11 +95,23 @@
       "userScope": "用户级",
       "projectScope": "项目级",
       "enterpriseScope": "企业级",
-      "mergeConflicts": "合并冲突"
+      "mergeConflicts": "合并冲突",
+      "command": "命令",
+      "envVars": "环境变量",
+      "overriddenBy": "被 {{scope}} 级别覆盖",
+      "status": {
+        "connected": "已连接",
+        "failed": "失败",
+        "unknown": "未知"
+      }
     },
     "hooks": {
       "events": "事件",
-      "hookCount": "{{count}} 个钩子"
+      "hookCount": "{{count}} 个钩子",
+      "matcher": "匹配器"
+    },
+    "plugins": {
+      "contains": "{{count}} 个组件"
     },
     "permissions": {
       "warning": "警告",
@@ -128,6 +149,12 @@
     "advancedModeDesc": "显示临时、调试和缓存资产",
     "about": "关于",
     "version": "版本"
+  },
+  "filter": {
+    "allScopes": "全部作用域"
+  },
+  "inspector": {
+    "copy": "复制到剪贴板"
   },
   "common": {
     "scope": {

@@ -11,13 +11,23 @@ const api = {
   },
   assets: {
     scan: (category?: string) => ipcRenderer.invoke('assets:scan', category),
+    scanAll: () => ipcRenderer.invoke('assets:scan-all'),
     get: (id: string) => ipcRenderer.invoke('assets:get', id),
     search: (query: string) => ipcRenderer.invoke('assets:search', query),
+    healthCheck: () => ipcRenderer.invoke('assets:health-check'),
     onChanged: (callback: (event: unknown) => void) => {
       const handler = (_: unknown, event: unknown): void => callback(event)
       ipcRenderer.on('assets:changed', handler)
       return () => ipcRenderer.removeListener('assets:changed', handler)
     }
+  },
+  sessions: {
+    list: (opts: { projectFilter?: string; limit?: number }) =>
+      ipcRenderer.invoke('sessions:list', opts),
+    get: (id: string) => ipcRenderer.invoke('sessions:get', id)
+  },
+  usage: {
+    summary: (opts: { days: number }) => ipcRenderer.invoke('usage:summary', opts)
   },
   shell: {
     openPath: (path: string) => ipcRenderer.invoke('shell:openPath', path),

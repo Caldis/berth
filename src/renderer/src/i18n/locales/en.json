@@ -27,6 +27,7 @@
     "rateLimits": "Rate Limits",
     "healthChecks": "Health Checks",
     "noIssues": "All systems operational",
+    "started": "Started",
     "timeRange": {
       "7d": "Last 7 days",
       "30d": "Last 30 days",
@@ -48,7 +49,11 @@
     "artifacts": "Artifacts",
     "skillsUsed": "Skills used",
     "mcpConnected": "MCP servers connected",
-    "hooksFired": "Hooks fired"
+    "hooksFired": "Hooks fired",
+    "plans": "Plans",
+    "todos": "Todos",
+    "fileHistory": "File history checkpoints",
+    "started": "Started"
   },
   "instructions": {
     "title": "Instructions",
@@ -65,6 +70,10 @@
     "trigger": "Trigger",
     "description": "Description",
     "files": "Files",
+    "tools": "Tools",
+    "agents": "Agents",
+    "model": "Model",
+    "importChain": "Import chain",
     "usedInSessions": "Used in sessions (last 30d)",
     "viewFile": "View File",
     "showInExplorer": "Show in Explorer"
@@ -86,11 +95,23 @@
       "userScope": "User scope",
       "projectScope": "Project scope",
       "enterpriseScope": "Enterprise scope",
-      "mergeConflicts": "Merge conflicts"
+      "mergeConflicts": "Merge conflicts",
+      "command": "Command",
+      "envVars": "Environment variables",
+      "overriddenBy": "Overridden by {{scope}} scope",
+      "status": {
+        "connected": "Connected",
+        "failed": "Failed",
+        "unknown": "Unknown"
+      }
     },
     "hooks": {
       "events": "events",
-      "hookCount": "{{count}} hooks"
+      "hookCount": "{{count}} hooks",
+      "matcher": "Matcher"
+    },
+    "plugins": {
+      "contains": "{{count}} components"
     },
     "permissions": {
       "warning": "Warning",
@@ -128,6 +149,12 @@
     "advancedModeDesc": "Show ephemeral, debug, and cache assets",
     "about": "About",
     "version": "Version"
+  },
+  "filter": {
+    "allScopes": "All scopes"
+  },
+  "inspector": {
+    "copy": "Copy to clipboard"
   },
   "common": {
     "scope": {

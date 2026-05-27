@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { Sidebar } from './sidebar'
 import { SearchDialog } from './search-dialog'
+import { InspectorDrawer } from './inspector-drawer'
 import { useAppStore } from '@/stores/app'
 
 export function AppLayout({ children }: { children: ReactNode }): React.ReactElement {
@@ -17,6 +18,7 @@ export function AppLayout({ children }: { children: ReactNode }): React.ReactEle
         <div className="px-6 pb-6">{children}</div>
       </main>
       <SearchDialog />
+      <InspectorDrawer />
     </div>
   )
 }

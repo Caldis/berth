@@ -1,11 +1,62 @@
+import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useTheme } from '@/components/theme-provider'
-import { Sun, Moon, Monitor, Check } from 'lucide-react'
+import { Sun, Moon, Monitor, Check, FolderOpen, ExternalLink } from 'lucide-react'
 import { cn } from '@/lib/utils'
+
+function Toggle({
+  enabled,
+  onToggle
+}: {
+  enabled: boolean
+  onToggle: (v: boolean) => void
+}): React.ReactElement {
+  return (
+    <button
+      role="switch"
+      aria-checked={enabled}
+      onClick={() => onToggle(!enabled)}
+      className={cn(
+        'relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full transition-colors',
+        enabled ? 'bg-accent' : 'bg-muted'
+      )}
+    >
+      <span
+        className={cn(
+          'pointer-events-none block h-4 w-4 rounded-full bg-white shadow-sm transition-transform',
+          enabled ? 'translate-x-[18px]' : 'translate-x-[2px]'
+        )}
+      />
+    </button>
+  )
+}
 
 export function Settings(): React.ReactElement {
   const { t, i18n } = useTranslation()
   const { theme, setTheme } = useTheme()
+  const [fileWatching, setFileWatching] = useState(true)
+  const [advancedMode, setAdvancedMode] = useState(false)
+  const [platformInfo, setPlatformInfo] = useState<{
+    homeDir: string
+    version: string
+    platform: string
+  } | null>(null)
+
+  useEffect(() => {
+    setFileWatching(localStorage.getItem('berth-file-watching') !== 'false')
+    setAdvancedMode(localStorage.getItem('berth-advanced-mode') === 'true')
+    window.api?.platform.info().then(setPlatformInfo).catch(() => {})
+  }, [])
+
+  const handleFileWatching = (v: boolean): void => {
+    setFileWatching(v)
+    localStorage.setItem('berth-file-watching', String(v))
+  }
+
+  const handleAdvancedMode = (v: boolean): void => {
+    setAdvancedMode(v)
+    localStorage.setItem('berth-advanced-mode', String(v))
+  }
 
   const themes = [
     { id: 'light' as const, labelKey: 'settings.themeLight', icon: Sun },
@@ -18,6 +69,10 @@ export function Settings(): React.ReactElement {
     { id: 'zh', label: '中文' }
   ]
 
+  const claudeDir = platformInfo
+    ? `${platformInfo.homeDir}${platformInfo.platform === 'win32' ? '\\' : '/'}.claude`
+    : '~/.claude'
+
   return (
     <div className="mx-auto max-w-2xl space-y-8">
       <h1 className="text-2xl font-semibold tracking-tight">{t('settings.title')}</h1>
@@ -25,7 +80,6 @@ export function Settings(): React.ReactElement {
       {/* Appearance */}
       <section className="space-y-4">
         <h2 className="text-base font-medium">{t('settings.appearance')}</h2>
-
         <div className="space-y-3 rounded-xl border border-border bg-card p-4">
           <div>
             <label className="text-sm font-medium">{t('settings.theme')}</label>
@@ -37,7 +91,7 @@ export function Settings(): React.ReactElement {
                   className={cn(
                     'flex items-center gap-2 rounded-md border px-3 py-2 text-sm transition-colors',
                     theme === t_.id
-                      ? 'border-accent bg-accent/10 text-accent-foreground'
+                      ? 'border-accent bg-accent/10 text-foreground'
                       : 'border-border hover:border-accent/50'
                   )}
                 >
@@ -62,7 +116,7 @@ export function Settings(): React.ReactElement {
                   className={cn(
                     'flex items-center gap-2 rounded-md border px-3 py-2 text-sm transition-colors',
                     i18n.language === lang.id
-                      ? 'border-accent bg-accent/10 text-accent-foreground'
+                      ? 'border-accent bg-accent/10 text-foreground'
                       : 'border-border hover:border-accent/50'
                   )}
                 >
@@ -80,20 +134,43 @@ export function Settings(): React.ReactElement {
       {/* Scanning */}
       <section className="space-y-4">
         <h2 className="text-base font-medium">{t('settings.scanning')}</h2>
-        <div className="space-y-3 rounded-xl border border-border bg-card p-4">
-          <div className="flex items-center justify-between">
+        <div className="rounded-xl border border-border bg-card">
+          <div className="flex items-center justify-between p-4">
             <div>
               <p className="text-sm font-medium">{t('settings.fileWatching')}</p>
               <p className="text-xs text-muted-foreground">{t('settings.fileWatchingDesc')}</p>
             </div>
-            <div className="h-5 w-9 rounded-full bg-accent" />
+            <Toggle enabled={fileWatching} onToggle={handleFileWatching} />
           </div>
-          <div className="flex items-center justify-between border-t border-border pt-3">
+          <div className="flex items-center justify-between border-t border-border p-4">
             <div>
               <p className="text-sm font-medium">{t('settings.advancedMode')}</p>
               <p className="text-xs text-muted-foreground">{t('settings.advancedModeDesc')}</p>
             </div>
-            <div className="h-5 w-9 rounded-full bg-muted" />
+            <Toggle enabled={advancedMode} onToggle={handleAdvancedMode} />
+          </div>
+        </div>
+      </section>
+
+      {/* Scan Directories */}
+      <section className="space-y-4">
+        <h2 className="text-base font-medium">{t('settings.scanDirectories')}</h2>
+        <div className="rounded-xl border border-border bg-card">
+          <div className="flex items-center justify-between p-4">
+            <div className="flex items-center gap-3">
+              <FolderOpen className="h-4 w-4 text-muted-foreground" />
+              <div>
+                <p className="text-sm font-medium">~/.claude/</p>
+                <p className="font-mono text-xs text-muted-foreground">{claudeDir}</p>
+              </div>
+            </div>
+            <button
+              onClick={() => window.api?.shell.openPath(claudeDir)}
+              className="flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs transition-colors hover:bg-accent/10"
+            >
+              <ExternalLink className="h-3 w-3" />
+              {t('instructions.showInExplorer')}
+            </button>
           </div>
         </div>
       </section>
@@ -109,9 +186,25 @@ export function Settings(): React.ReactElement {
             <div>
               <p className="font-medium">{t('app.name')}</p>
               <p className="text-xs text-muted-foreground">
-                {t('settings.version')} 0.1.0 · {t('app.tagline')}
+                {t('settings.version')} {platformInfo?.version ?? '0.1.0'} · {t('app.tagline')}
               </p>
             </div>
+          </div>
+          <div className="mt-3 flex gap-2 border-t border-border pt-3">
+            <button
+              onClick={() => window.api?.shell.openExternal('https://github.com/Caldis/berth')}
+              className="flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
+            >
+              <ExternalLink className="h-3 w-3" />
+              GitHub
+            </button>
+            <span className="text-xs text-muted-foreground">·</span>
+            <button
+              onClick={() => window.api?.shell.openExternal('https://github.com/Caldis/berth/issues')}
+              className="flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
+            >
+              Report Issue
+            </button>
           </div>
         </div>
       </section>

@@ -25,6 +25,12 @@ interface AppState {
 
   agentDetected: boolean
   setAgentDetected: (detected: boolean) => void
+
+  inspectorOpen: boolean
+  inspectorPath: string | null
+  inspectorContent: string | null
+  openInspector: (path: string, content: string) => void
+  closeInspector: () => void
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -59,5 +65,11 @@ export const useAppStore = create<AppState>((set) => ({
   setScanning: (scanning) => set({ scanning }),
 
   agentDetected: false,
-  setAgentDetected: (agentDetected) => set({ agentDetected })
+  setAgentDetected: (agentDetected) => set({ agentDetected }),
+
+  inspectorOpen: false,
+  inspectorPath: null,
+  inspectorContent: null,
+  openInspector: (path, content) => set({ inspectorOpen: true, inspectorPath: path, inspectorContent: content }),
+  closeInspector: () => set({ inspectorOpen: false, inspectorPath: null, inspectorContent: null })
 }))

@@ -1,6 +1,9 @@
-import { app, BrowserWindow, shell, ipcMain, nativeTheme } from 'electron'
+import { app, BrowserWindow, shell } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
+import { registerAllHandlers } from './ipc'
+import { initScanner } from './engine/scanner'
+import { getWatcher } from './engine/watcher'
 
 function createWindow(): BrowserWindow {
   const mainWindow = new BrowserWindow({
@@ -55,9 +58,15 @@ app.whenReady().then(() => {
     optimizer.watchWindowShortcuts(window)
   })
 
-  registerIpcHandlers()
+  registerAllHandlers()
 
-  createWindow()
+  // Initialize the asset engine
+  initScanner(process.cwd())
+  const watcher = getWatcher()
+
+  const mainWindow = createWindow()
+  watcher.setWindow(mainWindow)
+  watcher.start(process.cwd())
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
@@ -68,25 +77,3 @@ app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit()
 })
 
-function registerIpcHandlers(): void {
-  ipcMain.handle('platform:info', () => ({
-    platform: process.platform,
-    arch: process.arch,
-    homeDir: app.getPath('home'),
-    version: app.getVersion()
-  }))
-
-  ipcMain.handle('theme:get', () => nativeTheme.themeSource)
-
-  ipcMain.handle('theme:set', (_, theme: 'light' | 'dark' | 'system') => {
-    nativeTheme.themeSource = theme
-  })
-
-  ipcMain.handle('shell:openPath', (_, path: string) => {
-    shell.showItemInFolder(path)
-  })
-
-  ipcMain.handle('shell:openExternal', (_, url: string) => {
-    shell.openExternal(url)
-  })
-}
