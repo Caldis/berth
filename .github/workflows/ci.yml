@@ -1,0 +1,23 @@
+name: CI
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # lint 暂未纳入: 项目缺 eslint flat config, 见 issues/2026-05-29-BUG-eslint-config-missing.md
+      - run: pnpm typecheck
+      - run: pnpm test
+      - run: pnpm harness:check
