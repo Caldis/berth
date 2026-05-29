@@ -14,6 +14,7 @@
   <a href="#screenshots">Screenshots</a> ·
   <a href="#development">Development</a> ·
   <a href="#architecture">Architecture</a> ·
+  <a href="#ai-assisted-development">AI Workflow</a> ·
   <a href="docs/user-manual.md">User Manual</a>
 </p>
 
@@ -60,7 +61,11 @@ Download the latest release for your platform from the [Releases](https://github
 git clone https://github.com/Caldis/berth.git
 cd berth
 
-# Install dependencies
+# Enable corepack so the pinned pnpm 9.x is used
+# (corepack's default is pnpm 11, which skips native build scripts and breaks the build)
+corepack enable
+
+# Install dependencies (compiles better-sqlite3, downloads Electron)
 pnpm install
 
 # Start development server
@@ -73,7 +78,7 @@ pnpm package
 ### Requirements
 
 - **Node.js** 20+
-- **pnpm** 9+
+- **pnpm** 9.x — auto-pinned via `corepack enable` (the repo declares `packageManager: pnpm@9.15.4`; do **not** use pnpm 10/11)
 - **Claude Code** installed (Berth scans `~/.claude/`)
 
 ## Screenshots
@@ -113,6 +118,45 @@ pnpm package
 │ ~/.claude/ + project .claude/ dirs      │
 └─────────────────────────────────────────┘
 ```
+
+## AI-Assisted Development
+
+This repo ships an **AI Native Workflow harness** — a repo-contained workflow for developing Berth with AI coding agents (Claude Code and Codex), so a task can be picked up across sessions and across people without losing context.
+
+### Where it lives
+
+| Path | Purpose |
+|------|---------|
+| `.agents/workflow/*.md` | Single source of truth — the workflow playbooks (hand-written) |
+| `.agents/README.md` | Harness overview and how distribution works |
+| `.claude/commands/opsx/`, `.claude/skills/`, `.codex/skills/` | Generated entry points for each tool (symlinks + stubs) |
+| `docs/ARCHITECTURE.md` | Project Map — process/module boundaries, IPC contract |
+| `docs/works/` · `docs/friction/` | Per-task state · captured engineering friction |
+| `scripts/harness-sync.mjs` · `scripts/harness-check.mjs` | Regenerate distribution · validate it |
+
+### Using it
+
+The workflow is four phases — **Explore → Design → Implementation → Verify** — driven by slash commands. In Claude Code or Codex, from the repo root:
+
+```
+/opsx:new <task description>   # scaffold a task under docs/works/
+/opsx:explore                  # gather context → 01-ANALYSIS.md
+/opsx:design                   # tech design (asks you to clarify) → 02-SPEC.md + 03-PLAN.md
+/opsx:implement                # build per the plan, with tests
+/opsx:verify                   # full tests + review + UI acceptance
+/opsx:archive                  # archive the task, commit
+```
+
+Humans steer at `design` (clarify intent) and `verify` (confirm acceptance); the agent runs the rest. Full command list and contract: see [`.agents/README.md`](.agents/README.md).
+
+### Maintaining it
+
+```bash
+pnpm harness:sync     # regenerate command/skill distribution after editing .agents/workflow/*
+pnpm harness:check    # validate task structure, naming, and distribution (also runs in CI)
+```
+
+After cloning, the distribution (symlinks + stubs) is already committed and works as-is — `harness:sync` is only needed when you change the playbooks.
 
 ## Development
 
