@@ -5,6 +5,8 @@ berth 项目自用工具 (不含企业内部设施)。Agent 据此主动获取�
 ## 版本控制
 - `git` — 版本操作; 提交规范见根 AGENTS.md。
 - `gh` — GitHub CLI (PR / issue / CI 状态), 远端 Caldis/berth。
+- `gh project` — 任务看板跟踪 (new 建 item / archive 置 Done)。**前置**: token 需 `project` + `read:project` scope;
+  缺失时 `gh auth refresh -h github.com -s project,read:project` (浏览器授权, Agent 不可代办, 须请用户运行)。
 
 ## 包与构建
 - `pnpm` (钉死 9.x, 见 package.json packageManager) — 依赖与脚本。

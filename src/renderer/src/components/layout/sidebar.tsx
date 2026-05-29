@@ -87,6 +87,8 @@ export function Sidebar(): React.ReactElement {
   const toggleSidebar = useAppStore((s) => s.toggleSidebar)
   const setSearchOpen = useAppStore((s) => s.setSearchOpen)
 
+  const isMac = navigator.platform.includes('Mac')
+
   const isActive = (path: string): boolean => {
     if (path === '/') return location.pathname === '/'
     return location.pathname.startsWith(path)
@@ -112,8 +114,14 @@ export function Sidebar(): React.ReactElement {
         collapsed ? 'w-16' : 'w-60'
       )}
     >
-      {/* Titlebar drag area + logo */}
-      <div className="titlebar-drag flex h-14 shrink-0 items-center gap-2 px-4">
+      {/* Titlebar drag area + logo. On macOS, inset the top so the logo clears
+          the traffic-light buttons (positioned at 16,16 in src/main/index.ts). */}
+      <div
+        className={cn(
+          'titlebar-drag flex shrink-0 items-center gap-2 px-4',
+          isMac ? 'h-[72px] pt-[26px]' : 'h-14'
+        )}
+      >
         <div className="titlebar-no-drag flex items-center gap-2">
           <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary text-primary-foreground text-xs font-bold">
             B
