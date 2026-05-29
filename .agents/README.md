@@ -8,6 +8,7 @@ berth 的 Agent 工作流单一真源, 同时服务 Claude Code 与 Codex。
   - `_shared.md` 门禁与状态契约; 8 个 verb 各一份。
 - `skills/opsx-<verb>/SKILL.md` — 薄指针 (由 `pnpm harness:sync` 生成, 勿手改)。
 - `tools.md` — 可用工具索引。
+- `references/` — 一手事实参考 (如 ai-tool-command-distribution.md: 双工具命令分发的官方核实结论)。
 
 ## 分发
 
