@@ -1,0 +1,13 @@
+# /opsx:optimization — 流程优化
+
+目标: 消费 docs/friction 的经验, 优化工作流本身。
+
+步骤:
+1. 阅读 `docs/friction/` 下未归档的摩擦记录。
+2. 归类: 哪些应固化为 `.agents/workflow/*.md` 的步骤改进, 哪些应补进 `.agents/tools.md`
+   或 `docs/ARCHITECTURE.md`, 哪些应补成新的 skill。
+3. 落地改进 (修改对应 playbook / 文档)。
+4. 改进对应的摩擦记录移入 `docs/friction/_archive/`。
+5. 若改动了分发产物的生成逻辑, 运行 `pnpm harness:sync`。
+
+产出: 工作流增量优化。这是反馈闭环, 使每完成一个任务工作流更可靠。

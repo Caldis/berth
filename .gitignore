@@ -6,6 +6,7 @@ Thumbs.db
 *.log
 *.swp
 *.swo
+*.tsbuildinfo
 
 # Build
 build/
@@ -15,6 +16,9 @@ release/
 .idea/
 .vscode/
 *.code-workspace
+
+# Claude Code runtime
+.claude/scheduled_tasks.lock
 
 # Environment
 .env
