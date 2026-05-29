@@ -114,14 +114,14 @@ export function Sidebar(): React.ReactElement {
         collapsed ? 'w-16' : 'w-60'
       )}
     >
-      {/* Titlebar drag area + logo. On macOS, inset the top so the logo clears
-          the traffic-light buttons (positioned at 16,16 in src/main/index.ts). */}
-      <div
-        className={cn(
-          'titlebar-drag flex shrink-0 items-center gap-2 px-4',
-          isMac ? 'h-[72px] pt-[26px]' : 'h-14'
-        )}
-      >
+      {/* macOS reserves a draggable band for the traffic-light buttons (positioned
+          at 16,16 in src/main/index.ts). Its height matches the main content's top
+          drag strip (app-layout.tsx) so content begins on one line across the window,
+          giving the logo below comfortable clearance from the buttons. */}
+      {isMac && <div className="titlebar-drag h-9 w-full shrink-0" />}
+
+      {/* Titlebar drag area + logo */}
+      <div className="titlebar-drag flex h-14 shrink-0 items-center gap-2 px-4">
         <div className="titlebar-no-drag flex items-center gap-2">
           <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary text-primary-foreground text-xs font-bold">
             B
