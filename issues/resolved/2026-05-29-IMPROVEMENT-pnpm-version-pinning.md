@@ -17,3 +17,9 @@
 - CI 用 `pnpm/action-setup@v4` 指定 9.15.4
 - 关联摩擦: docs/friction/20260529-implement-pnpm-version-pinning.md
 - 备注: README 的 "pnpm 9+" 措辞偏宽松, 实际须 9.x (后续可收紧文案)
+
+---
+# 完成 (2026-05-30)
+- package.json packageManager + CI pnpm/action-setup 已钉 9.15.4 (commit 892e998 起)。
+- README Requirements 已收紧为 "pnpm 9.x ... do not use pnpm 10/11" (并删除一处重复行)。
+- 移入 resolved/。

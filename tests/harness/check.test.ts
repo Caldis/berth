@@ -4,7 +4,7 @@ import { mkdtempSync, rmSync, mkdirSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 // @ts-expect-error mjs sin tipos
-import { checkWorks, checkFriction, checkTemplates } from '../../scripts/harness-check.mjs'
+import { checkWorks, checkFriction, checkTemplates, checkWorkflowSources } from '../../scripts/harness-check.mjs'
 
 let root: string
 beforeEach(() => {
@@ -78,5 +78,33 @@ describe('checkFriction', () => {
 describe('checkTemplates', () => {
   it('模板缺失报错', () => {
     expect(checkTemplates(root).length).toBeGreaterThan(0)
+  })
+})
+
+describe('checkWorkflowSources', () => {
+  const VERBS = ['new', 'continue', 'explore', 'design', 'implement', 'verify', 'archive', 'optimization']
+  function writeWorkflow(empty: string[] = []): void {
+    const dir = join(root, '.agents/workflow')
+    mkdirSync(dir, { recursive: true })
+    for (const f of ['_shared', ...VERBS]) {
+      writeFileSync(join(dir, `${f}.md`), empty.includes(f) ? '   \n' : `# ${f}\nbody`)
+    }
+  }
+
+  it('完整非空 playbook 通过', () => {
+    writeWorkflow()
+    expect(checkWorkflowSources(root)).toEqual([])
+  })
+
+  it('空 playbook 文件被检出', () => {
+    writeWorkflow(['design'])
+    const errs = checkWorkflowSources(root)
+    expect(errs.some((e: string) => e.includes('empty') && e.includes('design.md'))).toBe(true)
+  })
+
+  it('孤儿 playbook 被检出', () => {
+    writeWorkflow()
+    writeFileSync(join(root, '.agents/workflow/bogus.md'), '# x')
+    expect(checkWorkflowSources(root).some((e: string) => e.includes('unexpected'))).toBe(true)
   })
 })

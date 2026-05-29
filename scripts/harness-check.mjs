@@ -89,11 +89,16 @@ export function checkTemplates(root) {
 export function checkWorkflowSources(root) {
   const errors = []
   const dir = join(root, '.agents/workflow')
+  // 非空断言: playbook 是操作真源, 0 字节/空白文件等于无 (existsSync 检不出截断)
+  const nonEmpty = (f) => existsSync(f) && readFileSync(f, 'utf8').trim().length > 0
   if (!existsSync(join(dir, '_shared.md')))
     errors.push('workflow: missing .agents/workflow/_shared.md')
+  else if (!nonEmpty(join(dir, '_shared.md')))
+    errors.push('workflow: empty .agents/workflow/_shared.md')
   for (const v of VERBS) {
-    if (!existsSync(join(dir, `${v}.md`)))
-      errors.push(`workflow: missing .agents/workflow/${v}.md`)
+    const f = join(dir, `${v}.md`)
+    if (!existsSync(f)) errors.push(`workflow: missing .agents/workflow/${v}.md`)
+    else if (!nonEmpty(f)) errors.push(`workflow: empty .agents/workflow/${v}.md`)
   }
   // 反向扫描: 检出非 _shared/非 VERB 的孤儿 playbook (防 verb 集与源静默分叉)
   if (existsSync(dir)) {
