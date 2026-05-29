@@ -49,7 +49,7 @@ export function extractAtImports(content: string): string[] {
   for (const line of content.split('\n')) {
     const trimmed = line.trim()
     // Matches @path references like @AGENTS.md, @./foo/bar.md
-    if (/^@[\w.\/\\]/.test(trimmed)) {
+    if (/^@[\w./\\]/.test(trimmed)) {
       results.push(trimmed.slice(1).trim())
     }
   }
