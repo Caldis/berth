@@ -1,3 +1,7 @@
+> 重定向: 任务的活动态 (Explore/Design/Implement/Verify 产物) 已迁至 AI Native Workflow 的
+> `docs/works/{date}[-{jira}]-{summary}/`, 由 `/opsx:*` 命令维护。本目录保留历史计划
+> (如 v0.1-development.md) 作为存档参考。新任务请用 `/opsx:new`。详见 `.agents/README.md`。
+
 # PLANS
 存放任务计划和执行清单, 维护任务进度持续进行
 - 如果某个任务可被分解为至少 3 个子任务, 请在本目录维护进度, 否则直接执行
