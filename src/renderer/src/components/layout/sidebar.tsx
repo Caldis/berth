@@ -87,6 +87,8 @@ export function Sidebar(): React.ReactElement {
   const toggleSidebar = useAppStore((s) => s.toggleSidebar)
   const setSearchOpen = useAppStore((s) => s.setSearchOpen)
 
+  const isMac = navigator.platform.includes('Mac')
+
   const isActive = (path: string): boolean => {
     if (path === '/') return location.pathname === '/'
     return location.pathname.startsWith(path)
@@ -112,6 +114,12 @@ export function Sidebar(): React.ReactElement {
         collapsed ? 'w-16' : 'w-60'
       )}
     >
+      {/* macOS reserves a draggable band for the traffic-light buttons (positioned
+          at 16,16 in src/main/index.ts). Its height matches the main content's top
+          drag strip (app-layout.tsx) so content begins on one line across the window,
+          giving the logo below comfortable clearance from the buttons. */}
+      {isMac && <div className="titlebar-drag h-9 w-full shrink-0" />}
+
       {/* Titlebar drag area + logo */}
       <div className="titlebar-drag flex h-14 shrink-0 items-center gap-2 px-4">
         <div className="titlebar-no-drag flex items-center gap-2">

@@ -16,8 +16,19 @@
 # TEST
 必须满足可测试性
 
+# BUILD_ENV
+本地构建/运行的非显然约束 (从代码无法直接得出, 交接与起步必读):
+- **必须 pnpm 9.x**。corepack 默认拉 pnpm 11, 会无视 `package.json` 的 `pnpm.onlyBuiltDependencies`, 跳过 better-sqlite3/electron/esbuild 构建脚本 (原生模块不编译、Electron 二进制不下载), 且生成无效 `pnpm-workspace.yaml` 导致所有 pnpm 命令报 `packages field missing`。起步先 `corepack prepare pnpm@9.15.4 --activate`; 已在 package.json 钉 `packageManager`。
+- **node 经 nvm** `~/.nvm/versions/node/v24.3.0/bin` (非交互 shell 默认无 pnpm, 需 prepend PATH)。
+- **dev 端口**: 5173 常被同机另一项目占用, electron-vite 自动跳 5174+。
+- **单实例**: 应用已加 `requestSingleInstanceLock` (src/main/index.ts), 重复 `pnpm dev` 不会多开窗口; 第二个实例自杀并聚焦已有窗口。
+- **UI 视觉验收截图**: 必须用 electron 主进程**实测窗口坐标**裁剪 (osascript 取 `{position, size}` of front window → 按显示器缩放比换算物理像素裁剪); 不可猜坐标。进程检测见 `.agents/workflow/verify.md` (完整 .pnpm 路径模式 + 排除 helper)。
+
 # EVOLUATION
 当用户对先前的任务或指令进行纠正或指示时, 你需要在验证其有效性后将其写入 issues
+- 在 harness 工作流 (/opsx:*) 任务过程中, 用户给出的纠正/意见/偏好, 一经验证有效, 必须主动沉淀为 friction (docs/friction/), 并在当轮落地优化, 无需用户提示 "记下来"。详见 `.agents/workflow/_shared.md` 不变量 6。
+- 判定归属: 针对当前任务执行过程的反馈 → friction; 针对产品功能/缺陷的反馈 → issues。
+- 沉淀产物本身 (friction / works / 文档) 必须先过 `pnpm harness:check` (命名/阶段/结构合规) 才能提交; 不可未验证就 commit。沉淀指令的完备性 = 主动记录 + 产物过闸门。
 
 # Behavioral guidelines
 to reduce common LLM coding mistakes. Merge with project-specific instructions as needed.
