@@ -6,6 +6,7 @@ Thumbs.db
 *.log
 *.swp
 *.swo
+*.tsbuildinfo
 
 # Build
 build/

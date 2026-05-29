@@ -1,6 +1,6 @@
 // tests/harness/sync.test.ts
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { mkdtempSync, rmSync, readFileSync, writeFileSync, readlinkSync, existsSync } from 'node:fs'
+import { mkdtempSync, rmSync, writeFileSync, readlinkSync, existsSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 // @ts-expect-error mjs sin tipos
