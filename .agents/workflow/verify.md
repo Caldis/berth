@@ -11,10 +11,14 @@
    - 对照 02-SPEC.md 与 docs/ARCHITECTURE.md, 检查是否偏离设计、越界、违反 MVVM/进程隔离。
 3. 前端验收: 用 `run` skill / Playwright `_electron` 启动应用, 截图, 走通受影响界面的交互流程,
    完成视觉与交互验收 (Agent 需"看到界面、摸到设备")。
-   - 启动前先清理同项目残留 dev 进程, 避免端口漂移与 electron 子进程冲突:
-     `pkill -f 'Code/berth/node_modules/.bin/electron-vite'; pkill -f 'Code/berth/node_modules/electron/dist'`。
+   - **启动前必须先检查是否已有运行实例** (`pgrep -f 'Code/berth/node_modules/.bin/electron-vite'`):
+     已有则复用其窗口 (vite HMR 已热更到新代码), 直接截图, 不重复启动 (重复启动会导致多实例 + 端口漂移)。
+   - 仅当无实例、或需冷启动验证主进程改动时, 才 `pkill -f 'Code/berth/node_modules/.bin/electron-vite'` +
+     `pkill -f 'Code/berth/node_modules/electron/dist'` 清理后重启, 且重启前后都确认实例数。
    - 截图前轮询确认 electron 主进程存活 (`pgrep -f 'Code/berth/node_modules/electron/dist/.../MacOS/Electron'`),
      而非仅看 vite 端口; 按窗口 id 截图。截图存 /tmp, 禁止入项目目录。
+   - UI 改动 (布局/间距/样式) 的视觉验收必须用 `/frontend-design:frontend-design` 指导设计判断,
+     不靠拍脑袋调数值; 间距/对齐需有明确依据 (如与既有元素对齐、符合平台 HIG)。
 4. 不通过项: 回写为 03-PLAN.md 新任务, 将 INDEX.phase 退回 implement, 重新进入开发循环。
 5. 全部通过后, 提示用户确认验收, 然后 `/opsx:archive`。
 

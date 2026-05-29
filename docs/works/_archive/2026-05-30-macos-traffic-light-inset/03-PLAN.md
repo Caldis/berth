@@ -10,5 +10,10 @@
 - [ ] 任务 6: gh project 跟踪 — 阻塞: gh token 缺 project scope, 待用户授权 (见 friction)
 
 ## verify 回写
-- verify 全部通过 (代码 + 视觉)。唯一遗留: 任务 6 gh project 需用户授权 token scope, 非代码问题。
-- 截图证据: /tmp/berth_after.png (按约定不入项目目录)。
+- 第一轮: 机械检查全绿, 但用户 (人工验收者) 指出首版样式欠佳 — 红绿灯距 logo 过近 (gap 仅 ~7px),
+  且未用设计 skill 指导。verify 不通过, 退回 implement。
+- 第二轮 (本轮): 用 /frontend-design 重做 — 废弃 pt hack, 改为 macOS 专用拖拽带 (h-9, 对齐主内容区顶部
+  drag strip) + logo header 恢复 h-14, 间距增至 ~22px。重新启动单实例 (启动前已检查无残留) 截图确认。
+- 关联 friction: 20260530-implement-ui-spacing-no-design-skill, 20260530-verify-dev-instance-not-checked。
+- 遗留: 任务 6 gh project 需用户授权 token scope (gh auth refresh -s project,read:project), 非代码问题。
+- 截图证据: /tmp/berth_v2.png (按约定不入项目目录)。

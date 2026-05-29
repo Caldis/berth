@@ -18,6 +18,8 @@
 
 # EVOLUATION
 当用户对先前的任务或指令进行纠正或指示时, 你需要在验证其有效性后将其写入 issues
+- 在 harness 工作流 (/opsx:*) 任务过程中, 用户给出的纠正/意见/偏好, 一经验证有效, 必须主动沉淀为 friction (docs/friction/), 并在当轮落地优化, 无需用户提示 "记下来"。详见 `.agents/workflow/_shared.md` 不变量 6。
+- 判定归属: 针对当前任务执行过程的反馈 → friction; 针对产品功能/缺陷的反馈 → issues。
 
 # Behavioral guidelines
 to reduce common LLM coding mistakes. Merge with project-specific instructions as needed.
