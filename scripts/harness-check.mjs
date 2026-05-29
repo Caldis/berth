@@ -7,7 +7,7 @@ import { VERBS, parseFrontmatter } from './harness-lib.mjs'
 import { check as checkDistribution } from './harness-sync.mjs'
 
 const WORK_NAME = /^\d{4}-\d{2}-\d{2}(-[A-Z][A-Z0-9]+-\d+)?-[a-z0-9-]+$/
-const FRICTION_NAME = /^\d{8}-(explore|design|implement|verify)-[a-z0-9-]+\.md$/
+const FRICTION_NAME = /^\d{8}-(new|continue|explore|design|implement|verify|archive|optimization)-[a-z0-9-]+\.md$/
 const PHASES = ['explore', 'design', 'blocked', 'implement', 'verify', 'archive']
 const PHASE_RANK = { explore: 0, design: 1, blocked: 1, implement: 2, verify: 3, archive: 4 }
 

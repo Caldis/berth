@@ -49,6 +49,7 @@ artifacts:
 3. design 遇 PRD 级歧义 → phase 置 blocked 并在 INDEX 标注待澄清项, 不进 implement。
 4. verify 不通过项回写 03-PLAN.md 新任务, phase 退回 implement。
 5. 工程摩擦不就地处理, 沉到 docs/friction/{YYYYMMDD}-{phase}-{summary}.md。
+6. 用户在任务过程中给出的纠正/意见/偏好, 一经验证有效, 必须主动沉淀为 friction 并当轮落地优化, 无需用户提示。沉淀产物本身须先过 `pnpm harness:check` 才能提交 (phase 段限 8 个 verb: new|continue|explore|design|implement|verify|archive|optimization)。
 
 ## 工具
 

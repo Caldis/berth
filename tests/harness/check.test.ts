@@ -33,17 +33,17 @@ describe('checkWorks', () => {
   it('design 阶段缺 01-ANALYSIS 报错', () => {
     task('2026-05-29-order-notes', 'task: t\ntype: feature\nphase: design\ncreated: 2026-05-29', ['00-PRD.md'])
     const errs = checkWorks(root)
-    expect(errs.some((e) => e.includes('01-ANALYSIS.md'))).toBe(true)
+    expect(errs.some((e: string) => e.includes('01-ANALYSIS.md'))).toBe(true)
   })
 
   it('非法目录命名报错', () => {
     task('OrderNotes', 'task: t\ntype: feature\nphase: explore\ncreated: 2026-05-29', ['00-PRD.md'])
-    expect(checkWorks(root).some((e) => e.includes('naming'))).toBe(true)
+    expect(checkWorks(root).some((e: string) => e.includes('naming'))).toBe(true)
   })
 
   it('非法 phase 枚举报错', () => {
     task('2026-05-29-x', 'task: t\ntype: feature\nphase: coding\ncreated: 2026-05-29', ['00-PRD.md'])
-    expect(checkWorks(root).some((e) => e.includes('phase'))).toBe(true)
+    expect(checkWorks(root).some((e: string) => e.includes('phase'))).toBe(true)
   })
 
   it('archive 阶段仍在 works 顶层报错', () => {
@@ -53,7 +53,7 @@ describe('checkWorks', () => {
       '02-SPEC.md',
       '03-PLAN.md'
     ])
-    expect(checkWorks(root).some((e) => e.includes('_archive'))).toBe(true)
+    expect(checkWorks(root).some((e: string) => e.includes('_archive'))).toBe(true)
   })
 })
 
@@ -63,8 +63,15 @@ describe('checkFriction', () => {
     writeFileSync(join(root, 'docs/friction/20260529-implement-foo.md'), 'x')
     writeFileSync(join(root, 'docs/friction/bad-name.md'), 'x')
     const errs = checkFriction(root)
-    expect(errs.some((e) => e.includes('bad-name'))).toBe(true)
-    expect(errs.some((e) => e.includes('20260529-implement-foo'))).toBe(false)
+    expect(errs.some((e: string) => e.includes('bad-name'))).toBe(true)
+    expect(errs.some((e: string) => e.includes('20260529-implement-foo'))).toBe(false)
+  })
+
+  it('接受全部 8 个 verb 阶段作为 phase 段', () => {
+    mkdirSync(join(root, 'docs/friction'), { recursive: true })
+    const phases = ['new', 'continue', 'explore', 'design', 'implement', 'verify', 'archive', 'optimization']
+    for (const p of phases) writeFileSync(join(root, `docs/friction/20260530-${p}-sample.md`), 'x')
+    expect(checkFriction(root)).toEqual([])
   })
 })
 
