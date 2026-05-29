@@ -1,5 +1,4 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { join } from 'path'
 
 // Mock fs for parser tests
 vi.mock('fs', async () => {
@@ -15,9 +14,6 @@ vi.mock('fs', async () => {
 vi.mock('glob', () => ({
   globSync: vi.fn(() => [])
 }))
-
-import { existsSync, readFileSync, statSync } from 'fs'
-import { globSync } from 'glob'
 
 describe('Claude Code Adapter - Scanner Logic', () => {
   beforeEach(() => {
