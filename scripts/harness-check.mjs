@@ -88,11 +88,20 @@ export function checkTemplates(root) {
 
 export function checkWorkflowSources(root) {
   const errors = []
-  if (!existsSync(join(root, '.agents/workflow/_shared.md')))
+  const dir = join(root, '.agents/workflow')
+  if (!existsSync(join(dir, '_shared.md')))
     errors.push('workflow: missing .agents/workflow/_shared.md')
   for (const v of VERBS) {
-    if (!existsSync(join(root, '.agents/workflow', `${v}.md`)))
+    if (!existsSync(join(dir, `${v}.md`)))
       errors.push(`workflow: missing .agents/workflow/${v}.md`)
+  }
+  // 反向扫描: 检出非 _shared/非 VERB 的孤儿 playbook (防 verb 集与源静默分叉)
+  if (existsSync(dir)) {
+    const allowed = new Set([...VERBS.map((v) => `${v}.md`), '_shared.md'])
+    for (const name of readdirSync(dir)) {
+      if (name.endsWith('.md') && !allowed.has(name))
+        errors.push(`workflow: unexpected playbook "${name}" (not in VERBS)`)
+    }
   }
   return errors
 }
