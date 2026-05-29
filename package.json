@@ -4,6 +4,7 @@
   "description": "Local AI Agent asset visualization and management tool",
   "author": "Caldis",
   "license": "MIT",
+  "packageManager": "pnpm@9.15.4",
   "homepage": "https://github.com/user/berth",
   "main": "./out/main/index.js",
   "scripts": {
