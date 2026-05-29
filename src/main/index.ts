@@ -51,29 +51,47 @@ function createWindow(): BrowserWindow {
   return mainWindow
 }
 
-app.whenReady().then(() => {
-  electronApp.setAppUserModelId('com.berth.app')
+// Enforce a single running instance. A second launch (double-clicking the app,
+// or re-running `pnpm dev` without killing the previous one) fails to acquire
+// the lock and quits immediately, focusing the existing window instead of
+// opening a duplicate. Prevents the multi-window issue in dev and production.
+const gotTheLock = app.requestSingleInstanceLock()
 
-  app.on('browser-window-created', (_, window) => {
-    optimizer.watchWindowShortcuts(window)
+if (!gotTheLock) {
+  app.quit()
+} else {
+  app.on('second-instance', () => {
+    const existing = BrowserWindow.getAllWindows()[0]
+    if (existing) {
+      if (existing.isMinimized()) existing.restore()
+      existing.focus()
+    }
   })
 
-  registerAllHandlers()
+  app.whenReady().then(() => {
+    electronApp.setAppUserModelId('com.berth.app')
 
-  // Initialize the asset engine
-  initScanner(process.cwd())
-  const watcher = getWatcher()
+    app.on('browser-window-created', (_, window) => {
+      optimizer.watchWindowShortcuts(window)
+    })
 
-  const mainWindow = createWindow()
-  watcher.setWindow(mainWindow)
-  watcher.start(process.cwd())
+    registerAllHandlers()
 
-  app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow()
+    // Initialize the asset engine
+    initScanner(process.cwd())
+    const watcher = getWatcher()
+
+    const mainWindow = createWindow()
+    watcher.setWindow(mainWindow)
+    watcher.start(process.cwd())
+
+    app.on('activate', () => {
+      if (BrowserWindow.getAllWindows().length === 0) createWindow()
+    })
   })
-})
 
-app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') app.quit()
-})
+  app.on('window-all-closed', () => {
+    if (process.platform !== 'darwin') app.quit()
+  })
+}
 
