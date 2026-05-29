@@ -13,6 +13,7 @@ import {
   cpSync
 } from 'node:fs'
 import { join, dirname } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { VERBS, skillMdContent, commandStubContent } from './harness-lib.mjs'
 
 // 期望产物描述符
@@ -108,7 +109,7 @@ export function check(root) {
 
 function main() {
   const root = process.cwd()
-  const checkMode = process.argv.includes('--check')
+  const checkMode = process.argv.includes('--check') || process.argv.includes('check')
   if (checkMode) {
     const r = check(root)
     if (r.ok) {
@@ -124,4 +125,4 @@ function main() {
   else console.log('harness-sync: updated ' + r.changed.length + ' artifact(s)')
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) main()
+if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) main()
