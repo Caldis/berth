@@ -17,6 +17,9 @@ release/
 .vscode/
 *.code-workspace
 
+# Claude Code runtime
+.claude/scheduled_tasks.lock
+
 # Environment
 .env
 .env.local
