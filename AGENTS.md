@@ -83,3 +83,14 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 ---
 
 **These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, and clarifying questions come before implementation rather than after mistakes.
+
+# AI NATIVE WORKFLOW HARNESS
+Agent 工作流体系, 单一真源在 `.agents/`, 同时服务 Claude Code 与 Codex。
+- 总览与调用: `.agents/README.md`
+- 流程 playbook: `.agents/workflow/` (Explore → Design → Implementation → Verify)
+- 工具索引: `.agents/tools.md`; 项目地图: `docs/ARCHITECTURE.md`
+- 任务态 (操作目录, 非冷文档): `docs/works/{date}[-{jira}]-{summary}/`
+- 工程摩擦: `docs/friction/{yyyymmdd}-{phase}-{summary}.md`
+- 自检/分发: `pnpm harness:check` / `pnpm harness:sync` (CI 强制)
+
+命令: /opsx:new · continue · explore · design · implement · verify · archive · optimization
