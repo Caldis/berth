@@ -9,16 +9,14 @@
 2. Code Review (只看机器判断不了的部分):
    - 对照 01-ANALYSIS.md 验收标准逐条核对产出。
    - 对照 02-SPEC.md 与 docs/ARCHITECTURE.md, 检查是否偏离设计、越界、违反 MVVM/进程隔离。
-3. 前端验收: 用 `run` skill / Playwright `_electron` 启动应用, 截图, 走通受影响界面的交互流程,
-   完成视觉与交互验收 (Agent 需"看到界面、摸到设备")。
-   - **启动前必须先检查是否已有运行实例** (`pgrep -f 'Code/berth/node_modules/.bin/electron-vite'`):
-     已有则复用其窗口 (vite HMR 已热更到新代码), 直接截图, 不重复启动 (重复启动会导致多实例 + 端口漂移)。
-   - 仅当无实例、或需冷启动验证主进程改动时, 才 `pkill -f 'Code/berth/node_modules/.bin/electron-vite'` +
-     `pkill -f 'Code/berth/node_modules/electron/dist'` 清理后重启, 且重启前后都确认实例数。
-   - 截图前轮询确认 electron 主进程存活 (`pgrep -f 'Code/berth/node_modules/electron/dist/.../MacOS/Electron'`),
-     而非仅看 vite 端口; 按窗口 id 截图。截图存 /tmp, 禁止入项目目录。
-   - UI 改动 (布局/间距/样式) 的视觉验收必须用 `/frontend-design:frontend-design` 指导设计判断,
-     不靠拍脑袋调数值; 间距/对齐需有明确依据 (如与既有元素对齐、符合平台 HIG)。
+3. 前端验收: 启动应用, 截图, 走通受影响界面的交互流程, 完成视觉与交互验收 (Agent 需"看到界面、摸到设备")。
+   - **启动前必查运行实例数, 能复用就复用** (vite HMR 已热更到新代码, 直接截图, 不重复启动):
+     `pgrep -f 'Desktop/Code/berth.*electron-vite'`。出现 2 次以上重复启动立即停手查根因, 不靠加 pkill 打补丁。
+   - 进程检测必须用**完整 .pnpm 路径模式** (electron 经 pnpm 软链, 简写会漏判 → 误以为没实例而重启):
+     主进程 = `ps -Ao command | grep -F '.pnpm/electron@<ver>/node_modules/electron/dist/Electron.app/Contents/MacOS/Electron .' | grep -v -- '--type='` (排除 helper 子进程)。
+   - 需冷启动 (验证主进程改动) 时先清零: `pkill -9 -f 'Desktop/Code/berth/node_modules/.pnpm/electron@'; pkill -9 -f 'Desktop/Code/berth.*electron-vite'`, 重启前后都确认实例数。
+   - 截图前轮询确认 electron 主进程存活 (上面的完整模式), 而非仅看 vite 端口; 按窗口 id 截图。截图存 /tmp, 禁止入项目目录。
+   - UI 改动 (布局/间距/样式) 的视觉验收必须用 `/frontend-design:frontend-design` 指导设计判断, 不靠拍脑袋调数值; 间距/对齐需有明确依据 (与既有元素对齐、符合平台 HIG)。
 4. 不通过项: 回写为 03-PLAN.md 新任务, 将 INDEX.phase 退回 implement, 重新进入开发循环。
 5. 全部通过后, 提示用户确认验收, 然后 `/opsx:archive`。
 
