@@ -21,3 +21,4 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm harness:check
+      - run: pnpm build # smoke: production build must succeed
