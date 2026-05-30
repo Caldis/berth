@@ -3,6 +3,7 @@ import type { ScanRoot, ScanSourceCode, ScanSourceStatus } from '@shared/types/a
 interface SourceCopy {
   title: string
   summary?: string
+  actionHint?: string
 }
 
 const EN_SOURCE_COPY: Record<ScanSourceCode, SourceCopy> = {
@@ -86,11 +87,13 @@ const EN_SOURCE_COPY: Record<ScanSourceCode, SourceCopy> = {
   },
   'project.current-candidate': {
     title: 'Project source candidate',
-    summary: 'Current project was checked for known project-level source files.'
+    summary: 'Current project was checked for known project-level source files.',
+    actionHint: 'Current project checked. Add a supported project-level source file to include it.'
   },
   'project.session-derived-candidate': {
     title: 'Project source candidate',
-    summary: 'Referenced by local session history, but Berth has not scanned this project directory.'
+    summary: 'Referenced by local session history, but Berth has not scanned this project directory.',
+    actionHint: 'Open this project, then Berth will scan its project-level sources.'
   }
 }
 
@@ -174,11 +177,13 @@ const ZH_SOURCE_COPY: Record<ScanSourceCode, SourceCopy> = {
   },
   'project.current-candidate': {
     title: '项目来源候选',
-    summary: '当前项目已经检查过已知项目级来源文件。'
+    summary: '当前项目已经检查过已知项目级来源文件。',
+    actionHint: '已检查当前项目。添加支持的项目级来源文件后会纳入。'
   },
   'project.session-derived-candidate': {
     title: '项目来源候选',
-    summary: '这个目录来自本机会话历史, 但 Berth 没有扫描这个项目目录。'
+    summary: '这个目录来自本机会话历史, 但 Berth 没有扫描这个项目目录。',
+    actionHint: '打开这个项目后, Berth 会扫描它的项目级来源。'
   }
 }
 

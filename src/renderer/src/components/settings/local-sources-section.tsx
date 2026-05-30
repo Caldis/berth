@@ -216,6 +216,9 @@ function SourceRow({
             <p className="max-w-[60ch] text-xs text-muted-foreground">{copy.summary}</p>
           )}
           <p className="truncate font-mono text-xs text-muted-foreground">{source.path}</p>
+          {copy.actionHint && (
+            <p className="max-w-[60ch] text-xs text-muted-foreground">{copy.actionHint}</p>
+          )}
         </div>
       </div>
       {status === 'scanned' ? (

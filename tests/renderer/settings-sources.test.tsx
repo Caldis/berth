@@ -53,6 +53,15 @@ const groups: AgentScanSourceGroup[] = [
         kind: 'directory',
         status: 'not-scanned',
         reason: 'session-derived-project'
+      },
+      {
+        path: 'D:\\Code\\current-project',
+        scope: 'project',
+        code: 'project.current-candidate',
+        categories: ['instruction', 'capability'],
+        kind: 'directory',
+        status: 'missing',
+        reason: 'current-project'
       }
     ]
   },
@@ -99,6 +108,7 @@ describe('SettingsContent scan sources', () => {
     expect(screen.getByText('1 source')).toBeInTheDocument()
     expect(screen.getByText('2 Scanned')).toBeInTheDocument()
     expect(screen.getByText('1 Not scanned')).toBeInTheDocument()
+    expect(screen.getByText('1 Missing')).toBeInTheDocument()
     expect(screen.getByText('1 Scanned')).toBeInTheDocument()
     expect(screen.getByText('Instructions')).toBeInTheDocument()
     expect(screen.getByText('Capabilities')).toBeInTheDocument()
@@ -107,6 +117,7 @@ describe('SettingsContent scan sources', () => {
     expect(screen.queryByText('C:\\Users\\test\\.claude.json')).not.toBeInTheDocument()
     expect(screen.queryByText('C:\\Users\\test\\.codex\\sessions')).not.toBeInTheDocument()
     expect(screen.queryByText('D:\\Code\\historic-project')).not.toBeInTheDocument()
+    expect(screen.queryByText('D:\\Code\\current-project')).not.toBeInTheDocument()
     expect(screen.queryByText('~/.claude/')).not.toBeInTheDocument()
   })
 
@@ -119,12 +130,26 @@ describe('SettingsContent scan sources', () => {
     expect(screen.getByText('Project sources')).toBeInTheDocument()
     expect(screen.getAllByText('Scanned').length).toBeGreaterThan(0)
     expect(screen.getByText('Not scanned')).toBeInTheDocument()
+    expect(screen.getByText('Missing')).toBeInTheDocument()
+    expect(
+      screen.getByText('Open this project, then Berth will scan its project-level sources.')
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText('Current project checked. Add a supported project-level source file to include it.')
+    ).toBeInTheDocument()
 
     const candidatePath = screen.getByText('D:\\Code\\historic-project')
     const row = candidatePath.closest('[data-scan-source-root]')
     expect(row).not.toBeNull()
     expect(
       within(row as HTMLElement).queryByRole('button', { name: 'Show in Explorer' })
+    ).not.toBeInTheDocument()
+
+    const currentProjectPath = screen.getByText('D:\\Code\\current-project')
+    const currentProjectRow = currentProjectPath.closest('[data-scan-source-root]')
+    expect(currentProjectRow).not.toBeNull()
+    expect(
+      within(currentProjectRow as HTMLElement).queryByRole('button', { name: 'Show in Explorer' })
     ).not.toBeInTheDocument()
   })
 
