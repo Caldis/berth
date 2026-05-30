@@ -796,6 +796,7 @@
     "copiedPricingOverride": "Copied",
     "loadErrorTitle": "Usage data could not be loaded",
     "loadErrorBody": "The local usage summary request failed. Retry after the scan or pricing data is available.",
+    "loadErrorStaleBody": "Showing the last loaded usage data because refresh failed.",
     "loadingSummary": "Loading usage summary",
     "pageErrorTitle": "Usage page failed",
     "pageErrorBody": "A rendering error stopped the Usage page. Retry to render it again.",

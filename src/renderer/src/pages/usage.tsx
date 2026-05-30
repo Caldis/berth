@@ -281,7 +281,9 @@ export function Usage(): React.ReactElement {
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
               <div className="min-w-0">
                 <div className="text-sm font-medium">{t('usage.loadErrorTitle')}</div>
-                <p className="mt-1 text-sm text-muted-foreground">{t('usage.loadErrorBody')}</p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {t(usage ? 'usage.loadErrorStaleBody' : 'usage.loadErrorBody')}
+                </p>
               </div>
             </div>
             <button

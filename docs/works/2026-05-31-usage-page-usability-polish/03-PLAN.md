@@ -27,9 +27,10 @@
   - 验证: `pnpm test -- tests/renderer/sessions-pages.test.tsx`, `pnpm typecheck:web`。
   - 结果: 已通过 `pnpm test -- tests/renderer/sessions-pages.test.tsx`、`pnpm typecheck:web`; Recharts 0 宽高警告仍为既有 jsdom 噪声。
 
-- [ ] 任务 6: 错误态保留旧数据提示
+- [x] 任务 6: 错误态保留旧数据提示
   - 刷新失败且有旧数据时显示 stale data 文案, 不隐藏旧数据。
   - 验证: `pnpm test -- tests/renderer/sessions-pages.test.tsx`, `pnpm typecheck:web`。
+  - 结果: 已通过 `pnpm test -- tests/renderer/sessions-pages.test.tsx`、`pnpm typecheck:web`; Recharts 0 宽高警告仍为既有 jsdom 噪声。
 
 - [ ] 任务 7: 总验证
   - `pnpm harness:check`

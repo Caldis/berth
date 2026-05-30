@@ -316,6 +316,44 @@ describe('session pages', () => {
     })
   })
 
+  it('keeps previous usage visible when a refresh fails', async () => {
+    const tokenUsage = normalizeTokenUsage({ inputTokens: 4, outputTokens: 2 })
+    window.api.usage.summary = vi
+      .fn()
+      .mockResolvedValueOnce({
+        totalCost: 0,
+        actualCost: 0,
+        estimatedCost: 0,
+        costDelta: 0,
+        totalTokens: tokenUsage.totalTokens,
+        tokenUsage,
+        costSource: 'unknown',
+        pricingMisses: [],
+        dailyCosts: [],
+        dailyTokenUsage: [],
+        byModel: [],
+        byProject: [],
+        rateLimits: []
+      })
+      .mockRejectedValueOnce(new Error('boom'))
+
+    render(
+      <MemoryRouter>
+        <Usage />
+      </MemoryRouter>
+    )
+
+    expect(await screen.findByText('Input: 4')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('radio', { name: 'Estimated' }))
+
+    expect(await screen.findByText('Usage data could not be loaded')).toBeInTheDocument()
+    expect(
+      screen.getByText('Showing the last loaded usage data because refresh failed.')
+    ).toBeInTheDocument()
+    expect(screen.getByText('Input: 4')).toBeInTheDocument()
+  })
+
   it('renders usage page when ipc returns legacy summary fields', async () => {
     const legacyTokenUsage = normalizeTokenUsage({ totalTokens: 15 })
     window.api.usage.summary = vi.fn(async () => ({
