@@ -134,8 +134,16 @@
             "body": "Most hooks eventually execute a command or script from a config file."
           },
           "difference": {
-            "title": "Agent differences",
-            "body": "The same event name can mean different coverage. Codex PreToolUse only covers Bash, apply_patch, and MCP tools."
+            "title": {
+              "all": "Agent differences",
+              "claude": "Current view",
+              "codex": "Current view"
+            },
+            "body": {
+              "all": "The same event name can mean different coverage. Codex PreToolUse only covers Bash, apply_patch, and MCP tools.",
+              "claude": "This view only describes Claude Code hooks, so cross-agent differences are hidden until you switch back to All.",
+              "codex": "This view only describes Codex hooks, so cross-agent differences are hidden until you switch back to All."
+            }
           }
         }
       },

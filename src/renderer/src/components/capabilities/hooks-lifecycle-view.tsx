@@ -76,8 +76,8 @@ export function HooksLifecycleView({ assets, agentView, search, scope }: HooksLi
             <div className="mt-3 grid gap-2 md:grid-cols-3">
               {['trigger', 'handler', 'difference'].map((key) => (
                 <div key={key} className="rounded-md border border-border/70 bg-background/60 px-3 py-2">
-                  <p className="text-xs font-medium text-foreground">{t(`capabilities.hooks.intro.tips.${key}.title`)}</p>
-                  <p className="mt-0.5 text-xs leading-5 text-muted-foreground">{t(`capabilities.hooks.intro.tips.${key}.body`)}</p>
+                  <p className="text-xs font-medium text-foreground">{t(introTipTitleKey(key, agentView))}</p>
+                  <p className="mt-0.5 text-xs leading-5 text-muted-foreground">{t(introTipBodyKey(key, agentView))}</p>
                 </div>
               ))}
             </div>
@@ -135,6 +135,16 @@ export function HooksLifecycleView({ assets, agentView, search, scope }: HooksLi
       </div>
     </div>
   )
+}
+
+function introTipTitleKey(key: string, agentView: AgentView): string {
+  if (key === 'difference') return `capabilities.hooks.intro.tips.difference.title.${agentView}`
+  return `capabilities.hooks.intro.tips.${key}.title`
+}
+
+function introTipBodyKey(key: string, agentView: AgentView): string {
+  if (key === 'difference') return `capabilities.hooks.intro.tips.difference.body.${agentView}`
+  return `capabilities.hooks.intro.tips.${key}.body`
 }
 
 function HookAgentEnablementPanel({ agentView }: { agentView: AgentView }): React.ReactElement {

@@ -134,8 +134,16 @@
             "body": "大多数 Hook 最终会从配置文件里执行一段命令或脚本。"
           },
           "difference": {
-            "title": "Agent 差异",
-            "body": "同名事件在不同 Agent 下覆盖范围可能不同。Codex 的 PreToolUse 只覆盖 Bash、apply_patch 和 MCP tool。"
+            "title": {
+              "all": "Agent 差异",
+              "claude": "当前视角",
+              "codex": "当前视角"
+            },
+            "body": {
+              "all": "同名事件在不同 Agent 下覆盖范围可能不同。Codex 的 PreToolUse 只覆盖 Bash、apply_patch 和 MCP tool。",
+              "claude": "当前只说明 Claude Code 的 Hooks。切回 All 视角后, 再展示跨 Agent 差异。",
+              "codex": "当前只说明 Codex 的 Hooks。切回 All 视角后, 再展示跨 Agent 差异。"
+            }
           }
         }
       },

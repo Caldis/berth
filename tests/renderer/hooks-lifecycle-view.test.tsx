@@ -47,9 +47,19 @@ describe('HooksLifecycleView', () => {
 
     expect(screen.getByText('What are hooks?')).toBeInTheDocument()
     expect(screen.getByText(/Hooks are Codex command handlers/)).toBeInTheDocument()
+    expect(screen.getByText(/This view only describes Codex hooks/)).toBeInTheDocument()
     expect(screen.getAllByText('Agent stops').length).toBeGreaterThan(0)
     expect(screen.queryByText('Environment events')).not.toBeInTheDocument()
     expect(screen.queryByText('Claude Code')).not.toBeInTheDocument()
+  })
+
+  it('shows Claude-only copy without Codex hints in Claude view', async () => {
+    renderHooks('claude', [hookAsset('claude-stop', 'claude-code', 'Stop')])
+    await waitForEnablementStatus()
+
+    expect(screen.getByText(/Hooks are Claude Code handlers/)).toBeInTheDocument()
+    expect(screen.getByText(/This view only describes Claude Code hooks/)).toBeInTheDocument()
+    expect(screen.queryByText(/Codex/)).not.toBeInTheDocument()
   })
 
   it('shows cross-agent differences in all view', async () => {
