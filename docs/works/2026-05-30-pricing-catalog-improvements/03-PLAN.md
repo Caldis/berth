@@ -11,9 +11,9 @@
   - Usage 页面传 `agentView`。
   - `TokenUsageDisplay` compact/detail/tooltip 显示 `unknownTokens`。
   - 验证: `pnpm test -- tests/renderer/sessions-pages.test.tsx`, `pnpm typecheck:web`。
-- [ ] 任务 3: pricing catalog 转换与 local override
+- [x] 任务 3: pricing catalog 转换与 local override
   - 增加 LiteLLM / models.dev 转换纯函数。
-  - 增加 generated snapshot 文件和 update script。
+  - 增加 generated snapshot 文件和 update script, 当前快照包含 6680 条价格记录。
   - 增加 local override loader 与模型 normalization。
   - 验证: `pnpm test -- tests/unit/pricing.test.ts`, `pnpm typecheck:node`。
 - [ ] 任务 4: cost resolution 明细与 pricing misses

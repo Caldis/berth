@@ -24,7 +24,8 @@
     "typecheck": "pnpm typecheck:node && pnpm typecheck:web",
     "harness:sync": "node scripts/harness-sync.mjs",
     "harness:check": "node scripts/harness-check.mjs",
-    "harness:stats": "node scripts/harness-stats.mjs"
+    "harness:stats": "node scripts/harness-stats.mjs",
+    "pricing:update": "node scripts/update-pricing-catalog.mjs"
   },
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.1",

@@ -8,6 +8,7 @@ export type PricingMissReason =
   | 'missing-price-component'
 
 export interface ModelPricing {
+  id?: string
   model: string
   provider?: string
   aliases?: string[]
@@ -16,9 +17,24 @@ export interface ModelPricing {
   cacheReadInputCostPerToken?: number
   cacheCreationInputCostPerToken?: number
   reasoningOutputCostPerToken?: number
+  contextWindow?: number
+  maxOutputTokens?: number
   source: PricingSource
   sourceUrl?: string
   updatedAt?: string
+}
+
+export interface PricingCatalogSource {
+  name: PricingSource
+  url: string
+  fetchedAt: string
+}
+
+export interface PricingCatalogSnapshot {
+  version: number
+  generatedAt: string
+  sources: PricingCatalogSource[]
+  models: ModelPricing[]
 }
 
 export interface UsageCostInput {
