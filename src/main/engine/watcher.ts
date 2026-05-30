@@ -1,5 +1,6 @@
 import * as path from 'path'
 import * as os from 'os'
+import * as fs from 'fs'
 import { watch } from 'chokidar'
 import type { FSWatcher } from 'chokidar'
 import type { BrowserWindow } from 'electron'
@@ -27,6 +28,11 @@ export class AssetWatcher {
 
     // Also watch ~/.claude.json
     watchPaths.push(path.join(os.homedir(), '.claude.json'))
+
+    const codexSessionsDir = path.join(os.homedir(), '.codex', 'sessions')
+    if (fs.existsSync(codexSessionsDir)) {
+      watchPaths.push(codexSessionsDir)
+    }
 
     this.watcher = watch(watchPaths, {
       ignoreInitial: true,

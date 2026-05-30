@@ -34,11 +34,13 @@ export class CodexAdapter implements AgentAdapter {
 
   async scanRoots(): Promise<ScanRoot[]> {
     if (!fs.existsSync(this.codexDir)) return []
+    const sessionsDir = path.join(this.codexDir, 'sessions')
+    if (!fs.existsSync(sessionsDir)) return []
     return [
       {
-        path: this.codexDir,
+        path: sessionsDir,
         scope: 'user',
-        description: 'Codex user configuration'
+        description: 'Codex session history'
       }
     ]
   }
