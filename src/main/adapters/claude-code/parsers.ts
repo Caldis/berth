@@ -6,6 +6,7 @@ import {
   emptyTokenUsage,
   normalizeTokenUsage
 } from '@shared/token-usage'
+import { extractCommandEntryPaths } from '../command-entry-paths'
 import type { Asset, AssetScope } from '../types'
 
 let _nextId = 0
@@ -256,6 +257,7 @@ export function parseHooks(filePath: string, scope: AssetScope): Asset[] {
         const hookRecord = isRecord(hook) ? hook : {}
         const command = typeof hookRecord.command === 'string' ? hookRecord.command : undefined
         const hookType = typeof hookRecord.type === 'string' ? hookRecord.type : undefined
+        const entryPaths = command ? extractCommandEntryPaths(filePath, command, { scope }) : []
         assets.push({
           id: makeId('hook'),
           agentId: 'claude-code',
@@ -270,6 +272,7 @@ export function parseHooks(filePath: string, scope: AssetScope): Asset[] {
             matcher,
             command,
             hookType,
+            entryPaths,
             handlerIndex,
             hookIndex
           }
@@ -379,7 +382,7 @@ function parseStatuslineSetting(
   const padding = readNumber(setting, 'padding')
   const refreshInterval = readNumber(setting, 'refreshInterval')
   const hideVimModeIndicator = readBoolean(setting, 'hideVimModeIndicator')
-  const entryPaths = command ? extractCommandEntryPaths(filePath, command) : []
+  const entryPaths = command ? extractCommandEntryPaths(filePath, command, { scope }) : []
 
   return {
     id: makeId('statusline'),
@@ -875,46 +878,6 @@ function readRawFile(filePath: string): string | undefined {
   } catch {
     return undefined
   }
-}
-
-function extractCommandEntryPaths(filePath: string, command: string): string[] {
-  const baseDir = path.dirname(filePath)
-  const paths: string[] = []
-
-  for (const token of splitCommandTokens(command)) {
-    if (!looksLikeScriptPath(token)) continue
-    const candidate = resolveCommandPath(baseDir, token)
-    if (fs.existsSync(candidate)) paths.push(candidate)
-  }
-
-  return Array.from(new Set(paths))
-}
-
-function splitCommandTokens(command: string): string[] {
-  const tokens: string[] = []
-  const pattern = /"([^"]+)"|'([^']+)'|(\S+)/g
-  for (const match of command.matchAll(pattern)) {
-    const token = match[1] ?? match[2] ?? match[3]
-    if (token) tokens.push(token)
-  }
-  return tokens
-}
-
-function resolveCommandPath(baseDir: string, token: string): string {
-  const expanded = expandHomePath(token)
-  return path.isAbsolute(expanded) ? expanded : path.resolve(baseDir, expanded)
-}
-
-function expandHomePath(token: string): string {
-  if (token !== '~' && !token.startsWith('~/') && !token.startsWith('~\\')) return token
-  const homeDir = process.env.HOME ?? process.env.USERPROFILE
-  if (!homeDir) return token
-  if (token === '~') return homeDir
-  return path.join(homeDir, token.slice(2))
-}
-
-function looksLikeScriptPath(value: string): boolean {
-  return /\.(?:bat|cmd|cjs|js|mjs|ps1|py|rb|sh|ts|zsh)$/i.test(value)
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

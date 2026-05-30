@@ -3,6 +3,7 @@ import * as path from 'path'
 import * as yaml from 'js-yaml'
 import { parse as parseToml } from 'smol-toml'
 import { emptyTokenUsage, normalizeTokenUsage } from '@shared/token-usage'
+import { extractCommandEntryPaths } from '../command-entry-paths'
 import type { Asset, AssetScope } from '../types'
 import type { TokenUsageBreakdown } from '@shared/types/asset'
 import type {
@@ -168,7 +169,7 @@ function parseCodexHooks(
         const hookKey = buildCodexHookKey(filePath, event, handlerIndex, hookIndex)
         const stateEnabled = readBoolean(hookState[hookKey], 'enabled')
         const enabled = stateEnabled ?? readHookEnabled(hookRecord)
-        const entryPaths = extractHookEntryPaths(filePath, [command, commandWindows])
+        const entryPaths = extractCommandEntryPaths(filePath, [command, commandWindows], { scope })
         const supportNote = readCodexHookSupportNote(hookType, asyncHook)
         assets.push({
           id: `codex-hook-${safeId(event)}-${handlerIndex}-${hookIndex}-${hashString(filePath)}`,
@@ -327,36 +328,6 @@ function toSnakeCase(value: string): string {
     .replace(/([a-z0-9])([A-Z])/g, '$1_$2')
     .replace(/[-\s]+/g, '_')
     .toLowerCase()
-}
-
-function extractHookEntryPaths(filePath: string, commands: Array<string | undefined>): string[] {
-  const baseDir = path.dirname(filePath)
-  const paths: string[] = []
-
-  for (const command of commands) {
-    if (!command) continue
-    for (const token of splitCommandTokens(command)) {
-      if (!looksLikeScriptPath(token)) continue
-      const candidate = path.isAbsolute(token) ? token : path.resolve(baseDir, token)
-      if (fs.existsSync(candidate)) paths.push(candidate)
-    }
-  }
-
-  return uniqueStrings(paths)
-}
-
-function splitCommandTokens(command: string): string[] {
-  const tokens: string[] = []
-  const pattern = /"([^"]+)"|'([^']+)'|(\S+)/g
-  for (const match of command.matchAll(pattern)) {
-    const token = match[1] ?? match[2] ?? match[3]
-    if (token) tokens.push(token)
-  }
-  return tokens
-}
-
-function looksLikeScriptPath(value: string): boolean {
-  return /\.(?:bat|cmd|cjs|js|mjs|ps1|py|rb|sh|ts|zsh)$/i.test(value)
 }
 
 function extractAtImports(content: string): string[] {

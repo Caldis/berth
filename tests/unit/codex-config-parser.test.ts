@@ -120,6 +120,40 @@ describe('Codex config parser', () => {
     expect(assets[2].meta.supportNote).toBe('capabilities.hooks.management.codexAsyncHookSkipped')
   })
 
+  it('detects Codex hook entry files from project-root and config-dir variables', () => {
+    const projectDir = path.join(tempDir!, 'project')
+    const codexDir = path.join(projectDir, '.codex')
+    const hooksDir = path.join(codexDir, 'hooks')
+    const hooksPath = path.join(codexDir, 'hooks.json')
+    const preHookPath = path.join(hooksDir, 'pre_tool.py')
+    const stopHookPath = path.join(hooksDir, 'stop.ps1')
+    fs.mkdirSync(hooksDir, { recursive: true })
+    fs.writeFileSync(preHookPath, 'print("pre")\n')
+    fs.writeFileSync(stopHookPath, 'Write-Output stop\n')
+    fs.writeFileSync(
+      hooksPath,
+      JSON.stringify({
+        hooks: {
+          PreToolUse: [
+            {
+              hooks: [
+                {
+                  type: 'command',
+                  command: 'python "$(git rev-parse --show-toplevel)/.codex/hooks/pre_tool.py"',
+                  command_windows: 'pwsh "$CODEX_HOME/hooks/stop.ps1"'
+                }
+              ]
+            }
+          ]
+        }
+      })
+    )
+
+    const assets = parseCodexHooksJson(hooksPath, 'project')
+
+    expect(assets[0].meta.entryPaths).toEqual([preHookPath, stopHookPath])
+  })
+
   it('applies Codex hooks.state without parsing state as a hook event', () => {
     const configPath = path.join(tempDir!, 'config.toml')
     const hookKey = `${configPath}:pre_tool_use:0:0`

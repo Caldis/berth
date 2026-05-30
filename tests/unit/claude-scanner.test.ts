@@ -66,6 +66,41 @@ describe('Claude Code scanner', () => {
     })
   })
 
+  it('detects Claude hook entry files from project-root commands', () => {
+    root = mkdtempSync(join(tmpdir(), 'berth-claude-hook-entry-'))
+    const projectDir = join(root, 'project')
+    const settingsDir = join(projectDir, '.claude')
+    const hooksDir = join(settingsDir, 'hooks')
+    const hookPath = join(hooksDir, 'pre_tool.py')
+    const settingsPath = join(settingsDir, 'settings.json')
+    mkdirSync(hooksDir, { recursive: true })
+    writeFileSync(hookPath, 'print("pre")\n')
+    writeFileSync(
+      settingsPath,
+      JSON.stringify({
+        hooks: {
+          PreToolUse: [
+            {
+              matcher: 'Bash',
+              hooks: [
+                {
+                  type: 'command',
+                  command: 'python "$(git rev-parse --show-toplevel)/.claude/hooks/pre_tool.py"'
+                }
+              ]
+            }
+          ]
+        }
+      })
+    )
+
+    const hooks = parseHooks(settingsPath, 'project')
+
+    expect(hooks[0].meta).toMatchObject({
+      entryPaths: [hookPath]
+    })
+  })
+
   it('parses Claude statusLine and subagentStatusLine settings', () => {
     root = mkdtempSync(join(tmpdir(), 'berth-claude-statusline-'))
     const settingsPath = join(root, 'settings.json')
