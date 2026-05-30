@@ -4,6 +4,7 @@ import * as path from 'path'
 import * as yaml from 'js-yaml'
 import { glob } from 'glob'
 import { parseCodexToml } from '../adapters/codex/parsers'
+import { resolveClaudeDirs, resolveCodexHomeDirs } from '../agent-homes'
 import type { Asset, AssetScope } from '@shared/types/asset'
 import type {
   HealthCheck,
@@ -46,7 +47,9 @@ interface HealthCheckInput {
 interface HealthPaths {
   homeDir: string
   claudeDir: string
+  claudeDirs: string[]
   codexDir: string
+  codexDirs: string[]
   projectDir?: string
 }
 
@@ -1099,17 +1102,21 @@ function normalizeOptions(options: HealthCheckOptions | string): NormalizedHealt
 }
 
 function buildHealthPaths(options: NormalizedHealthCheckOptions): HealthPaths {
+  const claudeDirs = resolveClaudeDirs(options.homeDir, options.env)
+  const codexDirs = resolveCodexHomeDirs(options.homeDir, options.env)
   return {
     homeDir: options.homeDir,
-    claudeDir: path.join(options.homeDir, '.claude'),
-    codexDir: options.env.CODEX_HOME || path.join(options.homeDir, '.codex'),
+    claudeDir: claudeDirs[0],
+    claudeDirs,
+    codexDir: codexDirs[0],
+    codexDirs,
     projectDir: options.projectDir
   }
 }
 
 function hasClaudeData(paths: HealthPaths): boolean {
   return (
-    dirExists(paths.claudeDir) ||
+    paths.claudeDirs.some(dirExists) ||
     (paths.projectDir != null &&
       (dirExists(path.join(paths.projectDir, '.claude')) ||
         fileExists(path.join(paths.projectDir, 'CLAUDE.md')) ||
@@ -1119,8 +1126,7 @@ function hasClaudeData(paths: HealthPaths): boolean {
 
 function hasCodexData(paths: HealthPaths): boolean {
   return (
-    dirExists(paths.codexDir) ||
-    dirExists(path.join(paths.codexDir, 'skills')) ||
+    paths.codexDirs.some((codexDir) => dirExists(codexDir) || dirExists(path.join(codexDir, 'skills'))) ||
     dirExists(path.join(paths.homeDir, '.agents', 'skills')) ||
     (paths.projectDir != null &&
       (dirExists(path.join(paths.projectDir, '.codex')) ||

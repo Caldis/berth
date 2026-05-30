@@ -335,4 +335,21 @@ describe('runHealthChecks', () => {
     expect(ids).not.toContain('codex:configuration:user-config-schema-comment-missing')
     expect(ids).not.toContain('claude-code:reference:project-agents-md-not-imported')
   })
+
+  it('recognizes explicitly configured extra agent homes as supported data', () => {
+    const extraClaudeDir = path.join(tempDir!, 'wsl-home', '.claude')
+    const extraCodexDir = path.join(tempDir!, 'wsl-codex-home')
+    fs.mkdirSync(extraClaudeDir, { recursive: true })
+    fs.mkdirSync(extraCodexDir, { recursive: true })
+
+    const checks = runHealthChecks({
+      homeDir: tempDir!,
+      env: {
+        BERTH_EXTRA_CLAUDE_DIRS: extraClaudeDir,
+        BERTH_EXTRA_CODEX_HOMES: extraCodexDir
+      }
+    })
+
+    expect(checks.map((check) => check.id)).not.toContain('all:source:no-agent-data')
+  })
 })

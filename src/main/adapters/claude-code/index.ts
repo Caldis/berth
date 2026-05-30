@@ -20,9 +20,12 @@ import {
   scanIntegration,
   type ScanContext
 } from './scanner'
+import { resolveClaudeDirs } from '../../agent-homes'
 
 interface ClaudeCodeAdapterOptions {
   managedDir?: string
+  env?: NodeJS.ProcessEnv
+  homeDir?: string
 }
 
 export class ClaudeCodeAdapter implements AgentAdapter {
@@ -30,11 +33,14 @@ export class ClaudeCodeAdapter implements AgentAdapter {
   readonly displayName = 'Claude Code'
 
   private claudeDir: string
+  private claudeDirs: string[]
   private managedDir: string
   private projectDir: string | undefined
 
   constructor(projectDir?: string, options: ClaudeCodeAdapterOptions = {}) {
-    this.claudeDir = path.join(os.homedir(), '.claude')
+    const homeDir = options.homeDir ?? os.homedir()
+    this.claudeDirs = resolveClaudeDirs(homeDir, options.env ?? process.env)
+    this.claudeDir = this.claudeDirs[0]
     this.managedDir = options.managedDir ?? resolveClaudeManagedDir()
     this.projectDir = projectDir
   }
@@ -68,30 +74,31 @@ export class ClaudeCodeAdapter implements AgentAdapter {
 
   async scanSourceCoverage(): Promise<ScanRoot[]> {
     const sources: ScanRoot[] = []
-    if (fs.existsSync(this.claudeDir)) {
+    for (const claudeDir of this.claudeDirs) {
+      if (!fs.existsSync(claudeDir)) continue
+      if (sources.some((source) => source.path === claudeDir)) continue
       sources.push({
-        path: this.claudeDir,
+        path: claudeDir,
         scope: 'user',
-        description: 'Claude Code data directory',
-        summary:
-          'Includes instructions, skills, agents, commands, hooks, plugins, status line, sessions, plans, todos, usage data, and integration state.',
+        code: 'claude.user.data-directory',
         categories: ['instruction', 'capability', 'state', 'observability', 'integration'],
         kind: 'directory',
         status: 'scanned'
       })
     }
     // ~/.claude.json (MCP config)
-    const homeClaudeJson = path.join(os.homedir(), '.claude.json')
-    if (fs.existsSync(homeClaudeJson)) {
-      sources.push({
-        path: homeClaudeJson,
-        scope: 'user',
-        description: 'Claude Code global config file',
-        summary: 'Includes global MCP server definitions.',
-        categories: ['capability'],
-        kind: 'file',
-        status: 'scanned'
-      })
+    for (const claudeDir of this.claudeDirs) {
+      const homeClaudeJson = path.resolve(claudeDir, '..', '.claude.json')
+      if (fs.existsSync(homeClaudeJson)) {
+        sources.push({
+          path: homeClaudeJson,
+          scope: 'user',
+          code: 'claude.user.global-config',
+          categories: ['capability'],
+          kind: 'file',
+          status: 'scanned'
+        })
+      }
     }
     if (this.projectDir) {
       const projectDotClaude = path.join(this.projectDir, '.claude')
@@ -99,9 +106,7 @@ export class ClaudeCodeAdapter implements AgentAdapter {
         sources.push({
           path: projectDotClaude,
           scope: 'project',
-          description: 'Project Claude Code directory',
-          summary:
-            'Includes project instructions, skills, agents, commands, hooks, permissions, environment variables, and teams.',
+          code: 'claude.project.directory',
           categories: ['instruction', 'capability'],
           kind: 'directory',
           status: 'scanned'
@@ -112,8 +117,7 @@ export class ClaudeCodeAdapter implements AgentAdapter {
         sources.push({
           path: projectMcp,
           scope: 'project',
-          description: 'Project MCP config file',
-          summary: 'Includes project MCP server definitions.',
+          code: 'claude.project.mcp-config',
           categories: ['capability'],
           kind: 'file',
           status: 'scanned'
@@ -125,8 +129,7 @@ export class ClaudeCodeAdapter implements AgentAdapter {
       sources.push({
         path: managedSettings,
         scope: 'enterprise',
-        description: 'Claude Code managed settings file',
-        summary: 'Includes policy-managed hooks, permissions, environment variables, and status line settings.',
+        code: 'claude.enterprise.managed-settings',
         categories: ['capability'],
         kind: 'file',
         status: 'scanned'
@@ -137,8 +140,7 @@ export class ClaudeCodeAdapter implements AgentAdapter {
       sources.push({
         path: managedMcp,
         scope: 'enterprise',
-        description: 'Claude Code managed MCP file',
-        summary: 'Includes policy-managed MCP server definitions.',
+        code: 'claude.enterprise.managed-mcp',
         categories: ['capability'],
         kind: 'file',
         status: 'scanned'
@@ -148,31 +150,41 @@ export class ClaudeCodeAdapter implements AgentAdapter {
   }
 
   async scanAssets(category: AssetCategory): Promise<Asset[]> {
-    const ctx = this.createContext()
+    const errors: ScanError[] = []
+    const contexts = this.createContexts(errors)
+    const assets: Asset[] = []
     switch (category) {
       case 'instruction':
-        return scanInstructions(ctx)
+        for (const ctx of contexts) assets.push(...scanInstructions(ctx))
+        return assets
       case 'capability':
-        return scanCapabilities(ctx)
+        for (const ctx of contexts) assets.push(...scanCapabilities(ctx))
+        return assets
       case 'state':
-        return scanState(ctx)
+        for (const ctx of contexts) assets.push(...scanState(ctx))
+        return assets
       case 'observability':
-        return scanObservability(ctx)
+        for (const ctx of contexts) assets.push(...scanObservability(ctx))
+        return assets
       case 'integration':
-        return scanIntegration(ctx)
+        for (const ctx of contexts) assets.push(...scanIntegration(ctx))
+        return assets
     }
   }
 
   async scanAll(): Promise<{ assets: Asset[]; errors: ScanError[] }> {
-    const ctx = this.createContext()
-    const assets: Asset[] = [
-      ...scanInstructions(ctx),
-      ...scanCapabilities(ctx),
-      ...scanState(ctx),
-      ...scanObservability(ctx),
-      ...scanIntegration(ctx)
-    ]
-    return { assets, errors: ctx.errors }
+    const errors: ScanError[] = []
+    const assets: Asset[] = []
+    for (const ctx of this.createContexts(errors)) {
+      assets.push(
+        ...scanInstructions(ctx),
+        ...scanCapabilities(ctx),
+        ...scanState(ctx),
+        ...scanObservability(ctx),
+        ...scanIntegration(ctx)
+      )
+    }
+    return { assets, errors }
   }
 
   watchAssets(callback: (event: WatchEvent) => void): { dispose(): void } {
@@ -203,13 +215,13 @@ export class ClaudeCodeAdapter implements AgentAdapter {
     return relations
   }
 
-  private createContext(): ScanContext {
-    return {
-      claudeDir: this.claudeDir,
-      projectDir: this.projectDir,
-      managedDir: this.managedDir,
-      errors: []
-    }
+  private createContexts(errors: ScanError[]): ScanContext[] {
+    return this.claudeDirs.map((claudeDir, index) => ({
+      claudeDir,
+      projectDir: index === 0 ? this.projectDir : undefined,
+      managedDir: index === 0 ? this.managedDir : undefined,
+      errors
+    }))
   }
 }
 

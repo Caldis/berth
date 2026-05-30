@@ -51,8 +51,7 @@ describe('CodexAdapter', () => {
         {
           path: sessionsDir,
           scope: 'user',
-          description: 'Codex session history directory',
-          summary: 'Includes Codex rollout session history.',
+          code: 'codex.user.sessions',
           categories: ['state'],
           kind: 'directory',
           status: 'scanned'
@@ -172,6 +171,39 @@ describe('CodexAdapter', () => {
     )
   })
 
+  it('scans additional explicit Codex homes', async () => {
+    const extraCodexDir = path.join(tempDir!, 'wsl-codex-home')
+    fs.mkdirSync(path.join(extraCodexDir, 'sessions'), { recursive: true })
+    fs.writeFileSync(path.join(extraCodexDir, 'AGENTS.md'), '# WSL Codex instructions\n')
+
+    const adapter = new CodexAdapter(undefined, mockHome.dir, {
+      BERTH_EXTRA_CODEX_HOMES: extraCodexDir
+    })
+    const sources = await adapter.scanSourceCoverage()
+    const result = await adapter.scanAll()
+
+    expect(sources).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          path: path.join(extraCodexDir, 'sessions'),
+          status: 'scanned'
+        }),
+        expect.objectContaining({
+          path: path.join(extraCodexDir, 'AGENTS.md'),
+          status: 'scanned'
+        })
+      ])
+    )
+    expect(result.assets).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          type: 'agents-md',
+          path: path.join(extraCodexDir, 'AGENTS.md')
+        })
+      ])
+    )
+  })
+
   it('scans active and archived Codex rollout sessions', async () => {
     const codexDir = path.join(mockHome.dir, '.codex')
     const sessionsDir = path.join(codexDir, 'sessions')
@@ -201,13 +233,13 @@ describe('CodexAdapter', () => {
       expect.arrayContaining([
         expect.objectContaining({
           path: sessionsDir,
-          description: 'Codex session history directory',
+          code: 'codex.user.sessions',
           status: 'scanned'
         }),
         expect.objectContaining({
           path: archivedDir,
           scope: 'session',
-          description: 'Codex archived session history directory',
+          code: 'codex.session.archived-sessions',
           status: 'scanned'
         })
       ])

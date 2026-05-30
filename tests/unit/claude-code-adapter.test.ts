@@ -44,7 +44,7 @@ describe('ClaudeCodeAdapter', () => {
       expect.objectContaining({
         path: claudeDir,
         scope: 'user',
-        description: 'Claude Code data directory',
+        code: 'claude.user.data-directory',
         categories: ['instruction', 'capability', 'state', 'observability', 'integration'],
         kind: 'directory',
         status: 'scanned'
@@ -52,7 +52,7 @@ describe('ClaudeCodeAdapter', () => {
       expect.objectContaining({
         path: path.join(mockHome.dir, '.claude.json'),
         scope: 'user',
-        description: 'Claude Code global config file',
+        code: 'claude.user.global-config',
         categories: ['capability'],
         kind: 'file',
         status: 'scanned'
@@ -60,7 +60,7 @@ describe('ClaudeCodeAdapter', () => {
       expect.objectContaining({
         path: path.join(projectDir, '.claude'),
         scope: 'project',
-        description: 'Project Claude Code directory',
+        code: 'claude.project.directory',
         categories: ['instruction', 'capability'],
         kind: 'directory',
         status: 'scanned'
@@ -68,7 +68,7 @@ describe('ClaudeCodeAdapter', () => {
       expect.objectContaining({
         path: path.join(projectDir, '.mcp.json'),
         scope: 'project',
-        description: 'Project MCP config file',
+        code: 'claude.project.mcp-config',
         categories: ['capability'],
         kind: 'file',
         status: 'scanned'
@@ -107,13 +107,13 @@ describe('ClaudeCodeAdapter', () => {
         expect.objectContaining({
           path: path.join(managedDir, 'managed-settings.json'),
           scope: 'enterprise',
-          description: 'Claude Code managed settings file',
+          code: 'claude.enterprise.managed-settings',
           status: 'scanned'
         }),
         expect.objectContaining({
           path: path.join(managedDir, 'managed-mcp.json'),
           scope: 'enterprise',
-          description: 'Claude Code managed MCP file',
+          code: 'claude.enterprise.managed-mcp',
           status: 'scanned'
         })
       ])
@@ -124,6 +124,36 @@ describe('ClaudeCodeAdapter', () => {
         ['permission', 'enterprise', 'allow-list'],
         ['env', 'enterprise', 'env'],
         ['mcp-server', 'enterprise', 'managed']
+      ])
+    )
+  })
+
+  it('scans additional explicit Claude Code data directories', async () => {
+    const extraClaudeDir = path.join(tempDir!, 'wsl-home', '.claude')
+    fs.mkdirSync(extraClaudeDir, { recursive: true })
+    fs.writeFileSync(path.join(extraClaudeDir, 'CLAUDE.md'), '# Extra Claude instructions\n')
+
+    const adapter = new ClaudeCodeAdapter(undefined, {
+      homeDir: mockHome.dir,
+      env: { BERTH_EXTRA_CLAUDE_DIRS: extraClaudeDir }
+    })
+    const sources = await adapter.scanSourceCoverage()
+    const result = await adapter.scanAll()
+
+    expect(sources).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          path: extraClaudeDir,
+          status: 'scanned'
+        })
+      ])
+    )
+    expect(result.assets).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          type: 'claude-md',
+          path: path.join(extraClaudeDir, 'CLAUDE.md')
+        })
       ])
     )
   })

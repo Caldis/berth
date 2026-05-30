@@ -20,19 +20,23 @@ import {
   parseCodexSessionMeta,
   parseCodexSkill
 } from './parsers'
+import {
+  resolveCodexHomeDir as resolvePrimaryCodexHomeDir,
+  resolveCodexHomeDirs
+} from '../../agent-homes'
 
 export class CodexAdapter implements AgentAdapter {
   readonly id = 'codex'
   readonly displayName = 'Codex'
 
-  private codexDir: string
+  private codexDirs: string[]
   private homeDir: string
   private projectDir?: string
 
   constructor(projectDir?: string, homeDir = os.homedir(), env = process.env) {
     this.homeDir = homeDir
     this.projectDir = projectDir
-    this.codexDir = resolveCodexHomeDir(homeDir, env)
+    this.codexDirs = resolveCodexHomeDirs(homeDir, env)
   }
 
   async detect(): Promise<DetectResult> {
@@ -50,77 +54,71 @@ export class CodexAdapter implements AgentAdapter {
 
   async scanSourceCoverage(): Promise<ScanRoot[]> {
     const roots: ScanRoot[] = []
-    addRoot(
-      roots,
-      path.join(this.codexDir, 'config.toml'),
-      'user',
-      'file',
-      'Codex config file',
-      'Includes MCP servers and user-level Codex configuration.',
-      ['capability']
-    )
-    addRoot(
-      roots,
-      path.join(this.codexDir, 'hooks.json'),
-      'user',
-      'file',
-      'Codex hooks file',
-      'Includes user-level hook definitions.',
-      ['capability']
-    )
-    addRoot(
-      roots,
-      path.join(this.codexDir, 'AGENTS.md'),
-      'user',
-      'file',
-      'Codex user instructions',
-      'Includes user-level Codex instructions.',
-      ['instruction']
-    )
-    addRoot(
-      roots,
-      path.join(this.codexDir, 'agents'),
-      'user',
-      'directory',
-      'Codex user agents directory',
-      'Includes user-level custom Codex agents.',
-      ['instruction']
-    )
-    addRoot(
-      roots,
-      path.join(this.codexDir, 'skills'),
-      'user',
-      'directory',
-      'Codex user skills directory',
-      'Includes user-level Codex skills under CODEX_HOME.',
-      ['instruction']
-    )
+    for (const codexDir of this.codexDirs) {
+      addRoot(
+        roots,
+        path.join(codexDir, 'config.toml'),
+        'user',
+        'file',
+        'codex.user.config',
+        ['capability']
+      )
+      addRoot(
+        roots,
+        path.join(codexDir, 'hooks.json'),
+        'user',
+        'file',
+        'codex.user.hooks',
+        ['capability']
+      )
+      addRoot(
+        roots,
+        path.join(codexDir, 'AGENTS.md'),
+        'user',
+        'file',
+        'codex.user.agents-md',
+        ['instruction']
+      )
+      addRoot(
+        roots,
+        path.join(codexDir, 'agents'),
+        'user',
+        'directory',
+        'codex.user.agents-directory',
+        ['instruction']
+      )
+      addRoot(
+        roots,
+        path.join(codexDir, 'skills'),
+        'user',
+        'directory',
+        'codex.user.codex-home-skills',
+        ['instruction']
+      )
+      addRoot(
+        roots,
+        path.join(codexDir, 'sessions'),
+        'user',
+        'directory',
+        'codex.user.sessions',
+        ['state']
+      )
+      addRoot(
+        roots,
+        path.join(codexDir, 'archived_sessions'),
+        'session',
+        'directory',
+        'codex.session.archived-sessions',
+        ['state']
+      )
+    }
     addRoot(
       roots,
       path.join(this.homeDir, '.agents', 'skills'),
       'user',
       'directory',
-      'Shared user skills directory',
-      'Includes user-level Codex skills.',
+      'codex.user.shared-skills',
       ['instruction']
-    )
-    addRoot(
-      roots,
-      path.join(this.codexDir, 'sessions'),
-      'user',
-      'directory',
-      'Codex session history directory',
-      'Includes Codex rollout session history.',
-      ['state']
-    )
-    addRoot(
-      roots,
-      path.join(this.codexDir, 'archived_sessions'),
-      'session',
-      'directory',
-      'Codex archived session history directory',
-      'Includes archived Codex rollout session history.',
-      ['state']
     )
 
     if (this.projectDir) {
@@ -129,8 +127,7 @@ export class CodexAdapter implements AgentAdapter {
         path.join(this.projectDir, 'AGENTS.md'),
         'project',
         'file',
-        'Codex project instructions',
-        'Includes project-level Codex instructions.',
+        'codex.project.agents-md',
         ['instruction']
       )
       addRoot(
@@ -138,8 +135,7 @@ export class CodexAdapter implements AgentAdapter {
         path.join(this.projectDir, '.codex', 'config.toml'),
         'project',
         'file',
-        'Codex project config file',
-        'Includes project-level Codex configuration.',
+        'codex.project.config',
         ['capability']
       )
       addRoot(
@@ -147,8 +143,7 @@ export class CodexAdapter implements AgentAdapter {
         path.join(this.projectDir, '.codex', 'hooks.json'),
         'project',
         'file',
-        'Codex project hooks file',
-        'Includes project-level hook definitions.',
+        'codex.project.hooks',
         ['capability']
       )
       addRoot(
@@ -156,8 +151,7 @@ export class CodexAdapter implements AgentAdapter {
         path.join(this.projectDir, '.codex', 'agents'),
         'project',
         'directory',
-        'Codex project agents directory',
-        'Includes project-level custom Codex agents.',
+        'codex.project.agents-directory',
         ['instruction']
       )
       addRoot(
@@ -165,8 +159,7 @@ export class CodexAdapter implements AgentAdapter {
         path.join(this.projectDir, '.agents', 'skills'),
         'project',
         'directory',
-        'Codex project skills directory',
-        'Includes project-level Codex skills.',
+        'codex.project.skills',
         ['instruction']
       )
     }
@@ -205,16 +198,19 @@ export class CodexAdapter implements AgentAdapter {
 
   private scanInstructions(errors: ScanError[]): Asset[] {
     const assets: Asset[] = []
-    const userAgentsMd = path.join(this.codexDir, 'AGENTS.md')
-    if (fs.existsSync(userAgentsMd)) {
-      const asset = safeScan(errors, userAgentsMd, 'agents-md', () =>
-        parseCodexAgentsMd(userAgentsMd, 'user')
-      )
-      if (asset) assets.push(asset)
+    for (const codexDir of this.codexDirs) {
+      const userAgentsMd = path.join(codexDir, 'AGENTS.md')
+      if (fs.existsSync(userAgentsMd)) {
+        const asset = safeScan(errors, userAgentsMd, 'agents-md', () =>
+          parseCodexAgentsMd(userAgentsMd, 'user')
+        )
+        if (asset) assets.push(asset)
+      }
+
+      assets.push(...scanDir(errors, path.join(codexDir, 'agents'), 'user', '**/*.toml', 'codex-agent', parseCodexCustomAgent))
+      assets.push(...scanDir(errors, path.join(codexDir, 'skills'), 'user', '**/SKILL.md', 'codex-skill', parseCodexSkill))
     }
 
-    assets.push(...scanDir(errors, path.join(this.codexDir, 'agents'), 'user', '**/*.toml', 'codex-agent', parseCodexCustomAgent))
-    assets.push(...scanDir(errors, path.join(this.codexDir, 'skills'), 'user', '**/SKILL.md', 'codex-skill', parseCodexSkill))
     assets.push(...scanDir(errors, path.join(this.homeDir, '.agents', 'skills'), 'user', '**/SKILL.md', 'codex-skill', parseCodexSkill))
 
     if (this.projectDir) {
@@ -235,13 +231,15 @@ export class CodexAdapter implements AgentAdapter {
 
   private scanCapabilities(errors: ScanError[]): Asset[] {
     const assets: Asset[] = []
-    const userConfig = path.join(this.codexDir, 'config.toml')
-    const userHooks = path.join(this.codexDir, 'hooks.json')
-    if (fs.existsSync(userConfig)) {
-      assets.push(...(safeScan(errors, userConfig, 'codex-config', () => parseCodexConfig(userConfig, 'user')) ?? []))
-    }
-    if (fs.existsSync(userHooks)) {
-      assets.push(...(safeScan(errors, userHooks, 'codex-hooks', () => parseCodexHooksJson(userHooks, 'user')) ?? []))
+    for (const codexDir of this.codexDirs) {
+      const userConfig = path.join(codexDir, 'config.toml')
+      const userHooks = path.join(codexDir, 'hooks.json')
+      if (fs.existsSync(userConfig)) {
+        assets.push(...(safeScan(errors, userConfig, 'codex-config', () => parseCodexConfig(userConfig, 'user')) ?? []))
+      }
+      if (fs.existsSync(userHooks)) {
+        assets.push(...(safeScan(errors, userHooks, 'codex-hooks', () => parseCodexHooksJson(userHooks, 'user')) ?? []))
+      }
     }
 
     if (this.projectDir) {
@@ -260,10 +258,10 @@ export class CodexAdapter implements AgentAdapter {
 
   private scanSessions(errors: ScanError[]): Asset[] {
     const assets: Asset[] = []
-    const sessionDirs = [
-      { path: path.join(this.codexDir, 'sessions'), archived: false },
-      { path: path.join(this.codexDir, 'archived_sessions'), archived: true }
-    ]
+    const sessionDirs = this.codexDirs.flatMap((codexDir) => [
+      { path: path.join(codexDir, 'sessions'), archived: false },
+      { path: path.join(codexDir, 'archived_sessions'), archived: true }
+    ])
 
     for (const sessionDir of sessionDirs) {
       if (!fs.existsSync(sessionDir.path)) continue
@@ -306,8 +304,7 @@ export function resolveCodexHomeDir(
   homeDir = os.homedir(),
   env: NodeJS.ProcessEnv = process.env
 ): string {
-  const configuredHome = env.CODEX_HOME?.trim()
-  return configuredHome ? path.resolve(configuredHome) : path.join(homeDir, '.codex')
+  return resolvePrimaryCodexHomeDir(homeDir, env)
 }
 
 function addRoot(
@@ -315,12 +312,11 @@ function addRoot(
   rootPath: string,
   scope: ScanRoot['scope'],
   kind: NonNullable<ScanRoot['kind']>,
-  description: string,
-  summary: string,
+  code: NonNullable<ScanRoot['code']>,
   categories: ScanRoot['categories']
 ): void {
   if (!fs.existsSync(rootPath)) return
-  roots.push({ path: rootPath, scope, description, summary, categories, kind, status: 'scanned' })
+  roots.push({ path: rootPath, scope, code, categories, kind, status: 'scanned' })
 }
 
 function safeScan<T>(

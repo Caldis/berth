@@ -61,4 +61,25 @@ describe('getAssetWatchPaths', () => {
     )
     expect(watchPaths).not.toContain(path.join(homeDir, '.codex', 'sessions'))
   })
+
+  it('includes explicit extra Claude and Codex homes', () => {
+    const homeDir = path.join(tempDir!, 'home')
+    const managedDir = path.join(tempDir!, 'managed')
+    const extraClaudeDir = path.join(tempDir!, 'wsl-home', '.claude')
+    const extraCodexDir = path.join(tempDir!, 'wsl-codex-home')
+    fs.mkdirSync(extraClaudeDir, { recursive: true })
+    fs.mkdirSync(path.join(extraCodexDir, 'sessions'), { recursive: true })
+
+    const watchPaths = getAssetWatchPaths(undefined, homeDir, managedDir, {
+      BERTH_EXTRA_CLAUDE_DIRS: extraClaudeDir,
+      BERTH_EXTRA_CODEX_HOMES: extraCodexDir
+    })
+
+    expect(watchPaths).toEqual(
+      expect.arrayContaining([
+        extraClaudeDir,
+        path.join(extraCodexDir, 'sessions')
+      ])
+    )
+  })
 })

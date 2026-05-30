@@ -6,7 +6,7 @@ import type { FSWatcher } from 'chokidar'
 import type { BrowserWindow } from 'electron'
 import type { IpcEvents } from '@shared/types/ipc'
 import { resolveClaudeManagedDir } from '../adapters/claude-code'
-import { resolveCodexHomeDir } from '../adapters/codex'
+import { resolveClaudeDirs, resolveCodexHomeDirs } from '../agent-homes'
 
 export class AssetWatcher {
   private watcher: FSWatcher | null = null
@@ -58,9 +58,7 @@ export function getAssetWatchPaths(
   managedDir = resolveClaudeManagedDir(),
   env = process.env
 ): string[] {
-  const claudeDir = path.join(homeDir, '.claude')
-  const codexDir = resolveCodexHomeDir(homeDir, env)
-  const watchPaths = [claudeDir]
+  const watchPaths = [...resolveClaudeDirs(homeDir, env)]
 
   if (projectDir) {
     watchPaths.push(path.join(projectDir, '.claude'))
@@ -74,12 +72,26 @@ export function getAssetWatchPaths(
     if (fs.existsSync(managedPath)) watchPaths.push(managedPath)
   }
 
-  for (const dirName of ['sessions', 'archived_sessions']) {
-    const codexSessionDir = path.join(codexDir, dirName)
-    if (fs.existsSync(codexSessionDir)) watchPaths.push(codexSessionDir)
+  for (const codexDir of resolveCodexHomeDirs(homeDir, env)) {
+    for (const dirName of ['sessions', 'archived_sessions']) {
+      const codexSessionDir = path.join(codexDir, dirName)
+      if (fs.existsSync(codexSessionDir)) watchPaths.push(codexSessionDir)
+    }
   }
 
-  return watchPaths
+  return uniquePaths(watchPaths)
+}
+
+function uniquePaths(paths: string[]): string[] {
+  const seen = new Set<string>()
+  const result: string[] = []
+  for (const filePath of paths) {
+    const key = process.platform === 'win32' ? path.resolve(filePath).toLowerCase() : path.resolve(filePath)
+    if (seen.has(key)) continue
+    seen.add(key)
+    result.push(filePath)
+  }
+  return result
 }
 
 let _watcherInstance: AssetWatcher | null = null
