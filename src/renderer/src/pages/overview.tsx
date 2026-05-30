@@ -14,7 +14,8 @@ import {
   Coins,
   ChevronRight,
   Copy,
-  Check
+  Check,
+  X
 } from 'lucide-react'
 import { Bar, BarChart, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts'
 import { cn } from '@/lib/utils'
@@ -41,6 +42,11 @@ export function Overview(): React.ReactElement {
   const { usage } = useUsageSummary(7, agentView)
   const { checks } = useHealthChecks()
   const [copiedFixId, setCopiedFixId] = useState<string | null>(null)
+  const [ignoredHealthChecks, setIgnoredHealthChecks] = useState<Set<string>>(() => readIgnoredHealthChecks())
+  const visibleChecks = useMemo(
+    () => checks.filter((check) => check.severity !== 'info' || !ignoredHealthChecks.has(healthCheckDismissKey(check))),
+    [checks, ignoredHealthChecks]
+  )
 
   const statCards = [
     {
@@ -73,7 +79,7 @@ export function Overview(): React.ReactElement {
     }
   ]
 
-  const healthGroups = useMemo(() => groupHealthChecks(checks), [checks])
+  const healthGroups = useMemo(() => groupHealthChecks(visibleChecks), [visibleChecks])
 
   const dailyCosts = usage?.dailyCosts ?? []
   const totalCost = usage?.totalCost ?? 0
@@ -218,7 +224,7 @@ export function Overview(): React.ReactElement {
         <div className="border-b border-border px-4 py-3">
           <h2 className="text-sm font-medium">{t('overview.healthChecks')}</h2>
         </div>
-        {checks.length === 0 ? (
+        {visibleChecks.length === 0 ? (
           <div className="flex items-center gap-2 p-4">
             <CheckCircle2 className="h-4 w-4 text-green-500" />
             <span className="text-sm text-muted-foreground">{t('overview.noIssues')}</span>
@@ -258,6 +264,13 @@ export function Overview(): React.ReactElement {
                         setCopiedFixId(check.id)
                       })
                     }
+                    const ignoreCheck = (event: React.MouseEvent): void => {
+                      event.stopPropagation()
+                      const next = new Set(ignoredHealthChecks)
+                      next.add(healthCheckDismissKey(check))
+                      setIgnoredHealthChecks(next)
+                      localStorage.setItem(IGNORED_HEALTH_CHECKS_KEY, JSON.stringify([...next]))
+                    }
                     return (
                       <div
                         key={check.id}
@@ -291,6 +304,16 @@ export function Overview(): React.ReactElement {
                               <span className="rounded border border-border px-1.5 py-0.5 text-[10px] text-muted-foreground">
                                 {check.confidence}
                               </span>
+                            )}
+                            {check.severity === 'info' && (
+                              <button
+                                type="button"
+                                title="Ignore info check"
+                                onClick={ignoreCheck}
+                                className="rounded border border-border p-0.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
                             )}
                           </div>
                           <p className="text-sm text-muted-foreground">{check.message}</p>
@@ -372,6 +395,22 @@ interface HealthCheckGroup {
   errors: number
   warnings: number
   info: number
+}
+
+const IGNORED_HEALTH_CHECKS_KEY = 'berth-ignored-health-checks'
+
+function readIgnoredHealthChecks(): Set<string> {
+  try {
+    const parsed: unknown = JSON.parse(localStorage.getItem(IGNORED_HEALTH_CHECKS_KEY) ?? '[]')
+    if (!Array.isArray(parsed)) return new Set()
+    return new Set(parsed.filter((item): item is string => typeof item === 'string'))
+  } catch {
+    return new Set()
+  }
+}
+
+function healthCheckDismissKey(check: HealthCheck): string {
+  return `${check.id}:${check.target?.path ?? check.path ?? ''}`
 }
 
 function groupHealthChecks(checks: HealthCheck[]): HealthCheckGroup[] {

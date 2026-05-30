@@ -7,6 +7,7 @@ import { Overview } from '../../src/renderer/src/pages/overview'
 
 describe('overview health checks', () => {
   it('renders info, warning and error checks grouped by agent', async () => {
+    localStorage.clear()
     window.api.sessions.list = vi.fn(async () => ({ sessions: [], totalCount: 0 }))
     window.api.usage.summary = vi.fn(async () => ({
       totalCost: 0,
@@ -112,6 +113,11 @@ describe('overview health checks', () => {
     fireEvent.click(screen.getByTitle('Copy fix snippet'))
 
     expect(navigator.clipboard.writeText).toHaveBeenCalledWith('commandWindows = "powershell -File hook.ps1"')
+
+    fireEvent.click(screen.getByTitle('Ignore info check'))
+
+    expect(screen.queryByText('User CLAUDE.md not found')).not.toBeInTheDocument()
+    expect(localStorage.getItem('berth-ignored-health-checks')).toContain('claude-code:source:user-claude-md-missing')
 
     fireEvent.click(screen.getByText('Codex hook has no Windows command override').closest('[role="button"]')!)
 
