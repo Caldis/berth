@@ -2,7 +2,7 @@
 task: 2026-05-30-home-overview-session-list
 type: bug
 jira:
-phase: verify
+phase: archive
 created: 2026-05-30
 artifacts:
   source: 00-BUG.md
@@ -29,4 +29,4 @@ artifacts:
 
 - project: berth (#6)
 - item: PVTI_lAHOADXbEs4BZHvQzguPiC0
-- status: Todo
+- status: Done
