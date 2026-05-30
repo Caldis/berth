@@ -2,7 +2,7 @@
 
 从 02-SPEC 拆解。每任务可独立执行与验证, 顺序确定。implement 阶段维护此清单。
 
-- [ ] 任务 1: shared token contract 与纯函数 helper
+- [x] 任务 1: shared token contract 与纯函数 helper
   - 修改 `src/shared/types/asset.ts` 与 `src/shared/token-usage.ts`。
   - 验证: 新增/更新 helper 单测, `pnpm test -- tests/unit/usage-summary.test.ts` 至少能编译到新类型。
 - [ ] 任务 2: Claude / Codex parser 保留 token 明细

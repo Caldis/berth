@@ -7,6 +7,7 @@ import { Overview } from '../../src/renderer/src/pages/overview'
 import { Sessions } from '../../src/renderer/src/pages/sessions'
 import { SessionDetail } from '../../src/renderer/src/pages/session-detail'
 import type { Asset, SessionSummary } from '../../src/shared/types/asset'
+import { normalizeTokenUsage } from '../../src/shared/token-usage'
 
 const summary: SessionSummary = {
   id: 'session-session-abc',
@@ -20,6 +21,12 @@ const summary: SessionSummary = {
   duration: 300,
   cost: null,
   tokens: 38,
+  tokenUsage: normalizeTokenUsage({
+    inputTokens: 10,
+    outputTokens: 5,
+    cacheReadInputTokens: 20,
+    cacheCreationInputTokens: 3
+  }),
   model: 'claude-sonnet-4-20250514',
   skillsUsed: ['frontend-design'],
   mcpServers: ['plugin_playwright_playwright'],
@@ -79,7 +86,10 @@ function mockSessionApis(): void {
   window.api.usage.summary = vi.fn(async () => ({
     totalCost: 0,
     totalTokens: 0,
+    tokenUsage: normalizeTokenUsage({}),
+    costSource: 'unknown',
     dailyCosts: [],
+    dailyTokenUsage: [],
     byModel: [],
     byProject: [],
     rateLimits: []

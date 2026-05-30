@@ -117,18 +117,35 @@ export interface SessionSummary {
   duration: number | null
   cost: number | null
   tokens: number
+  tokenUsage: TokenUsageBreakdown
   model: string
   skillsUsed: string[]
   mcpServers: string[]
   hooksFired: number
 }
 
+export interface TokenUsageBreakdown {
+  inputTokens: number
+  outputTokens: number
+  cacheReadInputTokens: number
+  cacheCreationInputTokens: number
+  reasoningOutputTokens: number
+  unknownTokens: number
+  totalTokens: number
+  hasBreakdown: boolean
+}
+
+export type CostSource = 'actual' | 'estimated' | 'mixed' | 'unknown'
+
 export interface UsageSummary {
   totalCost: number
   totalTokens: number
+  tokenUsage: TokenUsageBreakdown
+  costSource: CostSource
   dailyCosts: { date: string; cost: number }[]
-  byModel: { model: string; percentage: number; cost: number }[]
-  byProject: { project: string; percentage: number; cost: number }[]
+  dailyTokenUsage: { date: string; tokenUsage: TokenUsageBreakdown }[]
+  byModel: { model: string; percentage: number; cost: number; tokens: number; tokenUsage: TokenUsageBreakdown }[]
+  byProject: { project: string; percentage: number; cost: number; tokens: number; tokenUsage: TokenUsageBreakdown }[]
   rateLimits: {
     window: string
     remaining: number

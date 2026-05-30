@@ -32,10 +32,16 @@ describe('buildUsageSummary', () => {
     const summary = buildUsageSummary([statsCache])
 
     expect(summary.totalTokens).toBe(1050)
+    expect(summary.tokenUsage).toMatchObject({
+      inputTokens: 125,
+      outputTokens: 75,
+      cacheReadInputTokens: 850,
+      totalTokens: 1050
+    })
     expect(summary.totalCost).toBe(0)
-    expect(summary.byModel).toEqual([
-      { model: 'claude-opus', percentage: 95, cost: 0 },
-      { model: 'claude-sonnet', percentage: 5, cost: 0 }
+    expect(summary.byModel).toMatchObject([
+      { model: 'claude-opus', percentage: 95, cost: 0, tokens: 1000 },
+      { model: 'claude-sonnet', percentage: 5, cost: 0, tokens: 50 }
     ])
     expect(summary.dailyCosts).toEqual([])
   })
@@ -75,9 +81,10 @@ describe('buildUsageSummary', () => {
     const summary = buildUsageSummary([statsCache, usageData])
 
     expect(summary.totalTokens).toBe(500)
+    expect(summary.tokenUsage).toMatchObject({ unknownTokens: 500, totalTokens: 500 })
     expect(summary.totalCost).toBe(1.25)
-    expect(summary.byModel).toEqual([{ model: 'claude-opus', percentage: 100, cost: 1.25 }])
-    expect(summary.byProject).toEqual([{ project: 'D--Code-berth', percentage: 100, cost: 1.25 }])
+    expect(summary.byModel).toMatchObject([{ model: 'claude-opus', percentage: 100, cost: 1.25, tokens: 500 }])
+    expect(summary.byProject).toMatchObject([{ project: 'D--Code-berth', percentage: 100, cost: 1.25, tokens: 500 }])
     expect(summary.dailyCosts).toEqual([{ date: '2026-05-30', cost: 1.25 }])
   })
 })

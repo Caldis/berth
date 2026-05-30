@@ -1,5 +1,16 @@
 import '@testing-library/jest-dom'
 
+const emptyTokenUsage = {
+  inputTokens: 0,
+  outputTokens: 0,
+  cacheReadInputTokens: 0,
+  cacheCreationInputTokens: 0,
+  reasoningOutputTokens: 0,
+  unknownTokens: 0,
+  totalTokens: 0,
+  hasBreakdown: false
+}
+
 // Mock window.api for renderer tests
 const mockApi = {
   window: {
@@ -36,7 +47,17 @@ const mockApi = {
     get: async () => null
   },
   usage: {
-    summary: async () => ({ totalCost: 0, totalTokens: 0, dailyCosts: [], byModel: [], byProject: [], rateLimits: [] })
+    summary: async () => ({
+      totalCost: 0,
+      totalTokens: 0,
+      tokenUsage: emptyTokenUsage,
+      costSource: 'unknown' as const,
+      dailyCosts: [],
+      dailyTokenUsage: [],
+      byModel: [],
+      byProject: [],
+      rateLimits: []
+    })
   },
   shell: {
     openPath: async () => {},

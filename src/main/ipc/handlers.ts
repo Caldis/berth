@@ -20,6 +20,7 @@ import type {
 import { getScanner } from '../engine/scanner'
 import { getSearch } from '../engine/search'
 import { buildUsageSummary } from '../engine/usage'
+import { normalizeTokenUsage } from '../../shared/token-usage'
 import { runHealthChecks } from '../engine/health'
 import { resolveRelations, buildImportChain } from '../engine/relations'
 import { parseMcpServers } from '../adapters/claude-code/parsers'
@@ -199,6 +200,7 @@ async function ensureScanned(): Promise<ReturnType<typeof getScanner>> {
 }
 
 function toSessionSummary(asset: Asset): SessionSummary {
+  const tokenUsage = normalizeTokenUsage(asset.meta.tokenUsage ?? asset.meta)
   return {
     id: asset.id,
     agentId: asset.agentId,
@@ -210,7 +212,8 @@ function toSessionSummary(asset: Asset): SessionSummary {
     endedAt: readString(asset.meta, 'endedAt') ?? null,
     duration: readNumber(asset.meta, 'duration') ?? null,
     cost: readNumber(asset.meta, 'totalCost') ?? null,
-    tokens: readNumber(asset.meta, 'totalTokens') ?? 0,
+    tokens: tokenUsage.totalTokens,
+    tokenUsage,
     model: readString(asset.meta, 'model') ?? '',
     skillsUsed: readStringArray(asset.meta, 'skillsUsed'),
     mcpServers: readStringArray(asset.meta, 'mcpServers'),
