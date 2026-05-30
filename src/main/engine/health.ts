@@ -234,6 +234,7 @@ function checkCodex(paths: HealthPaths, platform: NodeJS.Platform): HealthCheck[
   checkCodexDuplicatedHooks(checks, parsedUserConfig, userHooks, 'user')
   checkInstructionImports(checks, 'codex', userAgentsMd, 'user', 'agents-md')
   checkCodexAgents(checks, path.join(paths.codexDir, 'agents'), 'user')
+  checkSkillDirectories(checks, 'codex', path.join(paths.codexDir, 'skills'), 'user')
   checkSkillDirectories(checks, 'codex', path.join(paths.homeDir, '.agents', 'skills'), 'user')
   checkCodexSessions(checks, path.join(paths.codexDir, 'sessions'))
 
@@ -1119,6 +1120,7 @@ function hasClaudeData(paths: HealthPaths): boolean {
 function hasCodexData(paths: HealthPaths): boolean {
   return (
     dirExists(paths.codexDir) ||
+    dirExists(path.join(paths.codexDir, 'skills')) ||
     dirExists(path.join(paths.homeDir, '.agents', 'skills')) ||
     (paths.projectDir != null &&
       (dirExists(path.join(paths.projectDir, '.codex')) ||

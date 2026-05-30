@@ -6,6 +6,7 @@ import type { FSWatcher } from 'chokidar'
 import type { BrowserWindow } from 'electron'
 import type { IpcEvents } from '@shared/types/ipc'
 import { resolveClaudeManagedDir } from '../adapters/claude-code'
+import { resolveCodexHomeDir } from '../adapters/codex'
 
 export class AssetWatcher {
   private watcher: FSWatcher | null = null
@@ -54,9 +55,11 @@ export class AssetWatcher {
 export function getAssetWatchPaths(
   projectDir?: string,
   homeDir = os.homedir(),
-  managedDir = resolveClaudeManagedDir()
+  managedDir = resolveClaudeManagedDir(),
+  env = process.env
 ): string[] {
   const claudeDir = path.join(homeDir, '.claude')
+  const codexDir = resolveCodexHomeDir(homeDir, env)
   const watchPaths = [claudeDir]
 
   if (projectDir) {
@@ -72,7 +75,7 @@ export function getAssetWatchPaths(
   }
 
   for (const dirName of ['sessions', 'archived_sessions']) {
-    const codexSessionDir = path.join(homeDir, '.codex', dirName)
+    const codexSessionDir = path.join(codexDir, dirName)
     if (fs.existsSync(codexSessionDir)) watchPaths.push(codexSessionDir)
   }
 

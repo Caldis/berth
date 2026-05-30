@@ -40,4 +40,25 @@ describe('getAssetWatchPaths', () => {
       ])
     )
   })
+
+  it('uses CODEX_HOME when watching Codex session directories', () => {
+    const homeDir = path.join(tempDir!, 'home')
+    const managedDir = path.join(tempDir!, 'managed')
+    const codexHome = path.join(tempDir!, 'custom-codex-home')
+    fs.mkdirSync(path.join(homeDir, '.codex', 'sessions'), { recursive: true })
+    fs.mkdirSync(path.join(codexHome, 'sessions'), { recursive: true })
+    fs.mkdirSync(path.join(codexHome, 'archived_sessions'), { recursive: true })
+
+    const watchPaths = getAssetWatchPaths(undefined, homeDir, managedDir, {
+      CODEX_HOME: codexHome
+    })
+
+    expect(watchPaths).toEqual(
+      expect.arrayContaining([
+        path.join(codexHome, 'sessions'),
+        path.join(codexHome, 'archived_sessions')
+      ])
+    )
+    expect(watchPaths).not.toContain(path.join(homeDir, '.codex', 'sessions'))
+  })
 })

@@ -29,10 +29,10 @@ export class CodexAdapter implements AgentAdapter {
   private homeDir: string
   private projectDir?: string
 
-  constructor(projectDir?: string, homeDir = os.homedir()) {
+  constructor(projectDir?: string, homeDir = os.homedir(), env = process.env) {
     this.homeDir = homeDir
     this.projectDir = projectDir
-    this.codexDir = path.join(homeDir, '.codex')
+    this.codexDir = resolveCodexHomeDir(homeDir, env)
   }
 
   async detect(): Promise<DetectResult> {
@@ -88,10 +88,19 @@ export class CodexAdapter implements AgentAdapter {
     )
     addRoot(
       roots,
-      path.join(this.homeDir, '.agents', 'skills'),
+      path.join(this.codexDir, 'skills'),
       'user',
       'directory',
       'Codex user skills directory',
+      'Includes user-level Codex skills under CODEX_HOME.',
+      ['instruction']
+    )
+    addRoot(
+      roots,
+      path.join(this.homeDir, '.agents', 'skills'),
+      'user',
+      'directory',
+      'Shared user skills directory',
       'Includes user-level Codex skills.',
       ['instruction']
     )
@@ -205,6 +214,7 @@ export class CodexAdapter implements AgentAdapter {
     }
 
     assets.push(...scanDir(errors, path.join(this.codexDir, 'agents'), 'user', '**/*.toml', 'codex-agent', parseCodexCustomAgent))
+    assets.push(...scanDir(errors, path.join(this.codexDir, 'skills'), 'user', '**/SKILL.md', 'codex-skill', parseCodexSkill))
     assets.push(...scanDir(errors, path.join(this.homeDir, '.agents', 'skills'), 'user', '**/SKILL.md', 'codex-skill', parseCodexSkill))
 
     if (this.projectDir) {
@@ -290,6 +300,14 @@ export class CodexAdapter implements AgentAdapter {
 
     return assets
   }
+}
+
+export function resolveCodexHomeDir(
+  homeDir = os.homedir(),
+  env: NodeJS.ProcessEnv = process.env
+): string {
+  const configuredHome = env.CODEX_HOME?.trim()
+  return configuredHome ? path.resolve(configuredHome) : path.join(homeDir, '.codex')
 }
 
 function addRoot(
