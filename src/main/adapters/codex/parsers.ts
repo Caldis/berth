@@ -1,7 +1,8 @@
 import * as fs from 'fs'
 import * as path from 'path'
+import { parse as parseToml } from 'smol-toml'
 import { emptyTokenUsage, normalizeTokenUsage } from '@shared/token-usage'
-import type { Asset } from '../types'
+import type { Asset, AssetScope } from '../types'
 import type { TokenUsageBreakdown } from '@shared/types/asset'
 import type {
   SessionArtifactFile,
@@ -17,10 +18,120 @@ export interface ParsedCodexSessionDetail {
   artifacts: SessionArtifacts
 }
 
+export function parseCodexToml(filePath: string): Record<string, unknown> {
+  const parsed = parseToml(fs.readFileSync(filePath, 'utf-8'))
+  return isRecord(parsed) ? parsed : {}
+}
+
+export function parseCodexConfig(filePath: string, scope: AssetScope): Asset[] {
+  const config = parseCodexToml(filePath)
+  return [
+    ...parseCodexMcpServers(filePath, scope, config),
+    ...parseCodexHooks(filePath, scope, asRecord(config.hooks))
+  ]
+}
+
+export function parseCodexCustomAgent(filePath: string, scope: AssetScope): Asset {
+  const config = parseCodexToml(filePath)
+  const name = readString(config, 'name') ?? path.basename(filePath, '.toml')
+  return {
+    id: `codex-agent-${safeId(name)}-${hashString(filePath)}`,
+    agentId: 'codex',
+    category: 'instruction',
+    type: 'agent',
+    scope,
+    name,
+    path: filePath,
+    meta: config
+  }
+}
+
+export function parseCodexHooksJson(filePath: string, scope: AssetScope): Asset[] {
+  const raw = fs.readFileSync(filePath, 'utf-8')
+  const parsed: unknown = JSON.parse(raw)
+  const root = asRecord(parsed)
+  const hooks = asRecord(root.hooks) ?? root
+  return parseCodexHooks(filePath, scope, hooks)
+}
+
 interface MutableArtifacts {
   plans: Map<string, SessionArtifactPlan>
   todos: Map<string, SessionArtifactTodo>
   files: Map<string, SessionArtifactFile>
+}
+
+function parseCodexMcpServers(
+  filePath: string,
+  scope: AssetScope,
+  config: Record<string, unknown>
+): Asset[] {
+  const servers = asRecord(config.mcp_servers)
+  if (!servers) return []
+  return Object.entries(servers)
+    .filter(([, serverConfig]) => isRecord(serverConfig))
+    .map(([name, serverConfig]) => ({
+      id: `codex-mcp-server-${safeId(name)}-${hashString(filePath)}`,
+      agentId: 'codex',
+      category: 'capability',
+      type: 'mcp-server',
+      scope,
+      name,
+      path: filePath,
+      meta: {
+        serverConfig,
+        source: filePath
+      }
+    }))
+}
+
+function parseCodexHooks(
+  filePath: string,
+  scope: AssetScope,
+  hooks: Record<string, unknown> | undefined
+): Asset[] {
+  if (!hooks) return []
+  const assets: Asset[] = []
+
+  for (const [event, handlers] of Object.entries(hooks)) {
+    const handlerList = Array.isArray(handlers) ? handlers : [handlers]
+    handlerList.forEach((handler, handlerIndex) => {
+      const handlerRecord = asRecord(handler) ?? {}
+      const matcher = readString(handlerRecord, 'matcher')
+      const nestedHooks = Array.isArray(handlerRecord.hooks)
+        ? handlerRecord.hooks
+        : [handlerRecord]
+
+      nestedHooks.forEach((hook, hookIndex) => {
+        const hookRecord = asRecord(hook) ?? {}
+        const command = readString(hookRecord, 'command')
+        const commandWindows =
+          readString(hookRecord, 'commandWindows') ?? readString(hookRecord, 'command_windows')
+        const hookType = readString(hookRecord, 'type')
+        assets.push({
+          id: `codex-hook-${safeId(event)}-${handlerIndex}-${hookIndex}-${hashString(filePath)}`,
+          agentId: 'codex',
+          category: 'capability',
+          type: 'hook',
+          scope,
+          name: command ?? `${event} hook ${handlerIndex + 1}`,
+          path: filePath,
+          meta: {
+            event,
+            eventType: event,
+            matcher,
+            command,
+            commandWindows,
+            hookType,
+            handlerIndex,
+            hookIndex,
+            source: filePath
+          }
+        })
+      })
+    })
+  }
+
+  return assets
 }
 
 export function parseCodexSessionMeta(filePath: string): Asset {
@@ -527,6 +638,10 @@ function hashString(value: string): string {
     hash = (hash * 31 + value.charCodeAt(i)) >>> 0
   }
   return hash.toString(36)
+}
+
+function asRecord(value: unknown): Record<string, unknown> | undefined {
+  return isRecord(value) ? value : undefined
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
