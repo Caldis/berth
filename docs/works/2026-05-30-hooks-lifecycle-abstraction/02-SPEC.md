@@ -15,6 +15,8 @@
 3. 提示文案必须跟左侧 Agent 视角联动。`codex` 视角不展示 Claude Code 专属解释; `claude` 视角不展示 Codex 专属解释; `all` 视角展示差异对照。
 4. 即使某个 stage 没有已安装 hook, 也应保留 stage 说明。否则用户只能看到“空”, 仍然无法理解生命周期。
 5. Codex repo-local `.codex` hook 扫描暂不纳入本轮实现。原因是项目根来源仍和 settings scan directories 任务相关。本轮只实现 user-level Codex hooks 数据接入, UI 契约保留 project scope 的展示能力。
+6. 管理操作必须诚实反映 Agent 能力。Claude Code 没有官方单 hook disable, Codex 有 individual non-managed hook disable 概念但持久化格式未作为公开配置契约暴露。UI 不能把两边都画成同样的 toggle。
+7. 本项目当前架构是只读扫描。启停 hooks 属于写用户配置, 必须作为显式管理动作进入编辑模式, 显示要修改的文件和字段, 写入后重新扫描。
 
 ## 页面布局
 
@@ -66,7 +68,13 @@
 4. 已安装 hooks
    - 按 native event 分组, 每条显示命令 / 名称、scope、matcher、来源文件入口。
    - 没有 hook 时显示教学型空状态: “这个阶段当前没有配置 hook, 但 Agent 仍然会经过这个阶段。”
-5. 注意事项
+5. 快速操作
+   - 打开来源文件: 打开注册该 hook 的配置文件, 如 `settings.json` 或 `hooks.json`。
+   - 打开来源目录: 打开来源文件所在目录。
+   - 打开入口文件: 如果 hook command 能解析出本地脚本路径, 直接打开脚本文件。
+   - 打开入口目录: 打开脚本所在目录。
+   - 启停: 根据 agent/source capability 显示可用、不可用或需要确认的管理动作。
+6. 注意事项
    - 只显示当前视角相关的限制。all 视角显示两边差异, 单 Agent 视角只显示当前 Agent 限制。
 
 视觉细节:
@@ -75,6 +83,7 @@
 - native event 用小号 mono chip, 但事件名旁边必须有白话说明, 不能只扔 `PreToolUse`。
 - support badge 三类: `supported`, `partial`, `unsupported`。Codex 的 tool hooks 标为 `partial`, 因为覆盖范围有限。
 - 颜色只用于状态和当前选择, 不用大面积彩色块。
+- 启停控件使用标准 switch / menu item, 不用自造交互。不可操作时显示 disabled 状态和一句原因。
 
 ## 数据契约
 
@@ -121,6 +130,30 @@ export interface HookLifecycleStage {
 }
 ```
 
+新增 hook 管理能力模型:
+
+```ts
+export type HookManagementAction =
+  | 'open-source-file'
+  | 'open-source-directory'
+  | 'open-entry-file'
+  | 'open-entry-directory'
+  | 'toggle-agent-hooks'
+  | 'toggle-hook'
+
+export type HookManagementAvailability =
+  | 'available'
+  | 'unavailable'
+  | 'needs-confirmation'
+
+export interface HookManagementState {
+  action: HookManagementAction
+  availability: HookManagementAvailability
+  reasonKey?: string
+  targetPath?: string
+}
+```
+
 核心函数:
 
 ```ts
@@ -128,6 +161,7 @@ export function getVisibleHookStages(view: AgentView): HookLifecycleStage[]
 export function getStageForEvent(eventType: string): HookLifecycleStage | null
 export function groupHookAssetsByStage(assets: Asset[], view: AgentView): HookStageGroup[]
 export function getVisibleStageSupport(stage: HookLifecycleStage, view: AgentView): HookAgentStageSupport[]
+export function getHookManagementState(asset: Asset, view: AgentView): HookManagementState[]
 ```
 
 规则:
@@ -136,6 +170,8 @@ export function getVisibleStageSupport(stage: HookLifecycleStage, view: AgentVie
 - `claude` / `codex` 只返回当前 agent 非 `unsupported` 的 stage。
 - hook asset 仍以 `meta.eventType` 绑定原生事件, 再映射到抽象 stage。
 - 未识别 eventType 的 hook 放入 `environment` 或 `unknown` 不合适。本轮应显示在一个独立 “未识别事件” section, 并提示“Berth 还没有映射这个事件”。这避免丢数据。
+- `open-*` 操作基于 `asset.path` 和从 `meta.command` 解析出的本地脚本路径。路径解析必须保守, 只打开明确存在的本地绝对路径或可解析到来源文件目录的相对路径。
+- `toggle-*` 操作只在 agent/source capability 明确时可用。不可用时展示原因, 不隐藏。
 
 Codex hooks 数据接入:
 
@@ -151,6 +187,9 @@ Codex hooks 数据接入:
   - `meta.command`: command hook 的 command
   - `meta.hookType`: command / prompt / agent 等原始类型
   - `meta.supportNote`: 当 hookType 不是 command 或 async 为 true 时, 标记 Codex 当前会跳过该 handler
+  - `meta.managed`: managed 来源标记, 若能识别
+  - `meta.enabled`: 当前是否启用, 仅在有可靠来源时填入
+  - `meta.entryPaths`: 从 command 中保守提取出的本地脚本路径数组
 
 不在本轮实现:
 
@@ -160,6 +199,42 @@ Codex hooks 数据接入:
 - managed hooks
 
 这些能力需要真实 project roots / plugin source, 本轮 UI 与数据契约只预留展示能力, 不伪造扫描结果。
+
+## 启停策略
+
+### 默认状态
+
+Hooks 页面默认是浏览状态。打开文件 / 打开目录属于只读动作, 可以直接可用。enable / disable 属于写配置动作, 需要显式确认。
+
+### Claude Code
+
+- 单个 hook: 不提供 toggle。显示原因: Claude Code 官方没有“保留配置但禁用单个 hook”的机制。
+- 全部 hooks: 可设计为 source-level / agent-level 开关, 写入对应 settings 的 `disableAllHooks`。写入前必须显示目标文件和字段。
+- managed hooks: 不允许从 user/project/local 设置禁用。UI 显示 managed badge 与禁用原因。
+- 删除 hook 不属于 enable/disable, 本轮不做。
+
+### Codex
+
+- 全部 hooks: 可设计为 agent-level 开关, 写入 `[features].hooks = false/true`。如果 requirements/managed config 强制启用, UI 禁用并说明。
+- 单个 hook: 只对 non-managed hook 显示可用入口。由于官方文档没有公开 individual disable 的持久化格式, 实现前必须先确认 Codex 本地持久化位置和格式; 未确认前 UI 显示“Codex 支持单个 non-managed hook 禁用, Berth 尚未接入写入”。
+- managed hooks: 不允许从用户 hook browser 禁用, Berth 也不得提供 toggle。
+
+### 写入 IPC
+
+如果本轮实现 enable / disable, 需要新增受控 IPC:
+
+```ts
+hooks.setAgentHooksEnabled(agentId, scope, enabled)
+hooks.setHookEnabled(assetId, enabled)
+```
+
+要求:
+
+- 主进程解析当前文件, 做结构化更新, 不用字符串拼接。
+- 写入前创建备份或使用原子写入。
+- 写入后触发重新扫描。
+- 渲染层显示成功 / 失败反馈。
+- 对 managed / unknown / unsupported action 返回明确错误码。
 
 ## 模块结构 / 组件拆分
 
@@ -180,6 +255,11 @@ Codex hooks 数据接入:
   - stage section, 包含行为说明、Agent 支持说明、hook 列表。
 - `src/renderer/src/components/capabilities/hook-asset-row.tsx`
   - 单条 hook 显示, 复用 `ScopeBadge` 或迁出共享。
+  - 显示管理动作: open source file, open source folder, open entry file, open entry folder, enable/disable 状态。
+- `src/renderer/src/components/capabilities/hook-management-menu.tsx`
+  - 标准菜单承载文件/目录动作, 避免一行里堆太多按钮。
+- `src/renderer/src/components/capabilities/hook-enable-control.tsx`
+  - 只在 action 可用时显示 switch; 不可用时显示 disabled switch 或说明 badge。
 
 如果为了保持改动小, 第一轮也可以先把组件放在 `capabilities.tsx` 内部, 但完成后文件会继续变大。推荐直接拆到 `components/capabilities/`。
 
@@ -191,6 +271,10 @@ Codex hooks 数据接入:
   - `scanAssets('capability')` 返回 Codex hooks。
   - `scanAll()` 合并 sessions 与 hooks。
   - `scanRoots()` 如存在 `~/.codex/hooks.json`, 可继续返回 `~/.codex` 或新增更精确 root 描述, 但不要破坏 settings scan directories 任务正在调整的 scan source 行为。
+- `src/main/ipc/handlers.ts`
+  - 如实现写操作, 新增 hooks 管理 handler; 只允许修改已扫描且可定位的 hook 配置。
+- `src/shared/types/ipc.ts`
+  - 如实现写操作, 增加 hooks 管理 IPC 类型与错误码。
 
 ### i18n
 
@@ -202,6 +286,8 @@ Codex hooks 数据接入:
 - `capabilities.hooks.nativeEvents.*`
 - `capabilities.hooks.emptyStage.*`
 - `capabilities.hooks.limitations.*`
+- `capabilities.hooks.actions.*`
+- `capabilities.hooks.management.*`
 
 中文以白话说明为主, 不直译英文术语。事件名保留原文, 但说明必须中文化。
 
@@ -214,6 +300,9 @@ Codex hooks 数据接入:
 5. stage index 中的 hook count 使用当前筛选后的 hook 数, 同时保留总数提示, 避免用户以为 stage 消失。
 6. hook command 可能很长, 必须单行截断, 展开后再显示完整命令。不要让命令撑破布局。
 7. 所有解释文案可见于界面, hover tooltip 只能作为补充, 不能承载关键解释。
+8. 打开文件 / 目录动作放在 hook row 的 `More` 菜单里, 常用的“打开来源文件”可以作为首项。
+9. 单 hook enable/disable 不可用时, 不要隐藏开关后让用户误以为功能缺失。显示 disabled 状态和原因。
+10. 全局禁用会影响该 Agent 的所有 hooks, 必须在页面说明区和确认文案里写清楚影响范围。
 
 ## 测试策略
 
@@ -226,12 +315,20 @@ Codex hooks 数据接入:
    - 解析 `~/.codex/hooks.json` 的 nested handler 结构。
    - 生成 `agentId:'codex'`、`type:'hook'`、`meta.eventType`、`matcher`、`command`。
    - 非 command / async hook 保留但标记 support note。
+   - 从 command 中保守提取本地入口文件路径。
 3. Renderer 测试:
    - `agentView='codex'` 时不出现 Claude Code 专属提示。
    - `agentView='claude'` 时不出现 Codex 专属提示。
    - `agentView='all'` 时出现差异对照。
    - 无 hook 时仍显示 stage 说明和教学型空状态。
-4. 门禁:
+   - Claude 单 hook toggle 不可用并显示原因。
+   - Codex managed hook toggle 不可用并显示原因。
+   - hook row 展示打开来源文件 / 目录动作。
+4. IPC / 写入测试, 仅当本轮实现 enable / disable 写操作:
+   - unsupported action 返回明确错误码。
+   - managed hook 不可写。
+   - 写入后重新扫描或返回更新后的状态。
+5. 门禁:
    - `pnpm harness:check`
    - `pnpm typecheck`
    - 相关 `pnpm test -- ...`
@@ -247,4 +344,6 @@ Codex hooks 数据接入:
 | Codex user-level hooks JSON parser 与 adapter 接入 | 4, 6, 8 |
 | `hook-lifecycle` 纯函数与测试 | 1, 2, 3, 5, 6, 8 |
 | renderer tests 覆盖 all/claude/codex 文案差异 | 2, 3, 5, 7, 8 |
+| 打开来源文件、来源目录、入口文件、入口目录 | 10 |
+| Agent-aware enable / disable 能力模型与不可用原因 | 11, 12 |
 | typecheck/test/harness/Electron screenshot 门禁 | 9 |

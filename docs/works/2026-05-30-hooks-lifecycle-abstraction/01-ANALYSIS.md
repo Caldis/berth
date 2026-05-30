@@ -42,6 +42,17 @@ Claude 与 Codex 的主要差异:
 5. Claude 有 `Notification` 这种用户注意力事件；Codex hooks 文档中没有等价事件。Codex 早期的 `notify` 配置不等同于 hooks lifecycle event, 不应混进 hooks 页面作为同类生命周期。
 6. 两者都有 `Stop`, `SubagentStop`, `UserPromptSubmit`, `PreToolUse`, `PermissionRequest`, `PostToolUse`, `PreCompact`, `PostCompact`, `SessionStart`, 但 matcher、可阻止性、payload 字段和覆盖范围不同。UI 必须保留 agent-specific support 状态, 不能只显示一个统一事件名。
 
+## 外部启停能力差异
+
+用户补充需求: Hooks 页面需要能 enable / disable hooks, 并能快速打开目录、原始文件、注册入口文件。
+
+官方资料显示两边的启停能力不能做成同一种开关:
+
+1. Claude Code 官方支持通过设置 `"disableAllHooks": true` 临时禁用全部 hooks, 也可以删除 settings JSON 里的 hook entry 来移除 hook。官方明确没有“保留配置但禁用单个 hook”的机制。Managed policy 配置的 hooks 也不能被 user/project/local settings 里的 `disableAllHooks` 禁用。
+2. Codex hooks 默认启用, 可通过 `[features].hooks = false` 关闭整体 hooks。Codex 官方还说明 `/hooks` 可禁用 individual non-managed hooks, 但 managed hooks 不能从用户 hook browser 禁用。官方文档没有把 individual disable 的持久化文件格式作为稳定配置契约公开。
+3. 因此 Berth UI 必须区分“整体 hooks 引擎启停”和“单个 hook 启停”。Claude 单 hook 不应显示可操作 toggle；Codex 单 hook toggle 只能在确认有可读写的、非 managed、持久化状态来源后启用, 否则应显示只读状态与说明。
+4. 本项目架构当前写明 v0.1 只读, 不写本地文件。enable / disable 会改变用户的 Agent 配置, 必须引入显式编辑模式、写入确认、失败回滚 / 重新扫描, 不能在普通浏览状态下隐式写文件。
+
 ## 建议抽象层
 
 UI 不应以 vendor event name 作为第一层分组。建议建立 `HookLifecycleStage` 抽象, 每个 stage 下列出各 agent 的原生事件映射、支持状态和限制。
@@ -67,6 +78,7 @@ UI 不应以 vendor event name 作为第一层分组。建议建立 `HookLifecyc
 - support level: `supported`, `partial`, `unsupported`。
 - limitations: 例如 Codex `PreToolUse` 不覆盖 WebSearch, Claude `PostToolBatch` 没有 Codex 等价。
 - hook assets: 真实扫描到的 `Asset[]`, 仍按 `meta.eventType` 与 native event 绑定。
+- management actions: 每条 hook 暴露可用操作, 至少包括打开来源文件、打开来源目录、打开命令脚本或注册入口文件。启停操作根据 agent/source capability 决定是否可用。
 
 ## 现状理解
 
@@ -100,6 +112,7 @@ Claude parser 当前从 `settings.json` 的 `hooks` 字段解析 hook asset, `me
 3. 搜索 / scope filter 仍应过滤 `Asset[]`; lifecycle stage 只负责分组和解释, 不应影响通用资产过滤。
 4. All 视角需要能展示一个 stage 下 Claude 和 Codex 两列 / 两组 native events, 避免用户以为两个 agent 都支持同一组事件。
 5. 用户手册目前写 Hooks Tab 按 8 个事件分组, 后续如果 UI 改为抽象 stage, 需要同步文档。
+6. 打开文件 / 打开目录可复用现有 shell bridge; enable / disable 则需要新的受控写入 IPC, 并且必须先从只读架构边界中显式扩展出来。
 
 ## 验收标准
 
@@ -112,6 +125,9 @@ Claude parser 当前从 `settings.json` 的 `hooks` 字段解析 hook asset, `me
 7. i18n 同步更新中英文文案。
 8. 至少用单元测试覆盖 lifecycle stage 映射和 hooks 分组逻辑；如果改 main adapter 扫描, 需要补 parser 测试。
 9. 通过 `pnpm typecheck`, `pnpm test` 或更小范围等价门禁；如涉及 UI, 补浏览器 / Electron 视觉验收截图。
+10. Hook row 必须能快速打开 hook 来源文件、来源目录; 如果 command 指向本地脚本, 还要能打开脚本文件和脚本目录。
+11. Enable / disable UI 必须真实反映 agent 能力: Claude 只提供整体禁用说明和可支持的整体开关, 不提供虚假的单 hook toggle; Codex 区分整体 `[features].hooks` 与 individual non-managed hook disable。
+12. 任何写配置操作都必须通过显式编辑动作触发, 显示将修改的文件和字段, 写入后重新扫描并更新状态; managed 或只读来源必须禁用操作并解释原因。
 
 ## 未决问题
 
