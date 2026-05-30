@@ -45,25 +45,33 @@ describe('ClaudeCodeAdapter', () => {
         path: claudeDir,
         scope: 'user',
         description: 'Claude Code data directory',
-        categories: ['instruction', 'capability', 'state', 'observability', 'integration']
+        categories: ['instruction', 'capability', 'state', 'observability', 'integration'],
+        kind: 'directory',
+        status: 'scanned'
       }),
       expect.objectContaining({
         path: path.join(mockHome.dir, '.claude.json'),
         scope: 'user',
         description: 'Claude Code global config file',
-        categories: ['capability']
+        categories: ['capability'],
+        kind: 'file',
+        status: 'scanned'
       }),
       expect.objectContaining({
         path: path.join(projectDir, '.claude'),
         scope: 'project',
         description: 'Project Claude Code directory',
-        categories: ['instruction', 'capability']
+        categories: ['instruction', 'capability'],
+        kind: 'directory',
+        status: 'scanned'
       }),
       expect.objectContaining({
         path: path.join(projectDir, '.mcp.json'),
         scope: 'project',
         description: 'Project MCP config file',
-        categories: ['capability']
+        categories: ['capability'],
+        kind: 'file',
+        status: 'scanned'
       })
     ])
   })

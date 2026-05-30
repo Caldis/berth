@@ -45,11 +45,16 @@ export class CodexAdapter implements AgentAdapter {
   }
 
   async scanRoots(): Promise<ScanRoot[]> {
+    return (await this.scanSourceCoverage()).filter((source) => source.status === 'scanned')
+  }
+
+  async scanSourceCoverage(): Promise<ScanRoot[]> {
     const roots: ScanRoot[] = []
     addRoot(
       roots,
       path.join(this.codexDir, 'config.toml'),
       'user',
+      'file',
       'Codex config file',
       'Includes MCP servers and user-level Codex configuration.',
       ['capability']
@@ -58,6 +63,7 @@ export class CodexAdapter implements AgentAdapter {
       roots,
       path.join(this.codexDir, 'hooks.json'),
       'user',
+      'file',
       'Codex hooks file',
       'Includes user-level hook definitions.',
       ['capability']
@@ -66,6 +72,7 @@ export class CodexAdapter implements AgentAdapter {
       roots,
       path.join(this.codexDir, 'AGENTS.md'),
       'user',
+      'file',
       'Codex user instructions',
       'Includes user-level Codex instructions.',
       ['instruction']
@@ -74,6 +81,7 @@ export class CodexAdapter implements AgentAdapter {
       roots,
       path.join(this.codexDir, 'agents'),
       'user',
+      'directory',
       'Codex user agents directory',
       'Includes user-level custom Codex agents.',
       ['instruction']
@@ -82,6 +90,7 @@ export class CodexAdapter implements AgentAdapter {
       roots,
       path.join(this.homeDir, '.agents', 'skills'),
       'user',
+      'directory',
       'Codex user skills directory',
       'Includes user-level Codex skills.',
       ['instruction']
@@ -90,6 +99,7 @@ export class CodexAdapter implements AgentAdapter {
       roots,
       path.join(this.codexDir, 'sessions'),
       'user',
+      'directory',
       'Codex session history directory',
       'Includes Codex rollout session history.',
       ['state']
@@ -100,6 +110,7 @@ export class CodexAdapter implements AgentAdapter {
         roots,
         path.join(this.projectDir, 'AGENTS.md'),
         'project',
+        'file',
         'Codex project instructions',
         'Includes project-level Codex instructions.',
         ['instruction']
@@ -108,6 +119,7 @@ export class CodexAdapter implements AgentAdapter {
         roots,
         path.join(this.projectDir, '.codex', 'config.toml'),
         'project',
+        'file',
         'Codex project config file',
         'Includes project-level Codex configuration.',
         ['capability']
@@ -116,6 +128,7 @@ export class CodexAdapter implements AgentAdapter {
         roots,
         path.join(this.projectDir, '.codex', 'hooks.json'),
         'project',
+        'file',
         'Codex project hooks file',
         'Includes project-level hook definitions.',
         ['capability']
@@ -124,6 +137,7 @@ export class CodexAdapter implements AgentAdapter {
         roots,
         path.join(this.projectDir, '.codex', 'agents'),
         'project',
+        'directory',
         'Codex project agents directory',
         'Includes project-level custom Codex agents.',
         ['instruction']
@@ -132,6 +146,7 @@ export class CodexAdapter implements AgentAdapter {
         roots,
         path.join(this.projectDir, '.agents', 'skills'),
         'project',
+        'directory',
         'Codex project skills directory',
         'Includes project-level Codex skills.',
         ['instruction']
@@ -264,12 +279,13 @@ function addRoot(
   roots: ScanRoot[],
   rootPath: string,
   scope: ScanRoot['scope'],
+  kind: NonNullable<ScanRoot['kind']>,
   description: string,
   summary: string,
   categories: ScanRoot['categories']
 ): void {
   if (!fs.existsSync(rootPath)) return
-  roots.push({ path: rootPath, scope, description, summary, categories })
+  roots.push({ path: rootPath, scope, description, summary, categories, kind, status: 'scanned' })
 }
 
 function safeScan<T>(

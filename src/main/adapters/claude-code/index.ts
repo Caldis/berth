@@ -56,52 +56,64 @@ export class ClaudeCodeAdapter implements AgentAdapter {
   }
 
   async scanRoots(): Promise<ScanRoot[]> {
-    const roots: ScanRoot[] = []
+    return (await this.scanSourceCoverage()).filter((source) => source.status === 'scanned')
+  }
+
+  async scanSourceCoverage(): Promise<ScanRoot[]> {
+    const sources: ScanRoot[] = []
     if (fs.existsSync(this.claudeDir)) {
-      roots.push({
+      sources.push({
         path: this.claudeDir,
         scope: 'user',
         description: 'Claude Code data directory',
         summary:
           'Includes instructions, skills, agents, commands, hooks, plugins, status line, sessions, plans, todos, usage data, and integration state.',
-        categories: ['instruction', 'capability', 'state', 'observability', 'integration']
+        categories: ['instruction', 'capability', 'state', 'observability', 'integration'],
+        kind: 'directory',
+        status: 'scanned'
       })
     }
     // ~/.claude.json (MCP config)
     const homeClaudeJson = path.join(os.homedir(), '.claude.json')
     if (fs.existsSync(homeClaudeJson)) {
-      roots.push({
+      sources.push({
         path: homeClaudeJson,
         scope: 'user',
         description: 'Claude Code global config file',
         summary: 'Includes global MCP server definitions.',
-        categories: ['capability']
+        categories: ['capability'],
+        kind: 'file',
+        status: 'scanned'
       })
     }
     if (this.projectDir) {
       const projectDotClaude = path.join(this.projectDir, '.claude')
       if (fs.existsSync(projectDotClaude)) {
-        roots.push({
+        sources.push({
           path: projectDotClaude,
           scope: 'project',
           description: 'Project Claude Code directory',
           summary:
             'Includes project instructions, skills, agents, commands, hooks, permissions, environment variables, and teams.',
-          categories: ['instruction', 'capability']
+          categories: ['instruction', 'capability'],
+          kind: 'directory',
+          status: 'scanned'
         })
       }
       const projectMcp = path.join(this.projectDir, '.mcp.json')
       if (fs.existsSync(projectMcp)) {
-        roots.push({
+        sources.push({
           path: projectMcp,
           scope: 'project',
           description: 'Project MCP config file',
           summary: 'Includes project MCP server definitions.',
-          categories: ['capability']
+          categories: ['capability'],
+          kind: 'file',
+          status: 'scanned'
         })
       }
     }
-    return roots
+    return sources
   }
 
   async scanAssets(category: AssetCategory): Promise<Asset[]> {

@@ -35,6 +35,7 @@ export interface AgentScanSourceGroup {
   agentName: string
   installed: boolean
   roots: ScanRoot[]
+  sources?: ScanRoot[]
 }
 
 export interface SessionListResult {

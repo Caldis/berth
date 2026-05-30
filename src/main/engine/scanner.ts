@@ -95,18 +95,23 @@ export class AssetScanner {
     for (const adapter of this.adapters) {
       try {
         const result = await adapter.detect()
+        const sources = adapter.scanSourceCoverage
+          ? await adapter.scanSourceCoverage()
+          : result.paths
         groups.push({
           agentId: adapter.id,
           agentName: adapter.displayName,
           installed: result.installed,
-          roots: result.paths
+          roots: result.paths,
+          sources
         })
       } catch {
         groups.push({
           agentId: adapter.id,
           agentName: adapter.displayName,
           installed: false,
-          roots: []
+          roots: [],
+          sources: []
         })
       }
     }

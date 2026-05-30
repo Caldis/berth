@@ -9,6 +9,10 @@ export type AssetScope = 'user' | 'project' | 'enterprise' | 'session'
 
 export type AgentView = 'all' | 'claude' | 'codex'
 
+export type ScanSourceKind = 'directory' | 'file' | 'policy'
+
+export type ScanSourceStatus = 'scanned' | 'missing' | 'not-scanned'
+
 export type AssetType =
   | 'claude-md'
   | 'agents-md'
@@ -71,6 +75,9 @@ export interface ScanRoot {
   description: string
   summary?: string
   categories?: AssetCategory[]
+  kind?: ScanSourceKind
+  status?: ScanSourceStatus
+  reason?: string
 }
 
 export interface DetectResult {
@@ -90,6 +97,7 @@ export interface AgentAdapter {
   readonly displayName: string
   detect(): Promise<DetectResult>
   scanRoots(): Promise<ScanRoot[]>
+  scanSourceCoverage?(): Promise<ScanRoot[]>
   scanAll(): Promise<{ assets: Asset[]; errors: { path: string; type: string; message: string }[] }>
   scanAssets(category: AssetCategory): Promise<Asset[]>
   watchAssets(callback: (event: WatchEvent) => void): { dispose(): void }

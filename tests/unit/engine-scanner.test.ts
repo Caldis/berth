@@ -7,10 +7,28 @@ const mocks = vi.hoisted(() => ({
     installed: true,
     paths: [{ path: 'C:\\Users\\test\\.claude', scope: 'user', description: 'Claude user config' }]
   })),
+  claudeCoverage: vi.fn(async () => [
+    {
+      path: 'C:\\Users\\test\\.claude',
+      scope: 'user',
+      description: 'Claude user config',
+      kind: 'directory',
+      status: 'scanned'
+    }
+  ]),
   codexDetect: vi.fn(async () => ({
     installed: true,
     paths: [{ path: 'C:\\Users\\test\\.codex\\sessions', scope: 'user', description: 'Codex sessions' }]
-  }))
+  })),
+  codexCoverage: vi.fn(async () => [
+    {
+      path: 'C:\\Users\\test\\.codex\\sessions',
+      scope: 'user',
+      description: 'Codex sessions',
+      kind: 'directory',
+      status: 'scanned'
+    }
+  ])
 }))
 
 vi.mock('../../src/main/adapters/claude-code', () => ({
@@ -19,6 +37,7 @@ vi.mock('../../src/main/adapters/claude-code', () => ({
     displayName = 'Claude Code'
     scanAll = mocks.claudeScanAll
     detect = mocks.claudeDetect
+    scanSourceCoverage = mocks.claudeCoverage
   }
 }))
 
@@ -28,6 +47,7 @@ vi.mock('../../src/main/adapters/codex', () => ({
     displayName = 'Codex'
     scanAll = mocks.codexScanAll
     detect = mocks.codexDetect
+    scanSourceCoverage = mocks.codexCoverage
   }
 }))
 
@@ -39,6 +59,8 @@ describe('AssetScanner', () => {
     mocks.codexScanAll.mockClear()
     mocks.claudeDetect.mockClear()
     mocks.codexDetect.mockClear()
+    mocks.claudeCoverage.mockClear()
+    mocks.codexCoverage.mockClear()
     mocks.claudeDetect.mockResolvedValue({
       installed: true,
       paths: [{ path: 'C:\\Users\\test\\.claude', scope: 'user', description: 'Claude user config' }]
@@ -47,6 +69,24 @@ describe('AssetScanner', () => {
       installed: true,
       paths: [{ path: 'C:\\Users\\test\\.codex\\sessions', scope: 'user', description: 'Codex sessions' }]
     })
+    mocks.claudeCoverage.mockResolvedValue([
+      {
+        path: 'C:\\Users\\test\\.claude',
+        scope: 'user',
+        description: 'Claude user config',
+        kind: 'directory',
+        status: 'scanned'
+      }
+    ])
+    mocks.codexCoverage.mockResolvedValue([
+      {
+        path: 'C:\\Users\\test\\.codex\\sessions',
+        scope: 'user',
+        description: 'Codex sessions',
+        kind: 'directory',
+        status: 'scanned'
+      }
+    ])
   })
 
   it('tracks whether a full scan has completed', async () => {
@@ -77,13 +117,31 @@ describe('AssetScanner', () => {
         agentId: 'claude-code',
         agentName: 'Claude Code',
         installed: true,
-        roots: [{ path: 'C:\\Users\\test\\.claude', scope: 'user', description: 'Claude user config' }]
+        roots: [{ path: 'C:\\Users\\test\\.claude', scope: 'user', description: 'Claude user config' }],
+        sources: [
+          {
+            path: 'C:\\Users\\test\\.claude',
+            scope: 'user',
+            description: 'Claude user config',
+            kind: 'directory',
+            status: 'scanned'
+          }
+        ]
       },
       {
         agentId: 'codex',
         agentName: 'Codex',
         installed: true,
-        roots: [{ path: 'C:\\Users\\test\\.codex\\sessions', scope: 'user', description: 'Codex sessions' }]
+        roots: [{ path: 'C:\\Users\\test\\.codex\\sessions', scope: 'user', description: 'Codex sessions' }],
+        sources: [
+          {
+            path: 'C:\\Users\\test\\.codex\\sessions',
+            scope: 'user',
+            description: 'Codex sessions',
+            kind: 'directory',
+            status: 'scanned'
+          }
+        ]
       }
     ])
     expect(mocks.claudeScanAll).not.toHaveBeenCalled()
@@ -100,7 +158,8 @@ describe('AssetScanner', () => {
       agentId: 'claude-code',
       agentName: 'Claude Code',
       installed: false,
-      roots: []
+      roots: [],
+      sources: []
     })
     expect(groups[1]?.agentId).toBe('codex')
     expect(groups[1]?.installed).toBe(true)
