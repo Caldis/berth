@@ -40,7 +40,7 @@
   - 内容: Hooks Tab 从“按 8 个事件分组”改为“按抽象生命周期 stage 展示, 并随 Agent 视角调整”; 说明打开来源文件/入口文件和启停限制。
   - 验证: `pnpm harness:check`。
 
-- [ ] 任务 8: 全量验证与视觉验收
+- [x] 任务 8: 全量验证与视觉验收
   - 运行: `pnpm typecheck`, 相关 `pnpm test`, `pnpm harness:check`。
   - UI: 启动 Electron, 使用实测窗口坐标截图, 分别检查 all / Claude / Codex 视角的 hooks tab。
   - 验收点: 文案不溢出, 长命令不撑破布局, 单 Agent 视角没有另一 Agent 的专属提示; 打开动作清楚可见; 不可用 toggle 有原因。
@@ -48,3 +48,7 @@
 ## verify 回写
 
 verify 不通过项作为新任务追加于此, phase 退回 implement。
+
+- 通过: `pnpm lint` (1 个既有 warning, 位于 `tests/renderer/sessions-pages.test.tsx`), `pnpm typecheck`, `pnpm test -- tests/renderer/hooks-lifecycle-view.test.tsx tests/unit/hook-lifecycle.test.ts`, `pnpm build`, `pnpm harness:check`。
+- 通过: Electron 真实窗口验收, 使用临时 HOME 与 user-data-dir, 截图 all / codex / claude 三个视角; codex 视角不含 Claude Code 文案, claude 视角不含 Codex 文案, 操作菜单含入口文件动作。
+- 未通过但不属于本任务: `pnpm test` 当前失败在 pricing catalog 与 asset guide panel 测试; `pnpm test:e2e` 当前失败在 Windows window controls maximize 断言。这些文件和窗口逻辑不在 Hooks 生命周期改造范围内。
