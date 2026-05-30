@@ -2,7 +2,7 @@
 task: 2026-05-30-settings-scan-directories
 type: bug
 jira:
-phase: implement
+phase: verify
 created: 2026-05-30
 artifacts:
   source: 00-BUG.md
@@ -28,4 +28,4 @@ artifacts:
 
 ## 待澄清 (blocked 时填)
 
-无阻塞项。用户已确认继续细化并落地, 本轮同时修正来源展示、Codex sessions 监听和 agent-aware health check。
+`pnpm lint` 仍被非本任务文件 `src/shared/types/memory.ts` 第 1 行的 `@typescript-eslint/ban-types` 阻塞; 已记录为 `docs/issues/2026-05-30-BUG-memory-source-id-lint-failure.md`。其余验证通过。

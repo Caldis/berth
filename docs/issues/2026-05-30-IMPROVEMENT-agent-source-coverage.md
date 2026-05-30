@@ -6,28 +6,33 @@ IMPROVEMENT
 
 ## 状态
 
-Open
+Resolved
 
 ## 背景
 
-设置页“本地来源”已改为按 Agent 汇总, 明细只展示当前 scanner 实际返回的 scan roots。但继续核对官方文档和当前代码后, 还有一些本机 Agent 来源没有纳入扫描模型。
+设置页“本地来源”已改为按 Agent 汇总, 明细只展示当前 scanner 实际返回的 scan roots。继续核对官方文档和当前代码后, 发现一些本机 Agent 来源没有纳入扫描模型。
 
 ## 已验证事实
 
-- Claude Code 官方文档列出 user / project / local / managed 多层配置。当前代码覆盖 `~/.claude`, `~/.claude.json`, 当前 `projectDir/.claude`, 当前 `projectDir/.mcp.json`; 未覆盖 macOS `/Library/Application Support/ClaudeCode/` 下的 managed settings / managed MCP, 也未覆盖系统策略来源。
-- Claude Code 官方文档列出 user 与 project 两级 subagents / skills 等来源。当前代码只对当前 `projectDir` 扫项目级来源, 不从历史 session 中反推并扫描所有曾出现过的项目目录。
-- Codex 开源实现存在 `sessions` 与 `archived_sessions` 两个 rollout 子目录常量。当前代码只扫描 `~/.codex/sessions/**/rollout-*.jsonl`, 未扫描 archived sessions。
-- Codex 当前实现硬编码 `path.join(os.homedir(), '.codex')`; 如果未来需要支持可配置 Codex home, 需要先引入明确来源, 不能在设置页里伪造。
+- Claude Code 官方文档列出 user / project / local / managed 多层配置。当前实现已覆盖 `~/.claude`, `~/.claude.json`, 当前 `projectDir/.claude`, 当前 `projectDir/.mcp.json`, 以及 file-based managed settings / managed MCP。
+- Claude Code 官方文档列出 user 与 project 两级 subagents / skills 等来源。当前实现只扫描当前 `projectDir` 的项目级来源; 历史 session 中出现过的项目目录作为 `not-scanned` 候选来源展示, 不自动递归扫描磁盘。
+- Codex 开源实现存在 `sessions` 与 `archived_sessions` 两个 rollout 子目录常量。当前实现已扫描两者, archived session 会标记 `meta.archived = true`。
+- Codex 用户级来源已跟随 `CODEX_HOME`; 未设置时回退到 `~/.codex`。`$CODEX_HOME/skills` 与旧的 `~/.agents/skills` 都作为用户技能来源处理。
 
-## 建议方向
+## 完成记录
 
-- 保持设置页“本地来源”只展示 scanner 实际扫描的来源, 不列出未扫描路径。
-- 新增“Agent source provider”层, 让每个 adapter 统一返回 user / project / managed / archive 等来源能力和是否启用。
-- 对 Claude managed settings、Codex archived sessions、可配置 Codex home 分别做小步实现与测试。
-- 对“所有项目目录”保持谨慎: 只在有明确 workspace 列表、用户选择目录, 或可验证的 session-derived 项目索引时纳入扫描; 不要递归扫磁盘。
+- `scanSourceCoverage()` 已成为 adapter 的结构化来源契约, 区分 `kind`, `status`, `reason`。
+- 设置页按 Claude Code / Codex 两个 Agent 汇总, 默认不展示路径; 展开后按 user / project / enterprise / session 分组显示明细。
+- `scanned` 来源提供打开入口; `not-scanned` / `missing` 来源只解释状态, 不提供打开操作。
+- watcher 已纳入 Claude managed files、Codex active sessions、Codex archived sessions, 并跟随 `CODEX_HOME`。
 
-## 验收建议
+## 验收记录
 
-- macOS 上 Claude managed file-based settings 能作为只读来源显示并扫描。
-- Codex archived sessions 可选择性纳入会话列表或在设置页明示未启用。
-- 项目级来源只显示实际扫描的项目, 并能解释来源来自当前项目、用户选择, 还是 session-derived index。
+- `pnpm test -- tests/unit/claude-code-adapter.test.ts tests/unit/codex-adapter.test.ts tests/unit/engine-scanner.test.ts`
+- `pnpm test -- tests/unit/claude-code-adapter.test.ts tests/unit/codex-adapter.test.ts tests/unit/watcher.test.ts`
+- `pnpm test -- tests/unit/claude-scanner.test.ts tests/unit/engine-scanner.test.ts`
+- `pnpm test -- tests/renderer/settings-sources.test.tsx`
+- `pnpm test`
+- `pnpm typecheck`
+- `pnpm build`
+- `pnpm harness:check`
