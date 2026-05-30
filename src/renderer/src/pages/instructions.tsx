@@ -22,6 +22,8 @@ import { useAppStore } from '@/stores/app'
 import { TabGroup, type TabDef } from '@/components/shared/tab-group'
 import { FilterBar } from '@/components/shared/filter-bar'
 import { DetailRow } from '@/components/shared/detail-row'
+import { AssetGuidePanel } from '@/components/shared/asset-guide-panel'
+import { instructionGuideMap, type InstructionGuideId } from '@/lib/asset-guidance'
 import type { Asset, AssetScope } from '@shared/types/asset'
 
 type ScopeFilter = 'all' | AssetScope
@@ -379,6 +381,7 @@ export function Instructions(): React.ReactElement {
       return true
     })
   }, [visibleAssets, activeTab, search, scope])
+  const activeGuide = instructionGuideMap[activeTab as InstructionGuideId]
 
   const renderContent = (): React.ReactElement => {
     if (filteredAssets.length === 0) {
@@ -441,6 +444,8 @@ export function Instructions(): React.ReactElement {
         onScopeChange={setScope}
         placeholder={`${t('search.placeholder')} ${t(`instructions.tabs.${activeTab}`)}`}
       />
+
+      <AssetGuidePanel guide={activeGuide} />
 
       {renderContent()}
     </div>
