@@ -87,4 +87,89 @@ describe('buildUsageSummary', () => {
     expect(summary.byProject).toMatchObject([{ project: 'D--Code-berth', percentage: 100, cost: 1.25, tokens: 500 }])
     expect(summary.dailyCosts).toEqual([{ date: '2026-05-30', cost: 1.25 }])
   })
+
+  it('filters usage-data daily cost and token totals by day range', () => {
+    const recentUsage: Asset = {
+      id: 'usage-data-recent',
+      agentId: 'claude-code',
+      category: 'observability',
+      type: 'usage-data',
+      scope: 'user',
+      name: '2026-05-30',
+      path: 'C:\\Users\\test\\.claude\\usage-data\\2026-05-30.json',
+      meta: {
+        date: '2026-05-30',
+        model: 'claude-opus',
+        project: 'D--Code-berth',
+        costUSD: 1.25,
+        inputTokens: 100,
+        outputTokens: 50
+      }
+    }
+    const oldUsage: Asset = {
+      ...recentUsage,
+      id: 'usage-data-old',
+      name: '2026-05-01',
+      path: 'C:\\Users\\test\\.claude\\usage-data\\2026-05-01.json',
+      meta: {
+        ...recentUsage.meta,
+        date: '2026-05-01',
+        costUSD: 9,
+        inputTokens: 900,
+        outputTokens: 100
+      }
+    }
+
+    const summary = buildUsageSummary([oldUsage, recentUsage], {
+      days: 7,
+      now: '2026-05-30T12:00:00.000Z'
+    })
+
+    expect(summary.totalCost).toBe(1.25)
+    expect(summary.totalTokens).toBe(150)
+    expect(summary.dailyCosts).toEqual([{ date: '2026-05-30', cost: 1.25 }])
+    expect(summary.dailyTokenUsage).toHaveLength(1)
+    expect(summary.dailyTokenUsage[0]).toMatchObject({
+      date: '2026-05-30',
+      tokenUsage: { inputTokens: 100, outputTokens: 50, totalTokens: 150 }
+    })
+  })
+
+  it('falls back to session assets when usage-data and stats-cache are absent', () => {
+    const session: Asset = {
+      id: 'codex-session-abc',
+      agentId: 'codex',
+      category: 'state',
+      type: 'session',
+      scope: 'session',
+      name: 'Codex Session',
+      path: 'C:\\Users\\test\\.codex\\sessions\\rollout.jsonl',
+      meta: {
+        startedAt: '2026-05-30T01:00:00.000Z',
+        project: 'berth',
+        model: 'gpt-5.3-codex',
+        tokenUsage: {
+          inputTokens: 20,
+          outputTokens: 10,
+          cacheReadInputTokens: 5,
+          cacheCreationInputTokens: 0,
+          reasoningOutputTokens: 2,
+          unknownTokens: 0,
+          totalTokens: 37,
+          hasBreakdown: true
+        }
+      }
+    }
+
+    const summary = buildUsageSummary([session], {
+      days: 7,
+      now: '2026-05-30T12:00:00.000Z'
+    })
+
+    expect(summary.totalTokens).toBe(37)
+    expect(summary.byModel).toMatchObject([{ model: 'gpt-5.3-codex', tokens: 37 }])
+    expect(summary.byProject).toMatchObject([{ project: 'berth', tokens: 37 }])
+    expect(summary.dailyTokenUsage).toHaveLength(1)
+    expect(summary.dailyTokenUsage[0]).toMatchObject({ date: '2026-05-30' })
+  })
 })

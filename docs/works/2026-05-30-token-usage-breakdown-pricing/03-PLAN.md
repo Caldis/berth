@@ -8,7 +8,7 @@
 - [x] 任务 2: Claude / Codex parser 保留 token 明细
   - 修改 `src/main/adapters/claude-code/parsers.ts`、`src/main/adapters/codex/parsers.ts`。
   - 验证: `pnpm test -- tests/unit/session-meta-parser.test.ts tests/unit/codex-session-parser.test.ts`。
-- [ ] 任务 3: Usage 聚合支持 token 明细、days 过滤和 session fallback
+- [x] 任务 3: Usage 聚合支持 token 明细、days 过滤和 session fallback
   - 修改 `src/main/engine/usage.ts` 与 `src/main/ipc/handlers.ts`。
   - 验证: `pnpm test -- tests/unit/usage-summary.test.ts`。
 - [ ] 任务 4: token 展示组件与页面替换

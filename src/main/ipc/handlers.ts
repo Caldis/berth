@@ -168,7 +168,10 @@ export function registerAssetHandlers(): void {
     'usage:summary',
     async (_event, opts: { days: number; agentView?: AgentView }): Promise<UsageSummary> => {
       const scanner = await ensureScanned()
-      return buildUsageSummary(scanner.getAllAssets().filter((asset) => sessionMatchesAgentView(asset, opts.agentView)))
+      return buildUsageSummary(
+        scanner.getAllAssets().filter((asset) => sessionMatchesAgentView(asset, opts.agentView)),
+        { days: opts.days }
+      )
     }
   )
 
