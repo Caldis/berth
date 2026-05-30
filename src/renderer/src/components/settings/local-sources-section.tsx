@@ -1,0 +1,240 @@
+import { useState, type ReactElement } from 'react'
+import { useTranslation } from 'react-i18next'
+import {
+  ChevronDown,
+  ChevronRight,
+  ExternalLink,
+  FileText,
+  FolderOpen
+} from 'lucide-react'
+import { cn } from '@/lib/utils'
+import type { AssetCategory, AssetScope, ScanRoot } from '@shared/types/asset'
+import type { AgentScanSourceGroup } from '@shared/types/ipc'
+
+const SOURCE_CATEGORY_ORDER: AssetCategory[] = [
+  'instruction',
+  'capability',
+  'state',
+  'observability',
+  'integration'
+]
+
+const SOURCE_SCOPE_ORDER: AssetScope[] = ['user', 'project', 'enterprise', 'session']
+
+interface LocalSourcesSectionProps {
+  groups: AgentScanSourceGroup[]
+  loading: boolean
+}
+
+export function LocalSourcesSection({
+  groups,
+  loading
+}: LocalSourcesSectionProps): ReactElement {
+  const { t } = useTranslation()
+  const [expandedSources, setExpandedSources] = useState<Record<string, boolean>>({})
+
+  const toggleSourceGroup = (agentId: string): void => {
+    setExpandedSources((current) => ({ ...current, [agentId]: !current[agentId] }))
+  }
+
+  return (
+    <section className="space-y-3">
+      <h2 className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
+        {t('settings.localSources')}
+      </h2>
+      <div className="rounded-lg border border-border bg-card">
+        {loading && <div className="p-4 text-sm text-muted-foreground">{t('common.loading')}</div>}
+        {!loading && groups.length === 0 && (
+          <div className="p-4 text-sm text-muted-foreground">{t('settings.localSourcesEmpty')}</div>
+        )}
+        {!loading &&
+          groups.map((group, groupIndex) => {
+            const sources = group.sources ?? group.roots
+            const sourceCategories = getSourceCategories(sources)
+            const scopedSources = groupSourcesByScope(sources)
+            const expanded = expandedSources[group.agentId] === true
+
+            return (
+              <div
+                key={group.agentId}
+                className={cn(groupIndex > 0 && 'border-t border-border')}
+              >
+                <button
+                  type="button"
+                  onClick={() => toggleSourceGroup(group.agentId)}
+                  aria-expanded={expanded}
+                  className="flex w-full items-start justify-between gap-3 px-4 py-3 text-left transition-colors hover:bg-accent/5"
+                >
+                  <div className="flex min-w-0 items-start gap-2">
+                    {expanded ? (
+                      <ChevronDown className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                    ) : (
+                      <ChevronRight className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                    )}
+                    <div className="min-w-0 space-y-1">
+                      <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                        <p className="text-sm font-medium">{group.agentName}</p>
+                        <span className="text-xs text-muted-foreground">
+                          {group.installed
+                            ? t('settings.sourceCount', { count: group.roots.length })
+                            : t('settings.sourceNotFound')}
+                        </span>
+                      </div>
+                      {sourceCategories.length > 0 && (
+                        <div className="flex flex-wrap gap-1">
+                          {sourceCategories.map((category) => (
+                            <span
+                              key={`${group.agentId}-${category}`}
+                              className="rounded-md border border-border px-1.5 py-0.5 text-[11px] text-muted-foreground"
+                            >
+                              {t(`settings.sourceCategories.${category}`)}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                      <p className="text-xs text-muted-foreground">
+                        {group.installed
+                          ? t('settings.sourceSummary')
+                          : t('settings.sourceNotFoundDesc')}
+                      </p>
+                    </div>
+                  </div>
+                  <span
+                    className={cn(
+                      'shrink-0 rounded-md border px-2 py-1 text-xs',
+                      group.installed
+                        ? 'border-accent/30 bg-accent/10 text-foreground'
+                        : 'border-border text-muted-foreground'
+                    )}
+                  >
+                    {group.installed ? t('settings.detected') : t('settings.notFound')}
+                  </span>
+                </button>
+                {expanded && sources.length > 0 ? (
+                  <div className="border-t border-border/70">
+                    {scopedSources.map((scopeGroup, scopeIndex) => (
+                      <div
+                        key={`${group.agentId}-${scopeGroup.scope}`}
+                        className={cn(scopeIndex > 0 && 'border-t border-border/70')}
+                      >
+                        <div className="bg-muted/20 px-4 py-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                          {t(`settings.sourceScopes.${scopeGroup.scope}`)}
+                        </div>
+                        {scopeGroup.sources.map((source, sourceIndex) => (
+                          <SourceRow
+                            key={`${group.agentId}-${source.path}-${source.reason ?? ''}`}
+                            source={source}
+                            showSeparator={sourceIndex > 0}
+                          />
+                        ))}
+                      </div>
+                    ))}
+                  </div>
+                ) : expanded ? (
+                  <div className="border-t border-border/70 px-4 py-3 text-xs text-muted-foreground">
+                    {t('settings.noSourceRoots')}
+                  </div>
+                ) : null}
+              </div>
+            )
+          })}
+      </div>
+    </section>
+  )
+}
+
+function SourceRow({
+  source,
+  showSeparator
+}: {
+  source: ScanRoot
+  showSeparator: boolean
+}): ReactElement {
+  const { t } = useTranslation()
+  const SourceIcon = source.kind === 'file' ? FileText : FolderOpen
+  const status = source.status ?? 'scanned'
+
+  return (
+    <div
+      data-scan-source-root
+      className={cn(
+        'flex items-start justify-between gap-3 px-4 py-3',
+        showSeparator && 'border-t border-border/70'
+      )}
+    >
+      <div className="flex min-w-0 items-start gap-3">
+        <SourceIcon className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+        <div className="min-w-0 space-y-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="text-sm font-medium">{source.description}</p>
+            <SourceStatusBadge status={status} />
+          </div>
+          {source.summary && (
+            <p className="max-w-[60ch] text-xs text-muted-foreground">{source.summary}</p>
+          )}
+          <p className="truncate font-mono text-xs text-muted-foreground">{source.path}</p>
+        </div>
+      </div>
+      {status === 'scanned' ? (
+        <button
+          onClick={() => window.api?.shell.openPath(source.path)}
+          className="flex shrink-0 items-center gap-1 rounded-md border border-border px-2 py-1 text-xs transition-colors hover:bg-accent/10"
+        >
+          <ExternalLink className="h-3 w-3" />
+          {t('instructions.showInExplorer')}
+        </button>
+      ) : null}
+    </div>
+  )
+}
+
+function SourceStatusBadge({ status }: { status: NonNullable<ScanRoot['status']> }): ReactElement {
+  const { t, i18n } = useTranslation()
+
+  return (
+    <span
+      className={cn(
+        'rounded-md border px-1.5 py-0.5 text-[11px]',
+        status === 'scanned'
+          ? 'border-accent/30 bg-accent/10 text-foreground'
+          : 'border-border text-muted-foreground'
+      )}
+    >
+      {getSourceStatusLabel(status, i18n.language, t)}
+    </span>
+  )
+}
+
+function getSourceStatusLabel(
+  status: NonNullable<ScanRoot['status']>,
+  language: string,
+  t: (key: string) => string
+): string {
+  if (status === 'scanned') {
+    return t('settings.detected')
+  }
+  if (status === 'missing') {
+    return t('settings.notFound')
+  }
+  return language.startsWith('zh') ? '未扫描' : 'Not scanned'
+}
+
+function getSourceCategories(sources: ScanRoot[]): AssetCategory[] {
+  const found = new Set<AssetCategory>()
+  for (const source of sources) {
+    for (const category of source.categories ?? []) {
+      found.add(category)
+    }
+  }
+  return SOURCE_CATEGORY_ORDER.filter((category) => found.has(category))
+}
+
+function groupSourcesByScope(sources: ScanRoot[]): { scope: AssetScope; sources: ScanRoot[] }[] {
+  const grouped = new Map<AssetScope, ScanRoot[]>()
+  for (const source of sources) {
+    grouped.set(source.scope, [...(grouped.get(source.scope) ?? []), source])
+  }
+  return SOURCE_SCOPE_ORDER
+    .filter((scope) => grouped.has(scope))
+    .map((scope) => ({ scope, sources: grouped.get(scope) ?? [] }))
+}

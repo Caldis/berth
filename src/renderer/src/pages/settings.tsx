@@ -6,50 +6,11 @@ import {
   Moon,
   Monitor,
   Check,
-  FolderOpen,
-  FileText,
-  ExternalLink,
-  ChevronDown,
-  ChevronRight
+  ExternalLink
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useScanSources } from '@/hooks/use-ipc'
-import type { AssetCategory, AssetScope, ScanRoot } from '@shared/types/asset'
-
-const SOURCE_CATEGORY_ORDER: AssetCategory[] = [
-  'instruction',
-  'capability',
-  'state',
-  'observability',
-  'integration'
-]
-
-const SOURCE_SCOPE_ORDER: AssetScope[] = ['user', 'project', 'enterprise', 'session']
-
-function getSourceCategories(roots: ScanRoot[]): AssetCategory[] {
-  const found = new Set<AssetCategory>()
-  for (const root of roots) {
-    for (const category of root.categories ?? []) {
-      found.add(category)
-    }
-  }
-  return SOURCE_CATEGORY_ORDER.filter((category) => found.has(category))
-}
-
-function groupRootsByScope(roots: ScanRoot[]): { scope: AssetScope; roots: ScanRoot[] }[] {
-  const grouped = new Map<AssetScope, ScanRoot[]>()
-  for (const root of roots) {
-    grouped.set(root.scope, [...(grouped.get(root.scope) ?? []), root])
-  }
-  return SOURCE_SCOPE_ORDER
-    .filter((scope) => grouped.has(scope))
-    .map((scope) => ({ scope, roots: grouped.get(scope) ?? [] }))
-}
-
-function isFileSource(rootPath: string): boolean {
-  const filename = rootPath.split(/[\\/]/).pop() ?? rootPath
-  return filename.includes('.')
-}
+import { LocalSourcesSection } from '@/components/settings/local-sources-section'
 
 function Toggle({
   enabled,
@@ -90,7 +51,6 @@ export function SettingsContent({
   const { t, i18n } = useTranslation()
   const { theme, setTheme } = useTheme()
   const [advancedMode, setAdvancedMode] = useState(false)
-  const [expandedSources, setExpandedSources] = useState<Record<string, boolean>>({})
   const { groups: scanSourceGroups, loading: scanSourcesLoading } = useScanSources()
   const [platformInfo, setPlatformInfo] = useState<{
     homeDir: string
@@ -118,10 +78,6 @@ export function SettingsContent({
     { id: 'en', label: 'English' },
     { id: 'zh', label: '中文' }
   ]
-
-  const toggleSourceGroup = (agentId: string): void => {
-    setExpandedSources((current) => ({ ...current, [agentId]: !current[agentId] }))
-  }
 
   return (
     <div className={cn(showTitle ? 'mx-auto max-w-2xl space-y-8' : 'space-y-5', className)}>
@@ -208,137 +164,7 @@ export function SettingsContent({
         </div>
       </section>
 
-      {/* Local Sources */}
-      <section className="space-y-3">
-        <h2 className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
-          {t('settings.localSources')}
-        </h2>
-        <div className="rounded-lg border border-border bg-card">
-          {scanSourcesLoading && (
-            <div className="p-4 text-sm text-muted-foreground">{t('common.loading')}</div>
-          )}
-          {!scanSourcesLoading && scanSourceGroups.length === 0 && (
-            <div className="p-4 text-sm text-muted-foreground">{t('settings.localSourcesEmpty')}</div>
-          )}
-          {!scanSourcesLoading &&
-            scanSourceGroups.map((group, groupIndex) => {
-              const sourceCategories = getSourceCategories(group.roots)
-              const scopedRoots = groupRootsByScope(group.roots)
-
-              return (
-                <div
-                  key={group.agentId}
-                  className={cn(groupIndex > 0 && 'border-t border-border')}
-                >
-                  <button
-                    type="button"
-                    onClick={() => toggleSourceGroup(group.agentId)}
-                    aria-expanded={expandedSources[group.agentId] === true}
-                    className="flex w-full items-start justify-between gap-3 px-4 py-3 text-left transition-colors hover:bg-accent/5"
-                  >
-                    <div className="flex min-w-0 items-start gap-2">
-                      {expandedSources[group.agentId] ? (
-                        <ChevronDown className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                      ) : (
-                        <ChevronRight className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                      )}
-                      <div className="min-w-0 space-y-1">
-                        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                          <p className="text-sm font-medium">{group.agentName}</p>
-                          <span className="text-xs text-muted-foreground">
-                            {group.installed
-                              ? t('settings.sourceCount', { count: group.roots.length })
-                              : t('settings.sourceNotFound')}
-                          </span>
-                        </div>
-                        {sourceCategories.length > 0 && (
-                          <div className="flex flex-wrap gap-1">
-                            {sourceCategories.map((category) => (
-                              <span
-                                key={`${group.agentId}-${category}`}
-                                className="rounded-md border border-border px-1.5 py-0.5 text-[11px] text-muted-foreground"
-                              >
-                                {t(`settings.sourceCategories.${category}`)}
-                              </span>
-                            ))}
-                          </div>
-                        )}
-                        <p className="text-xs text-muted-foreground">
-                          {group.installed
-                            ? t('settings.sourceSummary')
-                            : t('settings.sourceNotFoundDesc')}
-                        </p>
-                      </div>
-                    </div>
-                    <span
-                      className={cn(
-                        'shrink-0 rounded-md border px-2 py-1 text-xs',
-                        group.installed
-                          ? 'border-accent/30 bg-accent/10 text-foreground'
-                          : 'border-border text-muted-foreground'
-                      )}
-                    >
-                      {group.installed ? t('settings.detected') : t('settings.notFound')}
-                    </span>
-                  </button>
-                  {expandedSources[group.agentId] === true && group.roots.length > 0 ? (
-                    <div className="border-t border-border/70">
-                      {scopedRoots.map((scopeGroup, scopeIndex) => (
-                        <div
-                          key={`${group.agentId}-${scopeGroup.scope}`}
-                          className={cn(scopeIndex > 0 && 'border-t border-border/70')}
-                        >
-                          <div className="bg-muted/20 px-4 py-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                            {t(`settings.sourceScopes.${scopeGroup.scope}`)}
-                          </div>
-                          {scopeGroup.roots.map((root, rootIndex) => {
-                            const SourceIcon = isFileSource(root.path) ? FileText : FolderOpen
-                            return (
-                              <div
-                                key={`${group.agentId}-${root.path}`}
-                                data-scan-source-root
-                                className={cn(
-                                  'flex items-start justify-between gap-3 px-4 py-3',
-                                  rootIndex > 0 && 'border-t border-border/70'
-                                )}
-                              >
-                                <div className="flex min-w-0 items-start gap-3">
-                                  <SourceIcon className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
-                                  <div className="min-w-0 space-y-1">
-                                    <p className="text-sm font-medium">{root.description}</p>
-                                    {root.summary && (
-                                      <p className="max-w-[60ch] text-xs text-muted-foreground">
-                                        {root.summary}
-                                      </p>
-                                    )}
-                                    <p className="truncate font-mono text-xs text-muted-foreground">
-                                      {root.path}
-                                    </p>
-                                  </div>
-                                </div>
-                                <button
-                                  onClick={() => window.api?.shell.openPath(root.path)}
-                                  className="flex shrink-0 items-center gap-1 rounded-md border border-border px-2 py-1 text-xs transition-colors hover:bg-accent/10"
-                                >
-                                  <ExternalLink className="h-3 w-3" />
-                                  {t('instructions.showInExplorer')}
-                                </button>
-                              </div>
-                            )
-                          })}
-                        </div>
-                      ))}
-                    </div>
-                  ) : expandedSources[group.agentId] === true ? (
-                    <div className="border-t border-border/70 px-4 py-3 text-xs text-muted-foreground">
-                      {t('settings.noSourceRoots')}
-                    </div>
-                  ) : null}
-                </div>
-              )
-            })}
-        </div>
-      </section>
+      <LocalSourcesSection groups={scanSourceGroups} loading={scanSourcesLoading} />
 
       {/* About */}
       <section className="space-y-3">

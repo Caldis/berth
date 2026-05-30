@@ -17,14 +17,50 @@ const groups: AgentScanSourceGroup[] = [
         description: 'Claude Code data directory',
         summary:
           'Includes instructions, skills, agents, commands, hooks, plugins, status line, sessions, plans, todos, usage data, and integration state.',
-        categories: ['instruction', 'capability', 'state', 'observability', 'integration']
+        categories: ['instruction', 'capability', 'state', 'observability', 'integration'],
+        kind: 'directory',
+        status: 'scanned'
       },
       {
         path: 'C:\\Users\\test\\.claude.json',
         scope: 'user',
         description: 'Claude Code global config file',
         summary: 'Includes global MCP server definitions.',
-        categories: ['capability']
+        categories: ['capability'],
+        kind: 'file',
+        status: 'scanned'
+      }
+    ],
+    sources: [
+      {
+        path: 'C:\\Users\\test\\.claude',
+        scope: 'user',
+        description: 'Claude Code data directory',
+        summary:
+          'Includes instructions, skills, agents, commands, hooks, plugins, status line, sessions, plans, todos, usage data, and integration state.',
+        categories: ['instruction', 'capability', 'state', 'observability', 'integration'],
+        kind: 'directory',
+        status: 'scanned'
+      },
+      {
+        path: 'C:\\Users\\test\\.claude.json',
+        scope: 'user',
+        description: 'Claude Code global config file',
+        summary: 'Includes global MCP server definitions.',
+        categories: ['capability'],
+        kind: 'file',
+        status: 'scanned'
+      },
+      {
+        path: 'D:\\Code\\historic-project',
+        scope: 'project',
+        description: 'Claude Code project source candidate',
+        summary:
+          'Referenced by local session history, but Berth has not scanned this project directory.',
+        categories: ['instruction', 'capability'],
+        kind: 'directory',
+        status: 'not-scanned',
+        reason: 'session-derived-project'
       }
     ]
   },
@@ -38,7 +74,20 @@ const groups: AgentScanSourceGroup[] = [
         scope: 'user',
         description: 'Codex session history directory',
         summary: 'Includes Codex rollout session history.',
-        categories: ['state']
+        categories: ['state'],
+        kind: 'directory',
+        status: 'scanned'
+      }
+    ],
+    sources: [
+      {
+        path: 'C:\\Users\\test\\.codex\\sessions',
+        scope: 'user',
+        description: 'Codex session history directory',
+        summary: 'Includes Codex rollout session history.',
+        categories: ['state'],
+        kind: 'directory',
+        status: 'scanned'
       }
     ]
   }
@@ -64,7 +113,26 @@ describe('SettingsContent scan sources', () => {
     expect(screen.queryByText('C:\\Users\\test\\.claude')).not.toBeInTheDocument()
     expect(screen.queryByText('C:\\Users\\test\\.claude.json')).not.toBeInTheDocument()
     expect(screen.queryByText('C:\\Users\\test\\.codex\\sessions')).not.toBeInTheDocument()
+    expect(screen.queryByText('D:\\Code\\historic-project')).not.toBeInTheDocument()
     expect(screen.queryByText('~/.claude/')).not.toBeInTheDocument()
+  })
+
+  it('shows project candidates only inside the expanded breakdown', async () => {
+    render(<SettingsContent showTitle={false} />)
+
+    fireEvent.click(await screen.findByRole('button', { name: /Claude Code/ }))
+
+    expect(screen.getByText('User sources')).toBeInTheDocument()
+    expect(screen.getByText('Project sources')).toBeInTheDocument()
+    expect(screen.getAllByText('Detected').length).toBeGreaterThan(0)
+    expect(screen.getByText('Not scanned')).toBeInTheDocument()
+
+    const candidatePath = screen.getByText('D:\\Code\\historic-project')
+    const row = candidatePath.closest('[data-scan-source-root]')
+    expect(row).not.toBeNull()
+    expect(
+      within(row as HTMLElement).queryByRole('button', { name: 'Show in Explorer' })
+    ).not.toBeInTheDocument()
   })
 
   it('expands a source group before opening a concrete path', async () => {
