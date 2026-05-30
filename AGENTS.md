@@ -106,7 +106,7 @@ Agent 工作流体系, 单一真源在 `.agents/`, 同时服务 Claude Code 与 
 
 ## 何时进入 (强制)
 - feature / bug 开发任务: 落代码前必须先用 `opsx-new` 建任务态, 再按 explore → design → implement → verify 推进; 禁止跳过 new 直接 Read/Edit 进实现或调试。
-- 小改动豁免: 单行/拼写/纯文案注释, 或满足"单一文件·单一关注点·标准门禁 (typecheck/lint/test) 即可验收·无需跨文件根因分析或人工意图澄清"的小改动 (如弃用 API 替换、局部重构), 直接处理 + 跑门禁 (含可测试性), 不建任务态。
+- 小改动豁免: 单行/拼写/纯文案注释, 或满足"单一文件·单一关注点·标准门禁 (typecheck/lint/test) 即可验收·无需跨文件根因分析或人工意图澄清"的小改动 (如弃用 API 替换、局部重构), 可直接处理 + 跑门禁 (含可测试性), 不建任务态。小改动豁免前必须先声明豁免依据并征得用户确认。
 - 边界存疑按非平凡处理, 默认走 harness; 进行中的任务用 `opsx-continue` 续跑, 不重新 new。
 
 入口: opsx-new · opsx-continue · opsx-explore · opsx-design · opsx-implement · opsx-verify · opsx-archive · opsx-optimization

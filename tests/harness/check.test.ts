@@ -4,7 +4,14 @@ import { mkdtempSync, rmSync, mkdirSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 // @ts-expect-error mjs sin tipos
-import { checkWorks, checkFriction, checkTemplates, checkWorkflowSources } from '../../scripts/harness-check.mjs'
+import {
+  SMALL_CHANGE_EXEMPTION_CONSENT,
+  checkWorks,
+  checkFriction,
+  checkTemplates,
+  checkWorkflowSources,
+  checkEntryRules
+} from '../../scripts/harness-check.mjs'
 
 let root: string
 beforeEach(() => {
@@ -115,5 +122,30 @@ describe('checkWorkflowSources', () => {
     writeWorkflow()
     writeFileSync(join(root, '.agents/workflow/bogus.md'), '# x')
     expect(checkWorkflowSources(root).some((e: string) => e.includes('unexpected'))).toBe(true)
+  })
+})
+
+describe('checkEntryRules', () => {
+  function writeEntryRules(options: { agents?: boolean; readme?: boolean }): void {
+    if (options.agents) writeFileSync(join(root, 'AGENTS.md'), SMALL_CHANGE_EXEMPTION_CONSENT)
+    if (options.readme) {
+      mkdirSync(join(root, '.agents'), { recursive: true })
+      writeFileSync(join(root, '.agents/README.md'), SMALL_CHANGE_EXEMPTION_CONSENT)
+    }
+  }
+
+  it('根入口与 harness README 都声明小改动豁免确认规则时通过', () => {
+    writeEntryRules({ agents: true, readme: true })
+    expect(checkEntryRules(root)).toEqual([])
+  })
+
+  it('根 AGENTS.md 缺少小改动豁免确认规则时报错', () => {
+    writeEntryRules({ readme: true })
+    expect(checkEntryRules(root).some((e: string) => e.includes('AGENTS.md'))).toBe(true)
+  })
+
+  it('.agents README 缺少小改动豁免确认规则时报错', () => {
+    writeEntryRules({ agents: true })
+    expect(checkEntryRules(root).some((e: string) => e.includes('.agents/README.md'))).toBe(true)
   })
 })

@@ -10,6 +10,7 @@ const WORK_NAME = /^\d{4}-\d{2}-\d{2}(-[A-Z][A-Z0-9]+-\d+)?-[a-z0-9-]+$/
 const FRICTION_NAME = /^\d{8}-(new|continue|explore|design|implement|verify|archive|optimization)-[a-z0-9-]+\.md$/
 const PHASES = ['explore', 'design', 'blocked', 'implement', 'verify', 'archive']
 const PHASE_RANK = { explore: 0, design: 1, blocked: 1, implement: 2, verify: 3, archive: 4 }
+export const SMALL_CHANGE_EXEMPTION_CONSENT = '小改动豁免前必须先声明豁免依据并征得用户确认。'
 
 function listDirs(p) {
   if (!existsSync(p)) return []
@@ -111,9 +112,24 @@ export function checkWorkflowSources(root) {
   return errors
 }
 
+export function checkEntryRules(root) {
+  const errors = []
+  for (const rel of ['AGENTS.md', '.agents/README.md']) {
+    const path = join(root, rel)
+    if (!existsSync(path)) {
+      errors.push(`entry-rules: missing ${rel}`)
+      continue
+    }
+    if (!readFileSync(path, 'utf8').includes(SMALL_CHANGE_EXEMPTION_CONSENT))
+      errors.push(`entry-rules: ${rel} missing small-change exemption consent rule`)
+  }
+  return errors
+}
+
 export function checkAll(root) {
   const errors = [
     ...checkWorkflowSources(root),
+    ...checkEntryRules(root),
     ...checkTemplates(root),
     ...checkWorks(root),
     ...checkFriction(root)
