@@ -214,6 +214,8 @@ pnpm typecheck    # TypeScript type checking
 pnpm lint         # ESLint
 ```
 
+`pnpm dev` runs electron-vite with `--watch`, so renderer, main, and preload changes can refresh through the user's own dev process. If a dev process was already running before this script changed, restart it once so the running process picks up `--watch`.
+
 ## Security
 
 Berth is designed with security as a first principle:

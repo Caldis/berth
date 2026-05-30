@@ -19,5 +19,5 @@ verify 不通过项作为新任务追加于此, phase 退回 implement。
 - [x] 任务 9: 将 `scripts/agent-dev.mjs` 逻辑拆到可测模块。verify: `tests/unit/agent-dev-core.test.ts` 覆盖参数解析、路径保护、state 行为。
 - [x] 任务 10: 输出稳定 JSON 与人读摘要分离, 自动化使用 `--json`。verify: `node scripts/agent-dev.mjs status --json` 返回 JSON, 默认 `status` 返回人读摘要。
 - [x] 任务 11: 增加 guard before/after, 固化“保护用户 dev PID”的验收动作。verify: `tests/unit/agent-dev-core.test.ts` 覆盖 before snapshot 与 after 检查。
-- [ ] 任务 12: 文档提醒用户已有旧 dev 进程需重启一次才能吃到 `--watch`。verify: 文档命中说明。
+- [x] 任务 12: 文档提醒用户已有旧 dev 进程需重启一次才能吃到 `--watch`。verify: README scripts section 已说明旧 dev 进程需重启一次。
 - [x] 任务 13: 清理 stale state: `status` 标记 stale, `start` 遇同 id stale state 先清理。verify: `tests/unit/agent-dev-core.test.ts` 覆盖 stale summary 与同 id stale cleanup。
