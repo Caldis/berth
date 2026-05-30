@@ -197,6 +197,19 @@ describe('session pages', () => {
     expect(screen.getByText('claude-sonnet-4-20250514')).toBeInTheDocument()
   })
 
+  it('shows usage placeholders while the first summary request is loading', () => {
+    window.api.usage.summary = vi.fn(() => new Promise<UsageSummary>(() => undefined))
+
+    render(
+      <MemoryRouter>
+        <Usage />
+      </MemoryRouter>
+    )
+
+    expect(screen.getByLabelText('Loading usage summary')).toBeInTheDocument()
+    expect(screen.queryByText('0 tok')).not.toBeInTheDocument()
+  })
+
   it('passes agent view to usage summary and renders unknown token remainder', async () => {
     act(() => {
       useAppStore.setState({ agentView: 'codex' })

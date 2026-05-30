@@ -123,11 +123,48 @@ function formatCatalogDate(value: string | undefined): string {
   return date.toLocaleDateString()
 }
 
+function UsageLoadingSkeleton(): React.ReactElement {
+  const { t } = useTranslation()
+
+  return (
+    <div className="space-y-4" role="status" aria-label={t('usage.loadingSummary')}>
+      <div className="grid grid-cols-2 gap-4">
+        {[0, 1].map((item) => (
+          <div key={item} className="rounded-xl border border-border bg-card p-5">
+            <div className="h-4 w-28 animate-pulse rounded bg-muted" />
+            <div className="mt-3 h-8 w-36 animate-pulse rounded bg-muted" />
+            <div className="mt-4 grid grid-cols-3 gap-2">
+              <div className="h-9 animate-pulse rounded-md bg-muted/70" />
+              <div className="h-9 animate-pulse rounded-md bg-muted/70" />
+              <div className="h-9 animate-pulse rounded-md bg-muted/70" />
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="rounded-xl border border-border bg-card p-5">
+        <div className="h-4 w-36 animate-pulse rounded bg-muted" />
+        <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]">
+          <div className="space-y-2">
+            <div className="h-3 w-24 animate-pulse rounded bg-muted" />
+            <div className="h-6 w-40 animate-pulse rounded bg-muted" />
+            <div className="h-4 w-full max-w-sm animate-pulse rounded bg-muted/70" />
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="h-20 animate-pulse rounded-md bg-muted/70" />
+            <div className="h-20 animate-pulse rounded-md bg-muted/70" />
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export function Usage(): React.ReactElement {
   const { t } = useTranslation()
   const [days, setDays] = useState(30)
   const [costMode, setCostMode] = useState<CostMode>('auto')
   const [usage, setUsage] = useState<UsageSummary | null>(null)
+  const [hasLoadedUsage, setHasLoadedUsage] = useState(false)
   const [loadError, setLoadError] = useState(false)
   const [reloadKey, setReloadKey] = useState(0)
   const [showPricingOverride, setShowPricingOverride] = useState(false)
@@ -143,10 +180,14 @@ export function Usage(): React.ReactElement {
         if (!cancelled) {
           setUsage(normalizeUsageSummary(data))
           setLoadError(false)
+          setHasLoadedUsage(true)
         }
       })
       .catch(() => {
-        if (!cancelled) setLoadError(true)
+        if (!cancelled) {
+          setLoadError(true)
+          setHasLoadedUsage(true)
+        }
       })
     return () => {
       cancelled = true
@@ -172,6 +213,7 @@ export function Usage(): React.ReactElement {
     : '—'
   const pricingOverrideMiss = usage?.pricingMisses.find(canShowPricingOverrideExample)
   const pricingOverrideJson = pricingOverrideMiss ? pricingOverrideExample(pricingOverrideMiss) : ''
+  const isInitialLoading = !hasLoadedUsage && !usage && !loadError
 
   async function copyPricingOverride(): Promise<void> {
     if (!pricingOverrideJson || !navigator.clipboard) return
@@ -228,6 +270,10 @@ export function Usage(): React.ReactElement {
         </div>
       </div>
 
+      {isInitialLoading ? (
+        <UsageLoadingSkeleton />
+      ) : (
+        <>
       {loadError && (
         <div className="rounded-xl border border-destructive/25 bg-destructive/10 p-4">
           <div className="flex flex-wrap items-start justify-between gap-3">
@@ -658,6 +704,8 @@ export function Usage(): React.ReactElement {
           <p className="text-sm text-muted-foreground">{t('common.empty')}</p>
         </div>
       </div>
+        </>
+      )}
         </>
       )}
     </div>
