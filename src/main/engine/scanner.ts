@@ -1,16 +1,17 @@
-import type { Asset, AssetCategory, AssetStats } from '@shared/types/asset'
+import type { AgentAdapter, Asset, AssetCategory, AssetStats } from '@shared/types/asset'
 import type { ScanResult } from '@shared/types/ipc'
 import { ClaudeCodeAdapter } from '../adapters/claude-code'
+import { CodexAdapter } from '../adapters/codex'
 
 export class AssetScanner {
-  private adapter: ClaudeCodeAdapter
+  private adapters: AgentAdapter[]
   private cachedAssets: Asset[] = []
   private assetMap = new Map<string, Asset>()
   private scanned = false
   private scanPromise: Promise<ScanResult> | null = null
 
   constructor(projectDir?: string) {
-    this.adapter = new ClaudeCodeAdapter(projectDir)
+    this.adapters = [new ClaudeCodeAdapter(projectDir), new CodexAdapter()]
   }
 
   async scanAll(): Promise<ScanResult> {
@@ -25,7 +26,21 @@ export class AssetScanner {
   }
 
   private async runScanAll(): Promise<ScanResult> {
-    const { assets, errors } = await this.adapter.scanAll()
+    const assets: Asset[] = []
+    const errors: ScanResult['errors'] = []
+    for (const adapter of this.adapters) {
+      try {
+        const result = await adapter.scanAll()
+        assets.push(...result.assets)
+        errors.push(...result.errors)
+      } catch (err) {
+        errors.push({
+          path: adapter.id,
+          type: 'adapter',
+          message: err instanceof Error ? err.message : String(err)
+        })
+      }
+    }
     this.cachedAssets = assets
     this.scanned = true
     this.assetMap.clear()
@@ -40,7 +55,11 @@ export class AssetScanner {
   }
 
   async scanCategory(category: AssetCategory): Promise<Asset[]> {
-    return this.adapter.scanAssets(category)
+    const assets: Asset[] = []
+    for (const adapter of this.adapters) {
+      assets.push(...(await adapter.scanAssets(category)))
+    }
+    return assets
   }
 
   getAsset(id: string): Asset | null {
@@ -55,8 +74,8 @@ export class AssetScanner {
     return this.scanned
   }
 
-  getAdapter(): ClaudeCodeAdapter {
-    return this.adapter
+  getAdapters(): AgentAdapter[] {
+    return this.adapters
   }
 
   updateAsset(asset: Asset): void {

@@ -12,30 +12,31 @@ import {
   FolderOpen
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { formatCurrency, formatRelativeTime, formatNumber } from '@/lib/utils'
+import {
+  formatNumber,
+  formatOptionalCurrency,
+  formatOptionalDuration,
+  formatOptionalRelativeTime,
+  truncatePath
+} from '@/lib/utils'
 import { useSessions } from '@/hooks/use-ipc'
 import { EmptyState } from '@/components/shared/empty-state'
+import { useAppStore } from '@/stores/app'
 
 type GroupBy = 'project' | 'date'
 
-function formatDuration(seconds: number): string {
-  if (seconds < 60) return `${seconds}s`
-  const min = Math.floor(seconds / 60)
-  if (min < 60) return `${min}m`
-  const hr = Math.floor(min / 60)
-  const remainMin = min % 60
-  return remainMin > 0 ? `${hr}h ${remainMin}m` : `${hr}h`
-}
-
-function getDateGroupKey(dateStr: string): string {
+function getDateGroupKey(dateStr: string | null, unknownLabel: string): string {
+  if (!dateStr) return unknownLabel
   const d = new Date(dateStr)
+  if (Number.isNaN(d.getTime())) return unknownLabel
   return d.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })
 }
 
 export function Sessions(): React.ReactElement {
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const { sessions, loading } = useSessions()
+  const agentView = useAppStore((s) => s.agentView)
+  const { sessions, loading } = useSessions({ agentView })
 
   const [filter, setFilter] = useState('')
   const [groupBy, setGroupBy] = useState<GroupBy>('project')
@@ -48,6 +49,7 @@ export function Sessions(): React.ReactElement {
       (s) =>
         s.title.toLowerCase().includes(q) ||
         s.project.toLowerCase().includes(q) ||
+        s.projectPath.toLowerCase().includes(q) ||
         s.model.toLowerCase().includes(q)
     )
   }, [sessions, filter])
@@ -55,11 +57,14 @@ export function Sessions(): React.ReactElement {
   const grouped = useMemo(() => {
     const result: Record<string, typeof filtered> = {}
     for (const s of filtered) {
-      const key = groupBy === 'project' ? (s.project || 'Unknown') : getDateGroupKey(s.startedAt)
+      const key =
+        groupBy === 'project'
+          ? truncatePath(s.projectPath || s.project || t('common.unknown'), 72)
+          : getDateGroupKey(s.startedAt, t('common.unknown'))
       ;(result[key] ??= []).push(s)
     }
     return result
-  }, [filtered, groupBy])
+  }, [filtered, groupBy, t])
 
   const toggleGroup = (key: string): void => {
     setCollapsedGroups((prev) => {
@@ -158,22 +163,27 @@ export function Sessions(): React.ReactElement {
                           <div className="mt-0.5 flex items-center gap-3 text-xs text-muted-foreground">
                             <span className="flex items-center gap-1">
                               <Clock className="h-3 w-3" />
-                              {formatRelativeTime(new Date(session.startedAt))}
+                              {formatOptionalRelativeTime(session.startedAt)}
                             </span>
-                            <span>{formatDuration(session.duration)}</span>
+                            <span>{formatOptionalDuration(session.duration)}</span>
                           </div>
                         </div>
                         <div className="flex shrink-0 items-center gap-4 text-xs text-muted-foreground">
+                          {agentView === 'all' && (
+                            <span className="inline-flex items-center rounded-md border border-border px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+                              {session.agentId === 'codex' ? 'Codex' : 'Claude'}
+                            </span>
+                          )}
                           <span className="flex items-center gap-1">
                             <Coins className="h-3 w-3" />
-                            {formatCurrency(session.cost)}
+                            {formatOptionalCurrency(session.cost)}
                           </span>
                           <span className="flex items-center gap-1">
                             <Hash className="h-3 w-3" />
                             {formatNumber(session.tokens)}
                           </span>
                           <span className="inline-flex items-center rounded-md bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
-                            {session.model}
+                            {session.model || t('common.unknown')}
                           </span>
                         </div>
                       </button>

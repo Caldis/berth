@@ -1,5 +1,13 @@
 import { describe, it, expect } from 'vitest'
-import { formatNumber, formatCurrency, formatRelativeTime, truncatePath } from '../../src/renderer/src/lib/utils'
+import {
+  formatNumber,
+  formatCurrency,
+  formatOptionalCurrency,
+  formatOptionalDuration,
+  formatOptionalRelativeTime,
+  formatRelativeTime,
+  truncatePath
+} from '../../src/renderer/src/lib/utils'
 
 describe('formatNumber', () => {
   it('formats small numbers as-is', () => {
@@ -56,6 +64,24 @@ describe('formatRelativeTime', () => {
   it('formats weeks ago', () => {
     const twoWeeksAgo = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000)
     expect(formatRelativeTime(twoWeeksAgo)).toBe('2w ago')
+  })
+
+  it('returns a placeholder for invalid dates', () => {
+    expect(formatRelativeTime(new Date(''))).toBe('—')
+    expect(formatOptionalRelativeTime(null)).toBe('—')
+  })
+})
+
+describe('optional formatters', () => {
+  it('does not turn unknown cost into zero dollars', () => {
+    expect(formatOptionalCurrency(null)).toBe('—')
+    expect(formatOptionalCurrency(0)).toBe('$0.00')
+  })
+
+  it('does not turn unknown duration into zero seconds', () => {
+    expect(formatOptionalDuration(null)).toBe('—')
+    expect(formatOptionalDuration(0)).toBe('0s')
+    expect(formatOptionalDuration(125)).toBe('2m')
   })
 })
 

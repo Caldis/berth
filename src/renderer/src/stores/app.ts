@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { Asset, AssetStats, SessionSummary, UsageSummary } from '@shared/types/asset'
+import type { AgentView, Asset, AssetStats, SessionSummary, UsageSummary } from '@shared/types/asset'
 
 interface AppState {
   sidebarCollapsed: boolean
@@ -7,6 +7,9 @@ interface AppState {
 
   searchOpen: boolean
   setSearchOpen: (open: boolean) => void
+
+  agentView: AgentView
+  setAgentView: (agentView: AgentView) => void
 
   assets: Asset[]
   setAssets: (assets: Asset[]) => void
@@ -39,6 +42,9 @@ export const useAppStore = create<AppState>((set) => ({
 
   searchOpen: false,
   setSearchOpen: (searchOpen) => set({ searchOpen }),
+
+  agentView: 'all',
+  setAgentView: (agentView) => set({ agentView }),
 
   assets: [],
   setAssets: (assets) => set({ assets }),

@@ -7,6 +7,8 @@ export type AssetCategory =
 
 export type AssetScope = 'user' | 'project' | 'enterprise' | 'session'
 
+export type AgentView = 'all' | 'claude' | 'codex'
+
 export type AssetType =
   | 'claude-md'
   | 'agents-md'
@@ -86,6 +88,7 @@ export interface AgentAdapter {
   readonly displayName: string
   detect(): Promise<DetectResult>
   scanRoots(): Promise<ScanRoot[]>
+  scanAll(): Promise<{ assets: Asset[]; errors: { path: string; type: string; message: string }[] }>
   scanAssets(category: AssetCategory): Promise<Asset[]>
   watchAssets(callback: (event: WatchEvent) => void): { dispose(): void }
   resolveRelations(asset: Asset): Promise<Relation[]>
@@ -104,11 +107,15 @@ export interface AssetStats {
 
 export interface SessionSummary {
   id: string
+  agentId: string
   title: string
   project: string
-  startedAt: string
-  duration: number
-  cost: number
+  projectPath: string
+  transcriptPath: string
+  startedAt: string | null
+  endedAt: string | null
+  duration: number | null
+  cost: number | null
   tokens: number
   model: string
   skillsUsed: string[]

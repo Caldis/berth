@@ -12,6 +12,12 @@
     "usage": "Usage",
     "settings": "Settings"
   },
+  "agentView": {
+    "label": "Agent view",
+    "all": "All",
+    "claude": "Claude",
+    "codex": "Codex"
+  },
   "search": {
     "placeholder": "Search assets...",
     "shortcut": "⌘K",
@@ -43,6 +49,7 @@
     "cost": "Cost",
     "tokens": "Tokens",
     "model": "Model",
+    "toolTimeline": "Tool Timeline",
     "loadedAssets": "Loaded Assets",
     "artifacts": "Artifacts",
     "skillsUsed": "Skills used",
@@ -50,6 +57,8 @@
     "hooksFired": "Hooks fired",
     "plans": "Plans",
     "todos": "Todos",
+    "files": "Files",
+    "checkpoints": "Checkpoints",
     "fileHistory": "File history checkpoints",
     "started": "Started"
   },
@@ -172,6 +181,7 @@
     "error": "Something went wrong",
     "retry": "Retry",
     "empty": "Nothing here yet",
+    "unknown": "Unknown",
     "back": "Back",
     "close": "Close",
     "viewRaw": "View Raw",

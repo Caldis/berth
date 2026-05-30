@@ -15,22 +15,24 @@ import {
   Hash,
   ChevronDown,
   ChevronRight,
-  AlertTriangle
+  AlertTriangle,
+  Wrench,
+  CheckCircle2,
+  XCircle,
+  Circle
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { formatCurrency, formatNumber, formatRelativeTime } from '@/lib/utils'
+import {
+  formatNumber,
+  formatOptionalCurrency,
+  formatOptionalDuration,
+  formatOptionalRelativeTime,
+  truncatePath
+} from '@/lib/utils'
 import { useSessionDetail } from '@/hooks/use-ipc'
 import { ScopeBadge } from '@/components/shared/scope-badge'
 import { EmptyState } from '@/components/shared/empty-state'
-
-function formatDuration(seconds: number): string {
-  if (seconds < 60) return `${seconds}s`
-  const min = Math.floor(seconds / 60)
-  if (min < 60) return `${min}m`
-  const hr = Math.floor(min / 60)
-  const remainMin = min % 60
-  return remainMin > 0 ? `${hr}h ${remainMin}m` : `${hr}h`
-}
+import type { SessionArtifacts, SessionToolEvent } from '@shared/types/ipc'
 
 export function SessionDetail(): React.ReactElement {
   const { id } = useParams<{ id: string }>()
@@ -39,7 +41,7 @@ export function SessionDetail(): React.ReactElement {
   const { detail, loading } = useSessionDetail(id ?? '')
 
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
-    new Set(['skills', 'mcp', 'hooks'])
+    new Set(['tools', 'skills', 'mcp', 'hooks', 'plans', 'todos', 'files', 'checkpoints'])
   )
 
   const toggleSection = (key: string): void => {
@@ -55,6 +57,8 @@ export function SessionDetail(): React.ReactElement {
 
   // Group hooks by event
   const hooksByEvent = detail?.hooksFired ?? []
+  const artifacts = detail?.artifacts ?? emptyArtifacts()
+  const toolTimeline = detail?.toolTimeline ?? []
 
   return (
     <div className="space-y-6">
@@ -89,24 +93,24 @@ export function SessionDetail(): React.ReactElement {
             <div className="grid grid-cols-2 gap-4 p-4 sm:grid-cols-3 lg:grid-cols-6">
               <MetaItem
                 label={t('sessions.project')}
-                value={summary?.project ?? '-'}
+                value={summary ? truncatePath(summary.projectPath || summary.project, 64) : '-'}
               />
               <MetaItem
                 label={t('sessions.model')}
                 value={
                   <span className="inline-flex items-center rounded-md bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
-                    {summary?.model ?? '-'}
+                    {summary?.model || t('common.unknown')}
                   </span>
                 }
               />
               <MetaItem
                 label={t('sessions.duration')}
-                value={summary ? formatDuration(summary.duration) : '-'}
+                value={summary ? formatOptionalDuration(summary.duration) : '-'}
                 icon={Clock}
               />
               <MetaItem
                 label={t('sessions.cost')}
-                value={summary ? formatCurrency(summary.cost) : '-'}
+                value={summary ? formatOptionalCurrency(summary.cost) : '-'}
                 icon={Coins}
               />
               <MetaItem
@@ -115,15 +119,20 @@ export function SessionDetail(): React.ReactElement {
                 icon={Hash}
               />
               <MetaItem
-                label="Started"
-                value={
-                  summary
-                    ? formatRelativeTime(new Date(summary.startedAt))
-                    : '-'
-                }
+                label={t('sessions.started')}
+                value={summary ? formatOptionalRelativeTime(summary.startedAt) : '-'}
                 icon={Clock}
               />
             </div>
+          </div>
+
+          {/* Tool timeline */}
+          <div className="rounded-xl border border-border bg-card">
+            <div className="flex items-center justify-between border-b border-border px-4 py-3">
+              <h2 className="text-sm font-medium">{t('sessions.toolTimeline')}</h2>
+              <span className="text-xs text-muted-foreground">{toolTimeline.length}</span>
+            </div>
+            <ToolTimeline events={toolTimeline} />
           </div>
 
           {/* Loaded Assets */}
@@ -236,17 +245,17 @@ export function SessionDetail(): React.ReactElement {
 
             {/* Plans */}
             <CollapsibleSection
-              title="Plans"
-              count={detail.plans.length}
+              title={t('sessions.plans')}
+              count={artifacts.plans.length}
               icon={FileText}
               expanded={expandedSections.has('plans')}
               onToggle={() => toggleSection('plans')}
             >
-              {detail.plans.length === 0 ? (
+              {artifacts.plans.length === 0 ? (
                 <p className="px-4 py-2 text-xs text-muted-foreground">{t('common.empty')}</p>
               ) : (
                 <div className="divide-y divide-border">
-                  {detail.plans.map((plan) => (
+                  {artifacts.plans.map((plan) => (
                     <div
                       key={plan.id}
                       className="flex items-center gap-3 px-4 py-2 text-sm"
@@ -261,17 +270,17 @@ export function SessionDetail(): React.ReactElement {
 
             {/* Todos */}
             <CollapsibleSection
-              title="Todos"
-              count={detail.todos.length}
+              title={t('sessions.todos')}
+              count={artifacts.todos.length}
               icon={CheckSquare}
               expanded={expandedSections.has('todos')}
               onToggle={() => toggleSection('todos')}
             >
-              {detail.todos.length === 0 ? (
+              {artifacts.todos.length === 0 ? (
                 <p className="px-4 py-2 text-xs text-muted-foreground">{t('common.empty')}</p>
               ) : (
                 <div className="divide-y divide-border">
-                  {detail.todos.map((todo) => (
+                  {artifacts.todos.map((todo) => (
                     <div
                       key={todo.id}
                       className="flex items-center gap-3 px-4 py-2 text-sm"
@@ -295,14 +304,71 @@ export function SessionDetail(): React.ReactElement {
               )}
             </CollapsibleSection>
 
-            {/* File history */}
-            <div className="flex items-center justify-between border-t border-border px-4 py-2.5">
-              <div className="flex items-center gap-3">
-                <History className="h-3.5 w-3.5 text-muted-foreground" />
-                <span className="text-sm text-card-foreground">File history checkpoints</span>
-              </div>
-              <span className="text-xs text-muted-foreground">{detail.fileHistoryCount}</span>
-            </div>
+            {/* Files */}
+            <CollapsibleSection
+              title={t('sessions.files')}
+              count={artifacts.files.length}
+              icon={FileText}
+              expanded={expandedSections.has('files')}
+              onToggle={() => toggleSection('files')}
+            >
+              {artifacts.files.length === 0 ? (
+                <p className="px-4 py-2 text-xs text-muted-foreground">{t('common.empty')}</p>
+              ) : (
+                <div className="divide-y divide-border">
+                  {artifacts.files.map((file) => (
+                    <div
+                      key={file.id}
+                      className="flex items-center gap-3 px-4 py-2 text-sm"
+                    >
+                      <FileText className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                      <span className="min-w-0 flex-1 truncate font-mono text-xs text-card-foreground">
+                        {truncatePath(file.path, 96)}
+                      </span>
+                      {file.operation && (
+                        <span className="rounded-md bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
+                          {file.operation}
+                        </span>
+                      )}
+                      <span className="text-xs text-muted-foreground">{file.count}x</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CollapsibleSection>
+
+            {/* Checkpoints */}
+            <CollapsibleSection
+              title={t('sessions.checkpoints')}
+              count={artifacts.checkpoints.length || detail.fileHistoryCount}
+              icon={History}
+              expanded={expandedSections.has('checkpoints')}
+              onToggle={() => toggleSection('checkpoints')}
+            >
+              {artifacts.checkpoints.length === 0 ? (
+                <p className="px-4 py-2 text-xs text-muted-foreground">{t('common.empty')}</p>
+              ) : (
+                <div className="divide-y divide-border">
+                  {artifacts.checkpoints.map((checkpoint) => (
+                    <div
+                      key={checkpoint.id}
+                      className="flex items-center gap-3 px-4 py-2 text-sm"
+                    >
+                      <History className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-card-foreground">{checkpoint.title}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {formatOptionalRelativeTime(checkpoint.timestamp)}
+                        </p>
+                      </div>
+                      <span className="text-xs text-muted-foreground">
+                        {checkpoint.fileCount}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CollapsibleSection>
           </div>
         </>
       )}
@@ -311,6 +377,83 @@ export function SessionDetail(): React.ReactElement {
 }
 
 /* --- Sub-components --- */
+
+function emptyArtifacts(): SessionArtifacts {
+  return {
+    plans: [],
+    todos: [],
+    files: [],
+    checkpoints: []
+  }
+}
+
+function ToolTimeline({ events }: { events: SessionToolEvent[] }): React.ReactElement {
+  const { t } = useTranslation()
+
+  if (events.length === 0) {
+    return <p className="px-4 py-3 text-xs text-muted-foreground">{t('common.empty')}</p>
+  }
+
+  return (
+    <div className="max-h-[560px] divide-y divide-border overflow-y-auto">
+      {events.map((event, index) => (
+        <div key={event.id} className="flex gap-3 px-4 py-3">
+          <div className="flex w-5 flex-col items-center">
+            <TimelineStatusIcon status={event.status} />
+            {index < events.length - 1 && <div className="mt-1 h-full w-px bg-border" />}
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-sm font-medium text-card-foreground">{event.name}</span>
+              <span className="rounded-md bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
+                {event.category}
+              </span>
+              {event.mcpServer && (
+                <span className="rounded-md bg-green-500/10 px-1.5 py-0.5 text-[10px] text-green-600 dark:text-green-400">
+                  {event.mcpServer}
+                </span>
+              )}
+              {event.skillName && (
+                <span className="rounded-md bg-blue-500/10 px-1.5 py-0.5 text-[10px] text-blue-600 dark:text-blue-400">
+                  {event.skillName}
+                </span>
+              )}
+              <span className="ml-auto text-xs text-muted-foreground">
+                {formatOptionalRelativeTime(event.startedAt)}
+              </span>
+            </div>
+            {event.summary && (
+              <p className="mt-1 truncate text-xs text-muted-foreground">{event.summary}</p>
+            )}
+            {event.filePaths.length > 0 && (
+              <div className="mt-2 flex flex-wrap gap-1">
+                {event.filePaths.slice(0, 4).map((filePath) => (
+                  <span
+                    key={filePath}
+                    className="max-w-full truncate rounded-md bg-background px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground"
+                  >
+                    {truncatePath(filePath, 72)}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function TimelineStatusIcon({
+  status
+}: {
+  status: SessionToolEvent['status']
+}): React.ReactElement {
+  if (status === 'success') return <CheckCircle2 className="h-4 w-4 text-green-500" />
+  if (status === 'error') return <XCircle className="h-4 w-4 text-destructive" />
+  if (status === 'pending') return <Circle className="h-4 w-4 text-yellow-500" />
+  return <Wrench className="h-4 w-4 text-muted-foreground" />
+}
 
 function MetaItem({
   label,

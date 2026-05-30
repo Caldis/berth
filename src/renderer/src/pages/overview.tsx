@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
+import { useMemo } from 'react'
 import {
   Sparkles,
   Plug,
@@ -13,18 +14,25 @@ import {
 } from 'lucide-react'
 import { Bar, BarChart, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts'
 import { cn } from '@/lib/utils'
-import { formatCurrency, formatRelativeTime, formatNumber } from '@/lib/utils'
+import { formatCurrency, formatNumber, formatOptionalCurrency, formatOptionalRelativeTime, truncatePath } from '@/lib/utils'
 import { useSessions, useUsageSummary, useHealthChecks } from '@/hooks/use-ipc'
 import { useAppStore } from '@/stores/app'
+import { computeStatsForAssets, filterAssetsByAgentView } from '@/lib/agent-view'
 import { StatCard } from '@/components/shared/stat-card'
 import { EmptyState } from '@/components/shared/empty-state'
 
 export function Overview(): React.ReactElement {
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const stats = useAppStore((s) => s.stats)
-  const { sessions } = useSessions({ limit: 5 })
-  const { usage } = useUsageSummary(7)
+  const allStats = useAppStore((s) => s.stats)
+  const assets = useAppStore((s) => s.assets)
+  const agentView = useAppStore((s) => s.agentView)
+  const stats = useMemo(() => {
+    if (agentView === 'all') return allStats
+    return computeStatsForAssets(filterAssetsByAgentView(assets, agentView))
+  }, [agentView, allStats, assets])
+  const { sessions, loading: sessionsLoading } = useSessions({ limit: 5, agentView })
+  const { usage } = useUsageSummary(7, agentView)
   const { checks } = useHealthChecks()
 
   const statCards = [
@@ -59,13 +67,6 @@ export function Overview(): React.ReactElement {
   ]
 
   const warnings = checks.filter((c) => c.severity === 'warning' || c.severity === 'error')
-
-  // Group sessions by project
-  const grouped = sessions.reduce<Record<string, typeof sessions>>((acc, s) => {
-    const key = s.project || 'Unknown'
-    ;(acc[key] ??= []).push(s)
-    return acc
-  }, {})
 
   const dailyCosts = usage?.dailyCosts ?? []
   const totalCost = usage?.totalCost ?? 0
@@ -104,49 +105,42 @@ export function Overview(): React.ReactElement {
               </button>
             )}
           </div>
-          {sessions.length === 0 ? (
+          {sessionsLoading ? (
+            <p className="p-4 text-sm text-muted-foreground">{t('common.loading')}</p>
+          ) : sessions.length === 0 ? (
             <div className="p-4">
               <EmptyState icon={MessageSquare} message={t('common.empty')} className="border-0 py-8" />
             </div>
           ) : (
             <div className="divide-y divide-border">
-              {Object.entries(grouped).map(([project, projectSessions]) => (
-                <div key={project}>
-                  {Object.keys(grouped).length > 1 && (
-                    <div className="bg-muted/30 px-4 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                      {project}
+              {sessions.map((session) => (
+                <button
+                  key={session.id}
+                  onClick={() => navigate(`/sessions/${session.id}`)}
+                  className="flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-accent/5"
+                >
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium text-card-foreground">
+                      {session.title || `Session #${session.id.slice(0, 8)}`}
+                    </p>
+                    <div className="mt-0.5 flex items-center gap-3 text-xs text-muted-foreground">
+                      <span className="flex items-center gap-1">
+                        <Clock className="h-3 w-3" />
+                        {formatOptionalRelativeTime(session.startedAt)}
+                      </span>
+                      <span className="truncate">
+                        {truncatePath(session.projectPath || session.project || t('common.unknown'), 56)}
+                      </span>
                     </div>
-                  )}
-                  {projectSessions.map((session) => (
-                    <button
-                      key={session.id}
-                      onClick={() => navigate(`/sessions/${session.id}`)}
-                      className="flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-accent/5"
-                    >
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-medium text-card-foreground">
-                          {session.title || `Session #${session.id.slice(0, 8)}`}
-                        </p>
-                        <div className="mt-0.5 flex items-center gap-3 text-xs text-muted-foreground">
-                          <span className="flex items-center gap-1">
-                            <Clock className="h-3 w-3" />
-                            {formatRelativeTime(new Date(session.startedAt))}
-                          </span>
-                          {Object.keys(grouped).length <= 1 && (
-                            <span className="truncate">{session.project}</span>
-                          )}
-                        </div>
-                      </div>
-                      <div className="flex shrink-0 items-center gap-3 text-xs text-muted-foreground">
-                        <span className="flex items-center gap-1">
-                          <Coins className="h-3 w-3" />
-                          {formatCurrency(session.cost)}
-                        </span>
-                        <span>{formatNumber(session.tokens)} tok</span>
-                      </div>
-                    </button>
-                  ))}
-                </div>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-3 text-xs text-muted-foreground">
+                    <span className="flex items-center gap-1">
+                      <Coins className="h-3 w-3" />
+                      {formatOptionalCurrency(session.cost)}
+                    </span>
+                    <span>{formatNumber(session.tokens)} tok</span>
+                  </div>
+                </button>
               ))}
             </div>
           )}

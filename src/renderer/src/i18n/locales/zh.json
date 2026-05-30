@@ -12,6 +12,12 @@
     "usage": "用量",
     "settings": "设置"
   },
+  "agentView": {
+    "label": "Agent 视角",
+    "all": "All",
+    "claude": "Claude",
+    "codex": "Codex"
+  },
   "search": {
     "placeholder": "搜索资产…",
     "shortcut": "⌘K",
@@ -43,6 +49,7 @@
     "cost": "费用",
     "tokens": "Token",
     "model": "模型",
+    "toolTimeline": "工具时间线",
     "loadedAssets": "加载的资产",
     "artifacts": "产物",
     "skillsUsed": "使用的 Skills",
@@ -50,6 +57,8 @@
     "hooksFired": "触发的 Hooks",
     "plans": "计划",
     "todos": "待办",
+    "files": "文件",
+    "checkpoints": "Checkpoints",
     "fileHistory": "文件历史检查点",
     "started": "开始时间"
   },
@@ -172,6 +181,7 @@
     "error": "出了点问题",
     "retry": "重试",
     "empty": "暂无内容",
+    "unknown": "未知",
     "back": "返回",
     "close": "关闭",
     "viewRaw": "查看原始文件",

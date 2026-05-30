@@ -1,6 +1,6 @@
 import { ElectronAPI } from '@electron-toolkit/preload'
 import type { ScanResult, SessionListResult, SessionDetailResult, HealthCheck } from '../shared/types/ipc'
-import type { Asset, UsageSummary } from '../shared/types/asset'
+import type { AgentView, Asset, UsageSummary } from '../shared/types/asset'
 
 interface PlatformInfo {
   platform: NodeJS.Platform
@@ -33,11 +33,11 @@ interface BerthAPI {
     onChanged: (callback: (event: unknown) => void) => () => void
   }
   sessions: {
-    list: (opts: { projectFilter?: string; limit?: number }) => Promise<SessionListResult>
+    list: (opts: { projectFilter?: string; limit?: number; agentView?: AgentView }) => Promise<SessionListResult>
     get: (id: string) => Promise<SessionDetailResult | null>
   }
   usage: {
-    summary: (opts: { days: number }) => Promise<UsageSummary>
+    summary: (opts: { days: number; agentView?: AgentView }) => Promise<UsageSummary>
   }
   shell: {
     openPath: (path: string) => Promise<void>

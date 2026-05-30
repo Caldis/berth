@@ -17,6 +17,7 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { truncatePath } from '@/lib/utils'
+import { filterAssetsByAgentView } from '@/lib/agent-view'
 import { useAppStore } from '@/stores/app'
 import { TabGroup, type TabDef } from '@/components/shared/tab-group'
 import { FilterBar } from '@/components/shared/filter-bar'
@@ -347,24 +348,26 @@ const tabIconMap: Record<string, React.ComponentType<{ className?: string }>> = 
 export function Instructions(): React.ReactElement {
   const { t } = useTranslation()
   const assets = useAppStore((s) => s.assets)
+  const agentView = useAppStore((s) => s.agentView)
   const [activeTab, setActiveTab] = useState('skills')
   const [search, setSearch] = useState('')
   const [scope, setScope] = useState<ScopeFilter>('all')
+  const visibleAssets = useMemo(() => filterAssetsByAgentView(assets, agentView), [assets, agentView])
 
   // Build tab counts
   const tabCounts = useMemo(() => {
     const counts: Record<string, number> = {}
     for (const tab of tabs) {
       const types = tabTypeMap[tab.id] ?? []
-      counts[tab.id] = assets.filter((a) => types.includes(a.type)).length
+      counts[tab.id] = visibleAssets.filter((a) => types.includes(a.type)).length
     }
     return counts
-  }, [assets])
+  }, [visibleAssets])
 
   // Filter assets for active tab
   const filteredAssets = useMemo(() => {
     const types = tabTypeMap[activeTab] ?? []
-    return assets.filter((a) => {
+    return visibleAssets.filter((a) => {
       if (!types.includes(a.type)) return false
       if (scope !== 'all' && a.scope !== scope) return false
       if (search) {
@@ -375,7 +378,7 @@ export function Instructions(): React.ReactElement {
       }
       return true
     })
-  }, [assets, activeTab, search, scope])
+  }, [visibleAssets, activeTab, search, scope])
 
   const renderContent = (): React.ReactElement => {
     if (filteredAssets.length === 0) {

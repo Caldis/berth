@@ -16,6 +16,7 @@ export function formatCurrency(amount: number): string {
 }
 
 export function formatRelativeTime(date: Date): string {
+  if (Number.isNaN(date.getTime())) return '—'
   const now = new Date()
   const diffMs = now.getTime() - date.getTime()
   const diffSec = Math.floor(diffMs / 1000)
@@ -29,6 +30,25 @@ export function formatRelativeTime(date: Date): string {
   if (diffDay < 7) return `${diffDay}d ago`
   if (diffDay < 30) return `${Math.floor(diffDay / 7)}w ago`
   return date.toLocaleDateString()
+}
+
+export function formatOptionalRelativeTime(value: string | null | undefined): string {
+  if (!value) return '—'
+  return formatRelativeTime(new Date(value))
+}
+
+export function formatOptionalDuration(seconds: number | null | undefined): string {
+  if (seconds == null) return '—'
+  if (seconds < 60) return `${seconds}s`
+  const min = Math.floor(seconds / 60)
+  if (min < 60) return `${min}m`
+  const hr = Math.floor(min / 60)
+  const remainMin = min % 60
+  return remainMin > 0 ? `${hr}h ${remainMin}m` : `${hr}h`
+}
+
+export function formatOptionalCurrency(amount: number | null | undefined): string {
+  return amount == null ? '—' : formatCurrency(amount)
 }
 
 export function truncatePath(path: string, maxLength = 50): string {

@@ -33,12 +33,12 @@ const api = {
     }
   },
   sessions: {
-    list: (opts: { projectFilter?: string; limit?: number }) =>
+    list: (opts: { projectFilter?: string; limit?: number; agentView?: string }) =>
       ipcRenderer.invoke('sessions:list', opts),
     get: (id: string) => ipcRenderer.invoke('sessions:get', id)
   },
   usage: {
-    summary: (opts: { days: number }) => ipcRenderer.invoke('usage:summary', opts)
+    summary: (opts: { days: number; agentView?: string }) => ipcRenderer.invoke('usage:summary', opts)
   },
   shell: {
     openPath: (path: string) => ipcRenderer.invoke('shell:openPath', path),

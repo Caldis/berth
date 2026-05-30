@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react'
-import type { Asset, AssetStats, SessionSummary, UsageSummary } from '@shared/types/asset'
+import type { AgentView, Asset, AssetStats, SessionSummary, UsageSummary } from '@shared/types/asset'
 import type { SessionDetailResult, HealthCheck } from '@shared/types/ipc'
 import { useAppStore } from '@/stores/app'
 
@@ -55,6 +55,7 @@ export function useAssets(): {
 export function useSessions(opts?: {
   projectFilter?: string
   limit?: number
+  agentView?: AgentView
 }): { sessions: SessionSummary[]; loading: boolean } {
   const [sessions, setSessions] = useState<SessionSummary[]>([])
   const [loading, setLoading] = useState(true)
@@ -66,13 +67,13 @@ export function useSessions(opts?: {
     }
     setLoading(true)
     window.api.sessions
-      .list({ projectFilter: opts?.projectFilter, limit: opts?.limit })
+      .list({ projectFilter: opts?.projectFilter, limit: opts?.limit, agentView: opts?.agentView })
       .then((result) => {
         setSessions(result?.sessions ?? [])
       })
       .catch(() => {})
       .finally(() => setLoading(false))
-  }, [opts?.projectFilter, opts?.limit])
+  }, [opts?.projectFilter, opts?.limit, opts?.agentView])
 
   return { sessions, loading }
 }
@@ -102,7 +103,7 @@ export function useSessionDetail(id: string): {
   return { detail, loading }
 }
 
-export function useUsageSummary(days: number): {
+export function useUsageSummary(days: number, agentView?: AgentView): {
   usage: UsageSummary | null
   loading: boolean
 } {
@@ -116,13 +117,13 @@ export function useUsageSummary(days: number): {
     }
     setLoading(true)
     window.api.usage
-      .summary({ days })
+      .summary({ days, agentView })
       .then((result) => {
         setUsage(result ?? null)
       })
       .catch(() => {})
       .finally(() => setLoading(false))
-  }, [days])
+  }, [days, agentView])
 
   return { usage, loading }
 }

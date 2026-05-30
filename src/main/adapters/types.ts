@@ -2,6 +2,7 @@ export type {
   AgentAdapter,
   Asset,
   AssetCategory,
+  AgentView,
   AssetScope,
   AssetType,
   DetectResult,

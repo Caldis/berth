@@ -3,7 +3,7 @@ import * as path from 'path'
 import * as fs from 'fs'
 import { BrowserWindow, ipcMain, nativeTheme, shell, app } from 'electron'
 import type { IpcMainInvokeEvent } from 'electron'
-import type { Asset, AssetCategory, Relation, UsageSummary } from '@shared/types/asset'
+import type { AgentView, Asset, AssetCategory, Relation, SessionSummary, UsageSummary } from '@shared/types/asset'
 import type {
   PlatformInfo,
   ScanResult,
@@ -12,13 +12,17 @@ import type {
   ImportChainNode,
   SessionListResult,
   SessionDetailResult,
-  MCPMergeInfo
+  MCPMergeInfo,
+  SessionArtifacts,
+  SessionToolEvent
 } from '@shared/types/ipc'
 import { getScanner } from '../engine/scanner'
 import { getSearch } from '../engine/search'
 import { buildUsageSummary } from '../engine/usage'
 import { resolveRelations, buildImportChain } from '../engine/relations'
 import { parseMcpServers } from '../adapters/claude-code/parsers'
+import { parseClaudeSessionDetail } from '../adapters/claude-code/session-detail'
+import { parseCodexSessionDetail } from '../adapters/codex/parsers'
 
 export function registerAssetHandlers(): void {
   ipcMain.handle('window:minimize', (event: IpcMainInvokeEvent): void => {
@@ -94,24 +98,21 @@ export function registerAssetHandlers(): void {
 
   ipcMain.handle(
     'sessions:list',
-    async (_event, opts: { projectFilter?: string; limit?: number }): Promise<SessionListResult> => {
+    async (
+      _event,
+      opts: { projectFilter?: string; limit?: number; agentView?: AgentView }
+    ): Promise<SessionListResult> => {
       const scanner = await ensureScanned()
       let sessions = scanner
         .getAllAssets()
         .filter((a) => a.type === 'session')
+        .filter((a) => sessionMatchesAgentView(a, opts.agentView))
 
       if (opts.projectFilter) {
-        sessions = sessions.filter(
-          (s) => (s.meta.project as string)?.includes(opts.projectFilter!)
-        )
+        sessions = sessions.filter((s) => sessionMatchesProjectFilter(s, opts.projectFilter!))
       }
 
-      // Sort by modification time descending
-      sessions.sort((a, b) => {
-        const aTime = (a.meta.modifiedAt as string) ?? ''
-        const bTime = (b.meta.modifiedAt as string) ?? ''
-        return bTime.localeCompare(aTime)
-      })
+      sessions.sort((a, b) => getSessionSortTime(b) - getSessionSortTime(a))
 
       const totalCount = sessions.length
       if (opts.limit && opts.limit > 0) {
@@ -119,19 +120,7 @@ export function registerAssetHandlers(): void {
       }
 
       return {
-        sessions: sessions.map((s) => ({
-          id: s.id,
-          title: s.name,
-          project: (s.meta.project as string) ?? '',
-          startedAt: (s.meta.startedAt as string) ?? '',
-          duration: 0,
-          cost: (s.meta.totalCost as number) ?? 0,
-          tokens: (s.meta.totalTokens as number) ?? 0,
-          model: (s.meta.model as string) ?? '',
-          skillsUsed: (s.meta.skillsUsed as string[]) ?? [],
-          mcpServers: (s.meta.mcpServers as string[]) ?? [],
-          hooksFired: 0
-        })),
+        sessions: sessions.map(toSessionSummary),
         totalCount
       }
     }
@@ -143,36 +132,36 @@ export function registerAssetHandlers(): void {
       const scanner = await ensureScanned()
       const asset = scanner.getAsset(id)
       if (!asset || asset.type !== 'session') return null
+      const allAssets = scanner.getAllAssets()
+      const parsedDetail = parseSessionExecutionDetail(asset)
+      const fileHistoryCount =
+        parsedDetail.artifacts.checkpoints.length ||
+        readNumber(asset.meta, 'fileHistoryCount') ||
+        0
       return {
-        summary: {
-          id: asset.id,
-          title: asset.name,
-          project: (asset.meta.project as string) ?? '',
-          startedAt: (asset.meta.startedAt as string) ?? '',
-          duration: 0,
-          cost: (asset.meta.totalCost as number) ?? 0,
-          tokens: (asset.meta.totalTokens as number) ?? 0,
-          model: (asset.meta.model as string) ?? '',
-          skillsUsed: (asset.meta.skillsUsed as string[]) ?? [],
-          mcpServers: (asset.meta.mcpServers as string[]) ?? [],
-          hooksFired: 0
-        },
-        skillsUsed: [],
-        mcpServers: [],
-        hooksFired: [],
-        plans: [],
-        todos: [],
-        fileHistoryCount: 0
+        summary: toSessionSummary(asset),
+        skillsUsed: resolveSessionNamedAssets(asset, allAssets, 'skill', readStringArray(asset.meta, 'skillsUsed')),
+        mcpServers: resolveSessionNamedAssets(
+          asset,
+          allAssets,
+          'mcp-server',
+          readStringArray(asset.meta, 'mcpServers')
+        ),
+        hooksFired: toHookEvents(asset),
+        toolTimeline: parsedDetail.toolTimeline,
+        artifacts: parsedDetail.artifacts,
+        plans: parsedDetail.artifacts.plans,
+        todos: parsedDetail.artifacts.todos,
+        fileHistoryCount
       }
     }
   )
 
   ipcMain.handle(
     'usage:summary',
-    async (_event, opts: { days: number }): Promise<UsageSummary> => {
-      void opts
+    async (_event, opts: { days: number; agentView?: AgentView }): Promise<UsageSummary> => {
       const scanner = await ensureScanned()
-      return buildUsageSummary(scanner.getAllAssets())
+      return buildUsageSummary(scanner.getAllAssets().filter((asset) => sessionMatchesAgentView(asset, opts.agentView)))
     }
   )
 
@@ -201,6 +190,140 @@ async function ensureScanned(): Promise<ReturnType<typeof getScanner>> {
     await scanner.scanAll()
   }
   return scanner
+}
+
+function toSessionSummary(asset: Asset): SessionSummary {
+  return {
+    id: asset.id,
+    agentId: asset.agentId,
+    title: asset.name,
+    project: readString(asset.meta, 'project') ?? '',
+    projectPath: readString(asset.meta, 'projectPath') ?? '',
+    transcriptPath: readString(asset.meta, 'transcriptPath') ?? asset.path,
+    startedAt: readString(asset.meta, 'startedAt') ?? null,
+    endedAt: readString(asset.meta, 'endedAt') ?? null,
+    duration: readNumber(asset.meta, 'duration') ?? null,
+    cost: readNumber(asset.meta, 'totalCost') ?? null,
+    tokens: readNumber(asset.meta, 'totalTokens') ?? 0,
+    model: readString(asset.meta, 'model') ?? '',
+    skillsUsed: readStringArray(asset.meta, 'skillsUsed'),
+    mcpServers: readStringArray(asset.meta, 'mcpServers'),
+    hooksFired: readNumber(asset.meta, 'hooksFired') ?? 0
+  }
+}
+
+function sessionMatchesAgentView(asset: Asset, view: AgentView | undefined): boolean {
+  if (!view || view === 'all') return true
+  if (view === 'claude') return asset.agentId === 'claude-code' || asset.agentId === 'claude'
+  return asset.agentId === 'codex'
+}
+
+function sessionMatchesProjectFilter(asset: Asset, filter: string): boolean {
+  const query = filter.toLowerCase()
+  return [
+    readString(asset.meta, 'project'),
+    readString(asset.meta, 'projectPath'),
+    readString(asset.meta, 'projectDirName')
+  ].some((value) => value?.toLowerCase().includes(query))
+}
+
+function getSessionSortTime(asset: Asset): number {
+  for (const key of ['endedAt', 'startedAt', 'modifiedAt']) {
+    const value = readString(asset.meta, key)
+    if (!value) continue
+    const time = new Date(value).getTime()
+    if (!Number.isNaN(time)) return time
+  }
+  return 0
+}
+
+function resolveSessionNamedAssets(
+  session: Asset,
+  allAssets: Asset[],
+  type: Asset['type'],
+  names: string[]
+): Asset[] {
+  return names.map((name) => {
+    const existing = allAssets
+      .filter((asset) => asset.type === type && asset.name.toLowerCase() === name.toLowerCase())
+      .sort((a, b) => scopeRank(a.scope) - scopeRank(b.scope))[0]
+    if (existing) return existing
+
+    return {
+      id: `${session.id}-${type}-${slugId(name)}`,
+      agentId: session.agentId,
+      category: type === 'skill' ? 'instruction' : 'capability',
+      type,
+      scope: 'session',
+      name,
+      path: session.path,
+      meta: { source: 'session-transcript' }
+    }
+  })
+}
+
+function scopeRank(scope: Asset['scope']): number {
+  if (scope === 'project') return 0
+  if (scope === 'user') return 1
+  if (scope === 'enterprise') return 2
+  return 3
+}
+
+function toHookEvents(asset: Asset): { event: string; count: number }[] {
+  const counts = asset.meta.hookEventCounts
+  if (isRecord(counts)) {
+    return Object.entries(counts)
+      .filter((entry): entry is [string, number] => typeof entry[1] === 'number' && entry[1] > 0)
+      .map(([event, count]) => ({ event, count }))
+  }
+
+  const hooksFired = readNumber(asset.meta, 'hooksFired') ?? 0
+  return hooksFired > 0 ? [{ event: 'Stop', count: hooksFired }] : []
+}
+
+function parseSessionExecutionDetail(asset: Asset): {
+  toolTimeline: SessionToolEvent[]
+  artifacts: SessionArtifacts
+} {
+  if (asset.agentId === 'codex') {
+    return parseCodexSessionDetail(asset.path)
+  }
+  if (asset.agentId === 'claude-code' || asset.agentId === 'claude') {
+    return parseClaudeSessionDetail(asset.path)
+  }
+  return {
+    toolTimeline: [],
+    artifacts: {
+      plans: [],
+      todos: [],
+      files: [],
+      checkpoints: []
+    }
+  }
+}
+
+function readString(record: Record<string, unknown>, key: string): string | undefined {
+  const value = record[key]
+  return typeof value === 'string' && value.trim() ? value : undefined
+}
+
+function readNumber(record: Record<string, unknown>, key: string): number | undefined {
+  const value = record[key]
+  return typeof value === 'number' && Number.isFinite(value) ? value : undefined
+}
+
+function readStringArray(record: Record<string, unknown>, key: string): string[] {
+  const value = record[key]
+  if (!Array.isArray(value)) return []
+  return value.filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value != null && typeof value === 'object' && !Array.isArray(value)
+}
+
+function slugId(value: string): string {
+  return value.replace(/[^a-z0-9_-]+/gi, '-').replace(/^-+|-+$/g, '').slice(0, 80) || 'unknown'
 }
 
 // ---------------------------------------------------------------------------

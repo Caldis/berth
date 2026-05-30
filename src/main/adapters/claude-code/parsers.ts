@@ -360,76 +360,144 @@ export function parseStatusline(filePath: string, scope: AssetScope): Asset {
 // ---------------------------------------------------------------------------
 
 export function parseSessionMeta(filePath: string, projectName: string): Asset {
-  const sessionId = path.basename(filePath, '.jsonl')
-  const meta: Record<string, unknown> = { sessionId, project: projectName }
+  const fallbackSessionId = path.basename(filePath, '.jsonl')
+  let sessionId = fallbackSessionId
+  let firstTimestamp: string | undefined
+  let lastTimestamp: string | undefined
+  let title: string | undefined
+  let model: string | undefined
+  let projectPath: string | undefined
+  let totalTokens = 0
+  let sawUsage = false
+  let totalCost: number | undefined
+  let fileHistoryCount = 0
+  const skillsUsed = new Set<string>()
+  const mcpServers = new Set<string>()
+  const hookEventCounts = new Map<string, number>()
+
+  const meta: Record<string, unknown> = {
+    sessionId,
+    projectDirName: projectName,
+    transcriptPath: filePath
+  }
+
   try {
-    const fd = fs.openSync(filePath, 'r')
-    try {
-      const stat = fs.fstatSync(fd)
-      meta.sizeBytes = stat.size
-      meta.modifiedAt = stat.mtime.toISOString()
+    const stat = fs.statSync(filePath)
+    meta.sizeBytes = stat.size
+    meta.modifiedAt = stat.mtime.toISOString()
 
-      // Read first line for session start info
-      const buf = Buffer.alloc(Math.min(4096, stat.size))
-      const bytesRead = fs.readSync(fd, buf, 0, buf.length, 0)
-      const firstChunk = buf.toString('utf-8', 0, bytesRead)
-      const firstNewline = firstChunk.indexOf('\n')
-      const firstLine = firstNewline >= 0 ? firstChunk.slice(0, firstNewline) : firstChunk
-      if (firstLine.trim()) {
-        try {
-          const first = JSON.parse(firstLine)
-          if (first.type === 'summary') {
-            meta.title = first.summary ?? first.title
-            meta.model = first.model
-            meta.startedAt = first.timestamp
-            meta.totalCost = first.costUSD ?? first.cost
-            meta.totalTokens = first.totalTokens
-          } else {
-            meta.startedAt = first.timestamp
-            meta.model = first.model
-          }
-        } catch {
-          // not valid JSON
+    const raw = fs.readFileSync(filePath, 'utf-8')
+    for (const line of raw.split(/\r?\n/)) {
+      if (!line.trim()) continue
+      let parsed: unknown
+      try {
+        parsed = JSON.parse(line)
+      } catch {
+        continue
+      }
+      if (!isRecord(parsed)) continue
+
+      const recordSessionId = readString(parsed, 'sessionId') ?? readString(parsed, 'session_id')
+      if (recordSessionId) sessionId = recordSessionId
+
+      const timestamp = readValidDateString(parsed, 'timestamp')
+      if (timestamp) {
+        firstTimestamp ??= timestamp
+        lastTimestamp = timestamp
+      }
+
+      const workspace = isRecord(parsed.workspace) ? parsed.workspace : undefined
+      const workspaceProjectDir = readString(workspace, 'project_dir')
+      if (workspaceProjectDir) {
+        projectPath = workspaceProjectDir
+      } else {
+        projectPath ??= readString(workspace, 'current_dir') ?? readString(parsed, 'cwd')
+      }
+
+      const type = readString(parsed, 'type')
+      if (type === 'ai-title') {
+        title = title ?? readString(parsed, 'aiTitle')
+      }
+      if (type === 'file-history-snapshot') {
+        fileHistoryCount += 1
+      }
+
+      if (type === 'summary') {
+        title = title ?? readString(parsed, 'summary') ?? readString(parsed, 'title')
+        model = model ?? readString(parsed, 'model')
+        totalCost = readExplicitCost(parsed) ?? totalCost
+        if (!sawUsage) {
+          const legacyTokens = readNumber(parsed, 'totalTokens')
+          if (legacyTokens != null) totalTokens = legacyTokens
         }
       }
 
-      // Read last few KB for session end info
-      if (stat.size > 4096) {
-        const tailSize = Math.min(4096, stat.size)
-        const tailBuf = Buffer.alloc(tailSize)
-        fs.readSync(fd, tailBuf, 0, tailSize, stat.size - tailSize)
-        const tailStr = tailBuf.toString('utf-8')
-        const lines = tailStr.split('\n').filter((l) => l.trim())
-        const lastLine = lines[lines.length - 1]
-        if (lastLine) {
-          try {
-            const last = JSON.parse(lastLine)
-            meta.endedAt = last.timestamp
-            if (last.type === 'summary') {
-              meta.title = meta.title ?? last.summary ?? last.title
-              meta.totalCost = last.costUSD ?? last.cost ?? meta.totalCost
-              meta.totalTokens = last.totalTokens ?? meta.totalTokens
-              meta.model = last.model ?? meta.model
-            }
-          } catch {
-            // not valid JSON
-          }
+      const message = isRecord(parsed.message) ? parsed.message : undefined
+      model = readString(message, 'model') ?? model
+      const usage = isRecord(message?.usage) ? message.usage : undefined
+      if (usage) {
+        sawUsage = true
+        totalTokens += readTokenUsage(usage)
+      }
+
+      const content = Array.isArray(message?.content) ? message.content : []
+      for (const item of content) {
+        if (!isRecord(item)) continue
+        if (readString(item, 'type') !== 'tool_use') continue
+        const toolName = readString(item, 'name')
+        if (!toolName) continue
+        const input = isRecord(item.input) ? item.input : undefined
+        if (toolName === 'Skill') {
+          const skillName = readString(input, 'skill')
+          if (skillName) skillsUsed.add(skillName)
+        }
+        const mcpServer = extractMcpServerName(toolName)
+        if (mcpServer) mcpServers.add(mcpServer)
+      }
+
+      const subtype = readString(parsed, 'subtype')
+      if (subtype === 'stop_hook_summary') {
+        const hookCount =
+          readNumber(parsed, 'hookCount') ??
+          (Array.isArray(parsed.hookInfos) ? parsed.hookInfos.length : 0)
+        if (hookCount > 0) {
+          addHookCount(hookEventCounts, 'Stop', hookCount)
         }
       }
-    } finally {
-      fs.closeSync(fd)
     }
   } catch {
     // file read error
   }
 
+  const resolvedProjectPath = projectPath ?? decodeClaudeProjectDir(projectName)
+  const project = projectNameFromPath(resolvedProjectPath, projectName)
+  const duration = calculateDurationSeconds(firstTimestamp, lastTimestamp)
+  const hookCountsObject = Object.fromEntries(hookEventCounts)
+
+  meta.sessionId = sessionId
+  meta.project = project
+  meta.projectPath = resolvedProjectPath
+  meta.title = title
+  meta.model = model
+  meta.startedAt = firstTimestamp
+  meta.endedAt = lastTimestamp
+  meta.duration = duration
+  meta.totalTokens = totalTokens
+  meta.hasUsage = sawUsage
+  meta.skillsUsed = Array.from(skillsUsed).sort()
+  meta.mcpServers = Array.from(mcpServers).sort()
+  meta.hooksFired = Array.from(hookEventCounts.values()).reduce((sum, count) => sum + count, 0)
+  meta.hookEventCounts = hookCountsObject
+  meta.fileHistoryCount = fileHistoryCount
+  if (totalCost != null) meta.totalCost = totalCost
+
   return {
-    id: makeId('session'),
+    id: `session-${sessionId}`,
     agentId: 'claude-code',
     category: 'state',
     type: 'session',
     scope: 'session',
-    name: (meta.title as string) ?? sessionId,
+    name: title ?? `Session ${sessionId.slice(0, 8)}`,
     path: filePath,
     meta
   }
@@ -590,6 +658,99 @@ export function parseCredential(filePath: string): Asset {
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
+
+function readString(record: unknown, key: string): string | undefined {
+  if (!isRecord(record)) return undefined
+  const value = record[key]
+  return typeof value === 'string' && value.trim() ? value : undefined
+}
+
+function readNumber(record: unknown, key: string): number | undefined {
+  if (!isRecord(record)) return undefined
+  const value = record[key]
+  return typeof value === 'number' && Number.isFinite(value) ? value : undefined
+}
+
+function readValidDateString(record: unknown, key: string): string | undefined {
+  const value = readString(record, key)
+  if (!value) return undefined
+  return Number.isNaN(new Date(value).getTime()) ? undefined : value
+}
+
+function readExplicitCost(record: Record<string, unknown>): number | undefined {
+  const direct =
+    readNumber(record, 'costUSD') ??
+    readNumber(record, 'cost_usd') ??
+    readNumber(record, 'totalCost') ??
+    readNumber(record, 'total_cost_usd')
+  if (direct != null) return direct
+
+  const cost = record.cost
+  if (typeof cost === 'number' && Number.isFinite(cost)) return cost
+  if (isRecord(cost)) {
+    return (
+      readNumber(cost, 'total_cost_usd') ??
+      readNumber(cost, 'totalCostUsd') ??
+      readNumber(cost, 'costUSD')
+    )
+  }
+  return undefined
+}
+
+function readTokenUsage(usage: Record<string, unknown>): number {
+  const keys = [
+    'input_tokens',
+    'output_tokens',
+    'cache_read_input_tokens',
+    'cache_creation_input_tokens',
+    'cache_read_tokens',
+    'cache_creation_tokens',
+    'inputTokens',
+    'outputTokens',
+    'cacheReadInputTokens',
+    'cacheCreationInputTokens'
+  ]
+  return keys.reduce((sum, key) => sum + (readNumber(usage, key) ?? 0), 0)
+}
+
+function extractMcpServerName(toolName: string): string | undefined {
+  if (!toolName.startsWith('mcp__')) return undefined
+  const rest = toolName.slice('mcp__'.length)
+  const separator = rest.indexOf('__')
+  if (separator <= 0) return undefined
+  return rest.slice(0, separator)
+}
+
+function addHookCount(counts: Map<string, number>, event: string, count: number): void {
+  counts.set(event, (counts.get(event) ?? 0) + count)
+}
+
+function decodeClaudeProjectDir(projectName: string): string {
+  const windowsPath = projectName.match(/^([A-Za-z])--(.+)$/)
+  if (windowsPath) {
+    return `${windowsPath[1]}:\\${windowsPath[2].split('-').filter(Boolean).join('\\')}`
+  }
+  if (projectName.startsWith('-')) {
+    return `/${projectName.slice(1).split('-').filter(Boolean).join('/')}`
+  }
+  return projectName
+}
+
+function projectNameFromPath(projectPath: string, fallback: string): string {
+  const trimmed = projectPath.replace(/[\\/]+$/, '')
+  return path.win32.basename(trimmed) || path.posix.basename(trimmed) || fallback
+}
+
+function calculateDurationSeconds(
+  startedAt: string | undefined,
+  endedAt: string | undefined
+): number | null {
+  if (!startedAt || !endedAt) return null
+  const start = new Date(startedAt).getTime()
+  const end = new Date(endedAt).getTime()
+  if (Number.isNaN(start) || Number.isNaN(end)) return null
+  return Math.max(0, Math.round((end - start) / 1000))
+}
 
 function splitFrontmatter(content: string): {
   frontmatter: Record<string, unknown> | null

@@ -1,4 +1,12 @@
-import type { Asset, AssetCategory, AssetStats, SessionSummary, UsageSummary, Relation } from './asset'
+import type {
+  AgentView,
+  Asset,
+  AssetCategory,
+  AssetStats,
+  SessionSummary,
+  UsageSummary,
+  Relation
+} from './asset'
 
 export interface PlatformInfo {
   platform: NodeJS.Platform
@@ -25,13 +33,77 @@ export interface SessionListResult {
   totalCount: number
 }
 
+export type SessionToolEventCategory =
+  | 'builtin'
+  | 'skill'
+  | 'mcp'
+  | 'task'
+  | 'search'
+  | 'web'
+  | 'agent'
+  | 'file'
+  | 'hook'
+  | 'other'
+
+export type SessionToolEventStatus = 'pending' | 'success' | 'error' | 'unknown'
+
+export interface SessionToolEvent {
+  id: string
+  callId?: string
+  name: string
+  category: SessionToolEventCategory
+  status: SessionToolEventStatus
+  startedAt: string | null
+  endedAt: string | null
+  summary?: string
+  filePaths: string[]
+  mcpServer?: string
+  mcpTool?: string
+  skillName?: string
+}
+
+export interface SessionArtifactPlan {
+  id: string
+  title: string
+  path: string
+}
+
+export interface SessionArtifactTodo {
+  id: string
+  title: string
+  done: boolean
+}
+
+export interface SessionArtifactFile {
+  id: string
+  path: string
+  operation?: string
+  count: number
+}
+
+export interface SessionArtifactCheckpoint {
+  id: string
+  title: string
+  timestamp: string | null
+  fileCount: number
+}
+
+export interface SessionArtifacts {
+  plans: SessionArtifactPlan[]
+  todos: SessionArtifactTodo[]
+  files: SessionArtifactFile[]
+  checkpoints: SessionArtifactCheckpoint[]
+}
+
 export interface SessionDetailResult {
   summary: SessionSummary
   skillsUsed: Asset[]
   mcpServers: Asset[]
   hooksFired: { event: string; count: number }[]
-  plans: { id: string; title: string; path: string }[]
-  todos: { id: string; title: string; done: boolean }[]
+  toolTimeline: SessionToolEvent[]
+  artifacts: SessionArtifacts
+  plans: SessionArtifactPlan[]
+  todos: SessionArtifactTodo[]
   fileHistoryCount: number
 }
 
@@ -83,9 +155,9 @@ export interface IpcChannels {
   'assets:search': { args: [string]; result: SearchResult[] }
   'assets:health-check': { args: []; result: HealthCheck[] }
   'assets:import-chain': { args: [string]; result: ImportChainNode }
-  'sessions:list': { args: [{ projectFilter?: string; limit?: number }]; result: SessionListResult }
+  'sessions:list': { args: [{ projectFilter?: string; limit?: number; agentView?: AgentView }]; result: SessionListResult }
   'sessions:get': { args: [string]; result: SessionDetailResult | null }
-  'usage:summary': { args: [{ days: number }]; result: UsageSummary }
+  'usage:summary': { args: [{ days: number; agentView?: AgentView }]; result: UsageSummary }
   'mcp:merged': { args: []; result: MCPMergeInfo[] }
   'theme:get': { args: []; result: string }
   'theme:set': { args: ['light' | 'dark' | 'system']; result: void }

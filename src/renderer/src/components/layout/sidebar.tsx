@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { ChevronLeft, ChevronRight, Search, Settings as SettingsIcon } from 'lucide-react'
+import type { AgentView } from '@shared/types/asset'
 import { cn } from '@/lib/utils'
 import { useAppStore } from '@/stores/app'
 import { navSections } from './nav-config'
@@ -16,6 +17,8 @@ export function Sidebar(): React.ReactElement {
   const collapsed = useAppStore((s) => s.sidebarCollapsed)
   const toggleSidebar = useAppStore((s) => s.toggleSidebar)
   const setSearchOpen = useAppStore((s) => s.setSearchOpen)
+  const agentView = useAppStore((s) => s.agentView)
+  const setAgentView = useAppStore((s) => s.setAgentView)
 
   const isMac = isMacPlatform()
 
@@ -39,7 +42,7 @@ export function Sidebar(): React.ReactElement {
         {isMac && <div className="titlebar-drag h-9 w-full shrink-0" />}
 
         <div className="titlebar-drag flex h-14 shrink-0 items-center gap-2 px-4">
-          <div className="titlebar-no-drag flex items-center gap-2">
+          <div className="titlebar-no-drag flex min-w-0 items-center gap-2">
             <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary text-primary-foreground text-xs font-bold">
               B
             </div>
@@ -49,6 +52,18 @@ export function Sidebar(): React.ReactElement {
               </span>
             )}
           </div>
+          {!collapsed && (
+            <select
+              value={agentView}
+              onChange={(event) => setAgentView(event.target.value as AgentView)}
+              className="titlebar-no-drag ml-auto h-7 rounded-md border border-sidebar-border bg-sidebar px-2 text-xs text-sidebar-foreground outline-none ring-ring transition-colors hover:bg-sidebar-accent/10 focus:ring-1"
+              aria-label={t('agentView.label')}
+            >
+              <option value="all">{t('agentView.all')}</option>
+              <option value="claude">{t('agentView.claude')}</option>
+              <option value="codex">{t('agentView.codex')}</option>
+            </select>
+          )}
         </div>
 
         <div className="px-3 pb-2">
