@@ -25,6 +25,7 @@ const mockApi = {
   assets: {
     scan: async () => [],
     scanAll: async () => ({ assets: [], stats: { skills: 0, mcpServers: 0, sessions: 0, plugins: 0, hooks: 0, commands: 0, subagents: 0, teams: 0 }, errors: [] }),
+    scanSources: async () => [],
     get: async () => null,
     search: async () => [],
     healthCheck: async () => [],

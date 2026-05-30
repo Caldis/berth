@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
 import type { AgentView, Asset, AssetStats, SessionSummary, UsageSummary } from '@shared/types/asset'
-import type { SessionDetailResult, HealthCheck } from '@shared/types/ipc'
+import type { AgentScanSourceGroup, SessionDetailResult, HealthCheck } from '@shared/types/ipc'
 import { useAppStore } from '@/stores/app'
 
 const emptyStats: AssetStats = {
@@ -151,4 +151,29 @@ export function useHealthChecks(): {
   }, [])
 
   return { checks, loading }
+}
+
+export function useScanSources(): {
+  groups: AgentScanSourceGroup[]
+  loading: boolean
+} {
+  const [groups, setGroups] = useState<AgentScanSourceGroup[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    if (!window.api?.assets?.scanSources) {
+      setLoading(false)
+      return
+    }
+    setLoading(true)
+    window.api.assets
+      .scanSources()
+      .then((result) => {
+        setGroups(result ?? [])
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }, [])
+
+  return { groups, loading }
 }

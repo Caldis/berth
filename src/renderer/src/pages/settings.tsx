@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { useTheme } from '@/components/theme-provider'
 import { Sun, Moon, Monitor, Check, FolderOpen, ExternalLink } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useScanSources } from '@/hooks/use-ipc'
 
 function Toggle({
   enabled,
@@ -42,8 +43,8 @@ export function SettingsContent({
 }: SettingsContentProps): React.ReactElement {
   const { t, i18n } = useTranslation()
   const { theme, setTheme } = useTheme()
-  const [fileWatching, setFileWatching] = useState(true)
   const [advancedMode, setAdvancedMode] = useState(false)
+  const { groups: scanSourceGroups, loading: scanSourcesLoading } = useScanSources()
   const [platformInfo, setPlatformInfo] = useState<{
     homeDir: string
     version: string
@@ -51,15 +52,9 @@ export function SettingsContent({
   } | null>(null)
 
   useEffect(() => {
-    setFileWatching(localStorage.getItem('berth-file-watching') !== 'false')
     setAdvancedMode(localStorage.getItem('berth-advanced-mode') === 'true')
     window.api?.platform.info().then(setPlatformInfo).catch(() => {})
   }, [])
-
-  const handleFileWatching = (v: boolean): void => {
-    setFileWatching(v)
-    localStorage.setItem('berth-file-watching', String(v))
-  }
 
   const handleAdvancedMode = (v: boolean): void => {
     setAdvancedMode(v)
@@ -76,10 +71,6 @@ export function SettingsContent({
     { id: 'en', label: 'English' },
     { id: 'zh', label: '中文' }
   ]
-
-  const claudeDir = platformInfo
-    ? `${platformInfo.homeDir}${platformInfo.platform === 'win32' ? '\\' : '/'}.claude`
-    : '~/.claude'
 
   return (
     <div className={cn(showTitle ? 'mx-auto max-w-2xl space-y-8' : 'space-y-5', className)}>
@@ -152,7 +143,9 @@ export function SettingsContent({
               <p className="text-sm font-medium">{t('settings.fileWatching')}</p>
               <p className="text-xs text-muted-foreground">{t('settings.fileWatchingDesc')}</p>
             </div>
-            <Toggle enabled={fileWatching} onToggle={handleFileWatching} />
+            <span className="rounded-md border border-border px-2 py-1 text-xs text-muted-foreground">
+              {t('settings.automatic')}
+            </span>
           </div>
           <div className="flex items-center justify-between border-t border-border p-4">
             <div>
@@ -164,28 +157,79 @@ export function SettingsContent({
         </div>
       </section>
 
-      {/* Scan Directories */}
+      {/* Local Sources */}
       <section className="space-y-3">
         <h2 className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
-          {t('settings.scanDirectories')}
+          {t('settings.localSources')}
         </h2>
         <div className="rounded-lg border border-border bg-card">
-          <div className="flex items-center justify-between p-4">
-            <div className="flex items-center gap-3">
-              <FolderOpen className="h-4 w-4 text-muted-foreground" />
-              <div>
-                <p className="text-sm font-medium">~/.claude/</p>
-                <p className="font-mono text-xs text-muted-foreground">{claudeDir}</p>
+          {scanSourcesLoading && (
+            <div className="p-4 text-sm text-muted-foreground">{t('common.loading')}</div>
+          )}
+          {!scanSourcesLoading && scanSourceGroups.length === 0 && (
+            <div className="p-4 text-sm text-muted-foreground">{t('settings.localSourcesEmpty')}</div>
+          )}
+          {!scanSourcesLoading &&
+            scanSourceGroups.map((group, groupIndex) => (
+              <div
+                key={group.agentId}
+                className={cn(groupIndex > 0 && 'border-t border-border')}
+              >
+                <div className="flex items-center justify-between px-4 py-3">
+                  <div>
+                    <p className="text-sm font-medium">{group.agentName}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {group.installed ? t('settings.sourceDetected') : t('settings.sourceNotFound')}
+                    </p>
+                  </div>
+                  <span
+                    className={cn(
+                      'rounded-md border px-2 py-1 text-xs',
+                      group.installed
+                        ? 'border-accent/30 bg-accent/10 text-foreground'
+                        : 'border-border text-muted-foreground'
+                    )}
+                  >
+                    {group.installed ? t('settings.detected') : t('settings.notFound')}
+                  </span>
+                </div>
+                {group.roots.length > 0 ? (
+                  <div className="border-t border-border/70">
+                    {group.roots.map((root, rootIndex) => (
+                      <div
+                        key={`${group.agentId}-${root.path}`}
+                        data-scan-source-root
+                        className={cn(
+                          'flex items-center justify-between gap-3 px-4 py-3',
+                          rootIndex > 0 && 'border-t border-border/70'
+                        )}
+                      >
+                        <div className="flex min-w-0 items-center gap-3">
+                          <FolderOpen className="h-4 w-4 shrink-0 text-muted-foreground" />
+                          <div className="min-w-0">
+                            <p className="text-sm">{root.description}</p>
+                            <p className="truncate font-mono text-xs text-muted-foreground">
+                              {root.path}
+                            </p>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => window.api?.shell.openPath(root.path)}
+                          className="flex shrink-0 items-center gap-1 rounded-md border border-border px-2 py-1 text-xs transition-colors hover:bg-accent/10"
+                        >
+                          <ExternalLink className="h-3 w-3" />
+                          {t('instructions.showInExplorer')}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="border-t border-border/70 px-4 py-3 text-xs text-muted-foreground">
+                    {t('settings.noSourceRoots')}
+                  </div>
+                )}
               </div>
-            </div>
-            <button
-              onClick={() => window.api?.shell.openPath(claudeDir)}
-              className="flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs transition-colors hover:bg-accent/10"
-            >
-              <ExternalLink className="h-3 w-3" />
-              {t('instructions.showInExplorer')}
-            </button>
-          </div>
+            ))}
         </div>
       </section>
 
