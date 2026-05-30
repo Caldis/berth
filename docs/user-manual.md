@@ -36,7 +36,7 @@ pnpm package    # Build distributable
 
 ### Requirements
 
-- **Claude Code** must be installed — Berth scans `~/.claude/` for assets
+- **Claude Code** or **Codex** must have local data — Berth scans `~/.claude/`, `~/.codex/`, and supported project files when present
 - macOS 11+ or Windows 10+
 
 ---
@@ -45,11 +45,11 @@ pnpm package    # Build distributable
 
 When you first open Berth, it will:
 
-1. **Detect Claude Code** — Check if `~/.claude/` exists
+1. **Detect local agent data** — Check if Claude Code or Codex files exist
 2. **Full scan** — Read all asset files (skills, MCP configs, sessions, etc.)
 3. **Show Overview** — Display your asset dashboard
 
-If Claude Code is not installed, Berth will show a welcome screen with installation guidance.
+If no supported agent data exists, Berth will show a welcome screen with installation guidance.
 
 > Berth is **read-only**. It never modifies your files. It never sends data anywhere.
 
@@ -78,12 +78,23 @@ Click any session to see its full detail.
 A bar chart showing daily spending over the last 7 days.
 
 ### Health Checks
-Warnings about:
-- MCP servers that failed to connect
-- Skills with broken `@path` imports
-- Configuration issues
+Read-only local diagnostics for Claude Code and Codex. Checks are grouped by agent and severity.
 
-Green checkmark means everything is OK.
+Berth checks:
+- Source files and directories, such as `~/.claude/`, `~/.codex/`, project `.claude/`, project `.codex/`, `CLAUDE.md`, `AGENTS.md`, and skills directories
+- Syntax for JSON, TOML, and Markdown YAML frontmatter
+- Required structure for skills, MCP servers, hooks, and custom agents
+- Missing `@path` imports in `CLAUDE.md` and `AGENTS.md`
+- Windows-specific hook hints, such as Codex `commandWindows` and Claude Code `shell: powershell`
+- Session directories and incomplete transcript metadata
+
+Berth does not:
+- Run `claude`, `codex`, `/doctor`, `/mcp`, or any hook command
+- Modify configuration files
+- Read or display credential values
+- Guess across WSL and Windows home directories; it scans the current OS home and current project roots
+
+Green checkmark means no health check returned info, warning, or error.
 
 ---
 
