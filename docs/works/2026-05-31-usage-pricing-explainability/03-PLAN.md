@@ -12,7 +12,7 @@
 - [x] 任务 3: Usage 页面解释区、cost mode 控件和 pricing gap 操作提示
   - 修改 `Usage` 页面和 en/zh i18n。
   - 验证: `pnpm test -- tests/renderer/sessions-pages.test.tsx`, `pnpm typecheck:web`。
-- [ ] 任务 4: token 结构分析展示
+- [x] 任务 4: token 结构分析展示
   - 在 shared token helper 增加结构段派生函数。
   - Usage 页面显示 input/output/cache/reasoning/unknown 结构。
   - 验证: `pnpm test -- tests/unit/token-usage.test.ts tests/renderer/sessions-pages.test.tsx`。

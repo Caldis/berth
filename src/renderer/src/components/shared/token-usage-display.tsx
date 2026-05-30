@@ -1,12 +1,33 @@
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { TokenUsageBreakdown } from '@shared/types/asset'
+import { tokenUsageSegments, type TokenUsageSegmentId } from '@shared/token-usage'
 import { formatNumber, cn } from '@/lib/utils'
 
 interface TokenUsageDisplayProps {
   usage: TokenUsageBreakdown
   mode?: 'compact' | 'detail'
   className?: string
+}
+
+const SEGMENT_CLASS: Record<TokenUsageSegmentId, string> = {
+  input: 'bg-blue-500',
+  output: 'bg-emerald-500',
+  cache: 'bg-amber-500',
+  reasoning: 'bg-violet-500',
+  unknown: 'bg-muted-foreground/50'
+}
+
+const SEGMENT_LABEL_KEYS: Record<TokenUsageSegmentId, string> = {
+  input: 'usage.inputTokens',
+  output: 'usage.outputTokens',
+  cache: 'usage.cacheTokens',
+  reasoning: 'usage.reasoningTokens',
+  unknown: 'usage.unknownTokens'
+}
+
+function formatPercentage(value: number): string {
+  return `${Number.isInteger(value) ? value.toFixed(0) : value.toFixed(1)}%`
 }
 
 export function TokenUsageDisplay({
@@ -17,6 +38,7 @@ export function TokenUsageDisplay({
   const { t } = useTranslation()
   const cacheTokens = usage.cacheReadInputTokens + usage.cacheCreationInputTokens
   const hasUnknownTokens = usage.unknownTokens > 0
+  const segments = useMemo(() => tokenUsageSegments(usage), [usage])
   const title = useMemo(() => {
     if (!usage.hasBreakdown) {
       return [
@@ -57,6 +79,31 @@ export function TokenUsageDisplay({
             {hasUnknownTokens && (
               <span>{t('usage.unknownTokens')}: {formatNumber(usage.unknownTokens)}</span>
             )}
+          </div>
+        )}
+        {segments.length > 0 && (
+          <div className="space-y-1.5 pt-1.5">
+            <div className="flex h-1.5 overflow-hidden rounded-full bg-muted">
+              {segments.map((segment) => (
+                <div
+                  key={segment.id}
+                  className={SEGMENT_CLASS[segment.id]}
+                  style={{ width: `${segment.percentage}%` }}
+                  title={`${t(SEGMENT_LABEL_KEYS[segment.id])}: ${formatNumber(segment.tokens)} (${formatPercentage(segment.percentage)})`}
+                />
+              ))}
+            </div>
+            <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
+              {segments.map((segment) => (
+                <span key={segment.id} className="inline-flex items-center gap-1.5">
+                  <span className={cn('h-2 w-2 rounded-full', SEGMENT_CLASS[segment.id])} />
+                  <span>
+                    {t(SEGMENT_LABEL_KEYS[segment.id])} {formatNumber(segment.tokens)}
+                  </span>
+                  <span className="tabular-nums">({formatPercentage(segment.percentage)})</span>
+                </span>
+              ))}
+            </div>
           </div>
         )}
       </div>

@@ -3,6 +3,7 @@ import {
   addTokenUsage,
   emptyTokenUsage,
   normalizeTokenUsage,
+  tokenUsageSegments,
   tokenUsageTotal
 } from '../../src/shared/token-usage'
 
@@ -68,5 +69,30 @@ describe('token usage helpers', () => {
       hasBreakdown: true
     })
     expect(tokenUsageTotal(total)).toBe(27)
+  })
+
+  it('derives display segments from the token breakdown', () => {
+    const segments = tokenUsageSegments(
+      normalizeTokenUsage({
+        inputTokens: 10,
+        outputTokens: 5,
+        cacheReadInputTokens: 20,
+        cacheCreationInputTokens: 3,
+        reasoningOutputTokens: 2
+      })
+    )
+
+    expect(segments).toEqual([
+      { id: 'input', tokens: 10, percentage: 25 },
+      { id: 'output', tokens: 5, percentage: 12.5 },
+      { id: 'cache', tokens: 23, percentage: 57.5 },
+      { id: 'reasoning', tokens: 2, percentage: 5 }
+    ])
+  })
+
+  it('uses unknown as the only segment when only total tokens are known', () => {
+    expect(tokenUsageSegments(normalizeTokenUsage({ totalTokens: 42 }))).toEqual([
+      { id: 'unknown', tokens: 42, percentage: 100 }
+    ])
   })
 })

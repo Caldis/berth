@@ -11,6 +11,14 @@ const TOKEN_FIELDS = [
 
 type TokenField = (typeof TOKEN_FIELDS)[number]
 
+export type TokenUsageSegmentId = 'input' | 'output' | 'cache' | 'reasoning' | 'unknown'
+
+export interface TokenUsageSegment {
+  id: TokenUsageSegmentId
+  tokens: number
+  percentage: number
+}
+
 const FIELD_ALIASES: Record<TokenField, string[]> = {
   inputTokens: ['inputTokens', 'input_tokens'],
   outputTokens: ['outputTokens', 'output_tokens'],
@@ -100,6 +108,28 @@ export function addTokenUsage(
 
 export function tokenUsageTotal(value: unknown): number {
   return normalizeTokenUsage(value).totalTokens
+}
+
+export function tokenUsageSegments(usage: TokenUsageBreakdown): TokenUsageSegment[] {
+  const segments: Omit<TokenUsageSegment, 'percentage'>[] = [
+    { id: 'input', tokens: usage.inputTokens },
+    { id: 'output', tokens: usage.outputTokens },
+    { id: 'cache', tokens: usage.cacheReadInputTokens + usage.cacheCreationInputTokens },
+    { id: 'reasoning', tokens: usage.reasoningOutputTokens },
+    { id: 'unknown', tokens: usage.unknownTokens }
+  ]
+  const visibleSegments = segments.filter((segment) => segment.tokens > 0)
+
+  if (usage.totalTokens <= 0) return []
+
+  return visibleSegments.map((segment) => ({
+    ...segment,
+    percentage: roundPercentage((segment.tokens / usage.totalTokens) * 100)
+  }))
+}
+
+function roundPercentage(value: number): number {
+  return Math.round(value * 10) / 10
 }
 
 function readNumber(record: Record<string, unknown>, keys: string[]): number | undefined {
