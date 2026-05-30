@@ -235,21 +235,31 @@ export function Overview(): React.ReactElement {
                 <div className="divide-y divide-border">
                   {group.checks.map((check) => {
                     const clickable = Boolean(check.target?.route || check.target?.path || check.path || check.assetId)
+                    const activateCheck = (): void => {
+                      if (check.target?.route) {
+                        navigate(check.target.route)
+                        return
+                      }
+                      const targetPath = check.target?.path ?? check.path
+                      if (targetPath) {
+                        void window.api.shell.openPath(targetPath)
+                        return
+                      }
+                      if (check.assetId) {
+                        navigate(`/configuration/capabilities`)
+                      }
+                    }
                     return (
-                      <button
+                      <div
                         key={check.id}
-                        onClick={() => {
-                          if (check.target?.route) {
-                            navigate(check.target.route)
-                            return
-                          }
-                          const targetPath = check.target?.path ?? check.path
-                          if (targetPath) {
-                            void window.api.shell.openPath(targetPath)
-                            return
-                          }
-                          if (check.assetId) {
-                            navigate(`/configuration/capabilities`)
+                        role={clickable ? 'button' : undefined}
+                        tabIndex={clickable ? 0 : undefined}
+                        onClick={clickable ? activateCheck : undefined}
+                        onKeyDown={(event) => {
+                          if (!clickable) return
+                          if (event.key === 'Enter' || event.key === ' ') {
+                            event.preventDefault()
+                            activateCheck()
                           }
                         }}
                         className={cn(
@@ -291,7 +301,22 @@ export function Overview(): React.ReactElement {
                           {check.evidence && check.evidence.length > 0 && (
                             <div className="flex flex-wrap gap-2">
                               {check.evidence.map((evidence) => (
-                                <span key={evidence.url} className="text-xs text-muted-foreground">
+                                <span
+                                  key={evidence.url}
+                                  role="link"
+                                  tabIndex={0}
+                                  onClick={(event) => {
+                                    event.stopPropagation()
+                                    void window.api.shell.openExternal(evidence.url)
+                                  }}
+                                  onKeyDown={(event) => {
+                                    if (event.key !== 'Enter' && event.key !== ' ') return
+                                    event.preventDefault()
+                                    event.stopPropagation()
+                                    void window.api.shell.openExternal(evidence.url)
+                                  }}
+                                  className="cursor-pointer text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+                                >
                                   {evidence.label}
                                 </span>
                               ))}
@@ -308,7 +333,7 @@ export function Overview(): React.ReactElement {
                             {check.assetType}
                           </span>
                         )}
-                      </button>
+                      </div>
                     )
                   })}
                 </div>

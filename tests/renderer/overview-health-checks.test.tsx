@@ -77,6 +77,7 @@ describe('overview health checks', () => {
       }
     ])
     window.api.shell.openPath = vi.fn(async () => {})
+    window.api.shell.openExternal = vi.fn(async () => {})
 
     render(
       <MemoryRouter>
@@ -98,7 +99,11 @@ describe('overview health checks', () => {
     expect(screen.getByText('1 warning')).toBeInTheDocument()
     expect(screen.getByText('1 error')).toBeInTheDocument()
 
-    fireEvent.click(screen.getByText('Codex hook has no Windows command override').closest('button')!)
+    fireEvent.click(screen.getByText('Codex hooks'))
+
+    expect(window.api.shell.openExternal).toHaveBeenCalledWith('https://developers.openai.com/codex/hooks')
+
+    fireEvent.click(screen.getByText('Codex hook has no Windows command override').closest('[role="button"]')!)
 
     expect(await screen.findByText('/configuration/capabilities?tab=hooks')).toBeInTheDocument()
     expect(window.api.shell.openPath).not.toHaveBeenCalled()
