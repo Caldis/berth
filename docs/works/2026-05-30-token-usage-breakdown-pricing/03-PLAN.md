@@ -29,3 +29,8 @@
 
 ## verify 回写
 verify 不通过项作为新任务追加于此, phase 退回 implement。
+
+- [x] 任务 7: Usage 页面兼容 legacy summary 缺省字段
+  - 背景: verify/手测发现点击 Usage 页面白屏; 复现为 IPC 返回缺少 `pricingMisses` / `costSource` / cost 明细时, 渲染层直接读取 `.length`。
+  - 修改 `src/renderer/src/pages/usage.tsx`, 在 setState 前归一化 summary 默认字段。
+  - 验证: `pnpm test -- tests/renderer/sessions-pages.test.tsx`, `pnpm typecheck:web`。

@@ -7,7 +7,7 @@ import { Overview } from '../../src/renderer/src/pages/overview'
 import { Sessions } from '../../src/renderer/src/pages/sessions'
 import { SessionDetail } from '../../src/renderer/src/pages/session-detail'
 import { Usage } from '../../src/renderer/src/pages/usage'
-import type { Asset, SessionSummary } from '../../src/shared/types/asset'
+import type { Asset, SessionSummary, UsageSummary } from '../../src/shared/types/asset'
 import { normalizeTokenUsage } from '../../src/shared/token-usage'
 import { useAppStore } from '../../src/renderer/src/stores/app'
 
@@ -230,6 +230,43 @@ describe('session pages', () => {
     act(() => {
       useAppStore.setState({ agentView: 'all' })
     })
+  })
+
+  it('renders usage page when ipc returns legacy summary fields', async () => {
+    const legacyTokenUsage = normalizeTokenUsage({ totalTokens: 15 })
+    window.api.usage.summary = vi.fn(async () => ({
+      totalCost: 0,
+      totalTokens: legacyTokenUsage.totalTokens,
+      dailyCosts: [],
+      byModel: [
+        {
+          model: 'legacy-model',
+          percentage: 100,
+          cost: 0,
+          tokens: legacyTokenUsage.totalTokens
+        }
+      ],
+      byProject: [
+        {
+          project: 'legacy-project',
+          percentage: 100,
+          cost: 0,
+          tokens: legacyTokenUsage.totalTokens
+        }
+      ],
+      rateLimits: []
+    } as unknown as UsageSummary))
+
+    render(
+      <MemoryRouter>
+        <Usage />
+      </MemoryRouter>
+    )
+
+    expect(await screen.findByText('Unknown cost')).toBeInTheDocument()
+    expect(screen.getByText('legacy-model')).toBeInTheDocument()
+    expect(screen.getByText('legacy-project')).toBeInTheDocument()
+    expect(screen.getAllByText('15 tok').length).toBeGreaterThan(0)
   })
 
   it('renders usage cost details and pricing gaps', async () => {
