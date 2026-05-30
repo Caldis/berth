@@ -10,7 +10,7 @@ import type {
   SetHooksEnabledRequest,
   SetHooksEnabledResult
 } from '../shared/types/ipc'
-import type { AgentView, Asset, UsageSummary } from '../shared/types/asset'
+import type { AgentView, Asset, CostMode, UsageSummary } from '../shared/types/asset'
 import type { MemoryListResult, MemoryNote } from '../shared/types/memory'
 
 interface PlatformInfo {
@@ -49,7 +49,7 @@ interface BerthAPI {
     get: (id: string) => Promise<SessionDetailResult | null>
   }
   usage: {
-    summary: (opts: { days: number; agentView?: AgentView }) => Promise<UsageSummary>
+    summary: (opts: { days: number; agentView?: AgentView; costMode?: CostMode }) => Promise<UsageSummary>
   }
   memory: {
     list: () => Promise<MemoryListResult>

@@ -248,6 +248,54 @@ describe('buildUsageSummary', () => {
     expect(summary.dailyCosts[0].cost).toBeCloseTo(0.263, 6)
     expect(summary.byModel).toMatchObject([{ model: 'test/priced-model', cost: 0.263, tokens: 24 }])
     expect(summary.byProject).toMatchObject([{ project: 'D--Code-berth', cost: 0.263, tokens: 24 }])
+    expect(summary.costMode).toBe('auto')
+    expect(summary.costExplanation).toMatchObject({
+      formula: 'estimated',
+      pricingSources: [{ source: 'local', count: 1 }]
+    })
+  })
+
+  it('applies cost mode consistently across total, daily, model, and project costs', () => {
+    const usageData: Asset = {
+      id: 'usage-data-mode',
+      agentId: 'codex',
+      category: 'observability',
+      type: 'usage-data',
+      scope: 'user',
+      name: '2026-05-30',
+      path: 'C:\\Users\\test\\.codex\\usage-data\\2026-05-30.json',
+      meta: {
+        date: '2026-05-30',
+        model: 'test/priced-model',
+        project: 'D--Code-berth',
+        costUSD: 1.23,
+        inputTokens: 10,
+        outputTokens: 5
+      }
+    }
+
+    const actual = buildUsageSummary([usageData], {
+      pricingCatalog: [localPricing],
+      costMode: 'actual'
+    })
+    const estimated = buildUsageSummary([usageData], {
+      pricingCatalog: [localPricing],
+      costMode: 'estimated'
+    })
+
+    expect(actual.costMode).toBe('actual')
+    expect(actual.totalCost).toBe(1.23)
+    expect(actual.dailyCosts[0].cost).toBe(1.23)
+    expect(actual.byModel[0].cost).toBe(1.23)
+    expect(actual.byProject[0].cost).toBe(1.23)
+    expect(actual.costExplanation.formula).toBe('actual')
+
+    expect(estimated.costMode).toBe('estimated')
+    expect(estimated.totalCost).toBe(0.2)
+    expect(estimated.dailyCosts[0].cost).toBe(0.2)
+    expect(estimated.byModel[0].cost).toBe(0.2)
+    expect(estimated.byProject[0].cost).toBe(0.2)
+    expect(estimated.costExplanation.formula).toBe('estimated')
   })
 
   it('reports actual, estimated, delta, and pricing misses across usage dimensions', () => {

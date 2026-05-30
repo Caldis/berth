@@ -36,6 +36,7 @@ describe('pricing', () => {
       estimatedCost: 0.2,
       costDelta: 1.03
     })
+    expect(result.formula).toBe('actual')
   })
 
   it('keeps actual cost while surfacing missing estimate reasons', () => {
@@ -54,6 +55,7 @@ describe('pricing', () => {
     })
     expect(result.estimatedCost).toBeUndefined()
     expect(result.costDelta).toBeUndefined()
+    expect(result.formula).toBe('actual')
   })
 
   it('estimates cost from local pricing and full token breakdown', () => {
@@ -72,7 +74,45 @@ describe('pricing', () => {
         tokenUsage,
         pricingCatalog: [localPricing]
       })
-    ).toMatchObject({ cost: 0.263, source: 'estimated' })
+    ).toMatchObject({ cost: 0.263, source: 'estimated', formula: 'estimated' })
+  })
+
+  it('supports actual and estimated display modes', () => {
+    const tokenUsage = normalizeTokenUsage({ inputTokens: 10, outputTokens: 5 })
+
+    expect(
+      resolveUsageCost({
+        actualCost: 1.23,
+        model: 'test/priced-model',
+        tokenUsage,
+        pricingCatalog: [localPricing],
+        costMode: 'actual'
+      })
+    ).toMatchObject({
+      cost: 1.23,
+      source: 'actual',
+      actualCost: 1.23,
+      estimatedCost: 0.2,
+      costDelta: 1.03,
+      formula: 'actual'
+    })
+
+    expect(
+      resolveUsageCost({
+        actualCost: 1.23,
+        model: 'test/priced-model',
+        tokenUsage,
+        pricingCatalog: [localPricing],
+        costMode: 'estimated'
+      })
+    ).toMatchObject({
+      cost: 0.2,
+      source: 'estimated',
+      actualCost: 1.23,
+      estimatedCost: 0.2,
+      costDelta: 1.03,
+      formula: 'estimated'
+    })
   })
 
   it('returns unknown when pricing or token breakdown is missing', () => {

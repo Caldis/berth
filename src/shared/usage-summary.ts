@@ -1,5 +1,7 @@
 import type {
+  CostMode,
   CostSource,
+  UsageCostExplanation,
   UsageModelBreakdown,
   UsageProjectBreakdown,
   UsageSummary
@@ -8,10 +10,12 @@ import { emptyTokenUsage, normalizeTokenUsage } from './token-usage'
 
 export function emptyUsageSummary(): UsageSummary {
   return {
+    costMode: 'auto',
     totalCost: 0,
     actualCost: 0,
     estimatedCost: 0,
     costDelta: 0,
+    costExplanation: emptyCostExplanation(),
     totalTokens: 0,
     tokenUsage: emptyTokenUsage(),
     costSource: 'unknown',
@@ -30,12 +34,15 @@ export function normalizeUsageSummary(value: unknown): UsageSummary {
   const totalCost = numberOrZero(value.totalCost)
   const tokenUsage = normalizeTokenUsage(value.tokenUsage ?? { totalTokens: value.totalTokens })
   const costSource = normalizeCostSource(value.costSource, totalCost)
+  const costMode = normalizeCostMode(value.costMode)
 
   return {
+    costMode,
     totalCost,
     actualCost: numberOrZero(value.actualCost),
     estimatedCost: numberOrZero(value.estimatedCost),
     costDelta: numberOrZero(value.costDelta),
+    costExplanation: normalizeCostExplanation(value.costExplanation, costSource),
     totalTokens: numberOrZero(value.totalTokens) || tokenUsage.totalTokens,
     tokenUsage,
     costSource,
@@ -56,6 +63,49 @@ export function normalizeUsageSummary(value: unknown): UsageSummary {
     ),
     rateLimits: arrayOrEmpty(value.rateLimits)
   }
+}
+
+function emptyCostExplanation(): UsageCostExplanation {
+  return {
+    formula: 'unknown',
+    pricingSources: [],
+    catalog: { sources: [] }
+  }
+}
+
+function normalizeCostExplanation(value: unknown, source: CostSource): UsageCostExplanation {
+  if (!isRecord(value)) {
+    return {
+      ...emptyCostExplanation(),
+      formula: costSourceToFormula(source)
+    }
+  }
+
+  const catalog = isRecord(value.catalog) ? value.catalog : {}
+  return {
+    formula: normalizeFormula(value.formula, source),
+    pricingSources: arrayOrEmpty(value.pricingSources),
+    catalog: {
+      generatedAt: typeof catalog.generatedAt === 'string' ? catalog.generatedAt : undefined,
+      sources: arrayOrEmpty(catalog.sources)
+    }
+  }
+}
+
+function normalizeCostMode(value: unknown): CostMode {
+  return value === 'actual' || value === 'estimated' || value === 'auto' ? value : 'auto'
+}
+
+function normalizeFormula(value: unknown, source: CostSource): UsageCostExplanation['formula'] {
+  if (value === 'actual' || value === 'estimated' || value === 'mixed' || value === 'unknown') {
+    return value
+  }
+  return costSourceToFormula(source)
+}
+
+function costSourceToFormula(source: CostSource): UsageCostExplanation['formula'] {
+  if (source === 'actual' || source === 'estimated' || source === 'mixed') return source
+  return 'unknown'
 }
 
 export function normalizeUsageModelBreakdown(

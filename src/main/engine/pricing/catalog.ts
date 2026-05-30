@@ -1,3 +1,4 @@
+import type { PricingCatalogInfo } from '@shared/types/asset'
 import type { ModelPricing } from './types'
 import { PRICING_CATALOG_SNAPSHOT } from './catalog.generated'
 import { modelMatchKeys, normalizeModelId } from './model-match'
@@ -11,6 +12,17 @@ const BUILT_IN_MODEL_PRICING: readonly ModelPricing[] = PRICING_CATALOG_SNAPSHOT
 
 export function getBuiltInPricingCatalog(): readonly ModelPricing[] {
   return BUILT_IN_MODEL_PRICING
+}
+
+export function getBuiltInPricingCatalogInfo(): PricingCatalogInfo {
+  return {
+    generatedAt: PRICING_CATALOG_SNAPSHOT.generatedAt,
+    sources: PRICING_CATALOG_SNAPSHOT.sources.map((source) => ({
+      name: source.name,
+      url: source.url,
+      fetchedAt: source.fetchedAt
+    }))
+  }
 }
 
 export function resolveModelPricing(

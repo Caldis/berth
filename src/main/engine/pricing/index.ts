@@ -1,5 +1,6 @@
 export {
   getBuiltInPricingCatalog,
+  getBuiltInPricingCatalogInfo,
   LITELLM_MODEL_PRICES_URL,
   MODELS_DEV_API_URL,
   resolveModelPricing

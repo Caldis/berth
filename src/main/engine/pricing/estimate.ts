@@ -12,30 +12,83 @@ export function estimateTokenUsageCost(
 }
 
 export function resolveUsageCost(input: UsageCostInput): UsageCostResolution {
+  const costMode = input.costMode ?? 'auto'
   const actualCost = normalizeActualCost(input.actualCost)
   const pricing = resolveModelPricing(input.model, input.pricingCatalog)
-  if (!pricing) {
+  const estimate = pricing
+    ? estimateWithReason(input.tokenUsage, pricing)
+    : { cost: 0, reason: 'missing-model-pricing' as PricingMissReason }
+  const estimatedCost = estimate.reason ? undefined : estimate.cost
+  const costDelta = actualCost != null && estimatedCost != null ? actualCost - estimatedCost : undefined
+
+  if (costMode === 'actual') {
     if (actualCost != null) {
-      return { cost: actualCost, source: 'actual', actualCost, reason: 'missing-model-pricing' }
+      return {
+        cost: actualCost,
+        source: 'actual',
+        actualCost,
+        estimatedCost,
+        costDelta,
+        pricing,
+        formula: 'actual',
+        reason: estimate.reason
+      }
     }
-    return { cost: 0, source: 'unknown', reason: 'missing-model-pricing' }
+    return {
+      cost: 0,
+      source: 'unknown',
+      estimatedCost,
+      pricing,
+      formula: 'unknown',
+      reason: estimate.reason
+    }
   }
 
-  const estimate = estimateWithReason(input.tokenUsage, pricing)
+  if (costMode === 'estimated') {
+    if (estimate.reason) {
+      return {
+        cost: 0,
+        source: 'unknown',
+        actualCost,
+        pricing,
+        formula: 'unknown',
+        reason: estimate.reason
+      }
+    }
+    return {
+      cost: estimate.cost,
+      source: 'estimated',
+      actualCost,
+      estimatedCost: estimate.cost,
+      costDelta,
+      pricing,
+      formula: 'estimated'
+    }
+  }
+
   if (actualCost != null) {
     return {
       cost: actualCost,
       source: 'actual',
       actualCost,
-      estimatedCost: estimate.reason ? undefined : estimate.cost,
-      costDelta: estimate.reason ? undefined : actualCost - estimate.cost,
+      estimatedCost,
+      costDelta,
       pricing,
+      formula: 'actual',
       reason: estimate.reason
     }
   }
 
-  if (estimate.reason) return { cost: 0, source: 'unknown', pricing, reason: estimate.reason }
-  return { cost: estimate.cost, source: 'estimated', estimatedCost: estimate.cost, pricing }
+  if (estimate.reason) {
+    return { cost: 0, source: 'unknown', pricing, formula: 'unknown', reason: estimate.reason }
+  }
+  return {
+    cost: estimate.cost,
+    source: 'estimated',
+    estimatedCost: estimate.cost,
+    pricing,
+    formula: 'estimated'
+  }
 }
 
 export function mergeCostSources(sources: readonly CostSource[]): CostSource {

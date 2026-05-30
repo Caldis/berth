@@ -2,6 +2,7 @@ import type {
   AgentView,
   Asset,
   AssetCategory,
+  CostMode,
   AssetScope,
   AssetStats,
   ScanRoot,
@@ -233,7 +234,7 @@ export interface IpcChannels {
   'assets:import-chain': { args: [string]; result: ImportChainNode }
   'sessions:list': { args: [{ projectFilter?: string; limit?: number; agentView?: AgentView }]; result: SessionListResult }
   'sessions:get': { args: [string]; result: SessionDetailResult | null }
-  'usage:summary': { args: [{ days: number; agentView?: AgentView }]; result: UsageSummary }
+  'usage:summary': { args: [{ days: number; agentView?: AgentView; costMode?: CostMode }]; result: UsageSummary }
   'memory:list': { args: []; result: MemoryListResult }
   'memory:get': { args: [string]; result: MemoryNote | null }
   'mcp:merged': { args: []; result: MCPMergeInfo[] }

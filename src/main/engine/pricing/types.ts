@@ -1,4 +1,10 @@
-import type { CostSource, PricingMissReason, TokenUsageBreakdown } from '@shared/types/asset'
+import type {
+  CostMode,
+  CostSource,
+  PricingMissReason,
+  TokenUsageBreakdown,
+  UsageCostFormula
+} from '@shared/types/asset'
 
 export type PricingSource = 'litellm' | 'models.dev' | 'local'
 
@@ -34,6 +40,7 @@ export interface PricingCatalogSnapshot {
 
 export interface UsageCostInput {
   actualCost?: number | null
+  costMode?: CostMode
   model?: string | null
   tokenUsage: TokenUsageBreakdown
   pricingCatalog?: readonly ModelPricing[]
@@ -46,5 +53,6 @@ export interface UsageCostResolution {
   estimatedCost?: number
   costDelta?: number
   pricing?: ModelPricing
+  formula: UsageCostFormula
   reason?: PricingMissReason
 }

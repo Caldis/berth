@@ -39,7 +39,8 @@ const api = {
     get: (id: string) => ipcRenderer.invoke('sessions:get', id)
   },
   usage: {
-    summary: (opts: { days: number; agentView?: string }) => ipcRenderer.invoke('usage:summary', opts)
+    summary: (opts: { days: number; agentView?: string; costMode?: string }) =>
+      ipcRenderer.invoke('usage:summary', opts)
   },
   memory: {
     list: () => ipcRenderer.invoke('memory:list'),

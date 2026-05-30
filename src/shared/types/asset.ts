@@ -147,6 +147,12 @@ export interface TokenUsageBreakdown {
 
 export type CostSource = 'actual' | 'estimated' | 'mixed' | 'unknown'
 
+export type CostMode = 'auto' | 'actual' | 'estimated'
+
+export type UsageCostFormula = 'actual' | 'estimated' | 'mixed' | 'unknown'
+
+export type PricingSourceName = 'litellm' | 'models.dev' | 'local'
+
 export type PricingMissReason =
   | 'missing-model-pricing'
   | 'missing-token-breakdown'
@@ -157,6 +163,24 @@ export interface PricingMiss {
   reason: PricingMissReason
   tokens: number
   count: number
+}
+
+export interface UsagePricingSourceSummary {
+  source: PricingSourceName
+  sourceUrl?: string
+  updatedAt?: string
+  count: number
+}
+
+export interface PricingCatalogInfo {
+  generatedAt?: string
+  sources: { name: PricingSourceName; url: string; fetchedAt: string }[]
+}
+
+export interface UsageCostExplanation {
+  formula: UsageCostFormula
+  pricingSources: UsagePricingSourceSummary[]
+  catalog: PricingCatalogInfo
 }
 
 export interface UsageCostDetails {
@@ -187,10 +211,12 @@ export interface UsageProjectBreakdown extends UsageDimensionCost {
 }
 
 export interface UsageSummary {
+  costMode: CostMode
   totalCost: number
   actualCost: number
   estimatedCost: number
   costDelta: number
+  costExplanation: UsageCostExplanation
   totalTokens: number
   tokenUsage: TokenUsageBreakdown
   costSource: CostSource

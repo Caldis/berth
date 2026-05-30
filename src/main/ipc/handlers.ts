@@ -3,7 +3,7 @@ import * as path from 'path'
 import * as fs from 'fs'
 import { BrowserWindow, ipcMain, nativeTheme, shell, app } from 'electron'
 import type { IpcMainInvokeEvent } from 'electron'
-import type { AgentView, Asset, AssetCategory, Relation, SessionSummary, UsageSummary } from '@shared/types/asset'
+import type { AgentView, Asset, AssetCategory, CostMode, Relation, SessionSummary, UsageSummary } from '@shared/types/asset'
 import type {
   PlatformInfo,
   AgentScanSourceGroup,
@@ -177,11 +177,11 @@ export function registerAssetHandlers(): void {
 
   ipcMain.handle(
     'usage:summary',
-    async (_event, opts: { days: number; agentView?: AgentView }): Promise<UsageSummary> => {
+    async (_event, opts: { days: number; agentView?: AgentView; costMode?: CostMode }): Promise<UsageSummary> => {
       const scanner = await ensureScanned()
       return buildUsageSummary(
         scanner.getAllAssets().filter((asset) => sessionMatchesAgentView(asset, opts.agentView)),
-        { days: opts.days }
+        { days: opts.days, costMode: opts.costMode }
       )
     }
   )
