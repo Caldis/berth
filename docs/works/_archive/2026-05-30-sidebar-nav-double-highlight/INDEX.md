@@ -2,7 +2,7 @@
 task: 2026-05-30-sidebar-nav-double-highlight
 type: bug
 jira:
-phase: verify
+phase: archive
 created: 2026-05-30
 artifacts:
   source: 00-BUG.md
@@ -22,7 +22,9 @@ artifacts:
 - [x] 03-PLAN.md
 
 ## 状态
-verify 阶段。代码改动完成, 自动门禁全绿 (typecheck=0 / lint=0 / test=0, 含 nav-config 路径唯一性回归)。视觉验收截图待工具通道恢复后补 (验收标准 5)。
+archive。修复已提交 ( edc7561); 自动门禁全绿 (typecheck=0 / lint=0 / test 54 通过, 含 nav-config 路径唯一性回归); i18n 死键已清。
+视觉 (验收标准 5): 运行实例截图已发用户目视确认 (本 session 工具通道损坏, Agent 端无法渲染图像)。修复为确定性删除, 逻辑上 `/sessions` 仅 Sessions 命中 isActive。若用户目视发现异常则 verify 退回 implement。
+gh item 置 Done。
 
 ## gh project
 Caldis/berth project #6 (https://github.com/users/Caldis/projects/6)

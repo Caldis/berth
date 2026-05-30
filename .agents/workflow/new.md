@@ -14,8 +14,9 @@
 7. gh project 跟踪 (见 .agents/tools.md 的 scope 前置):
    - 先检查 `gh project list --owner Caldis` 是否可用; 若报缺 project scope, STOP 并提示用户运行
      `gh auth refresh -h github.com -s project,read:project` (浏览器授权, Agent 不可代办), 然后跳过本步, 不阻塞代码流程。
-   - 可用时: 复用既有 berth project (无则 `gh project create`), 用 `gh project item-create` 加一条 item,
-     title = 任务名, 状态置 Todo; 将 item URL 回写 INDEX.md 的 gh project 段。
+   - 可用时: 复用既有 berth project (无则 `gh project create`), 用 `gh project item-create --format json` 加 item。
+   - **gh node id (project/item/field/option) 一律从 `item-create` / `item-list` 的 `--format json` 输出取真实 id, 同一脚本内用 shell 变量传递; 严禁手敲或凭记忆填** (错 id 会 GraphQL "could not resolve" 但 exit 0, 静默失败)。置 Todo: 取 Status 字段与选项 id 后 `item-edit`, 再 `item-list` 复核 status。
+   - 将 item id / URL 回写 INDEX.md 的 gh project 段。
 
 产出: `docs/works/{task}/` 初始化完成, phase=explore (gh project item 已建或已记录待授权)。
 完成提示用户: 下一步 `/opsx:explore`。
