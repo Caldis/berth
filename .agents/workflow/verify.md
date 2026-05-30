@@ -23,6 +23,7 @@
    - Windows 进程检查需区分主进程和 helper 进程: 用 `Get-CimInstance Win32_Process` 查看 `electron.exe` 命令行, 主进程通常是 `electron.exe .` 或加载 `out/main/index.js`, helper 进程带 `--type=`。验证前后都要确认目标窗口对应的是刚冷启动的新进程。
    - Windows UI 截图需用真实 `electron.exe` 主进程窗口, Playwright/CDP 只负责交互。不要用 `_electron.launch()` 返回进程的 `MainWindowHandle` 当截图句柄; 该 PID 可能没有主窗口句柄。高 DPI/显示缩放下, 优先用 Win32 枚举目标进程可见窗口, 再用 DWM `DWMWA_EXTENDED_FRAME_BOUNDS` 获取物理像素窗口边界后 `CopyFromScreen` 裁剪。
    - verify 过程中若遇到已验证的工具链 workaround、截图/进程/环境类问题、或用户纠正, 不等最终复盘: 先写入 `docs/friction/{YYYYMMDD}-verify-{summary}.md`, 必要时同步更新 workflow 规则, 跑 `pnpm harness:check` 通过后再继续最终汇报。
+   - verify 过程中若发现已验证但不属于当前主线验收范围的产品 bug、功能缺口或改进项, 写入 `docs/issues/{YYYY-MM-DD}-{BUG|FEATURE|IMPROVEMENT}-{summary}.md`, 并在当前 verify 记录或 PLAN 中交叉引用; 不把旁支问题改成当前任务修复项, 除非用户明确扩大任务范围。
 4. 不通过项: 回写为 03-PLAN.md 新任务, 将 INDEX.phase 退回 implement, 重新进入开发循环。
 5. 全部通过后, 提示用户确认验收, 然后 `opsx-archive`。如果用户已明确认为任务完成或要求提交, 不要停在未提交工作区: 立即进入 archive 的归档与提交流程。若等待用户确认而暂不 archive, 最终说明必须明确“尚未提交, 下一步 archive/commit”。
 

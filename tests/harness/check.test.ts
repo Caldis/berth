@@ -147,11 +147,20 @@ describe('checkWorkflowSources', () => {
 })
 
 describe('checkEntryRules', () => {
-  function writeEntryRules(options: { agents?: boolean; readme?: boolean }): void {
+  function writeEntryRules(options: { agents?: boolean; readme?: boolean; sideIssue?: boolean }): void {
     if (options.agents) writeFileSync(join(root, 'AGENTS.md'), SMALL_CHANGE_EXEMPTION_CONSENT)
     if (options.readme) {
       mkdirSync(join(root, '.agents'), { recursive: true })
       writeFileSync(join(root, '.agents/README.md'), SMALL_CHANGE_EXEMPTION_CONSENT)
+    }
+    if (options.sideIssue !== false) {
+      mkdirSync(join(root, '.agents/workflow'), { recursive: true })
+      mkdirSync(join(root, 'docs/issues'), { recursive: true })
+      const text = '发现不属于当前主线验收范围的问题时写入 docs/issues。'
+      writeFileSync(join(root, '.agents/workflow/_shared.md'), text)
+      writeFileSync(join(root, '.agents/workflow/implement.md'), text)
+      writeFileSync(join(root, '.agents/workflow/verify.md'), text)
+      writeFileSync(join(root, 'docs/issues/AGENTS.md'), text)
     }
   }
 
@@ -168,5 +177,11 @@ describe('checkEntryRules', () => {
   it('.agents README 缺少小改动豁免确认规则时报错', () => {
     writeEntryRules({ agents: true })
     expect(checkEntryRules(root).some((e: string) => e.includes('.agents/README.md'))).toBe(true)
+  })
+
+  it('缺少旁支产品问题记录规则时报错', () => {
+    writeEntryRules({ agents: true, readme: true })
+    writeFileSync(join(root, '.agents/workflow/implement.md'), 'docs/issues')
+    expect(checkEntryRules(root).some((e: string) => e.includes('side product issue'))).toBe(true)
   })
 })

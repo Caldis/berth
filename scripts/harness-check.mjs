@@ -137,6 +137,16 @@ export function checkEntryRules(root) {
     if (!readFileSync(path, 'utf8').includes(SMALL_CHANGE_EXEMPTION_CONSENT))
       errors.push(`entry-rules: ${rel} missing small-change exemption consent rule`)
   }
+  for (const rel of ['.agents/workflow/_shared.md', '.agents/workflow/implement.md', '.agents/workflow/verify.md', 'docs/issues/AGENTS.md']) {
+    const path = join(root, rel)
+    if (!existsSync(path)) {
+      errors.push(`entry-rules: missing ${rel}`)
+      continue
+    }
+    const content = readFileSync(path, 'utf8')
+    if (!content.includes('docs/issues') || !content.includes('不属于当前主线'))
+      errors.push(`entry-rules: ${rel} missing side product issue capture rule`)
+  }
   return errors
 }
 
