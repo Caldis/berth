@@ -23,6 +23,9 @@ import { DetailRow } from '@/components/shared/detail-row'
 import { WarningBanner } from '@/components/shared/warning-banner'
 import { ScopeBadge } from '@/components/shared/scope-badge'
 import { HooksLifecycleView } from '@/components/capabilities/hooks-lifecycle-view'
+import { AssetGuidePanel } from '@/components/shared/asset-guide-panel'
+import { capabilityGuideMap, type CapabilityGuideId } from '@/lib/asset-guidance'
+import { normalizeEnvVars, normalizePermissionRules, type PermissionRuleKind, type PermissionRuleRow } from '@/lib/capability-assets'
 import type { Asset, AssetScope } from '@shared/types/asset'
 
 type ScopeFilter = 'all' | AssetScope
@@ -279,71 +282,71 @@ function StatusLineSection({ assets }: { assets: Asset[] }): React.ReactElement 
 }
 
 /* ---------- Permissions section ---------- */
+function PermissionRuleList({
+  title,
+  rows,
+  kind
+}: {
+  title: string
+  rows: PermissionRuleRow[]
+  kind: PermissionRuleKind
+}): React.ReactElement {
+  const { t } = useTranslation()
+  const color = kind === 'allow'
+    ? 'text-green-500'
+    : kind === 'deny'
+      ? 'text-destructive'
+      : 'text-amber-500'
+  const Icon = kind === 'allow' ? Check : kind === 'deny' ? XIcon : Shield
+
+  return (
+    <div className="rounded-lg border border-border bg-card">
+      <div className="border-b border-border px-4 py-2.5">
+        <h3 className="flex items-center gap-2 text-sm font-medium text-foreground">
+          <Icon className={cn('h-3.5 w-3.5', color)} />
+          {title}
+          <span className="text-xs text-muted-foreground">({rows.length})</span>
+        </h3>
+      </div>
+      {rows.length === 0 ? (
+        <div className="px-4 py-3">
+          <p className="text-xs text-muted-foreground">{t('common.empty')}</p>
+        </div>
+      ) : (
+        <div className="divide-y divide-border/50">
+          {rows.map((row) => (
+            <div key={row.id} className="flex items-center gap-2 px-4 py-2">
+              <span className="min-w-0 truncate text-xs font-mono text-foreground">{row.rule}</span>
+              <ScopeBadge scope={row.scope} />
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 function PermissionsSection({ assets }: { assets: Asset[] }): React.ReactElement {
   const { t } = useTranslation()
 
-  const bypassAsset = assets.find((a) => a.meta.bypassPermissions === true)
-  const allowAssets = assets.filter((a) => a.meta.listType === 'allow')
-  const denyAssets = assets.filter((a) => a.meta.listType === 'deny')
+  const rows = normalizePermissionRules(assets)
+  const bypassRow = rows.find((row) => row.kind === 'bypass')
+  const allowRows = rows.filter((row) => row.kind === 'allow')
+  const askRows = rows.filter((row) => row.kind === 'ask')
+  const denyRows = rows.filter((row) => row.kind === 'deny')
 
   return (
     <div className="space-y-3">
-      {bypassAsset && (
+      {bypassRow && (
         <WarningBanner
           title={t('capabilities.permissions.warning')}
-          message={t('capabilities.permissions.bypassEnabled', { scope: bypassAsset.scope })}
+          message={t('capabilities.permissions.bypassEnabled', { scope: bypassRow.scope })}
         />
       )}
 
-      {/* Allow list */}
-      <div className="rounded-lg border border-border bg-card">
-        <div className="border-b border-border px-4 py-2.5">
-          <h3 className="flex items-center gap-2 text-sm font-medium text-foreground">
-            <Check className="h-3.5 w-3.5 text-green-500" />
-            {t('capabilities.permissions.allowList')}
-            <span className="text-xs text-muted-foreground">({allowAssets.length})</span>
-          </h3>
-        </div>
-        {allowAssets.length === 0 ? (
-          <div className="px-4 py-3">
-            <p className="text-xs text-muted-foreground">{t('common.empty')}</p>
-          </div>
-        ) : (
-          <div className="divide-y divide-border/50">
-            {allowAssets.map((a) => (
-              <div key={a.id} className="flex items-center gap-2 px-4 py-2">
-                <span className="min-w-0 truncate text-xs font-mono text-foreground">{(a.meta.pattern as string) ?? a.name}</span>
-                <ScopeBadge scope={a.scope} />
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Deny list */}
-      <div className="rounded-lg border border-border bg-card">
-        <div className="border-b border-border px-4 py-2.5">
-          <h3 className="flex items-center gap-2 text-sm font-medium text-foreground">
-            <XIcon className="h-3.5 w-3.5 text-destructive" />
-            {t('capabilities.permissions.denyList')}
-            <span className="text-xs text-muted-foreground">({denyAssets.length})</span>
-          </h3>
-        </div>
-        {denyAssets.length === 0 ? (
-          <div className="px-4 py-3">
-            <p className="text-xs text-muted-foreground">{t('common.empty')}</p>
-          </div>
-        ) : (
-          <div className="divide-y divide-border/50">
-            {denyAssets.map((a) => (
-              <div key={a.id} className="flex items-center gap-2 px-4 py-2">
-                <span className="min-w-0 truncate text-xs font-mono text-foreground">{(a.meta.pattern as string) ?? a.name}</span>
-                <ScopeBadge scope={a.scope} />
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+      <PermissionRuleList title={t('capabilities.permissions.allowList')} rows={allowRows} kind="allow" />
+      <PermissionRuleList title={t('capabilities.permissions.askList')} rows={askRows} kind="ask" />
+      <PermissionRuleList title={t('capabilities.permissions.denyList')} rows={denyRows} kind="deny" />
     </div>
   )
 }
@@ -351,20 +354,21 @@ function PermissionsSection({ assets }: { assets: Asset[] }): React.ReactElement
 /* ---------- Env section ---------- */
 function EnvSection({ assets }: { assets: Asset[] }): React.ReactElement {
   const { t } = useTranslation()
+  const rows = normalizeEnvVars(assets)
 
-  if (assets.length === 0) {
+  if (rows.length === 0) {
     return <EmptyState icon={Variable} message={t('common.empty')} />
   }
 
   return (
     <div className="rounded-lg border border-border bg-card divide-y divide-border/50">
-      {assets.map((a) => (
-        <div key={a.id} className="flex items-center gap-3 px-4 py-2.5">
-          <span className="min-w-0 shrink-0 text-sm font-mono font-medium text-foreground">{a.name}</span>
+      {rows.map((row) => (
+        <div key={row.id} className="flex items-center gap-3 px-4 py-2.5">
+          <span className="min-w-0 shrink-0 text-sm font-mono font-medium text-foreground">{row.name}</span>
           <span className="min-w-0 flex-1 truncate text-sm font-mono text-muted-foreground">
-            {a.sensitive ? '••••••' : ((a.meta.value as string) ?? '••••••')}
+            {row.value}
           </span>
-          <ScopeBadge scope={a.scope} />
+          <ScopeBadge scope={row.scope} />
         </div>
       ))}
     </div>
@@ -418,6 +422,7 @@ export function Capabilities(): React.ReactElement {
   }, [visibleAssets, activeTab, search, scope])
 
   const showFilter = activeTab !== 'permissions'
+  const activeGuide = capabilityGuideMap[activeTab as CapabilityGuideId]
 
   const renderContent = (): React.ReactElement => {
     switch (activeTab) {
@@ -475,6 +480,8 @@ export function Capabilities(): React.ReactElement {
           placeholder={`${t('search.placeholder')} ${t(`capabilities.tabs.${activeTab}`)}`}
         />
       )}
+
+      <AssetGuidePanel guide={activeGuide} />
 
       {renderContent()}
     </div>

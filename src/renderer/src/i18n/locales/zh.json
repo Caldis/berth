@@ -495,6 +495,7 @@
       "warning": "警告",
       "bypassEnabled": "{{scope}} 级别已启用 bypassPermissions，将跳过所有权限提示。",
       "allowList": "允许列表",
+      "askList": "确认列表",
       "denyList": "拒绝列表"
     }
   },

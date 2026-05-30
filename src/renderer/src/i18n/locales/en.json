@@ -495,6 +495,7 @@
       "warning": "Warning",
       "bypassEnabled": "bypassPermissions is enabled in {{scope}} scope. This skips ALL permission prompts.",
       "allowList": "Allow list",
+      "askList": "Ask list",
       "denyList": "Deny list"
     }
   },
