@@ -4,7 +4,7 @@
 
 小步提交要求: 每完成一个任务并通过对应检查, 只暂存本任务相关文件, `git diff --cached` 核对后立即提交。
 
-- [ ] 任务 1: 增加 renderer hooks lifecycle 与管理动作抽象模型
+- [x] 任务 1: 增加 renderer hooks lifecycle 与管理动作抽象模型
   - 改动: `src/renderer/src/lib/hook-lifecycle.ts`, `tests/unit` 或 `tests/renderer` 中对应纯函数测试。
   - 内容: 定义 stage、agent support、native event 映射、view 过滤、asset 分组、unknown event 保留策略、hook management action availability。
   - 验证: 运行 lifecycle 映射相关测试。
