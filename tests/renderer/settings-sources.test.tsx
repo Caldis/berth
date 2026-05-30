@@ -107,6 +107,9 @@ describe('SettingsContent scan sources', () => {
     expect(screen.getByText('Codex')).toBeInTheDocument()
     expect(screen.getByText('2 sources')).toBeInTheDocument()
     expect(screen.getByText('1 source')).toBeInTheDocument()
+    expect(screen.getByText('2 Scanned')).toBeInTheDocument()
+    expect(screen.getByText('1 Not scanned')).toBeInTheDocument()
+    expect(screen.getByText('1 Scanned')).toBeInTheDocument()
     expect(screen.getByText('Instructions')).toBeInTheDocument()
     expect(screen.getByText('Capabilities')).toBeInTheDocument()
     expect(screen.getAllByText('State').length).toBeGreaterThan(0)
@@ -124,7 +127,7 @@ describe('SettingsContent scan sources', () => {
 
     expect(screen.getByText('User sources')).toBeInTheDocument()
     expect(screen.getByText('Project sources')).toBeInTheDocument()
-    expect(screen.getAllByText('Detected').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Scanned').length).toBeGreaterThan(0)
     expect(screen.getByText('Not scanned')).toBeInTheDocument()
 
     const candidatePath = screen.getByText('D:\\Code\\historic-project')

@@ -8,7 +8,12 @@ import {
   FolderOpen
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import type { AssetCategory, AssetScope, ScanRoot } from '@shared/types/asset'
+import type {
+  AssetCategory,
+  AssetScope,
+  ScanRoot,
+  ScanSourceStatus
+} from '@shared/types/asset'
 import type { AgentScanSourceGroup } from '@shared/types/ipc'
 
 const SOURCE_CATEGORY_ORDER: AssetCategory[] = [
@@ -20,6 +25,7 @@ const SOURCE_CATEGORY_ORDER: AssetCategory[] = [
 ]
 
 const SOURCE_SCOPE_ORDER: AssetScope[] = ['user', 'project', 'enterprise', 'session']
+const SOURCE_STATUS_ORDER: ScanSourceStatus[] = ['scanned', 'not-scanned', 'missing']
 
 interface LocalSourcesSectionProps {
   groups: AgentScanSourceGroup[]
@@ -30,7 +36,7 @@ export function LocalSourcesSection({
   groups,
   loading
 }: LocalSourcesSectionProps): ReactElement {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const [expandedSources, setExpandedSources] = useState<Record<string, boolean>>({})
 
   const toggleSourceGroup = (agentId: string): void => {
@@ -51,6 +57,7 @@ export function LocalSourcesSection({
           groups.map((group, groupIndex) => {
             const sources = group.sources ?? group.roots
             const sourceCategories = getSourceCategories(sources)
+            const statusCounts = getSourceStatusCounts(sources)
             const scopedSources = groupSourcesByScope(sources)
             const expanded = expandedSources[group.agentId] === true
 
@@ -92,6 +99,7 @@ export function LocalSourcesSection({
                           ))}
                         </div>
                       )}
+                      <SourceStatusCounts counts={statusCounts} language={i18n.language} />
                       <p className="text-xs text-muted-foreground">
                         {group.installed
                           ? t('settings.sourceSummary')
@@ -143,6 +151,35 @@ export function LocalSourcesSection({
   )
 }
 
+function SourceStatusCounts({
+  counts,
+  language
+}: {
+  counts: Record<ScanSourceStatus, number>
+  language: string
+}): ReactElement | null {
+  const visibleStatuses = SOURCE_STATUS_ORDER.filter((status) => counts[status] > 0)
+  if (visibleStatuses.length === 0) return null
+
+  return (
+    <div className="flex flex-wrap gap-1">
+      {visibleStatuses.map((status) => (
+        <span
+          key={status}
+          className={cn(
+            'rounded-md border px-1.5 py-0.5 text-[11px]',
+            status === 'scanned'
+              ? 'border-accent/30 bg-accent/10 text-foreground'
+              : 'border-border text-muted-foreground'
+          )}
+        >
+          {formatSourceStatusCount(status, counts[status], language)}
+        </span>
+      ))}
+    </div>
+  )
+}
+
 function SourceRow({
   source,
   showSeparator
@@ -189,7 +226,7 @@ function SourceRow({
 }
 
 function SourceStatusBadge({ status }: { status: NonNullable<ScanRoot['status']> }): ReactElement {
-  const { t, i18n } = useTranslation()
+  const { i18n } = useTranslation()
 
   return (
     <span
@@ -200,23 +237,32 @@ function SourceStatusBadge({ status }: { status: NonNullable<ScanRoot['status']>
           : 'border-border text-muted-foreground'
       )}
     >
-      {getSourceStatusLabel(status, i18n.language, t)}
+      {getSourceStatusLabel(status, i18n.language)}
     </span>
   )
 }
 
 function getSourceStatusLabel(
   status: NonNullable<ScanRoot['status']>,
-  language: string,
-  t: (key: string) => string
+  language: string
 ): string {
   if (status === 'scanned') {
-    return t('settings.detected')
+    return language.startsWith('zh') ? '已扫描' : 'Scanned'
   }
   if (status === 'missing') {
-    return t('settings.notFound')
+    return language.startsWith('zh') ? '未发现' : 'Missing'
   }
   return language.startsWith('zh') ? '未扫描' : 'Not scanned'
+}
+
+function formatSourceStatusCount(
+  status: ScanSourceStatus,
+  count: number,
+  language: string
+): string {
+  const label = getSourceStatusLabel(status, language)
+  if (language.startsWith('zh')) return `${label} ${count}`
+  return `${count} ${label}`
 }
 
 function getSourceCategories(sources: ScanRoot[]): AssetCategory[] {
@@ -227,6 +273,18 @@ function getSourceCategories(sources: ScanRoot[]): AssetCategory[] {
     }
   }
   return SOURCE_CATEGORY_ORDER.filter((category) => found.has(category))
+}
+
+function getSourceStatusCounts(sources: ScanRoot[]): Record<ScanSourceStatus, number> {
+  const counts: Record<ScanSourceStatus, number> = {
+    scanned: 0,
+    missing: 0,
+    'not-scanned': 0
+  }
+  for (const source of sources) {
+    counts[source.status ?? 'scanned'] += 1
+  }
+  return counts
 }
 
 function groupSourcesByScope(sources: ScanRoot[]): { scope: AssetScope; sources: ScanRoot[] }[] {
