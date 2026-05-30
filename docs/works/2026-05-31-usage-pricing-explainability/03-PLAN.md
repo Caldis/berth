@@ -30,3 +30,8 @@
 ## verify 回写
 
 verify 不通过项作为新任务追加于此, phase 退回 implement。
+
+- 2026-05-31 verify:
+  - 通过: `pnpm harness:check`, `pnpm test`, `pnpm typecheck`, `pnpm build`, `pnpm test:e2e -- tests/e2e/app.e2e.ts -g "can navigate to usage"`。
+  - 真实界面验收: 使用 `pnpm dev:agent start --id usage-pricing-verify` 启动 agent-owned Electron 实例; 左侧导航进入 Usage; 已看到计价模式、费用说明、token 结构条、价格缺口示例、每日花费和模型/项目拆分; 无白屏或明显重叠。验收后已 `pnpm dev:agent stop usage-pricing-verify`。
+  - 未通过但非本任务范围: `pnpm lint` 仍被既有 `src/shared/types/memory.ts` 第 1 行 `@typescript-eslint/ban-types` 阻塞; 已有 issue: `docs/issues/2026-05-30-BUG-memory-source-id-lint-failure.md`。
