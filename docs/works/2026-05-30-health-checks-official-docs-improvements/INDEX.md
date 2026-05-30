@@ -2,7 +2,7 @@
 task: 2026-05-30-health-checks-official-docs-improvements
 type: feature
 jira:
-phase: verify
+phase: implement
 created: 2026-05-30
 artifacts:
   source: 00-PRD.md
@@ -24,6 +24,6 @@ artifacts:
 ## gh project
 - project: https://github.com/users/Caldis/projects/6
 - item_id: PVTI_lAHOADXbEs4BZHvQzguQCS4
-- status: Done
+- status: In Progress
 
 ## 待澄清 (blocked 时填)
