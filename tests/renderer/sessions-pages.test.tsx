@@ -246,7 +246,13 @@ describe('session pages', () => {
     )
 
     expect(await screen.findByText('Input: 10')).toBeInTheDocument()
-    fireEvent.click(screen.getByRole('button', { name: 'Estimated' }))
+    expect(screen.getByRole('radiogroup', { name: 'Cost mode' })).toBeInTheDocument()
+    expect(screen.getByRole('radio', { name: 'Auto' })).toHaveAttribute(
+      'title',
+      'Use provider actual cost when available, otherwise use the pricing catalog estimate.'
+    )
+    expect(screen.getByRole('radio', { name: 'Auto' })).toHaveAttribute('aria-checked', 'true')
+    fireEvent.click(screen.getByRole('radio', { name: 'Estimated' }))
 
     await waitFor(() => {
       expect(window.api.usage.summary).toHaveBeenLastCalledWith({

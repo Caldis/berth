@@ -651,6 +651,11 @@
       "actual": "真实",
       "estimated": "估算"
     },
+    "costModeTooltip": {
+      "auto": "有供应商真实费用时使用真实费用, 否则使用价格表估算。",
+      "actual": "只显示供应商返回的真实费用, 缺失记录保持未知。",
+      "estimated": "只显示按 token 用量和价格表计算出的估算费用。"
+    },
     "costExplanationTitle": "费用说明",
     "costFormulaLabel": "计算方式",
     "costFormula": {

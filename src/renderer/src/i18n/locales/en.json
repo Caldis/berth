@@ -651,6 +651,11 @@
       "actual": "Actual",
       "estimated": "Estimated"
     },
+    "costModeTooltip": {
+      "auto": "Use provider actual cost when available, otherwise use the pricing catalog estimate.",
+      "actual": "Show only provider-reported actual cost. Missing records stay unknown.",
+      "estimated": "Show only pricing catalog estimates calculated from token usage."
+    },
     "costExplanationTitle": "Cost explanation",
     "costFormulaLabel": "Formula",
     "costFormula": {

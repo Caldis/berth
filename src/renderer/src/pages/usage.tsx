@@ -40,10 +40,22 @@ const TIME_RANGES = [
   { value: 365, labelKey: 'overview.timeRange.all' }
 ] as const
 
-const COST_MODES: { value: CostMode; labelKey: string }[] = [
-  { value: 'auto', labelKey: 'usage.costMode.auto' },
-  { value: 'actual', labelKey: 'usage.costMode.actual' },
-  { value: 'estimated', labelKey: 'usage.costMode.estimated' }
+const COST_MODES: { value: CostMode; labelKey: string; tooltipKey: string }[] = [
+  {
+    value: 'auto',
+    labelKey: 'usage.costMode.auto',
+    tooltipKey: 'usage.costModeTooltip.auto'
+  },
+  {
+    value: 'actual',
+    labelKey: 'usage.costMode.actual',
+    tooltipKey: 'usage.costModeTooltip.actual'
+  },
+  {
+    value: 'estimated',
+    labelKey: 'usage.costMode.estimated',
+    tooltipKey: 'usage.costModeTooltip.estimated'
+  }
 ]
 
 const FORMULA_LABEL_KEYS: Record<UsageCostFormula, string> = {
@@ -165,14 +177,18 @@ export function Usage(): React.ReactElement {
         <h1 className="text-2xl font-semibold tracking-tight">{t('usage.title')}</h1>
         <div className="flex flex-wrap items-center justify-end gap-2">
           <div
+            role="radiogroup"
             className="flex gap-1 rounded-lg border border-border bg-muted/50 p-1"
             aria-label={t('usage.costModeLabel')}
           >
             {COST_MODES.map((mode) => (
               <button
+                type="button"
+                role="radio"
                 key={mode.value}
                 onClick={() => setCostMode(mode.value)}
-                aria-pressed={costMode === mode.value}
+                aria-checked={costMode === mode.value}
+                title={t(mode.tooltipKey)}
                 className={cn(
                   'rounded-md px-3 py-1 text-xs font-medium transition-colors',
                   costMode === mode.value

@@ -2,9 +2,10 @@
 
 按优先级顺序执行, 每项完成后跑对应验证并小步提交。
 
-- [ ] 任务 1: cost mode tooltip 与 radiogroup 语义
+- [x] 任务 1: cost mode tooltip 与 radiogroup 语义
   - 改 `Usage` 页 cost mode 控件和 en/zh i18n。
   - 验证: `pnpm test -- tests/renderer/sessions-pages.test.tsx`, `pnpm typecheck:web`。
+  - 结果: 已通过 `pnpm test -- tests/renderer/sessions-pages.test.tsx -t "passes selected cost mode"`、`pnpm typecheck:web`; 该 Vitest 命令实际运行了整个 `sessions-pages` 文件, jsdom 下仍有 Recharts 0 宽高警告。
 
 - [ ] 任务 2: token cache read/write tooltip
   - 改 `src/shared/token-usage.ts` 和 `TokenUsageDisplay`。
