@@ -14,10 +14,13 @@ function buildSources(projectDir?: string): MemorySource[] {
 /**
  * Detect + list across all registered sources, aggregate notes, and include
  * unavailable sources in `sources` so the UI can show/filter them.
+ *
+ * `sources` is injectable for testing; production callers omit it.
  */
-export async function listMemory(projectDir?: string): Promise<MemoryListResult> {
-  const sources = buildSources(projectDir)
-
+export async function listMemory(
+  projectDir?: string,
+  sources: MemorySource[] = buildSources(projectDir)
+): Promise<MemoryListResult> {
   const results = await Promise.all(
     sources.map(
       async (
@@ -56,14 +59,15 @@ export async function listMemory(projectDir?: string): Promise<MemoryListResult>
  */
 export async function readMemory(
   globalId: string,
-  projectDir?: string
+  projectDir?: string,
+  sources: MemorySource[] = buildSources(projectDir)
 ): Promise<MemoryNote | null> {
   const colon = globalId.indexOf(':')
   if (colon < 0) return null
   const sourceId = globalId.slice(0, colon)
   const localId = globalId.slice(colon + 1)
 
-  const source = buildSources(projectDir).find((s) => s.id === sourceId)
+  const source = sources.find((s) => s.id === sourceId)
   if (!source) return null
   return source.read(localId)
 }

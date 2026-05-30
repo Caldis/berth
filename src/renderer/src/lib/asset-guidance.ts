@@ -11,7 +11,7 @@ export interface AssetGuideDefinition {
 }
 
 export type InstructionGuideId =
-  | 'memories'
+  | 'conventions'
   | 'skills'
   | 'subagents'
   | 'commands'
@@ -53,7 +53,10 @@ function guide(baseKey: string, docs: AssetGuideDocLink[]): AssetGuideDefinition
 }
 
 export const instructionGuideMap: Record<InstructionGuideId, AssetGuideDefinition> = {
-  memories: guide('instructions.guidance.memories', [
+  // The existing `guidance.memories` copy ("durable instructions the agent loads
+  // as context") describes CLAUDE.md / AGENTS.md, so it now backs the Conventions
+  // tab. The Memories tab renders MemoryView and shows no guide panel.
+  conventions: guide('instructions.guidance.memories', [
     { labelKey: 'instructions.guidance.docs.claudeMemory', url: CLAUDE_MEMORY_URL },
     { labelKey: 'instructions.guidance.docs.codexAgentsMd', url: CODEX_AGENTS_MD_URL }
   ]),

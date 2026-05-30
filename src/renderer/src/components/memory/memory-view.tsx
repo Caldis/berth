@@ -1,9 +1,22 @@
-import { useState, useMemo, useCallback } from 'react'
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Brain, Database, ChevronDown, ChevronRight, FolderOpen, Tag, Loader2 } from 'lucide-react'
+import {
+  Brain,
+  Database,
+  ChevronDown,
+  ChevronRight,
+  FolderOpen,
+  Tag,
+  Loader2,
+  Search,
+  RefreshCw,
+  Link2,
+  Eye
+} from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { truncatePath } from '@/lib/utils'
 import { useMemory } from '@/hooks/use-memory'
+import { useAppStore } from '@/stores/app'
 import type { MemoryNote, MemorySourceStatus, MemoryImportance } from '@shared/types/memory'
 
 const importanceColors: Record<MemoryImportance, string> = {
@@ -15,6 +28,16 @@ const importanceColors: Record<MemoryImportance, string> = {
 
 function sourceIcon(id: string): React.ComponentType<{ className?: string }> {
   return id === 'united-memory' ? Database : Brain
+}
+
+/** Most-recent-first; notes without a date sort last, tiebroken by title. */
+function byRecency(a: MemoryNote, b: MemoryNote): number {
+  const ta = a.updatedAt ? Date.parse(a.updatedAt) : NaN
+  const tb = b.updatedAt ? Date.parse(b.updatedAt) : NaN
+  const va = Number.isNaN(ta) ? -Infinity : ta
+  const vb = Number.isNaN(tb) ? -Infinity : tb
+  if (va !== vb) return vb - va
+  return a.title.localeCompare(b.title)
 }
 
 function ImportanceBadge({ importance }: { importance: MemoryImportance }): React.ReactElement {
@@ -35,34 +58,72 @@ function SourceBadge({ label, id }: { label: string; id: string }): React.ReactE
   )
 }
 
-function NoteCard({ note }: { note: MemoryNote }): React.ReactElement {
+function NoteCard({
+  note,
+  focused,
+  onNavigate
+}: {
+  note: MemoryNote
+  focused: boolean
+  onNavigate: (globalId: string) => void
+}): React.ReactElement {
   const { t } = useTranslation()
   const [expanded, setExpanded] = useState(false)
   const [body, setBody] = useState<string | null>(note.body ?? null)
   const [loadingBody, setLoadingBody] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+  const openInspector = useAppStore((s) => s.openInspector)
+
+  const ensureBody = useCallback(async (): Promise<string> => {
+    if (body != null) return body
+    if (!window.api?.memory?.get) return ''
+    setLoadingBody(true)
+    try {
+      const full = await window.api.memory.get(note.id)
+      const text = full?.body ?? ''
+      setBody(text)
+      return text
+    } catch {
+      setBody('')
+      return ''
+    } finally {
+      setLoadingBody(false)
+    }
+  }, [body, note.id])
 
   const toggle = useCallback(async () => {
     const next = !expanded
     setExpanded(next)
-    if (next && body == null && window.api?.memory?.get) {
-      setLoadingBody(true)
-      try {
-        const full = await window.api.memory.get(note.id)
-        setBody(full?.body ?? '')
-      } catch {
-        setBody('')
-      } finally {
-        setLoadingBody(false)
-      }
+    if (next) void ensureBody()
+  }, [expanded, ensureBody])
+
+  // When this card becomes the navigation target, expand + scroll into view.
+  useEffect(() => {
+    if (focused) {
+      setExpanded(true)
+      void ensureBody()
+      ref.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
     }
-  }, [expanded, body, note.id])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focused])
 
   const showInExplorer = useCallback(() => {
     if (note.path) window.api?.shell.openPath(note.path)
   }, [note.path])
 
+  const viewRaw = useCallback(async () => {
+    const text = await ensureBody()
+    openInspector(note.path, text)
+  }, [ensureBody, note.path, openInspector])
+
   return (
-    <div className="rounded-lg border border-border bg-card transition-colors hover:bg-accent/5">
+    <div
+      ref={ref}
+      className={cn(
+        'rounded-lg border bg-card transition-colors hover:bg-accent/5',
+        focused ? 'border-primary ring-1 ring-primary' : 'border-border'
+      )}
+    >
       <button onClick={toggle} className="flex w-full items-center gap-3 px-4 py-3 text-left">
         {expanded ? <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" /> : <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />}
         <div className="min-w-0 flex-1">
@@ -73,6 +134,9 @@ function NoteCard({ note }: { note: MemoryNote }): React.ReactElement {
           </div>
           {note.summary && <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">{note.summary}</p>}
         </div>
+        {note.updatedAt && (
+          <span className="shrink-0 text-[10px] text-muted-foreground/70">{note.updatedAt}</span>
+        )}
       </button>
 
       {expanded && (
@@ -85,20 +149,44 @@ function NoteCard({ note }: { note: MemoryNote }): React.ReactElement {
               ))}
             </div>
           )}
+
+          {note.links.length > 0 && (
+            <div className="flex flex-wrap items-center gap-1">
+              <Link2 className="h-3 w-3 text-muted-foreground" />
+              <span className="mr-1 text-xs text-muted-foreground">{t('memory.relations')}</span>
+              {note.links.map((link) => (
+                <button
+                  key={link}
+                  onClick={() => onNavigate(`${note.sourceId}:${link}`)}
+                  className="rounded-md border border-border px-2 py-0.5 text-xs font-mono text-primary transition-colors hover:bg-accent"
+                >
+                  {link}
+                </button>
+              ))}
+            </div>
+          )}
+
           {loadingBody ? (
             <div className="flex items-center gap-2 text-xs text-muted-foreground"><Loader2 className="h-3 w-3 animate-spin" />{t('common.loading')}</div>
           ) : body ? (
-            <pre className="max-h-80 overflow-auto whitespace-pre-wrap rounded-md bg-muted/40 p-3 text-xs text-foreground">{body}</pre>
+            <pre className="max-h-80 overflow-auto whitespace-pre-wrap rounded-md bg-muted/40 p-3 text-xs leading-5 text-foreground">{body}</pre>
           ) : null}
-          {note.path && (
-            <div className="flex items-center justify-between gap-2 pt-1">
-              <span className="truncate text-xs text-muted-foreground font-mono">{truncatePath(note.path)}</span>
-              <button onClick={showInExplorer} className="flex shrink-0 items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-accent">
+
+          <div className="flex items-center justify-between gap-2 pt-1">
+            <span className="truncate text-xs text-muted-foreground font-mono">{truncatePath(note.path)}</span>
+            <div className="flex shrink-0 gap-2">
+              {body !== '' && (
+                <button onClick={viewRaw} className="flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-accent">
+                  <Eye className="h-3 w-3" />
+                  {t('common.viewRaw')}
+                </button>
+              )}
+              <button onClick={showInExplorer} className="flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-accent">
                 <FolderOpen className="h-3 w-3" />
                 {t('instructions.showInExplorer')}
               </button>
             </div>
-          )}
+          </div>
         </div>
       )}
     </div>
@@ -142,13 +230,33 @@ function SourceFilter({
 
 export function MemoryView(): React.ReactElement {
   const { t } = useTranslation()
-  const { result, loading } = useMemory()
+  const { result, loading, refresh } = useMemory()
   const [activeSource, setActiveSource] = useState('all')
+  const [search, setSearch] = useState('')
+  const [focusId, setFocusId] = useState<string | null>(null)
 
   const notes = useMemo(() => {
-    if (activeSource === 'all') return result.notes
-    return result.notes.filter((n) => n.sourceId === activeSource)
-  }, [result.notes, activeSource])
+    const q = search.trim().toLowerCase()
+    return result.notes
+      .filter((n) => activeSource === 'all' || n.sourceId === activeSource)
+      .filter((n) => {
+        if (!q) return true
+        return (
+          n.title.toLowerCase().includes(q) ||
+          (n.summary?.toLowerCase().includes(q) ?? false) ||
+          n.tags.some((tag) => tag.toLowerCase().includes(q))
+        )
+      })
+      .slice()
+      .sort(byRecency)
+  }, [result.notes, activeSource, search])
+
+  const navigate = useCallback((globalId: string) => {
+    // Clear filters so the target is guaranteed visible, then focus it.
+    setSearch('')
+    setActiveSource('all')
+    setFocusId(globalId)
+  }, [])
 
   if (loading) {
     return (
@@ -161,7 +269,27 @@ export function MemoryView(): React.ReactElement {
 
   return (
     <div className="space-y-3">
+      <div className="flex items-center gap-2">
+        <div className="relative flex-1">
+          <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder={t('search.placeholder')}
+            className="h-9 w-full rounded-md border border-input bg-background pl-8 pr-3 text-sm outline-none ring-ring focus:ring-1"
+          />
+        </div>
+        <button
+          onClick={refresh}
+          title={t('memory.refresh')}
+          className="flex h-9 items-center gap-1.5 rounded-md border border-input bg-background px-3 text-sm text-foreground transition-colors hover:bg-accent"
+        >
+          <RefreshCw className="h-3.5 w-3.5" />
+        </button>
+      </div>
+
       <SourceFilter sources={result.sources} active={activeSource} total={result.notes.length} onChange={setActiveSource} />
+
       {notes.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border py-16">
           <Brain className="mb-3 h-10 w-10 text-muted-foreground/40" />
@@ -172,7 +300,14 @@ export function MemoryView(): React.ReactElement {
         </div>
       ) : (
         <div className="space-y-2">
-          {notes.map((note) => <NoteCard key={note.id} note={note} />)}
+          {notes.map((note) => (
+            <NoteCard
+              key={note.id}
+              note={note}
+              focused={note.id === focusId}
+              onNavigate={navigate}
+            />
+          ))}
         </div>
       )}
     </div>

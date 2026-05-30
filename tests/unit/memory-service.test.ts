@@ -1,0 +1,191 @@
+import { describe, it, expect, beforeAll, afterAll } from 'vitest'
+import * as fs from 'fs'
+import * as os from 'os'
+import * as path from 'path'
+import { listMemory, readMemory } from '../../src/main/memory'
+import { UnitedMemorySource } from '../../src/main/memory/sources/united-memory'
+import { ClaudeNativeSource } from '../../src/main/memory/sources/claude-native'
+import type { MemoryNote } from '../../src/shared/types/memory'
+import type { MemorySource } from '../../src/main/memory/types'
+
+// ── Source classes against a real temp dir (covers fs + absolute-path resolution) ──
+
+let tmp: string
+let umRoot: string
+let projectsRoot: string
+const SLUG = 'C--Users-test'
+
+beforeAll(async () => {
+  tmp = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'berth-mem-'))
+  umRoot = path.join(tmp, '.united-memory')
+  projectsRoot = path.join(tmp, 'projects')
+
+  // united-memory fixture
+  await fs.promises.mkdir(path.join(umRoot, 'mem'), { recursive: true })
+  await fs.promises.writeFile(
+    path.join(umRoot, 'index.json'),
+    JSON.stringify({
+      version: 1,
+      entries: [
+        {
+          id: 'note-a',
+          file: 'mem/note-a.md',
+          title: 'Note A',
+          tags: ['t1'],
+          links: ['note-b'],
+          importance: 'core',
+          summary: 'summary a',
+          created: '2026-01-01',
+          updated: '2026-05-01'
+        }
+      ]
+    }),
+    'utf-8'
+  )
+  await fs.promises.writeFile(
+    path.join(umRoot, 'mem', 'note-a.md'),
+    `---\nid: note-a\ntitle: Note A\ntags: [t1]\nlinks: [note-b]\nimportance: core\n---\n\n# Note A\n\n## TL;DR\n\nsummary a\n\n## Body\n\nfull body text\n`,
+    'utf-8'
+  )
+
+  // claude-native fixture
+  const memDir = path.join(projectsRoot, SLUG, 'memory')
+  await fs.promises.mkdir(memDir, { recursive: true })
+  await fs.promises.writeFile(path.join(memDir, 'MEMORY.md'), '# Memory Index\n\n- [foo.md](foo.md) — a note\n', 'utf-8')
+  await fs.promises.writeFile(
+    path.join(memDir, 'foo.md'),
+    `---\nname: Foo Note\ndescription: foo desc\nmetadata:\n  type: project\n---\n\n# Foo Note\n\nfoo body\n`,
+    'utf-8'
+  )
+})
+
+afterAll(async () => {
+  await fs.promises.rm(tmp, { recursive: true, force: true })
+})
+
+describe('UnitedMemorySource (temp dir)', () => {
+  it('detects availability and counts notes from index.json', async () => {
+    const status = await new UnitedMemorySource(umRoot).detect()
+    expect(status.available).toBe(true)
+    expect(status.noteCount).toBe(1)
+    expect(status.rootPath).toBe(umRoot)
+  })
+
+  it('list() returns ABSOLUTE paths (regression guard for Show-in-Explorer)', async () => {
+    const notes = await new UnitedMemorySource(umRoot).list()
+    expect(notes).toHaveLength(1)
+    expect(path.isAbsolute(notes[0].path)).toBe(true)
+    expect(notes[0].path).toBe(path.join(umRoot, 'mem', 'note-a.md'))
+  })
+
+  it('read() returns body + absolute path', async () => {
+    const note = await new UnitedMemorySource(umRoot).read('note-a')
+    expect(note).not.toBeNull()
+    expect(note!.body).toContain('full body text')
+    expect(path.isAbsolute(note!.path)).toBe(true)
+  })
+
+  it('detect() reports unavailable when the root is missing', async () => {
+    const status = await new UnitedMemorySource(path.join(tmp, 'nope')).detect()
+    expect(status.available).toBe(false)
+    expect(status.noteCount).toBe(0)
+  })
+})
+
+describe('ClaudeNativeSource (temp dir)', () => {
+  it('list() returns absolute paths and maps frontmatter', async () => {
+    const notes = await new ClaudeNativeSource(SLUG, projectsRoot).list()
+    expect(notes).toHaveLength(1)
+    expect(notes[0].title).toBe('Foo Note')
+    expect(notes[0].scope).toBe(SLUG)
+    expect(path.isAbsolute(notes[0].path)).toBe(true)
+    expect(notes[0].path).toBe(path.join(projectsRoot, SLUG, 'memory', 'foo.md'))
+  })
+
+  it('read() returns body + absolute path', async () => {
+    const note = await new ClaudeNativeSource(SLUG, projectsRoot).read(`${SLUG}/foo.md`)
+    expect(note).not.toBeNull()
+    expect(note!.body).toContain('foo body')
+    expect(path.isAbsolute(note!.path)).toBe(true)
+  })
+})
+
+// ── Aggregation / routing with injected fakes ──
+
+function fakeSource(id: string, notes: MemoryNote[], opts: { available?: boolean; throws?: boolean } = {}): MemorySource {
+  const { available = true, throws = false } = opts
+  return {
+    id,
+    label: id,
+    detect: async () => ({ id, label: id, available, rootPath: `/${id}`, noteCount: notes.length }),
+    list: async () => {
+      if (throws) throw new Error('boom')
+      return notes
+    },
+    read: async (localId) => notes.find((n) => n.id === `${id}:${localId}`) ?? null
+  }
+}
+
+function makeNote(id: string, sourceId: string): MemoryNote {
+  return {
+    id: `${sourceId}:${id}`,
+    sourceId,
+    sourceLabel: sourceId,
+    title: id,
+    tags: [],
+    importance: 'active',
+    path: `/${sourceId}/${id}.md`,
+    links: [],
+    createdAt: null,
+    updatedAt: null
+  }
+}
+
+describe('listMemory aggregation', () => {
+  it('flattens notes across sources and includes every source status', async () => {
+    const a = fakeSource('a', [makeNote('1', 'a'), makeNote('2', 'a')])
+    const b = fakeSource('b', [makeNote('1', 'b')])
+    const result = await listMemory(undefined, [a, b])
+    expect(result.notes).toHaveLength(3)
+    expect(result.sources.map((s) => s.id)).toEqual(['a', 'b'])
+  })
+
+  it('includes unavailable sources with no notes', async () => {
+    const a = fakeSource('a', [makeNote('1', 'a')], { available: false })
+    const result = await listMemory(undefined, [a])
+    expect(result.notes).toHaveLength(0)
+    expect(result.sources[0].available).toBe(false)
+  })
+
+  it('captures a source that throws during list() as unavailable + error', async () => {
+    const a = fakeSource('a', [makeNote('1', 'a')], { throws: true })
+    const result = await listMemory(undefined, [a])
+    expect(result.notes).toHaveLength(0)
+    expect(result.sources[0].available).toBe(false)
+    expect(result.sources[0].error).toContain('boom')
+  })
+})
+
+describe('readMemory routing', () => {
+  const a = fakeSource('a', [makeNote('1', 'a')])
+  const b = fakeSource('b', [makeNote('9', 'b')])
+
+  it('routes by the prefix before the first colon', async () => {
+    const note = await readMemory('a:1', undefined, [a, b])
+    expect(note?.id).toBe('a:1')
+  })
+
+  it('returns null for an unknown source', async () => {
+    expect(await readMemory('zzz:1', undefined, [a, b])).toBeNull()
+  })
+
+  it('returns null when the id has no colon', async () => {
+    expect(await readMemory('nocolon', undefined, [a, b])).toBeNull()
+  })
+
+  it('preserves colons in the local id', async () => {
+    const c = fakeSource('claude-native', [makeNote('slug/with:colon', 'claude-native')])
+    const note = await readMemory('claude-native:slug/with:colon', undefined, [c])
+    expect(note?.id).toBe('claude-native:slug/with:colon')
+  })
+})

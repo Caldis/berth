@@ -176,14 +176,14 @@ export class ClaudeNativeSource implements MemorySource {
     for (const slug of slugs) {
       const files = await this.noteFiles(slug)
       for (const filename of files) {
+        const filePath = path.join(this.memoryDir(slug), filename)
         try {
-          const md = await fs.promises.readFile(
-            path.join(this.memoryDir(slug), filename),
-            'utf-8'
-          )
+          const md = await fs.promises.readFile(filePath, 'utf-8')
           const note = parseNativeNote(md, slug, filename)
-          // List view omits body.
+          // List view omits body; resolve the parser's bare filename to an
+          // absolute path so "Show in Explorer" and the path label work.
           delete note.body
+          note.path = filePath
           notes.push(note)
         } catch {
           // unreadable note; skip
@@ -199,12 +199,10 @@ export class ClaudeNativeSource implements MemorySource {
     if (slash < 0) return null
     const slug = localId.slice(0, slash)
     const filename = localId.slice(slash + 1)
+    const filePath = path.join(this.memoryDir(slug), filename)
     try {
-      const md = await fs.promises.readFile(
-        path.join(this.memoryDir(slug), filename),
-        'utf-8'
-      )
-      return parseNativeNote(md, slug, filename)
+      const md = await fs.promises.readFile(filePath, 'utf-8')
+      return { ...parseNativeNote(md, slug, filename), path: filePath }
     } catch {
       return null
     }

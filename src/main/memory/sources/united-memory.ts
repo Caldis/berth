@@ -184,7 +184,12 @@ export class UnitedMemorySource implements MemorySource {
   async list(): Promise<MemoryNote[]> {
     try {
       const json = await fs.promises.readFile(this.indexPath, 'utf-8')
-      return parseUnitedIndex(json)
+      // Pure parser returns a repo-relative path (`mem/<id>.md`); resolve to an
+      // absolute path here so "Show in Explorer" and the path label work.
+      return parseUnitedIndex(json).map((n) => ({
+        ...n,
+        path: path.join(this.root, n.path)
+      }))
     } catch {
       return []
     }
@@ -194,7 +199,8 @@ export class UnitedMemorySource implements MemorySource {
     const filePath = path.join(this.root, 'mem', `${localId}.md`)
     try {
       const md = await fs.promises.readFile(filePath, 'utf-8')
-      return parseUnitedNote(md, localId)
+      // filePath is already absolute; override the parser's relative path.
+      return { ...parseUnitedNote(md, localId), path: filePath }
     } catch {
       return null
     }
