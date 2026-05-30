@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import React from 'react'
-import { MemoryRouter } from 'react-router-dom'
+import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { describe, expect, it, vi } from 'vitest'
 import '../../src/renderer/src/i18n'
 import { Overview } from '../../src/renderer/src/pages/overview'
@@ -51,6 +51,13 @@ describe('overview health checks', () => {
         title: 'Codex hook has no Windows command override',
         message: 'A command hook is configured without commandWindows on Windows.',
         suggestion: 'Add commandWindows or command_windows when the command differs on Windows.',
+        evidence: [{ label: 'Codex hooks', url: 'https://developers.openai.com/codex/hooks' }],
+        fix: {
+          label: 'Suggested fix',
+          description: 'Add commandWindows or command_windows when the command differs on Windows.'
+        },
+        target: { route: '/configuration/capabilities?tab=hooks', path: 'C:\\Users\\test\\.codex\\config.toml' },
+        confidence: 'medium',
         scope: 'user',
         path: 'C:\\Users\\test\\.codex\\config.toml',
         assetType: 'hook'
@@ -73,7 +80,10 @@ describe('overview health checks', () => {
 
     render(
       <MemoryRouter>
-        <Overview />
+        <Routes>
+          <Route path="/" element={<Overview />} />
+          <Route path="/configuration/capabilities" element={<LocationProbe />} />
+        </Routes>
       </MemoryRouter>
     )
 
@@ -82,12 +92,20 @@ describe('overview health checks', () => {
     expect(screen.getByText('User CLAUDE.md not found')).toBeInTheDocument()
     expect(screen.getByText('Codex hook has no Windows command override')).toBeInTheDocument()
     expect(screen.getByText('Invalid Codex config.toml')).toBeInTheDocument()
+    expect(screen.getByText('Codex hooks')).toBeInTheDocument()
+    expect(screen.getByText(/Suggested fix:/)).toBeInTheDocument()
     expect(screen.getByText('1 info')).toBeInTheDocument()
     expect(screen.getByText('1 warning')).toBeInTheDocument()
     expect(screen.getByText('1 error')).toBeInTheDocument()
 
     fireEvent.click(screen.getByText('Codex hook has no Windows command override').closest('button')!)
 
-    expect(window.api.shell.openPath).toHaveBeenCalledWith('C:\\Users\\test\\.codex\\config.toml')
+    expect(await screen.findByText('/configuration/capabilities?tab=hooks')).toBeInTheDocument()
+    expect(window.api.shell.openPath).not.toHaveBeenCalled()
   })
 })
+
+function LocationProbe(): React.ReactElement {
+  const location = useLocation()
+  return <p>{`${location.pathname}${location.search}`}</p>
+}

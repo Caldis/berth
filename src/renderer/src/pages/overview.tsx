@@ -234,16 +234,23 @@ export function Overview(): React.ReactElement {
                 </div>
                 <div className="divide-y divide-border">
                   {group.checks.map((check) => {
-                    const clickable = Boolean(check.path || check.assetId)
+                    const clickable = Boolean(check.target?.route || check.target?.path || check.path || check.assetId)
                     return (
                       <button
                         key={check.id}
                         onClick={() => {
-                          if (check.path) {
-                            void window.api.shell.openPath(check.path)
+                          if (check.target?.route) {
+                            navigate(check.target.route)
                             return
                           }
-                          if (check.assetId) navigate(`/configuration/capabilities`)
+                          const targetPath = check.target?.path ?? check.path
+                          if (targetPath) {
+                            void window.api.shell.openPath(targetPath)
+                            return
+                          }
+                          if (check.assetId) {
+                            navigate(`/configuration/capabilities`)
+                          }
                         }}
                         className={cn(
                           'flex w-full items-start gap-3 px-4 py-3 text-left transition-colors',
@@ -252,7 +259,7 @@ export function Overview(): React.ReactElement {
                       >
                         <HealthCheckIcon severity={check.severity} />
                         <div className="min-w-0 flex-1 space-y-1">
-                          <div className="flex items-center gap-2">
+                          <div className="flex flex-wrap items-center gap-2">
                             <span className="text-sm font-medium text-card-foreground">
                               {check.title}
                             </span>
@@ -261,10 +268,34 @@ export function Overview(): React.ReactElement {
                                 {check.scope}
                               </span>
                             )}
+                            {check.confidence && (
+                              <span className="rounded border border-border px-1.5 py-0.5 text-[10px] text-muted-foreground">
+                                {check.confidence}
+                              </span>
+                            )}
                           </div>
                           <p className="text-sm text-muted-foreground">{check.message}</p>
-                          {check.suggestion && (
+                          {check.fix ? (
+                            <p className="text-xs text-muted-foreground">
+                              <span className="font-medium text-card-foreground">{check.fix.label}: </span>
+                              {check.fix.description}
+                            </p>
+                          ) : check.suggestion ? (
                             <p className="text-xs text-muted-foreground">{check.suggestion}</p>
+                          ) : null}
+                          {check.fix?.snippet && (
+                            <pre className="overflow-hidden rounded border border-border bg-muted/30 px-2 py-1 text-xs text-muted-foreground">
+                              <code>{check.fix.snippet}</code>
+                            </pre>
+                          )}
+                          {check.evidence && check.evidence.length > 0 && (
+                            <div className="flex flex-wrap gap-2">
+                              {check.evidence.map((evidence) => (
+                                <span key={evidence.url} className="text-xs text-muted-foreground">
+                                  {evidence.label}
+                                </span>
+                              ))}
+                            </div>
                           )}
                           {check.path && (
                             <p className="truncate text-xs text-muted-foreground">
