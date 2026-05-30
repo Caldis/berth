@@ -95,8 +95,6 @@ function summarizeUsageData(usageAssets: Asset[], options: UsageSummaryOptions):
   }
 
   const totalTokens = tokenUsage.totalTokens
-  const modelTotal = totalCost > 0 ? totalCost : totalTokens
-  const projectTotal = totalCost > 0 ? totalCost : totalTokens
 
   return {
     totalCost,
@@ -111,14 +109,14 @@ function summarizeUsageData(usageAssets: Asset[], options: UsageSummaryOptions):
     ),
     byModel: Array.from(modelMap, ([model, entry]) => ({
       model,
-      percentage: percent(totalCost > 0 ? entry.cost : entry.tokenUsage.totalTokens, modelTotal),
+      percentage: percent(entry.tokenUsage.totalTokens, totalTokens),
       cost: entry.cost,
       tokens: entry.tokenUsage.totalTokens,
       tokenUsage: entry.tokenUsage
     })),
     byProject: Array.from(projectMap, ([project, entry]) => ({
       project,
-      percentage: percent(totalCost > 0 ? entry.cost : entry.tokenUsage.totalTokens, projectTotal),
+      percentage: percent(entry.tokenUsage.totalTokens, totalTokens),
       cost: entry.cost,
       tokens: entry.tokenUsage.totalTokens,
       tokenUsage: entry.tokenUsage
@@ -130,24 +128,29 @@ function summarizeUsageData(usageAssets: Asset[], options: UsageSummaryOptions):
 function collectDailyModelTokens(
   meta: Record<string, unknown>,
   options: UsageSummaryOptions
-): Map<string, number> {
-  const result = new Map<string, number>()
+): { byModel: Map<string, number>; byDate: Map<string, TokenUsageBreakdown> } {
+  const byModel = new Map<string, number>()
+  const byDate = new Map<string, TokenUsageBreakdown>()
   const dailyModelTokens = Array.isArray(meta.dailyModelTokens) ? meta.dailyModelTokens : []
 
   for (const day of dailyModelTokens) {
     if (!day || typeof day !== 'object') continue
     const record = day as Record<string, unknown>
-    if (!dateInRange(dateFromMeta(record, 'date'), options)) continue
+    const date = dateFromMeta(record, 'date')
+    if (!dateInRange(date, options)) continue
     const tokensByModel = record.tokensByModel
     if (!tokensByModel || typeof tokensByModel !== 'object') continue
 
+    let dailyTokenUsage = emptyTokenUsage()
     for (const [model, value] of Object.entries(tokensByModel as Record<string, unknown>)) {
       const tokens = readNumber(value) ?? 0
-      result.set(model, (result.get(model) ?? 0) + tokens)
+      byModel.set(model, (byModel.get(model) ?? 0) + tokens)
+      dailyTokenUsage = addTokenUsage(dailyTokenUsage, normalizeTokenUsage({ tokens }))
     }
+    if (date) byDate.set(date, addTokenUsage(byDate.get(date) ?? emptyTokenUsage(), dailyTokenUsage))
   }
 
-  return result
+  return { byModel, byDate }
 }
 
 function summarizeStatsCache(statsAsset: Asset, options: UsageSummaryOptions): UsageSummary {
@@ -172,7 +175,7 @@ function summarizeStatsCache(statsAsset: Asset, options: UsageSummaryOptions): U
     modelEntries.set(model, { cost, tokenUsage })
   }
 
-  for (const [model, tokens] of dailyTokenMap) {
+  for (const [model, tokens] of dailyTokenMap.byModel) {
     if (!modelEntries.has(model)) {
       const tokenUsage = normalizeTokenUsage({ tokens })
       const costResult = resolveUsageCost({
@@ -191,7 +194,6 @@ function summarizeStatsCache(statsAsset: Asset, options: UsageSummaryOptions): U
     emptyTokenUsage()
   )
   const totalTokens = tokenUsage.totalTokens
-  const distributionTotal = totalCost > 0 ? totalCost : totalTokens
 
   const dailyCosts = (Array.isArray(meta.dailyActivity) ? meta.dailyActivity : [])
     .map((entry) => {
@@ -203,9 +205,9 @@ function summarizeStatsCache(statsAsset: Asset, options: UsageSummaryOptions): U
       return date && cost != null ? { date, cost } : null
     })
     .filter((entry): entry is { date: string; cost: number } => entry != null && entry.cost > 0)
-  const dailyTokenUsage = Array.from(dailyTokenMap, ([date, tokens]) => ({
+  const dailyTokenUsage = Array.from(dailyTokenMap.byDate, ([date, tokenUsage]) => ({
     date,
-    tokenUsage: normalizeTokenUsage({ tokens })
+    tokenUsage
   })).sort((a, b) => a.date.localeCompare(b.date))
 
   return {
@@ -217,7 +219,7 @@ function summarizeStatsCache(statsAsset: Asset, options: UsageSummaryOptions): U
     dailyTokenUsage,
     byModel: Array.from(modelEntries, ([model, entry]) => ({
       model,
-      percentage: percent(totalCost > 0 ? entry.cost : entry.tokenUsage.totalTokens, distributionTotal),
+      percentage: percent(entry.tokenUsage.totalTokens, totalTokens),
       cost: entry.cost,
       tokens: entry.tokenUsage.totalTokens,
       tokenUsage: entry.tokenUsage
@@ -250,6 +252,21 @@ export function buildUsageSummary(
   assets: Asset[],
   options: UsageSummaryOptions = {}
 ): UsageSummary {
+  const groups = new Map<string, Asset[]>()
+  for (const asset of assets) {
+    const group = groups.get(asset.agentId) ?? []
+    group.push(asset)
+    groups.set(asset.agentId, group)
+  }
+
+  return mergeUsageSummaries(
+    Array.from(groups.values())
+      .map((group) => summarizeAssetGroup(group, options))
+      .filter(hasSummaryData)
+  )
+}
+
+function summarizeAssetGroup(assets: Asset[], options: UsageSummaryOptions): UsageSummary {
   const usageAssets = assets.filter((asset) => asset.type === 'usage-data')
   if (usageAssets.length > 0) return summarizeUsageData(usageAssets, options)
 
@@ -260,6 +277,89 @@ export function buildUsageSummary(
   if (sessionAssets.length > 0) return summarizeSessions(sessionAssets, options)
 
   return emptyUsageSummary()
+}
+
+function mergeUsageSummaries(summaries: UsageSummary[]): UsageSummary {
+  if (summaries.length === 0) return emptyUsageSummary()
+
+  let totalCost = 0
+  let tokenUsage = emptyTokenUsage()
+  const dailyMap = new Map<string, number>()
+  const dailyTokenMap = new Map<string, TokenUsageBreakdown>()
+  const modelMap = new Map<string, UsageEntry>()
+  const projectMap = new Map<string, UsageEntry>()
+  const costSources: CostSource[] = []
+  const rateLimits: UsageSummary['rateLimits'] = []
+
+  for (const summary of summaries) {
+    totalCost += summary.totalCost
+    tokenUsage = addTokenUsage(tokenUsage, summary.tokenUsage)
+    costSources.push(summary.costSource)
+    rateLimits.push(...summary.rateLimits)
+
+    for (const day of summary.dailyCosts) {
+      dailyMap.set(day.date, (dailyMap.get(day.date) ?? 0) + day.cost)
+    }
+    for (const day of summary.dailyTokenUsage) {
+      dailyTokenMap.set(
+        day.date,
+        addTokenUsage(dailyTokenMap.get(day.date) ?? emptyTokenUsage(), day.tokenUsage)
+      )
+    }
+    for (const item of summary.byModel) {
+      const entry = modelMap.get(item.model) ?? { cost: 0, tokenUsage: emptyTokenUsage() }
+      entry.cost += item.cost
+      entry.tokenUsage = addTokenUsage(entry.tokenUsage, item.tokenUsage)
+      modelMap.set(item.model, entry)
+    }
+    for (const item of summary.byProject) {
+      const entry = projectMap.get(item.project) ?? { cost: 0, tokenUsage: emptyTokenUsage() }
+      entry.cost += item.cost
+      entry.tokenUsage = addTokenUsage(entry.tokenUsage, item.tokenUsage)
+      projectMap.set(item.project, entry)
+    }
+  }
+
+  const totalTokens = tokenUsage.totalTokens
+  return {
+    totalCost,
+    totalTokens,
+    tokenUsage,
+    costSource: mergeCostSources(costSources),
+    dailyCosts: Array.from(dailyMap, ([date, cost]) => ({ date, cost })).sort((a, b) =>
+      a.date.localeCompare(b.date)
+    ),
+    dailyTokenUsage: Array.from(dailyTokenMap, ([date, tokenUsage]) => ({ date, tokenUsage })).sort(
+      (a, b) => a.date.localeCompare(b.date)
+    ),
+    byModel: Array.from(modelMap, ([model, entry]) => ({
+      model,
+      percentage: percent(entry.tokenUsage.totalTokens, totalTokens),
+      cost: entry.cost,
+      tokens: entry.tokenUsage.totalTokens,
+      tokenUsage: entry.tokenUsage
+    })),
+    byProject: Array.from(projectMap, ([project, entry]) => ({
+      project,
+      percentage: percent(entry.tokenUsage.totalTokens, totalTokens),
+      cost: entry.cost,
+      tokens: entry.tokenUsage.totalTokens,
+      tokenUsage: entry.tokenUsage
+    })),
+    rateLimits
+  }
+}
+
+function hasSummaryData(summary: UsageSummary): boolean {
+  return (
+    summary.totalCost > 0 ||
+    summary.totalTokens > 0 ||
+    summary.byModel.length > 0 ||
+    summary.byProject.length > 0 ||
+    summary.dailyCosts.length > 0 ||
+    summary.dailyTokenUsage.length > 0 ||
+    summary.rateLimits.length > 0
+  )
 }
 
 function dateFromMeta(meta: Record<string, unknown>, key: string): string | undefined {

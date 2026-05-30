@@ -2,7 +2,7 @@
 
 从 02-SPEC 拆解。每任务可独立执行与验证, 顺序确定。implement 阶段维护此清单。
 
-- [ ] 任务 1: 修 usage 聚合正确性
+- [x] 任务 1: 修 usage 聚合正确性
   - 修 `stats-cache.dailyModelTokens` 日期语义。
   - 支持 usage-data / stats-cache / session 按 agent 来源合并。
   - byModel / byProject 百分比按 tokens。
