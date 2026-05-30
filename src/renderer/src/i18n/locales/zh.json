@@ -5,8 +5,6 @@
   },
   "nav": {
     "overview": "总览",
-    "agents": "AGENTS",
-    "claudeCode": "Claude Code",
     "sessions": "会话",
     "configuration": "配置",
     "instructions": "指令",

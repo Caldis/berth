@@ -1,14 +1,7 @@
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import {
-  LayoutDashboard,
-  MessageSquare,
-  FileText,
-  Plug,
-  BarChart3,
-  Settings,
   Search,
-  Bot,
   ChevronLeft,
   ChevronRight,
   Sun,
@@ -19,64 +12,7 @@ import {
 import { cn } from '@/lib/utils'
 import { useAppStore } from '@/stores/app'
 import { useTheme } from '@/components/theme-provider'
-
-interface NavItem {
-  id: string
-  labelKey: string
-  icon: React.ComponentType<{ className?: string }>
-  path: string
-}
-
-interface NavSection {
-  labelKey?: string
-  items: NavItem[]
-}
-
-const navSections: NavSection[] = [
-  {
-    items: [
-      { id: 'overview', labelKey: 'nav.overview', icon: LayoutDashboard, path: '/' }
-    ]
-  },
-  {
-    labelKey: 'nav.agents',
-    items: [
-      { id: 'claude-code', labelKey: 'nav.claudeCode', icon: Bot, path: '/sessions' }
-    ]
-  },
-  {
-    items: [
-      { id: 'sessions', labelKey: 'nav.sessions', icon: MessageSquare, path: '/sessions' }
-    ]
-  },
-  {
-    labelKey: 'nav.configuration',
-    items: [
-      {
-        id: 'instructions',
-        labelKey: 'nav.instructions',
-        icon: FileText,
-        path: '/configuration/instructions'
-      },
-      {
-        id: 'capabilities',
-        labelKey: 'nav.capabilities',
-        icon: Plug,
-        path: '/configuration/capabilities'
-      }
-    ]
-  },
-  {
-    items: [
-      { id: 'usage', labelKey: 'nav.usage', icon: BarChart3, path: '/usage' }
-    ]
-  },
-  {
-    items: [
-      { id: 'settings', labelKey: 'nav.settings', icon: Settings, path: '/settings' }
-    ]
-  }
-]
+import { navSections } from './nav-config'
 
 export function Sidebar(): React.ReactElement {
   const { t, i18n } = useTranslation()

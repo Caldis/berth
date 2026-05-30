@@ -5,8 +5,6 @@
   },
   "nav": {
     "overview": "Overview",
-    "agents": "AGENTS",
-    "claudeCode": "Claude Code",
     "sessions": "Sessions",
     "configuration": "CONFIGURATION",
     "instructions": "Instructions",
