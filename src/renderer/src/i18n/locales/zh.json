@@ -115,7 +115,187 @@
     "hooks": {
       "events": "事件",
       "hookCount": "{{count}} 个钩子",
-      "matcher": "匹配器"
+      "matcher": "匹配器",
+      "lifecycleIndex": "生命周期",
+      "lifecycleCount": "当前视角有 {{count}} 个已配置 Hook",
+      "filteredHint": "筛选只影响 Hook 列表。生命周期说明会保留, 方便你继续理解每个阶段的位置。",
+      "intro": {
+        "title": "Hooks 是什么?",
+        "all": "Hooks 是本机配置的脚本或处理器, 会在 Agent 进入某个时刻时运行, 例如开始会话、收到你的提示、调用工具、压缩上下文或停止。当前视图把 Claude Code 和 Codex 合成到同一套生命周期里, 并标出两者行为差异。",
+        "claude": "Hooks 是 Claude Code 在会话、工具调用、权限、通知等节点运行的处理器。当前只显示 Claude Code 支持的阶段和已扫描到的 Claude Code hook 文件。",
+        "codex": "Hooks 是 Codex 在会话、用户输入、受支持的工具调用、权限请求、压缩、子 Agent 和停止等节点运行的命令脚本。当前只显示 Codex 支持的阶段和已扫描到的 Codex hook 文件。",
+        "tips": {
+          "trigger": {
+            "title": "触发点",
+            "body": "Hook 不会一直运行。它只在 Agent 走到匹配的行为时运行。"
+          },
+          "handler": {
+            "title": "处理器",
+            "body": "大多数 Hook 最终会从配置文件里执行一段命令或脚本。"
+          },
+          "difference": {
+            "title": "Agent 差异",
+            "body": "同名事件在不同 Agent 下覆盖范围可能不同。Codex 的 PreToolUse 只覆盖 Bash、apply_patch 和 MCP tool。"
+          }
+        }
+      },
+      "support": {
+        "supported": "支持",
+        "partial": "部分支持",
+        "unsupported": "不支持"
+      },
+      "stage": {
+        "session-start": {
+          "title": "会话开始",
+          "behavior": "Agent 打开或恢复一段对话, 并准备第一次要使用的上下文。",
+          "guide": "这个阶段适合做初始化: 注入上下文、检查本地状态, 或在 Agent 开始行动前准备规则。"
+        },
+        "user-input": {
+          "title": "用户输入进入",
+          "behavior": "你的提示已经提交, 但 Agent 还没有开始基于它进行推理。",
+          "guide": "这个阶段适合在提示进入模型之前做校验、补充上下文或拦截。"
+        },
+        "tool-before": {
+          "title": "工具运行前",
+          "behavior": "Agent 准备运行 shell、修改文件, 或调用受支持的外部工具。",
+          "guide": "这个阶段适合做安全检查、记录日志, 或在工具产生副作用前加一道确认。"
+        },
+        "permission": {
+          "title": "请求权限",
+          "behavior": "Agent 需要批准或明确回答, 才能继续执行。",
+          "guide": "这个阶段适合检查审批请求, 让敏感动作保持可见。"
+        },
+        "tool-after": {
+          "title": "工具运行后",
+          "behavior": "工具已经返回输出、成功、失败, 或作为一批工具调用完成。",
+          "guide": "这个阶段适合检查结果、收集日志, 或要求 Agent 根据工具输出继续处理。"
+        },
+        "subagent": {
+          "title": "子 Agent 工作",
+          "behavior": "主 Agent 启动、观察或停止委派出去的工作。",
+          "guide": "这个阶段适合给子 Agent 传上下文、审计委派结果, 或在还需要继续时让它不要停止。"
+        },
+        "context-maintenance": {
+          "title": "上下文维护",
+          "behavior": "Agent 压缩对话上下文, 或观察配置、指令、目录、文件变化。",
+          "guide": "这个阶段适合保留重要上下文, 或在工作环境变化时做响应。"
+        },
+        "session-stop": {
+          "title": "Agent 停止",
+          "behavior": "Agent 即将结束当前回合、停止运行、未能正常停止, 或结束会话。",
+          "guide": "这个阶段适合做最后检查、生成摘要, 或在 Agent 空闲前追加后续指令。"
+        },
+        "environment": {
+          "title": "环境事件",
+          "behavior": "外围工作区发生变化, worktree 被创建或移除, 或 Agent 发出通知。",
+          "guide": "这个阶段适合处理普通提示和工具循环之外的工作区事件。"
+        }
+      },
+      "agentSupport": {
+        "session-start": {
+          "claude": { "summary": "Claude Code 可以在准备会话时运行 setup 和 session-start hooks。" },
+          "codex": { "summary": "Codex 在会话开始、恢复、清空或压缩后继续时支持 SessionStart。" }
+        },
+        "user-input": {
+          "claude": { "summary": "Claude Code 可以在用户输入提交前, 以及 prompt expansion 时运行 hooks。" },
+          "codex": { "summary": "Codex 支持在提示进入模型前运行 UserPromptSubmit。" }
+        },
+        "tool-before": {
+          "claude": { "summary": "Claude Code 的 PreToolUse 覆盖范围较宽, 包含文件、shell、web 和 MCP 工具。" },
+          "codex": { "summary": "Codex 的 PreToolUse 可用于受支持的 shell、patch 和 MCP 工具调用。" }
+        },
+        "permission": {
+          "claude": { "summary": "Claude Code 暴露权限请求、拒绝和 elicitation 相关事件。" },
+          "codex": { "summary": "Codex 在即将请求批准时暴露 PermissionRequest。" }
+        },
+        "tool-after": {
+          "claude": { "summary": "Claude Code 会区分工具成功输出、失败输出和批量工具完成。" },
+          "codex": { "summary": "Codex 使用 PostToolUse 表示受支持工具的输出, 其中也包含部分失败命令输出。" }
+        },
+        "subagent": {
+          "claude": { "summary": "Claude Code 暴露子 Agent、task 和 teammate idle 相关事件。" },
+          "codex": { "summary": "Codex 暴露子 Agent 开始和停止事件。" }
+        },
+        "context-maintenance": {
+          "claude": { "summary": "Claude Code 暴露压缩, 以及指令、配置、cwd、文件变化事件。" },
+          "codex": { "summary": "Codex 暴露上下文压缩前后的 hooks。" }
+        },
+        "session-stop": {
+          "claude": { "summary": "Claude Code 可以响应 stop、stop failure 和 session end 事件。" },
+          "codex": { "summary": "Codex 在主 Agent 结束当前回合前支持 Stop。" }
+        },
+        "environment": {
+          "claude": { "summary": "Claude Code 支持通知和 worktree 相关事件。" },
+          "codex": { "summary": "Codex 没有暴露这个阶段对应的 hook event。" }
+        }
+      },
+      "nativeEvents": {
+        "unknown": { "description": "Berth 还没有映射这个事件。" },
+        "Setup": { "description": "Claude Code 准备会话设置时运行。" },
+        "SessionStart": { "description": "会话开始、恢复或上下文变化后继续时运行。" },
+        "UserPromptSubmit": { "description": "你提交提示后、模型收到提示前运行。" },
+        "UserPromptExpansion": { "description": "Claude Code 展开 prompt 内容时运行。" },
+        "PreToolUse": { "description": "受支持的工具调用执行前运行。" },
+        "PermissionRequest": { "description": "Agent 即将请求批准时运行。" },
+        "PermissionDenied": { "description": "Claude Code 权限请求被拒绝时运行。" },
+        "Elicitation": { "description": "Claude Code 请求结构化用户输入时运行。" },
+        "ElicitationResult": { "description": "Claude Code 收到结构化用户输入后运行。" },
+        "PostToolUse": { "description": "受支持的工具输出可用后运行。" },
+        "PostToolUseFailure": { "description": "Claude Code 工具失败后运行。" },
+        "PostToolBatch": { "description": "Claude Code 一批工具调用完成后运行。" },
+        "SubagentStart": { "description": "委派出去的 Agent 工作开始时运行。" },
+        "SubagentStop": { "description": "委派出去的 Agent 工作即将停止时运行。" },
+        "TaskCreated": { "description": "Claude Code 创建任务时运行。" },
+        "TaskCompleted": { "description": "Claude Code 完成任务时运行。" },
+        "TeammateIdle": { "description": "Claude Code teammate 进入空闲时运行。" },
+        "PreCompact": { "description": "上下文压缩前运行。" },
+        "PostCompact": { "description": "上下文压缩后运行。" },
+        "InstructionsLoaded": { "description": "Claude Code 加载指令时运行。" },
+        "ConfigChange": { "description": "Claude Code 观察到配置变化时运行。" },
+        "CwdChanged": { "description": "Claude Code 切换工作目录时运行。" },
+        "FileChanged": { "description": "Claude Code 观察到文件变化时运行。" },
+        "Stop": { "description": "主 Agent 结束当前回合前运行。" },
+        "StopFailure": { "description": "Claude Code 未能正常停止时运行。" },
+        "SessionEnd": { "description": "Claude Code 会话结束时运行。" },
+        "WorktreeCreate": { "description": "Claude Code 创建 worktree 时运行。" },
+        "WorktreeRemove": { "description": "Claude Code 移除 worktree 时运行。" },
+        "Notification": { "description": "Claude Code 发出用户通知时运行。" }
+      },
+      "limitations": {
+        "codexToolCoverage": "Codex 的工具 hooks 只覆盖 Bash、apply_patch 和 MCP tools, 不覆盖所有类似工具的动作。",
+        "codexPostToolMerged": "Codex 不把工具成功和失败拆成两个独立 hook event。",
+        "environment": {
+          "codex": {
+            "unsupported": "Codex 没有 Claude Code 通知或 worktree 事件对应的 hooks。"
+          }
+        }
+      },
+      "emptyStage": {
+        "title": "这个阶段当前没有配置 Hook。",
+        "body": "Agent 仍然可能经过这个行为。Berth 保留这个阶段, 是为了让生命周期保持可读。"
+      },
+      "unknown": {
+        "title": "未映射事件",
+        "body": "这些 Hook 使用了 Berth 还不认识的事件名。它们会显示在这里, 不会被隐藏。"
+      },
+      "actions": {
+        "menu": "操作",
+        "open-source-file": "打开来源文件",
+        "open-source-directory": "打开来源目录",
+        "open-entry-file": "打开入口文件",
+        "open-entry-directory": "打开入口目录",
+        "noOpenTargets": "没有检测到可打开的文件目标。"
+      },
+      "management": {
+        "noTargetPath": "这个操作没有可用的文件路径。",
+        "noEntryFile": "这条命令里没有检测到本地脚本入口。",
+        "managedHook": "这个 Hook 由 policy 或外部来源管理, Berth 不能在这里禁用它。",
+        "claudeNoSingleHookToggle": "Claude Code 没有支持“保留注册但单独禁用一个 Hook”的机制。",
+        "codexSingleHookNotConnected": "Codex 可以在自己的 hook browser 里禁用 non-managed hook, 但 Berth 还没有接入这条写入路径。",
+        "unknownAgent": "Berth 还不知道这个 Agent 如何保存 Hook 状态。",
+        "codexUnsupportedHookType": "Codex 当前会解析这种 Hook 类型, 但不会把它作为 command hook 运行。",
+        "codexAsyncHookSkipped": "Codex 当前会跳过 async hook handler。"
+      }
     },
     "plugins": {
       "contains": "{{count}} 个组件"

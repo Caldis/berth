@@ -115,7 +115,187 @@
     "hooks": {
       "events": "events",
       "hookCount": "{{count}} hooks",
-      "matcher": "Matcher"
+      "matcher": "Matcher",
+      "lifecycleIndex": "Lifecycle",
+      "lifecycleCount": "{{count}} configured hooks in this view",
+      "filteredHint": "Filters only change the hook rows. Lifecycle explanations stay visible so you can still understand where each stage sits.",
+      "intro": {
+        "title": "What are hooks?",
+        "all": "Hooks are local scripts or handlers that run when an agent reaches a specific moment, such as starting a session, receiving your prompt, using a tool, compacting context, or stopping. This view combines Claude Code and Codex into one lifecycle and calls out where their behavior differs.",
+        "claude": "Hooks are Claude Code handlers that run around session setup, user prompts, tool use, permissions, notifications, and shutdown. This view only shows Claude Code stages and scanned Claude Code hook files.",
+        "codex": "Hooks are Codex command handlers that run around sessions, user prompts, supported tool use, permission requests, compaction, subagents, and stop. This view only shows Codex stages and scanned Codex hook files.",
+        "tips": {
+          "trigger": {
+            "title": "Trigger point",
+            "body": "A hook does not run all the time. It runs when the agent reaches its matching behavior."
+          },
+          "handler": {
+            "title": "Handler",
+            "body": "Most hooks eventually execute a command or script from a config file."
+          },
+          "difference": {
+            "title": "Agent differences",
+            "body": "The same event name can mean different coverage. Codex PreToolUse only covers Bash, apply_patch, and MCP tools."
+          }
+        }
+      },
+      "support": {
+        "supported": "Supported",
+        "partial": "Partial",
+        "unsupported": "Unsupported"
+      },
+      "stage": {
+        "session-start": {
+          "title": "Session starts",
+          "behavior": "The agent opens or resumes a conversation and prepares the first context it will use.",
+          "guide": "Use this stage for setup work: inject context, check local state, or prepare rules before the agent starts acting."
+        },
+        "user-input": {
+          "title": "User input arrives",
+          "behavior": "Your prompt has been submitted, but the agent has not started reasoning over it yet.",
+          "guide": "Use this stage to validate or enrich user input before it reaches the model."
+        },
+        "tool-before": {
+          "title": "Before a tool runs",
+          "behavior": "The agent is about to run a shell command, edit files, or call a supported external tool.",
+          "guide": "Use this stage for guardrails, logging, or checks that need to happen before a tool can make changes."
+        },
+        "permission": {
+          "title": "Permission is requested",
+          "behavior": "The agent needs approval or an explicit answer before it can continue.",
+          "guide": "Use this stage to inspect approval requests and keep sensitive actions visible."
+        },
+        "tool-after": {
+          "title": "After a tool runs",
+          "behavior": "A tool has returned output, succeeded, failed, or finished as part of a batch.",
+          "guide": "Use this stage to review results, capture logs, or ask the agent to react to tool output."
+        },
+        "subagent": {
+          "title": "Subagent work",
+          "behavior": "The main agent starts, monitors, or stops delegated work.",
+          "guide": "Use this stage to pass context to subagents, audit delegated work, or keep them running when more work is needed."
+        },
+        "context-maintenance": {
+          "title": "Context maintenance",
+          "behavior": "The agent compacts conversation context or observes configuration, instruction, directory, or file changes.",
+          "guide": "Use this stage to preserve important context and respond when the working environment changes."
+        },
+        "session-stop": {
+          "title": "Agent stops",
+          "behavior": "The agent is about to finish a turn, stop a run, fail to stop cleanly, or end the session.",
+          "guide": "Use this stage for final checks, summaries, or follow-up instructions before the agent becomes idle."
+        },
+        "environment": {
+          "title": "Environment events",
+          "behavior": "The surrounding workspace changes, a worktree is created or removed, or the agent sends a notification.",
+          "guide": "Use this stage for workspace-level events that are outside the normal prompt and tool loop."
+        }
+      },
+      "agentSupport": {
+        "session-start": {
+          "claude": { "summary": "Claude Code can run setup and session-start hooks when it prepares a session." },
+          "codex": { "summary": "Codex supports SessionStart when a session starts, resumes, clears, or continues after compaction." }
+        },
+        "user-input": {
+          "claude": { "summary": "Claude Code can run hooks before user input is submitted and when prompt expansion occurs." },
+          "codex": { "summary": "Codex supports UserPromptSubmit before the prompt reaches the model." }
+        },
+        "tool-before": {
+          "claude": { "summary": "Claude Code PreToolUse covers a broad tool surface, including file, shell, web, and MCP tools." },
+          "codex": { "summary": "Codex PreToolUse is available for supported shell, patch, and MCP tool calls." }
+        },
+        "permission": {
+          "claude": { "summary": "Claude Code exposes permission requests, denials, and elicitation events." },
+          "codex": { "summary": "Codex exposes PermissionRequest when it is about to ask for approval." }
+        },
+        "tool-after": {
+          "claude": { "summary": "Claude Code separates successful tool output, failed tool output, and tool batches." },
+          "codex": { "summary": "Codex uses PostToolUse for supported tool output, including some failed command output." }
+        },
+        "subagent": {
+          "claude": { "summary": "Claude Code exposes subagents, tasks, and teammate idle events." },
+          "codex": { "summary": "Codex exposes subagent start and stop events." }
+        },
+        "context-maintenance": {
+          "claude": { "summary": "Claude Code exposes compaction plus instruction, config, cwd, and file change events." },
+          "codex": { "summary": "Codex exposes hooks before and after context compaction." }
+        },
+        "session-stop": {
+          "claude": { "summary": "Claude Code can react to stop, stop failure, and session end events." },
+          "codex": { "summary": "Codex supports Stop before the main agent finishes a turn." }
+        },
+        "environment": {
+          "claude": { "summary": "Claude Code supports notification and worktree events." },
+          "codex": { "summary": "Codex does not expose a hook event for this stage." }
+        }
+      },
+      "nativeEvents": {
+        "unknown": { "description": "Berth has not mapped this event yet." },
+        "Setup": { "description": "Runs while Claude Code prepares session setup." },
+        "SessionStart": { "description": "Runs when a session starts, resumes, or continues after context changes." },
+        "UserPromptSubmit": { "description": "Runs after you submit a prompt and before the model receives it." },
+        "UserPromptExpansion": { "description": "Runs when Claude Code expands prompt content." },
+        "PreToolUse": { "description": "Runs before a supported tool call executes." },
+        "PermissionRequest": { "description": "Runs when the agent is about to ask for approval." },
+        "PermissionDenied": { "description": "Runs when a Claude Code permission request is denied." },
+        "Elicitation": { "description": "Runs when Claude Code asks for structured user input." },
+        "ElicitationResult": { "description": "Runs when Claude Code receives structured user input." },
+        "PostToolUse": { "description": "Runs after supported tool output is available." },
+        "PostToolUseFailure": { "description": "Runs after a Claude Code tool fails." },
+        "PostToolBatch": { "description": "Runs after a Claude Code tool batch completes." },
+        "SubagentStart": { "description": "Runs when delegated agent work starts." },
+        "SubagentStop": { "description": "Runs when delegated agent work is about to stop." },
+        "TaskCreated": { "description": "Runs when Claude Code creates a task." },
+        "TaskCompleted": { "description": "Runs when Claude Code completes a task." },
+        "TeammateIdle": { "description": "Runs when a Claude Code teammate becomes idle." },
+        "PreCompact": { "description": "Runs before context compaction." },
+        "PostCompact": { "description": "Runs after context compaction." },
+        "InstructionsLoaded": { "description": "Runs when Claude Code loads instructions." },
+        "ConfigChange": { "description": "Runs when Claude Code observes config changes." },
+        "CwdChanged": { "description": "Runs when Claude Code changes working directory." },
+        "FileChanged": { "description": "Runs when Claude Code observes file changes." },
+        "Stop": { "description": "Runs before the main agent stops the current turn." },
+        "StopFailure": { "description": "Runs when Claude Code fails to stop cleanly." },
+        "SessionEnd": { "description": "Runs when a Claude Code session ends." },
+        "WorktreeCreate": { "description": "Runs when Claude Code creates a worktree." },
+        "WorktreeRemove": { "description": "Runs when Claude Code removes a worktree." },
+        "Notification": { "description": "Runs when Claude Code sends a user notification." }
+      },
+      "limitations": {
+        "codexToolCoverage": "Codex only applies tool hooks to Bash, apply_patch, and MCP tools. It does not cover every tool-like action.",
+        "codexPostToolMerged": "Codex does not split successful and failed tool output into separate hook events.",
+        "environment": {
+          "codex": {
+            "unsupported": "Codex has no hooks equivalent for Claude Code notification or worktree events."
+          }
+        }
+      },
+      "emptyStage": {
+        "title": "No hook is configured for this stage.",
+        "body": "The agent can still pass through this behavior. Berth keeps the stage visible so the lifecycle remains readable."
+      },
+      "unknown": {
+        "title": "Unmapped events",
+        "body": "These hooks use event names Berth does not know yet. They are shown here instead of being hidden."
+      },
+      "actions": {
+        "menu": "Actions",
+        "open-source-file": "Open source file",
+        "open-source-directory": "Open source folder",
+        "open-entry-file": "Open entry file",
+        "open-entry-directory": "Open entry folder",
+        "noOpenTargets": "No openable file target was detected."
+      },
+      "management": {
+        "noTargetPath": "No file path is available for this action.",
+        "noEntryFile": "No local script entry was detected in this command.",
+        "managedHook": "This hook is managed by policy or an external source, so Berth cannot disable it here.",
+        "claudeNoSingleHookToggle": "Claude Code does not provide a supported way to disable one hook while keeping it registered.",
+        "codexSingleHookNotConnected": "Codex can disable non-managed hooks in its hook browser, but Berth has not wired that write path yet.",
+        "unknownAgent": "Berth does not know how this agent stores hook state.",
+        "codexUnsupportedHookType": "Codex currently parses this hook type but does not run it as a command hook.",
+        "codexAsyncHookSkipped": "Codex currently skips async hook handlers."
+      }
     },
     "plugins": {
       "contains": "{{count}} components"

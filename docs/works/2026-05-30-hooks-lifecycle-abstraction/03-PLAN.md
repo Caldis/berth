@@ -14,17 +14,17 @@
   - 内容: 解析 `~/.codex/hooks.json`, 输出 `agentId:'codex'` 的 hook assets; 提取来源文件、matcher、command、entryPaths、managed/enabled 可判定状态; 不解析 repo-local / TOML / plugin hooks。
   - 验证: Codex parser / adapter 测试通过。
 
-- [ ] 任务 3: 重构 Hooks tab 页面布局
+- [x] 任务 3: 重构 Hooks tab 页面布局
   - 改动: `src/renderer/src/pages/capabilities.tsx`, 新增 `src/renderer/src/components/capabilities/*`。
   - 内容: 顶部说明区、生命周期 index、stage sections、hook rows、教学型空状态、hook row 管理菜单。
   - 验证: renderer 测试覆盖基本渲染与空状态。
 
-- [ ] 任务 4: 增加 view-aware 文案与 i18n
+- [x] 任务 4: 增加 view-aware 文案与 i18n
   - 改动: `src/renderer/src/i18n/locales/en.json`, `src/renderer/src/i18n/locales/zh.json`。
   - 内容: hooks intro、stage 行为说明、Agent 差异、限制说明、empty state、open actions、enable/disable 不可用原因。
   - 验证: renderer 测试断言 `codex` 视角不出现 Claude Code 专属提示, `claude` 视角不出现 Codex 专属提示, `all` 视角出现对照; Claude 单 hook toggle 不可用且说明原因。
 
-- [ ] 任务 5: 接入只读快速打开动作
+- [x] 任务 5: 接入只读快速打开动作
   - 改动: renderer hook row / management menu, 必要时补 preload / IPC shell 类型。
   - 内容: 打开 hook 来源文件、来源目录; command 能解析为本地脚本时打开入口文件、入口目录。
   - 验证: renderer 测试覆盖按钮可见性; shell bridge mock 断言 openPath 参数正确。

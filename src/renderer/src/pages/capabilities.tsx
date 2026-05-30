@@ -21,6 +21,8 @@ import { TabGroup, type TabDef } from '@/components/shared/tab-group'
 import { FilterBar } from '@/components/shared/filter-bar'
 import { DetailRow } from '@/components/shared/detail-row'
 import { WarningBanner } from '@/components/shared/warning-banner'
+import { ScopeBadge } from '@/components/shared/scope-badge'
+import { HooksLifecycleView } from '@/components/capabilities/hooks-lifecycle-view'
 import type { Asset, AssetScope } from '@shared/types/asset'
 
 type ScopeFilter = 'all' | AssetScope
@@ -41,21 +43,6 @@ const tabTypeMap: Record<string, string[]> = {
   statusLine: ['statusline'],
   permissions: ['permission'],
   env: ['env']
-}
-
-function ScopeBadge({ scope }: { scope: AssetScope }): React.ReactElement {
-  const { t } = useTranslation()
-  const colors: Record<string, string> = {
-    user: 'bg-blue-500/10 text-blue-600 dark:text-blue-400',
-    project: 'bg-green-500/10 text-green-600 dark:text-green-400',
-    enterprise: 'bg-purple-500/10 text-purple-600 dark:text-purple-400',
-    session: 'bg-orange-500/10 text-orange-600 dark:text-orange-400'
-  }
-  return (
-    <span className={cn('inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold', colors[scope] ?? 'bg-muted text-muted-foreground')}>
-      {t(`common.scope.${scope}`)}
-    </span>
-  )
 }
 
 function EmptyState({ icon: Icon, message }: { icon: React.ComponentType<{ className?: string }>; message: string }): React.ReactElement {
@@ -185,57 +172,6 @@ function McpSummary({ assets }: { assets: Asset[] }): React.ReactElement {
           <p className="text-xs text-muted-foreground">{t('capabilities.mcp.mergeConflicts')}</p>
         </div>
       </div>
-    </div>
-  )
-}
-
-/* ---------- Hook event group ---------- */
-const hookEventTypes = [
-  'PreToolUse', 'PostToolUse', 'UserPromptSubmit', 'Stop',
-  'SubagentStop', 'Notification', 'PreCompact', 'SessionStart'
-]
-
-function HookEventGroup({ eventType, hooks }: { eventType: string; hooks: Asset[] }): React.ReactElement {
-  const { t } = useTranslation()
-  const [expanded, setExpanded] = useState(false)
-
-  if (hooks.length === 0) return <></>
-
-  return (
-    <div className="rounded-lg border border-border bg-card">
-      <button
-        onClick={() => setExpanded(!expanded)}
-        className="flex w-full items-center gap-3 px-4 py-3 text-left"
-      >
-        {expanded ? <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" /> : <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />}
-        <Webhook className="h-4 w-4 shrink-0 text-muted-foreground" />
-        <span className="text-sm font-medium text-foreground">{eventType}</span>
-        <span className="ml-auto shrink-0 text-xs text-muted-foreground">
-          {t('capabilities.hooks.hookCount', { count: hooks.length })}
-        </span>
-      </button>
-
-      {expanded && (
-        <div className="border-t border-border">
-          {hooks.map((hook) => {
-            const matcher = (hook.meta.matcher as string) ?? ''
-            const command = (hook.meta.command as string) ?? ''
-            return (
-              <div key={hook.id} className="border-b border-border/50 px-4 py-2 last:border-b-0">
-                <div className="flex items-center gap-2">
-                  <span className="truncate text-xs font-mono text-foreground">{command || hook.name}</span>
-                  <ScopeBadge scope={hook.scope} />
-                </div>
-                {matcher && (
-                  <p className="mt-0.5 text-xs text-muted-foreground">
-                    {t('capabilities.hooks.matcher')}: <span className="font-mono">{matcher}</span>
-                  </p>
-                )}
-              </div>
-            )
-          })}
-        </div>
-      )}
     </div>
   )
 }
@@ -481,18 +417,6 @@ export function Capabilities(): React.ReactElement {
     })
   }, [visibleAssets, activeTab, search, scope])
 
-  // Group hooks by event type
-  const hooksByEvent = useMemo(() => {
-    if (activeTab !== 'hooks') return {}
-    const grouped: Record<string, Asset[]> = {}
-    for (const eventType of hookEventTypes) {
-      grouped[eventType] = filteredAssets.filter(
-        (a) => (a.meta.eventType as string) === eventType
-      )
-    }
-    return grouped
-  }, [filteredAssets, activeTab])
-
   const showFilter = activeTab !== 'permissions'
 
   const renderContent = (): React.ReactElement => {
@@ -509,15 +433,7 @@ export function Capabilities(): React.ReactElement {
         )
 
       case 'hooks': {
-        const hasHooks = Object.values(hooksByEvent).some((arr) => arr.length > 0)
-        if (!hasHooks) return <EmptyState icon={Webhook} message={t('common.empty')} />
-        return (
-          <div className="space-y-2">
-            {hookEventTypes.map((eventType) => (
-              <HookEventGroup key={eventType} eventType={eventType} hooks={hooksByEvent[eventType] ?? []} />
-            ))}
-          </div>
-        )
+        return <HooksLifecycleView assets={filteredAssets} agentView={agentView} search={search} scope={scope} />
       }
 
       case 'plugins':
