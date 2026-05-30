@@ -116,20 +116,28 @@ export function Usage(): React.ReactElement {
   const [days, setDays] = useState(30)
   const [costMode, setCostMode] = useState<CostMode>('auto')
   const [usage, setUsage] = useState<UsageSummary | null>(null)
+  const [loadError, setLoadError] = useState(false)
+  const [reloadKey, setReloadKey] = useState(0)
   const agentView = useAppStore((s) => s.agentView)
 
   useEffect(() => {
     let cancelled = false
+    setLoadError(false)
     window.api?.usage
       .summary({ days, agentView, costMode })
       .then((data) => {
-        if (!cancelled) setUsage(normalizeUsageSummary(data))
+        if (!cancelled) {
+          setUsage(normalizeUsageSummary(data))
+          setLoadError(false)
+        }
       })
-      .catch(() => {})
+      .catch(() => {
+        if (!cancelled) setLoadError(true)
+      })
     return () => {
       cancelled = true
     }
-  }, [agentView, costMode, days])
+  }, [agentView, costMode, days, reloadKey])
 
   const hasCostData = usage && usage.dailyCosts.length > 0
   const hasModelData = usage && usage.byModel.length > 0
@@ -195,6 +203,29 @@ export function Usage(): React.ReactElement {
         </div>
       </div>
 
+      {loadError && (
+        <div className="rounded-xl border border-destructive/25 bg-destructive/10 p-4">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="flex min-w-0 items-start gap-3">
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
+              <div className="min-w-0">
+                <div className="text-sm font-medium">{t('usage.loadErrorTitle')}</div>
+                <p className="mt-1 text-sm text-muted-foreground">{t('usage.loadErrorBody')}</p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setReloadKey((value) => value + 1)}
+              className="rounded-md border border-border bg-background px-3 py-1.5 text-sm font-medium hover:bg-muted"
+            >
+              {t('common.retry')}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {loadError && !usage ? null : (
+        <>
       {/* Summary cards */}
       <div className="grid grid-cols-2 gap-4">
         <div className="rounded-xl border border-border bg-card p-5">
@@ -571,6 +602,8 @@ export function Usage(): React.ReactElement {
           <p className="text-sm text-muted-foreground">{t('common.empty')}</p>
         </div>
       </div>
+        </>
+      )}
     </div>
   )
 }

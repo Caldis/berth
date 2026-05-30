@@ -16,7 +16,7 @@
   - 在 shared token helper 增加结构段派生函数。
   - Usage 页面显示 input/output/cache/reasoning/unknown 结构。
   - 验证: `pnpm test -- tests/unit/token-usage.test.ts tests/renderer/sessions-pages.test.tsx`。
-- [ ] 任务 5: Usage 页面错误边界和 IPC 错误态
+- [x] 任务 5: Usage 页面错误边界和 IPC 错误态
   - 新增 route-level `PageErrorBoundary`。
   - Usage IPC reject 时显示错误态并可重试。
   - 验证: `pnpm test -- tests/renderer/page-error-boundary.test.tsx tests/renderer/sessions-pages.test.tsx`。

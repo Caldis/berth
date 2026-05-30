@@ -257,6 +257,45 @@ describe('session pages', () => {
     })
   })
 
+  it('shows a retryable error when usage summary fails to load', async () => {
+    const tokenUsage = normalizeTokenUsage({ inputTokens: 4, outputTokens: 2 })
+    window.api.usage.summary = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('boom'))
+      .mockResolvedValueOnce({
+        totalCost: 0,
+        actualCost: 0,
+        estimatedCost: 0,
+        costDelta: 0,
+        totalTokens: tokenUsage.totalTokens,
+        tokenUsage,
+        costSource: 'unknown',
+        pricingMisses: [],
+        dailyCosts: [],
+        dailyTokenUsage: [],
+        byModel: [],
+        byProject: [],
+        rateLimits: []
+      })
+
+    render(
+      <MemoryRouter>
+        <Usage />
+      </MemoryRouter>
+    )
+
+    expect(await screen.findByText('Usage data could not be loaded')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Retry' }))
+
+    expect(await screen.findByText('Input: 4')).toBeInTheDocument()
+    expect(window.api.usage.summary).toHaveBeenLastCalledWith({
+      days: 30,
+      agentView: 'all',
+      costMode: 'auto'
+    })
+  })
+
   it('renders usage page when ipc returns legacy summary fields', async () => {
     const legacyTokenUsage = normalizeTokenUsage({ totalTokens: 15 })
     window.api.usage.summary = vi.fn(async () => ({

@@ -524,6 +524,10 @@
       "missingPriceComponentDesc": "模型价格已经命中, 但缓存或推理 token 的价格缺失。"
     },
     "pricingOverrideExample": "本地覆盖示例",
+    "loadErrorTitle": "用量数据加载失败",
+    "loadErrorBody": "本地用量汇总请求失败。扫描或价格数据可用后可以重试。",
+    "pageErrorTitle": "用量页面渲染失败",
+    "pageErrorBody": "用量页面发生渲染错误。点击重试会重新渲染页面。",
     "dailyCost": "每日花费",
     "byModel": "按模型",
     "byProject": "按项目",

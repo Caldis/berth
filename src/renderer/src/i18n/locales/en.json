@@ -524,6 +524,10 @@
       "missingPriceComponentDesc": "The model price is matched, but cache or reasoning token prices are missing."
     },
     "pricingOverrideExample": "Local override example",
+    "loadErrorTitle": "Usage data could not be loaded",
+    "loadErrorBody": "The local usage summary request failed. Retry after the scan or pricing data is available.",
+    "pageErrorTitle": "Usage page failed",
+    "pageErrorBody": "A rendering error stopped the Usage page. Retry to render it again.",
     "dailyCost": "Daily Cost",
     "byModel": "By Model",
     "byProject": "By Project",
