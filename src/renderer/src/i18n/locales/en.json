@@ -336,73 +336,169 @@
       },
       "agentSupport": {
         "session-start": {
-          "claude": { "summary": "Claude Code can run setup and session-start hooks when it prepares a session." },
-          "codex": { "summary": "Codex supports SessionStart when a session starts, resumes, clears, or continues after compaction." }
+          "claude": {
+            "summary": "Claude Code can run setup and session-start hooks when it prepares a session."
+          },
+          "codex": {
+            "summary": "Codex supports SessionStart when a session starts, resumes, clears, or continues after compaction."
+          }
         },
         "user-input": {
-          "claude": { "summary": "Claude Code can run hooks before user input is submitted and when prompt expansion occurs." },
-          "codex": { "summary": "Codex supports UserPromptSubmit before the prompt reaches the model." }
+          "claude": {
+            "summary": "Claude Code can run hooks before user input is submitted and when prompt expansion occurs."
+          },
+          "codex": {
+            "summary": "Codex supports UserPromptSubmit before the prompt reaches the model."
+          }
         },
         "tool-before": {
-          "claude": { "summary": "Claude Code PreToolUse covers a broad tool surface, including file, shell, web, and MCP tools." },
-          "codex": { "summary": "Codex PreToolUse is available for supported shell, patch, and MCP tool calls." }
+          "claude": {
+            "summary": "Claude Code PreToolUse covers a broad tool surface, including file, shell, web, and MCP tools."
+          },
+          "codex": {
+            "summary": "Codex PreToolUse is available for supported shell, patch, and MCP tool calls."
+          }
         },
         "permission": {
-          "claude": { "summary": "Claude Code exposes permission requests, denials, and elicitation events." },
-          "codex": { "summary": "Codex exposes PermissionRequest when it is about to ask for approval." }
+          "claude": {
+            "summary": "Claude Code exposes permission requests, denials, and elicitation events."
+          },
+          "codex": {
+            "summary": "Codex exposes PermissionRequest when it is about to ask for approval."
+          }
         },
         "tool-after": {
-          "claude": { "summary": "Claude Code separates successful tool output, failed tool output, and tool batches." },
-          "codex": { "summary": "Codex uses PostToolUse for supported tool output, including some failed command output." }
+          "claude": {
+            "summary": "Claude Code separates successful tool output, failed tool output, and tool batches."
+          },
+          "codex": {
+            "summary": "Codex uses PostToolUse for supported tool output, including some failed command output."
+          }
         },
         "subagent": {
-          "claude": { "summary": "Claude Code exposes subagents, tasks, and teammate idle events." },
-          "codex": { "summary": "Codex exposes subagent start and stop events." }
+          "claude": {
+            "summary": "Claude Code exposes subagents, tasks, and teammate idle events."
+          },
+          "codex": {
+            "summary": "Codex exposes subagent start and stop events."
+          }
         },
         "context-maintenance": {
-          "claude": { "summary": "Claude Code exposes compaction plus instruction, config, cwd, and file change events." },
-          "codex": { "summary": "Codex exposes hooks before and after context compaction." }
+          "claude": {
+            "summary": "Claude Code exposes compaction plus instruction, config, cwd, and file change events."
+          },
+          "codex": {
+            "summary": "Codex exposes hooks before and after context compaction."
+          }
         },
         "session-stop": {
-          "claude": { "summary": "Claude Code can react to stop, stop failure, and session end events." },
-          "codex": { "summary": "Codex supports Stop before the main agent finishes a turn." }
+          "claude": {
+            "summary": "Claude Code can react to stop, stop failure, and session end events."
+          },
+          "codex": {
+            "summary": "Codex supports Stop before the main agent finishes a turn."
+          }
         },
         "environment": {
-          "claude": { "summary": "Claude Code supports notification and worktree events." },
-          "codex": { "summary": "Codex does not expose a hook event for this stage." }
+          "claude": {
+            "summary": "Claude Code supports notification and worktree events."
+          },
+          "codex": {
+            "summary": "Codex does not expose a hook event for this stage."
+          }
         }
       },
       "nativeEvents": {
-        "unknown": { "description": "Berth has not mapped this event yet." },
-        "Setup": { "description": "Runs while Claude Code prepares session setup." },
-        "SessionStart": { "description": "Runs when a session starts, resumes, or continues after context changes." },
-        "UserPromptSubmit": { "description": "Runs after you submit a prompt and before the model receives it." },
-        "UserPromptExpansion": { "description": "Runs when Claude Code expands prompt content." },
-        "PreToolUse": { "description": "Runs before a supported tool call executes." },
-        "PermissionRequest": { "description": "Runs when the agent is about to ask for approval." },
-        "PermissionDenied": { "description": "Runs when a Claude Code permission request is denied." },
-        "Elicitation": { "description": "Runs when Claude Code asks for structured user input." },
-        "ElicitationResult": { "description": "Runs when Claude Code receives structured user input." },
-        "PostToolUse": { "description": "Runs after supported tool output is available." },
-        "PostToolUseFailure": { "description": "Runs after a Claude Code tool fails." },
-        "PostToolBatch": { "description": "Runs after a Claude Code tool batch completes." },
-        "SubagentStart": { "description": "Runs when delegated agent work starts." },
-        "SubagentStop": { "description": "Runs when delegated agent work is about to stop." },
-        "TaskCreated": { "description": "Runs when Claude Code creates a task." },
-        "TaskCompleted": { "description": "Runs when Claude Code completes a task." },
-        "TeammateIdle": { "description": "Runs when a Claude Code teammate becomes idle." },
-        "PreCompact": { "description": "Runs before context compaction." },
-        "PostCompact": { "description": "Runs after context compaction." },
-        "InstructionsLoaded": { "description": "Runs when Claude Code loads instructions." },
-        "ConfigChange": { "description": "Runs when Claude Code observes config changes." },
-        "CwdChanged": { "description": "Runs when Claude Code changes working directory." },
-        "FileChanged": { "description": "Runs when Claude Code observes file changes." },
-        "Stop": { "description": "Runs before the main agent stops the current turn." },
-        "StopFailure": { "description": "Runs when Claude Code fails to stop cleanly." },
-        "SessionEnd": { "description": "Runs when a Claude Code session ends." },
-        "WorktreeCreate": { "description": "Runs when Claude Code creates a worktree." },
-        "WorktreeRemove": { "description": "Runs when Claude Code removes a worktree." },
-        "Notification": { "description": "Runs when Claude Code sends a user notification." }
+        "unknown": {
+          "description": "Berth has not mapped this event yet."
+        },
+        "Setup": {
+          "description": "Runs while Claude Code prepares session setup."
+        },
+        "SessionStart": {
+          "description": "Runs when a session starts, resumes, or continues after context changes."
+        },
+        "UserPromptSubmit": {
+          "description": "Runs after you submit a prompt and before the model receives it."
+        },
+        "UserPromptExpansion": {
+          "description": "Runs when Claude Code expands prompt content."
+        },
+        "PreToolUse": {
+          "description": "Runs before a supported tool call executes."
+        },
+        "PermissionRequest": {
+          "description": "Runs when the agent is about to ask for approval."
+        },
+        "PermissionDenied": {
+          "description": "Runs when a Claude Code permission request is denied."
+        },
+        "Elicitation": {
+          "description": "Runs when Claude Code asks for structured user input."
+        },
+        "ElicitationResult": {
+          "description": "Runs when Claude Code receives structured user input."
+        },
+        "PostToolUse": {
+          "description": "Runs after supported tool output is available."
+        },
+        "PostToolUseFailure": {
+          "description": "Runs after a Claude Code tool fails."
+        },
+        "PostToolBatch": {
+          "description": "Runs after a Claude Code tool batch completes."
+        },
+        "SubagentStart": {
+          "description": "Runs when delegated agent work starts."
+        },
+        "SubagentStop": {
+          "description": "Runs when delegated agent work is about to stop."
+        },
+        "TaskCreated": {
+          "description": "Runs when Claude Code creates a task."
+        },
+        "TaskCompleted": {
+          "description": "Runs when Claude Code completes a task."
+        },
+        "TeammateIdle": {
+          "description": "Runs when a Claude Code teammate becomes idle."
+        },
+        "PreCompact": {
+          "description": "Runs before context compaction."
+        },
+        "PostCompact": {
+          "description": "Runs after context compaction."
+        },
+        "InstructionsLoaded": {
+          "description": "Runs when Claude Code loads instructions."
+        },
+        "ConfigChange": {
+          "description": "Runs when Claude Code observes config changes."
+        },
+        "CwdChanged": {
+          "description": "Runs when Claude Code changes working directory."
+        },
+        "FileChanged": {
+          "description": "Runs when Claude Code observes file changes."
+        },
+        "Stop": {
+          "description": "Runs before the main agent stops the current turn."
+        },
+        "StopFailure": {
+          "description": "Runs when Claude Code fails to stop cleanly."
+        },
+        "SessionEnd": {
+          "description": "Runs when a Claude Code session ends."
+        },
+        "WorktreeCreate": {
+          "description": "Runs when Claude Code creates a worktree."
+        },
+        "WorktreeRemove": {
+          "description": "Runs when Claude Code removes a worktree."
+        },
+        "Notification": {
+          "description": "Runs when Claude Code sends a user notification."
+        }
       },
       "limitations": {
         "codexToolCoverage": "Codex only applies tool hooks to Bash, apply_patch, and MCP tools. It does not cover every tool-like action.",
@@ -456,6 +552,46 @@
       "bypassEnabled": "bypassPermissions is enabled in {{scope}} scope. This skips ALL permission prompts.",
       "allowList": "Allow list",
       "denyList": "Deny list"
+    },
+    "statusLine": {
+      "intro": {
+        "title": "Status lines show live session state",
+        "all": "Claude Code and Codex both expose a status line, but they work differently. Claude Code runs a configured command and renders its output. Codex renders an ordered list of built-in footer items from config.toml.",
+        "claude": "Claude Code status lines are command-backed settings from settings.json. The command can be a script or inline shell command, and Claude Code refreshes it during the session.",
+        "codex": "Codex status lines are built-in TUI footer items persisted in config.toml. Codex does not run a custom status-line script."
+      },
+      "model": {
+        "claude": {
+          "title": "Claude Code command",
+          "body": "Reads statusLine and subagentStatusLine from settings files. Commands can reference local scripts and may be disabled by disableAllHooks."
+        },
+        "codex": {
+          "title": "Codex footer items",
+          "body": "Reads [tui].status_line from config.toml. Items such as model, directory, branch, tokens, rate limits, and task progress are selected and ordered."
+        }
+      },
+      "summary": {
+        "total": "Configured status line assets",
+        "claude": "Claude command surfaces",
+        "codexItems": "Codex footer items",
+        "disabled": "Disabled by settings"
+      },
+      "setting": "Setting",
+      "command": "Command",
+      "footerItems": "Footer items",
+      "themeColors": "Theme colors",
+      "refreshInterval": "Refresh interval",
+      "padding": "Padding",
+      "hideVimModeIndicator": "Hide Vim mode",
+      "entryPaths": "Referenced scripts",
+      "disabled": "Disabled by disableAllHooks",
+      "hidden": "status_line is explicitly empty, so the Codex status line is hidden instead of using defaults.",
+      "unknownItems": "{{count}} unknown item(s) will be ignored by current Codex builds.",
+      "empty": {
+        "all": "No status line config was found. Claude Code uses settings.json command config; Codex falls back to model-with-reasoning and current-dir when tui.status_line is unset.",
+        "claude": "No Claude Code statusLine or subagentStatusLine setting was found in the scanned settings files.",
+        "codex": "No Codex tui.status_line setting was found. Codex will use its default footer items unless the field is explicitly set."
+      }
     }
   },
   "usage": {
@@ -607,6 +743,8 @@
     "back": "Back",
     "close": "Close",
     "viewRaw": "View Raw",
-    "sensitive": "Sensitive"
+    "sensitive": "Sensitive",
+    "yes": "Yes",
+    "no": "No"
   }
 }
