@@ -2,7 +2,7 @@
 task: 2026-05-30-agent-owned-dev-instance
 type: bug
 jira:
-phase: verify
+phase: archive
 created: 2026-05-30
 artifacts:
   source: 00-BUG.md
@@ -24,6 +24,6 @@ artifacts:
 ## gh project
 - project: https://github.com/users/Caldis/projects/6
 - item_id: PVTI_lAHOADXbEs4BZHvQzguQBnk
-- status: In Progress
+- status: Done
 
 ## 待澄清 (blocked 时填)
