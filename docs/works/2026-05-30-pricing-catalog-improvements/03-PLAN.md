@@ -7,7 +7,7 @@
   - 支持 usage-data / stats-cache / session 按 agent 来源合并。
   - byModel / byProject 百分比按 tokens。
   - 验证: `pnpm test -- tests/unit/usage-summary.test.ts`, `pnpm typecheck:node`。
-- [ ] 任务 2: 修 Usage agentView 与 unknown token 显示
+- [x] 任务 2: 修 Usage agentView 与 unknown token 显示
   - Usage 页面传 `agentView`。
   - `TokenUsageDisplay` compact/detail/tooltip 显示 `unknownTokens`。
   - 验证: `pnpm test -- tests/renderer/sessions-pages.test.tsx`, `pnpm typecheck:web`。

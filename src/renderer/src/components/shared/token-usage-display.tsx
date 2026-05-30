@@ -16,17 +16,22 @@ export function TokenUsageDisplay({
 }: TokenUsageDisplayProps): React.ReactElement {
   const { t } = useTranslation()
   const cacheTokens = usage.cacheReadInputTokens + usage.cacheCreationInputTokens
+  const hasUnknownTokens = usage.unknownTokens > 0
   const title = useMemo(() => {
     if (!usage.hasBreakdown) {
-      return `${formatNumber(usage.totalTokens)} ${t('usage.tokenUnit')}`
+      return [
+        `${formatNumber(usage.totalTokens)} ${t('usage.tokenUnit')}`,
+        hasUnknownTokens ? `${t('usage.unknownTokens')}: ${formatNumber(usage.unknownTokens)}` : null
+      ].filter(Boolean).join(' | ')
     }
     return [
       `${t('usage.inputTokens')}: ${formatNumber(usage.inputTokens)}`,
       `${t('usage.outputTokens')}: ${formatNumber(usage.outputTokens)}`,
       `${t('usage.cacheTokens')}: ${formatNumber(cacheTokens)}`,
-      `${t('usage.reasoningTokens')}: ${formatNumber(usage.reasoningOutputTokens)}`
-    ].join(' | ')
-  }, [cacheTokens, t, usage])
+      `${t('usage.reasoningTokens')}: ${formatNumber(usage.reasoningOutputTokens)}`,
+      hasUnknownTokens ? `${t('usage.unknownTokens')}: ${formatNumber(usage.unknownTokens)}` : null
+    ].filter(Boolean).join(' | ')
+  }, [cacheTokens, hasUnknownTokens, t, usage])
 
   if (mode === 'detail') {
     return (
@@ -42,9 +47,17 @@ export function TokenUsageDisplay({
             {usage.reasoningOutputTokens > 0 && (
               <span>{t('usage.reasoningTokens')}: {formatNumber(usage.reasoningOutputTokens)}</span>
             )}
+            {hasUnknownTokens && (
+              <span>{t('usage.unknownTokens')}: {formatNumber(usage.unknownTokens)}</span>
+            )}
           </div>
         ) : (
-          <div className="text-xs text-muted-foreground">{t('usage.breakdownUnavailable')}</div>
+          <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
+            <span>{t('usage.breakdownUnavailable')}</span>
+            {hasUnknownTokens && (
+              <span>{t('usage.unknownTokens')}: {formatNumber(usage.unknownTokens)}</span>
+            )}
+          </div>
         )}
       </div>
     )
@@ -60,6 +73,17 @@ export function TokenUsageDisplay({
         <span className="text-muted-foreground">
           · {t('usage.inputTokensShort')} {formatNumber(usage.inputTokens)} /{' '}
           {t('usage.outputTokensShort')} {formatNumber(usage.outputTokens)}
+          {hasUnknownTokens && (
+            <>
+              {' / '}
+              {t('usage.unknownTokens')} {formatNumber(usage.unknownTokens)}
+            </>
+          )}
+        </span>
+      )}
+      {!usage.hasBreakdown && hasUnknownTokens && (
+        <span className="text-muted-foreground">
+          · {t('usage.unknownTokens')} {formatNumber(usage.unknownTokens)}
         </span>
       )}
     </span>

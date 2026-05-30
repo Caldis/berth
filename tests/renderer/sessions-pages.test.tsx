@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { act, render, screen } from '@testing-library/react'
 import React from 'react'
 import { describe, expect, it, vi } from 'vitest'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
@@ -9,6 +9,7 @@ import { SessionDetail } from '../../src/renderer/src/pages/session-detail'
 import { Usage } from '../../src/renderer/src/pages/usage'
 import type { Asset, SessionSummary } from '../../src/shared/types/asset'
 import { normalizeTokenUsage } from '../../src/shared/token-usage'
+import { useAppStore } from '../../src/renderer/src/stores/app'
 
 const summary: SessionSummary = {
   id: 'session-session-abc',
@@ -172,7 +173,7 @@ describe('session pages', () => {
   it('renders usage token totals and model token counts', async () => {
     mockSessionApis()
 
-    render(
+    const { unmount } = render(
       <MemoryRouter>
         <Usage />
       </MemoryRouter>
@@ -184,5 +185,37 @@ describe('session pages', () => {
     expect(screen.queryByText('$0.00')).not.toBeInTheDocument()
     expect(screen.getAllByText('38 tok').length).toBeGreaterThan(0)
     expect(screen.getByText('claude-sonnet-4-20250514')).toBeInTheDocument()
+  })
+
+  it('passes agent view to usage summary and renders unknown token remainder', async () => {
+    act(() => {
+      useAppStore.setState({ agentView: 'codex' })
+    })
+    const tokenUsage = normalizeTokenUsage({ inputTokens: 10, totalTokens: 15 })
+    window.api.usage.summary = vi.fn(async () => ({
+      totalCost: 0,
+      totalTokens: tokenUsage.totalTokens,
+      tokenUsage,
+      costSource: 'unknown',
+      dailyCosts: [],
+      dailyTokenUsage: [],
+      byModel: [],
+      byProject: [],
+      rateLimits: []
+    }))
+
+    const { unmount } = render(
+      <MemoryRouter>
+        <Usage />
+      </MemoryRouter>
+    )
+
+    expect(await screen.findByText('Input: 10')).toBeInTheDocument()
+    expect(screen.getByText('Unknown: 5')).toBeInTheDocument()
+    expect(window.api.usage.summary).toHaveBeenCalledWith({ days: 30, agentView: 'codex' })
+    unmount()
+    act(() => {
+      useAppStore.setState({ agentView: 'all' })
+    })
   })
 })

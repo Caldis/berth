@@ -15,6 +15,7 @@ import { DollarSign, Coins, Gauge, FlaskConical } from 'lucide-react'
 import { cn, formatNumber, formatCurrency } from '@/lib/utils'
 import type { UsageSummary } from '@shared/types/asset'
 import { TokenUsageDisplay } from '@/components/shared/token-usage-display'
+import { useAppStore } from '@/stores/app'
 
 const CHART_COLORS = [
   'hsl(216, 57%, 25%)',
@@ -34,11 +35,12 @@ export function Usage(): React.ReactElement {
   const { t } = useTranslation()
   const [days, setDays] = useState(30)
   const [usage, setUsage] = useState<UsageSummary | null>(null)
+  const agentView = useAppStore((s) => s.agentView)
 
   useEffect(() => {
     let cancelled = false
     window.api?.usage
-      .summary({ days })
+      .summary({ days, agentView })
       .then((data) => {
         if (!cancelled) setUsage(data)
       })
@@ -46,7 +48,7 @@ export function Usage(): React.ReactElement {
     return () => {
       cancelled = true
     }
-  }, [days])
+  }, [agentView, days])
 
   const hasCostData = usage && usage.dailyCosts.length > 0
   const hasModelData = usage && usage.byModel.length > 0
