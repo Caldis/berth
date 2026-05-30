@@ -4,6 +4,7 @@ import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { registerAllHandlers } from './ipc'
 import { initScanner } from './engine/scanner'
 import { getWatcher } from './engine/watcher'
+import { resolveDefaultProjectDir } from './project-dir'
 
 function createWindow(): BrowserWindow {
   const mainWindow = new BrowserWindow({
@@ -78,12 +79,13 @@ if (!gotTheLock) {
     registerAllHandlers()
 
     // Initialize the asset engine
-    initScanner(process.cwd())
+    const projectDir = resolveDefaultProjectDir({ isDev: is.dev, cwd: process.cwd() })
+    initScanner(projectDir)
     const watcher = getWatcher()
 
     const mainWindow = createWindow()
     watcher.setWindow(mainWindow)
-    watcher.start(process.cwd())
+    watcher.start(projectDir)
 
     app.on('activate', () => {
       if (BrowserWindow.getAllWindows().length === 0) createWindow()
