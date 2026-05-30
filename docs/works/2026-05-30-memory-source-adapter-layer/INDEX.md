@@ -43,6 +43,12 @@ implement — explore + design 完成 (00-PRD / 01-ANALYSIS / 02-SPEC / 03-PLAN 
 - ⏳ 剩余: (a) i18n keys 待 en/zh.json 脱离并行 status-line WIP 后单独提交; (b) 应用 GUI 截图验收
   (可由 `pnpm dev` → 指令 → 记忆 tab 人工查看; Windows 自动截图未做)。
 
+### verify 回写 (defect 修复)
+- 🐞→✅ 点击新增 "约定" tab 白屏。根因: `AssetGuidePanel` 直接解引用 `guide.titleKey` (无 undefined 守卫),
+  而 `instructionGuideMap` 无 `conventions` 键 → activeGuide=undefined → 渲染抛错。
+  修复: `instructions.tsx` 改为 `{activeGuide && <AssetGuidePanel .../>}` (无 guide 的 tab 不渲染该面板)。
+  typecheck 0 error。教训: 新增 tab 必须配 guide 或对 AssetGuidePanel 加守卫。
+
 ### 已知数据细节 (非 berth bug)
 - united-memory 返回 45 (依 index.json) 而磁盘 mem/ 仅 38 有效 (+8 畸形文件): index.json 偏旧。
   berth 以 index.json 为准是正确取舍; 指向缺失文件的条目 read() 时优雅降级。属 ~/.united-memory 仓库

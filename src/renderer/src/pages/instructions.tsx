@@ -458,7 +458,7 @@ export function Instructions(): React.ReactElement {
         />
       )}
 
-      <AssetGuidePanel guide={activeGuide} />
+      {activeGuide && <AssetGuidePanel guide={activeGuide} />}
 
       {renderContent()}
     </div>
