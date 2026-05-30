@@ -38,7 +38,7 @@ OpenSpec 风格自定义命令, 以 Jira Task ID 串联上下文, 流程绑定�
 
 - `AGENTS.md` (项目指令, 含 behavioral guidelines)
 - `CLAUDE.md` 仅含 `@AGENTS.md` 引用
-- `plans/` (任务计划), `issues/` (bug 跟踪), 各含 AGENTS.md 约定
+- `plans/` (历史任务计划), `docs/issues/` (产品 bug/feature/improvement 跟踪), 各含 AGENTS.md 约定
 - `docs/` (index.html, user-manual.md, CONTRIBUTING.md, prd/)
 - `tests/` (Vitest 单测 + Playwright e2e stub)
 - GitHub remote: `Caldis/berth`
@@ -54,7 +54,7 @@ OpenSpec 风格自定义命令, 以 Jira Task ID 串联上下文, 流程绑定�
 
 ### 3.3 现状冲突
 
-berth 现有 `plans/` 采用 `{DATE}-{SHORT_DESC}` 命名, `issues/` 存 bug, 与源文档的 `works/{DATE}-{JIRA}-{SUMMARY}` + `friction/` 命名与结构不一致, 需调和 (见第 11 节)。
+berth 现有 `plans/` 采用 `{DATE}-{SHORT_DESC}` 命名, `docs/issues/` 存产品问题, 与源文档的 `works/{DATE}-{JIRA}-{SUMMARY}` + `friction/` 命名与结构不一致, 需调和 (见第 11 节)。
 
 ## 4. 架构决策: 单一真源 + 双工具分发
 
@@ -103,7 +103,7 @@ berth/
 │
 ├── scripts/
 │   ├── harness-sync.mjs                       # 幂等生成 Claude skill 分发, 清理历史 command 桩
-│   └── harness-check.mjs                      # 校验任务产物/模板/命名/分发
+│   └── harness-check.mjs                      # 校验任务产物/模板/命名/issues 目录/分发
 │
 ├── docs/
 │   ├── ARCHITECTURE.md                        # Project Map (新建)
@@ -113,10 +113,14 @@ berth/
 │   │   │   ├── 01-ANALYSIS.md  02-SPEC.md  03-PLAN.md
 │   │   ├── _archive/
 │   │   └── {YYYY-MM-DD}[-{JIRA}]-{SUMMARY}/
-│   └── friction/                              # 工程摩擦 (反馈设施)
-│       ├── _template.md
-│       ├── _archive/
-│       └── {YYYYMMDD}-{phase}-{SUMMARY}.md
+│   ├── friction/                              # 工程摩擦 (反馈设施)
+│   │   ├── _template.md
+│   │   ├── _archive/
+│   │   └── {YYYYMMDD}-{phase}-{SUMMARY}.md
+│   └── issues/                                # 产品问题清单
+│       ├── AGENTS.md
+│       ├── resolved/
+│       └── {YYYY-MM-DD}-{BUG|FEATURE|IMPROVEMENT}-{SUMMARY}.md
 │
 ├── .github/
 │   ├── workflows/ci.yml                       # lint + typecheck + test + harness:check
@@ -258,17 +262,18 @@ Claude Code 会从 `.claude/skills/opsx-explore/SKILL.md` 生成 `/opsx-explore`
 1. 每个 works 任务按 INDEX 声明的 phase 具备必需产物 (explore 须有 ANALYSIS; design 须有 SPEC + PLAN; feature 须有 00-PRD; bug 须有 00-BUG)
 2. `_template/` 模板齐全
 3. works 命名符合 `{date}[-{jira}]-{summary}`, friction 命名符合 `{yyyymmdd}-{phase}-{summary}`
-4. 分发完整: 8 个 verb 的 skill 分发存在且内容正确; 历史 opsx command 桩不存在
+4. `docs/issues/` 存在且根同名目录未复活
+5. 分发完整: 8 个 verb 的 skill 分发存在且内容正确; 历史 opsx command 桩不存在
 
 `tests/harness/check.test.ts`: fixture 驱动, 覆盖合规与各类违规场景。
 
 `package.json` 增 `harness:check` (运行校验器) 与 `harness:sync` (运行同步) 两个 script。
 
-## 11. 与现有 plans/ + issues/ 调和
+## 11. 与现有 plans/ + docs/issues/ 调和
 
 - `plans/AGENTS.md`: 改为重定向说明, 活任务态移至 `docs/works/`; 保留 `v0.1-development.md` 作为历史记录
-- `issues/AGENTS.md`: 改为重定向说明, 过程摩擦移至 `docs/friction/`; `issues/` 仍存产品 bug, 与 works/friction 双向交叉引用
-- 顶层 `AGENTS.md` 的 DOCS 段标注 works/friction 为操作态例外 (非冷文档)
+- `docs/issues/AGENTS.md`: 说明产品问题清单语义, 过程摩擦移至 `docs/friction/`; `docs/issues/` 仍存产品 bug, 与 works/friction 双向交叉引用
+- 顶层 `AGENTS.md` 的 DOCS 段标注 works/friction/issues 为操作态例外 (非冷文档)
 
 ## 12. 顺手必修: pnpm 版本钉死
 
@@ -277,7 +282,7 @@ Claude Code 会从 `.claude/skills/opsx-explore/SKILL.md` 生成 `/opsx-explore`
 该修复同时作为 harness 的首条 dogfood 样本:
 
 - friction 记录: `docs/friction/20260529-implement-pnpm-version-pinning.md`
-- issues 录入: 符合 berth AGENTS.md 的 EVALUATION 约定
+- docs/issues 录入: 符合 berth AGENTS.md 的 EVALUATION 约定
 
 ## 13. CI 与 PR 模板
 

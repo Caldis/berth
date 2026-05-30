@@ -5,13 +5,13 @@
 - 不使用 worktree
 
 # DOCS
-存放冷文档目录
+存放冷文档目录; harness 操作态例外为 `docs/works/`、`docs/friction/`、`docs/issues/`
 
 # PLANS
 存放任务计划和执行清单, 每次启动时先检索该目录, 并询问用户是否继续最近任务
 
 # ISSUES
-存放发现的 bug、需要改进的功能、以及其他任何需要跟踪的问题
+产品 bug、功能与改进项统一存放在 `docs/issues/`
 
 # TEST
 必须满足可测试性
@@ -25,10 +25,10 @@
 - **UI 视觉验收截图**: 必须用 electron 主进程**实测窗口坐标**裁剪 (osascript 取 `{position, size}` of front window → 按显示器缩放比换算物理像素裁剪); 不可猜坐标。进程检测见 `.agents/workflow/verify.md` (完整 .pnpm 路径模式 + 排除 helper)。
 
 # EVOLUATION
-当用户对先前的任务或指令进行纠正或指示时, 你需要在验证其有效性后将其写入 issues
+当用户对先前的任务或指令进行纠正或指示时, 你需要在验证其有效性后将其写入 `docs/issues/`
 - 在 harness 工作流 (opsx-*) 任务过程中, 用户给出的纠正/意见/偏好, 一经验证有效, 必须主动沉淀为 friction (docs/friction/), 并在当轮落地优化, 无需用户提示 "记下来"。详见 `.agents/workflow/_shared.md` 不变量 6。
-- 判定归属: 针对当前任务执行过程的反馈 → friction; 针对产品功能/缺陷的反馈 → issues。
-- 沉淀产物本身 (friction / works / 文档) 必须先过 `pnpm harness:check` (命名/阶段/结构合规) 才能提交; 不可未验证就 commit。沉淀指令的完备性 = 主动记录 + 产物过闸门。
+- 判定归属: 针对当前任务执行过程的反馈 → friction; 针对产品功能/缺陷的反馈 → `docs/issues/`。
+- 沉淀产物本身 (friction / works / issues / 文档) 必须先过 `pnpm harness:check` (命名/阶段/结构合规) 才能提交; 不可未验证就 commit。沉淀指令的完备性 = 主动记录 + 产物过闸门。
 
 # Behavioral guidelines
 to reduce common LLM coding mistakes. Merge with project-specific instructions as needed.
@@ -102,6 +102,7 @@ Agent 工作流体系, 单一真源在 `.agents/`, 同时服务 Claude Code 与 
 - 工具索引: `.agents/tools.md`; 项目地图: `docs/ARCHITECTURE.md`
 - 任务态 (操作目录, 非冷文档): `docs/works/{date}[-{jira}]-{summary}/`
 - 工程摩擦: `docs/friction/{yyyymmdd}-{phase}-{summary}.md`
+- 产品问题: `docs/issues/{YYYY-MM-DD}-{BUG|FEATURE|IMPROVEMENT}-{summary}.md`
 - 自检/分发: `pnpm harness:check` / `pnpm harness:sync` (CI 强制)
 
 ## 何时进入 (强制)

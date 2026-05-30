@@ -25,6 +25,7 @@ describe('collectStats', () => {
     const s = collectStats(root)
     expect(s.works.active).toBe(0)
     expect(s.friction.active).toBe(0)
+    expect(s.issues.active).toBe(0)
     expect(s.works.archived).toBe(0)
   })
 
@@ -47,5 +48,15 @@ describe('collectStats', () => {
     expect(s.works.archived).toBe(1)
     expect(s.friction.active).toBe(1)
     expect(s.friction.archived).toBe(1)
+  })
+
+  it('统计 active/resolved 产品 issues', () => {
+    mkdirSync(join(root, 'docs/issues/resolved'), { recursive: true })
+    writeFileSync(join(root, 'docs/issues/AGENTS.md'), 'x')
+    writeFileSync(join(root, 'docs/issues/2026-05-30-BUG-a.md'), 'x')
+    writeFileSync(join(root, 'docs/issues/resolved/2026-05-29-IMPROVEMENT-b.md'), 'x')
+    const s = collectStats(root)
+    expect(s.issues.active).toBe(1)
+    expect(s.issues.resolved).toBe(1)
   })
 })

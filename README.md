@@ -131,7 +131,7 @@ This repo ships an **AI Native Workflow harness** — a repo-contained workflow 
 | `.agents/README.md` | Harness overview and how distribution works |
 | `.claude/commands/opsx/`, `.claude/skills/`, `.codex/skills/` | Generated entry points for each tool (symlinks + stubs) |
 | `docs/ARCHITECTURE.md` | Project Map — process/module boundaries, IPC contract |
-| `docs/works/` · `docs/friction/` | Per-task state · captured engineering friction |
+| `docs/works/` · `docs/friction/` · `docs/issues/` | Per-task state · captured engineering friction · product issues |
 | `scripts/harness-sync.mjs` · `scripts/harness-check.mjs` | Regenerate distribution · validate it |
 
 ### Using it

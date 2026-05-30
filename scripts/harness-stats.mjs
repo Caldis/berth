@@ -1,5 +1,5 @@
 // scripts/harness-stats.mjs
-// 最小观测: 汇总 harness 运行健康度 (works 阶段分布 / friction 消费率 / 分发完整性)。
+// 最小观测: 汇总 harness 运行健康度 (works 阶段分布 / friction 消费率 / issues 计数 / 分发完整性)。
 // 只读, 不改任何文件。源文档「观测」一节的 v1 落地。
 import { readdirSync, readFileSync, existsSync, statSync } from 'node:fs'
 import { join } from 'node:path'
@@ -15,6 +15,13 @@ function listTaskDirs(p) {
 function listMdFiles(p) {
   if (!existsSync(p)) return []
   return readdirSync(p).filter((n) => n.endsWith('.md') && !n.startsWith('_') && statSync(join(p, n)).isFile())
+}
+
+function listIssueFiles(p) {
+  if (!existsSync(p)) return []
+  return readdirSync(p).filter((n) =>
+    n.endsWith('.md') && n !== 'AGENTS.md' && !n.startsWith('_') && statSync(join(p, n)).isFile()
+  )
 }
 
 export function collectStats(root) {
@@ -34,12 +41,17 @@ export function collectStats(root) {
   const frictionActive = listMdFiles(join(root, 'docs/friction')).length
   const frictionArchived = listMdFiles(join(root, 'docs/friction/_archive')).length
 
+  // issues: 产品问题 active vs resolved
+  const issuesActive = listIssueFiles(join(root, 'docs/issues')).length
+  const issuesResolved = listIssueFiles(join(root, 'docs/issues/resolved')).length
+
   // distribution: 复用 sync 的期望产物描述与 check
   const dist = checkDistribution(root)
 
   return {
     works: { active: worksActive, byPhase, archived: worksArchived },
     friction: { active: frictionActive, archived: frictionArchived },
+    issues: { active: issuesActive, resolved: issuesResolved },
     distribution: { ok: dist.ok, expected: desiredArtifacts(root).length, drift: dist.drift.length }
   }
 }
@@ -51,6 +63,7 @@ function main() {
     `  works    active=${s.works.active} archived=${s.works.archived}` +
       (s.works.active ? ` (${Object.entries(s.works.byPhase).map(([k, v]) => `${k}:${v}`).join(' ')})` : ''),
     `  friction active=${s.friction.active} archived=${s.friction.archived}`,
+    `  issues   active=${s.issues.active} resolved=${s.issues.resolved}`,
     `  dist     ${s.distribution.ok ? 'in-sync' : `DRIFT(${s.distribution.drift})`} (expected ${s.distribution.expected} artifacts)`
   ]
   console.log(lines.join('\n'))

@@ -36,7 +36,7 @@ verb: new · continue · explore · design · implement · verify · archive · 
 ## 四阶段
 
 Explore → Design → Implementation → Verify。人在 design 澄清意图, 在 verify 确认验收, 其余交给 Agent。
-状态见各任务 `docs/works/{task}/INDEX.md`; 摩擦见 `docs/friction/`。
+状态见各任务 `docs/works/{task}/INDEX.md`; 摩擦见 `docs/friction/`; 产品问题见 `docs/issues/`。
 
 ## 观测 (v2)
 

@@ -4,7 +4,7 @@
 
 **Goal:** 在 berth 仓库内落地一套自包含、同时兼容 Claude Code 与 Codex 的 AI Native Workflow harness (四设施 + 四阶段 + /opsx:* 命令封装)。
 
-**Architecture:** 单一真源在 `.agents/workflow/*.md` (手写 playbook); 分发层 (skills 软链 + Claude 命令桩 + 各 skill 的 SKILL.md) 由 `scripts/harness-sync.mjs` 幂等生成; `scripts/harness-check.mjs` 校验任务产物/模板/命名/分发完整性, 接入 CI。
+**Architecture:** 单一真源在 `.agents/workflow/*.md` (手写 playbook); 分发层 (skills 软链 + Claude 命令桩 + 各 skill 的 SKILL.md) 由 `scripts/harness-sync.mjs` 幂等生成; `scripts/harness-check.mjs` 校验任务产物/模板/命名/issues 目录/分发完整性, 接入 CI。
 
 **Tech Stack:** Node ESM (`.mjs` 脚本), Vitest (校验器测试), js-yaml (frontmatter 解析), GitHub Actions (CI), pnpm 9。
 
@@ -38,7 +38,7 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 **新建 (代码):**
 - `scripts/harness-lib.mjs` — 共享常量 + 内容生成器 + frontmatter 解析 (DRY 核心)
 - `scripts/harness-sync.mjs` — 分发: 生成 SKILL.md + 命令桩 + 软链; apply/check
-- `scripts/harness-check.mjs` — 校验: 源/模板/works/friction/分发
+- `scripts/harness-check.mjs` — 校验: 源/模板/works/friction/issues/分发
 - `tests/harness/sync.test.ts` — sync 幂等性 + drift 检测
 - `tests/harness/check.test.ts` — 校验器 fixture 测试
 
@@ -51,11 +51,11 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 **修改:**
 - `package.json` — `packageManager` 字段 + `harness:sync`/`harness:check` 脚本
 - `AGENTS.md` — 增 Harness 索引章节
-- `plans/AGENTS.md`, `issues/AGENTS.md` — 改为重定向说明
+- `plans/AGENTS.md`, `docs/issues/AGENTS.md` — 改为重定向说明
 
 **新建 (dogfood):**
 - `docs/friction/20260529-implement-pnpm-version-pinning.md`
-- `issues/20260529-pnpm-version-pinning.md`
+- `docs/issues/20260529-pnpm-version-pinning.md`
 
 ---
 
@@ -952,7 +952,7 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 1. 将 INDEX.phase 置 archive。
 2. 将 `docs/works/{task}/` 整体移动到 `docs/works/_archive/{task}/`, 避免污染上下文。
 3. 提交代码 (遵守提交规范), 准备提测。
-4. 若任务关联 issues/, 更新其状态并交叉引用归档路径。
+4. 若任务关联 `docs/issues/`, 更新其状态并交叉引用归档路径。
 
 产出: 任务归档 + commit。
 ```
@@ -1425,10 +1425,10 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 
 ---
 
-## Task 14: AGENTS.md 索引章节 + plans/issues 重定向
+## Task 14: AGENTS.md 索引章节 + plans/docs/issues 重定向
 
 **Files:**
-- Modify: `AGENTS.md`, `plans/AGENTS.md`, `issues/AGENTS.md`
+- Modify: `AGENTS.md`, `plans/AGENTS.md`, `docs/issues/AGENTS.md`
 
 - [ ] **Step 1: 在 AGENTS.md 末尾追加 Harness 索引章节**
 
@@ -1464,9 +1464,9 @@ Expected: 行数 < 500
 
 ```
 
-- [ ] **Step 4: 改写 issues/AGENTS.md 为重定向 (在文件顶部追加说明, 保留原内容)**
+- [ ] **Step 4: 改写 docs/issues/AGENTS.md 为重定向 (在文件顶部追加说明, 保留原内容)**
 
-读取 `issues/AGENTS.md` 现有内容, 在其首行之前插入:
+读取 `docs/issues/AGENTS.md` 现有内容, 在其首行之前插入:
 ```markdown
 > 重定向: 开发过程中的工程摩擦 (卡顿/手动补的上下文/被迫修正) 改记入 AI Native Workflow 的
 > `docs/friction/{yyyymmdd}-{phase}-{summary}.md`, 由 `/opsx:optimization` 消费。本目录用于
@@ -1478,8 +1478,8 @@ Expected: 行数 < 500
 
 ```bash
 cd /Users/caldis/Desktop/Code/berth
-git add AGENTS.md plans/AGENTS.md issues/AGENTS.md
-git commit -m "docs(harness): wire AGENTS index and redirect plans/issues
+git add AGENTS.md plans/AGENTS.md docs/issues/AGENTS.md
+git commit -m "docs(harness): wire AGENTS index and redirect plans/docs-issues
 
 Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 ```
@@ -1490,7 +1490,7 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 
 **Files:**
 - Create: `docs/friction/20260529-implement-pnpm-version-pinning.md`
-- Create: `issues/20260529-pnpm-version-pinning.md`
+- Create: `docs/issues/20260529-pnpm-version-pinning.md`
 
 - [ ] **Step 1: 创建 friction 记录**
 
@@ -1516,7 +1516,7 @@ implement (首次 `pnpm dev` 启动 berth)。
 
 ## 建议的流程改进 (已落地)
 package.json 增 `"packageManager": "pnpm@9.15.4"`; CI 用 pnpm/action-setup 钉死 9.15.4。
-关联 issue: issues/20260529-pnpm-version-pinning.md。
+关联 issue: docs/issues/20260529-pnpm-version-pinning.md。
 ```
 
 - [ ] **Step 2: 创建 issue 记录**
@@ -1552,7 +1552,7 @@ Expected: `FRICTION_OK`
 
 ```bash
 cd /Users/caldis/Desktop/Code/berth
-git add docs/friction/20260529-implement-pnpm-version-pinning.md issues/20260529-pnpm-version-pinning.md
+git add docs/friction/20260529-implement-pnpm-version-pinning.md docs/issues/20260529-pnpm-version-pinning.md
 git commit -m "docs(harness): record pnpm pinning friction + issue (dogfood)
 
 Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
@@ -1600,7 +1600,7 @@ jobs:
 <!-- 本 PR 做了什么, 关联哪个任务 -->
 
 关联任务: `docs/works/{date}-{summary}/` (或 N/A)
-关联 issue / friction:
+关联 docs/issues / friction:
 
 ## 验收标准
 <!-- 对照 01-ANALYSIS.md 逐条勾选 -->
@@ -1695,7 +1695,7 @@ REQUIRED SUB-SKILL: 调用 `superpowers:finishing-a-development-branch` 决定�
 
 ## Self-Review
 
-**1. Spec coverage:** 第 1-3 节背景/映射/现状 → 体现在各 playbook 与 README (T6-9); 第 4 节双工具决策 → T2/T3/T12/T13; 第 5 节目录树 → 全量任务; 第 6 节四设施 → 指令(T11,T14)/工具(T9)/状态(T10)/反馈(T16,T8 verify,T15); 第 7 节四阶段 → T7/T8 playbook + _shared(T6); 第 8 节 verb 规格 → T7/T8; 第 9 节 sync → T3; 第 10 节 check+测试 → T4; 第 11 节 plans/issues 调和 → T14; 第 12 节 pnpm → T1+T15; 第 13 节 CI/PR → T16; 第 14 节验收 → T17; 第 15 节亲验 → T13; 第 16 节范围外 (观测 v2) → README 占位(T9)。无遗漏。
+**1. Spec coverage:** 第 1-3 节背景/映射/现状 → 体现在各 playbook 与 README (T6-9); 第 4 节双工具决策 → T2/T3/T12/T13; 第 5 节目录树 → 全量任务; 第 6 节四设施 → 指令(T11,T14)/工具(T9)/状态(T10)/反馈(T16,T8 verify,T15); 第 7 节四阶段 → T7/T8 playbook + _shared(T6); 第 8 节 verb 规格 → T7/T8; 第 9 节 sync → T3; 第 10 节 check+测试 → T4; 第 11 节 plans/docs/issues 调和 → T14; 第 12 节 pnpm → T1+T15; 第 13 节 CI/PR → T16; 第 14 节验收 → T17; 第 15 节亲验 → T13; 第 16 节范围外 (观测 v2) → README 占位(T9)。无遗漏。
 
 **2. Placeholder scan:** 模板文件中的 `{YYYY-MM-DD}` / `{SUMMARY}` 是模板占位符 (交付物的有意内容, 非计划缺口); 代码与命令步骤均含完整内容。无 TODO/TBD/"类似 Task N"。
 

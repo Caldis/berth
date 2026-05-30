@@ -51,4 +51,4 @@ Electron 33 (electron-vite 5) · React 19 + TS · Tailwind/shadcn · Zustand · 
 ## 相关
 
 - 工作流: `.agents/README.md`
-- 任务态: `docs/works/` · 摩擦: `docs/friction/`
+- 任务态: `docs/works/` · 摩擦: `docs/friction/` · 产品问题: `docs/issues/`

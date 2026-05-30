@@ -19,4 +19,4 @@ implement (首次 `pnpm dev` 启动 berth)。
 
 ## 建议的流程改进 (已落地)
 package.json 增 `"packageManager": "pnpm@9.15.4"`; CI 用 pnpm/action-setup 钉死 9.15.4。
-关联 issue: issues/2026-05-29-IMPROVEMENT-pnpm-version-pinning.md。
+关联 issue: docs/issues/resolved/2026-05-29-IMPROVEMENT-pnpm-version-pinning.md。

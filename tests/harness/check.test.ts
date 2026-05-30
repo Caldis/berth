@@ -8,6 +8,7 @@ import {
   SMALL_CHANGE_EXEMPTION_CONSENT,
   checkWorks,
   checkFriction,
+  checkIssues,
   checkTemplates,
   checkWorkflowSources,
   checkEntryRules
@@ -88,6 +89,26 @@ describe('checkFriction', () => {
     const phases = ['new', 'continue', 'explore', 'design', 'implement', 'verify', 'archive', 'optimization']
     for (const p of phases) writeFileSync(join(root, `docs/friction/20260530-${p}-sample.md`), 'x')
     expect(checkFriction(root)).toEqual([])
+  })
+})
+
+describe('checkIssues', () => {
+  it('要求产品 issue 目录位于 docs/issues', () => {
+    mkdirSync(join(root, 'docs/issues'), { recursive: true })
+    writeFileSync(join(root, 'docs/issues/AGENTS.md'), 'x')
+    expect(checkIssues(root)).toEqual([])
+  })
+
+  it('根 issues 目录复活时报错', () => {
+    mkdirSync(join(root, 'docs/issues'), { recursive: true })
+    mkdirSync(join(root, 'issues'), { recursive: true })
+    writeFileSync(join(root, 'docs/issues/AGENTS.md'), 'x')
+    expect(checkIssues(root).some((e: string) => e.includes('root directory named issues'))).toBe(true)
+  })
+
+  it('缺少 docs/issues/AGENTS.md 时报错', () => {
+    mkdirSync(join(root, 'docs/issues'), { recursive: true })
+    expect(checkIssues(root).some((e: string) => e.includes('AGENTS.md'))).toBe(true)
   })
 })
 

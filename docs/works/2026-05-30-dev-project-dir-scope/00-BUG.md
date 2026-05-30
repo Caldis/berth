@@ -2,7 +2,7 @@
 
 > 原始缺陷描述快照。任何阶段不回写。
 
-来源: `issues/2026-05-30-IMPROVEMENT-dev-cwd-scan-scope.md`
+来源: `docs/issues/2026-05-30-IMPROVEMENT-dev-cwd-scan-scope.md`
 
 ## 复现步骤
 
@@ -16,4 +16,3 @@
 实际:
 - `src/main/index.ts` 调用 `initScanner(process.cwd())` 与 `watcher.start(process.cwd())`。
 - dev 模式下 `process.cwd()` 是 berth 仓库根, 导致 scanner / watcher 把仓库根作为 project scope 检查。
-

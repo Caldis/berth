@@ -1,12 +1,13 @@
-> 重定向: 开发过程中的工程摩擦 (卡顿/手动补的上下文/被迫修正) 改记入 AI Native Workflow 的
-> `docs/friction/{yyyymmdd}-{phase}-{summary}.md`, 由 `/opsx:optimization` 消费。本目录用于
-> 跟踪产品缺陷与改进项, 与 friction 双向交叉引用。详见 `.agents/README.md`。
+> 说明: 产品缺陷、功能请求与改进项统一存放在 `docs/issues/`。开发过程中的工程摩擦
+> (卡顿/手动补的上下文/被迫修正) 记入 AI Native Workflow 的
+> `docs/friction/{yyyymmdd}-{phase}-{summary}.md`, 由 `/opsx:optimization` 消费。
+> 本目录与 works/friction 只做交叉引用, 不承载任务 phase 状态。
 
 # ISSUES
 本目录存放发现的 bug、需要改进的功能、以及其他任何需要跟踪的问题
 - 每个 issue 按照 {YYYY-MM-DD}-{BUG|FEATURE|IMPROVEMENT}-{SHORT_DESCRIPTION}.md 命名
 - 创建时, 按照模板填充 issue 内容
-- 完成后, 移入 reolved 目录, 并补充完成日期和解决方案简述
+- 完成后, 移入 resolved 目录, 并补充完成日期和解决方案简述
 
 # TEMPLATE
 ```

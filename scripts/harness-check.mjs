@@ -1,5 +1,5 @@
 // scripts/harness-check.mjs
-// 校验: 源 playbook / 模板 / works 任务产物与命名 / friction 命名 / 分发完整性。
+// 校验: 源 playbook / 模板 / works 任务产物与命名 / friction 命名 / issues 目录 / 分发完整性。
 import { readdirSync, readFileSync, existsSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -112,6 +112,20 @@ export function checkWorkflowSources(root) {
   return errors
 }
 
+export function checkIssues(root) {
+  const errors = []
+  if (existsSync(join(root, 'issues')))
+    errors.push('issues: root directory named issues is deprecated; use docs/issues/')
+  const base = join(root, 'docs/issues')
+  if (!existsSync(base)) {
+    errors.push('issues: missing docs/issues')
+    return errors
+  }
+  if (!existsSync(join(base, 'AGENTS.md')))
+    errors.push('issues: missing docs/issues/AGENTS.md')
+  return errors
+}
+
 export function checkEntryRules(root) {
   const errors = []
   for (const rel of ['AGENTS.md', '.agents/README.md']) {
@@ -132,7 +146,8 @@ export function checkAll(root) {
     ...checkEntryRules(root),
     ...checkTemplates(root),
     ...checkWorks(root),
-    ...checkFriction(root)
+    ...checkFriction(root),
+    ...checkIssues(root)
   ]
   const dist = checkDistribution(root)
   if (!dist.ok) for (const d of dist.drift) errors.push(`distribution drift: ${d}`)
