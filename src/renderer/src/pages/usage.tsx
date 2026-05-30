@@ -13,14 +13,8 @@ import {
 } from 'recharts'
 import { AlertTriangle, DollarSign, Coins, Gauge, FlaskConical } from 'lucide-react'
 import { cn, formatNumber, formatCurrency } from '@/lib/utils'
-import type {
-  CostSource,
-  PricingMiss,
-  UsageModelBreakdown,
-  UsageProjectBreakdown,
-  UsageSummary
-} from '@shared/types/asset'
-import { normalizeTokenUsage } from '@shared/token-usage'
+import type { PricingMiss, UsageSummary } from '@shared/types/asset'
+import { normalizeUsageSummary } from '@shared/usage-summary'
 import { TokenUsageDisplay } from '@/components/shared/token-usage-display'
 import { useAppStore } from '@/stores/app'
 import { CostSourceBadge } from '@/components/shared/cost-source-badge'
@@ -46,92 +40,6 @@ function formatSignedCurrency(amount: number): string {
 
 function pricingMissLabel(miss: PricingMiss): string {
   return miss.model ?? 'unknown'
-}
-
-function normalizeUsageSummary(summary: UsageSummary): UsageSummary {
-  const totalCost = numberOrZero(summary.totalCost)
-  const tokenUsage = normalizeTokenUsage(summary.tokenUsage ?? { totalTokens: summary.totalTokens })
-  const costSource = normalizeCostSource(summary.costSource, totalCost)
-
-  return {
-    totalCost,
-    actualCost: numberOrZero(summary.actualCost),
-    estimatedCost: numberOrZero(summary.estimatedCost),
-    costDelta: numberOrZero(summary.costDelta),
-    totalTokens: numberOrZero(summary.totalTokens) || tokenUsage.totalTokens,
-    tokenUsage,
-    costSource,
-    pricingMisses: arrayOrEmpty(summary.pricingMisses),
-    dailyCosts: arrayOrEmpty(summary.dailyCosts),
-    dailyTokenUsage: arrayOrEmpty(summary.dailyTokenUsage).map((item) => ({
-      ...item,
-      tokenUsage: normalizeTokenUsage(item.tokenUsage)
-    })),
-    byModel: arrayOrEmpty(summary.byModel).map((item) =>
-      normalizeModelBreakdown(item, costSource)
-    ),
-    byProject: arrayOrEmpty(summary.byProject).map((item) =>
-      normalizeProjectBreakdown(item, costSource)
-    ),
-    rateLimits: arrayOrEmpty(summary.rateLimits)
-  }
-}
-
-function normalizeModelBreakdown(
-  item: UsageModelBreakdown,
-  fallbackSource: CostSource
-): UsageModelBreakdown {
-  const cost = numberOrZero(item.cost)
-  const tokenUsage = normalizeTokenUsage(item.tokenUsage ?? { totalTokens: item.tokens })
-
-  return {
-    ...item,
-    percentage: numberOrZero(item.percentage),
-    cost,
-    actualCost: numberOrZero(item.actualCost),
-    estimatedCost: numberOrZero(item.estimatedCost),
-    costDelta: numberOrZero(item.costDelta),
-    costSource: normalizeCostSource(item.costSource ?? fallbackSource, cost),
-    pricingMisses: arrayOrEmpty(item.pricingMisses),
-    tokens: numberOrZero(item.tokens) || tokenUsage.totalTokens,
-    tokenUsage
-  }
-}
-
-function normalizeProjectBreakdown(
-  item: UsageProjectBreakdown,
-  fallbackSource: CostSource
-): UsageProjectBreakdown {
-  const cost = numberOrZero(item.cost)
-  const tokenUsage = normalizeTokenUsage(item.tokenUsage ?? { totalTokens: item.tokens })
-
-  return {
-    ...item,
-    percentage: numberOrZero(item.percentage),
-    cost,
-    actualCost: numberOrZero(item.actualCost),
-    estimatedCost: numberOrZero(item.estimatedCost),
-    costDelta: numberOrZero(item.costDelta),
-    costSource: normalizeCostSource(item.costSource ?? fallbackSource, cost),
-    pricingMisses: arrayOrEmpty(item.pricingMisses),
-    tokens: numberOrZero(item.tokens) || tokenUsage.totalTokens,
-    tokenUsage
-  }
-}
-
-function normalizeCostSource(value: unknown, cost: number): CostSource {
-  if (value === 'actual' || value === 'estimated' || value === 'mixed' || value === 'unknown') {
-    return value
-  }
-  return cost > 0 ? 'actual' : 'unknown'
-}
-
-function numberOrZero(value: unknown): number {
-  return typeof value === 'number' && Number.isFinite(value) ? value : 0
-}
-
-function arrayOrEmpty<T>(value: T[] | undefined): T[] {
-  return Array.isArray(value) ? value : []
 }
 
 export function Usage(): React.ReactElement {

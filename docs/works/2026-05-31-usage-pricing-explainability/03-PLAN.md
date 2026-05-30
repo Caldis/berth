@@ -2,7 +2,7 @@
 
 从 02-SPEC 拆解。每任务可独立执行与验证, 顺序确定。implement 阶段维护此清单。
 
-- [ ] 任务 1: shared UsageSummary 归一化层
+- [x] 任务 1: shared UsageSummary 归一化层
   - 新增 `src/shared/usage-summary.ts`。
   - 移除 `Usage` 页内重复 normalization。
   - 验证: `pnpm test -- tests/unit/usage-summary-normalizer.test.ts tests/renderer/sessions-pages.test.tsx`, `pnpm typecheck:web`。
