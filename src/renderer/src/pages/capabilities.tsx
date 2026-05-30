@@ -12,8 +12,7 @@ import {
   Circle,
   Eye,
   Check,
-  X as XIcon,
-  AlertTriangle
+  X as XIcon
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { filterAssetsByAgentView } from '@/lib/agent-view'
@@ -27,7 +26,7 @@ import { HooksLifecycleView } from '@/components/capabilities/hooks-lifecycle-vi
 import { AssetGuidePanel } from '@/components/shared/asset-guide-panel'
 import { capabilityGuideMap, type CapabilityGuideId } from '@/lib/asset-guidance'
 import { normalizeEnvVars, normalizePermissionRules, type PermissionRuleKind, type PermissionRuleRow } from '@/lib/capability-assets'
-import type { AgentView, Asset, AssetScope } from '@shared/types/asset'
+import type { Asset, AssetScope } from '@shared/types/asset'
 
 type ScopeFilter = 'all' | AssetScope
 
@@ -240,208 +239,44 @@ function PluginCard({ asset }: { asset: Asset }): React.ReactElement {
 }
 
 /* ---------- StatusLine section ---------- */
-function asStringArray(value: unknown): string[] {
-  return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : []
-}
-
-function StatusLineIntro({ agentView }: { agentView: AgentView }): React.ReactElement {
-  const { t } = useTranslation()
-
-  return (
-    <div className="rounded-lg border border-border bg-card px-4 py-3">
-      <div className="flex items-start gap-3">
-        <Activity className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-        <div className="min-w-0">
-          <h2 className="text-sm font-semibold text-foreground">{t('capabilities.statusLine.intro.title')}</h2>
-          <p className="mt-1 max-w-[78ch] text-sm leading-6 text-muted-foreground">
-            {t(`capabilities.statusLine.intro.${agentView}`)}
-          </p>
-        </div>
-      </div>
-      <div className="mt-3 grid gap-3 md:grid-cols-2">
-        <div className="rounded-md border border-border/70 px-3 py-2">
-          <p className="text-xs font-medium text-foreground">{t('capabilities.statusLine.model.claude.title')}</p>
-          <p className="mt-1 text-xs leading-5 text-muted-foreground">{t('capabilities.statusLine.model.claude.body')}</p>
-        </div>
-        <div className="rounded-md border border-border/70 px-3 py-2">
-          <p className="text-xs font-medium text-foreground">{t('capabilities.statusLine.model.codex.title')}</p>
-          <p className="mt-1 text-xs leading-5 text-muted-foreground">{t('capabilities.statusLine.model.codex.body')}</p>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function StatusLineSummary({ assets }: { assets: Asset[] }): React.ReactElement {
-  const { t } = useTranslation()
-  const claudeCount = assets.filter((asset) => asset.agentId === 'claude-code').length
-  const codexCount = assets.filter((asset) => asset.agentId === 'codex').length
-  const disabledCount = assets.filter((asset) => asset.meta.disabledByDisableAllHooks === true).length
-  const codexItemCount = assets.reduce((total, asset) => total + asStringArray(asset.meta.items).length, 0)
-  const cards = [
-    { key: 'total', value: assets.length },
-    { key: 'claude', value: claudeCount },
-    { key: 'codexItems', value: codexItemCount || codexCount },
-    { key: 'disabled', value: disabledCount }
-  ]
-
-  return (
-    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-      {cards.map(({ key, value }) => (
-        <div key={key} className="rounded-lg border border-border bg-card px-4 py-3">
-          <p className="text-lg font-bold text-foreground">{value}</p>
-          <p className="text-xs text-muted-foreground">{t(`capabilities.statusLine.summary.${key}`)}</p>
-        </div>
-      ))}
-    </div>
-  )
-}
-
-function ProviderBadge({ agentId }: { agentId: string }): React.ReactElement {
-  const label = agentId === 'codex' ? 'Codex' : 'Claude Code'
-  const className = agentId === 'codex'
-    ? 'bg-sky-500/10 text-sky-600 dark:text-sky-400'
-    : 'bg-violet-500/10 text-violet-600 dark:text-violet-400'
-
-  return (
-    <span className={cn('inline-flex items-center rounded-md px-1.5 py-0.5 text-[10px] font-medium', className)}>
-      {label}
-    </span>
-  )
-}
-
-function StatusLineCard({ asset }: { asset: Asset }): React.ReactElement {
+function StatusLineSection({ assets }: { assets: Asset[] }): React.ReactElement {
   const { t } = useTranslation()
   const openInspector = useAppStore((s) => s.openInspector)
-  const provider = (asset.meta.provider as string | undefined) ?? asset.agentId
-  const isCodex = provider === 'codex'
-  const entryPaths = asStringArray(asset.meta.entryPaths)
-  const items = asStringArray(asset.meta.items)
-  const unknownItems = asStringArray(asset.meta.unknownItems)
-  const command = (asset.meta.command as string | undefined) ?? ''
-  const settingKey = (asset.meta.settingKey as string | undefined) ?? ''
-  const disabled = asset.meta.disabledByDisableAllHooks === true
-  const hidden = asset.meta.hidden === true
 
-  const handleViewFile = async (): Promise<void> => {
-    try {
-      const full = await window.api?.assets.get(asset.id) as Asset | null
-      const raw = full?.raw ?? asset.raw
-      if (raw) openInspector(asset.path, raw)
-    } catch { /* graceful */ }
+  if (assets.length === 0) {
+    return <EmptyState icon={Activity} message={t('common.empty')} />
   }
 
   return (
-    <div className="rounded-lg border border-border bg-card px-4 py-3">
-      <div className="flex flex-wrap items-center gap-2">
-        <Activity className="h-4 w-4 text-muted-foreground" />
-        <span className="text-sm font-medium text-foreground">{asset.name}</span>
-        <ProviderBadge agentId={asset.agentId} />
-        <ScopeBadge scope={asset.scope} />
-        {disabled && (
-          <span className="inline-flex items-center gap-1 rounded-md bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-medium text-amber-600 dark:text-amber-400">
-            <AlertTriangle className="h-3 w-3" />
-            {t('capabilities.statusLine.disabled')}
-          </span>
-        )}
-      </div>
-      <p className="mt-1 break-all font-mono text-xs text-muted-foreground">{asset.path}</p>
+    <div className="space-y-2">
+      {assets.map((asset) => {
+        const handleViewFile = async (): Promise<void> => {
+          try {
+            const full = await window.api?.assets.get(asset.id) as Asset | null
+            if (full?.raw) openInspector(asset.path, full.raw)
+          } catch { /* graceful */ }
+        }
 
-      <div className="mt-3 space-y-2">
-        {settingKey && <DetailRow label={t('capabilities.statusLine.setting')} value={settingKey} mono />}
-
-        {isCodex ? (
-          <div>
-            <p className="mb-1 text-xs font-medium text-muted-foreground">{t('capabilities.statusLine.footerItems')}</p>
-            {hidden ? (
-              <p className="rounded-md border border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
-                {t('capabilities.statusLine.hidden')}
-              </p>
-            ) : (
-              <div className="flex flex-wrap gap-1.5">
-                {items.map((item) => (
-                  <span
-                    key={item}
-                    className={cn(
-                      'rounded-md border px-2 py-1 font-mono text-xs',
-                      unknownItems.includes(item)
-                        ? 'border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300'
-                        : 'border-border bg-muted/40 text-foreground'
-                    )}
-                  >
-                    {item}
-                  </span>
-                ))}
-              </div>
-            )}
-            {unknownItems.length > 0 && (
-              <p className="mt-2 text-xs leading-5 text-amber-600 dark:text-amber-400">
-                {t('capabilities.statusLine.unknownItems', { count: unknownItems.length })}
-              </p>
-            )}
-            <DetailRow
-              label={t('capabilities.statusLine.themeColors')}
-              value={asset.meta.useThemeColors === false ? t('common.no') : t('common.yes')}
-            />
+        return (
+          <div key={asset.id} className="rounded-lg border border-border bg-card px-4 py-3">
+            <div className="flex items-center gap-2">
+              <Activity className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm font-medium text-foreground">{asset.name}</span>
+              <ScopeBadge scope={asset.scope} />
+            </div>
+            <p className="mt-1 text-xs text-muted-foreground font-mono">{asset.path}</p>
+            <div className="flex gap-2 pt-2">
+              <button
+                onClick={handleViewFile}
+                className="flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-accent"
+              >
+                <Eye className="h-3 w-3" />
+                {t('common.viewRaw')}
+              </button>
+            </div>
           </div>
-        ) : (
-          <div className="space-y-2">
-            {command && <DetailRow label={t('capabilities.statusLine.command')} value={command} mono />}
-            {asset.meta.refreshInterval != null && (
-              <DetailRow label={t('capabilities.statusLine.refreshInterval')} value={`${asset.meta.refreshInterval}s`} />
-            )}
-            {asset.meta.padding != null && (
-              <DetailRow label={t('capabilities.statusLine.padding')} value={String(asset.meta.padding)} />
-            )}
-            {asset.meta.hideVimModeIndicator != null && (
-              <DetailRow
-                label={t('capabilities.statusLine.hideVimModeIndicator')}
-                value={asset.meta.hideVimModeIndicator ? t('common.yes') : t('common.no')}
-              />
-            )}
-            {entryPaths.length > 0 && (
-              <div>
-                <p className="mb-1 text-xs font-medium text-muted-foreground">{t('capabilities.statusLine.entryPaths')}</p>
-                <div className="space-y-1">
-                  {entryPaths.map((entryPath) => (
-                    <p key={entryPath} className="break-all font-mono text-xs text-foreground">{entryPath}</p>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-
-      <div className="flex gap-2 pt-3">
-        <button
-          onClick={handleViewFile}
-          className="flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-accent"
-        >
-          <Eye className="h-3 w-3" />
-          {t('common.viewRaw')}
-        </button>
-      </div>
-    </div>
-  )
-}
-
-export function StatusLineSection({ assets, agentView }: { assets: Asset[]; agentView: AgentView }): React.ReactElement {
-  const { t } = useTranslation()
-
-  return (
-    <div className="space-y-3">
-      <StatusLineIntro agentView={agentView} />
-      {assets.length === 0 ? (
-        <EmptyState icon={Activity} message={t(`capabilities.statusLine.empty.${agentView}`)} />
-      ) : (
-        <>
-          <StatusLineSummary assets={assets} />
-          <div className="space-y-2">
-            {assets.map((asset) => <StatusLineCard key={asset.id} asset={asset} />)}
-          </div>
-        </>
-      )}
+        )
+      })}
     </div>
   )
 }
@@ -615,7 +450,7 @@ export function Capabilities(): React.ReactElement {
         )
 
       case 'statusLine':
-        return <StatusLineSection assets={filteredAssets} agentView={agentView} />
+        return <StatusLineSection assets={filteredAssets} />
 
       case 'permissions':
         return <PermissionsSection assets={filteredAssets} />

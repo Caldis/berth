@@ -5,7 +5,7 @@
 - [x] 任务 1: 新增 `asset-guidance` 数据定义、`AssetGuidePanel` 组件和中英文 i18n 文案。验证: `pnpm test -- tests/renderer/asset-guide-panel.test.tsx`; `pnpm typecheck:web`。
 - [x] 任务 2: 在 Instructions / Capabilities 页面接入说明面板, 不改现有扫描和 IPC。验证: `pnpm typecheck:web`。
 - [x] 任务 3: 修复 PermissionsSection / EnvSection 对当前 parser meta 的兼容展示。验证: `pnpm test -- tests/renderer/capability-assets.test.ts`; `pnpm typecheck:web`。
-- [ ] 任务 4: 跑 typecheck、相关 tests、harness:check; 如启动 Electron, 按 verify 规则做视觉检查。
+- [x] 任务 4: 跑 typecheck、相关 tests、harness:check; 如启动 Electron, 按 verify 规则做视觉检查。验证: `pnpm test -- tests/renderer/asset-guide-panel.test.tsx tests/renderer/capability-assets.test.ts`; `pnpm typecheck:web`; `pnpm harness:check`。
 
 ## verify 回写
 verify 不通过项作为新任务追加于此, phase 退回 implement。
