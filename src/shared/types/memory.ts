@@ -1,4 +1,4 @@
-export type MemorySourceId = 'claude-native' | 'united-memory' | (string & {})
+export type MemorySourceId = 'claude-native' | 'united-memory' | (string & { readonly __memorySourceId?: never })
 
 export type MemoryImportance = 'core' | 'active' | 'archive' | 'unknown'
 

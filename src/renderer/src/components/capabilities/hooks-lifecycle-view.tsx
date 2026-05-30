@@ -630,14 +630,15 @@ function HookAssetRow({ hook, agentView, density }: { hook: Asset; agentView: Ag
   const managementStates = getHookManagementState(hook, agentView)
   const riskHints = getHookRiskHints(hook)
   const toggleState = managementStates.find((state) => state.action === 'toggle-hook')
-  const [hookEnabled, setHookEnabled] = useState(() => hookEnabledValue(hook))
+  const initialHookEnabled = hookEnabledValue(hook)
+  const [hookEnabled, setHookEnabled] = useState(initialHookEnabled)
   const [toggleBusy, setToggleBusy] = useState(false)
   const [toggleError, setToggleError] = useState<string | null>(null)
 
   useEffect(() => {
-    setHookEnabled(hookEnabledValue(hook))
+    setHookEnabled(initialHookEnabled)
     setToggleError(null)
-  }, [hook.id, hook.meta.enabled])
+  }, [hook.id, initialHookEnabled])
 
   const toggleHook = async (): Promise<void> => {
     if (!toggleState?.hookKey || hook.agentId !== 'codex') return
