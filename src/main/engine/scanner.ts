@@ -1,4 +1,7 @@
+import * as fs from 'fs'
+import * as path from 'path'
 import type { AgentAdapter, Asset, AssetCategory, AssetStats } from '@shared/types/asset'
+import type { ScanRoot } from '@shared/types/asset'
 import type { AgentScanSourceGroup, ScanResult } from '@shared/types/ipc'
 import { ClaudeCodeAdapter } from '../adapters/claude-code'
 import { CodexAdapter } from '../adapters/codex'
@@ -98,12 +101,17 @@ export class AssetScanner {
         const sources = adapter.scanSourceCoverage
           ? await adapter.scanSourceCoverage()
           : result.paths
+        const sourceCoverage = this.withProjectSourceCandidates(
+          adapter.id,
+          adapter.displayName,
+          sources
+        )
         groups.push({
           agentId: adapter.id,
           agentName: adapter.displayName,
           installed: result.installed,
           roots: result.paths,
-          sources
+          sources: sourceCoverage
         })
       } catch {
         groups.push({
@@ -145,6 +153,76 @@ export class AssetScanner {
       teams: assets.filter((a) => a.type === 'team').length
     }
   }
+
+  private withProjectSourceCandidates(
+    agentId: string,
+    agentName: string,
+    sources: ScanRoot[]
+  ): ScanRoot[] {
+    const projectPaths = this.getProjectCandidatePaths(agentId)
+    if (projectPaths.length === 0) return sources
+
+    const nextSources = [...sources]
+    for (const projectPath of projectPaths) {
+      if (sourceListContainsProject(nextSources, projectPath)) continue
+      const isCurrentProject = samePath(projectPath, this.projectDir)
+      const projectExists = fs.existsSync(projectPath)
+      nextSources.push({
+        path: projectPath,
+        scope: 'project',
+        description: `${agentName} project source candidate`,
+        summary: isCurrentProject
+          ? 'Current project was checked for known project-level source files.'
+          : 'Referenced by local session history, but Berth has not scanned this project directory.',
+        categories: ['instruction', 'capability'],
+        kind: 'directory',
+        status: isCurrentProject ? 'missing' : projectExists ? 'not-scanned' : 'missing',
+        reason: isCurrentProject ? 'current-project' : 'session-derived-project'
+      })
+    }
+    return nextSources
+  }
+
+  private getProjectCandidatePaths(agentId: string): string[] {
+    const projectPaths = new Set<string>()
+    if (this.projectDir) projectPaths.add(this.projectDir)
+
+    for (const asset of this.cachedAssets) {
+      if (asset.type !== 'session' || asset.agentId !== agentId) continue
+      const projectPath = readString(asset.meta, 'projectPath')
+      if (projectPath) projectPaths.add(projectPath)
+    }
+
+    return [...projectPaths].filter((projectPath) => projectPath.trim().length > 0)
+  }
+}
+
+function sourceListContainsProject(sources: ScanRoot[], projectPath: string): boolean {
+  return sources.some((source) => {
+    if (source.scope !== 'project') return false
+    return samePath(source.path, projectPath) || isPathInside(source.path, projectPath)
+  })
+}
+
+function isPathInside(candidate: string, parent: string): boolean {
+  const normalizedCandidate = normalizePath(candidate)
+  const normalizedParent = normalizePath(parent)
+  return normalizedCandidate.startsWith(`${normalizedParent}${path.sep}`)
+}
+
+function samePath(a: string | undefined, b: string | undefined): boolean {
+  if (!a || !b) return false
+  return normalizePath(a) === normalizePath(b)
+}
+
+function normalizePath(filePath: string): string {
+  const resolved = path.resolve(filePath)
+  return process.platform === 'win32' ? resolved.toLowerCase() : resolved
+}
+
+function readString(record: Record<string, unknown>, key: string): string | undefined {
+  const value = record[key]
+  return typeof value === 'string' && value.trim().length > 0 ? value : undefined
 }
 
 let _scannerInstance: AssetScanner | null = null

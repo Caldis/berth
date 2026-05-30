@@ -148,6 +148,41 @@ describe('AssetScanner', () => {
     expect(mocks.codexScanAll).not.toHaveBeenCalled()
   })
 
+  it('adds session-derived project source candidates without scanning project directories', async () => {
+    const projectPath = process.cwd()
+    mocks.claudeScanAll.mockResolvedValueOnce({
+      assets: [
+        {
+          id: 'session-1',
+          agentId: 'claude-code',
+          category: 'state',
+          type: 'session',
+          scope: 'session',
+          name: 'Session',
+          path: 'C:\\Users\\test\\.claude\\projects\\session.jsonl',
+          meta: { projectPath }
+        }
+      ],
+      errors: []
+    })
+    const scanner = new AssetScanner()
+
+    await scanner.scanAll()
+    const groups = await scanner.getScanSourceGroups()
+
+    expect(groups[0]?.sources).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          path: projectPath,
+          scope: 'project',
+          status: 'not-scanned',
+          reason: 'session-derived-project'
+        })
+      ])
+    )
+    expect(mocks.claudeScanAll).toHaveBeenCalledTimes(1)
+  })
+
   it('keeps other source groups visible when one adapter detection fails', async () => {
     mocks.claudeDetect.mockRejectedValueOnce(new Error('permission denied'))
     const scanner = new AssetScanner()
