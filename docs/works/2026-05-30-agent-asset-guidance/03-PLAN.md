@@ -17,4 +17,5 @@
 ## verify 回写
 verify 不通过项作为新任务追加于此, phase 退回 implement。
 
-- 2026-05-31: 相关 renderer 测试 3 个文件 10 个用例通过; `pnpm typecheck:web` 通过; `pnpm harness:check` 通过。未启动 Electron 做人工视觉截图, 留到正式 verify / archive 前补做。
+- 2026-05-31: 相关 renderer 测试 3 个文件 10 个用例通过; `pnpm typecheck:web` 通过; `pnpm harness:check` 通过。
+- 2026-05-31: 使用 `pnpm dev:agent start --id asset-guidance-verify` 启动 agent-owned Electron 实例, 实测 Instructions 说明面板详情展开、Capabilities/MCP 和 Permissions 页。截图位于系统临时目录, 未入库; 未见白屏、明显重叠或按钮文字溢出。`pnpm dev:agent stop asset-guidance-verify` 已停止本轮实例。`guard after` 发现用户 dev Electron 子进程 PID 已被 watch 重启, 但用户 dev 父进程仍在且有新的 Electron 子进程; 已记录到 `docs/friction/20260531-verify-user-dev-electron-restart-guard.md`。
