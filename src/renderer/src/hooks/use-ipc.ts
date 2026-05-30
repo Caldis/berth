@@ -131,11 +131,14 @@ export function useUsageSummary(days: number, agentView?: AgentView): {
 export function useHealthChecks(): {
   checks: HealthCheck[]
   loading: boolean
+  lastCheckedAt: string | null
+  refresh: () => void
 } {
   const [checks, setChecks] = useState<HealthCheck[]>([])
   const [loading, setLoading] = useState(true)
+  const [lastCheckedAt, setLastCheckedAt] = useState<string | null>(null)
 
-  useEffect(() => {
+  const refresh = useCallback(() => {
     if (!window.api?.assets?.healthCheck) {
       setLoading(false)
       return
@@ -145,12 +148,23 @@ export function useHealthChecks(): {
       .healthCheck()
       .then((result) => {
         setChecks(result ?? [])
+        setLastCheckedAt(new Date().toISOString())
       })
       .catch(() => {})
       .finally(() => setLoading(false))
   }, [])
 
-  return { checks, loading }
+  useEffect(() => {
+    refresh()
+    const unsubscribe = window.api?.assets?.onChanged?.(() => {
+      refresh()
+    })
+    return () => {
+      if (unsubscribe) unsubscribe()
+    }
+  }, [refresh])
+
+  return { checks, loading, lastCheckedAt, refresh }
 }
 
 export function useScanSources(): {

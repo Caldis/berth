@@ -18,6 +18,8 @@ import type {
   SessionToolEvent,
   HooksAgentId,
   HooksEnablementStatus,
+  SetHookEnabledRequest,
+  SetHookEnabledResult,
   SetHooksEnabledRequest,
   SetHooksEnabledResult
 } from '@shared/types/ipc'
@@ -26,7 +28,7 @@ import { getSearch } from '../engine/search'
 import { buildUsageSummary } from '../engine/usage'
 import { normalizeTokenUsage } from '../../shared/token-usage'
 import { runHealthChecks } from '../engine/health'
-import { getAgentHooksStatus, setAgentHooksEnabled } from '../engine/hooks-manager'
+import { getAgentHooksStatus, setAgentHooksEnabled, setHookEnabled } from '../engine/hooks-manager'
 import { resolveRelations, buildImportChain } from '../engine/relations'
 import { parseMcpServers } from '../adapters/claude-code/parsers'
 import { parseClaudeSessionDetail } from '../adapters/claude-code/session-detail'
@@ -102,7 +104,8 @@ export function registerAssetHandlers(): void {
   })
 
   ipcMain.handle('assets:health-check', async (): Promise<HealthCheck[]> => {
-    const scanner = await ensureScanned()
+    const scanner = getScanner()
+    await scanner.scanAll()
     return runHealthChecks({
       projectDir: scanner.getProjectDir(),
       assets: scanner.getAllAssets(),
@@ -202,6 +205,16 @@ export function registerAssetHandlers(): void {
     'hooks:set-enabled',
     async (_event, request: SetHooksEnabledRequest): Promise<SetHooksEnabledResult> => {
       const result = setAgentHooksEnabled(request)
+      const scanResult = await getScanner().scanAll()
+      getSearch().buildIndex(scanResult.assets)
+      return result
+    }
+  )
+
+  ipcMain.handle(
+    'hooks:set-hook-enabled',
+    async (_event, request: SetHookEnabledRequest): Promise<SetHookEnabledResult> => {
+      const result = setHookEnabled(request)
       const scanResult = await getScanner().scanAll()
       getSearch().buildIndex(scanResult.assets)
       return result
