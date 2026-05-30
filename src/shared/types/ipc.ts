@@ -71,6 +71,10 @@ export interface ImportChainNode {
  * Main process implements handlers; preload exposes typed wrappers.
  */
 export interface IpcChannels {
+  'window:minimize': { args: []; result: void }
+  'window:toggle-maximize': { args: []; result: void }
+  'window:close': { args: []; result: void }
+  'window:is-maximized': { args: []; result: boolean }
   'platform:info': { args: []; result: PlatformInfo }
   'assets:scan-all': { args: []; result: ScanResult }
   'assets:scan-category': { args: [AssetCategory]; result: Asset[] }
@@ -91,6 +95,7 @@ export interface IpcChannels {
 
 /** Events pushed from main → renderer */
 export interface IpcEvents {
+  'window:maximized-change': { maximized: boolean }
   'assets:changed': { type: 'added' | 'changed' | 'removed'; assetId: string; asset?: Asset }
   'scan:progress': { phase: string; current: number; total: number }
 }

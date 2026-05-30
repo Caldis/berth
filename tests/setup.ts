@@ -2,6 +2,13 @@ import '@testing-library/jest-dom'
 
 // Mock window.api for renderer tests
 const mockApi = {
+  window: {
+    minimize: async () => {},
+    toggleMaximize: async () => {},
+    close: async () => {},
+    isMaximized: async () => false,
+    onMaximizedChange: () => () => {}
+  },
   platform: {
     info: async () => ({
       platform: 'win32' as const,

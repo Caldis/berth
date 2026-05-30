@@ -7,24 +7,27 @@ import { getWatcher } from './engine/watcher'
 import { resolveDefaultProjectDir } from './project-dir'
 
 function createWindow(): BrowserWindow {
+  const isWindows = process.platform === 'win32'
+  const isMacOS = process.platform === 'darwin'
+
   const mainWindow = new BrowserWindow({
     width: 1280,
     height: 860,
     minWidth: 900,
     minHeight: 600,
     show: false,
-    titleBarStyle: 'hiddenInset',
-    ...(process.platform === 'win32'
+    autoHideMenuBar: true,
+    ...(isWindows
       ? {
-          titleBarOverlay: {
-            color: '#00000000',
-            symbolColor: '#64748b',
-            height: 36
-          }
+          frame: false,
+          titleBarStyle: 'hidden' as const
         }
       : {}),
-    ...(process.platform === 'darwin'
-      ? { trafficLightPosition: { x: 16, y: 16 } }
+    ...(isMacOS
+      ? {
+          titleBarStyle: 'hiddenInset' as const,
+          trafficLightPosition: { x: 16, y: 16 }
+        }
       : {}),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
@@ -34,8 +37,20 @@ function createWindow(): BrowserWindow {
     }
   })
 
+  if (isWindows) {
+    mainWindow.setMenu(null)
+  }
+
   mainWindow.on('ready-to-show', () => {
     mainWindow.show()
+  })
+
+  mainWindow.on('maximize', () => {
+    mainWindow.webContents.send('window:maximized-change', true)
+  })
+
+  mainWindow.on('unmaximize', () => {
+    mainWindow.webContents.send('window:maximized-change', false)
   })
 
   mainWindow.webContents.setWindowOpenHandler((details) => {

@@ -1,9 +1,20 @@
-/**
- * 平台检测。优先 navigator.userAgentData (navigator.platform 已被浏览器标记弃用);
- * 渲染进程为 Chromium, userAgentData 恒可用, platform 取值如 "macOS" / "Windows"。
- */
+function getNavigatorPlatformText(): string {
+  const nav = navigator as unknown as {
+    userAgentData?: { platform?: string }
+    platform?: string
+    userAgent?: string
+  }
+  return [nav.userAgentData?.platform, nav.platform, nav.userAgent]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase()
+}
+
 export function isMacPlatform(): boolean {
-  const platform = (navigator as unknown as { userAgentData?: { platform?: string } })
-    .userAgentData?.platform
-  return (platform ?? '').toLowerCase().includes('mac')
+  return getNavigatorPlatformText().includes('mac')
+}
+
+export function isWindowsPlatform(): boolean {
+  const platform = getNavigatorPlatformText()
+  return platform.includes('win')
 }

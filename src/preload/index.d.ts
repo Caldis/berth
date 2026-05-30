@@ -10,6 +10,13 @@ interface PlatformInfo {
 }
 
 interface BerthAPI {
+  window: {
+    minimize: () => Promise<void>
+    toggleMaximize: () => Promise<void>
+    close: () => Promise<void>
+    isMaximized: () => Promise<boolean>
+    onMaximizedChange: (callback: (maximized: boolean) => void) => () => void
+  }
   platform: {
     info: () => Promise<PlatformInfo>
   }

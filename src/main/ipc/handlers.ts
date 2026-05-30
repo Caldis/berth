@@ -1,7 +1,8 @@
 import * as os from 'os'
 import * as path from 'path'
 import * as fs from 'fs'
-import { ipcMain, nativeTheme, shell, app } from 'electron'
+import { BrowserWindow, ipcMain, nativeTheme, shell, app } from 'electron'
+import type { IpcMainInvokeEvent } from 'electron'
 import type { Asset, AssetCategory, Relation, UsageSummary } from '@shared/types/asset'
 import type {
   PlatformInfo,
@@ -20,6 +21,28 @@ import { resolveRelations, buildImportChain } from '../engine/relations'
 import { parseMcpServers } from '../adapters/claude-code/parsers'
 
 export function registerAssetHandlers(): void {
+  ipcMain.handle('window:minimize', (event: IpcMainInvokeEvent): void => {
+    BrowserWindow.fromWebContents(event.sender)?.minimize()
+  })
+
+  ipcMain.handle('window:toggle-maximize', (event: IpcMainInvokeEvent): void => {
+    const window = BrowserWindow.fromWebContents(event.sender)
+    if (!window) return
+    if (window.isMaximized()) {
+      window.unmaximize()
+    } else {
+      window.maximize()
+    }
+  })
+
+  ipcMain.handle('window:close', (event: IpcMainInvokeEvent): void => {
+    BrowserWindow.fromWebContents(event.sender)?.close()
+  })
+
+  ipcMain.handle('window:is-maximized', (event: IpcMainInvokeEvent): boolean => {
+    return BrowserWindow.fromWebContents(event.sender)?.isMaximized() ?? false
+  })
+
   ipcMain.handle('platform:info', (): PlatformInfo => ({
     platform: process.platform,
     arch: process.arch,

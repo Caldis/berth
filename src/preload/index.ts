@@ -2,6 +2,17 @@ import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
 
 const api = {
+  window: {
+    minimize: () => ipcRenderer.invoke('window:minimize'),
+    toggleMaximize: () => ipcRenderer.invoke('window:toggle-maximize'),
+    close: () => ipcRenderer.invoke('window:close'),
+    isMaximized: () => ipcRenderer.invoke('window:is-maximized'),
+    onMaximizedChange: (callback: (maximized: boolean) => void) => {
+      const handler = (_event: unknown, maximized: boolean): void => callback(maximized)
+      ipcRenderer.on('window:maximized-change', handler)
+      return () => ipcRenderer.removeListener('window:maximized-change', handler)
+    }
+  },
   platform: {
     info: () => ipcRenderer.invoke('platform:info')
   },
