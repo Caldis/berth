@@ -182,7 +182,7 @@ describe('session pages', () => {
   it('renders usage token totals and model token counts', async () => {
     mockSessionApis()
 
-    const { unmount } = render(
+    render(
       <MemoryRouter>
         <Usage />
       </MemoryRouter>
