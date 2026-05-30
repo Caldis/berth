@@ -11,11 +11,12 @@ import {
   Pie,
   Cell
 } from 'recharts'
-import { DollarSign, Coins, Gauge, FlaskConical } from 'lucide-react'
+import { AlertTriangle, DollarSign, Coins, Gauge, FlaskConical } from 'lucide-react'
 import { cn, formatNumber, formatCurrency } from '@/lib/utils'
-import type { UsageSummary } from '@shared/types/asset'
+import type { PricingMiss, UsageSummary } from '@shared/types/asset'
 import { TokenUsageDisplay } from '@/components/shared/token-usage-display'
 import { useAppStore } from '@/stores/app'
+import { CostSourceBadge } from '@/components/shared/cost-source-badge'
 
 const CHART_COLORS = [
   'hsl(216, 57%, 25%)',
@@ -30,6 +31,15 @@ const TIME_RANGES = [
   { value: 30, labelKey: 'overview.timeRange.30d' },
   { value: 365, labelKey: 'overview.timeRange.all' }
 ] as const
+
+function formatSignedCurrency(amount: number): string {
+  if (amount === 0) return formatCurrency(0)
+  return amount > 0 ? `+${formatCurrency(amount)}` : `-${formatCurrency(Math.abs(amount))}`
+}
+
+function pricingMissLabel(miss: PricingMiss): string {
+  return miss.model ?? 'unknown'
+}
 
 export function Usage(): React.ReactElement {
   const { t } = useTranslation()
@@ -54,6 +64,8 @@ export function Usage(): React.ReactElement {
   const hasModelData = usage && usage.byModel.length > 0
   const hasProjectData = usage && usage.byProject.length > 0
   const hasRateLimits = usage && usage.rateLimits.length > 0
+  const hasPricingMisses = usage && usage.pricingMisses.length > 0
+  const showCostDetails = usage && (usage.actualCost > 0 || usage.estimatedCost > 0 || usage.costDelta !== 0)
   const costLabelKey =
     usage?.costSource === 'actual'
       ? 'usage.actualCost'
@@ -92,15 +104,34 @@ export function Usage(): React.ReactElement {
       {/* Summary cards */}
       <div className="grid grid-cols-2 gap-4">
         <div className="rounded-xl border border-border bg-card p-5">
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <DollarSign className="h-4 w-4" />
-            <span className="text-xs font-medium uppercase tracking-wide">
-              {t(costLabelKey)}
-            </span>
+          <div className="flex items-center justify-between gap-2 text-muted-foreground">
+            <div className="flex items-center gap-2">
+              <DollarSign className="h-4 w-4" />
+              <span className="text-xs font-medium uppercase tracking-wide">
+                {t(costLabelKey)}
+              </span>
+            </div>
+            {usage && <CostSourceBadge source={usage.costSource} />}
           </div>
           <p className="mt-2 text-3xl font-bold tabular-nums">
             {costValue}
           </p>
+          {showCostDetails && (
+            <div className="mt-3 grid grid-cols-3 gap-2 text-xs">
+              <div className="min-w-0 rounded-md bg-muted/60 px-2 py-1.5">
+                <div className="text-muted-foreground">{t('usage.actualCostShort')}</div>
+                <div className="truncate font-medium tabular-nums">{formatCurrency(usage.actualCost)}</div>
+              </div>
+              <div className="min-w-0 rounded-md bg-muted/60 px-2 py-1.5">
+                <div className="text-muted-foreground">{t('usage.estimatedCostShort')}</div>
+                <div className="truncate font-medium tabular-nums">{formatCurrency(usage.estimatedCost)}</div>
+              </div>
+              <div className="min-w-0 rounded-md bg-muted/60 px-2 py-1.5">
+                <div className="text-muted-foreground">{t('usage.deltaCostShort')}</div>
+                <div className="truncate font-medium tabular-nums">{formatSignedCurrency(usage.costDelta)}</div>
+              </div>
+            </div>
+          )}
         </div>
         <div className="rounded-xl border border-border bg-card p-5">
           <div className="flex items-center gap-2 text-muted-foreground">
@@ -116,6 +147,35 @@ export function Usage(): React.ReactElement {
           )}
         </div>
       </div>
+
+      {hasPricingMisses && (
+        <div className="rounded-xl border border-amber-500/25 bg-amber-500/10 p-4">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-700 dark:text-amber-300" />
+            <div className="min-w-0 flex-1">
+              <div className="text-sm font-medium">{t('usage.pricingGapsTitle')}</div>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {t('usage.pricingGapsBody', { count: usage.pricingMisses.length })}
+              </p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {usage.pricingMisses.slice(0, 4).map((miss) => (
+                  <span
+                    key={`${miss.model ?? 'unknown'}-${miss.reason}`}
+                    className="max-w-full truncate rounded-md border border-border bg-background px-2 py-1 text-xs text-muted-foreground"
+                  >
+                    {pricingMissLabel(miss)} · {formatNumber(miss.tokens)} {t('usage.tokenUnit')}
+                  </span>
+                ))}
+                {usage.pricingMisses.length > 4 && (
+                  <span className="rounded-md border border-border bg-background px-2 py-1 text-xs text-muted-foreground">
+                    {t('usage.pricingGapsMore', { count: usage.pricingMisses.length - 4 })}
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Daily cost chart */}
       <div className="rounded-xl border border-border bg-card">
@@ -197,18 +257,26 @@ export function Usage(): React.ReactElement {
                 </div>
                 <div className="flex-1 space-y-2">
                   {usage!.byModel.map((item, i) => (
-                    <div key={item.model} className="flex items-center gap-2 text-sm">
-                      <div
-                        className="h-2.5 w-2.5 rounded-full"
-                        style={{ backgroundColor: CHART_COLORS[i % CHART_COLORS.length] }}
-                      />
-                      <span className="flex-1 truncate text-muted-foreground">
-                        {item.model}
-                      </span>
-                      <span className="tabular-nums text-muted-foreground">
-                        {formatNumber(item.tokens)} {t('usage.tokenUnit')}
-                      </span>
-                      <span className="tabular-nums font-medium">{item.percentage}%</span>
+                    <div key={item.model} className="space-y-1">
+                      <div className="flex items-center gap-2 text-sm">
+                        <div
+                          className="h-2.5 w-2.5 rounded-full"
+                          style={{ backgroundColor: CHART_COLORS[i % CHART_COLORS.length] }}
+                        />
+                        <span className="flex-1 truncate text-muted-foreground">
+                          {item.model}
+                        </span>
+                        <CostSourceBadge source={item.costSource} />
+                        <span className="tabular-nums text-muted-foreground">
+                          {formatNumber(item.tokens)} {t('usage.tokenUnit')}
+                        </span>
+                        <span className="tabular-nums font-medium">{item.percentage}%</span>
+                      </div>
+                      {item.pricingMisses.length > 0 && (
+                        <div className="pl-4 text-xs text-amber-700 dark:text-amber-300">
+                          {t('usage.pricingGapShort', { count: item.pricingMisses.length })}
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -231,8 +299,9 @@ export function Usage(): React.ReactElement {
               <div className="space-y-3">
                 {usage!.byProject.map((item, i) => (
                   <div key={item.project}>
-                    <div className="mb-1 flex items-center justify-between text-sm">
-                      <span className="truncate text-muted-foreground">{item.project}</span>
+                    <div className="mb-1 flex items-center gap-2 text-sm">
+                      <span className="min-w-0 flex-1 truncate text-muted-foreground">{item.project}</span>
+                      <CostSourceBadge source={item.costSource} className="ml-2" />
                       <span className="ml-2 tabular-nums text-muted-foreground">
                         {formatNumber(item.tokens)} {t('usage.tokenUnit')}
                       </span>
@@ -247,6 +316,11 @@ export function Usage(): React.ReactElement {
                         }}
                       />
                     </div>
+                    {item.pricingMisses.length > 0 && (
+                      <div className="mt-1 text-xs text-amber-700 dark:text-amber-300">
+                        {t('usage.pricingGapShort', { count: item.pricingMisses.length })}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

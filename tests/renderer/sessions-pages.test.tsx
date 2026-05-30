@@ -87,9 +87,13 @@ function mockSessionApis(): void {
   }))
   window.api.usage.summary = vi.fn(async () => ({
     totalCost: 0,
+    actualCost: 0,
+    estimatedCost: 0,
+    costDelta: 0,
     totalTokens: summary.tokenUsage.totalTokens,
     tokenUsage: summary.tokenUsage,
     costSource: 'unknown',
+    pricingMisses: [],
     dailyCosts: [],
     dailyTokenUsage: [],
     byModel: [
@@ -97,6 +101,11 @@ function mockSessionApis(): void {
         model: summary.model,
         percentage: 100,
         cost: 0,
+        actualCost: 0,
+        estimatedCost: 0,
+        costDelta: 0,
+        costSource: 'unknown',
+        pricingMisses: [],
         tokens: summary.tokenUsage.totalTokens,
         tokenUsage: summary.tokenUsage
       }
@@ -194,9 +203,13 @@ describe('session pages', () => {
     const tokenUsage = normalizeTokenUsage({ inputTokens: 10, totalTokens: 15 })
     window.api.usage.summary = vi.fn(async () => ({
       totalCost: 0,
+      actualCost: 0,
+      estimatedCost: 0,
+      costDelta: 0,
       totalTokens: tokenUsage.totalTokens,
       tokenUsage,
       costSource: 'unknown',
+      pricingMisses: [],
       dailyCosts: [],
       dailyTokenUsage: [],
       byModel: [],
@@ -217,5 +230,67 @@ describe('session pages', () => {
     act(() => {
       useAppStore.setState({ agentView: 'all' })
     })
+  })
+
+  it('renders usage cost details and pricing gaps', async () => {
+    const tokenUsage = normalizeTokenUsage({ inputTokens: 10, outputTokens: 2 })
+    window.api.usage.summary = vi.fn(async () => ({
+      totalCost: 0.3,
+      actualCost: 0.3,
+      estimatedCost: 0.26,
+      costDelta: 0.04,
+      totalTokens: tokenUsage.totalTokens,
+      tokenUsage,
+      costSource: 'mixed',
+      pricingMisses: [
+        { model: 'missing-model', reason: 'missing-model-pricing', tokens: 12, count: 1 }
+      ],
+      dailyCosts: [{ date: '2026-05-30', cost: 0.3 }],
+      dailyTokenUsage: [],
+      byModel: [
+        {
+          model: 'test/priced-model',
+          percentage: 100,
+          cost: 0.3,
+          actualCost: 0.3,
+          estimatedCost: 0.26,
+          costDelta: 0.04,
+          costSource: 'actual',
+          pricingMisses: [],
+          tokens: tokenUsage.totalTokens,
+          tokenUsage
+        }
+      ],
+      byProject: [
+        {
+          project: 'D--Code-berth',
+          percentage: 100,
+          cost: 0.3,
+          actualCost: 0.3,
+          estimatedCost: 0.26,
+          costDelta: 0.04,
+          costSource: 'mixed',
+          pricingMisses: [
+            { model: 'missing-model', reason: 'missing-model-pricing', tokens: 12, count: 1 }
+          ],
+          tokens: tokenUsage.totalTokens,
+          tokenUsage
+        }
+      ],
+      rateLimits: []
+    }))
+
+    render(
+      <MemoryRouter>
+        <Usage />
+      </MemoryRouter>
+    )
+
+    expect(await screen.findByText('Pricing gaps')).toBeInTheDocument()
+    expect(screen.getAllByText('Actual').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Estimated').length).toBeGreaterThan(0)
+    expect(screen.getByText('Delta')).toBeInTheDocument()
+    expect(screen.getByText('missing-model · 12 tok')).toBeInTheDocument()
+    expect(screen.getAllByText('Mixed').length).toBeGreaterThan(0)
   })
 })

@@ -20,7 +20,7 @@
   - 扩展 `UsageCostResolution`, `UsageSummary`, byModel/byProject。
   - 输出 actual/estimated/delta 和 `pricingMisses`。
   - 验证: `pnpm test -- tests/unit/pricing.test.ts tests/unit/usage-summary.test.ts`, `pnpm typecheck:node`。
-- [ ] 任务 5: Usage UI 口径展示
+- [x] 任务 5: Usage UI 口径展示
   - 新增 `CostSourceBadge`。
   - Usage 显示 unknown pricing notice、pricing gaps、actual vs estimated 差异。
   - i18n en/zh 同步。
