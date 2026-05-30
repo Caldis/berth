@@ -6,7 +6,6 @@ import {
   Plug,
   MessageSquare,
   BarChart3,
-  Settings,
   Search
 } from 'lucide-react'
 import { useAppStore } from '@/stores/app'
@@ -37,8 +36,7 @@ const quickActions: QuickAction[] = [
     path: '/configuration/capabilities',
     group: 'Pages'
   },
-  { id: 'usage', label: 'Usage', icon: BarChart3, path: '/usage', group: 'Pages' },
-  { id: 'settings', label: 'Settings', icon: Settings, path: '/settings', group: 'Pages' }
+  { id: 'usage', label: 'Usage', icon: BarChart3, path: '/usage', group: 'Pages' }
 ]
 
 export function SearchDialog(): React.ReactElement | null {

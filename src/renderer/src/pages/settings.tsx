@@ -23,7 +23,7 @@ function Toggle({
     >
       <span
         className={cn(
-          'pointer-events-none block h-4 w-4 rounded-full bg-white shadow-sm transition-transform',
+          'pointer-events-none block h-4 w-4 rounded-full bg-background shadow-sm ring-1 ring-border transition-transform',
           enabled ? 'translate-x-[18px]' : 'translate-x-[2px]'
         )}
       />
@@ -31,7 +31,15 @@ function Toggle({
   )
 }
 
-export function Settings(): React.ReactElement {
+interface SettingsContentProps {
+  showTitle?: boolean
+  className?: string
+}
+
+export function SettingsContent({
+  showTitle = true,
+  className
+}: SettingsContentProps): React.ReactElement {
   const { t, i18n } = useTranslation()
   const { theme, setTheme } = useTheme()
   const [fileWatching, setFileWatching] = useState(true)
@@ -74,30 +82,32 @@ export function Settings(): React.ReactElement {
     : '~/.claude'
 
   return (
-    <div className="mx-auto max-w-2xl space-y-8">
-      <h1 className="text-2xl font-semibold tracking-tight">{t('settings.title')}</h1>
+    <div className={cn(showTitle ? 'mx-auto max-w-2xl space-y-8' : 'space-y-5', className)}>
+      {showTitle && <h1 className="text-2xl font-semibold tracking-tight">{t('settings.title')}</h1>}
 
       {/* Appearance */}
-      <section className="space-y-4">
-        <h2 className="text-base font-medium">{t('settings.appearance')}</h2>
-        <div className="space-y-3 rounded-xl border border-border bg-card p-4">
+      <section className="space-y-3">
+        <h2 className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
+          {t('settings.appearance')}
+        </h2>
+        <div className="space-y-3 rounded-lg border border-border bg-card p-4">
           <div>
             <label className="text-sm font-medium">{t('settings.theme')}</label>
             <div className="mt-2 flex gap-2">
-              {themes.map((t_) => (
+              {themes.map((themeOption) => (
                 <button
-                  key={t_.id}
-                  onClick={() => setTheme(t_.id)}
+                  key={themeOption.id}
+                  onClick={() => setTheme(themeOption.id)}
                   className={cn(
                     'flex items-center gap-2 rounded-md border px-3 py-2 text-sm transition-colors',
-                    theme === t_.id
+                    theme === themeOption.id
                       ? 'border-accent bg-accent/10 text-foreground'
                       : 'border-border hover:border-accent/50'
                   )}
                 >
-                  <t_.icon className="h-4 w-4" />
-                  {t(t_.labelKey)}
-                  {theme === t_.id && <Check className="h-3.5 w-3.5 text-accent" />}
+                  <themeOption.icon className="h-4 w-4" />
+                  {t(themeOption.labelKey)}
+                  {theme === themeOption.id && <Check className="h-3.5 w-3.5 text-accent" />}
                 </button>
               ))}
             </div>
@@ -132,9 +142,11 @@ export function Settings(): React.ReactElement {
       </section>
 
       {/* Scanning */}
-      <section className="space-y-4">
-        <h2 className="text-base font-medium">{t('settings.scanning')}</h2>
-        <div className="rounded-xl border border-border bg-card">
+      <section className="space-y-3">
+        <h2 className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
+          {t('settings.scanning')}
+        </h2>
+        <div className="rounded-lg border border-border bg-card">
           <div className="flex items-center justify-between p-4">
             <div>
               <p className="text-sm font-medium">{t('settings.fileWatching')}</p>
@@ -153,9 +165,11 @@ export function Settings(): React.ReactElement {
       </section>
 
       {/* Scan Directories */}
-      <section className="space-y-4">
-        <h2 className="text-base font-medium">{t('settings.scanDirectories')}</h2>
-        <div className="rounded-xl border border-border bg-card">
+      <section className="space-y-3">
+        <h2 className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
+          {t('settings.scanDirectories')}
+        </h2>
+        <div className="rounded-lg border border-border bg-card">
           <div className="flex items-center justify-between p-4">
             <div className="flex items-center gap-3">
               <FolderOpen className="h-4 w-4 text-muted-foreground" />
@@ -176,9 +190,11 @@ export function Settings(): React.ReactElement {
       </section>
 
       {/* About */}
-      <section className="space-y-4">
-        <h2 className="text-base font-medium">{t('settings.about')}</h2>
-        <div className="rounded-xl border border-border bg-card p-4">
+      <section className="space-y-3">
+        <h2 className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
+          {t('settings.about')}
+        </h2>
+        <div className="rounded-lg border border-border bg-card p-4">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold">
               B

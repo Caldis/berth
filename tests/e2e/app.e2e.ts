@@ -1,6 +1,8 @@
 import { test, expect, type ElectronApplication, type Locator, type Page } from '@playwright/test'
 import { _electron as electron } from '@playwright/test'
-import { resolve } from 'path'
+import { mkdtempSync } from 'fs'
+import { tmpdir } from 'os'
+import { join, resolve } from 'path'
 
 let app: ElectronApplication
 let page: Page
@@ -17,15 +19,18 @@ const navNames = {
   sessions: /^(Sessions|会话)$/,
   instructions: /^(Instructions|指令)$/,
   capabilities: /^(Capabilities|能力)$/,
-  usage: /^(Usage|用量)$/,
-  settings: /^(Settings|设置)$/
+  usage: /^(Usage|用量)$/
 }
 
 const navButton = (name: RegExp): Locator => page.locator('aside').getByRole('button', { name })
+const settingsButton = (): Locator =>
+  page.locator('aside').getByRole('button', { name: /^(Settings|设置)$/ })
 
 test.beforeAll(async () => {
+  const userDataDir = mkdtempSync(join(tmpdir(), 'berth-e2e-'))
+
   app = await electron.launch({
-    args: [resolve(__dirname, '../../out/main/index.js')],
+    args: [resolve(__dirname, '../../out/main/index.js'), `--user-data-dir=${userDataDir}`],
     env: {
       ...process.env,
       NODE_ENV: 'test'
@@ -100,22 +105,30 @@ test.describe('App Shell', () => {
     await expect(heading).toContainText(/Usage|用量/)
   })
 
-  test('can navigate to settings', async () => {
-    await navButton(navNames.settings).click()
-    const heading = page.locator('h1')
-    await expect(heading).toContainText(/Settings|设置/)
+  test('settings is not a regular navigation item', async () => {
+    await expect(page.locator('aside nav').getByRole('button', { name: /^(Settings|设置)$/ })).toHaveCount(0)
+  })
+
+  test('can open settings dialog from sidebar footer', async () => {
+    await settingsButton().click()
+    const dialog = page.getByRole('dialog', { name: /^(Settings|设置)$/ })
+    await expect(dialog).toBeVisible()
+    await page.keyboard.press('Escape')
+    await expect(dialog).toBeHidden()
   })
 })
 
 test.describe('Theme', () => {
-  test('can toggle theme via settings', async () => {
-    await navButton(navNames.settings).click()
-    const darkBtn = page.locator('main').getByRole('button', { name: /^(Dark|深色)$/ })
+  test('can toggle theme via settings dialog', async () => {
+    await settingsButton().click()
+    const dialog = page.getByRole('dialog', { name: /^(Settings|设置)$/ })
+    const darkBtn = dialog.getByRole('button', { name: /^(Dark|深色)$/ })
     if (await darkBtn.isVisible()) {
       await darkBtn.click()
       const html = page.locator('html')
       await expect(html).toHaveClass(/dark/)
     }
+    await page.keyboard.press('Escape')
   })
 })
 

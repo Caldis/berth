@@ -4,8 +4,7 @@ import {
   MessageSquare,
   FileText,
   Plug,
-  BarChart3,
-  Settings
+  BarChart3
 } from 'lucide-react'
 
 export interface NavItem {
@@ -46,8 +45,5 @@ export const navSections: NavSection[] = [
   },
   {
     items: [{ id: 'usage', labelKey: 'nav.usage', icon: BarChart3, path: '/usage' }]
-  },
-  {
-    items: [{ id: 'settings', labelKey: 'nav.settings', icon: Settings, path: '/settings' }]
   }
 ]

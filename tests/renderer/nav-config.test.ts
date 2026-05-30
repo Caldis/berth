@@ -12,4 +12,8 @@ describe('sidebar nav-config', () => {
   it('不再含已删除的 Claude Code 占位项', () => {
     expect(items.map((i) => i.id)).not.toContain('claude-code')
   })
+
+  it('设置不作为普通侧边栏导航项', () => {
+    expect(items.map((i) => i.id)).not.toContain('settings')
+  })
 })

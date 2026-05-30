@@ -7,7 +7,6 @@ import { SessionDetail } from '@/pages/session-detail'
 import { Instructions } from '@/pages/instructions'
 import { Capabilities } from '@/pages/capabilities'
 import { Usage } from '@/pages/usage'
-import { Settings } from '@/pages/settings'
 
 export default function App(): React.ReactElement {
   return (
@@ -20,7 +19,6 @@ export default function App(): React.ReactElement {
           <Route path="/configuration/instructions" element={<Instructions />} />
           <Route path="/configuration/capabilities" element={<Capabilities />} />
           <Route path="/usage" element={<Usage />} />
-          <Route path="/settings" element={<Settings />} />
         </Routes>
       </AppLayout>
     </ThemeProvider>
