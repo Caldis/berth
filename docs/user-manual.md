@@ -155,7 +155,16 @@ Shows the **merged effective configuration** from all three scopes:
 Each server shows its name, scope badge, connection status, and any override conflicts.
 
 ### Hooks Tab
-Groups hooks by the 8 event types: PreToolUse, PostToolUse, UserPromptSubmit, Stop, SubagentStop, Notification, PreCompact, SessionStart.
+Shows hooks as an agent lifecycle instead of a vendor event list. Each lifecycle stage explains what agent behavior it belongs to, which native events map to it, and how Claude Code and Codex differ.
+
+The left Agent view selector changes the copy and support matrix:
+- **All**: shows Claude Code and Codex side by side.
+- **Claude**: shows only Claude Code stages and limitations.
+- **Codex**: shows only Codex stages and limitations.
+
+Each hook row can open its source configuration file, source folder, detected script entry file, and detected script entry folder. The page also shows an agent-level hooks switch for supported user-level configuration:
+- Claude Code: toggles `disableAllHooks` in the user settings file. Claude Code does not support disabling one hook while keeping it registered.
+- Codex: toggles `[features].hooks` in `~/.codex/config.toml`. Berth does not write Codex individual hook disable state unless a stable local format is available.
 
 ### Plugins Tab
 Shows installed plugins and their contained components (skills, commands, subagents).

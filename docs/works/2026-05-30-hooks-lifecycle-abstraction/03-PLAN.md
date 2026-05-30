@@ -35,7 +35,7 @@
   - 验证: IPC 单元测试覆盖 unsupported/managed/unknown action; renderer 测试覆盖确认文案和状态更新。
   - 风险: 这一步突破当前只读架构, 实施前需要在代码里建立明确的写入边界、确认 UI 和失败回滚。若边界无法在本轮收敛, 本任务应先完成只读打开动作, 把启停写入拆为单独 issue。
 
-- [ ] 任务 7: 同步用户文档
+- [x] 任务 7: 同步用户文档
   - 改动: `docs/user-manual.md`。
   - 内容: Hooks Tab 从“按 8 个事件分组”改为“按抽象生命周期 stage 展示, 并随 Agent 视角调整”; 说明打开来源文件/入口文件和启停限制。
   - 验证: `pnpm harness:check`。
