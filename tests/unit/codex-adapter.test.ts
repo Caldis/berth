@@ -128,6 +128,52 @@ describe('CodexAdapter', () => {
     )
   })
 
+  it('scans active and archived Codex rollout sessions', async () => {
+    const codexDir = path.join(mockHome.dir, '.codex')
+    const sessionsDir = path.join(codexDir, 'sessions')
+    const archivedDir = path.join(codexDir, 'archived_sessions')
+    fs.mkdirSync(sessionsDir, { recursive: true })
+    fs.mkdirSync(archivedDir, { recursive: true })
+    fs.writeFileSync(
+      path.join(sessionsDir, 'rollout-active.jsonl'),
+      JSON.stringify({
+        type: 'session_meta',
+        payload: { id: 'active-session', cwd: 'D:\\Code\\active', model: 'gpt-5' }
+      }) + '\n'
+    )
+    fs.writeFileSync(
+      path.join(archivedDir, 'rollout-archived.jsonl'),
+      JSON.stringify({
+        type: 'session_meta',
+        payload: { id: 'archived-session', cwd: 'D:\\Code\\archived', model: 'gpt-5' }
+      }) + '\n'
+    )
+
+    const adapter = new CodexAdapter()
+    const sources = await adapter.scanSourceCoverage()
+    const result = await adapter.scanAll()
+
+    expect(sources).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          path: sessionsDir,
+          description: 'Codex session history directory',
+          status: 'scanned'
+        }),
+        expect.objectContaining({
+          path: archivedDir,
+          scope: 'session',
+          description: 'Codex archived session history directory',
+          status: 'scanned'
+        })
+      ])
+    )
+    expect(result.assets.map((asset) => asset.meta.sessionId)).toEqual(
+      expect.arrayContaining(['active-session', 'archived-session'])
+    )
+    expect(result.assets.find((asset) => asset.meta.sessionId === 'archived-session')?.meta.archived).toBe(true)
+  })
+
   it('records parser errors without stopping the Codex scan', async () => {
     const codexDir = path.join(mockHome.dir, '.codex')
     fs.mkdirSync(codexDir, { recursive: true })

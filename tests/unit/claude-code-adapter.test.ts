@@ -75,4 +75,56 @@ describe('ClaudeCodeAdapter', () => {
       })
     ])
   })
+
+  it('scans file-based managed settings and MCP sources', async () => {
+    const managedDir = path.join(tempDir!, 'managed')
+    fs.mkdirSync(managedDir, { recursive: true })
+    fs.writeFileSync(
+      path.join(managedDir, 'managed-settings.json'),
+      JSON.stringify({
+        hooks: {
+          Stop: [{ hooks: [{ type: 'command', command: 'echo managed' }] }]
+        },
+        permissions: {
+          allow: ['Bash(git status)']
+        },
+        env: {
+          CLAUDE_CODE_ENABLE_TELEMETRY: '1'
+        }
+      })
+    )
+    fs.writeFileSync(
+      path.join(managedDir, 'managed-mcp.json'),
+      JSON.stringify({ mcpServers: { managed: { command: 'managed-mcp' } } })
+    )
+
+    const adapter = new ClaudeCodeAdapter(undefined, { managedDir })
+    const sources = await adapter.scanSourceCoverage()
+    const result = await adapter.scanAll()
+
+    expect(sources).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          path: path.join(managedDir, 'managed-settings.json'),
+          scope: 'enterprise',
+          description: 'Claude Code managed settings file',
+          status: 'scanned'
+        }),
+        expect.objectContaining({
+          path: path.join(managedDir, 'managed-mcp.json'),
+          scope: 'enterprise',
+          description: 'Claude Code managed MCP file',
+          status: 'scanned'
+        })
+      ])
+    )
+    expect(result.assets.map((asset) => [asset.type, asset.scope, asset.name])).toEqual(
+      expect.arrayContaining([
+        ['hook', 'enterprise', 'echo managed'],
+        ['permission', 'enterprise', 'allow-list'],
+        ['env', 'enterprise', 'env'],
+        ['mcp-server', 'enterprise', 'managed']
+      ])
+    )
+  })
 })

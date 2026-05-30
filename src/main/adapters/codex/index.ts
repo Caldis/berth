@@ -104,6 +104,15 @@ export class CodexAdapter implements AgentAdapter {
       'Includes Codex rollout session history.',
       ['state']
     )
+    addRoot(
+      roots,
+      path.join(this.codexDir, 'archived_sessions'),
+      'session',
+      'directory',
+      'Codex archived session history directory',
+      'Includes archived Codex rollout session history.',
+      ['state']
+    )
 
     if (this.projectDir) {
       addRoot(
@@ -240,34 +249,42 @@ export class CodexAdapter implements AgentAdapter {
   }
 
   private scanSessions(errors: ScanError[]): Asset[] {
-    const sessionsDir = path.join(this.codexDir, 'sessions')
-    if (!fs.existsSync(sessionsDir)) return []
     const assets: Asset[] = []
-    let files: string[] = []
-    try {
-      files = glob.sync('**/rollout-*.jsonl', {
-        cwd: sessionsDir,
-        absolute: true,
-        windowsPathsNoEscape: true
-      })
-    } catch (err) {
-      errors.push({
-        path: sessionsDir,
-        type: 'session',
-        message: err instanceof Error ? err.message : String(err)
-      })
-      return assets
-    }
+    const sessionDirs = [
+      { path: path.join(this.codexDir, 'sessions'), archived: false },
+      { path: path.join(this.codexDir, 'archived_sessions'), archived: true }
+    ]
 
-    for (const filePath of files) {
+    for (const sessionDir of sessionDirs) {
+      if (!fs.existsSync(sessionDir.path)) continue
+      let files: string[] = []
       try {
-        assets.push(parseCodexSessionMeta(filePath))
+        files = glob.sync('**/rollout-*.jsonl', {
+          cwd: sessionDir.path,
+          absolute: true,
+          windowsPathsNoEscape: true
+        })
       } catch (err) {
         errors.push({
-          path: filePath,
+          path: sessionDir.path,
           type: 'session',
           message: err instanceof Error ? err.message : String(err)
         })
+        continue
+      }
+
+      for (const filePath of files) {
+        try {
+          const asset = parseCodexSessionMeta(filePath)
+          if (sessionDir.archived) asset.meta.archived = true
+          assets.push(asset)
+        } catch (err) {
+          errors.push({
+            path: filePath,
+            type: 'session',
+            message: err instanceof Error ? err.message : String(err)
+          })
+        }
       }
     }
 

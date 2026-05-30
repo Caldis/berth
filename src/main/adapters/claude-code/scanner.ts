@@ -30,6 +30,7 @@ import {
 export interface ScanContext {
   claudeDir: string // ~/.claude
   projectDir?: string // current project root (if any)
+  managedDir?: string // file-based managed settings directory
   errors: ScanError[]
 }
 
@@ -176,6 +177,9 @@ export function scanCapabilities(ctx: ScanContext): Asset[] {
     [path.join(ctx.claudeDir, '..', '.claude.json'), 'user'],
     [path.join(ctx.claudeDir, 'settings.json'), 'user']
   ]
+  if (ctx.managedDir) {
+    mcpSources.push([path.join(ctx.managedDir, 'managed-mcp.json'), 'enterprise'])
+  }
   if (ctx.projectDir) {
     mcpSources.push([path.join(ctx.projectDir, '.mcp.json'), 'project'])
   }
@@ -190,6 +194,9 @@ export function scanCapabilities(ctx: ScanContext): Asset[] {
   const settingsSources: [string, AssetScope][] = [
     [path.join(ctx.claudeDir, 'settings.json'), 'user']
   ]
+  if (ctx.managedDir) {
+    settingsSources.push([path.join(ctx.managedDir, 'managed-settings.json'), 'enterprise'])
+  }
   if (ctx.projectDir) {
     settingsSources.push([path.join(ctx.projectDir, '.claude', 'settings.json'), 'project'])
   }

@@ -21,20 +21,27 @@ import {
   type ScanContext
 } from './scanner'
 
+interface ClaudeCodeAdapterOptions {
+  managedDir?: string
+}
+
 export class ClaudeCodeAdapter implements AgentAdapter {
   readonly id = 'claude-code'
   readonly displayName = 'Claude Code'
 
   private claudeDir: string
+  private managedDir: string
   private projectDir: string | undefined
 
-  constructor(projectDir?: string) {
+  constructor(projectDir?: string, options: ClaudeCodeAdapterOptions = {}) {
     this.claudeDir = path.join(os.homedir(), '.claude')
+    this.managedDir = options.managedDir ?? resolveClaudeManagedDir()
     this.projectDir = projectDir
   }
 
   async detect(): Promise<DetectResult> {
-    const installed = fs.existsSync(this.claudeDir)
+    const paths = await this.scanRoots()
+    const installed = fs.existsSync(this.claudeDir) || paths.length > 0
     let version: string | undefined
     if (installed) {
       // Try to read version from a known location
@@ -51,7 +58,7 @@ export class ClaudeCodeAdapter implements AgentAdapter {
     return {
       installed,
       version,
-      paths: await this.scanRoots()
+      paths
     }
   }
 
@@ -112,6 +119,30 @@ export class ClaudeCodeAdapter implements AgentAdapter {
           status: 'scanned'
         })
       }
+    }
+    const managedSettings = path.join(this.managedDir, 'managed-settings.json')
+    if (fs.existsSync(managedSettings)) {
+      sources.push({
+        path: managedSettings,
+        scope: 'enterprise',
+        description: 'Claude Code managed settings file',
+        summary: 'Includes policy-managed hooks, permissions, environment variables, and status line settings.',
+        categories: ['capability'],
+        kind: 'file',
+        status: 'scanned'
+      })
+    }
+    const managedMcp = path.join(this.managedDir, 'managed-mcp.json')
+    if (fs.existsSync(managedMcp)) {
+      sources.push({
+        path: managedMcp,
+        scope: 'enterprise',
+        description: 'Claude Code managed MCP file',
+        summary: 'Includes policy-managed MCP server definitions.',
+        categories: ['capability'],
+        kind: 'file',
+        status: 'scanned'
+      })
     }
     return sources
   }
@@ -176,7 +207,14 @@ export class ClaudeCodeAdapter implements AgentAdapter {
     return {
       claudeDir: this.claudeDir,
       projectDir: this.projectDir,
+      managedDir: this.managedDir,
       errors: []
     }
   }
+}
+
+export function resolveClaudeManagedDir(platform: NodeJS.Platform = process.platform): string {
+  if (platform === 'darwin') return '/Library/Application Support/ClaudeCode'
+  if (platform === 'win32') return path.join(process.env['ProgramFiles'] ?? 'C:\\Program Files', 'ClaudeCode')
+  return '/etc/claude-code'
 }

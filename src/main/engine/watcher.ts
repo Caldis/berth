@@ -5,6 +5,7 @@ import { watch } from 'chokidar'
 import type { FSWatcher } from 'chokidar'
 import type { BrowserWindow } from 'electron'
 import type { IpcEvents } from '@shared/types/ipc'
+import { resolveClaudeManagedDir } from '../adapters/claude-code'
 
 export class AssetWatcher {
   private watcher: FSWatcher | null = null
@@ -17,22 +18,7 @@ export class AssetWatcher {
   start(projectDir?: string): void {
     if (this.watcher) return
 
-    const claudeDir = path.join(os.homedir(), '.claude')
-    const watchPaths = [claudeDir]
-
-    if (projectDir) {
-      watchPaths.push(path.join(projectDir, '.claude'))
-      const mcpJson = path.join(projectDir, '.mcp.json')
-      watchPaths.push(mcpJson)
-    }
-
-    // Also watch ~/.claude.json
-    watchPaths.push(path.join(os.homedir(), '.claude.json'))
-
-    const codexSessionsDir = path.join(os.homedir(), '.codex', 'sessions')
-    if (fs.existsSync(codexSessionsDir)) {
-      watchPaths.push(codexSessionsDir)
-    }
+    const watchPaths = getAssetWatchPaths(projectDir)
 
     this.watcher = watch(watchPaths, {
       ignoreInitial: true,
@@ -63,6 +49,34 @@ export class AssetWatcher {
     const assetId = path.basename(filePath)
     this.mainWindow.webContents.send('assets:changed', { type, assetId, asset: undefined })
   }
+}
+
+export function getAssetWatchPaths(
+  projectDir?: string,
+  homeDir = os.homedir(),
+  managedDir = resolveClaudeManagedDir()
+): string[] {
+  const claudeDir = path.join(homeDir, '.claude')
+  const watchPaths = [claudeDir]
+
+  if (projectDir) {
+    watchPaths.push(path.join(projectDir, '.claude'))
+    watchPaths.push(path.join(projectDir, '.mcp.json'))
+  }
+
+  watchPaths.push(path.join(homeDir, '.claude.json'))
+
+  for (const fileName of ['managed-settings.json', 'managed-mcp.json']) {
+    const managedPath = path.join(managedDir, fileName)
+    if (fs.existsSync(managedPath)) watchPaths.push(managedPath)
+  }
+
+  for (const dirName of ['sessions', 'archived_sessions']) {
+    const codexSessionDir = path.join(homeDir, '.codex', dirName)
+    if (fs.existsSync(codexSessionDir)) watchPaths.push(codexSessionDir)
+  }
+
+  return watchPaths
 }
 
 let _watcherInstance: AssetWatcher | null = null
