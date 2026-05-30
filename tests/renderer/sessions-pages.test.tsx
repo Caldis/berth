@@ -341,6 +341,11 @@ describe('session pages', () => {
   })
 
   it('renders usage cost details and pricing gaps', async () => {
+    const writeText = vi.fn(async () => undefined)
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { writeText }
+    })
     const tokenUsage = normalizeTokenUsage({ inputTokens: 10, outputTokens: 2 })
     window.api.usage.summary = vi.fn(async () => ({
       totalCost: 0.3,
@@ -419,6 +424,16 @@ describe('session pages', () => {
     expect(screen.getByText('Local override · 1 model match(es)')).toBeInTheDocument()
     expect(screen.getByText(/LiteLLM/)).toBeInTheDocument()
     expect(screen.getByText('Local override example')).toBeInTheDocument()
+    expect(screen.queryByText(/inputCostPerToken/)).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Show local override example' }))
+
     expect(screen.getByText(/inputCostPerToken/)).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Copy override JSON' }))
+
+    await waitFor(() => {
+      expect(writeText).toHaveBeenCalledWith(expect.stringContaining('inputCostPerToken'))
+    })
+    expect(screen.getByRole('button', { name: 'Copied' })).toBeInTheDocument()
   })
 })

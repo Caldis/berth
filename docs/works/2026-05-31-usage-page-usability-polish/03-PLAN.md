@@ -12,9 +12,10 @@
   - 验证: `pnpm test -- tests/unit/token-usage.test.ts tests/renderer/sessions-pages.test.tsx`, `pnpm typecheck:web`。
   - 结果: 已通过 `pnpm test -- tests/unit/token-usage.test.ts tests/renderer/sessions-pages.test.tsx`、`pnpm typecheck:web`; 该页面测试仍有 Recharts 0 宽高警告。
 
-- [ ] 任务 3: pricing gap override 默认收起与复制按钮
+- [x] 任务 3: pricing gap override 默认收起与复制按钮
   - 改 `Usage` 页和 en/zh i18n。
   - 验证: `pnpm test -- tests/renderer/sessions-pages.test.tsx`, `pnpm typecheck:web`。
+  - 结果: 已通过 `pnpm test -- tests/renderer/sessions-pages.test.tsx`、`pnpm typecheck:web`; Recharts 0 宽高警告仍为既有 jsdom 噪声。
 
 - [ ] 任务 4: 数据口径提示
   - 在费用说明区显示“本地扫描 / 估算不等于账单”提示。

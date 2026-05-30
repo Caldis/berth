@@ -11,7 +11,7 @@ import {
   Pie,
   Cell
 } from 'recharts'
-import { AlertTriangle, Calculator, DollarSign, Coins, Gauge, FlaskConical } from 'lucide-react'
+import { AlertTriangle, Calculator, DollarSign, Coins, Gauge, FlaskConical, Copy } from 'lucide-react'
 import { cn, formatNumber, formatCurrency } from '@/lib/utils'
 import type {
   CostMode,
@@ -130,6 +130,8 @@ export function Usage(): React.ReactElement {
   const [usage, setUsage] = useState<UsageSummary | null>(null)
   const [loadError, setLoadError] = useState(false)
   const [reloadKey, setReloadKey] = useState(0)
+  const [showPricingOverride, setShowPricingOverride] = useState(false)
+  const [pricingOverrideCopied, setPricingOverrideCopied] = useState(false)
   const agentView = useAppStore((s) => s.agentView)
 
   useEffect(() => {
@@ -169,6 +171,13 @@ export function Usage(): React.ReactElement {
     ? formatCurrency(usage.totalCost)
     : '—'
   const pricingOverrideMiss = usage?.pricingMisses.find(canShowPricingOverrideExample)
+  const pricingOverrideJson = pricingOverrideMiss ? pricingOverrideExample(pricingOverrideMiss) : ''
+
+  async function copyPricingOverride(): Promise<void> {
+    if (!pricingOverrideJson || !navigator.clipboard) return
+    await navigator.clipboard.writeText(pricingOverrideJson)
+    setPricingOverrideCopied(true)
+  }
 
   return (
     <div className="space-y-6">
@@ -393,10 +402,40 @@ export function Usage(): React.ReactElement {
               </div>
               {pricingOverrideMiss && (
                 <div className="mt-3 rounded-md border border-amber-500/20 bg-background/80 p-3">
-                  <div className="text-xs font-medium">{t('usage.pricingOverrideExample')}</div>
-                  <pre className="mt-2 max-h-40 overflow-auto rounded-md bg-muted/70 p-3 text-xs leading-relaxed text-muted-foreground">
-                    <code>{pricingOverrideExample(pricingOverrideMiss)}</code>
-                  </pre>
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="text-xs font-medium">{t('usage.pricingOverrideExample')}</div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      {showPricingOverride && (
+                        <button
+                          type="button"
+                          onClick={copyPricingOverride}
+                          className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-2 py-1 text-xs font-medium text-muted-foreground hover:text-foreground"
+                        >
+                          <Copy className="h-3.5 w-3.5" />
+                          {pricingOverrideCopied
+                            ? t('usage.copiedPricingOverride')
+                            : t('usage.copyPricingOverride')}
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowPricingOverride((value) => !value)
+                          setPricingOverrideCopied(false)
+                        }}
+                        className="rounded-md border border-border bg-background px-2 py-1 text-xs font-medium hover:bg-muted"
+                      >
+                        {showPricingOverride
+                          ? t('usage.hidePricingOverrideExample')
+                          : t('usage.showPricingOverrideExample')}
+                      </button>
+                    </div>
+                  </div>
+                  {showPricingOverride && (
+                    <pre className="mt-2 max-h-40 overflow-auto rounded-md bg-muted/70 p-3 text-xs leading-relaxed text-muted-foreground">
+                      <code>{pricingOverrideJson}</code>
+                    </pre>
+                  )}
                 </div>
               )}
             </div>

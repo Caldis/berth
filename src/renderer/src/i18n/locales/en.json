@@ -784,6 +784,10 @@
       "missingPriceComponentDesc": "The model price is matched, but cache or reasoning token prices are missing."
     },
     "pricingOverrideExample": "Local override example",
+    "showPricingOverrideExample": "Show local override example",
+    "hidePricingOverrideExample": "Hide local override example",
+    "copyPricingOverride": "Copy override JSON",
+    "copiedPricingOverride": "Copied",
     "loadErrorTitle": "Usage data could not be loaded",
     "loadErrorBody": "The local usage summary request failed. Retry after the scan or pricing data is available.",
     "pageErrorTitle": "Usage page failed",
