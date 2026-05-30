@@ -83,7 +83,73 @@
     "importChain": "导入链",
     "usedInSessions": "近 30 天使用会话",
     "viewFile": "查看文件",
-    "showInExplorer": "在资源管理器中显示"
+    "showInExplorer": "在资源管理器中显示",
+    "guidance": {
+      "docs": {
+        "claudeMemory": "Claude Code 记忆",
+        "codexAgentsMd": "Codex AGENTS.md",
+        "claudeSkills": "Claude Code Skills",
+        "codexConfig": "Codex 配置",
+        "claudeSubagents": "Claude Code 子代理",
+        "codexSlashCommands": "Codex 斜杠命令",
+        "claudeOutputStyles": "Claude Code 输出样式",
+        "claudeSettings": "Claude Code 设置"
+      },
+      "memories": {
+        "title": "持久指令上下文",
+        "summary": "记忆文件是 Agent 开始工作前会加载的持久指令。它们承载项目规则、团队约定、个人偏好和导入内容。",
+        "points": {
+          "role": "适合放会影响很多任务的事实和规则，不适合放一次性提示。",
+          "scope": "作用域说明谁会收到这条指令: 单个用户、当前项目或组织策略。",
+          "review": "当 Agent 遵循了意外规则时，先检查导入链和优先级。"
+        }
+      },
+      "skills": {
+        "title": "可复用工作流包",
+        "summary": "Skills 把可重复过程打包成指令和可选文件。Agent 只在相关时加载正文，所以很长的流程不会一直占用上下文。",
+        "points": {
+          "role": "同一个抽象概念可以由 Claude Code skills、Codex skill 配置或其他 provider 的能力包承载。",
+          "scope": "用户级 skill 可跨项目使用；项目级 skill 记录团队流程，并可随仓库版本管理。",
+          "review": "信任第三方 skill 前，应阅读它的指令和随附脚本。"
+        }
+      },
+      "subagents": {
+        "title": "专门的工作者配置",
+        "summary": "子代理是带有独立指令、工具和有时带模型选择的命名角色。主 Agent 可以把聚焦任务委派给它们，而不是把所有角色塞进同一个提示。",
+        "points": {
+          "role": "适合处理需要更窄角色的重复任务，例如审查、探索或调研。",
+          "scope": "不同 provider 的支持方式不同，但抽象资产都是委派工作者定义。",
+          "review": "依赖委派前，检查工具权限、模型设置和触发描述。"
+        }
+      },
+      "commands": {
+        "title": "保存好的提示入口",
+        "summary": "命令是可直接调用的命名提示或流程。它适合由用户明确发起的工作流，而不是让 Agent 自动选择。",
+        "points": {
+          "role": "适合发布准备、审查、项目初始化这类重复交互动作。",
+          "scope": "个人命令服务单个用户；项目命令可以形成团队共享快捷入口。",
+          "review": "运行外部来源的命令前，检查参数处理和其中的 shell 片段。"
+        }
+      },
+      "outputModes": {
+        "title": "主 Agent 行为样式",
+        "summary": "输出模式调整主 Agent 的回应方式。它改变语气、教学深度或工作风格，但不会新增一个工作者。",
+        "points": {
+          "role": "适合让同一个任务以不同沟通方式或教学方式处理。",
+          "scope": "它通常属于用户或项目，因为不同团队可能需要不同交互风格。",
+          "review": "把输出模式当成行为策略，不要把它当成能力授权或权限授权。"
+        }
+      },
+      "agentTeams": {
+        "title": "多 Agent 组合",
+        "summary": "Agent Teams 描述多个 Agent 角色如何一起工作。Berth 把它视为编排资产，而不是单个提示或工具。",
+        "points": {
+          "role": "适合多个角色会反复一起出现、需要固定交接方式的工作流。",
+          "scope": "当前这类资产仍偏 provider 特定，但抽象模型是可复用协作计划。",
+          "review": "信任组合流程前，检查每个成员角色和共享工具权限。"
+        }
+      }
+    }
   },
   "capabilities": {
     "title": "能力",
@@ -110,6 +176,75 @@
         "connected": "已连接",
         "failed": "失败",
         "unknown": "未知"
+      }
+    },
+    "guidance": {
+      "docs": {
+        "mcpIntro": "MCP 概览",
+        "mcpTools": "MCP tools 规范",
+        "claudeMcp": "Claude Code MCP",
+        "claudeHooks": "Claude Code Hooks",
+        "codexConfig": "Codex 配置",
+        "claudePlugins": "Claude Code 插件",
+        "claudeSettings": "Claude Code 设置",
+        "claudeStatusLine": "Claude Code 状态栏",
+        "claudePermissions": "Claude Code 权限",
+        "codexPermissions": "Codex 权限",
+        "codexSecurity": "Codex 审批与沙箱"
+      },
+      "mcp": {
+        "title": "外部工具和数据来源",
+        "summary": "MCP server 通过通用协议暴露工具、资源和提示。它让 Agent 能接触数据库、工单、文件和内部 API 等真实系统。",
+        "points": {
+          "role": "当能力需要真实外部系统，而不是静态指令时，用 MCP。",
+          "scope": "作用域说明 server 是个人配置、随仓库共享，还是由策略管理。",
+          "review": "MCP 可能让 Agent 执行真实动作，因此要检查暴露工具和环境变量。"
+        }
+      },
+      "hooks": {
+        "title": "生命周期自动化",
+        "summary": "Hooks 是在 Agent 走到某个生命周期时运行的命令或处理器，例如工具调用前后、压缩前后或停止前。",
+        "points": {
+          "role": "适合做检查、记录、保护规则和上下文更新。",
+          "scope": "不同 provider 暴露的事件不同，Berth 会映射到一套共享生命周期视图。",
+          "review": "Hook 命令可以运行本地代码。启用前检查触发点、匹配器和入口文件。"
+        }
+      },
+      "plugins": {
+        "title": "打包后的能力集合",
+        "summary": "插件把多个资产打包在一起，例如 skills、agents、hooks、MCP servers 和设置。它适合把一组能力作为整体安装、版本管理和共享。",
+        "points": {
+          "role": "适合可复用分发，不适合一次性项目配置。",
+          "scope": "已安装插件可能是用户级、项目级或策略管理，取决于 provider。",
+          "review": "启用外部插件前，检查 manifest 和其中打包的组件。"
+        }
+      },
+      "statusLine": {
+        "title": "运行状态展示面",
+        "summary": "状态栏资产把当前会话的紧凑信息显示出来，例如模型、目录、分支、费用或任务状态。",
+        "points": {
+          "role": "适合展示一眼能看完的状态，不适合放长指令或隐藏自动化。",
+          "scope": "不同 provider 的支持不同，但抽象资产都是附着在 Agent UI 上的状态读数。",
+          "review": "脚本可能随会话更新反复运行，应保持快速且安全。"
+        }
+      },
+      "permissions": {
+        "title": "运行时安全策略",
+        "summary": "权限定义 Agent runtime 哪些动作可以不询问、哪些必须确认、哪些直接禁止。它在模型提示之外执行边界。",
+        "points": {
+          "role": "用于控制工具调用、文件访问、命令执行、网络访问和子 Agent 委派。",
+          "scope": "规则可能跨用户、项目、本地和托管层合并；高层策略可能无法覆盖。",
+          "review": "宽泛 allow 规则和 bypass 模式会减少提示，但风险更高。可信流程也优先用窄规则。"
+        }
+      },
+      "env": {
+        "title": "会话和子进程环境",
+        "summary": "环境变量配置 Agent 进程、hooks、MCP servers、遥测和 provider 集成。它们常用于功能开关或指向密钥。",
+        "points": {
+          "role": "当运行时行为依赖本机、provider 或集成设置时，用环境变量。",
+          "scope": "有些变量作用于每个会话；有些只转发给某个 MCP server 或子进程。",
+          "review": "Berth 应显示变量名和来源，不显示密钥值。包含 key 或 token 的变量都按敏感信息处理。"
+        }
       }
     },
     "hooks": {

@@ -83,7 +83,73 @@
     "importChain": "Import chain",
     "usedInSessions": "Used in sessions (last 30d)",
     "viewFile": "View File",
-    "showInExplorer": "Show in Explorer"
+    "showInExplorer": "Show in Explorer",
+    "guidance": {
+      "docs": {
+        "claudeMemory": "Claude Code memory",
+        "codexAgentsMd": "Codex AGENTS.md",
+        "claudeSkills": "Claude Code skills",
+        "codexConfig": "Codex config",
+        "claudeSubagents": "Claude Code subagents",
+        "codexSlashCommands": "Codex slash commands",
+        "claudeOutputStyles": "Claude Code output styles",
+        "claudeSettings": "Claude Code settings"
+      },
+      "memories": {
+        "title": "Persistent instruction context",
+        "summary": "Memory files are durable instructions the agent loads as context before work. They carry project rules, team norms, personal preferences, and imports into the first turn.",
+        "points": {
+          "role": "Use them for facts and rules that should shape many tasks, not for one-off prompts.",
+          "scope": "Scope tells you who receives the instruction: one user, this project, or an organization policy.",
+          "review": "Check imports and precedence when the agent follows unexpected guidance."
+        }
+      },
+      "skills": {
+        "title": "Reusable workflow packages",
+        "summary": "Skills package repeatable procedures with instructions and optional files. The agent loads the body only when the skill is relevant, so long procedures do not always sit in context.",
+        "points": {
+          "role": "The same concept can be backed by Claude Code skills, Codex skill config, or another provider's packaged capability.",
+          "scope": "User skills travel across projects; project skills document team workflow and can be versioned with the repo.",
+          "review": "Read the skill instructions and bundled scripts before trusting a third-party skill."
+        }
+      },
+      "subagents": {
+        "title": "Specialized worker profiles",
+        "summary": "Subagents are named agent roles with their own instructions, tools, and sometimes model choices. The main agent can delegate focused work to them instead of keeping every role in one prompt.",
+        "points": {
+          "role": "Use them when a repeatable task needs a narrower role, such as review, exploration, or research.",
+          "scope": "Provider support differs, but the abstract asset is a delegated worker definition.",
+          "review": "Check tool access, model settings, and trigger descriptions before relying on delegation."
+        }
+      },
+      "commands": {
+        "title": "Saved prompt entry points",
+        "summary": "Commands are named prompts or procedures that users invoke directly. They are useful when a workflow should start from an explicit action instead of automatic skill selection.",
+        "points": {
+          "role": "Use commands for repeatable interactive actions such as release prep, review, or project setup.",
+          "scope": "Personal commands help one user; project commands create shared team shortcuts.",
+          "review": "Check argument handling and any shell snippets before running commands from another source."
+        }
+      },
+      "outputModes": {
+        "title": "Primary agent behavior styles",
+        "summary": "Output modes adjust how the primary agent responds. They change tone, teaching level, or working style without adding a separate worker.",
+        "points": {
+          "role": "Use them when the same task should be handled in a different communication or teaching mode.",
+          "scope": "They are usually local to one user or project because teams may want different interaction styles.",
+          "review": "Treat output modes as behavior policy, not as capability or permission grants."
+        }
+      },
+      "agentTeams": {
+        "title": "Multi-agent composition",
+        "summary": "Agent teams describe how several agent roles should work together. Berth treats them as orchestration assets rather than a single prompt or tool.",
+        "points": {
+          "role": "Use them for structured handoffs where multiple roles repeatedly appear together.",
+          "scope": "Team assets are provider-specific today, but the abstract model is a reusable collaboration plan.",
+          "review": "Check each member role and shared tool access before trusting the combined workflow."
+        }
+      }
+    }
   },
   "capabilities": {
     "title": "Capabilities",
@@ -110,6 +176,75 @@
         "connected": "Connected",
         "failed": "Failed",
         "unknown": "Unknown"
+      }
+    },
+    "guidance": {
+      "docs": {
+        "mcpIntro": "MCP overview",
+        "mcpTools": "MCP tools spec",
+        "claudeMcp": "Claude Code MCP",
+        "claudeHooks": "Claude Code hooks",
+        "codexConfig": "Codex config",
+        "claudePlugins": "Claude Code plugins",
+        "claudeSettings": "Claude Code settings",
+        "claudeStatusLine": "Claude Code status line",
+        "claudePermissions": "Claude Code permissions",
+        "codexPermissions": "Codex permissions",
+        "codexSecurity": "Codex approvals and sandbox"
+      },
+      "mcp": {
+        "title": "External tools and data sources",
+        "summary": "MCP servers expose tools, resources, and prompts through a shared protocol. They let an agent reach systems such as databases, issue trackers, files, and internal APIs.",
+        "points": {
+          "role": "Use MCP when a capability needs a real external system instead of static instructions.",
+          "scope": "Scope tells you whether the server is personal, shared with a repo, or managed by policy.",
+          "review": "Review exposed tools and environment variables because MCP can let the agent take real actions."
+        }
+      },
+      "hooks": {
+        "title": "Lifecycle automation",
+        "summary": "Hooks are commands or handlers that run when the agent reaches a lifecycle moment, such as before a tool call, after a result, before compaction, or before stop.",
+        "points": {
+          "role": "Use hooks for checks, logging, guardrails, and context updates that should happen around agent actions.",
+          "scope": "Each provider exposes a different event set, so Berth maps them into a shared lifecycle view.",
+          "review": "Hook commands can run local code. Check the trigger, matcher, and entry file before enabling them."
+        }
+      },
+      "plugins": {
+        "title": "Packaged capability bundles",
+        "summary": "Plugins package multiple assets together, such as skills, agents, hooks, MCP servers, and settings. They are useful when a capability should be installed, versioned, and shared as one unit.",
+        "points": {
+          "role": "Use plugins for reusable distributions rather than one-off project configuration.",
+          "scope": "Installed plugins may be user-level, project-level, or policy-managed depending on the provider.",
+          "review": "Inspect manifests and bundled components before enabling a plugin from outside your team."
+        }
+      },
+      "statusLine": {
+        "title": "Runtime status surface",
+        "summary": "Status line assets render compact context about the running session, such as model, directory, branch, cost, or task state.",
+        "points": {
+          "role": "Use this for glanceable state, not for long instructions or hidden automation.",
+          "scope": "Status line support varies by provider, but the abstract asset is a readout attached to the agent UI.",
+          "review": "Keep scripts fast and safe because they can run repeatedly while the session updates."
+        }
+      },
+      "permissions": {
+        "title": "Runtime safety policy",
+        "summary": "Permissions define what the agent runtime may do without asking, what must be confirmed, and what is blocked. They enforce boundaries outside the model prompt.",
+        "points": {
+          "role": "Use permissions to control tool use, file access, command execution, network access, and delegated agents.",
+          "scope": "Rules can merge across user, project, local, and managed layers; higher policy may be impossible to override.",
+          "review": "Broad allow rules and bypass modes reduce prompts but increase risk. Prefer narrow rules for trusted workflows."
+        }
+      },
+      "env": {
+        "title": "Session and subprocess environment",
+        "summary": "Environment variables configure the agent process, hooks, MCP servers, telemetry, and provider integrations. They often carry feature flags or references to secrets.",
+        "points": {
+          "role": "Use env vars when runtime behavior depends on local machine, provider, or integration settings.",
+          "scope": "Some variables apply to every session; others are forwarded only to an MCP server or subprocess.",
+          "review": "Berth should show names and sources, not secret values. Treat variables containing keys or tokens as sensitive."
+        }
       }
     },
     "hooks": {
