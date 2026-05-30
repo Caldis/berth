@@ -21,3 +21,13 @@ verify 不通过项作为新任务追加于此, phase 退回 implement。
 - [x] 任务 11: 增加 guard before/after, 固化“保护用户 dev PID”的验收动作。verify: `tests/unit/agent-dev-core.test.ts` 覆盖 before snapshot、after 检查、guard 不污染 status；实测 guard before → start → stop → guard after 通过。
 - [x] 任务 12: 文档提醒用户已有旧 dev 进程需重启一次才能吃到 `--watch`。verify: README scripts section 已说明旧 dev 进程需重启一次。
 - [x] 任务 13: 清理 stale state: `status` 标记 stale, `start` 遇同 id stale state 先清理。verify: `tests/unit/agent-dev-core.test.ts` 覆盖 stale summary 与同 id stale cleanup。
+
+## 2026-05-31 verify 记录
+
+- `pnpm test -- tests/unit/agent-dev-core.test.ts tests/unit/dev-instance.test.ts` 通过。
+- `node scripts/agent-dev.mjs status --json` 返回空实例列表。
+- 实测 `guard before --id codex-20260531-hardening --json` 保护用户 dev PID 484524/489312。
+- 实测 `start --id codex-20260531-hardening --json` 启动 agent pid 529220。
+- 实测同 id 二次 start 被拒绝: `Agent dev instance already running`。
+- 实测 `stop codex-20260531-hardening --json` 只停止 agent pid。
+- 实测 `guard after --id codex-20260531-hardening --json` 通过, 用户 dev PID 484524/489312 仍存活。
