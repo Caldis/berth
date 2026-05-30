@@ -22,4 +22,7 @@ sidebar 左上角 logo 被 macOS 系统红绿灯按钮遮挡。本任务为 harn
 - [x] 03-PLAN.md — 任务清单
 
 ## gh project
-跟踪需 gh token 增 project scope (见 docs/friction)。授权后回填 project item URL。
+已跟踪: Caldis/berth project #6 (https://github.com/users/Caldis/projects/6),
+item "macOS traffic-light avoidance + single-instance lock" 状态 Done。
+(gh token 于 2026-05-30 补授 project scope 后补建并置 Done; 授权步骤见
+docs/friction/_archive/20260530-implement-gh-project-scope.md)
