@@ -178,6 +178,46 @@
         "unknown": "Unknown"
       }
     },
+    "statusLine": {
+      "intro": {
+        "title": "Status lines show live session state",
+        "all": "Claude Code and Codex both expose a status line, but they work differently. Claude Code runs a configured command and renders its output. Codex renders an ordered list of built-in footer items from config.toml.",
+        "claude": "Claude Code status lines are command-backed settings from settings.json. The command can be a script or inline shell command, and Claude Code refreshes it during the session.",
+        "codex": "Codex status lines are built-in TUI footer items persisted in config.toml. Codex does not run a custom status-line script."
+      },
+      "model": {
+        "claude": {
+          "title": "Claude Code command",
+          "body": "Reads statusLine and subagentStatusLine from settings files. Commands can reference local scripts and may be disabled by disableAllHooks."
+        },
+        "codex": {
+          "title": "Codex footer items",
+          "body": "Reads [tui].status_line from config.toml. Items such as model, directory, branch, tokens, rate limits, and task progress are selected and ordered."
+        }
+      },
+      "summary": {
+        "total": "Configured status line assets",
+        "claude": "Claude command surfaces",
+        "codexItems": "Codex footer items",
+        "disabled": "Disabled by settings"
+      },
+      "setting": "Setting",
+      "command": "Command",
+      "footerItems": "Footer items",
+      "themeColors": "Theme colors",
+      "refreshInterval": "Refresh interval",
+      "padding": "Padding",
+      "hideVimModeIndicator": "Hide Vim mode",
+      "entryPaths": "Referenced scripts",
+      "disabled": "Disabled by disableAllHooks",
+      "hidden": "status_line is explicitly empty, so the Codex status line is hidden instead of using defaults.",
+      "unknownItems": "{{count}} unknown item(s) will be ignored by current Codex builds.",
+      "empty": {
+        "all": "No status line config was found. Claude Code uses settings.json command config; Codex falls back to model-with-reasoning and current-dir when tui.status_line is unset.",
+        "claude": "No Claude Code statusLine or subagentStatusLine setting was found in the scanned settings files.",
+        "codex": "No Codex tui.status_line setting was found. Codex will use its default footer items unless the field is explicitly set."
+      }
+    },
     "guidance": {
       "docs": {
         "mcpIntro": "MCP overview",
@@ -554,6 +594,8 @@
     "back": "Back",
     "close": "Close",
     "viewRaw": "View Raw",
-    "sensitive": "Sensitive"
+    "sensitive": "Sensitive",
+    "yes": "Yes",
+    "no": "No"
   }
 }
