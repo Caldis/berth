@@ -26,6 +26,12 @@ berth 的 Agent 工作流单一真源, 同时服务 Claude Code 与 Codex。
 
 verb: new · continue · explore · design · implement · verify · archive · optimization
 
+## 何时进入
+
+- feature / bug 开发任务: 落代码前必须 `/opsx:new` 建任务态, 禁止跳过直接实现或调试。
+- 平凡改动 (单行 / 拼写 / 纯文案注释, 无需分析与验收) 直接处理, 不建任务态。
+- 存疑默认走 harness; 进行中的任务用 `/opsx:continue` 续跑。
+
 ## 四阶段
 
 Explore → Design → Implementation → Verify。人在 design 澄清意图, 在 verify 确认验收, 其余交给 Agent。

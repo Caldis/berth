@@ -104,4 +104,9 @@ Agent 工作流体系, 单一真源在 `.agents/`, 同时服务 Claude Code 与 
 - 工程摩擦: `docs/friction/{yyyymmdd}-{phase}-{summary}.md`
 - 自检/分发: `pnpm harness:check` / `pnpm harness:sync` (CI 强制)
 
+## 何时进入 (强制)
+- feature / bug 开发任务: 落代码前必须先 `/opsx:new` 建任务态, 再按 explore → design → implement → verify 推进; 禁止跳过 new 直接 Read/Edit 进实现或调试。
+- 平凡改动豁免: 单行修复 / 拼写 / 纯文案或注释, 且无需根因分析与验收时, 直接处理, 不建任务态。
+- 边界存疑按非平凡处理, 默认走 harness; 进行中的任务用 `/opsx:continue` 续跑, 不重新 new。
+
 命令: /opsx:new · continue · explore · design · implement · verify · archive · optimization
