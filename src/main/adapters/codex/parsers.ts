@@ -1,6 +1,8 @@
 import * as fs from 'fs'
 import * as path from 'path'
+import { emptyTokenUsage, normalizeTokenUsage } from '@shared/token-usage'
 import type { Asset } from '../types'
+import type { TokenUsageBreakdown } from '@shared/types/asset'
 import type {
   SessionArtifactFile,
   SessionArtifactPlan,
@@ -29,7 +31,7 @@ export function parseCodexSessionMeta(filePath: string): Asset {
   let title: string | undefined
   let model: string | undefined
   let projectPath: string | undefined
-  let totalTokens = 0
+  let tokenUsage = emptyTokenUsage()
 
   const meta: Record<string, unknown> = {
     sessionId,
@@ -73,7 +75,8 @@ export function parseCodexSessionMeta(filePath: string): Asset {
             title
         }
         if (payloadType === 'token_count') {
-          totalTokens = Math.max(totalTokens, readTokenTotal(payload))
+          const candidate = readTokenUsage(payload)
+          if (candidate.totalTokens >= tokenUsage.totalTokens) tokenUsage = candidate
         }
       }
     }
@@ -93,8 +96,9 @@ export function parseCodexSessionMeta(filePath: string): Asset {
   meta.startedAt = firstTimestamp
   meta.endedAt = lastTimestamp
   meta.duration = duration
-  meta.totalTokens = totalTokens
-  meta.hasUsage = totalTokens > 0
+  meta.totalTokens = tokenUsage.totalTokens
+  meta.tokenUsage = tokenUsage
+  meta.hasUsage = tokenUsage.totalTokens > 0
   meta.skillsUsed = []
   meta.mcpServers = []
   meta.hooksFired = 0
@@ -422,25 +426,22 @@ function parseMcpToolName(name: string): { server: string; tool: string } | unde
   }
 }
 
-function readTokenTotal(payload: Record<string, unknown>): number {
-  const direct =
-    readNumber(payload, 'total_tokens') ??
-    readNumber(payload, 'totalTokens') ??
-    readNumber(payload, 'tokens')
-  if (direct != null) return direct
+function readTokenUsage(payload: Record<string, unknown>): TokenUsageBreakdown {
   const info = isRecord(payload.info) ? payload.info : undefined
+  const direct = normalizeTokenUsage(payload)
   if (info) {
-    return (
-      readNumber(info, 'total_tokens') ??
-      readNumber(info, 'totalTokens') ??
-      readNestedTokenTotal(info)
-    )
+    const nested = normalizeTokenUsage({ ...readNestedTokenRecord(info), ...info })
+    if (nested.hasBreakdown) {
+      const totalTokens = Math.max(direct.totalTokens, nested.totalTokens)
+      return normalizeTokenUsage({ ...nested, totalTokens })
+    }
   }
-  return readNestedTokenTotal(payload)
+  if (direct.totalTokens > 0) return direct
+  return normalizeTokenUsage(readNestedTokenRecord(payload))
 }
 
-function readNestedTokenTotal(record: Record<string, unknown>): number {
-  let total = 0
+function readNestedTokenRecord(record: Record<string, unknown>): Record<string, number> {
+  const result: Record<string, number> = {}
   const tokenKeys = [
     'input_tokens',
     'output_tokens',
@@ -451,12 +452,15 @@ function readNestedTokenTotal(record: Record<string, unknown>): number {
   ]
   for (const [key, value] of Object.entries(record)) {
     if (typeof value === 'number' && tokenKeys.includes(key) && Number.isFinite(value)) {
-      total += value
+      result[key] = (result[key] ?? 0) + value
     } else if (isRecord(value)) {
-      total += readNestedTokenTotal(value)
+      const nested = readNestedTokenRecord(value)
+      for (const [nestedKey, nestedValue] of Object.entries(nested)) {
+        result[nestedKey] = (result[nestedKey] ?? 0) + nestedValue
+      }
     }
   }
-  return total
+  return result
 }
 
 function firstString(record: Record<string, unknown>, keys: string[]): string | undefined {
@@ -471,12 +475,6 @@ function readString(record: unknown, key: string): string | undefined {
   if (!isRecord(record)) return undefined
   const value = record[key]
   return typeof value === 'string' && value.trim() ? value : undefined
-}
-
-function readNumber(record: unknown, key: string): number | undefined {
-  if (!isRecord(record)) return undefined
-  const value = record[key]
-  return typeof value === 'number' && Number.isFinite(value) ? value : undefined
 }
 
 function readValidDateString(record: unknown, key: string): string | undefined {

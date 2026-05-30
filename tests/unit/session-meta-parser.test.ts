@@ -89,6 +89,14 @@ describe('parseSessionMeta', () => {
     expect(asset.meta.duration).toBe(300)
     expect(asset.meta.model).toBe('claude-sonnet-4-20250514')
     expect(asset.meta.totalTokens).toBe(38)
+    expect(asset.meta.tokenUsage).toMatchObject({
+      inputTokens: 10,
+      outputTokens: 5,
+      cacheReadInputTokens: 20,
+      cacheCreationInputTokens: 3,
+      totalTokens: 38,
+      hasBreakdown: true
+    })
     expect(asset.meta.totalCost).toBeUndefined()
     expect(asset.meta.skillsUsed).toEqual(['frontend-design'])
     expect(asset.meta.mcpServers).toEqual(['plugin_playwright_playwright'])

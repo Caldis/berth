@@ -84,6 +84,11 @@ describe('Codex session parser', () => {
     expect(asset.meta.projectPath).toBe('D:\\Code\\berth')
     expect(asset.meta.model).toBe('gpt-5.3-codex')
     expect(asset.meta.totalTokens).toBe(42)
+    expect(asset.meta.tokenUsage).toMatchObject({
+      unknownTokens: 42,
+      totalTokens: 42,
+      hasBreakdown: false
+    })
 
     expect(detail.toolTimeline.map((event) => event.name)).toEqual([
       'shell_command',
@@ -97,5 +102,45 @@ describe('Codex session parser', () => {
       done: true
     })
     expect(detail.artifacts.files[0].path).toBe('src/main/adapters/codex/parsers.ts')
+  })
+
+  it('preserves token count breakdowns when Codex records them', () => {
+    tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'berth-codex-session-'))
+    const rolloutPath = path.join(tempDir, 'rollout-2026-05-30T03-00-00-codex-breakdown.jsonl')
+    fs.writeFileSync(
+      rolloutPath,
+      [
+        JSON.stringify({
+          type: 'session_meta',
+          timestamp: '2026-05-30T03:00:00.000Z',
+          payload: { id: 'codex-breakdown', cwd: 'D:\\Code\\berth' }
+        }),
+        JSON.stringify({
+          type: 'event_msg',
+          timestamp: '2026-05-30T03:00:20.000Z',
+          payload: {
+            type: 'token_count',
+            info: {
+              input_tokens: 11,
+              output_tokens: 7,
+              cached_input_tokens: 13,
+              reasoning_output_tokens: 5
+            }
+          }
+        })
+      ].join('\n')
+    )
+
+    const asset = parseCodexSessionMeta(rolloutPath)
+
+    expect(asset.meta.totalTokens).toBe(36)
+    expect(asset.meta.tokenUsage).toMatchObject({
+      inputTokens: 11,
+      outputTokens: 7,
+      cacheReadInputTokens: 13,
+      reasoningOutputTokens: 5,
+      totalTokens: 36,
+      hasBreakdown: true
+    })
   })
 })

@@ -1,6 +1,11 @@
 import * as fs from 'fs'
 import * as path from 'path'
 import * as yaml from 'js-yaml'
+import {
+  addTokenUsage,
+  emptyTokenUsage,
+  normalizeTokenUsage
+} from '@shared/token-usage'
 import type { Asset, AssetScope } from '../types'
 
 let _nextId = 0
@@ -367,8 +372,9 @@ export function parseSessionMeta(filePath: string, projectName: string): Asset {
   let title: string | undefined
   let model: string | undefined
   let projectPath: string | undefined
-  let totalTokens = 0
   let sawUsage = false
+  let messageTokenUsage = emptyTokenUsage()
+  let legacyTokenUsage = emptyTokenUsage()
   let totalCost: number | undefined
   let fileHistoryCount = 0
   const skillsUsed = new Set<string>()
@@ -428,7 +434,7 @@ export function parseSessionMeta(filePath: string, projectName: string): Asset {
         totalCost = readExplicitCost(parsed) ?? totalCost
         if (!sawUsage) {
           const legacyTokens = readNumber(parsed, 'totalTokens')
-          if (legacyTokens != null) totalTokens = legacyTokens
+          if (legacyTokens != null) legacyTokenUsage = normalizeTokenUsage({ totalTokens: legacyTokens })
         }
       }
 
@@ -437,7 +443,7 @@ export function parseSessionMeta(filePath: string, projectName: string): Asset {
       const usage = isRecord(message?.usage) ? message.usage : undefined
       if (usage) {
         sawUsage = true
-        totalTokens += readTokenUsage(usage)
+        messageTokenUsage = addTokenUsage(messageTokenUsage, normalizeTokenUsage(usage))
       }
 
       const content = Array.isArray(message?.content) ? message.content : []
@@ -473,6 +479,7 @@ export function parseSessionMeta(filePath: string, projectName: string): Asset {
   const project = projectNameFromPath(resolvedProjectPath, projectName)
   const duration = calculateDurationSeconds(firstTimestamp, lastTimestamp)
   const hookCountsObject = Object.fromEntries(hookEventCounts)
+  const tokenUsage = sawUsage ? messageTokenUsage : legacyTokenUsage
 
   meta.sessionId = sessionId
   meta.project = project
@@ -482,8 +489,9 @@ export function parseSessionMeta(filePath: string, projectName: string): Asset {
   meta.startedAt = firstTimestamp
   meta.endedAt = lastTimestamp
   meta.duration = duration
-  meta.totalTokens = totalTokens
-  meta.hasUsage = sawUsage
+  meta.totalTokens = tokenUsage.totalTokens
+  meta.tokenUsage = tokenUsage
+  meta.hasUsage = tokenUsage.totalTokens > 0
   meta.skillsUsed = Array.from(skillsUsed).sort()
   meta.mcpServers = Array.from(mcpServers).sort()
   meta.hooksFired = Array.from(hookEventCounts.values()).reduce((sum, count) => sum + count, 0)
@@ -695,22 +703,6 @@ function readExplicitCost(record: Record<string, unknown>): number | undefined {
     )
   }
   return undefined
-}
-
-function readTokenUsage(usage: Record<string, unknown>): number {
-  const keys = [
-    'input_tokens',
-    'output_tokens',
-    'cache_read_input_tokens',
-    'cache_creation_input_tokens',
-    'cache_read_tokens',
-    'cache_creation_tokens',
-    'inputTokens',
-    'outputTokens',
-    'cacheReadInputTokens',
-    'cacheCreationInputTokens'
-  ]
-  return keys.reduce((sum, key) => sum + (readNumber(usage, key) ?? 0), 0)
 }
 
 function extractMcpServerName(toolName: string): string | undefined {

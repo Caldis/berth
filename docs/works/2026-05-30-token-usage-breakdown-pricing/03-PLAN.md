@@ -5,7 +5,7 @@
 - [x] 任务 1: shared token contract 与纯函数 helper
   - 修改 `src/shared/types/asset.ts` 与 `src/shared/token-usage.ts`。
   - 验证: 新增/更新 helper 单测, `pnpm test -- tests/unit/usage-summary.test.ts` 至少能编译到新类型。
-- [ ] 任务 2: Claude / Codex parser 保留 token 明细
+- [x] 任务 2: Claude / Codex parser 保留 token 明细
   - 修改 `src/main/adapters/claude-code/parsers.ts`、`src/main/adapters/codex/parsers.ts`。
   - 验证: `pnpm test -- tests/unit/session-meta-parser.test.ts tests/unit/codex-session-parser.test.ts`。
 - [ ] 任务 3: Usage 聚合支持 token 明细、days 过滤和 session fallback
