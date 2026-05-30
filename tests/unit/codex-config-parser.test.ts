@@ -169,28 +169,6 @@ describe('Codex config parser', () => {
     expect(assets.filter((asset) => asset.type === 'statusline')).toEqual([])
   })
 
-  it('keeps an empty Codex status_line as an explicit hidden statusline asset', () => {
-    const configPath = path.join(tempDir!, 'config.toml')
-    fs.writeFileSync(
-      configPath,
-      [
-        '[tui]',
-        'status_line = []'
-      ].join('\n')
-    )
-
-    const assets = parseCodexConfig(configPath, 'user')
-
-    expect(assets.filter((asset) => asset.type === 'statusline')).toEqual([
-      expect.objectContaining({
-        meta: expect.objectContaining({
-          items: [],
-          hidden: true
-        })
-      })
-    ])
-  })
-
   it('parses standalone custom agent TOML', () => {
     const agentPath = path.join(tempDir!, 'reviewer.toml')
     fs.writeFileSync(

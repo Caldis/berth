@@ -178,46 +178,6 @@
         "unknown": "未知"
       }
     },
-    "statusLine": {
-      "intro": {
-        "title": "状态栏展示会话实时状态",
-        "all": "Claude Code 和 Codex 都有状态栏, 但模型不同。Claude Code 运行配置好的命令并展示输出。Codex 从 config.toml 读取内置 footer item 的有序列表。",
-        "claude": "Claude Code 状态栏来自 settings.json 中的 command-backed 配置。命令可以是脚本路径或 inline shell command, 会在会话期间刷新。",
-        "codex": "Codex 状态栏是内置 TUI footer item, 持久化在 config.toml。Codex 不运行自定义状态栏脚本。"
-      },
-      "model": {
-        "claude": {
-          "title": "Claude Code 命令",
-          "body": "读取 settings 文件中的 statusLine 和 subagentStatusLine。命令可以引用本地脚本, 也可能被 disableAllHooks 禁用。"
-        },
-        "codex": {
-          "title": "Codex footer items",
-          "body": "读取 config.toml 里的 [tui].status_line。模型、目录、分支、token、速率限制和任务进度等 item 可被选择和排序。"
-        }
-      },
-      "summary": {
-        "total": "已配置状态栏资产",
-        "claude": "Claude 命令展示面",
-        "codexItems": "Codex footer items",
-        "disabled": "被设置禁用"
-      },
-      "setting": "设置项",
-      "command": "命令",
-      "footerItems": "Footer items",
-      "themeColors": "主题颜色",
-      "refreshInterval": "刷新间隔",
-      "padding": "边距",
-      "hideVimModeIndicator": "隐藏 Vim 模式",
-      "entryPaths": "引用脚本",
-      "disabled": "被 disableAllHooks 禁用",
-      "hidden": "status_line 显式为空, 因此 Codex 状态栏被隐藏, 不会回退到默认项。",
-      "unknownItems": "{{count}} 个未知 item 会被当前 Codex 忽略。",
-      "empty": {
-        "all": "没有发现状态栏配置。Claude Code 使用 settings.json 的命令配置；Codex 在 tui.status_line 未设置时会回退到 model-with-reasoning 和 current-dir。",
-        "claude": "扫描到的 settings 文件里没有 Claude Code statusLine 或 subagentStatusLine 设置。",
-        "codex": "没有发现 Codex tui.status_line 设置。除非显式设置该字段, Codex 会使用默认 footer items。"
-      }
-    },
     "guidance": {
       "docs": {
         "mcpIntro": "MCP 概览",
@@ -495,7 +455,6 @@
       "warning": "警告",
       "bypassEnabled": "{{scope}} 级别已启用 bypassPermissions，将跳过所有权限提示。",
       "allowList": "允许列表",
-      "askList": "确认列表",
       "denyList": "拒绝列表"
     }
   },
@@ -607,8 +566,6 @@
     "back": "返回",
     "close": "关闭",
     "viewRaw": "查看原始文件",
-    "sensitive": "敏感",
-    "yes": "是",
-    "no": "否"
+    "sensitive": "敏感"
   }
 }

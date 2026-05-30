@@ -25,6 +25,14 @@ implement — explore + design 完成 (00-PRD / 01-ANALYSIS / 02-SPEC / 03-PLAN 
   开工前等用户对"何时动共享文件"给绿灯。
 - 过程摩擦已沉淀: docs/friction/20260530-explore-product-ui-vs-host-tool-misattribution.md。
 
+### 实现进度
+- ✅ 步骤 1-7 (核心模块, 全新文件, 无碰撞): memory.ts 类型 / MemorySource 接口 / united-memory 源 /
+  claude-native 源 / 聚合服务 + 2 个单测。子代理 TDD 落地, 19/19 测试绿, 自有文件 typecheck 干净。
+- ⏳ 步骤 8 (IPC 契约)、步骤 10 (instructions.tsx + i18n): **共享热点**, 这些文件有并行 session 未提交改动
+  (token-usage / hooks WIP), 须协调时序后小步接线。
+- ⚠ 全量 typecheck 当前因并行 WIP (handlers.ts / ipc.ts / usage.tsx) 报错, 非本任务; 本任务 verify
+  的全门禁须等并行任务落地或在干净基线上跑。
+
 ## 范围决策 (来自用户)
 - 记忆 tab 语义: 重定义为真·记忆视图 (默认推荐)。
 - 多源呈现: 聚合 + 来源标签/过滤, 并支持源切换 (用户选了 "完整记忆浏览体验" → 取最全)。

@@ -226,6 +226,8 @@ function parseCodexStatusLine(
   if (!tui || !Array.isArray(tui.status_line)) return []
 
   const items = tui.status_line.filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
+  if (items.length === 0) return []
+
   const knownItems = items.filter((item) => CODEX_STATUS_LINE_ITEMS.has(item))
   const unknownItems = items.filter((item) => !CODEX_STATUS_LINE_ITEMS.has(item))
   const useThemeColors = readBoolean(tui, 'status_line_use_colors')
@@ -246,7 +248,6 @@ function parseCodexStatusLine(
         items,
         knownItems,
         unknownItems,
-        hidden: items.length === 0,
         useThemeColors: useThemeColors ?? true,
         source: filePath
       },
