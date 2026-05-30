@@ -7,8 +7,12 @@
 - [x] 任务 3: Overview 展示 evidence/fix 并优先使用 `target.route`; verify: `pnpm test -- tests/renderer/overview-health-checks.test.tsx`。
 - [x] 任务 4: 最终回归: `pnpm test -- tests/unit/health-check.test.ts`, `pnpm test -- tests/renderer/overview-health-checks.test.tsx`, `pnpm typecheck`; 若无关任务恢复则跑 `pnpm harness:check`。
 - [x] 任务 5: 补官方 schema 与配置发现提示, 包括 Codex config schema 注释、Claude settings `$schema`、Claude 项目 AGENTS.md import 建议; verify: `pnpm test -- tests/unit/health-check.test.ts`。
-- [ ] 后续任务 A: 等 settings scan directories 稳定后, 设计显式额外 agent home / WSL Codex home 配置。
-- [ ] 后续任务 B: 单独设计 scanner/watcher/IPC/store 的 health check 增量刷新。
+- [ ] 任务 6: 扫描范围补显式额外 agent home / WSL Codex home 配置, 优先支持 env 显式传入, 不自动猜路径; verify: adapter / watcher / health 单测。
+- [ ] 任务 7: 增量刷新 health checks, watcher 变更后重新扫描并通知 renderer 更新首页; verify: renderer hook 单测。
+- [ ] 任务 8: Overview evidence 官方文档链接可点击打开; verify: renderer health checks 单测。
+- [ ] 任务 9: 低风险 fix snippet 支持复制, 先不自动写用户配置; verify: renderer health checks 单测。
+- [ ] 任务 10: 降噪与忽略规则, 支持按 check id + path 忽略 info 级建议; verify: renderer health checks 单测。
+- [ ] 任务 11: 增加 Claude Code / Codex 兼容提示, 明确哪些配置只对某一工具生效; verify: health 单测与 overview 渲染单测。
 
 ## verify 回写
 - 2026-05-30: 任务 5 已通过 `pnpm test -- tests/unit/health-check.test.ts` 与 `pnpm typecheck`。后续任务 A/B 仍作为独立改进项保留。
