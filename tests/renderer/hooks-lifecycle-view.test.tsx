@@ -32,13 +32,18 @@ function renderHooks(agentView: AgentView, assets: Asset[]): void {
   render(<HooksLifecycleView assets={assets} agentView={agentView} search="" scope="all" />)
 }
 
+async function waitForEnablementStatus(): Promise<void> {
+  await screen.findAllByText('Enabled')
+}
+
 describe('HooksLifecycleView', () => {
   beforeEach(() => {
     window.api.shell.openPath = vi.fn(async () => {})
   })
 
-  it('shows Codex-only copy without Claude Code support rows in Codex view', () => {
+  it('shows Codex-only copy without Claude Code support rows in Codex view', async () => {
     renderHooks('codex', [hookAsset('codex-stop', 'codex', 'Stop')])
+    await waitForEnablementStatus()
 
     expect(screen.getByText('What are hooks?')).toBeInTheDocument()
     expect(screen.getByText(/Hooks are Codex command handlers/)).toBeInTheDocument()
@@ -47,11 +52,12 @@ describe('HooksLifecycleView', () => {
     expect(screen.queryByText('Claude Code')).not.toBeInTheDocument()
   })
 
-  it('shows cross-agent differences in all view', () => {
+  it('shows cross-agent differences in all view', async () => {
     renderHooks('all', [
       hookAsset('claude-pre', 'claude-code', 'PreToolUse'),
       hookAsset('codex-stop', 'codex', 'Stop')
     ])
+    await waitForEnablementStatus()
 
     expect(screen.getByText(/combines Claude Code and Codex/)).toBeInTheDocument()
     expect(screen.getAllByText('Claude Code').length).toBeGreaterThan(0)
@@ -59,21 +65,24 @@ describe('HooksLifecycleView', () => {
     expect(screen.getAllByText(/Codex only applies tool hooks/).length).toBeGreaterThan(0)
   })
 
-  it('keeps lifecycle explanations visible when there are no hooks', () => {
+  it('keeps lifecycle explanations visible when there are no hooks', async () => {
     renderHooks('claude', [])
+    await waitForEnablementStatus()
 
     expect(screen.getAllByText('Session starts').length).toBeGreaterThan(0)
     expect(screen.getAllByText('No hook is configured for this stage.').length).toBeGreaterThan(0)
   })
 
-  it('explains why Claude single hook toggles are not available', () => {
+  it('explains why Claude single hook toggles are not available', async () => {
     renderHooks('claude', [hookAsset('claude-stop', 'claude-code', 'Stop')])
+    await waitForEnablementStatus()
 
     expect(screen.getByText(/Claude Code does not provide a supported way/)).toBeInTheDocument()
   })
 
   it('opens hook source files from the row action menu', async () => {
     renderHooks('codex', [hookAsset('codex-stop', 'codex', 'Stop')])
+    await waitForEnablementStatus()
 
     fireEvent.click(screen.getAllByText('Actions')[0])
     fireEvent.click(screen.getByText('Open source file'))

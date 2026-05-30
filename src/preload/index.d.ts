@@ -1,5 +1,15 @@
 import { ElectronAPI } from '@electron-toolkit/preload'
-import type { AgentScanSourceGroup, ScanResult, SessionListResult, SessionDetailResult, HealthCheck } from '../shared/types/ipc'
+import type {
+  AgentScanSourceGroup,
+  ScanResult,
+  SessionListResult,
+  SessionDetailResult,
+  HealthCheck,
+  HooksAgentId,
+  HooksEnablementStatus,
+  SetHooksEnabledRequest,
+  SetHooksEnabledResult
+} from '../shared/types/ipc'
 import type { AgentView, Asset, UsageSummary } from '../shared/types/asset'
 
 interface PlatformInfo {
@@ -39,6 +49,10 @@ interface BerthAPI {
   }
   usage: {
     summary: (opts: { days: number; agentView?: AgentView }) => Promise<UsageSummary>
+  }
+  hooks: {
+    status: (agentId: HooksAgentId) => Promise<HooksEnablementStatus>
+    setEnabled: (request: SetHooksEnabledRequest) => Promise<SetHooksEnabledResult>
   }
   shell: {
     openPath: (path: string) => Promise<void>

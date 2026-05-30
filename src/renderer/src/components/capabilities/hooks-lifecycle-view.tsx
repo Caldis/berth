@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   CheckCircle2,
@@ -24,6 +24,7 @@ import {
   type HookStageGroup
 } from '@/lib/hook-lifecycle'
 import type { AgentView, Asset, AssetScope } from '@shared/types/asset'
+import type { HooksAgentId, HooksEnablementStatus } from '@shared/types/ipc'
 
 interface HooksLifecycleViewProps {
   assets: Asset[]
@@ -80,6 +81,7 @@ export function HooksLifecycleView({ assets, agentView, search, scope }: HooksLi
                 </div>
               ))}
             </div>
+            <HookAgentEnablementPanel agentView={agentView} />
           </div>
         </div>
       </section>
@@ -130,6 +132,95 @@ export function HooksLifecycleView({ assets, agentView, search, scope }: HooksLi
             <HookStageSection key={group.id} group={group} agentView={agentView} />
           ))}
         </div>
+      </div>
+    </div>
+  )
+}
+
+function HookAgentEnablementPanel({ agentView }: { agentView: AgentView }): React.ReactElement {
+  const { t } = useTranslation()
+  const [statuses, setStatuses] = useState<HooksEnablementStatus[]>([])
+  const [busyAgent, setBusyAgent] = useState<HooksAgentId | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const agents = useMemo(() => visibleHooksAgents(agentView), [agentView])
+
+  useEffect(() => {
+    let disposed = false
+    setError(null)
+    void Promise.all(agents.map((agentId) => window.api.hooks.status(agentId)))
+      .then((nextStatuses) => {
+        if (!disposed) setStatuses(nextStatuses)
+      })
+      .catch((err) => {
+        if (!disposed) setError(err instanceof Error ? err.message : String(err))
+      })
+    return () => {
+      disposed = true
+    }
+  }, [agents])
+
+  const toggle = async (status: HooksEnablementStatus): Promise<void> => {
+    const enabled = !status.enabled
+    const confirmMessage = enabled
+      ? t('capabilities.hooks.management.confirmEnable', { agent: status.agentName, path: status.sourcePath })
+      : t('capabilities.hooks.management.confirmDisable', { agent: status.agentName, path: status.sourcePath })
+
+    if (!window.confirm(confirmMessage)) return
+
+    setBusyAgent(status.agentId)
+    setError(null)
+    try {
+      const result = await window.api.hooks.setEnabled({
+        agentId: status.agentId,
+        scope: status.scope,
+        enabled
+      })
+      setStatuses((current) =>
+        current.map((item) => item.agentId === result.status.agentId ? result.status : item)
+      )
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err))
+    } finally {
+      setBusyAgent(null)
+    }
+  }
+
+  return (
+    <div className="mt-4 rounded-md border border-border/70 bg-background/60 px-3 py-3">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="text-xs font-medium text-foreground">{t('capabilities.hooks.management.agentToggleTitle')}</p>
+          <p className="mt-0.5 max-w-[70ch] text-xs leading-5 text-muted-foreground">
+            {t('capabilities.hooks.management.agentToggleBody')}
+          </p>
+        </div>
+      </div>
+      {error && <p className="mt-2 text-xs text-destructive">{error}</p>}
+      <div className="mt-3 grid gap-2 md:grid-cols-2">
+        {statuses.map((status) => (
+          <div key={status.agentId} className="flex items-center justify-between gap-3 rounded-md border border-border bg-card px-3 py-2">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-medium text-foreground">{status.agentName}</span>
+                <span className={cn(
+                  'rounded-md px-1.5 py-0.5 text-[10px] font-medium',
+                  status.enabled ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'bg-muted text-muted-foreground'
+                )}>
+                  {status.enabled ? t('capabilities.hooks.management.enabled') : t('capabilities.hooks.management.disabled')}
+                </span>
+              </div>
+              <p className="mt-0.5 truncate font-mono text-[11px] text-muted-foreground">{status.sourcePath}</p>
+            </div>
+            <button
+              type="button"
+              disabled={!status.supported || busyAgent === status.agentId}
+              onClick={() => void toggle(status)}
+              className="shrink-0 rounded-md border border-border px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:text-muted-foreground/60 disabled:hover:bg-transparent"
+            >
+              {status.enabled ? t('capabilities.hooks.management.disableAll') : t('capabilities.hooks.management.enableAll')}
+            </button>
+          </div>
+        ))}
       </div>
     </div>
   )
@@ -360,4 +451,10 @@ function dirname(filePath: string): string {
   const normalized = filePath.replace(/[/\\]+$/, '')
   const index = Math.max(normalized.lastIndexOf('\\'), normalized.lastIndexOf('/'))
   return index > 0 ? normalized.slice(0, index) : normalized
+}
+
+function visibleHooksAgents(agentView: AgentView): HooksAgentId[] {
+  if (agentView === 'claude') return ['claude-code']
+  if (agentView === 'codex') return ['codex']
+  return ['claude-code', 'codex']
 }

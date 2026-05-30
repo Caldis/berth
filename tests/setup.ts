@@ -59,6 +59,33 @@ const mockApi = {
       rateLimits: []
     })
   },
+  hooks: {
+    status: async (agentId: 'claude-code' | 'codex') => ({
+      agentId,
+      agentName: agentId === 'codex' ? 'Codex' : 'Claude Code',
+      scope: 'user' as const,
+      enabled: true,
+      sourcePath: agentId === 'codex'
+        ? 'C:\\Users\\test\\.codex\\config.toml'
+        : 'C:\\Users\\test\\.claude\\settings.json',
+      sourceExists: true,
+      supported: true
+    }),
+    setEnabled: async (request: { agentId: 'claude-code' | 'codex'; scope: 'user'; enabled: boolean }) => ({
+      status: {
+        agentId: request.agentId,
+        agentName: request.agentId === 'codex' ? 'Codex' : 'Claude Code',
+        scope: request.scope,
+        enabled: request.enabled,
+        sourcePath: request.agentId === 'codex'
+          ? 'C:\\Users\\test\\.codex\\config.toml'
+          : 'C:\\Users\\test\\.claude\\settings.json',
+        sourceExists: true,
+        supported: true
+      },
+      changed: true
+    })
+  },
   shell: {
     openPath: async () => {},
     openExternal: async () => {}

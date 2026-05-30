@@ -157,6 +157,30 @@ export interface MCPMergeInfo {
   overriddenBy?: string
 }
 
+export type HooksAgentId = 'claude-code' | 'codex'
+
+export interface HooksEnablementStatus {
+  agentId: HooksAgentId
+  agentName: string
+  scope: 'user'
+  enabled: boolean
+  sourcePath: string
+  sourceExists: boolean
+  supported: boolean
+  reason?: string
+}
+
+export interface SetHooksEnabledRequest {
+  agentId: HooksAgentId
+  scope: 'user'
+  enabled: boolean
+}
+
+export interface SetHooksEnabledResult {
+  status: HooksEnablementStatus
+  changed: boolean
+}
+
 export interface ImportChainNode {
   path: string
   content?: string
@@ -186,6 +210,8 @@ export interface IpcChannels {
   'sessions:get': { args: [string]; result: SessionDetailResult | null }
   'usage:summary': { args: [{ days: number; agentView?: AgentView }]; result: UsageSummary }
   'mcp:merged': { args: []; result: MCPMergeInfo[] }
+  'hooks:status': { args: [HooksAgentId]; result: HooksEnablementStatus }
+  'hooks:set-enabled': { args: [SetHooksEnabledRequest]; result: SetHooksEnabledResult }
   'theme:get': { args: []; result: string }
   'theme:set': { args: ['light' | 'dark' | 'system']; result: void }
   'shell:openPath': { args: [string]; result: void }

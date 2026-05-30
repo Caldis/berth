@@ -41,6 +41,11 @@ const api = {
   usage: {
     summary: (opts: { days: number; agentView?: string }) => ipcRenderer.invoke('usage:summary', opts)
   },
+  hooks: {
+    status: (agentId: string) => ipcRenderer.invoke('hooks:status', agentId),
+    setEnabled: (request: { agentId: string; scope: string; enabled: boolean }) =>
+      ipcRenderer.invoke('hooks:set-enabled', request)
+  },
   shell: {
     openPath: (path: string) => ipcRenderer.invoke('shell:openPath', path),
     openExternal: (url: string) => ipcRenderer.invoke('shell:openExternal', url)

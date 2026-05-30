@@ -294,7 +294,15 @@
         "codexSingleHookNotConnected": "Codex can disable non-managed hooks in its hook browser, but Berth has not wired that write path yet.",
         "unknownAgent": "Berth does not know how this agent stores hook state.",
         "codexUnsupportedHookType": "Codex currently parses this hook type but does not run it as a command hook.",
-        "codexAsyncHookSkipped": "Codex currently skips async hook handlers."
+        "codexAsyncHookSkipped": "Codex currently skips async hook handlers.",
+        "agentToggleTitle": "Agent-level hooks switch",
+        "agentToggleBody": "This changes the official user-level setting for the selected agent. It affects all hooks for that agent, not only the rows shown below.",
+        "enabled": "Enabled",
+        "disabled": "Disabled",
+        "enableAll": "Enable all",
+        "disableAll": "Disable all",
+        "confirmEnable": "Enable hooks for {{agent}}? Berth will update {{path}} and rescan local assets.",
+        "confirmDisable": "Disable hooks for {{agent}}? Berth will update {{path}} and rescan local assets."
       }
     },
     "plugins": {

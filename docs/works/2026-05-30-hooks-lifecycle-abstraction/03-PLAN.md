@@ -29,7 +29,7 @@
   - 内容: 打开 hook 来源文件、来源目录; command 能解析为本地脚本时打开入口文件、入口目录。
   - 验证: renderer 测试覆盖按钮可见性; shell bridge mock 断言 openPath 参数正确。
 
-- [ ] 任务 6: 设计并实现受控启停入口
+- [x] 任务 6: 设计并实现受控启停入口
   - 改动: `src/shared/types/ipc.ts`, `src/main/ipc/handlers.ts`, hooks 管理组件与测试。
   - 内容: 先实现官方确定且结构清晰的 agent-level hooks enable/disable; Claude 写 `disableAllHooks`, Codex 写 `[features].hooks`; 单 hook toggle 只在 capability 明确时启用, 否则显示不可用原因。
   - 验证: IPC 单元测试覆盖 unsupported/managed/unknown action; renderer 测试覆盖确认文案和状态更新。

@@ -15,13 +15,18 @@ import type {
   SessionDetailResult,
   MCPMergeInfo,
   SessionArtifacts,
-  SessionToolEvent
+  SessionToolEvent,
+  HooksAgentId,
+  HooksEnablementStatus,
+  SetHooksEnabledRequest,
+  SetHooksEnabledResult
 } from '@shared/types/ipc'
 import { getScanner } from '../engine/scanner'
 import { getSearch } from '../engine/search'
 import { buildUsageSummary } from '../engine/usage'
 import { normalizeTokenUsage } from '../../shared/token-usage'
 import { runHealthChecks } from '../engine/health'
+import { getAgentHooksStatus, setAgentHooksEnabled } from '../engine/hooks-manager'
 import { resolveRelations, buildImportChain } from '../engine/relations'
 import { parseMcpServers } from '../adapters/claude-code/parsers'
 import { parseClaudeSessionDetail } from '../adapters/claude-code/session-detail'
@@ -183,6 +188,20 @@ export function registerAssetHandlers(): void {
   ipcMain.handle('mcp:merged', (): MCPMergeInfo[] => {
     return computeMcpMerged()
   })
+
+  ipcMain.handle('hooks:status', (_event, agentId: HooksAgentId): HooksEnablementStatus => {
+    return getAgentHooksStatus(agentId)
+  })
+
+  ipcMain.handle(
+    'hooks:set-enabled',
+    async (_event, request: SetHooksEnabledRequest): Promise<SetHooksEnabledResult> => {
+      const result = setAgentHooksEnabled(request)
+      const scanResult = await getScanner().scanAll()
+      getSearch().buildIndex(scanResult.assets)
+      return result
+    }
+  )
 
   ipcMain.handle('theme:get', () => nativeTheme.themeSource)
 
