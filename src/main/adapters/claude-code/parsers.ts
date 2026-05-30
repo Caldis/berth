@@ -90,6 +90,25 @@ export function parseSkill(filePath: string, scope: AssetScope): Asset {
 
 export function parseAgent(filePath: string, scope: AssetScope): Asset {
   const raw = fs.readFileSync(filePath, 'utf-8')
+  if (path.extname(filePath).toLowerCase() === '.md') {
+    const { frontmatter, body } = splitFrontmatter(raw)
+    const meta = {
+      ...(frontmatter ?? {}),
+      bodyLength: body.length
+    }
+    return {
+      id: makeId('agent'),
+      agentId: 'claude-code',
+      category: 'instruction',
+      type: 'agent',
+      scope,
+      name: (frontmatter?.name as string) ?? path.basename(filePath, path.extname(filePath)),
+      path: filePath,
+      meta,
+      raw
+    }
+  }
+
   let parsed: Record<string, unknown> = {}
   try {
     parsed = (yaml.load(raw) as Record<string, unknown>) ?? {}

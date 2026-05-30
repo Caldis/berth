@@ -110,7 +110,7 @@ export function scanInstructions(ctx: ScanContext): Asset[] {
 
   // Agents
   assets.push(
-    ...scanDir(ctx, path.join(ctx.claudeDir, 'agents'), 'user', '**/*.{yml,yaml}', parseAgent)
+    ...scanDir(ctx, path.join(ctx.claudeDir, 'agents'), 'user', '**/*.md', parseAgent)
   )
   if (ctx.projectDir) {
     assets.push(
@@ -118,7 +118,7 @@ export function scanInstructions(ctx: ScanContext): Asset[] {
         ctx,
         path.join(ctx.projectDir, '.claude', 'agents'),
         'project',
-        '**/*.{yml,yaml}',
+        '**/*.md',
         parseAgent
       )
     )

@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'fs'
 import { join } from 'path'
 import { tmpdir } from 'os'
-import { scanState } from '../../src/main/adapters/claude-code/scanner'
+import { scanInstructions, scanState } from '../../src/main/adapters/claude-code/scanner'
 import { parseHooks } from '../../src/main/adapters/claude-code/parsers'
 
 let root: string | null = null
@@ -64,5 +64,41 @@ describe('Claude Code scanner', () => {
       command: 'echo pre-tool',
       hookType: 'command'
     })
+  })
+
+  it('scans Claude subagents from Markdown frontmatter files', () => {
+    root = mkdtempSync(join(tmpdir(), 'berth-claude-agent-'))
+    const claudeDir = join(root, '.claude')
+    const agentsDir = join(claudeDir, 'agents')
+    mkdirSync(agentsDir, { recursive: true })
+    writeFileSync(
+      join(agentsDir, 'reviewer.md'),
+      [
+        '---',
+        'name: reviewer',
+        'description: Reviews code changes.',
+        'tools: Read, Grep',
+        '---',
+        'Review code like an owner.'
+      ].join('\n')
+    )
+
+    const errors: { path: string; type: string; message: string }[] = []
+    const assets = scanInstructions({ claudeDir, errors })
+
+    expect(errors).toEqual([])
+    expect(assets.filter((asset) => asset.type === 'agent')).toEqual([
+      expect.objectContaining({
+        agentId: 'claude-code',
+        category: 'instruction',
+        type: 'agent',
+        scope: 'user',
+        name: 'reviewer',
+        meta: expect.objectContaining({
+          description: 'Reviews code changes.',
+          tools: 'Read, Grep'
+        })
+      })
+    ])
   })
 })
