@@ -152,6 +152,8 @@
     "scanDirectories": "Scan Directories",
     "localSources": "Local Sources",
     "localSourcesEmpty": "No supported local sources found.",
+    "sourceCount_one": "{{count}} source",
+    "sourceCount_other": "{{count}} sources",
     "sourceDetected": "Local data source detected",
     "sourceNotFound": "Local data source not found",
     "detected": "Detected",

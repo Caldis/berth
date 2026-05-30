@@ -1,7 +1,16 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useTheme } from '@/components/theme-provider'
-import { Sun, Moon, Monitor, Check, FolderOpen, ExternalLink } from 'lucide-react'
+import {
+  Sun,
+  Moon,
+  Monitor,
+  Check,
+  FolderOpen,
+  ExternalLink,
+  ChevronDown,
+  ChevronRight
+} from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useScanSources } from '@/hooks/use-ipc'
 
@@ -44,6 +53,7 @@ export function SettingsContent({
   const { t, i18n } = useTranslation()
   const { theme, setTheme } = useTheme()
   const [advancedMode, setAdvancedMode] = useState(false)
+  const [expandedSources, setExpandedSources] = useState<Record<string, boolean>>({})
   const { groups: scanSourceGroups, loading: scanSourcesLoading } = useScanSources()
   const [platformInfo, setPlatformInfo] = useState<{
     homeDir: string
@@ -71,6 +81,10 @@ export function SettingsContent({
     { id: 'en', label: 'English' },
     { id: 'zh', label: '中文' }
   ]
+
+  const toggleSourceGroup = (agentId: string): void => {
+    setExpandedSources((current) => ({ ...current, [agentId]: !current[agentId] }))
+  }
 
   return (
     <div className={cn(showTitle ? 'mx-auto max-w-2xl space-y-8' : 'space-y-5', className)}>
@@ -175,16 +189,30 @@ export function SettingsContent({
                 key={group.agentId}
                 className={cn(groupIndex > 0 && 'border-t border-border')}
               >
-                <div className="flex items-center justify-between px-4 py-3">
-                  <div>
-                    <p className="text-sm font-medium">{group.agentName}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {group.installed ? t('settings.sourceDetected') : t('settings.sourceNotFound')}
-                    </p>
+                <button
+                  type="button"
+                  onClick={() => toggleSourceGroup(group.agentId)}
+                  aria-expanded={expandedSources[group.agentId] === true}
+                  className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition-colors hover:bg-accent/5"
+                >
+                  <div className="flex min-w-0 items-center gap-2">
+                    {expandedSources[group.agentId] ? (
+                      <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                    ) : (
+                      <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                    )}
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium">{group.agentName}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {group.installed
+                          ? t('settings.sourceCount', { count: group.roots.length })
+                          : t('settings.sourceNotFound')}
+                      </p>
+                    </div>
                   </div>
                   <span
                     className={cn(
-                      'rounded-md border px-2 py-1 text-xs',
+                      'shrink-0 rounded-md border px-2 py-1 text-xs',
                       group.installed
                         ? 'border-accent/30 bg-accent/10 text-foreground'
                         : 'border-border text-muted-foreground'
@@ -192,8 +220,8 @@ export function SettingsContent({
                   >
                     {group.installed ? t('settings.detected') : t('settings.notFound')}
                   </span>
-                </div>
-                {group.roots.length > 0 ? (
+                </button>
+                {expandedSources[group.agentId] === true && group.roots.length > 0 ? (
                   <div className="border-t border-border/70">
                     {group.roots.map((root, rootIndex) => (
                       <div
@@ -223,11 +251,11 @@ export function SettingsContent({
                       </div>
                     ))}
                   </div>
-                ) : (
+                ) : expandedSources[group.agentId] === true ? (
                   <div className="border-t border-border/70 px-4 py-3 text-xs text-muted-foreground">
                     {t('settings.noSourceRoots')}
                   </div>
-                )}
+                ) : null}
               </div>
             ))}
         </div>

@@ -15,6 +15,11 @@ const groups: AgentScanSourceGroup[] = [
         path: 'C:\\Users\\test\\.claude',
         scope: 'user',
         description: 'Claude Code user configuration'
+      },
+      {
+        path: 'C:\\Users\\test\\.claude.json',
+        scope: 'user',
+        description: 'Claude Code global MCP config'
       }
     ]
   },
@@ -44,15 +49,20 @@ describe('SettingsContent scan sources', () => {
     expect(await screen.findByText('Local Sources')).toBeInTheDocument()
     expect(screen.getByText('Claude Code')).toBeInTheDocument()
     expect(screen.getByText('Codex')).toBeInTheDocument()
-    expect(screen.getByText('C:\\Users\\test\\.claude')).toBeInTheDocument()
-    expect(screen.getByText('C:\\Users\\test\\.codex\\sessions')).toBeInTheDocument()
+    expect(screen.getByText('2 sources')).toBeInTheDocument()
+    expect(screen.getByText('1 source')).toBeInTheDocument()
+    expect(screen.queryByText('C:\\Users\\test\\.claude')).not.toBeInTheDocument()
+    expect(screen.queryByText('C:\\Users\\test\\.claude.json')).not.toBeInTheDocument()
+    expect(screen.queryByText('C:\\Users\\test\\.codex\\sessions')).not.toBeInTheDocument()
     expect(screen.queryByText('~/.claude/')).not.toBeInTheDocument()
   })
 
-  it('opens an existing source path from its own row', async () => {
+  it('expands a source group before opening a concrete path', async () => {
     render(<SettingsContent showTitle={false} />)
 
-    const codexPath = await screen.findByText('C:\\Users\\test\\.codex\\sessions')
+    fireEvent.click(await screen.findByRole('button', { name: /Codex/ }))
+
+    const codexPath = screen.getByText('C:\\Users\\test\\.codex\\sessions')
     const row = codexPath.closest('[data-scan-source-root]')
     expect(row).not.toBeNull()
 

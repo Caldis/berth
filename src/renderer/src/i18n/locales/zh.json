@@ -152,6 +152,7 @@
     "scanDirectories": "扫描目录",
     "localSources": "本地来源",
     "localSourcesEmpty": "未发现支持的本地来源。",
+    "sourceCount": "{{count}} 个来源",
     "sourceDetected": "已发现本地数据来源",
     "sourceNotFound": "未发现本地数据来源",
     "detected": "已发现",
