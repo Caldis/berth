@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import type { Asset } from '../../src/shared/types/asset'
-import { MASKED_ENV_VALUE, normalizeEnvVars, normalizePermissionRules } from '../../src/renderer/src/lib/capability-assets'
+import {
+  MASKED_ENV_VALUE,
+  groupEnvVars,
+  normalizeEnvVars,
+  normalizePermissionRules,
+  summarizePermissionRules
+} from '../../src/renderer/src/lib/capability-assets'
 
 function asset(overrides: Partial<Asset>): Asset {
   return {
@@ -26,7 +32,7 @@ describe('capability asset normalization', () => {
     ])
 
     expect(rows).toEqual([
-      expect.objectContaining({ id: 'allow:allow:0', kind: 'allow', rule: 'Bash(pnpm test *)' }),
+      expect.objectContaining({ id: 'allow:allow:0', kind: 'allow', rule: 'Bash(pnpm test *)', risk: 'none' }),
       expect.objectContaining({ id: 'allow:allow:1', kind: 'allow', rule: 'Read(src/**)' })
     ])
   })
@@ -74,5 +80,33 @@ describe('capability asset normalization', () => {
     expect(rows).toEqual([
       expect.objectContaining({ id: 'debug', name: 'DEBUG', value: '1', sensitive: false })
     ])
+  })
+
+  it('summarizes effective permission distribution and broad allow risks', () => {
+    const rows = normalizePermissionRules([
+      asset({ id: 'broad', meta: { kind: 'allow', rules: ['Bash(*)'] } }),
+      asset({ id: 'ask', scope: 'user', meta: { kind: 'ask', rules: ['Bash(git push *)'] } }),
+      asset({ id: 'deny', meta: { kind: 'deny', rules: ['Bash(rm -rf *)'] } })
+    ])
+
+    expect(summarizePermissionRules(rows)).toEqual({
+      allow: 1,
+      ask: 1,
+      deny: 1,
+      bypass: 0,
+      broadAllow: 1,
+      sourceCount: 1,
+      scopeCounts: { user: 1, project: 2, enterprise: 0, session: 0 }
+    })
+  })
+
+  it('groups env vars by likely consumer', () => {
+    const rows = normalizeEnvVars([
+      asset({ id: 'provider', type: 'env', name: 'OPENAI_API_KEY', meta: { value: 'secret' } }),
+      asset({ id: 'mcp', type: 'env', name: 'DATABASE_URL', path: '/tmp/mcp-server.json', meta: { value: 'postgres://local' } }),
+      asset({ id: 'telemetry', type: 'env', name: 'OTEL_EXPORTER_OTLP_ENDPOINT', meta: { value: 'http://localhost' } })
+    ])
+
+    expect(groupEnvVars(rows).map((section) => section.group)).toEqual(['provider', 'mcp', 'telemetry'])
   })
 })

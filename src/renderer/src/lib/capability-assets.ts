@@ -1,6 +1,8 @@
 import type { Asset, AssetScope } from '@shared/types/asset'
 
 export type PermissionRuleKind = 'allow' | 'ask' | 'deny' | 'bypass'
+export type PermissionRuleRisk = 'none' | 'broad' | 'bypass'
+export type EnvVarGroup = 'runtime' | 'mcp' | 'hooks' | 'telemetry' | 'provider'
 
 export interface PermissionRuleRow {
   id: string
@@ -8,6 +10,7 @@ export interface PermissionRuleRow {
   rule: string
   scope: AssetScope
   path: string
+  risk: PermissionRuleRisk
 }
 
 export interface EnvVarRow {
@@ -17,6 +20,22 @@ export interface EnvVarRow {
   scope: AssetScope
   path: string
   sensitive: boolean
+  group: EnvVarGroup
+}
+
+export interface PermissionSummary {
+  allow: number
+  ask: number
+  deny: number
+  bypass: number
+  broadAllow: number
+  sourceCount: number
+  scopeCounts: Record<AssetScope, number>
+}
+
+export interface EnvVarGroupSection {
+  group: EnvVarGroup
+  rows: EnvVarRow[]
 }
 
 export const MASKED_ENV_VALUE = '••••••'
@@ -41,6 +60,28 @@ function isSensitiveName(name: string): boolean {
   return /(?:KEY|SECRET|TOKEN|PASSWORD|PASSWD|CREDENTIAL|AUTH|PRIVATE)/i.test(name)
 }
 
+function isBroadPermissionRule(rule: string): boolean {
+  const normalized = rule.replace(/\s+/g, '')
+  return normalized === '*' || normalized.includes('(*)') || normalized.includes('(**)') || normalized === 'Bash'
+}
+
+function classifyEnvVar(name: string, path: string): EnvVarGroup {
+  const haystack = `${name} ${path}`.toUpperCase()
+
+  if (haystack.includes('MCP')) return 'mcp'
+  if (haystack.includes('HOOK')) return 'hooks'
+  if (/(OTEL|TELEMETRY|SENTRY|STATSIG|DEBUG|LOG_LEVEL|TRACE)/.test(haystack)) return 'telemetry'
+  if (/(OPENAI|ANTHROPIC|CLAUDE|CODEX|API_KEY|TOKEN|AUTH|MODEL)/.test(haystack)) return 'provider'
+
+  return 'runtime'
+}
+
+function permissionRisk(kind: PermissionRuleKind, rule: string): PermissionRuleRisk {
+  if (kind === 'bypass') return 'bypass'
+  if (kind === 'allow' && isBroadPermissionRule(rule)) return 'broad'
+  return 'none'
+}
+
 export function normalizePermissionRules(assets: Asset[]): PermissionRuleRow[] {
   const rows: PermissionRuleRow[] = []
 
@@ -56,7 +97,8 @@ export function normalizePermissionRules(assets: Asset[]): PermissionRuleRow[] {
           kind,
           rule,
           scope: asset.scope,
-          path: asset.path
+          path: asset.path,
+          risk: permissionRisk(kind, rule)
         })))
       } else if (pattern) {
         rows.push({
@@ -64,7 +106,8 @@ export function normalizePermissionRules(assets: Asset[]): PermissionRuleRow[] {
           kind,
           rule: pattern,
           scope: asset.scope,
-          path: asset.path
+          path: asset.path,
+          risk: permissionRisk(kind, pattern)
         })
       }
     }
@@ -75,7 +118,8 @@ export function normalizePermissionRules(assets: Asset[]): PermissionRuleRow[] {
         kind: 'bypass',
         rule: 'bypassPermissions',
         scope: asset.scope,
-        path: asset.path
+        path: asset.path,
+        risk: 'bypass'
       })
     }
   }
@@ -96,7 +140,8 @@ export function normalizeEnvVars(assets: Asset[]): EnvVarRow[] {
         value: MASKED_ENV_VALUE,
         scope: asset.scope,
         path: asset.path,
-        sensitive: true
+        sensitive: true,
+        group: classifyEnvVar(key, asset.path)
       })))
       continue
     }
@@ -110,9 +155,46 @@ export function normalizeEnvVars(assets: Asset[]): EnvVarRow[] {
       value: sensitive ? MASKED_ENV_VALUE : value ?? MASKED_ENV_VALUE,
       scope: asset.scope,
       path: asset.path,
-      sensitive
+      sensitive,
+      group: classifyEnvVar(asset.name, asset.path)
     })
   }
 
   return rows
+}
+
+export function summarizePermissionRules(rows: PermissionRuleRow[]): PermissionSummary {
+  const scopeCounts: Record<AssetScope, number> = {
+    user: 0,
+    project: 0,
+    enterprise: 0,
+    session: 0
+  }
+  const sources = new Set<string>()
+
+  for (const row of rows) {
+    scopeCounts[row.scope] += 1
+    if (row.path) sources.add(row.path)
+  }
+
+  return {
+    allow: rows.filter((row) => row.kind === 'allow').length,
+    ask: rows.filter((row) => row.kind === 'ask').length,
+    deny: rows.filter((row) => row.kind === 'deny').length,
+    bypass: rows.filter((row) => row.kind === 'bypass').length,
+    broadAllow: rows.filter((row) => row.risk === 'broad').length,
+    sourceCount: sources.size,
+    scopeCounts
+  }
+}
+
+export function groupEnvVars(rows: EnvVarRow[]): EnvVarGroupSection[] {
+  const order: EnvVarGroup[] = ['provider', 'mcp', 'hooks', 'telemetry', 'runtime']
+
+  return order
+    .map((group) => ({
+      group,
+      rows: rows.filter((row) => row.group === group)
+    }))
+    .filter((section) => section.rows.length > 0)
 }

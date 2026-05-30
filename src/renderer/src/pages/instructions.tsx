@@ -24,7 +24,7 @@ import { TabGroup, type TabDef } from '@/components/shared/tab-group'
 import { FilterBar } from '@/components/shared/filter-bar'
 import { DetailRow } from '@/components/shared/detail-row'
 import { AssetGuidePanel } from '@/components/shared/asset-guide-panel'
-import { instructionGuideMap, type InstructionGuideId } from '@/lib/asset-guidance'
+import { buildAssetGuideEvidence, instructionGuideMap, type InstructionGuideId } from '@/lib/asset-guidance'
 import type { Asset, AssetScope } from '@shared/types/asset'
 import { MemoryView } from '@/components/memory/memory-view'
 import { useMemory } from '@/hooks/use-memory'
@@ -389,6 +389,7 @@ export function Instructions(): React.ReactElement {
     })
   }, [visibleAssets, activeTab, search, scope])
   const activeGuide = instructionGuideMap[activeTab as InstructionGuideId]
+  const activeEvidence = useMemo(() => buildAssetGuideEvidence(filteredAssets), [filteredAssets])
 
   const renderContent = (): React.ReactElement => {
     if (activeTab === 'memories') {
@@ -458,7 +459,7 @@ export function Instructions(): React.ReactElement {
         />
       )}
 
-      {activeGuide && <AssetGuidePanel guide={activeGuide} />}
+      {activeGuide && <AssetGuidePanel guide={activeGuide} evidence={activeEvidence} />}
 
       {renderContent()}
     </div>

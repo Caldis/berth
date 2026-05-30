@@ -93,7 +93,9 @@
         "claudeSubagents": "Claude Code 子代理",
         "codexSlashCommands": "Codex 斜杠命令",
         "claudeOutputStyles": "Claude Code 输出样式",
-        "claudeSettings": "Claude Code 设置"
+        "claudeSettings": "Claude Code 设置",
+        "codexSkills": "Codex Skills",
+        "codexSubagents": "Codex 子代理"
       },
       "memories": {
         "title": "持久指令上下文",
@@ -102,6 +104,10 @@
           "role": "适合放会影响很多任务的事实和规则，不适合放一次性提示。",
           "scope": "作用域说明谁会收到这条指令: 单个用户、当前项目或组织策略。",
           "review": "当 Agent 遵循了意外规则时，先检查导入链和优先级。"
+        },
+        "providers": {
+          "claude": "Claude Code 会把项目级和用户级记忆文件加载到工作上下文。",
+          "codex": "Codex 在开始工作前读取 AGENTS.md 作为仓库指令。"
         }
       },
       "skills": {
@@ -111,6 +117,10 @@
           "role": "同一个抽象概念可以由 Claude Code skills、Codex skill 配置或其他 provider 的能力包承载。",
           "scope": "用户级 skill 可跨项目使用；项目级 skill 记录团队流程，并可随仓库版本管理。",
           "review": "信任第三方 skill 前，应阅读它的指令和随附脚本。"
+        },
+        "providers": {
+          "claude": "Claude Code skills 是按需加载或直接调用的 SKILL.md 能力包。",
+          "codex": "Codex skills 以同样的可复用过程包抽象承载工作流。"
         }
       },
       "subagents": {
@@ -120,6 +130,10 @@
           "role": "适合处理需要更窄角色的重复任务，例如审查、探索或调研。",
           "scope": "不同 provider 的支持方式不同，但抽象资产都是委派工作者定义。",
           "review": "依赖委派前，检查工具权限、模型设置和触发描述。"
+        },
+        "providers": {
+          "claude": "Claude Code 子代理是带独立角色和工具权限的 markdown 工作者配置。",
+          "codex": "Codex 子代理描述可由主会话调用的委派工作者。"
         }
       },
       "commands": {
@@ -129,6 +143,10 @@
           "role": "适合发布准备、审查、项目初始化这类重复交互动作。",
           "scope": "个人命令服务单个用户；项目命令可以形成团队共享快捷入口。",
           "review": "运行外部来源的命令前，检查参数处理和其中的 shell 片段。"
+        },
+        "providers": {
+          "claude": "Claude Code 把自定义命令和 skills 都作为明确的斜杠入口。",
+          "codex": "Codex 斜杠命令是会话里直接调用的命名 CLI 动作或提示。"
         }
       },
       "outputModes": {
@@ -138,6 +156,10 @@
           "role": "适合让同一个任务以不同沟通方式或教学方式处理。",
           "scope": "它通常属于用户或项目，因为不同团队可能需要不同交互风格。",
           "review": "把输出模式当成行为策略，不要把它当成能力授权或权限授权。"
+        },
+        "providers": {
+          "claude": "Claude Code 输出样式会改变主 Agent 的回应方式。",
+          "abstract": "Berth 把它视为回应行为策略，不视为工具或工作者。"
         }
       },
       "agentTeams": {
@@ -147,6 +169,10 @@
           "role": "适合多个角色会反复一起出现、需要固定交接方式的工作流。",
           "scope": "当前这类资产仍偏 provider 特定，但抽象模型是可复用协作计划。",
           "review": "信任组合流程前，检查每个成员角色和共享工具权限。"
+        },
+        "providers": {
+          "claude": "Claude Code 可以把多个 Agent 角色组合成可复用团队流程。",
+          "abstract": "Berth 把它建模为多个工作者定义之间的编排关系。"
         }
       }
     }
@@ -190,7 +216,9 @@
         "claudeStatusLine": "Claude Code 状态栏",
         "claudePermissions": "Claude Code 权限",
         "codexPermissions": "Codex 权限",
-        "codexSecurity": "Codex 审批与沙箱"
+        "codexSecurity": "Codex 审批与沙箱",
+        "codexMcp": "Codex MCP",
+        "codexHooks": "Codex Hooks"
       },
       "mcp": {
         "title": "外部工具和数据来源",
@@ -199,6 +227,11 @@
           "role": "当能力需要真实外部系统，而不是静态指令时，用 MCP。",
           "scope": "作用域说明 server 是个人配置、随仓库共享，还是由策略管理。",
           "review": "MCP 可能让 Agent 执行真实动作，因此要检查暴露工具和环境变量。"
+        },
+        "providers": {
+          "claude": "Claude Code 从 settings 和项目 MCP 文件读取 MCP server 定义。",
+          "codex": "Codex 从 config.toml 读取 MCP server。",
+          "abstract": "共享资产是通过 MCP 暴露的外部工具或资源。"
         }
       },
       "hooks": {
@@ -208,6 +241,10 @@
           "role": "适合做检查、记录、保护规则和上下文更新。",
           "scope": "不同 provider 暴露的事件不同，Berth 会映射到一套共享生命周期视图。",
           "review": "Hook 命令可以运行本地代码。启用前检查触发点、匹配器和入口文件。"
+        },
+        "providers": {
+          "claude": "Claude Code Hooks 是挂在生命周期事件上的 settings 命令。",
+          "codex": "Codex Hooks 是 config.toml 中围绕会话和工具事件运行的命令处理器。"
         }
       },
       "plugins": {
@@ -217,6 +254,10 @@
           "role": "适合可复用分发，不适合一次性项目配置。",
           "scope": "已安装插件可能是用户级、项目级或策略管理，取决于 provider。",
           "review": "启用外部插件前，检查 manifest 和其中打包的组件。"
+        },
+        "providers": {
+          "claude": "Claude Code 插件可以打包 skills、agents、hooks、MCP servers 和设置。",
+          "abstract": "Berth 把插件视为可安装的能力集合。"
         }
       },
       "statusLine": {
@@ -226,6 +267,10 @@
           "role": "适合展示一眼能看完的状态，不适合放长指令或隐藏自动化。",
           "scope": "不同 provider 的支持不同，但抽象资产都是附着在 Agent UI 上的状态读数。",
           "review": "脚本可能随会话更新反复运行，应保持快速且安全。"
+        },
+        "providers": {
+          "claude": "Claude Code 状态栏运行配置好的命令并展示输出。",
+          "codex": "Codex 状态栏从 config.toml 选择有序的内置 footer items。"
         }
       },
       "permissions": {
@@ -235,6 +280,10 @@
           "role": "用于控制工具调用、文件访问、命令执行、网络访问和子 Agent 委派。",
           "scope": "规则可能跨用户、项目、本地和托管层合并；高层策略可能无法覆盖。",
           "review": "宽泛 allow 规则和 bypass 模式会减少提示，但风险更高。可信流程也优先用窄规则。"
+        },
+        "providers": {
+          "claude": "Claude Code 权限定义工具周围的 allow、ask、deny 和 bypass 行为。",
+          "codex": "Codex 会组合 approval policy、sandbox mode 和显式权限。"
         }
       },
       "env": {
@@ -244,6 +293,11 @@
           "role": "当运行时行为依赖本机、provider 或集成设置时，用环境变量。",
           "scope": "有些变量作用于每个会话；有些只转发给某个 MCP server 或子进程。",
           "review": "Berth 应显示变量名和来源，不显示密钥值。包含 key 或 token 的变量都按敏感信息处理。"
+        },
+        "providers": {
+          "claude": "Claude Code 可以通过 settings 和集成配置定义会话环境。",
+          "codex": "Codex 环境行为由 config 和 shell environment policy 控制。",
+          "abstract": "共享资产是 Agent 或其子进程可见的进程环境。"
         }
       }
     },
@@ -551,7 +605,21 @@
       "warning": "警告",
       "bypassEnabled": "{{scope}} 级别已启用 bypassPermissions，将跳过所有权限提示。",
       "allowList": "允许列表",
-      "denyList": "拒绝列表"
+      "denyList": "拒绝列表",
+      "askList": "确认列表",
+      "effective": {
+        "title": "有效权限分布",
+        "sources": "当前可见规则来自 {{count}} 个来源",
+        "allow": "允许",
+        "ask": "确认",
+        "deny": "拒绝",
+        "broadAllow": "宽泛允许",
+        "bypass": "跳过权限"
+      },
+      "broadAllowWarning": {
+        "title": "宽泛允许规则需要复查",
+        "message": "{{count}} 条 allow 规则可能过宽，会明显减少运行时确认。"
+      }
     },
     "statusLine": {
       "intro": {
@@ -616,6 +684,30 @@
         "all": "没有发现状态栏配置。Claude Code 使用 settings.json 的命令配置；Codex 在 tui.status_line 未设置时会回退到 model-with-reasoning 和 current-dir。",
         "claude": "扫描到的 settings 文件里没有 Claude Code statusLine 或 subagentStatusLine 设置。",
         "codex": "没有发现 Codex tui.status_line 设置。除非显式设置该字段, Codex 会使用默认 footer items。"
+      }
+    },
+    "env": {
+      "groups": {
+        "provider": {
+          "title": "Provider 和认证",
+          "body": "密钥、token、模型选择和 provider 专属运行设置。"
+        },
+        "mcp": {
+          "title": "MCP 子进程",
+          "body": "转发给外部工具 server 和集成进程的变量。"
+        },
+        "hooks": {
+          "title": "Hook 子进程",
+          "body": "生命周期脚本或命令处理器可能读取的变量。"
+        },
+        "telemetry": {
+          "title": "遥测和调试",
+          "body": "追踪、日志、debug 开关和观测目标。"
+        },
+        "runtime": {
+          "title": "Agent runtime",
+          "body": "Agent 会话可见的一般进程环境。"
+        }
       }
     }
   },
@@ -777,5 +869,27 @@
     "sensitive": "敏感",
     "yes": "是",
     "no": "否"
+  },
+  "assetGuide": {
+    "showDetails": "详情",
+    "hideDetails": "收起详情",
+    "suggestedPath": "建议查看顺序",
+    "path": {
+      "instructions": "指令",
+      "capabilities": "能力",
+      "boundaries": "权限和环境变量",
+      "sessions": "会话"
+    },
+    "evidence": {
+      "assets": "个资产",
+      "sources": "个来源",
+      "providers": "个 provider",
+      "risks": "个风险"
+    },
+    "providerMap": {
+      "provider": "Provider",
+      "config": "配置",
+      "meaning": "Berth 如何理解"
+    }
   }
 }

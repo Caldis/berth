@@ -93,7 +93,9 @@
         "claudeSubagents": "Claude Code subagents",
         "codexSlashCommands": "Codex slash commands",
         "claudeOutputStyles": "Claude Code output styles",
-        "claudeSettings": "Claude Code settings"
+        "claudeSettings": "Claude Code settings",
+        "codexSkills": "Codex skills",
+        "codexSubagents": "Codex subagents"
       },
       "memories": {
         "title": "Persistent instruction context",
@@ -102,6 +104,10 @@
           "role": "Use them for facts and rules that should shape many tasks, not for one-off prompts.",
           "scope": "Scope tells you who receives the instruction: one user, this project, or an organization policy.",
           "review": "Check imports and precedence when the agent follows unexpected guidance."
+        },
+        "providers": {
+          "claude": "Claude Code loads project and user memory files into the working context.",
+          "codex": "Codex reads AGENTS.md as repository instructions before work starts."
         }
       },
       "skills": {
@@ -111,6 +117,10 @@
           "role": "The same concept can be backed by Claude Code skills, Codex skill config, or another provider's packaged capability.",
           "scope": "User skills travel across projects; project skills document team workflow and can be versioned with the repo.",
           "review": "Read the skill instructions and bundled scripts before trusting a third-party skill."
+        },
+        "providers": {
+          "claude": "Claude Code skills are SKILL.md packages loaded when relevant or invoked directly.",
+          "codex": "Codex skills follow the same packaged-procedure idea through its skill support."
         }
       },
       "subagents": {
@@ -120,6 +130,10 @@
           "role": "Use them when a repeatable task needs a narrower role, such as review, exploration, or research.",
           "scope": "Provider support differs, but the abstract asset is a delegated worker definition.",
           "review": "Check tool access, model settings, and trigger descriptions before relying on delegation."
+        },
+        "providers": {
+          "claude": "Claude Code subagents are markdown worker profiles with their own role and tool access.",
+          "codex": "Codex subagents describe delegated workers that can be invoked by the main session."
         }
       },
       "commands": {
@@ -129,6 +143,10 @@
           "role": "Use commands for repeatable interactive actions such as release prep, review, or project setup.",
           "scope": "Personal commands help one user; project commands create shared team shortcuts.",
           "review": "Check argument handling and any shell snippets before running commands from another source."
+        },
+        "providers": {
+          "claude": "Claude Code treats custom commands and skills as explicit slash entry points.",
+          "codex": "Codex slash commands are named CLI actions and prompts invoked from the session."
         }
       },
       "outputModes": {
@@ -138,6 +156,10 @@
           "role": "Use them when the same task should be handled in a different communication or teaching mode.",
           "scope": "They are usually local to one user or project because teams may want different interaction styles.",
           "review": "Treat output modes as behavior policy, not as capability or permission grants."
+        },
+        "providers": {
+          "claude": "Claude Code output styles change how the primary agent responds.",
+          "abstract": "Berth treats this as response behavior policy, not as a tool or worker."
         }
       },
       "agentTeams": {
@@ -147,6 +169,10 @@
           "role": "Use them for structured handoffs where multiple roles repeatedly appear together.",
           "scope": "Team assets are provider-specific today, but the abstract model is a reusable collaboration plan.",
           "review": "Check each member role and shared tool access before trusting the combined workflow."
+        },
+        "providers": {
+          "claude": "Claude Code can compose agent roles into repeatable team workflows.",
+          "abstract": "Berth models this as orchestration across worker definitions."
         }
       }
     }
@@ -190,7 +216,9 @@
         "claudeStatusLine": "Claude Code status line",
         "claudePermissions": "Claude Code permissions",
         "codexPermissions": "Codex permissions",
-        "codexSecurity": "Codex approvals and sandbox"
+        "codexSecurity": "Codex approvals and sandbox",
+        "codexMcp": "Codex MCP",
+        "codexHooks": "Codex hooks"
       },
       "mcp": {
         "title": "External tools and data sources",
@@ -199,6 +227,11 @@
           "role": "Use MCP when a capability needs a real external system instead of static instructions.",
           "scope": "Scope tells you whether the server is personal, shared with a repo, or managed by policy.",
           "review": "Review exposed tools and environment variables because MCP can let the agent take real actions."
+        },
+        "providers": {
+          "claude": "Claude Code reads MCP server definitions from settings and project MCP files.",
+          "codex": "Codex reads MCP servers from config.toml.",
+          "abstract": "The shared asset is an external tool or resource exposed through MCP."
         }
       },
       "hooks": {
@@ -208,6 +241,10 @@
           "role": "Use hooks for checks, logging, guardrails, and context updates that should happen around agent actions.",
           "scope": "Each provider exposes a different event set, so Berth maps them into a shared lifecycle view.",
           "review": "Hook commands can run local code. Check the trigger, matcher, and entry file before enabling them."
+        },
+        "providers": {
+          "claude": "Claude Code hooks are settings-backed commands attached to lifecycle events.",
+          "codex": "Codex hooks are config.toml command handlers around supported session and tool events."
         }
       },
       "plugins": {
@@ -217,6 +254,10 @@
           "role": "Use plugins for reusable distributions rather than one-off project configuration.",
           "scope": "Installed plugins may be user-level, project-level, or policy-managed depending on the provider.",
           "review": "Inspect manifests and bundled components before enabling a plugin from outside your team."
+        },
+        "providers": {
+          "claude": "Claude Code plugins bundle skills, agents, hooks, MCP servers, and settings.",
+          "abstract": "Berth treats plugins as installable capability bundles."
         }
       },
       "statusLine": {
@@ -226,6 +267,10 @@
           "role": "Use this for glanceable state, not for long instructions or hidden automation.",
           "scope": "Status line support varies by provider, but the abstract asset is a readout attached to the agent UI.",
           "review": "Keep scripts fast and safe because they can run repeatedly while the session updates."
+        },
+        "providers": {
+          "claude": "Claude Code status lines run configured commands and render their output.",
+          "codex": "Codex status lines select ordered built-in footer items from config.toml."
         }
       },
       "permissions": {
@@ -235,6 +280,10 @@
           "role": "Use permissions to control tool use, file access, command execution, network access, and delegated agents.",
           "scope": "Rules can merge across user, project, local, and managed layers; higher policy may be impossible to override.",
           "review": "Broad allow rules and bypass modes reduce prompts but increase risk. Prefer narrow rules for trusted workflows."
+        },
+        "providers": {
+          "claude": "Claude Code permissions define allow, ask, deny, and bypass behavior around tools.",
+          "codex": "Codex combines approval policy, sandbox mode, and explicit permissions."
         }
       },
       "env": {
@@ -244,6 +293,11 @@
           "role": "Use env vars when runtime behavior depends on local machine, provider, or integration settings.",
           "scope": "Some variables apply to every session; others are forwarded only to an MCP server or subprocess.",
           "review": "Berth should show names and sources, not secret values. Treat variables containing keys or tokens as sensitive."
+        },
+        "providers": {
+          "claude": "Claude Code can define session environment through settings and integration config.",
+          "codex": "Codex environment behavior is controlled by config and shell environment policy.",
+          "abstract": "The shared asset is process environment visible to the agent or its subprocesses."
         }
       }
     },
@@ -551,7 +605,21 @@
       "warning": "Warning",
       "bypassEnabled": "bypassPermissions is enabled in {{scope}} scope. This skips ALL permission prompts.",
       "allowList": "Allow list",
-      "denyList": "Deny list"
+      "denyList": "Deny list",
+      "askList": "Ask list",
+      "effective": {
+        "title": "Effective permission distribution",
+        "sources": "Visible rules from {{count}} source(s)",
+        "allow": "allow",
+        "ask": "ask",
+        "deny": "deny",
+        "broadAllow": "broad allow",
+        "bypass": "bypass"
+      },
+      "broadAllowWarning": {
+        "title": "Broad allow rules need review",
+        "message": "{{count}} allow rule(s) look broad enough to reduce runtime prompts significantly."
+      }
     },
     "statusLine": {
       "intro": {
@@ -616,6 +684,30 @@
         "all": "No status line config was found. Claude Code uses settings.json command config; Codex falls back to model-with-reasoning and current-dir when tui.status_line is unset.",
         "claude": "No Claude Code statusLine or subagentStatusLine setting was found in the scanned settings files.",
         "codex": "No Codex tui.status_line setting was found. Codex will use its default footer items unless the field is explicitly set."
+      }
+    },
+    "env": {
+      "groups": {
+        "provider": {
+          "title": "Provider and auth",
+          "body": "Keys, tokens, model selectors, and provider-specific runtime settings."
+        },
+        "mcp": {
+          "title": "MCP subprocesses",
+          "body": "Variables forwarded to external tool servers and integration processes."
+        },
+        "hooks": {
+          "title": "Hook subprocesses",
+          "body": "Variables likely read by lifecycle scripts or command handlers."
+        },
+        "telemetry": {
+          "title": "Telemetry and debug",
+          "body": "Tracing, logging, debug flags, and observability destinations."
+        },
+        "runtime": {
+          "title": "Agent runtime",
+          "body": "General process environment visible to the agent session."
+        }
       }
     }
   },
@@ -778,5 +870,27 @@
     "sensitive": "Sensitive",
     "yes": "Yes",
     "no": "No"
+  },
+  "assetGuide": {
+    "showDetails": "Details",
+    "hideDetails": "Hide details",
+    "suggestedPath": "Suggested path",
+    "path": {
+      "instructions": "Instructions",
+      "capabilities": "Capabilities",
+      "boundaries": "Permissions and env",
+      "sessions": "Sessions"
+    },
+    "evidence": {
+      "assets": "assets",
+      "sources": "sources",
+      "providers": "providers",
+      "risks": "risks"
+    },
+    "providerMap": {
+      "provider": "Provider",
+      "config": "Config",
+      "meaning": "How Berth reads it"
+    }
   }
 }
