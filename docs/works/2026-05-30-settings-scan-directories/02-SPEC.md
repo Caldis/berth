@@ -16,6 +16,9 @@ export interface AgentScanSourceGroup {
 ```
 
 - `ScanRoot` 复用 `src/shared/types/asset.ts` 现有类型, 含 `path / scope / description`。
+- `ScanRoot` 追加可选展示元数据:
+  - `summary`: 说明该入口实际覆盖的内容, 例如 `Instructions, skills, hooks, plugins, sessions, usage data`。
+  - `categories`: 使用现有 `AssetCategory[]` 表示入口可能产出的资产大类, 用于 UI 汇总, 不枚举每个文件类型。
 - 新增 IPC: `assets:scan-sources -> AgentScanSourceGroup[]`。
 - preload 暴露 `window.api.assets.scanSources()`。
 - `PlatformInfo.claudeDir` 可暂时保留兼容, 但设置页不再依赖它渲染扫描来源。
@@ -54,7 +57,8 @@ export interface AgentScanSourceGroup {
 3. 每个 agent group 展示:
    - agent 名称: Claude Code / Codex。
    - 状态: `Detected / Not found`。
-   - roots: path + scope + description。
+   - 默认摘要: root 数量 + 覆盖资产大类。
+   - 展开明细: 按 user/project scope 分组, 显示每个 root 的 description / summary / path。
    - open button 只在对应 root 存在时显示。
 4. 取消“扫描目录可配置”的暗示, 不提供添加目录。
 5. `File Watching` toggle 当前不接主进程, 本轮改为说明性禁用行: “Watching is managed automatically for detected sources”。不再写 localStorage。

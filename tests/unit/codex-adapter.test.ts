@@ -51,7 +51,9 @@ describe('CodexAdapter', () => {
         {
           path: sessionsDir,
           scope: 'user',
-          description: 'Codex session history'
+          description: 'Codex session history directory',
+          summary: 'Includes Codex rollout session history.',
+          categories: ['state']
         }
       ]
     })

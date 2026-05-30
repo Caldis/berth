@@ -357,6 +357,21 @@
     "sourceCount_other": "{{count}} sources",
     "sourceDetected": "Local data source detected",
     "sourceNotFound": "Local data source not found",
+    "sourceNotFoundDesc": "No supported user or project sources were found for this agent.",
+    "sourceSummary": "Shows the directories and files Berth actually reads for this agent.",
+    "sourceCategories": {
+      "instruction": "Instructions",
+      "capability": "Capabilities",
+      "state": "State",
+      "observability": "Observability",
+      "integration": "Integrations"
+    },
+    "sourceScopes": {
+      "user": "User sources",
+      "project": "Project sources",
+      "enterprise": "Enterprise sources",
+      "session": "Session sources"
+    },
     "detected": "Detected",
     "notFound": "Not found",
     "noSourceRoots": "No readable source path was found for this agent.",

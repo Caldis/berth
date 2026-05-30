@@ -15,3 +15,5 @@ verify 不通过项作为新任务追加于此, phase 退回 implement。
 - [x] 任务 6: 根据用户验收反馈调整本地来源展示。默认只显示 Claude Code / Codex 两个 Agent 汇总行, 不默认展开具体路径; 具体 user/project/session 来源放入每个 Agent 的折叠明细。verify: 更新 renderer 测试, `pnpm test -- tests/renderer/settings-sources.test.tsx`, `pnpm typecheck` 通过。
 
 边界记录: macOS Claude managed settings、Codex archived sessions、Codex home 可配置化和“所有项目目录”扫描属于后续来源覆盖问题, 已记录到 `docs/issues/2026-05-30-IMPROVEMENT-agent-source-coverage.md`。
+
+- [x] 任务 7: 重构“本地来源”的信息层级。scan root 文案从“配置文件”改为“实际扫描入口”, 增加每个入口覆盖的资产大类说明; 设置页默认只显示 Agent 摘要和覆盖大类, 展开后按 user/project 分组显示具体入口路径、说明和打开操作。verify: 更新 adapter / renderer 测试, `pnpm test -- tests/unit/claude-code-adapter.test.ts tests/unit/codex-adapter.test.ts tests/renderer/settings-sources.test.tsx`, `pnpm typecheck`, `pnpm lint` 通过。

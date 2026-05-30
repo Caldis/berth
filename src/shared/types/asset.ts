@@ -69,6 +69,8 @@ export interface ScanRoot {
   path: string
   scope: AssetScope
   description: string
+  summary?: string
+  categories?: AssetCategory[]
 }
 
 export interface DetectResult {

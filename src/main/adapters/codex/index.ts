@@ -46,19 +46,96 @@ export class CodexAdapter implements AgentAdapter {
 
   async scanRoots(): Promise<ScanRoot[]> {
     const roots: ScanRoot[] = []
-    addRoot(roots, path.join(this.codexDir, 'config.toml'), 'user', 'Codex user config')
-    addRoot(roots, path.join(this.codexDir, 'hooks.json'), 'user', 'Codex user hooks')
-    addRoot(roots, path.join(this.codexDir, 'AGENTS.md'), 'user', 'Codex user instructions')
-    addRoot(roots, path.join(this.codexDir, 'agents'), 'user', 'Codex user agents')
-    addRoot(roots, path.join(this.homeDir, '.agents', 'skills'), 'user', 'Codex user skills')
-    addRoot(roots, path.join(this.codexDir, 'sessions'), 'user', 'Codex session history')
+    addRoot(
+      roots,
+      path.join(this.codexDir, 'config.toml'),
+      'user',
+      'Codex config file',
+      'Includes MCP servers and user-level Codex configuration.',
+      ['capability']
+    )
+    addRoot(
+      roots,
+      path.join(this.codexDir, 'hooks.json'),
+      'user',
+      'Codex hooks file',
+      'Includes user-level hook definitions.',
+      ['capability']
+    )
+    addRoot(
+      roots,
+      path.join(this.codexDir, 'AGENTS.md'),
+      'user',
+      'Codex user instructions',
+      'Includes user-level Codex instructions.',
+      ['instruction']
+    )
+    addRoot(
+      roots,
+      path.join(this.codexDir, 'agents'),
+      'user',
+      'Codex user agents directory',
+      'Includes user-level custom Codex agents.',
+      ['instruction']
+    )
+    addRoot(
+      roots,
+      path.join(this.homeDir, '.agents', 'skills'),
+      'user',
+      'Codex user skills directory',
+      'Includes user-level Codex skills.',
+      ['instruction']
+    )
+    addRoot(
+      roots,
+      path.join(this.codexDir, 'sessions'),
+      'user',
+      'Codex session history directory',
+      'Includes Codex rollout session history.',
+      ['state']
+    )
 
     if (this.projectDir) {
-      addRoot(roots, path.join(this.projectDir, 'AGENTS.md'), 'project', 'Codex project instructions')
-      addRoot(roots, path.join(this.projectDir, '.codex', 'config.toml'), 'project', 'Codex project config')
-      addRoot(roots, path.join(this.projectDir, '.codex', 'hooks.json'), 'project', 'Codex project hooks')
-      addRoot(roots, path.join(this.projectDir, '.codex', 'agents'), 'project', 'Codex project agents')
-      addRoot(roots, path.join(this.projectDir, '.agents', 'skills'), 'project', 'Codex project skills')
+      addRoot(
+        roots,
+        path.join(this.projectDir, 'AGENTS.md'),
+        'project',
+        'Codex project instructions',
+        'Includes project-level Codex instructions.',
+        ['instruction']
+      )
+      addRoot(
+        roots,
+        path.join(this.projectDir, '.codex', 'config.toml'),
+        'project',
+        'Codex project config file',
+        'Includes project-level Codex configuration.',
+        ['capability']
+      )
+      addRoot(
+        roots,
+        path.join(this.projectDir, '.codex', 'hooks.json'),
+        'project',
+        'Codex project hooks file',
+        'Includes project-level hook definitions.',
+        ['capability']
+      )
+      addRoot(
+        roots,
+        path.join(this.projectDir, '.codex', 'agents'),
+        'project',
+        'Codex project agents directory',
+        'Includes project-level custom Codex agents.',
+        ['instruction']
+      )
+      addRoot(
+        roots,
+        path.join(this.projectDir, '.agents', 'skills'),
+        'project',
+        'Codex project skills directory',
+        'Includes project-level Codex skills.',
+        ['instruction']
+      )
     }
 
     return roots
@@ -187,10 +264,12 @@ function addRoot(
   roots: ScanRoot[],
   rootPath: string,
   scope: ScanRoot['scope'],
-  description: string
+  description: string,
+  summary: string,
+  categories: ScanRoot['categories']
 ): void {
   if (!fs.existsSync(rootPath)) return
-  roots.push({ path: rootPath, scope, description })
+  roots.push({ path: rootPath, scope, description, summary, categories })
 }
 
 function safeScan<T>(

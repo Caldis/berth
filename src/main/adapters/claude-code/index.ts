@@ -61,7 +61,10 @@ export class ClaudeCodeAdapter implements AgentAdapter {
       roots.push({
         path: this.claudeDir,
         scope: 'user',
-        description: 'Claude Code user configuration'
+        description: 'Claude Code data directory',
+        summary:
+          'Includes instructions, skills, agents, commands, hooks, plugins, status line, sessions, plans, todos, usage data, and integration state.',
+        categories: ['instruction', 'capability', 'state', 'observability', 'integration']
       })
     }
     // ~/.claude.json (MCP config)
@@ -70,7 +73,9 @@ export class ClaudeCodeAdapter implements AgentAdapter {
       roots.push({
         path: homeClaudeJson,
         scope: 'user',
-        description: 'Claude Code global MCP config'
+        description: 'Claude Code global config file',
+        summary: 'Includes global MCP server definitions.',
+        categories: ['capability']
       })
     }
     if (this.projectDir) {
@@ -79,7 +84,10 @@ export class ClaudeCodeAdapter implements AgentAdapter {
         roots.push({
           path: projectDotClaude,
           scope: 'project',
-          description: 'Project Claude Code configuration'
+          description: 'Project Claude Code directory',
+          summary:
+            'Includes project instructions, skills, agents, commands, hooks, permissions, environment variables, and teams.',
+          categories: ['instruction', 'capability']
         })
       }
       const projectMcp = path.join(this.projectDir, '.mcp.json')
@@ -87,7 +95,9 @@ export class ClaudeCodeAdapter implements AgentAdapter {
         roots.push({
           path: projectMcp,
           scope: 'project',
-          description: 'Project MCP server config'
+          description: 'Project MCP config file',
+          summary: 'Includes project MCP server definitions.',
+          categories: ['capability']
         })
       }
     }

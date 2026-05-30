@@ -14,12 +14,17 @@ const groups: AgentScanSourceGroup[] = [
       {
         path: 'C:\\Users\\test\\.claude',
         scope: 'user',
-        description: 'Claude Code user configuration'
+        description: 'Claude Code data directory',
+        summary:
+          'Includes instructions, skills, agents, commands, hooks, plugins, status line, sessions, plans, todos, usage data, and integration state.',
+        categories: ['instruction', 'capability', 'state', 'observability', 'integration']
       },
       {
         path: 'C:\\Users\\test\\.claude.json',
         scope: 'user',
-        description: 'Claude Code global MCP config'
+        description: 'Claude Code global config file',
+        summary: 'Includes global MCP server definitions.',
+        categories: ['capability']
       }
     ]
   },
@@ -31,7 +36,9 @@ const groups: AgentScanSourceGroup[] = [
       {
         path: 'C:\\Users\\test\\.codex\\sessions',
         scope: 'user',
-        description: 'Codex session history'
+        description: 'Codex session history directory',
+        summary: 'Includes Codex rollout session history.',
+        categories: ['state']
       }
     ]
   }
@@ -51,6 +58,9 @@ describe('SettingsContent scan sources', () => {
     expect(screen.getByText('Codex')).toBeInTheDocument()
     expect(screen.getByText('2 sources')).toBeInTheDocument()
     expect(screen.getByText('1 source')).toBeInTheDocument()
+    expect(screen.getByText('Instructions')).toBeInTheDocument()
+    expect(screen.getByText('Capabilities')).toBeInTheDocument()
+    expect(screen.getAllByText('State').length).toBeGreaterThan(0)
     expect(screen.queryByText('C:\\Users\\test\\.claude')).not.toBeInTheDocument()
     expect(screen.queryByText('C:\\Users\\test\\.claude.json')).not.toBeInTheDocument()
     expect(screen.queryByText('C:\\Users\\test\\.codex\\sessions')).not.toBeInTheDocument()
@@ -62,6 +72,8 @@ describe('SettingsContent scan sources', () => {
 
     fireEvent.click(await screen.findByRole('button', { name: /Codex/ }))
 
+    expect(screen.getByText('Codex session history directory')).toBeInTheDocument()
+    expect(screen.getByText('Includes Codex rollout session history.')).toBeInTheDocument()
     const codexPath = screen.getByText('C:\\Users\\test\\.codex\\sessions')
     const row = codexPath.closest('[data-scan-source-root]')
     expect(row).not.toBeNull()
