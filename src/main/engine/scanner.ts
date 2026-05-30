@@ -101,11 +101,7 @@ export class AssetScanner {
         const sources = adapter.scanSourceCoverage
           ? await adapter.scanSourceCoverage()
           : result.paths
-        const sourceCoverage = this.withProjectSourceCandidates(
-          adapter.id,
-          adapter.displayName,
-          sources
-        )
+        const sourceCoverage = this.withProjectSourceCandidates(adapter.id, sources)
         groups.push({
           agentId: adapter.id,
           agentName: adapter.displayName,
@@ -156,7 +152,6 @@ export class AssetScanner {
 
   private withProjectSourceCandidates(
     agentId: string,
-    agentName: string,
     sources: ScanRoot[]
   ): ScanRoot[] {
     const projectPaths = this.getProjectCandidatePaths(agentId)
@@ -170,10 +165,7 @@ export class AssetScanner {
       nextSources.push({
         path: projectPath,
         scope: 'project',
-        description: `${agentName} project source candidate`,
-        summary: isCurrentProject
-          ? 'Current project was checked for known project-level source files.'
-          : 'Referenced by local session history, but Berth has not scanned this project directory.',
+        code: isCurrentProject ? 'project.current-candidate' : 'project.session-derived-candidate',
         categories: ['instruction', 'capability'],
         kind: 'directory',
         status: isCurrentProject ? 'missing' : projectExists ? 'not-scanned' : 'missing',

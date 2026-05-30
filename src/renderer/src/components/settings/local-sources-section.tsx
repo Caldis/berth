@@ -15,6 +15,11 @@ import type {
   ScanSourceStatus
 } from '@shared/types/asset'
 import type { AgentScanSourceGroup } from '@shared/types/ipc'
+import {
+  formatScanSourceStatusCount,
+  getScanSourceCopy,
+  getScanSourceStatusLabel
+} from './local-source-copy'
 
 const SOURCE_CATEGORY_ORDER: AssetCategory[] = [
   'instruction',
@@ -173,7 +178,7 @@ function SourceStatusCounts({
               : 'border-border text-muted-foreground'
           )}
         >
-          {formatSourceStatusCount(status, counts[status], language)}
+          {formatScanSourceStatusCount(status, counts[status], language)}
         </span>
       ))}
     </div>
@@ -187,9 +192,10 @@ function SourceRow({
   source: ScanRoot
   showSeparator: boolean
 }): ReactElement {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const SourceIcon = source.kind === 'file' ? FileText : FolderOpen
   const status = source.status ?? 'scanned'
+  const copy = getScanSourceCopy(source, i18n.language)
 
   return (
     <div
@@ -203,11 +209,11 @@ function SourceRow({
         <SourceIcon className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
         <div className="min-w-0 space-y-1">
           <div className="flex flex-wrap items-center gap-2">
-            <p className="text-sm font-medium">{source.description}</p>
+            <p className="text-sm font-medium">{copy.title}</p>
             <SourceStatusBadge status={status} />
           </div>
-          {source.summary && (
-            <p className="max-w-[60ch] text-xs text-muted-foreground">{source.summary}</p>
+          {copy.summary && (
+            <p className="max-w-[60ch] text-xs text-muted-foreground">{copy.summary}</p>
           )}
           <p className="truncate font-mono text-xs text-muted-foreground">{source.path}</p>
         </div>
@@ -237,32 +243,9 @@ function SourceStatusBadge({ status }: { status: NonNullable<ScanRoot['status']>
           : 'border-border text-muted-foreground'
       )}
     >
-      {getSourceStatusLabel(status, i18n.language)}
+      {getScanSourceStatusLabel(status, i18n.language)}
     </span>
   )
-}
-
-function getSourceStatusLabel(
-  status: NonNullable<ScanRoot['status']>,
-  language: string
-): string {
-  if (status === 'scanned') {
-    return language.startsWith('zh') ? '已扫描' : 'Scanned'
-  }
-  if (status === 'missing') {
-    return language.startsWith('zh') ? '未发现' : 'Missing'
-  }
-  return language.startsWith('zh') ? '未扫描' : 'Not scanned'
-}
-
-function formatSourceStatusCount(
-  status: ScanSourceStatus,
-  count: number,
-  language: string
-): string {
-  const label = getSourceStatusLabel(status, language)
-  if (language.startsWith('zh')) return `${label} ${count}`
-  return `${count} ${label}`
 }
 
 function getSourceCategories(sources: ScanRoot[]): AssetCategory[] {

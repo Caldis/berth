@@ -14,9 +14,7 @@ const groups: AgentScanSourceGroup[] = [
       {
         path: 'C:\\Users\\test\\.claude',
         scope: 'user',
-        description: 'Claude Code data directory',
-        summary:
-          'Includes instructions, skills, agents, commands, hooks, plugins, status line, sessions, plans, todos, usage data, and integration state.',
+        code: 'claude.user.data-directory',
         categories: ['instruction', 'capability', 'state', 'observability', 'integration'],
         kind: 'directory',
         status: 'scanned'
@@ -24,8 +22,7 @@ const groups: AgentScanSourceGroup[] = [
       {
         path: 'C:\\Users\\test\\.claude.json',
         scope: 'user',
-        description: 'Claude Code global config file',
-        summary: 'Includes global MCP server definitions.',
+        code: 'claude.user.global-config',
         categories: ['capability'],
         kind: 'file',
         status: 'scanned'
@@ -35,9 +32,7 @@ const groups: AgentScanSourceGroup[] = [
       {
         path: 'C:\\Users\\test\\.claude',
         scope: 'user',
-        description: 'Claude Code data directory',
-        summary:
-          'Includes instructions, skills, agents, commands, hooks, plugins, status line, sessions, plans, todos, usage data, and integration state.',
+        code: 'claude.user.data-directory',
         categories: ['instruction', 'capability', 'state', 'observability', 'integration'],
         kind: 'directory',
         status: 'scanned'
@@ -45,8 +40,7 @@ const groups: AgentScanSourceGroup[] = [
       {
         path: 'C:\\Users\\test\\.claude.json',
         scope: 'user',
-        description: 'Claude Code global config file',
-        summary: 'Includes global MCP server definitions.',
+        code: 'claude.user.global-config',
         categories: ['capability'],
         kind: 'file',
         status: 'scanned'
@@ -54,9 +48,7 @@ const groups: AgentScanSourceGroup[] = [
       {
         path: 'D:\\Code\\historic-project',
         scope: 'project',
-        description: 'Claude Code project source candidate',
-        summary:
-          'Referenced by local session history, but Berth has not scanned this project directory.',
+        code: 'project.session-derived-candidate',
         categories: ['instruction', 'capability'],
         kind: 'directory',
         status: 'not-scanned',
@@ -72,8 +64,7 @@ const groups: AgentScanSourceGroup[] = [
       {
         path: 'C:\\Users\\test\\.codex\\sessions',
         scope: 'user',
-        description: 'Codex session history directory',
-        summary: 'Includes Codex rollout session history.',
+        code: 'codex.user.sessions',
         categories: ['state'],
         kind: 'directory',
         status: 'scanned'
@@ -83,8 +74,7 @@ const groups: AgentScanSourceGroup[] = [
       {
         path: 'C:\\Users\\test\\.codex\\sessions',
         scope: 'user',
-        description: 'Codex session history directory',
-        summary: 'Includes Codex rollout session history.',
+        code: 'codex.user.sessions',
         categories: ['state'],
         kind: 'directory',
         status: 'scanned'

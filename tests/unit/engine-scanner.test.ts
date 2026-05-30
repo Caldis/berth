@@ -5,26 +5,26 @@ const mocks = vi.hoisted(() => ({
   codexScanAll: vi.fn(async () => ({ assets: [], errors: [] })),
   claudeDetect: vi.fn(async () => ({
     installed: true,
-    paths: [{ path: 'C:\\Users\\test\\.claude', scope: 'user', description: 'Claude user config' }]
+    paths: [{ path: 'C:\\Users\\test\\.claude', scope: 'user', code: 'claude.user.data-directory' }]
   })),
   claudeCoverage: vi.fn(async () => [
     {
       path: 'C:\\Users\\test\\.claude',
       scope: 'user',
-      description: 'Claude user config',
+      code: 'claude.user.data-directory',
       kind: 'directory',
       status: 'scanned'
     }
   ]),
   codexDetect: vi.fn(async () => ({
     installed: true,
-    paths: [{ path: 'C:\\Users\\test\\.codex\\sessions', scope: 'user', description: 'Codex sessions' }]
+    paths: [{ path: 'C:\\Users\\test\\.codex\\sessions', scope: 'user', code: 'codex.user.sessions' }]
   })),
   codexCoverage: vi.fn(async () => [
     {
       path: 'C:\\Users\\test\\.codex\\sessions',
       scope: 'user',
-      description: 'Codex sessions',
+      code: 'codex.user.sessions',
       kind: 'directory',
       status: 'scanned'
     }
@@ -63,17 +63,17 @@ describe('AssetScanner', () => {
     mocks.codexCoverage.mockClear()
     mocks.claudeDetect.mockResolvedValue({
       installed: true,
-      paths: [{ path: 'C:\\Users\\test\\.claude', scope: 'user', description: 'Claude user config' }]
+      paths: [{ path: 'C:\\Users\\test\\.claude', scope: 'user', code: 'claude.user.data-directory' }]
     })
     mocks.codexDetect.mockResolvedValue({
       installed: true,
-      paths: [{ path: 'C:\\Users\\test\\.codex\\sessions', scope: 'user', description: 'Codex sessions' }]
+      paths: [{ path: 'C:\\Users\\test\\.codex\\sessions', scope: 'user', code: 'codex.user.sessions' }]
     })
     mocks.claudeCoverage.mockResolvedValue([
       {
         path: 'C:\\Users\\test\\.claude',
         scope: 'user',
-        description: 'Claude user config',
+        code: 'claude.user.data-directory',
         kind: 'directory',
         status: 'scanned'
       }
@@ -82,7 +82,7 @@ describe('AssetScanner', () => {
       {
         path: 'C:\\Users\\test\\.codex\\sessions',
         scope: 'user',
-        description: 'Codex sessions',
+        code: 'codex.user.sessions',
         kind: 'directory',
         status: 'scanned'
       }
@@ -117,12 +117,12 @@ describe('AssetScanner', () => {
         agentId: 'claude-code',
         agentName: 'Claude Code',
         installed: true,
-        roots: [{ path: 'C:\\Users\\test\\.claude', scope: 'user', description: 'Claude user config' }],
+        roots: [{ path: 'C:\\Users\\test\\.claude', scope: 'user', code: 'claude.user.data-directory' }],
         sources: [
           {
             path: 'C:\\Users\\test\\.claude',
             scope: 'user',
-            description: 'Claude user config',
+            code: 'claude.user.data-directory',
             kind: 'directory',
             status: 'scanned'
           }
@@ -132,12 +132,12 @@ describe('AssetScanner', () => {
         agentId: 'codex',
         agentName: 'Codex',
         installed: true,
-        roots: [{ path: 'C:\\Users\\test\\.codex\\sessions', scope: 'user', description: 'Codex sessions' }],
+        roots: [{ path: 'C:\\Users\\test\\.codex\\sessions', scope: 'user', code: 'codex.user.sessions' }],
         sources: [
           {
             path: 'C:\\Users\\test\\.codex\\sessions',
             scope: 'user',
-            description: 'Codex sessions',
+            code: 'codex.user.sessions',
             kind: 'directory',
             status: 'scanned'
           }

@@ -13,6 +13,29 @@ export type ScanSourceKind = 'directory' | 'file' | 'policy'
 
 export type ScanSourceStatus = 'scanned' | 'missing' | 'not-scanned'
 
+export type ScanSourceCode =
+  | 'claude.user.data-directory'
+  | 'claude.user.global-config'
+  | 'claude.project.directory'
+  | 'claude.project.mcp-config'
+  | 'claude.enterprise.managed-settings'
+  | 'claude.enterprise.managed-mcp'
+  | 'codex.user.config'
+  | 'codex.user.hooks'
+  | 'codex.user.agents-md'
+  | 'codex.user.agents-directory'
+  | 'codex.user.codex-home-skills'
+  | 'codex.user.shared-skills'
+  | 'codex.user.sessions'
+  | 'codex.session.archived-sessions'
+  | 'codex.project.agents-md'
+  | 'codex.project.config'
+  | 'codex.project.hooks'
+  | 'codex.project.agents-directory'
+  | 'codex.project.skills'
+  | 'project.current-candidate'
+  | 'project.session-derived-candidate'
+
 export type AssetType =
   | 'claude-md'
   | 'agents-md'
@@ -72,7 +95,8 @@ export interface Relation {
 export interface ScanRoot {
   path: string
   scope: AssetScope
-  description: string
+  code?: ScanSourceCode
+  description?: string
   summary?: string
   categories?: AssetCategory[]
   kind?: ScanSourceKind
