@@ -2,7 +2,7 @@
 task: 2026-05-30-settings-scan-directories
 type: bug
 jira:
-phase: design
+phase: implement
 created: 2026-05-30
 artifacts:
   source: 00-BUG.md
@@ -23,9 +23,9 @@ artifacts:
 ## 产物
 - [x] 00-BUG.md — 原始输入快照
 - [x] 01-ANALYSIS.md — Explore 产物
-- [ ] 02-SPEC.md — Design 产物
-- [ ] 03-PLAN.md — 活任务清单
+- [x] 02-SPEC.md — Design 产物
+- [x] 03-PLAN.md — 活任务清单
 
 ## 待澄清 (blocked 时填)
 
-无阻塞项。设计阶段需要确认本轮是否同时修正 file watching / health check 的旧 Claude-only 表述。
+无阻塞项。用户已确认继续细化并落地, 本轮同时修正来源展示、Codex sessions 监听和 agent-aware health check。
