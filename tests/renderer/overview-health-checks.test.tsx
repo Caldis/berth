@@ -54,7 +54,8 @@ describe('overview health checks', () => {
         evidence: [{ label: 'Codex hooks', url: 'https://developers.openai.com/codex/hooks' }],
         fix: {
           label: 'Suggested fix',
-          description: 'Add commandWindows or command_windows when the command differs on Windows.'
+          description: 'Add commandWindows or command_windows when the command differs on Windows.',
+          snippet: 'commandWindows = "powershell -File hook.ps1"'
         },
         target: { route: '/configuration/capabilities?tab=hooks', path: 'C:\\Users\\test\\.codex\\config.toml' },
         confidence: 'medium',
@@ -78,6 +79,10 @@ describe('overview health checks', () => {
     ])
     window.api.shell.openPath = vi.fn(async () => {})
     window.api.shell.openExternal = vi.fn(async () => {})
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { writeText: vi.fn(async () => {}) }
+    })
 
     render(
       <MemoryRouter>
@@ -95,6 +100,7 @@ describe('overview health checks', () => {
     expect(screen.getByText('Invalid Codex config.toml')).toBeInTheDocument()
     expect(screen.getByText('Codex hooks')).toBeInTheDocument()
     expect(screen.getByText(/Suggested fix:/)).toBeInTheDocument()
+    expect(screen.getByText('commandWindows = "powershell -File hook.ps1"')).toBeInTheDocument()
     expect(screen.getByText('1 info')).toBeInTheDocument()
     expect(screen.getByText('1 warning')).toBeInTheDocument()
     expect(screen.getByText('1 error')).toBeInTheDocument()
@@ -102,6 +108,10 @@ describe('overview health checks', () => {
     fireEvent.click(screen.getByText('Codex hooks'))
 
     expect(window.api.shell.openExternal).toHaveBeenCalledWith('https://developers.openai.com/codex/hooks')
+
+    fireEvent.click(screen.getByTitle('Copy fix snippet'))
+
+    expect(navigator.clipboard.writeText).toHaveBeenCalledWith('commandWindows = "powershell -File hook.ps1"')
 
     fireEvent.click(screen.getByText('Codex hook has no Windows command override').closest('[role="button"]')!)
 

@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import {
   Sparkles,
   Plug,
@@ -12,7 +12,9 @@ import {
   XCircle,
   Clock,
   Coins,
-  ChevronRight
+  ChevronRight,
+  Copy,
+  Check
 } from 'lucide-react'
 import { Bar, BarChart, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts'
 import { cn } from '@/lib/utils'
@@ -38,6 +40,7 @@ export function Overview(): React.ReactElement {
   const { sessions, loading: sessionsLoading } = useSessions({ limit: 5, agentView })
   const { usage } = useUsageSummary(7, agentView)
   const { checks } = useHealthChecks()
+  const [copiedFixId, setCopiedFixId] = useState<string | null>(null)
 
   const statCards = [
     {
@@ -249,6 +252,12 @@ export function Overview(): React.ReactElement {
                         navigate(`/configuration/capabilities`)
                       }
                     }
+                    const copyFixSnippet = (event: React.MouseEvent, snippet: string): void => {
+                      event.stopPropagation()
+                      void navigator.clipboard?.writeText(snippet).then(() => {
+                        setCopiedFixId(check.id)
+                      })
+                    }
                     return (
                       <div
                         key={check.id}
@@ -294,9 +303,19 @@ export function Overview(): React.ReactElement {
                             <p className="text-xs text-muted-foreground">{check.suggestion}</p>
                           ) : null}
                           {check.fix?.snippet && (
-                            <pre className="overflow-hidden rounded border border-border bg-muted/30 px-2 py-1 text-xs text-muted-foreground">
-                              <code>{check.fix.snippet}</code>
-                            </pre>
+                            <div className="flex items-start gap-2">
+                              <pre className="min-w-0 flex-1 overflow-hidden rounded border border-border bg-muted/30 px-2 py-1 text-xs text-muted-foreground">
+                                <code>{check.fix.snippet}</code>
+                              </pre>
+                              <button
+                                type="button"
+                                title="Copy fix snippet"
+                                onClick={(event) => copyFixSnippet(event, check.fix!.snippet!)}
+                                className="shrink-0 rounded border border-border p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                              >
+                                {copiedFixId === check.id ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                              </button>
+                            </div>
                           )}
                           {check.evidence && check.evidence.length > 0 && (
                             <div className="flex flex-wrap gap-2">
