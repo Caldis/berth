@@ -751,6 +751,7 @@
       "estimated": "Show only pricing catalog estimates calculated from token usage."
     },
     "costExplanationTitle": "Cost explanation",
+    "costScopeNotice": "Local scan data and catalog estimates may differ from provider billing.",
     "costFormulaLabel": "Formula",
     "costFormula": {
       "actual": "Provider actual",

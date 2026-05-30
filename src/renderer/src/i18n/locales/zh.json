@@ -751,6 +751,7 @@
       "estimated": "只显示按 token 用量和价格表计算出的估算费用。"
     },
     "costExplanationTitle": "费用说明",
+    "costScopeNotice": "本地扫描数据和价格表估算可能与供应商账单不同。",
     "costFormulaLabel": "计算方式",
     "costFormula": {
       "actual": "供应商真实费用",

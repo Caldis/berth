@@ -421,6 +421,9 @@ describe('session pages', () => {
     expect(screen.getByText('missing-model · 12 tok')).toBeInTheDocument()
     expect(screen.getAllByText('Mixed').length).toBeGreaterThan(0)
     expect(screen.getByText('Cost explanation')).toBeInTheDocument()
+    expect(
+      screen.getByText('Local scan data and catalog estimates may differ from provider billing.')
+    ).toBeInTheDocument()
     expect(screen.getByText('Local override · 1 model match(es)')).toBeInTheDocument()
     expect(screen.getByText(/LiteLLM/)).toBeInTheDocument()
     expect(screen.getByText('Local override example')).toBeInTheDocument()

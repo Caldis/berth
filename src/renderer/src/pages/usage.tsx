@@ -304,6 +304,7 @@ export function Usage(): React.ReactElement {
             <Calculator className="h-4 w-4 text-muted-foreground" />
             {t('usage.costExplanationTitle')}
           </div>
+          <p className="mt-1 text-sm text-muted-foreground">{t('usage.costScopeNotice')}</p>
           <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]">
             <div>
               <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
