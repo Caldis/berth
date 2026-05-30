@@ -352,6 +352,11 @@
         "partial": "Partial",
         "unsupported": "Unsupported"
       },
+      "risk": {
+        "noEntryFile": "Entry file not detected",
+        "broadToolMatcher": "Runs for every matching tool",
+        "managed": "Managed externally"
+      },
       "stage": {
         "session-start": {
           "title": "Session starts",

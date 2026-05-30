@@ -158,4 +158,18 @@ describe('HooksLifecycleView', () => {
       expect(window.api.shell.openPath).toHaveBeenCalledWith('C:\\Users\\test\\.codex\\hooks.json')
     })
   })
+
+  it('shows row-level risk hints for broad hooks without entry files', async () => {
+    renderHooks('codex', [
+      hookAsset('codex-pre', 'codex', 'PreToolUse', {
+        command: 'python hook.py',
+        entryPaths: [],
+        matcher: undefined
+      })
+    ])
+    await waitForEnablementStatus()
+
+    expect(screen.getByText('Entry file not detected')).toBeInTheDocument()
+    expect(screen.getByText('Runs for every matching tool')).toBeInTheDocument()
+  })
 })

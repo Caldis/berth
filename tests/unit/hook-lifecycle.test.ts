@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { Asset } from '../../src/shared/types/asset'
 import {
+  getHookRiskHints,
   getHookManagementState,
   getStageForEvent,
   getVisibleHookStages,
@@ -168,5 +169,24 @@ describe('hook lifecycle model', () => {
       availability: 'unavailable',
       reasonKey: 'capabilities.hooks.management.managedHook'
     })
+  })
+
+  it('flags row-level hook configuration risks', () => {
+    const hints = getHookRiskHints(
+      hookAsset({
+        id: 'risky-hook',
+        agentId: 'codex',
+        eventType: 'PreToolUse',
+        meta: {
+          command: 'python hook.py',
+          entryPaths: []
+        }
+      })
+    )
+
+    expect(hints).toEqual([
+      expect.objectContaining({ key: 'capabilities.hooks.risk.noEntryFile', level: 'warning' }),
+      expect.objectContaining({ key: 'capabilities.hooks.risk.broadToolMatcher', level: 'warning' })
+    ])
   })
 })

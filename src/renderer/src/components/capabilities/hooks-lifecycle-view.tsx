@@ -15,12 +15,14 @@ import { cn } from '@/lib/utils'
 import { ScopeBadge } from '@/components/shared/scope-badge'
 import {
   getHookManagementState,
+  getHookRiskHints,
   getVisibleStageSupport,
   groupHookAssetsByStage,
   type HookAgentStageSupport,
   type HookLifecycleSupport,
   type HookManagementAction,
   type HookManagementState,
+  type HookRiskHint,
   type HookStageGroup
 } from '@/lib/hook-lifecycle'
 import type { AgentView, Asset, AssetScope } from '@shared/types/asset'
@@ -458,6 +460,7 @@ function HookAssetRow({ hook, agentView }: { hook: Asset; agentView: AgentView }
   const matcher = typeof hook.meta.matcher === 'string' ? hook.meta.matcher : ''
   const supportNote = typeof hook.meta.supportNote === 'string' ? hook.meta.supportNote : ''
   const managementStates = getHookManagementState(hook, agentView)
+  const riskHints = getHookRiskHints(hook)
   const toggleState = managementStates.find((state) => state.action === 'toggle-hook')
   const [hookEnabled, setHookEnabled] = useState(() => hookEnabledValue(hook))
   const [toggleBusy, setToggleBusy] = useState(false)
@@ -531,6 +534,7 @@ function HookAssetRow({ hook, agentView }: { hook: Asset; agentView: AgentView }
               <span>{t(supportNote)}</span>
             </p>
           )}
+          <HookRiskHints hints={riskHints} />
           {toggleState?.availability === 'unavailable' && toggleState.reasonKey && (
             <p className="mt-2 text-xs leading-5 text-muted-foreground">{t(toggleState.reasonKey)}</p>
           )}
@@ -549,6 +553,29 @@ function HookAssetRow({ hook, agentView }: { hook: Asset; agentView: AgentView }
         )}
         <HookActions states={managementStates} />
       </div>
+    </div>
+  )
+}
+
+function HookRiskHints({ hints }: { hints: HookRiskHint[] }): React.ReactElement | null {
+  const { t } = useTranslation()
+  if (hints.length === 0) return null
+
+  return (
+    <div className="mt-2 flex flex-wrap gap-1.5">
+      {hints.map((hint) => (
+        <span
+          key={hint.key}
+          className={cn(
+            'rounded-md px-1.5 py-0.5 text-[11px] font-medium',
+            hint.level === 'warning'
+              ? 'bg-amber-500/10 text-amber-700 dark:text-amber-300'
+              : 'bg-muted text-muted-foreground'
+          )}
+        >
+          {t(hint.key)}
+        </span>
+      ))}
     </div>
   )
 }

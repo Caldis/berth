@@ -11,7 +11,7 @@
 - [x] 任务 3: 生命周期对照模式
   - 范围: 页面内 lifecycle/comparison 切换, 按 Agent 视角隐藏无关列。
   - 验证: renderer 单测覆盖 all/claude/codex。
-- [ ] 任务 4: 配置风险提示
+- [x] 任务 4: 配置风险提示
   - 范围: row 级风险标签, 不写配置。
   - 验证: lifecycle 单测 + renderer 单测。
 - [ ] 任务 5: 用户级 / 项目级开关分开
@@ -33,3 +33,4 @@ verify 不通过项作为新任务追加于此, phase 退回 implement。
 - 任务 1: 已通过相关 Vitest、`pnpm typecheck`、`pnpm harness:check`。
 - 任务 2: 已通过 `pnpm vitest run tests/unit/claude-scanner.test.ts tests/unit/codex-config-parser.test.ts tests/unit/hook-lifecycle.test.ts`、`pnpm typecheck`、`pnpm harness:check`。
 - 任务 3: 已通过 `pnpm vitest run tests/renderer/hooks-lifecycle-view.test.tsx tests/unit/hook-lifecycle.test.ts`、`pnpm typecheck`、`pnpm harness:check`。
+- 任务 4: 已通过 `pnpm vitest run tests/unit/hook-lifecycle.test.ts tests/renderer/hooks-lifecycle-view.test.tsx`、`pnpm typecheck`、`pnpm harness:check`。

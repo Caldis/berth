@@ -352,6 +352,11 @@
         "partial": "部分支持",
         "unsupported": "不支持"
       },
+      "risk": {
+        "noEntryFile": "未识别到入口文件",
+        "broadToolMatcher": "会对每个匹配工具运行",
+        "managed": "由外部管理"
+      },
       "stage": {
         "session-start": {
           "title": "会话开始",

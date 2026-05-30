@@ -59,6 +59,13 @@ export interface HookManagementState {
   enabled?: boolean
 }
 
+export type HookRiskLevel = 'info' | 'warning'
+
+export interface HookRiskHint {
+  key: string
+  level: HookRiskLevel
+}
+
 export interface HookEventGroup {
   eventType: string
   hooks: Asset[]
@@ -371,6 +378,26 @@ export function getHookManagementState(asset: Asset, _view: AgentView): HookMana
   return states
 }
 
+export function getHookRiskHints(asset: Asset): HookRiskHint[] {
+  const hints: HookRiskHint[] = []
+  const command = firstString(asset.meta.command)
+  const entryPaths = stringArray(asset.meta.entryPaths)
+  const eventType = getHookEventType(asset)
+  const matcher = firstString(asset.meta.matcher)
+
+  if (command && entryPaths.length === 0) {
+    hints.push({ key: 'capabilities.hooks.risk.noEntryFile', level: 'warning' })
+  }
+  if ((eventType === 'PreToolUse' || eventType === 'PostToolUse') && !matcher) {
+    hints.push({ key: 'capabilities.hooks.risk.broadToolMatcher', level: 'warning' })
+  }
+  if (asset.meta.managed === true) {
+    hints.push({ key: 'capabilities.hooks.risk.managed', level: 'info' })
+  }
+
+  return hints
+}
+
 function viewToLifecycleAgent(view: AgentView): HookLifecycleAgent | null {
   if (view === 'claude') return 'claude'
   if (view === 'codex') return 'codex'
@@ -462,4 +489,8 @@ function firstString(value: unknown): string | undefined {
   if (typeof value === 'string') return value
   if (!Array.isArray(value)) return undefined
   return value.find((item): item is string => typeof item === 'string' && item.length > 0)
+}
+
+function stringArray(value: unknown): string[] {
+  return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string' && item.length > 0) : []
 }
