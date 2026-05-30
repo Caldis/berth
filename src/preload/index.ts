@@ -41,6 +41,10 @@ const api = {
   usage: {
     summary: (opts: { days: number; agentView?: string }) => ipcRenderer.invoke('usage:summary', opts)
   },
+  memory: {
+    list: () => ipcRenderer.invoke('memory:list'),
+    get: (id: string) => ipcRenderer.invoke('memory:get', id)
+  },
   hooks: {
     status: (agentId: string) => ipcRenderer.invoke('hooks:status', agentId),
     setEnabled: (request: { agentId: string; scope: string; enabled: boolean }) =>

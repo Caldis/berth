@@ -9,6 +9,7 @@ import type {
   UsageSummary,
   Relation
 } from './asset'
+import type { MemoryListResult, MemoryNote } from './memory'
 
 export interface PlatformInfo {
   platform: NodeJS.Platform
@@ -233,6 +234,8 @@ export interface IpcChannels {
   'sessions:list': { args: [{ projectFilter?: string; limit?: number; agentView?: AgentView }]; result: SessionListResult }
   'sessions:get': { args: [string]; result: SessionDetailResult | null }
   'usage:summary': { args: [{ days: number; agentView?: AgentView }]; result: UsageSummary }
+  'memory:list': { args: []; result: MemoryListResult }
+  'memory:get': { args: [string]; result: MemoryNote | null }
   'mcp:merged': { args: []; result: MCPMergeInfo[] }
   'hooks:status': { args: [HooksAgentId]; result: HooksEnablementStatus }
   'hooks:set-enabled': { args: [SetHooksEnabledRequest]; result: SetHooksEnabledResult }

@@ -11,6 +11,7 @@ import type {
   SetHooksEnabledResult
 } from '../shared/types/ipc'
 import type { AgentView, Asset, UsageSummary } from '../shared/types/asset'
+import type { MemoryListResult, MemoryNote } from '../shared/types/memory'
 
 interface PlatformInfo {
   platform: NodeJS.Platform
@@ -49,6 +50,10 @@ interface BerthAPI {
   }
   usage: {
     summary: (opts: { days: number; agentView?: AgentView }) => Promise<UsageSummary>
+  }
+  memory: {
+    list: () => Promise<MemoryListResult>
+    get: (id: string) => Promise<MemoryNote | null>
   }
   hooks: {
     status: (agentId: HooksAgentId) => Promise<HooksEnablementStatus>

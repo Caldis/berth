@@ -26,12 +26,15 @@ implement — explore + design 完成 (00-PRD / 01-ANALYSIS / 02-SPEC / 03-PLAN 
 - 过程摩擦已沉淀: docs/friction/20260530-explore-product-ui-vs-host-tool-misattribution.md。
 
 ### 实现进度
-- ✅ 步骤 1-7 (核心模块, 全新文件, 无碰撞): memory.ts 类型 / MemorySource 接口 / united-memory 源 /
-  claude-native 源 / 聚合服务 + 2 个单测。子代理 TDD 落地, 19/19 测试绿, 自有文件 typecheck 干净。
-- ⏳ 步骤 8 (IPC 契约)、步骤 10 (instructions.tsx + i18n): **共享热点**, 这些文件有并行 session 未提交改动
-  (token-usage / hooks WIP), 须协调时序后小步接线。
-- ⚠ 全量 typecheck 当前因并行 WIP (handlers.ts / ipc.ts / usage.tsx) 报错, 非本任务; 本任务 verify
-  的全门禁须等并行任务落地或在干净基线上跑。
+- ✅ 步骤 1-7 核心模块 (已提交 357315c): memory.ts 类型 / MemorySource 接口 / united-memory 源 /
+  claude-native 源 / 聚合服务 + 2 单测 (16/16 绿)。
+- ✅ 步骤 8 IPC 接线: ipc.ts (memory:list/get) + handlers.ts + preload index.ts/index.d.ts (clean 文件)。
+- ✅ 步骤 9 渲染: use-memory hook + MemoryView 组件 (源过滤 + 来源/重要度 badge + 懒加载详情, 新文件)。
+- ✅ 步骤 10 instructions.tsx: "记忆" tab → MemoryView; CLAUDE.md/AGENTS.md → 新 "约定" tab。
+- ✅ 全量 typecheck **0 error**; memory 单测 16/16 绿。
+- ⏳ i18n: memory.* / tabs.conventions keys 已加到工作区, 但 en/zh.json 仍混并行 status-line WIP,
+  暂不单独提交 (待其干净); 运行态已生效 (i18next 从工作区读)。
+- ⏳ verify: 应用实跑截图验收 (面板显示本机 ~38 条 united-memory 记忆 + 来源标签 + 过滤)。
 
 ## 范围决策 (来自用户)
 - 记忆 tab 语义: 重定义为真·记忆视图 (默认推荐)。

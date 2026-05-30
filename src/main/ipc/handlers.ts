@@ -31,6 +31,7 @@ import { resolveRelations, buildImportChain } from '../engine/relations'
 import { parseMcpServers } from '../adapters/claude-code/parsers'
 import { parseClaudeSessionDetail } from '../adapters/claude-code/session-detail'
 import { parseCodexSessionDetail } from '../adapters/codex/parsers'
+import { listMemory, readMemory } from '../memory'
 
 export function registerAssetHandlers(): void {
   ipcMain.handle('window:minimize', (event: IpcMainInvokeEvent): void => {
@@ -184,6 +185,10 @@ export function registerAssetHandlers(): void {
       )
     }
   )
+
+  ipcMain.handle('memory:list', () => listMemory())
+
+  ipcMain.handle('memory:get', (_event, id: string) => readMemory(id))
 
   ipcMain.handle('mcp:merged', (): MCPMergeInfo[] => {
     return computeMcpMerged()

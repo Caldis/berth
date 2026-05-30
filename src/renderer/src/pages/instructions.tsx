@@ -7,6 +7,7 @@ import {
   Terminal,
   Palette,
   Users,
+  Brain,
   ChevronDown,
   ChevronRight,
   Eye,
@@ -25,11 +26,14 @@ import { DetailRow } from '@/components/shared/detail-row'
 import { AssetGuidePanel } from '@/components/shared/asset-guide-panel'
 import { instructionGuideMap, type InstructionGuideId } from '@/lib/asset-guidance'
 import type { Asset, AssetScope } from '@shared/types/asset'
+import { MemoryView } from '@/components/memory/memory-view'
+import { useMemory } from '@/hooks/use-memory'
 
 type ScopeFilter = 'all' | AssetScope
 
 const tabs: TabDef[] = [
-  { id: 'memories', labelKey: 'instructions.tabs.memories', icon: FileText },
+  { id: 'memories', labelKey: 'instructions.tabs.memories', icon: Brain },
+  { id: 'conventions', labelKey: 'instructions.tabs.conventions', icon: FileText },
   { id: 'skills', labelKey: 'instructions.tabs.skills', icon: Sparkles },
   { id: 'subagents', labelKey: 'instructions.tabs.subagents', icon: Bot },
   { id: 'commands', labelKey: 'instructions.tabs.commands', icon: Terminal },
@@ -38,7 +42,7 @@ const tabs: TabDef[] = [
 ]
 
 const tabTypeMap: Record<string, string[]> = {
-  memories: ['claude-md', 'agents-md'],
+  conventions: ['claude-md', 'agents-md'],
   skills: ['skill'],
   subagents: ['agent'],
   commands: ['command'],
@@ -338,7 +342,8 @@ function GenericAssetCard({ asset, icon: Icon }: { asset: Asset; icon: React.Com
 
 /* ---------- Tab icon map ---------- */
 const tabIconMap: Record<string, React.ComponentType<{ className?: string }>> = {
-  memories: FileText,
+  memories: Brain,
+  conventions: FileText,
   skills: Sparkles,
   subagents: Bot,
   commands: Terminal,
@@ -351,6 +356,7 @@ export function Instructions(): React.ReactElement {
   const { t } = useTranslation()
   const assets = useAppStore((s) => s.assets)
   const agentView = useAppStore((s) => s.agentView)
+  const { result: memoryResult } = useMemory()
   const [activeTab, setActiveTab] = useState('skills')
   const [search, setSearch] = useState('')
   const [scope, setScope] = useState<ScopeFilter>('all')
@@ -363,8 +369,9 @@ export function Instructions(): React.ReactElement {
       const types = tabTypeMap[tab.id] ?? []
       counts[tab.id] = visibleAssets.filter((a) => types.includes(a.type)).length
     }
+    counts['memories'] = memoryResult.notes.length
     return counts
-  }, [visibleAssets])
+  }, [visibleAssets, memoryResult])
 
   // Filter assets for active tab
   const filteredAssets = useMemo(() => {
@@ -384,13 +391,17 @@ export function Instructions(): React.ReactElement {
   const activeGuide = instructionGuideMap[activeTab as InstructionGuideId]
 
   const renderContent = (): React.ReactElement => {
+    if (activeTab === 'memories') {
+      return <MemoryView />
+    }
+
     if (filteredAssets.length === 0) {
       const Icon = tabIconMap[activeTab] ?? FileText
       return <EmptyState icon={Icon} message={t('common.empty')} />
     }
 
     switch (activeTab) {
-      case 'memories':
+      case 'conventions':
         return (
           <div className="space-y-2">
             {filteredAssets.map((a) => <MemoryCard key={a.id} asset={a} />)}
@@ -437,13 +448,15 @@ export function Instructions(): React.ReactElement {
 
       <TabGroup tabs={tabs} activeTab={activeTab} onTabChange={setActiveTab} counts={tabCounts} />
 
-      <FilterBar
-        search={search}
-        onSearchChange={setSearch}
-        scope={scope}
-        onScopeChange={setScope}
-        placeholder={`${t('search.placeholder')} ${t(`instructions.tabs.${activeTab}`)}`}
-      />
+      {activeTab !== 'memories' && (
+        <FilterBar
+          search={search}
+          onSearchChange={setSearch}
+          scope={scope}
+          onScopeChange={setScope}
+          placeholder={`${t('search.placeholder')} ${t(`instructions.tabs.${activeTab}`)}`}
+        />
+      )}
 
       <AssetGuidePanel guide={activeGuide} />
 
