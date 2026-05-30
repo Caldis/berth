@@ -364,6 +364,42 @@ function HookAssetRow({ hook, agentView }: { hook: Asset; agentView: AgentView }
   const supportNote = typeof hook.meta.supportNote === 'string' ? hook.meta.supportNote : ''
   const managementStates = getHookManagementState(hook, agentView)
   const toggleState = managementStates.find((state) => state.action === 'toggle-hook')
+  const [hookEnabled, setHookEnabled] = useState(() => hookEnabledValue(hook))
+  const [toggleBusy, setToggleBusy] = useState(false)
+  const [toggleError, setToggleError] = useState<string | null>(null)
+
+  useEffect(() => {
+    setHookEnabled(hookEnabledValue(hook))
+    setToggleError(null)
+  }, [hook.id, hook.meta.enabled])
+
+  const toggleHook = async (): Promise<void> => {
+    if (!toggleState?.hookKey || hook.agentId !== 'codex') return
+    const enabled = !hookEnabled
+    const confirmMessage = enabled
+      ? t('capabilities.hooks.management.confirmEnableHook', { path: hook.path })
+      : t('capabilities.hooks.management.confirmDisableHook', { path: hook.path })
+
+    if (!window.confirm(confirmMessage)) return
+
+    setToggleBusy(true)
+    setToggleError(null)
+    try {
+      const result = await window.api.hooks.setHookEnabled({
+        agentId: 'codex',
+        scope: 'user',
+        hookKey: toggleState.hookKey,
+        sourcePath: hook.path,
+        enabled,
+        managed: hook.meta.managed === true
+      })
+      setHookEnabled(result.enabled)
+    } catch (err) {
+      setToggleError(err instanceof Error ? err.message : String(err))
+    } finally {
+      setToggleBusy(false)
+    }
+  }
 
   return (
     <div className="px-3 py-3">
@@ -372,6 +408,14 @@ function HookAssetRow({ hook, agentView }: { hook: Asset; agentView: AgentView }
           <div className="flex min-w-0 flex-wrap items-center gap-2">
             <span className="min-w-0 max-w-full truncate font-mono text-xs text-foreground">{command || hook.name}</span>
             <ScopeBadge scope={hook.scope} />
+            {hook.agentId === 'codex' && (
+              <span className={cn(
+                'rounded-md px-1.5 py-0.5 text-[10px] font-medium',
+                hookEnabled ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'bg-muted text-muted-foreground'
+              )}>
+                {hookEnabled ? t('capabilities.hooks.management.enabled') : t('capabilities.hooks.management.disabled')}
+              </span>
+            )}
             {agentView === 'all' && (
               <span className="rounded-md bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
                 {hook.agentId === 'codex' ? 'Codex' : 'Claude Code'}
@@ -395,12 +439,27 @@ function HookAssetRow({ hook, agentView }: { hook: Asset; agentView: AgentView }
           {toggleState?.availability === 'unavailable' && toggleState.reasonKey && (
             <p className="mt-2 text-xs leading-5 text-muted-foreground">{t(toggleState.reasonKey)}</p>
           )}
+          {toggleError && <p className="mt-2 text-xs leading-5 text-destructive">{toggleError}</p>}
         </div>
 
+        {toggleState?.availability === 'needs-confirmation' && (
+          <button
+            type="button"
+            disabled={toggleBusy}
+            onClick={() => void toggleHook()}
+            className="shrink-0 rounded-md border border-border px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:text-muted-foreground/60 disabled:hover:bg-transparent"
+          >
+            {hookEnabled ? t('capabilities.hooks.management.disableHook') : t('capabilities.hooks.management.enableHook')}
+          </button>
+        )}
         <HookActions states={managementStates} />
       </div>
     </div>
   )
+}
+
+function hookEnabledValue(hook: Asset): boolean {
+  return hook.meta.enabled !== false
 }
 
 function HookActions({ states }: { states: HookManagementState[] }): React.ReactElement {

@@ -120,6 +120,68 @@ describe('Codex config parser', () => {
     expect(assets[2].meta.supportNote).toBe('capabilities.hooks.management.codexAsyncHookSkipped')
   })
 
+  it('applies Codex hooks.state without parsing state as a hook event', () => {
+    const configPath = path.join(tempDir!, 'config.toml')
+    const hookKey = `${configPath}:pre_tool_use:0:0`
+    fs.writeFileSync(
+      configPath,
+      [
+        '[hooks.state]',
+        `${JSON.stringify(hookKey)} = { enabled = false }`,
+        '',
+        '[[hooks.PreToolUse]]',
+        'matcher = "Bash"',
+        '[[hooks.PreToolUse.hooks]]',
+        'type = "command"',
+        'command = "python hook.py"'
+      ].join('\n')
+    )
+
+    const hooks = parseCodexConfig(configPath, 'user').filter((asset) => asset.type === 'hook')
+
+    expect(hooks).toHaveLength(1)
+    expect(hooks[0]).toMatchObject({
+      meta: {
+        eventType: 'PreToolUse',
+        hookKey,
+        enabled: false,
+        canToggleHook: true,
+        stateSourcePath: configPath
+      }
+    })
+  })
+
+  it('applies adjacent Codex config hooks.state to hooks.json assets', () => {
+    const hooksPath = path.join(tempDir!, 'hooks.json')
+    const configPath = path.join(tempDir!, 'config.toml')
+    const hookKey = `${hooksPath}:stop:0:0`
+    fs.writeFileSync(
+      configPath,
+      [
+        '[hooks.state]',
+        `${JSON.stringify(hookKey)} = { enabled = false }`
+      ].join('\n')
+    )
+    fs.writeFileSync(
+      hooksPath,
+      JSON.stringify({
+        hooks: {
+          Stop: [{ hooks: [{ type: 'command', command: 'echo stop' }] }]
+        }
+      })
+    )
+
+    const hooks = parseCodexHooksJson(hooksPath, 'user')
+
+    expect(hooks).toHaveLength(1)
+    expect(hooks[0].meta).toMatchObject({
+      hookKey,
+      enabled: false,
+      canToggleHook: true,
+      stateSourcePath: configPath
+    })
+  })
+
   it('parses Codex TUI status line items from config.toml', () => {
     const configPath = path.join(tempDir!, 'config.toml')
     fs.writeFileSync(

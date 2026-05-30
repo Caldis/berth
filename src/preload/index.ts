@@ -49,7 +49,9 @@ const api = {
   hooks: {
     status: (agentId: string) => ipcRenderer.invoke('hooks:status', agentId),
     setEnabled: (request: { agentId: string; scope: string; enabled: boolean }) =>
-      ipcRenderer.invoke('hooks:set-enabled', request)
+      ipcRenderer.invoke('hooks:set-enabled', request),
+    setHookEnabled: (request: { agentId: string; scope: string; hookKey: string; sourcePath: string; enabled: boolean; managed?: boolean }) =>
+      ipcRenderer.invoke('hooks:set-hook-enabled', request)
   },
   shell: {
     openPath: (path: string) => ipcRenderer.invoke('shell:openPath', path),

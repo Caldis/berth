@@ -55,6 +55,8 @@ export interface HookManagementState {
   availability: HookManagementAvailability
   reasonKey?: string
   targetPath?: string
+  hookKey?: string
+  enabled?: boolean
 }
 
 export interface HookEventGroup {
@@ -423,11 +425,22 @@ function getToggleHookState(asset: Asset): HookManagementState {
   }
 
   if (asset.agentId === 'codex') {
+    const hookKey = firstString(asset.meta.hookKey)
+    if (!hookKey) {
+      return {
+        action: 'toggle-hook',
+        availability: 'unavailable',
+        reasonKey: 'capabilities.hooks.management.codexSingleHookMissingKey'
+      }
+    }
+
     if (asset.meta.canToggleHook === true) {
       return {
         action: 'toggle-hook',
         availability: 'needs-confirmation',
-        targetPath: asset.path
+        targetPath: asset.path,
+        hookKey,
+        enabled: asset.meta.enabled !== false
       }
     }
 

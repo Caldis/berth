@@ -585,6 +585,7 @@
         "managedHook": "这个 Hook 由 policy 或外部来源管理, Berth 不能在这里禁用它。",
         "claudeNoSingleHookToggle": "Claude Code 没有支持“保留注册但单独禁用一个 Hook”的机制。",
         "codexSingleHookNotConnected": "Codex 可以在自己的 hook browser 里禁用 non-managed hook, 但 Berth 还没有接入这条写入路径。",
+        "codexSingleHookMissingKey": "Berth 没有算出 Codex 这一行的 hook state key, 因此不能安全修改这个 Hook。",
         "unknownAgent": "Berth 还不知道这个 Agent 如何保存 Hook 状态。",
         "codexUnsupportedHookType": "Codex 当前会解析这种 Hook 类型, 但不会把它作为 command hook 运行。",
         "codexAsyncHookSkipped": "Codex 当前会跳过 async hook handler。",
@@ -592,10 +593,14 @@
         "agentToggleBody": "这里修改的是当前 Agent 官方的用户级设置。它会影响这个 Agent 的全部 Hooks, 不只影响下面显示的几行。",
         "enabled": "已启用",
         "disabled": "已禁用",
+        "enableHook": "启用这个 Hook",
+        "disableHook": "禁用这个 Hook",
         "enableAll": "全部启用",
         "disableAll": "全部禁用",
         "confirmEnable": "要启用 {{agent}} 的 Hooks 吗? Berth 会更新 {{path}} 并重新扫描本地资产。",
-        "confirmDisable": "要禁用 {{agent}} 的 Hooks 吗? Berth 会更新 {{path}} 并重新扫描本地资产。"
+        "confirmDisable": "要禁用 {{agent}} 的 Hooks 吗? Berth 会更新 {{path}} 并重新扫描本地资产。",
+        "confirmEnableHook": "要启用这个 Codex Hook 吗? Berth 会更新用户配置里的 hooks.state。来源: {{path}}",
+        "confirmDisableHook": "要禁用这个 Codex Hook 吗? Berth 会更新用户配置里的 hooks.state。来源: {{path}}"
       }
     },
     "plugins": {

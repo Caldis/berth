@@ -19,6 +19,12 @@ export interface ParsedCodexSessionDetail {
   artifacts: SessionArtifacts
 }
 
+export interface CodexHookStateEntry {
+  enabled?: boolean
+}
+
+export type CodexHookState = Record<string, CodexHookStateEntry>
+
 export function parseCodexToml(filePath: string): Record<string, unknown> {
   const parsed = parseToml(fs.readFileSync(filePath, 'utf-8'))
   return isRecord(parsed) ? parsed : {}
@@ -26,9 +32,10 @@ export function parseCodexToml(filePath: string): Record<string, unknown> {
 
 export function parseCodexConfig(filePath: string, scope: AssetScope): Asset[] {
   const config = parseCodexToml(filePath)
+  const hookState = readCodexHookState(config)
   return [
     ...parseCodexMcpServers(filePath, scope, config),
-    ...parseCodexHooks(filePath, scope, asRecord(config.hooks)),
+    ...parseCodexHooks(filePath, scope, asRecord(config.hooks), hookState, filePath),
     ...parseCodexStatusLine(filePath, scope, config)
   ]
 }
@@ -48,13 +55,20 @@ export function parseCodexCustomAgent(filePath: string, scope: AssetScope): Asse
   }
 }
 
-export function parseCodexHooksJson(filePath: string, scope: AssetScope): Asset[] {
+export function parseCodexHooksJson(
+  filePath: string,
+  scope: AssetScope,
+  hookState?: CodexHookState,
+  stateSourcePath?: string
+): Asset[] {
   const raw = fs.readFileSync(filePath, 'utf-8')
   const parsed: unknown = JSON.parse(raw)
   const root = asRecord(parsed)
   if (!root) return []
   const hooks = asRecord(root.hooks) ?? root
-  return parseCodexHooks(filePath, scope, hooks)
+  const adjacentConfigPath = stateSourcePath ?? path.join(path.dirname(filePath), 'config.toml')
+  const effectiveHookState = hookState ?? readCodexHookStateFromConfig(adjacentConfigPath)
+  return parseCodexHooks(filePath, scope, hooks, effectiveHookState, adjacentConfigPath)
 }
 
 export function parseCodexAgentsMd(filePath: string, scope: AssetScope): Asset {
@@ -126,12 +140,15 @@ function parseCodexMcpServers(
 function parseCodexHooks(
   filePath: string,
   scope: AssetScope,
-  hooks: Record<string, unknown> | undefined
+  hooks: Record<string, unknown> | undefined,
+  hookState: CodexHookState = {},
+  stateSourcePath?: string
 ): Asset[] {
   if (!hooks) return []
   const assets: Asset[] = []
 
   for (const [event, handlers] of Object.entries(hooks)) {
+    if (isCodexHookMetadataKey(event)) continue
     const handlerList = Array.isArray(handlers) ? handlers : [handlers]
     handlerList.forEach((handler, handlerIndex) => {
       const handlerRecord = asRecord(handler) ?? {}
@@ -148,7 +165,9 @@ function parseCodexHooks(
         const hookType = readString(hookRecord, 'type')
         const asyncHook = readBoolean(hookRecord, 'async')
         const managed = readBoolean(hookRecord, 'managed') ?? readBoolean(handlerRecord, 'managed')
-        const enabled = readHookEnabled(hookRecord)
+        const hookKey = buildCodexHookKey(filePath, event, handlerIndex, hookIndex)
+        const stateEnabled = readBoolean(hookState[hookKey], 'enabled')
+        const enabled = stateEnabled ?? readHookEnabled(hookRecord)
         const entryPaths = extractHookEntryPaths(filePath, [command, commandWindows])
         const supportNote = readCodexHookSupportNote(hookType, asyncHook)
         assets.push({
@@ -169,6 +188,9 @@ function parseCodexHooks(
             async: asyncHook,
             managed,
             enabled,
+            canToggleHook: scope === 'user' && managed !== true,
+            hookKey,
+            stateSourcePath,
             entryPaths,
             supportNote,
             handlerIndex,
@@ -181,6 +203,29 @@ function parseCodexHooks(
   }
 
   return assets
+}
+
+export function readCodexHookStateFromConfig(filePath: string): CodexHookState {
+  if (!fs.existsSync(filePath)) return {}
+  return readCodexHookState(parseCodexToml(filePath))
+}
+
+function readCodexHookState(config: Record<string, unknown>): CodexHookState {
+  const hooks = asRecord(config.hooks)
+  const state = asRecord(hooks?.state)
+  if (!state) return {}
+
+  const result: CodexHookState = {}
+  for (const [key, value] of Object.entries(state)) {
+    if (!isRecord(value)) continue
+    const enabled = readBoolean(value, 'enabled')
+    if (enabled != null) result[key] = { enabled }
+  }
+  return result
+}
+
+function isCodexHookMetadataKey(key: string): boolean {
+  return ['state', 'managed_dir', 'windows_managed_dir'].includes(key)
 }
 
 const CODEX_STATUS_LINE_ITEMS = new Set([
@@ -266,6 +311,22 @@ function readHookEnabled(hookRecord: Record<string, unknown>): boolean | undefin
   if (enabled != null) return enabled
   const disabled = readBoolean(hookRecord, 'disabled')
   return disabled == null ? undefined : !disabled
+}
+
+function buildCodexHookKey(
+  filePath: string,
+  event: string,
+  handlerIndex: number,
+  hookIndex: number
+): string {
+  return `${filePath}:${toSnakeCase(event)}:${handlerIndex}:${hookIndex}`
+}
+
+function toSnakeCase(value: string): string {
+  return value
+    .replace(/([a-z0-9])([A-Z])/g, '$1_$2')
+    .replace(/[-\s]+/g, '_')
+    .toLowerCase()
 }
 
 function extractHookEntryPaths(filePath: string, commands: Array<string | undefined>): string[] {

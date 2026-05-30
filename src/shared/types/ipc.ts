@@ -207,6 +207,22 @@ export interface SetHooksEnabledResult {
   changed: boolean
 }
 
+export interface SetHookEnabledRequest {
+  agentId: HooksAgentId
+  scope: 'user'
+  hookKey: string
+  sourcePath: string
+  enabled: boolean
+  managed?: boolean
+}
+
+export interface SetHookEnabledResult {
+  hookKey: string
+  enabled: boolean
+  changed: boolean
+  sourcePath: string
+}
+
 export interface ImportChainNode {
   path: string
   content?: string
@@ -240,6 +256,7 @@ export interface IpcChannels {
   'mcp:merged': { args: []; result: MCPMergeInfo[] }
   'hooks:status': { args: [HooksAgentId]; result: HooksEnablementStatus }
   'hooks:set-enabled': { args: [SetHooksEnabledRequest]; result: SetHooksEnabledResult }
+  'hooks:set-hook-enabled': { args: [SetHookEnabledRequest]; result: SetHookEnabledResult }
   'theme:get': { args: []; result: string }
   'theme:set': { args: ['light' | 'dark' | 'system']; result: void }
   'shell:openPath': { args: [string]; result: void }

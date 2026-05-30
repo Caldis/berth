@@ -39,6 +39,13 @@ async function waitForEnablementStatus(): Promise<void> {
 describe('HooksLifecycleView', () => {
   beforeEach(() => {
     window.api.shell.openPath = vi.fn(async () => {})
+    window.api.hooks.setHookEnabled = vi.fn(async (request) => ({
+      hookKey: request.hookKey,
+      enabled: request.enabled,
+      changed: true,
+      sourcePath: 'C:\\Users\\test\\.codex\\config.toml'
+    }))
+    window.confirm = vi.fn(() => true)
   })
 
   it('shows Codex-only copy without Claude Code support rows in Codex view', async () => {
@@ -88,6 +95,31 @@ describe('HooksLifecycleView', () => {
     await waitForEnablementStatus()
 
     expect(screen.getByText(/Claude Code does not provide a supported way/)).toBeInTheDocument()
+  })
+
+  it('toggles a Codex non-managed hook through hooks.state', async () => {
+    renderHooks('codex', [
+      hookAsset('codex-stop', 'codex', 'Stop', {
+        hookKey: 'C:\\Users\\test\\.codex\\hooks.json:stop:0:0',
+        enabled: true,
+        canToggleHook: true
+      })
+    ])
+    await waitForEnablementStatus()
+
+    fireEvent.click(screen.getByText('Disable hook'))
+
+    await waitFor(() => {
+      expect(window.api.hooks.setHookEnabled).toHaveBeenCalledWith({
+        agentId: 'codex',
+        scope: 'user',
+        hookKey: 'C:\\Users\\test\\.codex\\hooks.json:stop:0:0',
+        sourcePath: 'C:\\Users\\test\\.codex\\hooks.json',
+        enabled: false,
+        managed: false
+      })
+    })
+    expect(screen.getByText('Disabled')).toBeInTheDocument()
   })
 
   it('opens hook source files from the row action menu', async () => {

@@ -7,6 +7,8 @@ import type {
   HealthCheck,
   HooksAgentId,
   HooksEnablementStatus,
+  SetHookEnabledRequest,
+  SetHookEnabledResult,
   SetHooksEnabledRequest,
   SetHooksEnabledResult
 } from '../shared/types/ipc'
@@ -58,6 +60,7 @@ interface BerthAPI {
   hooks: {
     status: (agentId: HooksAgentId) => Promise<HooksEnablementStatus>
     setEnabled: (request: SetHooksEnabledRequest) => Promise<SetHooksEnabledResult>
+    setHookEnabled: (request: SetHookEnabledRequest) => Promise<SetHookEnabledResult>
   }
   shell: {
     openPath: (path: string) => Promise<void>

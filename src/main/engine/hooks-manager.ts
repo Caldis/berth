@@ -3,6 +3,8 @@ import * as os from 'os'
 import * as path from 'path'
 import { parse as parseToml, stringify as stringifyToml } from 'smol-toml'
 import type {
+  SetHookEnabledRequest,
+  SetHookEnabledResult,
   HooksAgentId,
   HooksEnablementStatus,
   SetHooksEnabledRequest,
@@ -37,6 +39,46 @@ export function setAgentHooksEnabled(
   return {
     status,
     changed: before.enabled !== status.enabled
+  }
+}
+
+export function setHookEnabled(
+  request: SetHookEnabledRequest,
+  homeDir = os.homedir()
+): SetHookEnabledResult {
+  if (request.agentId !== 'codex') {
+    throw new Error('Single hook enablement only supports Codex hooks')
+  }
+  if (request.scope !== 'user') {
+    throw new Error(`Unsupported hook state scope: ${request.scope}`)
+  }
+  if (!request.hookKey.trim()) {
+    throw new Error('Codex hook state requires a hook key')
+  }
+  if (request.managed === true) {
+    throw new Error('managed hooks cannot be changed from user hook state')
+  }
+
+  const sourcePath = path.join(homeDir, '.codex', 'config.toml')
+  const config = readTomlObject(sourcePath) ?? {}
+  const hooks = isRecord(config.hooks) ? config.hooks : {}
+  const state = isRecord(hooks.state) ? hooks.state : {}
+  const existingState = isRecord(state[request.hookKey]) ? state[request.hookKey] as Record<string, unknown> : {}
+  const beforeEnabled = readBoolean(existingState, 'enabled') ?? true
+
+  state[request.hookKey] = {
+    ...existingState,
+    enabled: request.enabled
+  }
+  hooks.state = state
+  config.hooks = hooks
+  writeTextFile(sourcePath, stringifyToml(config))
+
+  return {
+    hookKey: request.hookKey,
+    enabled: request.enabled,
+    changed: beforeEnabled !== request.enabled,
+    sourcePath
   }
 }
 
@@ -109,6 +151,12 @@ function writeTextFile(filePath: string, content: string): void {
     fs.copyFileSync(filePath, `${filePath}.bak`)
   }
   fs.writeFileSync(filePath, content)
+}
+
+function readBoolean(record: unknown, key: string): boolean | undefined {
+  if (!isRecord(record)) return undefined
+  const value = record[key]
+  return typeof value === 'boolean' ? value : undefined
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

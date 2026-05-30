@@ -84,6 +84,12 @@ const mockApi = {
         supported: true
       },
       changed: true
+    }),
+    setHookEnabled: async (request: { hookKey: string; enabled: boolean }) => ({
+      hookKey: request.hookKey,
+      enabled: request.enabled,
+      changed: true,
+      sourcePath: 'C:\\Users\\test\\.codex\\config.toml'
     })
   },
   shell: {

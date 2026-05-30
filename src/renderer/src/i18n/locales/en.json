@@ -585,6 +585,7 @@
         "managedHook": "This hook is managed by policy or an external source, so Berth cannot disable it here.",
         "claudeNoSingleHookToggle": "Claude Code does not provide a supported way to disable one hook while keeping it registered.",
         "codexSingleHookNotConnected": "Codex can disable non-managed hooks in its hook browser, but Berth has not wired that write path yet.",
+        "codexSingleHookMissingKey": "Berth could not compute Codex's hook state key for this row, so it cannot change this hook safely.",
         "unknownAgent": "Berth does not know how this agent stores hook state.",
         "codexUnsupportedHookType": "Codex currently parses this hook type but does not run it as a command hook.",
         "codexAsyncHookSkipped": "Codex currently skips async hook handlers.",
@@ -592,10 +593,14 @@
         "agentToggleBody": "This changes the official user-level setting for the selected agent. It affects all hooks for that agent, not only the rows shown below.",
         "enabled": "Enabled",
         "disabled": "Disabled",
+        "enableHook": "Enable hook",
+        "disableHook": "Disable hook",
         "enableAll": "Enable all",
         "disableAll": "Disable all",
         "confirmEnable": "Enable hooks for {{agent}}? Berth will update {{path}} and rescan local assets.",
-        "confirmDisable": "Disable hooks for {{agent}}? Berth will update {{path}} and rescan local assets."
+        "confirmDisable": "Disable hooks for {{agent}}? Berth will update {{path}} and rescan local assets.",
+        "confirmEnableHook": "Enable this Codex hook? Berth will update hooks.state in your user config. Source: {{path}}",
+        "confirmDisableHook": "Disable this Codex hook? Berth will update hooks.state in your user config. Source: {{path}}"
       }
     },
     "plugins": {

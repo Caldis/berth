@@ -95,7 +95,29 @@ describe('hook lifecycle model', () => {
     })
   })
 
-  it('keeps Codex single hook toggle disabled until persistence is wired', () => {
+  it('allows Codex non-managed hooks with a hook state key to toggle', () => {
+    const states = getHookManagementState(
+      hookAsset({
+        id: 'codex-hook',
+        agentId: 'codex',
+        eventType: 'Stop',
+        meta: {
+          hookKey: 'C:\\Users\\test\\.codex\\hooks.json:stop:0:0',
+          enabled: true,
+          canToggleHook: true
+        }
+      }),
+      'codex'
+    )
+
+    expect(states.find((state) => state.action === 'toggle-hook')).toMatchObject({
+      availability: 'needs-confirmation',
+      hookKey: 'C:\\Users\\test\\.codex\\hooks.json:stop:0:0',
+      enabled: true
+    })
+  })
+
+  it('keeps Codex hooks without a state key unavailable', () => {
     const states = getHookManagementState(
       hookAsset({ id: 'codex-hook', agentId: 'codex', eventType: 'Stop' }),
       'codex'
@@ -103,7 +125,7 @@ describe('hook lifecycle model', () => {
 
     expect(states.find((state) => state.action === 'toggle-hook')).toMatchObject({
       availability: 'unavailable',
-      reasonKey: 'capabilities.hooks.management.codexSingleHookNotConnected'
+      reasonKey: 'capabilities.hooks.management.codexSingleHookMissingKey'
     })
   })
 
