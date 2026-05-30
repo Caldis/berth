@@ -253,4 +253,86 @@ describe('runHealthChecks', () => {
     expect(checks.map((check) => check.id)).not.toContain('claude-code:structure:user-skill-minimal-frontmatter-missing-required')
     expect(checks.filter((check) => check.assetType === 'skill')).toEqual([])
   })
+
+  it('suggests official schema pointers for Codex and Claude config files', () => {
+    const claudeDir = path.join(tempDir!, '.claude')
+    const codexDir = path.join(tempDir!, '.codex')
+    fs.mkdirSync(claudeDir, { recursive: true })
+    fs.mkdirSync(codexDir, { recursive: true })
+    fs.writeFileSync(path.join(claudeDir, 'CLAUDE.md'), '# Claude\n')
+    fs.writeFileSync(path.join(claudeDir, 'settings.json'), JSON.stringify({ env: {} }))
+    fs.writeFileSync(path.join(codexDir, 'config.toml'), 'model = "gpt-5.3-codex"\n')
+
+    const checks = runHealthChecks({ homeDir: tempDir! })
+
+    expect(checks).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: 'claude-code:configuration:user-settings-schema-missing',
+          severity: 'info',
+          evidence: [expect.objectContaining({ url: 'https://code.claude.com/docs/en/settings' })],
+          fix: expect.objectContaining({
+            snippet: '{\n  "$schema": "https://json.schemastore.org/claude-code-settings.json"\n}'
+          })
+        }),
+        expect.objectContaining({
+          id: 'codex:configuration:user-config-schema-comment-missing',
+          severity: 'info',
+          evidence: [expect.objectContaining({ url: 'https://developers.openai.com/codex/config-reference' })],
+          fix: expect.objectContaining({
+            snippet: '#:schema https://developers.openai.com/codex/config-schema.json'
+          })
+        })
+      ])
+    )
+  })
+
+  it('suggests importing AGENTS.md from CLAUDE.md for Claude Code projects', () => {
+    const projectDir = path.join(tempDir!, 'project')
+    const claudeDir = path.join(tempDir!, '.claude')
+    fs.mkdirSync(claudeDir, { recursive: true })
+    fs.mkdirSync(projectDir, { recursive: true })
+    fs.writeFileSync(path.join(claudeDir, 'CLAUDE.md'), '# User Claude\n')
+    fs.writeFileSync(path.join(projectDir, 'AGENTS.md'), '# Shared instructions\n')
+    fs.writeFileSync(path.join(projectDir, 'CLAUDE.md'), '# Claude project instructions\n')
+
+    const checks = runHealthChecks({ homeDir: tempDir!, projectDir })
+
+    expect(checks).toContainEqual(
+      expect.objectContaining({
+        id: 'claude-code:reference:project-agents-md-not-imported',
+        severity: 'info',
+        evidence: [expect.objectContaining({ url: 'https://code.claude.com/docs/en/memory' })],
+        fix: expect.objectContaining({
+          snippet: '@AGENTS.md'
+        })
+      })
+    )
+  })
+
+  it('does not suggest official config hints when they are already present', () => {
+    const projectDir = path.join(tempDir!, 'project')
+    const claudeDir = path.join(tempDir!, '.claude')
+    const codexDir = path.join(tempDir!, '.codex')
+    fs.mkdirSync(claudeDir, { recursive: true })
+    fs.mkdirSync(codexDir, { recursive: true })
+    fs.mkdirSync(projectDir, { recursive: true })
+    fs.writeFileSync(
+      path.join(claudeDir, 'settings.json'),
+      JSON.stringify({ $schema: 'https://json.schemastore.org/claude-code-settings.json' })
+    )
+    fs.writeFileSync(
+      path.join(codexDir, 'config.toml'),
+      '#:schema https://developers.openai.com/codex/config-schema.json\nmodel = "gpt-5.3-codex"\n'
+    )
+    fs.writeFileSync(path.join(projectDir, 'AGENTS.md'), '# Shared instructions\n')
+    fs.writeFileSync(path.join(projectDir, 'CLAUDE.md'), '@AGENTS.md\n')
+
+    const checks = runHealthChecks({ homeDir: tempDir!, projectDir })
+    const ids = checks.map((check) => check.id)
+
+    expect(ids).not.toContain('claude-code:configuration:user-settings-schema-missing')
+    expect(ids).not.toContain('codex:configuration:user-config-schema-comment-missing')
+    expect(ids).not.toContain('claude-code:reference:project-agents-md-not-imported')
+  })
 })

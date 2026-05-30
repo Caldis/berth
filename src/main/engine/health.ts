@@ -87,6 +87,8 @@ const CODEX_PROJECT_IGNORED_KEYS = new Set([
 
 const CODEX_RUNNABLE_HOOK_TYPE = 'command'
 const CLAUDE_HOOK_TYPES = new Set(['command', 'http', 'mcp_tool', 'prompt', 'agent'])
+const CODEX_CONFIG_SCHEMA_COMMENT = '#:schema https://developers.openai.com/codex/config-schema.json'
+const CLAUDE_SETTINGS_SCHEMA = 'https://json.schemastore.org/claude-code-settings.json'
 
 export function runHealthChecks(options: HealthCheckOptions | string = {}): HealthCheck[] {
   const normalized = normalizeOptions(options)
@@ -143,7 +145,11 @@ function checkClaude(paths: HealthPaths, platform: NodeJS.Platform): HealthCheck
     'Invalid settings.json',
     'Fix the JSON syntax in ~/.claude/settings.json.'
   )
-  if (userSettings) checkClaudeSettings(checks, userSettings, 'user', path.join(paths.claudeDir, 'settings.json'), platform)
+  if (userSettings) {
+    const userSettingsPath = path.join(paths.claudeDir, 'settings.json')
+    checkClaudeSettingsSchema(checks, userSettings, 'user', userSettingsPath)
+    checkClaudeSettings(checks, userSettings, 'user', userSettingsPath, platform)
+  }
 
   const claudeJson = checkJsonConfig(
     checks,
@@ -169,7 +175,10 @@ function checkClaude(paths: HealthPaths, platform: NodeJS.Platform): HealthCheck
       'Invalid project settings.json',
       'Fix the JSON syntax in .claude/settings.json.'
     )
-    if (parsedProjectSettings) checkClaudeSettings(checks, parsedProjectSettings, 'project', projectSettings, platform)
+    if (parsedProjectSettings) {
+      checkClaudeSettingsSchema(checks, parsedProjectSettings, 'project', projectSettings)
+      checkClaudeSettings(checks, parsedProjectSettings, 'project', projectSettings, platform)
+    }
 
     const parsedLocalSettings = checkJsonConfig(
       checks,
@@ -200,6 +209,7 @@ function checkClaude(paths: HealthPaths, platform: NodeJS.Platform): HealthCheck
     checkInstructionImports(checks, 'claude-code', path.join(paths.projectDir, 'CLAUDE.md'), 'project', 'claude-md')
     checkInstructionImports(checks, 'claude-code', path.join(paths.projectDir, '.claude', 'CLAUDE.md'), 'project', 'claude-md')
     checkInstructionImports(checks, 'claude-code', path.join(paths.projectDir, 'AGENTS.md'), 'project', 'agents-md')
+    checkClaudeProjectAgentsImport(checks, paths.projectDir)
   }
 
   checkSkillDirectories(checks, 'claude-code', path.join(paths.claudeDir, 'skills'), 'user')
@@ -251,6 +261,33 @@ function checkClaudeSettings(
   checkClaudeHooks(checks, asRecord(settings.hooks), scope, filePath, platform)
   checkClaudePermissions(checks, settings, scope, filePath)
   checkMcpServers(checks, 'claude-code', settings, 'mcpServers', scope, filePath)
+}
+
+function checkClaudeSettingsSchema(
+  checks: HealthCheck[],
+  settings: Record<string, unknown>,
+  scope: AssetScope,
+  filePath: string
+): void {
+  if (stringValue(settings.$schema)) return
+  checks.push(makeCheck({
+    id: `claude-code:configuration:${scope}-settings-schema-missing`,
+    severity: 'info',
+    category: 'configuration',
+    agentId: 'claude-code',
+    title: 'Claude settings schema is not declared',
+    message: `${path.basename(filePath)} does not declare the Claude Code settings JSON schema.`,
+    suggestion: 'Add $schema if you want editor validation for Claude Code settings.',
+    scope,
+    path: filePath,
+    evidence: [EVIDENCE.claudeSettings],
+    fix: {
+      label: 'Add Claude settings schema',
+      description: 'Add the official Claude Code settings schema near the top of the JSON file.',
+      snippet: `{\n  "$schema": "${CLAUDE_SETTINGS_SCHEMA}"\n}`
+    },
+    confidence: 'low'
+  }))
 }
 
 function checkClaudeHooks(
@@ -370,7 +407,9 @@ function checkCodexConfig(
 ): Record<string, unknown> | undefined {
   if (!fileExists(filePath)) return undefined
   try {
+    const raw = fs.readFileSync(filePath, 'utf-8')
     const config = parseCodexToml(filePath)
+    checkCodexConfigSchemaComment(checks, raw, scope, filePath)
     checkMcpServers(checks, 'codex', config, 'mcp_servers', scope, filePath)
     checkCodexHooks(checks, asRecord(config.hooks), scope, filePath, platform)
     checkCodexProjectIgnoredKeys(checks, config, scope, filePath)
@@ -390,6 +429,33 @@ function checkCodexConfig(
     }))
     return undefined
   }
+}
+
+function checkCodexConfigSchemaComment(
+  checks: HealthCheck[],
+  raw: string,
+  scope: AssetScope,
+  filePath: string
+): void {
+  if (/^#:schema\s+https:\/\/developers\.openai\.com\/codex\/config-schema\.json\s*$/m.test(raw)) return
+  checks.push(makeCheck({
+    id: `codex:configuration:${scope}-config-schema-comment-missing`,
+    severity: 'info',
+    category: 'configuration',
+    agentId: 'codex',
+    title: 'Codex config schema comment is not declared',
+    message: 'config.toml does not include the official Codex TOML schema comment.',
+    suggestion: 'Add the Codex schema comment if you want editor validation for config.toml.',
+    scope,
+    path: filePath,
+    evidence: [EVIDENCE.codexConfig],
+    fix: {
+      label: 'Add Codex config schema',
+      description: 'Add the official Codex TOML schema comment near the top of config.toml.',
+      snippet: CODEX_CONFIG_SCHEMA_COMMENT
+    },
+    confidence: 'low'
+  }))
 }
 
 function checkCodexHooksJson(
@@ -606,6 +672,49 @@ function checkInstructionImports(
       assetType: fileType
     }))
   }
+}
+
+function checkClaudeProjectAgentsImport(checks: HealthCheck[], projectDir: string): void {
+  const agentsMd = path.join(projectDir, 'AGENTS.md')
+  if (!fileExists(agentsMd)) return
+
+  const claudeFiles = [
+    path.join(projectDir, 'CLAUDE.md'),
+    path.join(projectDir, '.claude', 'CLAUDE.md')
+  ].filter(fileExists)
+  if (claudeFiles.length === 0) return
+
+  for (const filePath of claudeFiles) {
+    const raw = safeReadText(filePath)
+    if (!raw) continue
+    const importsAgentsMd = extractAtImports(raw).some((importPath) => {
+      const resolved = path.isAbsolute(importPath)
+        ? importPath
+        : path.resolve(path.dirname(filePath), importPath)
+      return samePath(resolved, agentsMd)
+    })
+    if (importsAgentsMd) return
+  }
+
+  checks.push(makeCheck({
+    id: 'claude-code:reference:project-agents-md-not-imported',
+    severity: 'info',
+    category: 'reference',
+    agentId: 'claude-code',
+    title: 'Project CLAUDE.md does not import AGENTS.md',
+    message: 'This project has AGENTS.md, but Claude Code reads CLAUDE.md and only imports files referenced from it.',
+    suggestion: 'Add @AGENTS.md to project CLAUDE.md if those shared instructions should apply to Claude Code.',
+    scope: 'project',
+    path: claudeFiles[0],
+    assetType: 'claude-md',
+    evidence: [EVIDENCE.claudeMemory],
+    fix: {
+      label: 'Import AGENTS.md',
+      description: 'Add a Claude memory import for the shared project instructions.',
+      snippet: '@AGENTS.md'
+    },
+    confidence: 'medium'
+  }))
 }
 
 function checkSkillDirectories(
@@ -1117,6 +1226,14 @@ function safeReadDir(dirPath: string): fs.Dirent[] {
   }
 }
 
+function safeReadText(filePath: string): string | undefined {
+  try {
+    return fs.readFileSync(filePath, 'utf-8')
+  } catch {
+    return undefined
+  }
+}
+
 function fileExists(filePath: string): boolean {
   try {
     return fs.statSync(filePath).isFile()
@@ -1159,6 +1276,13 @@ function looksWindowsSpecificCommand(command: string): boolean {
     /\bcmd(\.exe)?\s*\/c\b/i.test(command) ||
     /\.(ps1|bat|cmd)(\s|$)/i.test(command)
   )
+}
+
+function samePath(left: string, right: string): boolean {
+  const normalizedLeft = path.resolve(left)
+  const normalizedRight = path.resolve(right)
+  if (normalizedLeft === normalizedRight) return true
+  return process.platform === 'win32' && normalizedLeft.toLowerCase() === normalizedRight.toLowerCase()
 }
 
 function slug(value: string): string {
