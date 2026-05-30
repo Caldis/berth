@@ -147,15 +147,58 @@ export interface TokenUsageBreakdown {
 
 export type CostSource = 'actual' | 'estimated' | 'mixed' | 'unknown'
 
+export type PricingMissReason =
+  | 'missing-model-pricing'
+  | 'missing-token-breakdown'
+  | 'missing-price-component'
+
+export interface PricingMiss {
+  model: string | null
+  reason: PricingMissReason
+  tokens: number
+  count: number
+}
+
+export interface UsageCostDetails {
+  actualCost: number
+  estimatedCost: number
+  costDelta: number
+}
+
+export interface UsageDimensionCost extends UsageCostDetails {
+  costSource: CostSource
+  pricingMisses: PricingMiss[]
+}
+
+export interface UsageModelBreakdown extends UsageDimensionCost {
+  model: string
+  percentage: number
+  cost: number
+  tokens: number
+  tokenUsage: TokenUsageBreakdown
+}
+
+export interface UsageProjectBreakdown extends UsageDimensionCost {
+  project: string
+  percentage: number
+  cost: number
+  tokens: number
+  tokenUsage: TokenUsageBreakdown
+}
+
 export interface UsageSummary {
   totalCost: number
+  actualCost: number
+  estimatedCost: number
+  costDelta: number
   totalTokens: number
   tokenUsage: TokenUsageBreakdown
   costSource: CostSource
+  pricingMisses: PricingMiss[]
   dailyCosts: { date: string; cost: number }[]
   dailyTokenUsage: { date: string; tokenUsage: TokenUsageBreakdown }[]
-  byModel: { model: string; percentage: number; cost: number; tokens: number; tokenUsage: TokenUsageBreakdown }[]
-  byProject: { project: string; percentage: number; cost: number; tokens: number; tokenUsage: TokenUsageBreakdown }[]
+  byModel: UsageModelBreakdown[]
+  byProject: UsageProjectBreakdown[]
   rateLimits: {
     window: string
     remaining: number

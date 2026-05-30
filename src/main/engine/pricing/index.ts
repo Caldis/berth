@@ -19,7 +19,6 @@ export type {
   PricingCatalogSnapshot,
   PricingCatalogSource,
   ModelPricing,
-  PricingMissReason,
   PricingSource,
   UsageCostInput,
   UsageCostResolution

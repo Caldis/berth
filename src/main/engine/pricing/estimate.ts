@@ -1,6 +1,7 @@
 import type { CostSource, TokenUsageBreakdown } from '@shared/types/asset'
 import { resolveModelPricing } from './catalog'
-import type { ModelPricing, PricingMissReason, UsageCostInput, UsageCostResolution } from './types'
+import type { PricingMissReason } from '@shared/types/asset'
+import type { ModelPricing, UsageCostInput, UsageCostResolution } from './types'
 
 export function estimateTokenUsageCost(
   tokenUsage: TokenUsageBreakdown,
@@ -12,16 +13,29 @@ export function estimateTokenUsageCost(
 
 export function resolveUsageCost(input: UsageCostInput): UsageCostResolution {
   const actualCost = normalizeActualCost(input.actualCost)
-  if (actualCost != null) return { cost: actualCost, source: 'actual' }
-
   const pricing = resolveModelPricing(input.model, input.pricingCatalog)
   if (!pricing) {
+    if (actualCost != null) {
+      return { cost: actualCost, source: 'actual', actualCost, reason: 'missing-model-pricing' }
+    }
     return { cost: 0, source: 'unknown', reason: 'missing-model-pricing' }
   }
 
   const estimate = estimateWithReason(input.tokenUsage, pricing)
-  if (estimate.reason) return { cost: 0, source: 'unknown', reason: estimate.reason }
-  return { cost: estimate.cost, source: 'estimated', pricing }
+  if (actualCost != null) {
+    return {
+      cost: actualCost,
+      source: 'actual',
+      actualCost,
+      estimatedCost: estimate.reason ? undefined : estimate.cost,
+      costDelta: estimate.reason ? undefined : actualCost - estimate.cost,
+      pricing,
+      reason: estimate.reason
+    }
+  }
+
+  if (estimate.reason) return { cost: 0, source: 'unknown', pricing, reason: estimate.reason }
+  return { cost: estimate.cost, source: 'estimated', estimatedCost: estimate.cost, pricing }
 }
 
 export function mergeCostSources(sources: readonly CostSource[]): CostSource {

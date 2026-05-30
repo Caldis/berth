@@ -16,7 +16,7 @@
   - 增加 generated snapshot 文件和 update script, 当前快照包含 6680 条价格记录。
   - 增加 local override loader 与模型 normalization。
   - 验证: `pnpm test -- tests/unit/pricing.test.ts`, `pnpm typecheck:node`。
-- [ ] 任务 4: cost resolution 明细与 pricing misses
+- [x] 任务 4: cost resolution 明细与 pricing misses
   - 扩展 `UsageCostResolution`, `UsageSummary`, byModel/byProject。
   - 输出 actual/estimated/delta 和 `pricingMisses`。
   - 验证: `pnpm test -- tests/unit/pricing.test.ts tests/unit/usage-summary.test.ts`, `pnpm typecheck:node`。

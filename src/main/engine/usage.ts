@@ -1,4 +1,11 @@
-import type { Asset, CostSource, TokenUsageBreakdown, UsageSummary } from '@shared/types/asset'
+import type {
+  Asset,
+  CostSource,
+  PricingMiss,
+  TokenUsageBreakdown,
+  UsageCostDetails,
+  UsageSummary
+} from '@shared/types/asset'
 import {
   addTokenUsage,
   emptyTokenUsage,
@@ -7,7 +14,8 @@ import {
 import {
   mergeCostSources,
   resolveUsageCost,
-  type ModelPricing
+  type ModelPricing,
+  type UsageCostResolution
 } from './pricing'
 
 type Numberish = number | null | undefined
@@ -18,15 +26,24 @@ type UsageSummaryOptions = {
 }
 type UsageEntry = {
   cost: number
+  actualCost: number
+  estimatedCost: number
+  costDelta: number
+  costSources: CostSource[]
+  pricingMisses: PricingMiss[]
   tokenUsage: TokenUsageBreakdown
 }
 
 function emptyUsageSummary(): UsageSummary {
   return {
     totalCost: 0,
+    actualCost: 0,
+    estimatedCost: 0,
+    costDelta: 0,
     totalTokens: 0,
     tokenUsage: emptyTokenUsage(),
     costSource: 'unknown',
+    pricingMisses: [],
     dailyCosts: [],
     dailyTokenUsage: [],
     byModel: [],
@@ -49,6 +66,7 @@ function percent(part: Numberish, total: number): number {
 
 function summarizeUsageData(usageAssets: Asset[], options: UsageSummaryOptions): UsageSummary {
   let totalCost = 0
+  let costDetails = emptyCostDetails()
   let tokenUsage = emptyTokenUsage()
   const modelMap = new Map<string, UsageEntry>()
   const projectMap = new Map<string, UsageEntry>()
@@ -69,21 +87,22 @@ function summarizeUsageData(usageAssets: Asset[], options: UsageSummaryOptions):
       pricingCatalog: options.pricingCatalog
     })
     const cost = costResult.cost
+    costDetails = addCostDetails(costDetails, costResult)
     costSources.push(costResult.source)
     totalCost += cost
     tokenUsage = addTokenUsage(tokenUsage, entryTokenUsage)
 
     if (model) {
-      const entry = modelMap.get(model) ?? { cost: 0, tokenUsage: emptyTokenUsage() }
-      entry.cost += cost
+      const entry = modelMap.get(model) ?? emptyUsageEntry()
+      addCostResultToEntry(entry, costResult, model, entryTokenUsage)
       entry.tokenUsage = addTokenUsage(entry.tokenUsage, entryTokenUsage)
       modelMap.set(model, entry)
     }
 
     const project = typeof asset.meta.project === 'string' ? asset.meta.project : undefined
     if (project) {
-      const entry = projectMap.get(project) ?? { cost: 0, tokenUsage: emptyTokenUsage() }
-      entry.cost += cost
+      const entry = projectMap.get(project) ?? emptyUsageEntry()
+      addCostResultToEntry(entry, costResult, model, entryTokenUsage)
       entry.tokenUsage = addTokenUsage(entry.tokenUsage, entryTokenUsage)
       projectMap.set(project, entry)
     }
@@ -98,9 +117,11 @@ function summarizeUsageData(usageAssets: Asset[], options: UsageSummaryOptions):
 
   return {
     totalCost,
+    ...costDetails,
     totalTokens,
     tokenUsage,
     costSource: mergeCostSources(costSources),
+    pricingMisses: mergePricingMisses([...modelMap.values()].flatMap((entry) => entry.pricingMisses)),
     dailyCosts: Array.from(dailyMap, ([date, cost]) => ({ date, cost })).sort((a, b) =>
       a.date.localeCompare(b.date)
     ),
@@ -111,6 +132,7 @@ function summarizeUsageData(usageAssets: Asset[], options: UsageSummaryOptions):
       model,
       percentage: percent(entry.tokenUsage.totalTokens, totalTokens),
       cost: entry.cost,
+      ...entryCostDetails(entry),
       tokens: entry.tokenUsage.totalTokens,
       tokenUsage: entry.tokenUsage
     })),
@@ -118,6 +140,7 @@ function summarizeUsageData(usageAssets: Asset[], options: UsageSummaryOptions):
       project,
       percentage: percent(entry.tokenUsage.totalTokens, totalTokens),
       cost: entry.cost,
+      ...entryCostDetails(entry),
       tokens: entry.tokenUsage.totalTokens,
       tokenUsage: entry.tokenUsage
     })),
@@ -160,6 +183,7 @@ function summarizeStatsCache(statsAsset: Asset, options: UsageSummaryOptions): U
     : {}
   const dailyTokenMap = collectDailyModelTokens(meta, options)
   const modelEntries = new Map<string, UsageEntry>()
+  let costDetails = emptyCostDetails()
   const costSources: CostSource[] = []
 
   for (const [model, value] of Object.entries(modelUsage)) {
@@ -170,9 +194,12 @@ function summarizeStatsCache(statsAsset: Asset, options: UsageSummaryOptions): U
       tokenUsage,
       pricingCatalog: options.pricingCatalog
     })
-    const cost = costResult.cost
+    costDetails = addCostDetails(costDetails, costResult)
     costSources.push(costResult.source)
-    modelEntries.set(model, { cost, tokenUsage })
+    const entry = emptyUsageEntry()
+    addCostResultToEntry(entry, costResult, model, tokenUsage)
+    entry.tokenUsage = tokenUsage
+    modelEntries.set(model, entry)
   }
 
   for (const [model, tokens] of dailyTokenMap.byModel) {
@@ -183,8 +210,12 @@ function summarizeStatsCache(statsAsset: Asset, options: UsageSummaryOptions): U
         tokenUsage,
         pricingCatalog: options.pricingCatalog
       })
+      costDetails = addCostDetails(costDetails, costResult)
       costSources.push(costResult.source)
-      modelEntries.set(model, { cost: costResult.cost, tokenUsage })
+      const entry = emptyUsageEntry()
+      addCostResultToEntry(entry, costResult, model, tokenUsage)
+      entry.tokenUsage = tokenUsage
+      modelEntries.set(model, entry)
     }
   }
 
@@ -212,15 +243,20 @@ function summarizeStatsCache(statsAsset: Asset, options: UsageSummaryOptions): U
 
   return {
     totalCost,
+    ...costDetails,
     totalTokens,
     tokenUsage,
     costSource: mergeCostSources(costSources),
+    pricingMisses: mergePricingMisses(
+      Array.from(modelEntries.values()).flatMap((entry) => entry.pricingMisses)
+    ),
     dailyCosts,
     dailyTokenUsage,
     byModel: Array.from(modelEntries, ([model, entry]) => ({
       model,
       percentage: percent(entry.tokenUsage.totalTokens, totalTokens),
       cost: entry.cost,
+      ...entryCostDetails(entry),
       tokens: entry.tokenUsage.totalTokens,
       tokenUsage: entry.tokenUsage
     })),
@@ -283,6 +319,7 @@ function mergeUsageSummaries(summaries: UsageSummary[]): UsageSummary {
   if (summaries.length === 0) return emptyUsageSummary()
 
   let totalCost = 0
+  let costDetails = emptyCostDetails()
   let tokenUsage = emptyTokenUsage()
   const dailyMap = new Map<string, number>()
   const dailyTokenMap = new Map<string, TokenUsageBreakdown>()
@@ -293,6 +330,7 @@ function mergeUsageSummaries(summaries: UsageSummary[]): UsageSummary {
 
   for (const summary of summaries) {
     totalCost += summary.totalCost
+    costDetails = addCostDetails(costDetails, summary)
     tokenUsage = addTokenUsage(tokenUsage, summary.tokenUsage)
     costSources.push(summary.costSource)
     rateLimits.push(...summary.rateLimits)
@@ -307,14 +345,14 @@ function mergeUsageSummaries(summaries: UsageSummary[]): UsageSummary {
       )
     }
     for (const item of summary.byModel) {
-      const entry = modelMap.get(item.model) ?? { cost: 0, tokenUsage: emptyTokenUsage() }
-      entry.cost += item.cost
+      const entry = modelMap.get(item.model) ?? emptyUsageEntry()
+      addSummaryItemToEntry(entry, item)
       entry.tokenUsage = addTokenUsage(entry.tokenUsage, item.tokenUsage)
       modelMap.set(item.model, entry)
     }
     for (const item of summary.byProject) {
-      const entry = projectMap.get(item.project) ?? { cost: 0, tokenUsage: emptyTokenUsage() }
-      entry.cost += item.cost
+      const entry = projectMap.get(item.project) ?? emptyUsageEntry()
+      addSummaryItemToEntry(entry, item)
       entry.tokenUsage = addTokenUsage(entry.tokenUsage, item.tokenUsage)
       projectMap.set(item.project, entry)
     }
@@ -323,9 +361,11 @@ function mergeUsageSummaries(summaries: UsageSummary[]): UsageSummary {
   const totalTokens = tokenUsage.totalTokens
   return {
     totalCost,
+    ...costDetails,
     totalTokens,
     tokenUsage,
     costSource: mergeCostSources(costSources),
+    pricingMisses: mergePricingMisses(summaries.flatMap((summary) => summary.pricingMisses)),
     dailyCosts: Array.from(dailyMap, ([date, cost]) => ({ date, cost })).sort((a, b) =>
       a.date.localeCompare(b.date)
     ),
@@ -336,6 +376,7 @@ function mergeUsageSummaries(summaries: UsageSummary[]): UsageSummary {
       model,
       percentage: percent(entry.tokenUsage.totalTokens, totalTokens),
       cost: entry.cost,
+      ...entryCostDetails(entry),
       tokens: entry.tokenUsage.totalTokens,
       tokenUsage: entry.tokenUsage
     })),
@@ -343,12 +384,106 @@ function mergeUsageSummaries(summaries: UsageSummary[]): UsageSummary {
       project,
       percentage: percent(entry.tokenUsage.totalTokens, totalTokens),
       cost: entry.cost,
+      ...entryCostDetails(entry),
       tokens: entry.tokenUsage.totalTokens,
       tokenUsage: entry.tokenUsage
     })),
     rateLimits
   }
 }
+
+function emptyCostDetails(): UsageCostDetails {
+  return { actualCost: 0, estimatedCost: 0, costDelta: 0 }
+}
+
+function emptyUsageEntry(): UsageEntry {
+  return {
+    cost: 0,
+    ...emptyCostDetails(),
+    costSources: [],
+    pricingMisses: [],
+    tokenUsage: emptyTokenUsage()
+  }
+}
+
+function addCostDetails<T extends Partial<UsageCostDetails>>(
+  current: UsageCostDetails,
+  next: T
+): UsageCostDetails {
+  return {
+    actualCost: current.actualCost + (next.actualCost ?? 0),
+    estimatedCost: current.estimatedCost + (next.estimatedCost ?? 0),
+    costDelta: current.costDelta + (next.costDelta ?? 0)
+  }
+}
+
+function addCostResultToEntry(
+  entry: UsageEntry,
+  result: UsageCostResolution,
+  model: string | undefined,
+  tokenUsage: TokenUsageBreakdown
+): void {
+  entry.cost += result.cost
+  entry.actualCost += result.actualCost ?? 0
+  entry.estimatedCost += result.estimatedCost ?? 0
+  entry.costDelta += result.costDelta ?? 0
+  entry.costSources.push(result.source)
+  const miss = pricingMissFromResult(result, model, tokenUsage)
+  if (miss) entry.pricingMisses.push(miss)
+}
+
+function addSummaryItemToEntry(entry: UsageEntry, item: UsageEntrySummary): void {
+  entry.cost += item.cost
+  entry.actualCost += item.actualCost
+  entry.estimatedCost += item.estimatedCost
+  entry.costDelta += item.costDelta
+  entry.costSources.push(item.costSource)
+  entry.pricingMisses.push(...item.pricingMisses)
+}
+
+function entryCostDetails(entry: UsageEntry): UsageCostDetails & {
+  costSource: CostSource
+  pricingMisses: PricingMiss[]
+} {
+  return {
+    actualCost: entry.actualCost,
+    estimatedCost: entry.estimatedCost,
+    costDelta: entry.costDelta,
+    costSource: mergeCostSources(entry.costSources),
+    pricingMisses: mergePricingMisses(entry.pricingMisses)
+  }
+}
+
+function pricingMissFromResult(
+  result: UsageCostResolution,
+  model: string | undefined,
+  tokenUsage: TokenUsageBreakdown
+): PricingMiss | undefined {
+  if (!result.reason) return undefined
+  return {
+    model: model ?? null,
+    reason: result.reason,
+    tokens: tokenUsage.totalTokens,
+    count: 1
+  }
+}
+
+function mergePricingMisses(misses: readonly PricingMiss[]): PricingMiss[] {
+  const merged = new Map<string, PricingMiss>()
+  for (const miss of misses) {
+    const key = `${miss.model ?? ''}\0${miss.reason}`
+    const entry = merged.get(key) ?? { ...miss, tokens: 0, count: 0 }
+    entry.tokens += miss.tokens
+    entry.count += miss.count
+    merged.set(key, entry)
+  }
+  return Array.from(merged.values())
+}
+
+type UsageEntrySummary = Pick<
+  UsageSummary['byModel'][number],
+  'cost' | 'actualCost' | 'estimatedCost' | 'costDelta' | 'costSource' | 'pricingMisses'
+>
 
 function hasSummaryData(summary: UsageSummary): boolean {
   return (

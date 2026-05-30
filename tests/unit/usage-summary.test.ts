@@ -250,6 +250,83 @@ describe('buildUsageSummary', () => {
     expect(summary.byProject).toMatchObject([{ project: 'D--Code-berth', cost: 0.263, tokens: 24 }])
   })
 
+  it('reports actual, estimated, delta, and pricing misses across usage dimensions', () => {
+    const pricedActual: Asset = {
+      id: 'usage-data-actual',
+      agentId: 'codex',
+      category: 'observability',
+      type: 'usage-data',
+      scope: 'user',
+      name: '2026-05-30',
+      path: 'C:\\Users\\test\\.codex\\usage-data\\2026-05-30.json',
+      meta: {
+        date: '2026-05-30',
+        model: 'test/priced-model',
+        project: 'D--Code-berth',
+        costUSD: 0.3,
+        inputTokens: 10,
+        outputTokens: 2,
+        cacheReadInputTokens: 3,
+        cacheCreationInputTokens: 4,
+        reasoningOutputTokens: 5
+      }
+    }
+    const missingPricing: Asset = {
+      ...pricedActual,
+      id: 'usage-data-missing-pricing',
+      name: 'missing-pricing',
+      meta: {
+        date: '2026-05-30',
+        model: 'missing-model',
+        project: 'D--Code-berth',
+        inputTokens: 8,
+        outputTokens: 4
+      }
+    }
+
+    const summary = buildUsageSummary([pricedActual, missingPricing], {
+      pricingCatalog: [localPricing]
+    })
+
+    expect(summary.totalCost).toBe(0.3)
+    expect(summary.actualCost).toBe(0.3)
+    expect(summary.estimatedCost).toBeCloseTo(0.263, 6)
+    expect(summary.costDelta).toBeCloseTo(0.037, 6)
+    expect(summary.pricingMisses).toEqual([
+      { model: 'missing-model', reason: 'missing-model-pricing', tokens: 12, count: 1 }
+    ])
+    expect(summary.byModel).toMatchObject([
+      {
+        model: 'test/priced-model',
+        cost: 0.3,
+        actualCost: 0.3,
+        estimatedCost: 0.263,
+        costSource: 'actual',
+        pricingMisses: []
+      },
+      {
+        model: 'missing-model',
+        cost: 0,
+        costSource: 'unknown',
+        pricingMisses: [
+          { model: 'missing-model', reason: 'missing-model-pricing', tokens: 12, count: 1 }
+        ]
+      }
+    ])
+    expect(summary.byProject).toMatchObject([
+      {
+        project: 'D--Code-berth',
+        cost: 0.3,
+        actualCost: 0.3,
+        estimatedCost: 0.263,
+        costSource: 'mixed',
+        pricingMisses: [
+          { model: 'missing-model', reason: 'missing-model-pricing', tokens: 12, count: 1 }
+        ]
+      }
+    ])
+  })
+
   it('filters usage-data daily cost and token totals by day range', () => {
     const recentUsage: Asset = {
       id: 'usage-data-recent',

@@ -29,7 +29,31 @@ describe('pricing', () => {
       pricingCatalog: [localPricing]
     })
 
-    expect(result).toMatchObject({ cost: 1.23, source: 'actual' })
+    expect(result).toMatchObject({
+      cost: 1.23,
+      source: 'actual',
+      actualCost: 1.23,
+      estimatedCost: 0.2,
+      costDelta: 1.03
+    })
+  })
+
+  it('keeps actual cost while surfacing missing estimate reasons', () => {
+    const result = resolveUsageCost({
+      actualCost: 1.23,
+      model: 'missing-model',
+      tokenUsage: normalizeTokenUsage({ inputTokens: 10, outputTokens: 5 }),
+      pricingCatalog: [localPricing]
+    })
+
+    expect(result).toMatchObject({
+      cost: 1.23,
+      source: 'actual',
+      actualCost: 1.23,
+      reason: 'missing-model-pricing'
+    })
+    expect(result.estimatedCost).toBeUndefined()
+    expect(result.costDelta).toBeUndefined()
   })
 
   it('estimates cost from local pricing and full token breakdown', () => {
