@@ -62,8 +62,8 @@ berth 现有 `plans/` 采用 `{DATE}-{SHORT_DESC}` 命名, `issues/` 存 bug, �
 
 实现机制经官方一手来源核实, 结论如下 (含置信度):
 
-1. Claude Code `.claude/commands/` 子目录命名空间在不同资料与版本中存在不一致。当前实现不依赖冒号命名空间, 改用 `.claude/commands/opsx-<verb>.md` 扁平命名。
-2. Claude Code `.claude/commands/` 不跟随符号链接 (GitHub issue 39475, 10573)。置信中。故命令桩须复制而非软链。
+1. Claude Code skills 原生提供 slash 入口: `.claude/skills/<skill-name>/SKILL.md` 暴露为 `/<skill-name>`, 且 `description` 参与自动触发判断。
+2. Claude custom commands 已合并进 skills; `.claude/commands/*.md` 仍兼容, 但官方建议使用 skills。同名 skill 与 command 同时存在时, skill 优先。
 3. Claude Code `.claude/skills/` 可用软链, 但 Windows checkout 可能把 Git symlink 落成普通文本文件。当前实现允许软链或目录副本。
 4. Codex custom prompts 已废弃并在 HEAD 删除 (commit 48144a7), 且仅支持全局 `~/.codex/prompts/`, 无项目级。官方文档建议改用 skills。置信高。
 5. Codex repo 级 skills 当前入口是 `.agents/skills/<name>/SKILL.md`, 从当前目录向仓库根逐级发现。项目不再分发 `.codex/skills`。
@@ -73,13 +73,13 @@ berth 现有 `plans/` 采用 `{DATE}-{SHORT_DESC}` 命名, `issues/` 存 bug, �
 
 由证据收敛: skill 是两工具唯一对称的载体。故单一真源以 skill 指针形式存放于 `.agents/`; Codex 直接读取 `.agents/skills`; Claude Code 通过 `.claude/skills` 的软链或目录副本读取。真正的操作性 playbook 抽到 `.agents/workflow/`, skill 仅作薄指针 (贯彻文档「唯一性」原则)。
 
-为兼容 Claude Code 的命令入口, 额外复制薄命令桩到 `.claude/commands/opsx-<verb>.md` (因 commands 不跟随软链, 只能复制; 命令桩静态, 由同步脚本生成)。
+Claude Code 不再需要额外命令桩: `.claude/skills/opsx-<verb>/SKILL.md` 已直接提供 `/opsx-<verb>`。`harness-sync` 会清理历史生成的 `.claude/commands/opsx-<verb>.md`, 避免同名入口重复。
 
 调用形态:
 
 | 工具 | 主通道 | 次通道 |
 |---|---|---|
-| Claude Code | `/opsx-<verb>` (命令或 skill) | 无 |
+| Claude Code | `/opsx-<verb>` (skill) | 自动触发 |
 | Codex | `$opsx-<verb>` skill | 无 |
 
 ## 5. 目录结构
@@ -99,11 +99,10 @@ berth/
 │       └── opsx-<verb>/SKILL.md               # 共 8 个
 │
 ├── .claude/
-│   ├── skills/opsx-<verb>                     # symlink 或目录副本 x8
-│   └── commands/opsx-<verb>.md                # 复制的命令桩 x8 -> /opsx-<verb>
+│   └── skills/opsx-<verb>                     # symlink 或目录副本 x8 -> /opsx-<verb>
 │
 ├── scripts/
-│   ├── harness-sync.mjs                       # 幂等生成 Claude skill 分发 + 命令桩
+│   ├── harness-sync.mjs                       # 幂等生成 Claude skill 分发, 清理历史 command 桩
 │   └── harness-check.mjs                      # 校验任务产物/模板/命名/分发
 │
 ├── docs/
@@ -240,14 +239,14 @@ description: 工作流 Explore 阶段. 读取并执行 .agents/workflow/explore.
 
 `SKILL.md` 正文为工具无关指令: 读取 `.agents/workflow/explore.md` 并按其执行, 任务标识取自参数。
 
-命令桩 `.claude/commands/opsx-explore.md` 内容等价, 触发 `opsx-explore` 行为。
+Claude Code 会从 `.claude/skills/opsx-explore/SKILL.md` 生成 `/opsx-explore` 入口, 不需要额外 command 桩。
 
 ## 9. 分发同步脚本 harness-sync.mjs
 
 职责:
 
 1. 为每个 verb 在 `.claude/skills/` 创建指向 `.agents/skills/opsx-<verb>` 的相对软链; Windows/EPERM 时回退为目录副本
-2. 为每个 verb 在 `.claude/commands/` 生成 `opsx-<verb>.md` 命令桩 (从 skill 指针派生, 内容确定)
+2. 清理历史生成的 `.claude/commands/opsx-<verb>.md` command 桩
 3. 幂等: 重复运行无变更; 提供 `--check` 模式供 CI 校验分发未漂移
 
 跨平台: berth 支持 macOS 与 Windows。Windows 无符号链接权限时, Claude skill 分发回退为复制目录; check 同时接受 symlink 与目录副本。Codex 不走 `.codex/skills`, 直接读取 `.agents/skills`。
@@ -259,7 +258,7 @@ description: 工作流 Explore 阶段. 读取并执行 .agents/workflow/explore.
 1. 每个 works 任务按 INDEX 声明的 phase 具备必需产物 (explore 须有 ANALYSIS; design 须有 SPEC + PLAN; feature 须有 00-PRD; bug 须有 00-BUG)
 2. `_template/` 模板齐全
 3. works 命名符合 `{date}[-{jira}]-{summary}`, friction 命名符合 `{yyyymmdd}-{phase}-{summary}`
-4. 分发完整: 8 个 verb 的 skill 分发与命令桩存在且内容正确
+4. 分发完整: 8 个 verb 的 skill 分发存在且内容正确; 历史 opsx command 桩不存在
 
 `tests/harness/check.test.ts`: fixture 驱动, 覆盖合规与各类违规场景。
 
@@ -291,7 +290,7 @@ description: 工作流 Explore 阶段. 读取并执行 .agents/workflow/explore.
 1. `pnpm harness:sync` 幂等 (二次运行零变更)
 2. `pnpm harness:check` 通过
 3. `tests/harness/check.test.ts` 通过
-4. 8 个 verb 在 Claude Code 与 Codex 均可见且可调用
+4. 8 个 verb 在 Claude Code 与 Codex 均可见且可调用; Claude Code 由 skill 提供 `/opsx-<verb>`
 5. 一个样例 works 任务可走完 explore -> design -> implement -> verify -> archive
 6. CI 全绿
 7. `AGENTS.md` 行数 < 500
@@ -301,7 +300,7 @@ description: 工作流 Explore 阶段. 读取并执行 .agents/workflow/explore.
 
 | 项 | 置信 | 验证方式 | 回退 |
 |---|---|---|---|
-| Claude `.claude/commands/opsx-<verb>.md` 渲染为 `/opsx-<verb>` | 高 | Claude Code `/` 菜单观察 | 直接用同名 skill |
+| Claude `.claude/skills/opsx-<verb>/SKILL.md` 渲染为 `/opsx-<verb>` | 高 | 官方文档 + Claude Code `/` 菜单观察 | 无需 `.claude/commands` |
 | Codex 读取 `.agents/skills` | 高 | Codex skill 列表观察 | 无需 `.codex/skills` 分发 |
 | Codex skill 触发语法 | 高 | 文档 + 实测 | - |
 

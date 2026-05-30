@@ -1,5 +1,5 @@
 // scripts/harness-sync.mjs
-// 幂等分发: 生成 .agents/skills/*/SKILL.md + .claude/commands/opsx-*.md
+// 幂等分发: 生成 .agents/skills/*/SKILL.md
 // + .claude/skills 的相对软链 (Windows/EPERM 回退复制)。
 import {
   mkdirSync,
@@ -14,7 +14,7 @@ import {
 } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { VERBS, skillMdContent, commandStubContent } from './harness-lib.mjs'
+import { VERBS, skillMdContent } from './harness-lib.mjs'
 
 // 期望产物描述符
 export function desiredArtifacts(root) {
@@ -24,11 +24,6 @@ export function desiredArtifacts(root) {
       kind: 'file',
       path: join(root, '.agents/skills', `opsx-${v}`, 'SKILL.md'),
       content: skillMdContent(v)
-    })
-    items.push({
-      kind: 'file',
-      path: join(root, '.claude/commands', `opsx-${v}.md`),
-      content: commandStubContent(v)
     })
     items.push({
       kind: 'link',
@@ -47,6 +42,10 @@ function fileInSync(path, content) {
   return existsSync(path) && normalizeText(readFileSync(path, 'utf8')) === normalizeText(content)
 }
 
+function legacyCommandPaths(root) {
+  return VERBS.map((v) => join(root, '.claude/commands', `opsx-${v}.md`))
+}
+
 function linkInSync(root, path, target) {
   if (!existsSync(path)) return false
   try {
@@ -63,6 +62,11 @@ function linkInSync(root, path, target) {
 
 export function apply(root) {
   const changed = []
+  for (const path of legacyCommandPaths(root)) {
+    if (!existsSync(path) && !isBrokenLink(path)) continue
+    rmSync(path, { recursive: true, force: true })
+    changed.push(path)
+  }
   // 文件先行 (软链目标须存在)
   for (const it of desiredArtifacts(root).filter((i) => i.kind === 'file')) {
     if (fileInSync(it.path, it.content)) continue
@@ -99,6 +103,9 @@ function isBrokenLink(path) {
 
 export function check(root) {
   const drift = []
+  for (const path of legacyCommandPaths(root)) {
+    if (existsSync(path) || isBrokenLink(path)) drift.push(path)
+  }
   for (const it of desiredArtifacts(root)) {
     if (it.kind === 'file' && !fileInSync(it.path, it.content)) drift.push(it.path)
     if (it.kind === 'link' && !linkInSync(root, it.path, it.target)) drift.push(it.path)

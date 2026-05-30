@@ -25,19 +25,6 @@ description: AI Native Workflow ${verb} 阶段. 读取并执行 .agents/workflow
 `
 }
 
-// .claude/commands/opsx-<verb>.md 命令桩内容 (复制, 因 commands 不跟随软链)
-export function commandStubContent(verb) {
-  return `---
-description: AI Native Workflow ${verb} 阶段. 读取并执行 .agents/workflow/${verb}.md
-argument-hint: [task-id]
----
-
-执行 AI Native Workflow 的 \`${verb}\` 阶段。
-
-读取仓库根的 \`.agents/workflow/${verb}.md\` 并严格按其执行。任务标识: $ARGUMENTS
-`
-}
-
 // 提取并解析 markdown 顶部的 YAML frontmatter; 无则返回 null
 export function parseFrontmatter(md) {
   const m = /^---\r?\n([\s\S]*?)\r?\n---\r?\n?/.exec(md)

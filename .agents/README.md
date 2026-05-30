@@ -14,15 +14,15 @@ berth 的 Agent 工作流单一真源, 同时服务 Claude Code 与 Codex。
 
 `pnpm harness:sync` 幂等生成:
 - `.agents/skills/opsx-<verb>/SKILL.md`
-- `.claude/skills/opsx-<verb>` 软链或目录副本
-- `.claude/commands/opsx-<verb>.md` 命令桩 (commands 不跟随软链, 故复制)
+- `.claude/skills/opsx-<verb>` 软链或目录副本 (Claude Code 由 skill 提供 `/opsx-<verb>` 并可按 description 自动触发)
 - Codex 原生读取 `.agents/skills`, 不再分发 `.codex/skills`
+- 历史生成的 `.claude/commands/opsx-<verb>.md` 会被清理; Claude Code 官方已将 custom commands 合并进 skills
 
 `pnpm harness:check` 校验产物/模板/命名/分发。CI 强制。
 
 ## 调用
 
-- Claude Code: `/opsx-<verb>` (命令或 skill)
+- Claude Code: `/opsx-<verb>` (由 `.claude/skills/opsx-<verb>/SKILL.md` 提供, 也可自动触发)
 - Codex: `$opsx-<verb>` (skill)
 
 verb: new · continue · explore · design · implement · verify · archive · optimization

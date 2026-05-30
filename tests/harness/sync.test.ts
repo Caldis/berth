@@ -1,6 +1,6 @@
 // tests/harness/sync.test.ts
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { mkdtempSync, rmSync, writeFileSync, readlinkSync, existsSync, lstatSync, readFileSync } from 'node:fs'
+import { mkdtempSync, rmSync, writeFileSync, readlinkSync, existsSync, lstatSync, readFileSync, mkdirSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 // @ts-expect-error mjs sin tipos
@@ -27,10 +27,10 @@ function expectSkillDistribution(path: string, target: string): void {
 }
 
 describe('harness-sync', () => {
-  it('apply 生成 8 个 verb 的 SKILL.md / 命令桩 / Claude skill 分发', () => {
+  it('apply 生成 8 个 verb 的 SKILL.md / Claude skill 分发', () => {
     apply(root)
     expect(existsSync(join(root, '.agents/skills/opsx-explore/SKILL.md'))).toBe(true)
-    expect(existsSync(join(root, '.claude/commands/opsx-explore.md'))).toBe(true)
+    expect(existsSync(join(root, '.claude/commands/opsx-explore.md'))).toBe(false)
     expectSkillDistribution(join(root, '.claude/skills/opsx-explore'), '../../.agents/skills/opsx-explore')
     expect(existsSync(join(root, '.codex/skills/opsx-explore'))).toBe(false)
   })
@@ -41,18 +41,31 @@ describe('harness-sync', () => {
     expect(second.changed).toEqual([])
   })
 
-  it('check: 同步后 ok, 删桩后报 drift', () => {
+  it('check: 同步后 ok, 删除 Claude skill 分发后报 drift', () => {
     apply(root)
     expect(check(root).ok).toBe(true)
-    rmSync(join(root, '.claude/commands/opsx-verify.md'))
+    rmSync(join(root, '.claude/skills/opsx-verify'), { recursive: true, force: true })
     const r = check(root)
     expect(r.ok).toBe(false)
     expect(r.drift.some((d: string) => d.includes('verify'))).toBe(true)
   })
 
-  it('check: 桩内容漂移可被检出', () => {
+  it('check: skill 内容漂移可被检出', () => {
     apply(root)
-    writeFileSync(join(root, '.claude/commands/opsx-new.md'), 'tampered')
+    writeFileSync(join(root, '.agents/skills/opsx-new/SKILL.md'), 'tampered')
     expect(check(root).ok).toBe(false)
+  })
+
+  it('check/apply: 旧 Claude command 桩会被视为漂移并清理', () => {
+    apply(root)
+    mkdirSync(join(root, '.claude/commands'), { recursive: true })
+    const legacyCommand = join(root, '.claude/commands/opsx-new.md')
+    writeFileSync(legacyCommand, 'legacy')
+    expect(check(root).ok).toBe(false)
+
+    const r = apply(root)
+    expect(r.changed).toContain(legacyCommand)
+    expect(existsSync(legacyCommand)).toBe(false)
+    expect(check(root).ok).toBe(true)
   })
 })
