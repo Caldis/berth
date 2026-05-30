@@ -8,6 +8,8 @@ import {
   Puzzle,
   AlertTriangle,
   CheckCircle2,
+  Info,
+  XCircle,
   Clock,
   Coins,
   ChevronRight
@@ -20,6 +22,7 @@ import { useAppStore } from '@/stores/app'
 import { computeStatsForAssets, filterAssetsByAgentView } from '@/lib/agent-view'
 import { StatCard } from '@/components/shared/stat-card'
 import { EmptyState } from '@/components/shared/empty-state'
+import type { HealthCheck } from '@shared/types/ipc'
 import { TokenUsageDisplay } from '@/components/shared/token-usage-display'
 
 export function Overview(): React.ReactElement {
@@ -67,10 +70,11 @@ export function Overview(): React.ReactElement {
     }
   ]
 
-  const warnings = checks.filter((c) => c.severity === 'warning' || c.severity === 'error')
+  const healthGroups = useMemo(() => groupHealthChecks(checks), [checks])
 
   const dailyCosts = usage?.dailyCosts ?? []
   const totalCost = usage?.totalCost ?? 0
+  const hasKnownCost = usage != null && usage.costSource !== 'unknown'
 
   return (
     <div className="space-y-6">
@@ -152,7 +156,7 @@ export function Overview(): React.ReactElement {
           <div className="flex items-center justify-between border-b border-border px-4 py-3">
             <h2 className="text-sm font-medium">{t('overview.costLast7Days')}</h2>
             <span className="text-sm font-semibold text-card-foreground">
-              {formatCurrency(totalCost)}
+              {hasKnownCost ? formatCurrency(totalCost) : '—'}
             </span>
           </div>
           {dailyCosts.length === 0 ? (
@@ -211,41 +215,122 @@ export function Overview(): React.ReactElement {
         <div className="border-b border-border px-4 py-3">
           <h2 className="text-sm font-medium">{t('overview.healthChecks')}</h2>
         </div>
-        {warnings.length === 0 ? (
+        {checks.length === 0 ? (
           <div className="flex items-center gap-2 p-4">
             <CheckCircle2 className="h-4 w-4 text-green-500" />
             <span className="text-sm text-muted-foreground">{t('overview.noIssues')}</span>
           </div>
         ) : (
           <div className="divide-y divide-border">
-            {warnings.map((check) => (
-              <button
-                key={check.id}
-                onClick={() => {
-                  if (check.assetId) navigate(`/configuration/capabilities`)
-                }}
-                className={cn(
-                  'flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-accent/5',
-                  !check.assetId && 'cursor-default'
-                )}
-              >
-                <AlertTriangle
-                  className={cn(
-                    'h-4 w-4 shrink-0',
-                    check.severity === 'error' ? 'text-destructive' : 'text-yellow-500'
-                  )}
-                />
-                <span className="text-sm text-card-foreground">{check.message}</span>
-                {check.assetType && (
-                  <span className="ml-auto shrink-0 text-[10px] text-muted-foreground">
-                    {check.assetType}
-                  </span>
-                )}
-              </button>
+            {healthGroups.map((group) => (
+              <div key={group.agentId}>
+                <div className="flex items-center justify-between bg-muted/20 px-4 py-2">
+                  <span className="text-xs font-medium text-muted-foreground">{group.agentName}</span>
+                  <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+                    {group.errors > 0 && <span>{group.errors} error</span>}
+                    {group.warnings > 0 && <span>{group.warnings} warning</span>}
+                    {group.info > 0 && <span>{group.info} info</span>}
+                  </div>
+                </div>
+                <div className="divide-y divide-border">
+                  {group.checks.map((check) => {
+                    const clickable = Boolean(check.path || check.assetId)
+                    return (
+                      <button
+                        key={check.id}
+                        onClick={() => {
+                          if (check.path) {
+                            void window.api.shell.openPath(check.path)
+                            return
+                          }
+                          if (check.assetId) navigate(`/configuration/capabilities`)
+                        }}
+                        className={cn(
+                          'flex w-full items-start gap-3 px-4 py-3 text-left transition-colors',
+                          clickable ? 'hover:bg-accent/5' : 'cursor-default'
+                        )}
+                      >
+                        <HealthCheckIcon severity={check.severity} />
+                        <div className="min-w-0 flex-1 space-y-1">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-medium text-card-foreground">
+                              {check.title}
+                            </span>
+                            {check.scope && (
+                              <span className="rounded border border-border px-1.5 py-0.5 text-[10px] uppercase text-muted-foreground">
+                                {check.scope}
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-sm text-muted-foreground">{check.message}</p>
+                          {check.suggestion && (
+                            <p className="text-xs text-muted-foreground">{check.suggestion}</p>
+                          )}
+                          {check.path && (
+                            <p className="truncate text-xs text-muted-foreground">
+                              {truncatePath(check.path, 88)}
+                            </p>
+                          )}
+                        </div>
+                        {check.assetType && (
+                          <span className="shrink-0 text-[10px] text-muted-foreground">
+                            {check.assetType}
+                          </span>
+                        )}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
             ))}
           </div>
         )}
       </div>
     </div>
   )
+}
+
+interface HealthCheckGroup {
+  agentId: string
+  agentName: string
+  checks: HealthCheck[]
+  errors: number
+  warnings: number
+  info: number
+}
+
+function groupHealthChecks(checks: HealthCheck[]): HealthCheckGroup[] {
+  const groups = new Map<string, HealthCheckGroup>()
+  const sorted = [...checks].sort((a, b) => severityRank(a.severity) - severityRank(b.severity))
+  for (const check of sorted) {
+    const key = check.agentId
+    const group =
+      groups.get(key) ??
+      {
+        agentId: key,
+        agentName: check.agentName,
+        checks: [],
+        errors: 0,
+        warnings: 0,
+        info: 0
+      }
+    group.checks.push(check)
+    if (check.severity === 'error') group.errors += 1
+    if (check.severity === 'warning') group.warnings += 1
+    if (check.severity === 'info') group.info += 1
+    groups.set(key, group)
+  }
+  return Array.from(groups.values())
+}
+
+function severityRank(severity: HealthCheck['severity']): number {
+  if (severity === 'error') return 0
+  if (severity === 'warning') return 1
+  return 2
+}
+
+function HealthCheckIcon({ severity }: { severity: HealthCheck['severity'] }): React.ReactElement {
+  if (severity === 'error') return <XCircle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
+  if (severity === 'warning') return <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-yellow-500" />
+  return <Info className="mt-0.5 h-4 w-4 shrink-0 text-blue-500" />
 }
