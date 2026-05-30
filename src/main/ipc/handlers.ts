@@ -95,8 +95,13 @@ export function registerAssetHandlers(): void {
     return search.search(query, scanner.getAllAssets())
   })
 
-  ipcMain.handle('assets:health-check', (): HealthCheck[] => {
-    return runHealthChecks()
+  ipcMain.handle('assets:health-check', async (): Promise<HealthCheck[]> => {
+    const scanner = await ensureScanned()
+    return runHealthChecks({
+      projectDir: scanner.getProjectDir(),
+      assets: scanner.getAllAssets(),
+      scanErrors: scanner.getScanErrors()
+    })
   })
 
   ipcMain.handle('assets:import-chain', (_event, filePath: string): ImportChainNode => {

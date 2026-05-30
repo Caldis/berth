@@ -6,12 +6,15 @@ import { CodexAdapter } from '../adapters/codex'
 export class AssetScanner {
   private adapters: AgentAdapter[]
   private cachedAssets: Asset[] = []
+  private cachedErrors: ScanResult['errors'] = []
   private assetMap = new Map<string, Asset>()
   private scanned = false
   private scanPromise: Promise<ScanResult> | null = null
+  private readonly projectDir?: string
 
   constructor(projectDir?: string) {
-    this.adapters = [new ClaudeCodeAdapter(projectDir), new CodexAdapter()]
+    this.projectDir = projectDir
+    this.adapters = [new ClaudeCodeAdapter(projectDir), new CodexAdapter(projectDir)]
   }
 
   async scanAll(): Promise<ScanResult> {
@@ -42,6 +45,7 @@ export class AssetScanner {
       }
     }
     this.cachedAssets = assets
+    this.cachedErrors = errors
     this.scanned = true
     this.assetMap.clear()
     for (const a of assets) {
@@ -68,6 +72,14 @@ export class AssetScanner {
 
   getAllAssets(): Asset[] {
     return this.cachedAssets
+  }
+
+  getScanErrors(): ScanResult['errors'] {
+    return this.cachedErrors
+  }
+
+  getProjectDir(): string | undefined {
+    return this.projectDir
   }
 
   hasScanned(): boolean {
