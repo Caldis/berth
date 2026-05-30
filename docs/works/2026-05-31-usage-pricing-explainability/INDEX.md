@@ -2,7 +2,7 @@
 task: 2026-05-31-usage-pricing-explainability
 type: feature
 jira:
-phase: implement
+phase: verify
 created: 2026-05-31
 artifacts:
   source: 00-PRD.md

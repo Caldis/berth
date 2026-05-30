@@ -20,7 +20,7 @@
   - 新增 route-level `PageErrorBoundary`。
   - Usage IPC reject 时显示错误态并可重试。
   - 验证: `pnpm test -- tests/renderer/page-error-boundary.test.tsx tests/renderer/sessions-pages.test.tsx`。
-- [ ] 任务 6: 总验证
+- [x] 任务 6: 总验证
   - `pnpm harness:check`
   - `pnpm test`
   - `pnpm typecheck`
