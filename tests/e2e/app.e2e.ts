@@ -1,9 +1,27 @@
-import { test, expect, ElectronApplication, Page } from '@playwright/test'
+import { test, expect, type ElectronApplication, type Locator, type Page } from '@playwright/test'
 import { _electron as electron } from '@playwright/test'
 import { resolve } from 'path'
 
 let app: ElectronApplication
 let page: Page
+
+type Box = {
+  x: number
+  y: number
+  width: number
+  height: number
+}
+
+const navNames = {
+  overview: /^(Overview|总览)$/,
+  sessions: /^(Sessions|会话)$/,
+  instructions: /^(Instructions|指令)$/,
+  capabilities: /^(Capabilities|能力)$/,
+  usage: /^(Usage|用量)$/,
+  settings: /^(Settings|设置)$/
+}
+
+const navButton = (name: RegExp): Locator => page.locator('aside').getByRole('button', { name })
 
 test.beforeAll(async () => {
   app = await electron.launch({
@@ -32,37 +50,58 @@ test.describe('App Shell', () => {
     await expect(sidebar).toBeVisible()
   })
 
+  test('sidebar item spacing is consistent inside configuration group', async () => {
+    const itemBox = async (name: RegExp): Promise<Box> => {
+      const box = await navButton(name).boundingBox()
+      expect(box).not.toBeNull()
+      return box!
+    }
+
+    const overview = await itemBox(navNames.overview)
+    const sessions = await itemBox(navNames.sessions)
+    const instructions = await itemBox(navNames.instructions)
+    const capabilities = await itemBox(navNames.capabilities)
+    const usage = await itemBox(navNames.usage)
+
+    const gapBetween = (previous: Box, next: Box): number => next.y - previous.y - previous.height
+
+    const regularGap = gapBetween(overview, sessions)
+
+    expect(gapBetween(instructions, capabilities)).toBeCloseTo(regularGap, 0)
+    expect(gapBetween(capabilities, usage)).toBeCloseTo(regularGap, 0)
+  })
+
   test('overview page loads by default', async () => {
     const heading = page.locator('h1')
     await expect(heading).toBeVisible()
   })
 
   test('can navigate to sessions', async () => {
-    await page.click('button:has-text("Sessions")')
+    await navButton(navNames.sessions).click()
     const heading = page.locator('h1')
     await expect(heading).toContainText(/Sessions|会话/)
   })
 
   test('can navigate to instructions', async () => {
-    await page.click('button:has-text("Instructions")')
+    await navButton(navNames.instructions).click()
     const heading = page.locator('h1')
     await expect(heading).toContainText(/Instructions|指令/)
   })
 
   test('can navigate to capabilities', async () => {
-    await page.click('button:has-text("Capabilities")')
+    await navButton(navNames.capabilities).click()
     const heading = page.locator('h1')
     await expect(heading).toContainText(/Capabilities|能力/)
   })
 
   test('can navigate to usage', async () => {
-    await page.click('button:has-text("Usage")')
+    await navButton(navNames.usage).click()
     const heading = page.locator('h1')
     await expect(heading).toContainText(/Usage|用量/)
   })
 
   test('can navigate to settings', async () => {
-    await page.click('button:has-text("Settings")')
+    await navButton(navNames.settings).click()
     const heading = page.locator('h1')
     await expect(heading).toContainText(/Settings|设置/)
   })
@@ -70,8 +109,8 @@ test.describe('App Shell', () => {
 
 test.describe('Theme', () => {
   test('can toggle theme via settings', async () => {
-    await page.click('button:has-text("Settings")')
-    const darkBtn = page.locator('button:has-text("Dark")')
+    await navButton(navNames.settings).click()
+    const darkBtn = page.locator('main').getByRole('button', { name: /^(Dark|深色)$/ })
     if (await darkBtn.isVisible()) {
       await darkBtn.click()
       const html = page.locator('html')

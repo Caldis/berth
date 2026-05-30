@@ -101,26 +101,28 @@ export function Sidebar(): React.ReactElement {
                 {t(section.labelKey)}
               </div>
             )}
-            {section.items.map((item) => {
-              const active = isActive(item.path)
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => navigate(item.path)}
-                  className={cn(
-                    'titlebar-no-drag flex w-full items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm transition-colors',
-                    active
-                      ? 'bg-accent text-accent-foreground font-medium'
-                      : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/10 hover:text-sidebar-foreground',
-                    collapsed && 'justify-center px-0'
-                  )}
-                  title={collapsed ? t(item.labelKey) : undefined}
-                >
-                  <item.icon className="h-4 w-4 shrink-0" />
-                  {!collapsed && <span>{t(item.labelKey)}</span>}
-                </button>
-              )
-            })}
+            <div className="flex flex-col gap-1">
+              {section.items.map((item) => {
+                const active = isActive(item.path)
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => navigate(item.path)}
+                    className={cn(
+                      'titlebar-no-drag flex w-full items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm transition-colors',
+                      active
+                        ? 'bg-accent text-accent-foreground font-medium'
+                        : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/10 hover:text-sidebar-foreground',
+                      collapsed && 'justify-center px-0'
+                    )}
+                    title={collapsed ? t(item.labelKey) : undefined}
+                  >
+                    <item.icon className="h-4 w-4 shrink-0" />
+                    {!collapsed && <span>{t(item.labelKey)}</span>}
+                  </button>
+                )
+              })}
+            </div>
           </div>
         ))}
       </nav>
