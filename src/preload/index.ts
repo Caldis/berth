@@ -23,6 +23,7 @@ const api = {
   assets: {
     scan: (category?: string) => ipcRenderer.invoke('assets:scan', category),
     scanAll: () => ipcRenderer.invoke('assets:scan-all'),
+    scanSources: () => ipcRenderer.invoke('assets:scan-sources'),
     get: (id: string) => ipcRenderer.invoke('assets:get', id),
     search: (query: string) => ipcRenderer.invoke('assets:search', query),
     healthCheck: () => ipcRenderer.invoke('assets:health-check'),

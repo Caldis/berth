@@ -1,5 +1,5 @@
 import type { AgentAdapter, Asset, AssetCategory, AssetStats } from '@shared/types/asset'
-import type { ScanResult } from '@shared/types/ipc'
+import type { AgentScanSourceGroup, ScanResult } from '@shared/types/ipc'
 import { ClaudeCodeAdapter } from '../adapters/claude-code'
 import { CodexAdapter } from '../adapters/codex'
 
@@ -76,6 +76,29 @@ export class AssetScanner {
 
   getAdapters(): AgentAdapter[] {
     return this.adapters
+  }
+
+  async getScanSourceGroups(): Promise<AgentScanSourceGroup[]> {
+    const groups: AgentScanSourceGroup[] = []
+    for (const adapter of this.adapters) {
+      try {
+        const result = await adapter.detect()
+        groups.push({
+          agentId: adapter.id,
+          agentName: adapter.displayName,
+          installed: result.installed,
+          roots: result.paths
+        })
+      } catch {
+        groups.push({
+          agentId: adapter.id,
+          agentName: adapter.displayName,
+          installed: false,
+          roots: []
+        })
+      }
+    }
+    return groups
   }
 
   updateAsset(asset: Asset): void {

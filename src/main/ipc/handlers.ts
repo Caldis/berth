@@ -6,6 +6,7 @@ import type { IpcMainInvokeEvent } from 'electron'
 import type { AgentView, Asset, AssetCategory, Relation, SessionSummary, UsageSummary } from '@shared/types/asset'
 import type {
   PlatformInfo,
+  AgentScanSourceGroup,
   ScanResult,
   SearchResult,
   HealthCheck,
@@ -61,6 +62,10 @@ export function registerAssetHandlers(): void {
     const search = getSearch()
     search.buildIndex(result.assets)
     return result
+  })
+
+  ipcMain.handle('assets:scan-sources', async (): Promise<AgentScanSourceGroup[]> => {
+    return getScanner().getScanSourceGroups()
   })
 
   ipcMain.handle(

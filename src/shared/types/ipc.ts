@@ -3,6 +3,7 @@ import type {
   Asset,
   AssetCategory,
   AssetStats,
+  ScanRoot,
   SessionSummary,
   UsageSummary,
   Relation
@@ -26,6 +27,13 @@ export interface ScanError {
   path: string
   type: string
   message: string
+}
+
+export interface AgentScanSourceGroup {
+  agentId: string
+  agentName: string
+  installed: boolean
+  roots: ScanRoot[]
 }
 
 export interface SessionListResult {
@@ -149,6 +157,7 @@ export interface IpcChannels {
   'window:is-maximized': { args: []; result: boolean }
   'platform:info': { args: []; result: PlatformInfo }
   'assets:scan-all': { args: []; result: ScanResult }
+  'assets:scan-sources': { args: []; result: AgentScanSourceGroup[] }
   'assets:scan-category': { args: [AssetCategory]; result: Asset[] }
   'assets:get': { args: [string]; result: Asset | null }
   'assets:relations': { args: [string]; result: Relation[] }
