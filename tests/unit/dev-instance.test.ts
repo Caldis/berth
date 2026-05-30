@@ -66,7 +66,7 @@ describe('dev agent instance', () => {
     expect(profile).toEqual({ id: 'agent-1', profileDir })
     expect(setPath).toHaveBeenCalledWith('userData', profileDir)
     expect(setPath).toHaveBeenCalledWith('sessionData', profileDir)
-    expect(shouldRequestSingleInstanceLock(profile)).toBe(false)
+    expect(shouldRequestSingleInstanceLock(profile)).toBe(true)
   })
 
   it('keeps the normal single-instance lock when no agent profile is configured', () => {

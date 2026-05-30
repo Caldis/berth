@@ -75,5 +75,6 @@ export function configureAgentDevProfile(
 }
 
 export function shouldRequestSingleInstanceLock(profile: AgentDevProfile | undefined): boolean {
-  return !profile
+  void profile
+  return true
 }

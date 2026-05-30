@@ -2,7 +2,7 @@
 task: 2026-05-30-agent-owned-dev-instance
 type: bug
 jira:
-phase: verify
+phase: implement
 created: 2026-05-30
 artifacts:
   source: 00-BUG.md
