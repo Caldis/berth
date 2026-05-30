@@ -2,7 +2,7 @@
 task: 2026-05-30-dev-project-dir-scope
 type: bug
 jira:
-phase: verify
+phase: archive
 created: 2026-05-30
 artifacts:
   source: 00-BUG.md
@@ -15,7 +15,7 @@ gh_project:
   project_number: 6
   project_url: https://github.com/users/Caldis/projects/6
   item_id: PVTI_lAHOADXbEs4BZHvQzguPY8E
-  item_status: In Progress
+  item_status: Done
 ---
 
 # dev-project-dir-scope
