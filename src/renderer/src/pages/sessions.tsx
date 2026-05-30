@@ -13,7 +13,6 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import {
-  formatNumber,
   formatOptionalCurrency,
   formatOptionalDuration,
   formatOptionalRelativeTime,
@@ -22,6 +21,7 @@ import {
 import { useSessions } from '@/hooks/use-ipc'
 import { EmptyState } from '@/components/shared/empty-state'
 import { useAppStore } from '@/stores/app'
+import { TokenUsageDisplay } from '@/components/shared/token-usage-display'
 
 type GroupBy = 'project' | 'date'
 
@@ -180,7 +180,7 @@ export function Sessions(): React.ReactElement {
                           </span>
                           <span className="flex items-center gap-1">
                             <Hash className="h-3 w-3" />
-                            {formatNumber(session.tokens)}
+                            <TokenUsageDisplay usage={session.tokenUsage} />
                           </span>
                           <span className="inline-flex items-center rounded-md bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
                             {session.model || t('common.unknown')}

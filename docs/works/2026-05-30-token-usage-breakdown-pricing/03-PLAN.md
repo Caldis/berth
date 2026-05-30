@@ -11,11 +11,11 @@
 - [x] 任务 3: Usage 聚合支持 token 明细、days 过滤和 session fallback
   - 修改 `src/main/engine/usage.ts` 与 `src/main/ipc/handlers.ts`。
   - 验证: `pnpm test -- tests/unit/usage-summary.test.ts`。
-- [ ] 任务 4: token 展示组件与页面替换
+- [x] 任务 4: token 展示组件与页面替换
   - 新增 `src/renderer/src/components/shared/token-usage-display.tsx`。
   - 替换 Overview、Sessions、Session Detail、Usage 中的 token 总数显示。
   - 更新 en/zh i18n。
-  - 验证: `pnpm test -- tests/renderer/sessions-pages.test.tsx`。
+  - 验证: `pnpm test -- tests/renderer/sessions-pages.test.tsx`, `pnpm typecheck:web`。
 - [ ] 任务 5: pricing catalog 与 cost source 基础模型
   - 增加 pricing 类型和估算 helper, 暂不把估算冒充真实账单。
   - 支持内置 catalog / local override / missing pricing 结果。

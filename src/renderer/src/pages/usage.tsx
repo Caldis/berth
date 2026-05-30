@@ -14,6 +14,7 @@ import {
 import { DollarSign, Coins, Gauge, FlaskConical } from 'lucide-react'
 import { cn, formatNumber, formatCurrency } from '@/lib/utils'
 import type { UsageSummary } from '@shared/types/asset'
+import { TokenUsageDisplay } from '@/components/shared/token-usage-display'
 
 const CHART_COLORS = [
   'hsl(216, 57%, 25%)',
@@ -95,9 +96,11 @@ export function Usage(): React.ReactElement {
               {t('usage.tokensUsed')}
             </span>
           </div>
-          <p className="mt-2 text-3xl font-bold tabular-nums">
-            {formatNumber(usage?.totalTokens ?? 0)}
-          </p>
+          {usage ? (
+            <TokenUsageDisplay usage={usage.tokenUsage} mode="detail" className="mt-2" />
+          ) : (
+            <p className="mt-2 text-3xl font-bold tabular-nums">0 {t('usage.tokenUnit')}</p>
+          )}
         </div>
       </div>
 
@@ -189,6 +192,9 @@ export function Usage(): React.ReactElement {
                       <span className="flex-1 truncate text-muted-foreground">
                         {item.model}
                       </span>
+                      <span className="tabular-nums text-muted-foreground">
+                        {formatNumber(item.tokens)} {t('usage.tokenUnit')}
+                      </span>
                       <span className="tabular-nums font-medium">{item.percentage}%</span>
                     </div>
                   ))}
@@ -214,6 +220,9 @@ export function Usage(): React.ReactElement {
                   <div key={item.project}>
                     <div className="mb-1 flex items-center justify-between text-sm">
                       <span className="truncate text-muted-foreground">{item.project}</span>
+                      <span className="ml-2 tabular-nums text-muted-foreground">
+                        {formatNumber(item.tokens)} {t('usage.tokenUnit')}
+                      </span>
                       <span className="ml-2 tabular-nums font-medium">{item.percentage}%</span>
                     </div>
                     <div className="h-1.5 overflow-hidden rounded-full bg-muted">

@@ -6,6 +6,7 @@ import '../../src/renderer/src/i18n'
 import { Overview } from '../../src/renderer/src/pages/overview'
 import { Sessions } from '../../src/renderer/src/pages/sessions'
 import { SessionDetail } from '../../src/renderer/src/pages/session-detail'
+import { Usage } from '../../src/renderer/src/pages/usage'
 import type { Asset, SessionSummary } from '../../src/shared/types/asset'
 import { normalizeTokenUsage } from '../../src/shared/token-usage'
 
@@ -85,12 +86,20 @@ function mockSessionApis(): void {
   }))
   window.api.usage.summary = vi.fn(async () => ({
     totalCost: 0,
-    totalTokens: 0,
-    tokenUsage: normalizeTokenUsage({}),
+    totalTokens: summary.tokenUsage.totalTokens,
+    tokenUsage: summary.tokenUsage,
     costSource: 'unknown',
     dailyCosts: [],
     dailyTokenUsage: [],
-    byModel: [],
+    byModel: [
+      {
+        model: summary.model,
+        percentage: 100,
+        cost: 0,
+        tokens: summary.tokenUsage.totalTokens,
+        tokenUsage: summary.tokenUsage
+      }
+    ],
     byProject: [],
     rateLimits: []
   }))
@@ -111,6 +120,7 @@ describe('session pages', () => {
     expect(window.api.sessions.list).toHaveBeenCalledWith({ projectFilter: undefined, limit: 5, agentView: 'all' })
     expect(screen.getByText('D:\\Code\\berth')).toBeInTheDocument()
     expect(screen.getByText('38 tok')).toBeInTheDocument()
+    expect(screen.getByText(/I 10 \/ O 5/)).toBeInTheDocument()
     expect(screen.getAllByText('—').length).toBeGreaterThan(0)
   })
 
@@ -128,7 +138,8 @@ describe('session pages', () => {
     expect(screen.queryByText('D--Code-berth')).not.toBeInTheDocument()
     expect(screen.queryByText(/Invalid Date/i)).not.toBeInTheDocument()
     expect(screen.getByText('5m')).toBeInTheDocument()
-    expect(screen.getByText('38')).toBeInTheDocument()
+    expect(screen.getByText('38 tok')).toBeInTheDocument()
+    expect(screen.getByText(/I 10 \/ O 5/)).toBeInTheDocument()
     expect(screen.getByText('claude-sonnet-4-20250514')).toBeInTheDocument()
   })
 
@@ -147,6 +158,8 @@ describe('session pages', () => {
     expect(screen.getByText('D:\\Code\\berth')).toBeInTheDocument()
     expect(screen.getByText('claude-sonnet-4-20250514')).toBeInTheDocument()
     expect(screen.getByText('5m')).toBeInTheDocument()
+    expect(screen.getByText('Input: 10')).toBeInTheDocument()
+    expect(screen.getByText('Output: 5')).toBeInTheDocument()
     expect(screen.getByText('frontend-design')).toBeInTheDocument()
     expect(screen.getByText('plugin_playwright_playwright')).toBeInTheDocument()
     expect(screen.getByText('Edit')).toBeInTheDocument()
@@ -154,5 +167,20 @@ describe('session pages', () => {
     expect(screen.getAllByText('D:\\Code\\berth\\src\\main.ts').length).toBeGreaterThan(0)
     expect(screen.getByText('Stop')).toBeInTheDocument()
     expect(screen.getByText('2x')).toBeInTheDocument()
+  })
+
+  it('renders usage token totals and model token counts', async () => {
+    mockSessionApis()
+
+    render(
+      <MemoryRouter>
+        <Usage />
+      </MemoryRouter>
+    )
+
+    expect(await screen.findByText('Input: 10')).toBeInTheDocument()
+    expect(screen.getByText('Output: 5')).toBeInTheDocument()
+    expect(screen.getAllByText('38 tok').length).toBeGreaterThan(0)
+    expect(screen.getByText('claude-sonnet-4-20250514')).toBeInTheDocument()
   })
 })

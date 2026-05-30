@@ -23,7 +23,6 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import {
-  formatNumber,
   formatOptionalCurrency,
   formatOptionalDuration,
   formatOptionalRelativeTime,
@@ -32,6 +31,7 @@ import {
 import { useSessionDetail } from '@/hooks/use-ipc'
 import { ScopeBadge } from '@/components/shared/scope-badge'
 import { EmptyState } from '@/components/shared/empty-state'
+import { TokenUsageDisplay } from '@/components/shared/token-usage-display'
 import type { SessionArtifacts, SessionToolEvent } from '@shared/types/ipc'
 
 export function SessionDetail(): React.ReactElement {
@@ -115,7 +115,7 @@ export function SessionDetail(): React.ReactElement {
               />
               <MetaItem
                 label={t('sessions.tokens')}
-                value={summary ? formatNumber(summary.tokens) : '-'}
+                value={summary ? <TokenUsageDisplay usage={summary.tokenUsage} mode="detail" /> : '-'}
                 icon={Hash}
               />
               <MetaItem

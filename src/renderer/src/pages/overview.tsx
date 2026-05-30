@@ -14,12 +14,13 @@ import {
 } from 'lucide-react'
 import { Bar, BarChart, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts'
 import { cn } from '@/lib/utils'
-import { formatCurrency, formatNumber, formatOptionalCurrency, formatOptionalRelativeTime, truncatePath } from '@/lib/utils'
+import { formatCurrency, formatOptionalCurrency, formatOptionalRelativeTime, truncatePath } from '@/lib/utils'
 import { useSessions, useUsageSummary, useHealthChecks } from '@/hooks/use-ipc'
 import { useAppStore } from '@/stores/app'
 import { computeStatsForAssets, filterAssetsByAgentView } from '@/lib/agent-view'
 import { StatCard } from '@/components/shared/stat-card'
 import { EmptyState } from '@/components/shared/empty-state'
+import { TokenUsageDisplay } from '@/components/shared/token-usage-display'
 
 export function Overview(): React.ReactElement {
   const { t } = useTranslation()
@@ -138,7 +139,7 @@ export function Overview(): React.ReactElement {
                       <Coins className="h-3 w-3" />
                       {formatOptionalCurrency(session.cost)}
                     </span>
-                    <span>{formatNumber(session.tokens)} tok</span>
+                    <TokenUsageDisplay usage={session.tokenUsage} />
                   </div>
                 </button>
               ))}
