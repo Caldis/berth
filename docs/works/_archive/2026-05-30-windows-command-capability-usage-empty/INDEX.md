@@ -2,7 +2,7 @@
 task: 2026-05-30-windows-command-capability-usage-empty
 type: bug
 jira:
-phase: verify
+phase: archive
 created: 2026-05-30
 artifacts:
   source: 00-BUG.md
