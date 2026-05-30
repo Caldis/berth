@@ -28,7 +28,7 @@ import { getSearch } from '../engine/search'
 import { buildUsageSummary } from '../engine/usage'
 import { normalizeTokenUsage } from '../../shared/token-usage'
 import { runHealthChecks } from '../engine/health'
-import { getAgentHooksStatus, setAgentHooksEnabled, setHookEnabled } from '../engine/hooks-manager'
+import { getAgentHooksStatus, getAgentHooksStatuses, setAgentHooksEnabled, setHookEnabled } from '../engine/hooks-manager'
 import { resolveRelations, buildImportChain } from '../engine/relations'
 import { parseMcpServers } from '../adapters/claude-code/parsers'
 import { parseClaudeSessionDetail } from '../adapters/claude-code/session-detail'
@@ -199,6 +199,10 @@ export function registerAssetHandlers(): void {
 
   ipcMain.handle('hooks:status', (_event, agentId: HooksAgentId): HooksEnablementStatus => {
     return getAgentHooksStatus(agentId)
+  })
+
+  ipcMain.handle('hooks:statuses', (_event, agentId: HooksAgentId): HooksEnablementStatus[] => {
+    return getAgentHooksStatuses(agentId, undefined, getScanner().getProjectDir())
   })
 
   ipcMain.handle(

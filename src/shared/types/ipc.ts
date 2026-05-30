@@ -188,12 +188,14 @@ export type HooksAgentId = 'claude-code' | 'codex'
 export interface HooksEnablementStatus {
   agentId: HooksAgentId
   agentName: string
-  scope: 'user'
+  scope: 'user' | 'project'
   enabled: boolean
   sourcePath: string
   sourceExists: boolean
   supported: boolean
+  writable?: boolean
   reason?: string
+  reasonKey?: string
 }
 
 export interface SetHooksEnabledRequest {
@@ -255,6 +257,7 @@ export interface IpcChannels {
   'memory:get': { args: [string]; result: MemoryNote | null }
   'mcp:merged': { args: []; result: MCPMergeInfo[] }
   'hooks:status': { args: [HooksAgentId]; result: HooksEnablementStatus }
+  'hooks:statuses': { args: [HooksAgentId]; result: HooksEnablementStatus[] }
   'hooks:set-enabled': { args: [SetHooksEnabledRequest]; result: SetHooksEnabledResult }
   'hooks:set-hook-enabled': { args: [SetHookEnabledRequest]; result: SetHookEnabledResult }
   'theme:get': { args: []; result: string }

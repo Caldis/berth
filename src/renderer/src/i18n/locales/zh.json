@@ -603,6 +603,11 @@
         "codexSingleHookNotConnected": "Codex 可以在自己的 hook browser 里禁用 non-managed hook, 但 Berth 还没有接入这条写入路径。",
         "codexSingleHookMissingKey": "Berth 没有算出 Codex 这一行的 hook state key, 因此不能安全修改这个 Hook。",
         "unknownAgent": "Berth 还不知道这个 Agent 如何保存 Hook 状态。",
+        "projectReadOnly": "项目级 Hooks 开关只在这里展示, 如需修改请直接编辑来源文件。",
+        "scope": {
+          "user": "用户级",
+          "project": "项目级"
+        },
         "codexUnsupportedHookType": "Codex 当前会解析这种 Hook 类型, 但不会把它作为 command hook 运行。",
         "codexAsyncHookSkipped": "Codex 当前会跳过 async hook handler。",
         "agentToggleTitle": "Agent 级 Hooks 开关",

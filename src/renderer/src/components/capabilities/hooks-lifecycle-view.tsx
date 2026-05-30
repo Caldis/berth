@@ -183,9 +183,9 @@ function HookAgentEnablementPanel({ agentView }: { agentView: AgentView }): Reac
   useEffect(() => {
     let disposed = false
     setError(null)
-    void Promise.all(agents.map((agentId) => window.api.hooks.status(agentId)))
-      .then((nextStatuses) => {
-        if (!disposed) setStatuses(nextStatuses)
+    void Promise.all(agents.map((agentId) => window.api.hooks.statuses(agentId)))
+      .then((nextStatusGroups) => {
+        if (!disposed) setStatuses(nextStatusGroups.flat())
       })
       .catch((err) => {
         if (!disposed) setError(err instanceof Error ? err.message : String(err))
@@ -196,6 +196,7 @@ function HookAgentEnablementPanel({ agentView }: { agentView: AgentView }): Reac
   }, [agents])
 
   const toggle = async (status: HooksEnablementStatus): Promise<void> => {
+    if (status.scope !== 'user' || status.writable === false) return
     const enabled = !status.enabled
     const confirmMessage = enabled
       ? t('capabilities.hooks.management.confirmEnable', { agent: status.agentName, path: status.sourcePath })
@@ -234,10 +235,13 @@ function HookAgentEnablementPanel({ agentView }: { agentView: AgentView }): Reac
       {error && <p className="mt-2 text-xs text-destructive">{error}</p>}
       <div className="mt-3 grid gap-2 md:grid-cols-2">
         {statuses.map((status) => (
-          <div key={status.agentId} className="flex items-center justify-between gap-3 rounded-md border border-border bg-card px-3 py-2">
+          <div key={`${status.agentId}-${status.scope}`} className="flex items-center justify-between gap-3 rounded-md border border-border bg-card px-3 py-2">
             <div className="min-w-0">
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <span className="text-xs font-medium text-foreground">{status.agentName}</span>
+                <span className="rounded-md border border-border px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+                  {t(`capabilities.hooks.management.scope.${status.scope}`)}
+                </span>
                 <span className={cn(
                   'rounded-md px-1.5 py-0.5 text-[10px] font-medium',
                   status.enabled ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'bg-muted text-muted-foreground'
@@ -246,10 +250,15 @@ function HookAgentEnablementPanel({ agentView }: { agentView: AgentView }): Reac
                 </span>
               </div>
               <p className="mt-0.5 truncate font-mono text-[11px] text-muted-foreground">{status.sourcePath}</p>
+              {status.writable === false && (
+                <p className="mt-1 text-[11px] leading-4 text-muted-foreground">
+                  {status.reasonKey ? t(status.reasonKey) : status.reason}
+                </p>
+              )}
             </div>
             <button
               type="button"
-              disabled={!status.supported || busyAgent === status.agentId}
+              disabled={!status.supported || status.writable === false || busyAgent === status.agentId}
               onClick={() => void toggle(status)}
               className="shrink-0 rounded-md border border-border px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:text-muted-foreground/60 disabled:hover:bg-transparent"
             >

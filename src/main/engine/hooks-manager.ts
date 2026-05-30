@@ -16,6 +16,19 @@ export function getAgentHooksStatus(agentId: HooksAgentId, homeDir = os.homedir(
   return getCodexHooksStatus(homeDir)
 }
 
+export function getAgentHooksStatuses(
+  agentId: HooksAgentId,
+  homeDir = os.homedir(),
+  projectDir?: string
+): HooksEnablementStatus[] {
+  const statuses = [getAgentHooksStatus(agentId, homeDir)]
+  if (!projectDir) return statuses
+  statuses.push(agentId === 'claude-code'
+    ? getClaudeProjectHooksStatus(projectDir)
+    : getCodexProjectHooksStatus(projectDir))
+  return statuses
+}
+
 export function setAgentHooksEnabled(
   request: SetHooksEnabledRequest,
   homeDir = os.homedir()
@@ -92,7 +105,8 @@ function getClaudeHooksStatus(homeDir: string): HooksEnablementStatus {
     enabled: settings?.disableAllHooks !== true,
     sourcePath,
     sourceExists: fs.existsSync(sourcePath),
-    supported: true
+    supported: true,
+    writable: true
   }
 }
 
@@ -107,7 +121,41 @@ function getCodexHooksStatus(homeDir: string): HooksEnablementStatus {
     enabled: features?.hooks !== false,
     sourcePath,
     sourceExists: fs.existsSync(sourcePath),
-    supported: true
+    supported: true,
+    writable: true
+  }
+}
+
+function getClaudeProjectHooksStatus(projectDir: string): HooksEnablementStatus {
+  const sourcePath = path.join(projectDir, '.claude', 'settings.json')
+  const settings = readJsonObject(sourcePath)
+  return {
+    agentId: 'claude-code',
+    agentName: 'Claude Code',
+    scope: 'project',
+    enabled: settings?.disableAllHooks !== true,
+    sourcePath,
+    sourceExists: fs.existsSync(sourcePath),
+    supported: true,
+    writable: false,
+    reasonKey: 'capabilities.hooks.management.projectReadOnly'
+  }
+}
+
+function getCodexProjectHooksStatus(projectDir: string): HooksEnablementStatus {
+  const sourcePath = path.join(projectDir, '.codex', 'config.toml')
+  const config = readTomlObject(sourcePath)
+  const features = isRecord(config?.features) ? config.features : undefined
+  return {
+    agentId: 'codex',
+    agentName: 'Codex',
+    scope: 'project',
+    enabled: features?.hooks !== false,
+    sourcePath,
+    sourceExists: fs.existsSync(sourcePath),
+    supported: true,
+    writable: false,
+    reasonKey: 'capabilities.hooks.management.projectReadOnly'
   }
 }
 

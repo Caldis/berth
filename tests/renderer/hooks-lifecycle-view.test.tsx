@@ -172,4 +172,37 @@ describe('HooksLifecycleView', () => {
     expect(screen.getByText('Entry file not detected')).toBeInTheDocument()
     expect(screen.getByText('Runs for every matching tool')).toBeInTheDocument()
   })
+
+  it('shows user and project hook switches separately', async () => {
+    window.api.hooks.statuses = vi.fn(async (agentId) => [
+      {
+        agentId,
+        agentName: 'Codex',
+        scope: 'user',
+        enabled: true,
+        sourcePath: 'C:\\Users\\test\\.codex\\config.toml',
+        sourceExists: true,
+        supported: true,
+        writable: true
+      },
+      {
+        agentId,
+        agentName: 'Codex',
+        scope: 'project',
+        enabled: false,
+        sourcePath: 'D:\\Code\\berth\\.codex\\config.toml',
+        sourceExists: true,
+        supported: true,
+        writable: false,
+        reasonKey: 'capabilities.hooks.management.projectReadOnly'
+      }
+    ])
+
+    renderHooks('codex', [hookAsset('codex-stop', 'codex', 'Stop')])
+    await waitForEnablementStatus()
+
+    expect(screen.getByText('User scope')).toBeInTheDocument()
+    expect(screen.getByText('Project scope')).toBeInTheDocument()
+    expect(screen.getByText('Project-level hook switches are shown for review only. Edit the source file directly.')).toBeInTheDocument()
+  })
 })

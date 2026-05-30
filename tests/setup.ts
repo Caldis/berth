@@ -69,8 +69,23 @@ const mockApi = {
         ? 'C:\\Users\\test\\.codex\\config.toml'
         : 'C:\\Users\\test\\.claude\\settings.json',
       sourceExists: true,
-      supported: true
+      supported: true,
+      writable: true
     }),
+    statuses: async (agentId: 'claude-code' | 'codex') => [
+      {
+        agentId,
+        agentName: agentId === 'codex' ? 'Codex' : 'Claude Code',
+        scope: 'user' as const,
+        enabled: true,
+        sourcePath: agentId === 'codex'
+          ? 'C:\\Users\\test\\.codex\\config.toml'
+          : 'C:\\Users\\test\\.claude\\settings.json',
+        sourceExists: true,
+        supported: true,
+        writable: true
+      }
+    ],
     setEnabled: async (request: { agentId: 'claude-code' | 'codex'; scope: 'user'; enabled: boolean }) => ({
       status: {
         agentId: request.agentId,
@@ -81,7 +96,8 @@ const mockApi = {
           ? 'C:\\Users\\test\\.codex\\config.toml'
           : 'C:\\Users\\test\\.claude\\settings.json',
         sourceExists: true,
-        supported: true
+        supported: true,
+        writable: true
       },
       changed: true
     }),

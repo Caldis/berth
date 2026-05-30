@@ -59,6 +59,7 @@ interface BerthAPI {
   }
   hooks: {
     status: (agentId: HooksAgentId) => Promise<HooksEnablementStatus>
+    statuses: (agentId: HooksAgentId) => Promise<HooksEnablementStatus[]>
     setEnabled: (request: SetHooksEnabledRequest) => Promise<SetHooksEnabledResult>
     setHookEnabled: (request: SetHookEnabledRequest) => Promise<SetHookEnabledResult>
   }
