@@ -147,6 +147,16 @@ export function checkEntryRules(root) {
     if (!content.includes('docs/issues') || !content.includes('不属于当前主线'))
       errors.push(`entry-rules: ${rel} missing side product issue capture rule`)
   }
+  for (const rel of ['AGENTS.md', '.agents/workflow/_shared.md', '.agents/workflow/implement.md', '.agents/workflow/archive.md']) {
+    const path = join(root, rel)
+    if (!existsSync(path)) {
+      errors.push(`entry-rules: missing ${rel}`)
+      continue
+    }
+    const content = readFileSync(path, 'utf8')
+    if (!content.includes('自己相关') || !content.includes('git diff --cached'))
+      errors.push(`entry-rules: ${rel} missing frequent scoped commit rule`)
+  }
   return errors
 }
 

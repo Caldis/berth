@@ -1,6 +1,6 @@
 // tests/harness/check.test.ts
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { mkdtempSync, rmSync, mkdirSync, writeFileSync } from 'node:fs'
+import { mkdtempSync, rmSync, mkdirSync, writeFileSync, existsSync, readFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 // @ts-expect-error mjs sin tipos
@@ -147,8 +147,11 @@ describe('checkWorkflowSources', () => {
 })
 
 describe('checkEntryRules', () => {
-  function writeEntryRules(options: { agents?: boolean; readme?: boolean; sideIssue?: boolean }): void {
-    if (options.agents) writeFileSync(join(root, 'AGENTS.md'), SMALL_CHANGE_EXEMPTION_CONSENT)
+  function writeEntryRules(options: { agents?: boolean; readme?: boolean; sideIssue?: boolean; scopedCommit?: boolean }): void {
+    if (options.agents) {
+      const scopedCommit = options.scopedCommit === false ? '' : '\n自己相关 git diff --cached'
+      writeFileSync(join(root, 'AGENTS.md'), SMALL_CHANGE_EXEMPTION_CONSENT + scopedCommit)
+    }
     if (options.readme) {
       mkdirSync(join(root, '.agents'), { recursive: true })
       writeFileSync(join(root, '.agents/README.md'), SMALL_CHANGE_EXEMPTION_CONSENT)
@@ -161,6 +164,14 @@ describe('checkEntryRules', () => {
       writeFileSync(join(root, '.agents/workflow/implement.md'), text)
       writeFileSync(join(root, '.agents/workflow/verify.md'), text)
       writeFileSync(join(root, 'docs/issues/AGENTS.md'), text)
+    }
+    if (options.scopedCommit !== false) {
+      mkdirSync(join(root, '.agents/workflow'), { recursive: true })
+      for (const rel of ['.agents/workflow/_shared.md', '.agents/workflow/implement.md', '.agents/workflow/archive.md']) {
+        const path = join(root, rel)
+        const current = existsSync(path) ? readFileSync(path, 'utf8') : ''
+        writeFileSync(path, current + '\n自己相关 git diff --cached')
+      }
     }
   }
 
@@ -183,5 +194,11 @@ describe('checkEntryRules', () => {
     writeEntryRules({ agents: true, readme: true })
     writeFileSync(join(root, '.agents/workflow/implement.md'), 'docs/issues')
     expect(checkEntryRules(root).some((e: string) => e.includes('side product issue'))).toBe(true)
+  })
+
+  it('缺少频繁且限定范围提交规则时报错', () => {
+    writeEntryRules({ agents: true, readme: true })
+    writeFileSync(join(root, '.agents/workflow/archive.md'), '自己相关')
+    expect(checkEntryRules(root).some((e: string) => e.includes('frequent scoped commit'))).toBe(true)
   })
 })

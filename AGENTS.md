@@ -29,6 +29,7 @@
 - 在 harness 工作流 (opsx-*) 任务过程中, 用户给出的纠正/意见/偏好, 一经验证有效, 必须主动沉淀为 friction (docs/friction/), 并在当轮落地优化, 无需用户提示 "记下来"。详见 `.agents/workflow/_shared.md` 不变量 6。
 - 判定归属: 针对当前任务执行过程的反馈 → friction; 针对产品功能/缺陷的反馈 → `docs/issues/`。
 - 执行当前任务时发现已验证但不属于当前主线验收范围的产品 bug、功能缺口或改进项, 主动记录到 `docs/issues/`, 当前任务只做交叉引用; 不顺手修旁支问题, 除非用户明确扩大任务范围。
+- 已验证、边界清楚的增量尽可能频繁提交; 每次只暂存和提交自己相关文件, 提交前必须用 `git diff --cached` 核对 staged 集合。
 - 沉淀产物本身 (friction / works / issues / 文档) 必须先过 `pnpm harness:check` (命名/阶段/结构合规) 才能提交; 不可未验证就 commit。沉淀指令的完备性 = 主动记录 + 产物过闸门。
 
 # Behavioral guidelines
