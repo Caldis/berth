@@ -312,6 +312,10 @@
         "lifecycle": "Lifecycle",
         "comparison": "Compare agents"
       },
+      "density": {
+        "comfortable": "Comfortable",
+        "compact": "Compact"
+      },
       "comparison": {
         "title": "Lifecycle comparison",
         "body": "Use this view to compare which native events each visible agent exposes under the same abstract stage.",

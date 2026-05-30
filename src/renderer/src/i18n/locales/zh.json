@@ -312,6 +312,10 @@
         "lifecycle": "生命周期",
         "comparison": "对照 Agent"
       },
+      "density": {
+        "comfortable": "舒适",
+        "compact": "紧凑"
+      },
       "comparison": {
         "title": "生命周期对照",
         "body": "这个视图把当前可见 Agent 在同一个抽象阶段下支持的原生事件并排展示。",

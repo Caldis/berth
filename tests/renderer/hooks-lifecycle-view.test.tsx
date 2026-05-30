@@ -205,4 +205,20 @@ describe('HooksLifecycleView', () => {
     expect(screen.getByText('Project scope')).toBeInTheDocument()
     expect(screen.getByText('Project-level hook switches are shown for review only. Edit the source file directly.')).toBeInTheDocument()
   })
+
+  it('switches to compact density and keeps long commands visible', async () => {
+    const longCommand = 'python scripts/hooks/pre_tool_use_with_a_very_long_name.py --check safety --format json'
+    renderHooks('codex', [
+      hookAsset('codex-pre', 'codex', 'PreToolUse', {
+        command: longCommand
+      })
+    ])
+    await waitForEnablementStatus()
+
+    const compactButton = screen.getByRole('button', { name: 'Compact' })
+    fireEvent.click(compactButton)
+
+    expect(compactButton.className).toContain('bg-foreground')
+    expect(screen.getByText(longCommand)).toBeInTheDocument()
+  })
 })

@@ -36,6 +36,7 @@ interface HooksLifecycleViewProps {
 }
 
 type HookDisplayMode = 'lifecycle' | 'comparison'
+type HookDensity = 'comfortable' | 'compact'
 
 const supportIconMap = {
   supported: CheckCircle2,
@@ -53,6 +54,7 @@ export function HooksLifecycleView({ assets, agentView, search, scope }: HooksLi
   const { t } = useTranslation()
   const groups = useMemo(() => groupHookAssetsByStage(assets, agentView), [assets, agentView])
   const [displayMode, setDisplayMode] = useState<HookDisplayMode>('lifecycle')
+  const [density, setDensity] = useState<HookDensity>('comfortable')
   const hookCount = assets.length
   const hasSearch = search.trim().length > 0
   const hasScopeFilter = scope !== 'all'
@@ -100,6 +102,23 @@ export function HooksLifecycleView({ assets, agentView, search, scope }: HooksLi
                   )}
                 >
                   {t(`capabilities.hooks.viewMode.${mode}`)}
+                </button>
+              ))}
+            </div>
+            <div className="ml-0 mt-2 inline-flex rounded-md border border-border bg-background p-1 sm:ml-2 sm:mt-3">
+              {(['comfortable', 'compact'] as HookDensity[]).map((item) => (
+                <button
+                  key={item}
+                  type="button"
+                  onClick={() => setDensity(item)}
+                  className={cn(
+                    'rounded px-2.5 py-1 text-xs font-medium transition-colors',
+                    density === item
+                      ? 'bg-foreground text-background'
+                      : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+                  )}
+                >
+                  {t(`capabilities.hooks.density.${item}`)}
                 </button>
               ))}
             </div>
@@ -152,7 +171,7 @@ export function HooksLifecycleView({ assets, agentView, search, scope }: HooksLi
               </div>
             )}
             {groups.map((group) => (
-              <HookStageSection key={group.id} group={group} agentView={agentView} />
+              <HookStageSection key={group.id} group={group} agentView={agentView} density={density} />
             ))}
           </div>
         </div>
@@ -342,11 +361,11 @@ function ComparisonSupportCell({ support }: { support: HookAgentStageSupport }):
   )
 }
 
-function HookStageSection({ group, agentView }: { group: HookStageGroup; agentView: AgentView }): React.ReactElement {
+function HookStageSection({ group, agentView, density }: { group: HookStageGroup; agentView: AgentView; density: HookDensity }): React.ReactElement {
   const { t } = useTranslation()
 
   if (!group.stage) {
-    return <UnknownHookSection group={group} agentView={agentView} />
+    return <UnknownHookSection group={group} agentView={agentView} density={density} />
   }
 
   const supports = getVisibleStageSupport(group.stage, agentView)
@@ -373,13 +392,13 @@ function HookStageSection({ group, agentView }: { group: HookStageGroup; agentVi
           ))}
         </div>
 
-        <HookEventList group={group} agentView={agentView} />
+        <HookEventList group={group} agentView={agentView} density={density} />
       </div>
     </section>
   )
 }
 
-function UnknownHookSection({ group, agentView }: { group: HookStageGroup; agentView: AgentView }): React.ReactElement {
+function UnknownHookSection({ group, agentView, density }: { group: HookStageGroup; agentView: AgentView; density: HookDensity }): React.ReactElement {
   const { t } = useTranslation()
 
   return (
@@ -389,7 +408,7 @@ function UnknownHookSection({ group, agentView }: { group: HookStageGroup; agent
         <p className="mt-1 max-w-[72ch] text-sm leading-6 text-muted-foreground">{t('capabilities.hooks.unknown.body')}</p>
       </div>
       <div className="px-4 py-4">
-        <HookEventList group={group} agentView={agentView} />
+        <HookEventList group={group} agentView={agentView} density={density} />
       </div>
     </section>
   )
@@ -430,7 +449,7 @@ function AgentSupportRow({ support }: { support: HookAgentStageSupport }): React
   )
 }
 
-function HookEventList({ group, agentView }: { group: HookStageGroup; agentView: AgentView }): React.ReactElement {
+function HookEventList({ group, agentView, density }: { group: HookStageGroup; agentView: AgentView; density: HookDensity }): React.ReactElement {
   const { t } = useTranslation()
 
   if (group.hooks.length === 0) {
@@ -454,7 +473,7 @@ function HookEventList({ group, agentView }: { group: HookStageGroup; agentView:
           </div>
           <div className="divide-y divide-border/60">
             {eventGroup.hooks.map((hook) => (
-              <HookAssetRow key={hook.id} hook={hook} agentView={agentView} />
+              <HookAssetRow key={hook.id} hook={hook} agentView={agentView} density={density} />
             ))}
           </div>
         </div>
@@ -463,7 +482,7 @@ function HookEventList({ group, agentView }: { group: HookStageGroup; agentView:
   )
 }
 
-function HookAssetRow({ hook, agentView }: { hook: Asset; agentView: AgentView }): React.ReactElement {
+function HookAssetRow({ hook, agentView, density }: { hook: Asset; agentView: AgentView; density: HookDensity }): React.ReactElement {
   const { t } = useTranslation()
   const command = typeof hook.meta.command === 'string' ? hook.meta.command : ''
   const matcher = typeof hook.meta.matcher === 'string' ? hook.meta.matcher : ''
@@ -509,11 +528,11 @@ function HookAssetRow({ hook, agentView }: { hook: Asset; agentView: AgentView }
   }
 
   return (
-    <div className="px-3 py-3">
+    <div className={cn('px-3', density === 'compact' ? 'py-2' : 'py-3')}>
       <div className="flex flex-wrap items-start gap-3">
         <div className="min-w-0 flex-1">
           <div className="flex min-w-0 flex-wrap items-center gap-2">
-            <span className="min-w-0 max-w-full truncate font-mono text-xs text-foreground">{command || hook.name}</span>
+            <span className="min-w-0 max-w-full break-all font-mono text-xs text-foreground">{command || hook.name}</span>
             <ScopeBadge scope={hook.scope} />
             {hook.agentId === 'codex' && (
               <span className={cn(
