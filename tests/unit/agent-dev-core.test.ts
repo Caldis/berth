@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'fs'
+import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'fs'
 import { tmpdir } from 'os'
 import { join } from 'path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -13,7 +13,9 @@ import {
   formatResult,
   guardAfter,
   guardBefore,
+  guardPath,
   isInsideStateRoot,
+  listStates,
   normalizeId,
   parseArgs,
   profileDir,
@@ -195,7 +197,14 @@ describe('agent dev core', () => {
       status: 'guard-ok'
     })
 
+    expect(existsSync(guardPath(context, 'agent-1'))).toBe(false)
     cleanupState(context, { id: 'agent-1' })
+  })
+
+  it('does not treat guard snapshots as agent state', () => {
+    const context = makeContext()
+    guardBefore({ id: 'agent-1' }, context, { listProcesses: () => [] })
+    expect(listStates(context)).toEqual([])
   })
 
   it('matches owned command lines', () => {

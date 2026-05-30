@@ -100,7 +100,7 @@ export function logPath(context, id) {
 }
 
 export function guardPath(context, id) {
-  return join(instanceDir(context, id), 'guard.json')
+  return join(context.stateRoot, `${id}.guard.json`)
 }
 
 export function isInsideStateRoot(context, target) {
@@ -130,7 +130,7 @@ export function writeState(context, state) {
 export function listStates(context) {
   if (!existsSync(context.stateRoot)) return []
   return readdirSync(context.stateRoot)
-    .filter((name) => name.endsWith('.json'))
+    .filter((name) => name.endsWith('.json') && !name.endsWith('.guard.json'))
     .map((name) => readState(context, name.slice(0, -'.json'.length)))
     .filter(Boolean)
 }
@@ -456,6 +456,7 @@ export function guardAfter(options, context = createAgentDevContext(), deps = {}
   if (!result.ok) {
     throw new Error(`Protected user dev processes exited: ${result.missing.map((p) => p.pid).join(', ')}`)
   }
+  safeRemove(context, file)
   return { status: 'guard-ok', id, protectedProcesses: snapshot.protectedProcesses }
 }
 
