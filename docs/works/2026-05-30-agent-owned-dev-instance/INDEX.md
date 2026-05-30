@@ -24,6 +24,6 @@ artifacts:
 ## gh project
 - project: https://github.com/users/Caldis/projects/6
 - item_id: PVTI_lAHOADXbEs4BZHvQzguQBnk
-- status: Todo
+- status: In Progress
 
 ## 待澄清 (blocked 时填)
