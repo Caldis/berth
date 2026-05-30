@@ -1,7 +1,7 @@
 ---
 task: 2026-05-30-memory-source-adapter-layer
 type: feature
-phase: design
+phase: implement
 created: 2026-05-30
 artifacts:
   source: 00-PRD.md
@@ -19,8 +19,11 @@ berth 的 "记忆" tab 当前只映射 `claude-md`/`agents-md`、没有任何真
 接入 原生 Claude Code 记忆 + united-memory + 未来可扩展; 重定义 "记忆" 视图为真·记忆浏览体验 (只读)。
 
 ## 当前 phase
-design — explore 已完成 (00-PRD + 01-ANALYSIS)。下一步: 02-SPEC (MemorySource 接口/模型/IPC) + 03-PLAN。
-开工实现前须先解决"并发热点"提交策略 (见 01-ANALYSIS 风险段)。
+implement — explore + design 完成 (00-PRD / 01-ANALYSIS / 02-SPEC / 03-PLAN 齐, harness:check 绿)。
+- 安全先行: 03-PLAN 步骤 1-7、9 全是新文件 (无碰撞), 可直接 TDD 落地。
+- 共享热点 (步骤 8 IPC、步骤 10 instructions.tsx+i18n) 触并行 session 未提交文件, 须协调时序/提交,
+  开工前等用户对"何时动共享文件"给绿灯。
+- 过程摩擦已沉淀: docs/friction/20260530-explore-product-ui-vs-host-tool-misattribution.md。
 
 ## 范围决策 (来自用户)
 - 记忆 tab 语义: 重定义为真·记忆视图 (默认推荐)。
