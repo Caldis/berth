@@ -2,7 +2,7 @@
 task: 2026-05-30-settings-scan-directories
 type: bug
 jira:
-phase: implement
+phase: verify
 created: 2026-05-30
 artifacts:
   source: 00-BUG.md
