@@ -13,6 +13,7 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { ScopeBadge } from '@/components/shared/scope-badge'
+import { useHealthChecks } from '@/hooks/use-ipc'
 import {
   getHookManagementState,
   getHookRiskHints,
@@ -26,7 +27,7 @@ import {
   type HookStageGroup
 } from '@/lib/hook-lifecycle'
 import type { AgentView, Asset, AssetScope } from '@shared/types/asset'
-import type { HooksAgentId, HooksEnablementStatus } from '@shared/types/ipc'
+import type { HealthCheck, HooksAgentId, HooksEnablementStatus } from '@shared/types/ipc'
 
 interface HooksLifecycleViewProps {
   assets: Asset[]
@@ -53,6 +54,11 @@ const supportClassMap = {
 export function HooksLifecycleView({ assets, agentView, search, scope }: HooksLifecycleViewProps): React.ReactElement {
   const { t } = useTranslation()
   const groups = useMemo(() => groupHookAssetsByStage(assets, agentView), [assets, agentView])
+  const { checks: healthChecks, loading: healthLoading } = useHealthChecks()
+  const hookHealthChecks = useMemo(
+    () => visibleHookHealthChecks(healthChecks, agentView),
+    [healthChecks, agentView]
+  )
   const [displayMode, setDisplayMode] = useState<HookDisplayMode>('lifecycle')
   const [density, setDensity] = useState<HookDensity>('comfortable')
   const hookCount = assets.length
@@ -123,6 +129,7 @@ export function HooksLifecycleView({ assets, agentView, search, scope }: HooksLi
               ))}
             </div>
             <HookAgentEnablementPanel agentView={agentView} />
+            <HookHealthSummary checks={hookHealthChecks} loading={healthLoading} />
           </div>
         </div>
       </section>
@@ -178,6 +185,7 @@ export function HooksLifecycleView({ assets, agentView, search, scope }: HooksLi
       ) : (
         <HookComparisonTable groups={groups} agentView={agentView} />
       )}
+      {hookHealthChecks.length > 0 && <HookHealthDetails checks={hookHealthChecks} />}
     </div>
   )
 }
@@ -190,6 +198,138 @@ function introTipTitleKey(key: string, agentView: AgentView): string {
 function introTipBodyKey(key: string, agentView: AgentView): string {
   if (key === 'difference') return `capabilities.hooks.intro.tips.difference.body.${agentView}`
   return `capabilities.hooks.intro.tips.${key}.body`
+}
+
+function HookHealthSummary({ checks, loading }: { checks: HealthCheck[]; loading: boolean }): React.ReactElement {
+  const { t } = useTranslation()
+  const counts = countHealthSeverities(checks)
+  const hasChecks = checks.length > 0
+  const scrollToDetails = (): void => {
+    document.getElementById('hook-health-checks')?.scrollIntoView?.({ block: 'start', behavior: 'smooth' })
+  }
+
+  return (
+    <div className="mt-3 rounded-md border border-border/70 bg-background/60 px-3 py-3">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="text-xs font-medium text-foreground">{t('capabilities.hooks.health.title')}</p>
+            {loading && (
+              <span className="rounded-md bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+                {t('capabilities.hooks.health.loading')}
+              </span>
+            )}
+          </div>
+          <p className="mt-0.5 max-w-[70ch] text-xs leading-5 text-muted-foreground">
+            {hasChecks
+              ? t('capabilities.hooks.health.summary', { count: checks.length })
+              : t('capabilities.hooks.health.ok')}
+          </p>
+          {hasChecks && (
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {counts.error > 0 && <HealthCountChip severity="error" count={counts.error} />}
+              {counts.warning > 0 && <HealthCountChip severity="warning" count={counts.warning} />}
+              {counts.info > 0 && <HealthCountChip severity="info" count={counts.info} />}
+            </div>
+          )}
+        </div>
+        {hasChecks && (
+          <button
+            type="button"
+            onClick={scrollToDetails}
+            className="shrink-0 rounded-md border border-border px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-accent active:translate-y-px"
+          >
+            {t('capabilities.hooks.health.review')}
+          </button>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function HookHealthDetails({ checks }: { checks: HealthCheck[] }): React.ReactElement {
+  const { t } = useTranslation()
+  const sortedChecks = useMemo(
+    () => [...checks].sort((a, b) => healthSeverityRank(a.severity) - healthSeverityRank(b.severity)),
+    [checks]
+  )
+
+  return (
+    <section id="hook-health-checks" className="scroll-mt-4 rounded-lg border border-border bg-card">
+      <div className="border-b border-border px-4 py-4">
+        <h3 className="text-base font-semibold text-foreground">{t('capabilities.hooks.health.detailsTitle')}</h3>
+        <p className="mt-1 max-w-[72ch] text-sm leading-6 text-muted-foreground">
+          {t('capabilities.hooks.health.detailsBody')}
+        </p>
+      </div>
+      <div className="divide-y divide-border/70">
+        {sortedChecks.map((check) => (
+          <HookHealthCheckRow key={check.id} check={check} />
+        ))}
+      </div>
+    </section>
+  )
+}
+
+function HookHealthCheckRow({ check }: { check: HealthCheck }): React.ReactElement {
+  const { t } = useTranslation()
+  const targetPath = check.target?.path ?? check.path
+
+  return (
+    <div className="grid gap-3 px-4 py-3 md:grid-cols-[minmax(0,1fr)_auto]">
+      <div className="min-w-0">
+        <div className="flex flex-wrap items-center gap-2">
+          <HealthSeverityBadge severity={check.severity} />
+          <span className="text-sm font-medium text-foreground">{check.title}</span>
+          <span className="rounded-md border border-border px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+            {check.agentName}
+          </span>
+          {check.scope && (
+            <span className="rounded-md border border-border px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+              {check.scope}
+            </span>
+          )}
+        </div>
+        <p className="mt-1 text-xs leading-5 text-muted-foreground">{check.message}</p>
+        {check.fix ? (
+          <p className="mt-1 text-xs leading-5 text-muted-foreground">
+            <span className="font-medium text-foreground">{check.fix.label}: </span>
+            {check.fix.description}
+          </p>
+        ) : check.suggestion ? (
+          <p className="mt-1 text-xs leading-5 text-muted-foreground">{check.suggestion}</p>
+        ) : null}
+        {targetPath && <p className="mt-1 break-all font-mono text-[11px] text-muted-foreground">{targetPath}</p>}
+      </div>
+      {targetPath && (
+        <button
+          type="button"
+          onClick={() => void window.api?.shell.openPath(targetPath)}
+          className="h-fit shrink-0 rounded-md border border-border px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-accent active:translate-y-px"
+        >
+          {t('capabilities.hooks.health.openSource')}
+        </button>
+      )}
+    </div>
+  )
+}
+
+function HealthCountChip({ severity, count }: { severity: HealthCheck['severity']; count: number }): React.ReactElement {
+  const { t } = useTranslation()
+  return (
+    <span className={cn('rounded-md px-1.5 py-0.5 text-[11px] font-medium', healthSeverityClass(severity))}>
+      {t(`capabilities.hooks.health.severity.${severity}`, { count })}
+    </span>
+  )
+}
+
+function HealthSeverityBadge({ severity }: { severity: HealthCheck['severity'] }): React.ReactElement {
+  const { t } = useTranslation()
+  return (
+    <span className={cn('rounded-md px-1.5 py-0.5 text-[11px] font-medium', healthSeverityClass(severity))}>
+      {t(`capabilities.hooks.health.severityLabel.${severity}`)}
+    </span>
+  )
 }
 
 function HookAgentEnablementPanel({ agentView }: { agentView: AgentView }): React.ReactElement {
@@ -676,4 +816,41 @@ function visibleHooksAgents(agentView: AgentView): HooksAgentId[] {
   if (agentView === 'claude') return ['claude-code']
   if (agentView === 'codex') return ['codex']
   return ['claude-code', 'codex']
+}
+
+function visibleHookHealthChecks(checks: HealthCheck[], agentView: AgentView): HealthCheck[] {
+  return checks.filter((check) => isHookHealthCheck(check) && healthCheckMatchesAgent(check, agentView))
+}
+
+function isHookHealthCheck(check: HealthCheck): boolean {
+  return check.assetType === 'hook' || check.target?.route?.includes('tab=hooks') === true
+}
+
+function healthCheckMatchesAgent(check: HealthCheck, agentView: AgentView): boolean {
+  if (check.agentId === 'all') return true
+  if (agentView === 'all') return check.agentId === 'claude-code' || check.agentId === 'codex'
+  if (agentView === 'claude') return check.agentId === 'claude-code'
+  return check.agentId === 'codex'
+}
+
+function countHealthSeverities(checks: HealthCheck[]): Record<HealthCheck['severity'], number> {
+  return checks.reduce<Record<HealthCheck['severity'], number>>(
+    (counts, check) => {
+      counts[check.severity] += 1
+      return counts
+    },
+    { error: 0, warning: 0, info: 0 }
+  )
+}
+
+function healthSeverityRank(severity: HealthCheck['severity']): number {
+  if (severity === 'error') return 0
+  if (severity === 'warning') return 1
+  return 2
+}
+
+function healthSeverityClass(severity: HealthCheck['severity']): string {
+  if (severity === 'error') return 'bg-destructive/10 text-destructive'
+  if (severity === 'warning') return 'bg-amber-500/10 text-amber-700 dark:text-amber-300'
+  return 'bg-blue-500/10 text-blue-700 dark:text-blue-300'
 }

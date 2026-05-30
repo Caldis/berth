@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import '../../src/renderer/src/i18n'
 import { HooksLifecycleView } from '../../src/renderer/src/components/capabilities/hooks-lifecycle-view'
 import type { AgentView, Asset } from '../../src/shared/types/asset'
+import type { HealthCheck } from '../../src/shared/types/ipc'
 
 function hookAsset(
   id: string,
@@ -38,6 +39,7 @@ async function waitForEnablementStatus(): Promise<void> {
 
 describe('HooksLifecycleView', () => {
   beforeEach(() => {
+    window.api.assets.healthCheck = vi.fn(async () => [])
     window.api.shell.openPath = vi.fn(async () => {})
     window.api.hooks.setHookEnabled = vi.fn(async (request) => ({
       hookKey: request.hookKey,
@@ -220,5 +222,62 @@ describe('HooksLifecycleView', () => {
 
     expect(compactButton.className).toContain('bg-foreground')
     expect(screen.getByText(longCommand)).toBeInTheDocument()
+  })
+
+  it('summarizes visible hook health checks and jumps to the details', async () => {
+    const scrollIntoView = vi.fn()
+    Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', {
+      configurable: true,
+      value: scrollIntoView
+    })
+    const checks: HealthCheck[] = [
+      {
+        id: 'codex:configuration:user-hook-windows-command',
+        severity: 'warning',
+        category: 'configuration',
+        agentId: 'codex',
+        agentName: 'Codex',
+        title: 'Codex hook has no Windows command override',
+        message: 'A command hook is configured without commandWindows on Windows.',
+        path: 'C:\\Users\\test\\.codex\\hooks.json',
+        assetType: 'hook',
+        target: { route: '/configuration/capabilities?tab=hooks' }
+      },
+      {
+        id: 'claude-code:structure:user-hook-missing-command',
+        severity: 'error',
+        category: 'structure',
+        agentId: 'claude-code',
+        agentName: 'Claude Code',
+        title: 'Claude Code hook is missing command',
+        message: 'PreToolUse contains a command hook without a command.',
+        path: 'C:\\Users\\test\\.claude\\settings.json',
+        assetType: 'hook',
+        target: { route: '/configuration/capabilities?tab=hooks' }
+      },
+      {
+        id: 'codex:configuration:user-mcp-disabled',
+        severity: 'warning',
+        category: 'configuration',
+        agentId: 'codex',
+        agentName: 'Codex',
+        title: 'Codex MCP server is disabled',
+        message: 'This is not a hook check.',
+        assetType: 'mcp-server'
+      }
+    ]
+    window.api.assets.healthCheck = vi.fn(async () => checks)
+
+    renderHooks('codex', [hookAsset('codex-stop', 'codex', 'Stop')])
+    await waitForEnablementStatus()
+
+    expect(await screen.findByText('1 hook check needs attention')).toBeInTheDocument()
+    expect(screen.getByText('Codex hook has no Windows command override')).toBeInTheDocument()
+    expect(screen.queryByText('Claude Code hook is missing command')).not.toBeInTheDocument()
+    expect(screen.queryByText('Codex MCP server is disabled')).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Review hook checks' }))
+
+    expect(scrollIntoView).toHaveBeenCalled()
   })
 })

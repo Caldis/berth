@@ -361,6 +361,26 @@
         "broadToolMatcher": "Runs for every matching tool",
         "managed": "Managed externally"
       },
+      "health": {
+        "title": "Hook health checks",
+        "loading": "Checking",
+        "ok": "No hook health checks need attention for this view.",
+        "summary": "{{count}} hook check needs attention",
+        "review": "Review hook checks",
+        "detailsTitle": "Hook check details",
+        "detailsBody": "These checks come from the same health scanner as Overview, filtered to hooks and the current Agent view.",
+        "openSource": "Open source",
+        "severity": {
+          "error": "{{count}} error",
+          "warning": "{{count}} warning",
+          "info": "{{count}} info"
+        },
+        "severityLabel": {
+          "error": "Error",
+          "warning": "Warning",
+          "info": "Info"
+        }
+      },
       "stage": {
         "session-start": {
           "title": "Session starts",

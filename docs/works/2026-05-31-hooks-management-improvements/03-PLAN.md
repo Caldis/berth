@@ -20,7 +20,7 @@
 - [x] 任务 6: 页面密度优化
   - 范围: comfortable/compact 切换, 长命令可读。
   - 验证: renderer 单测。
-- [ ] 任务 7: Hook 健康检查入口
+- [x] 任务 7: Hook 健康检查入口
   - 范围: 顶部 hook 检查摘要与跳转。
   - 验证: renderer 单测 + 现有 health 单测。
 
@@ -36,3 +36,4 @@ verify 不通过项作为新任务追加于此, phase 退回 implement。
 - 任务 4: 已通过 `pnpm vitest run tests/unit/hook-lifecycle.test.ts tests/renderer/hooks-lifecycle-view.test.tsx`、`pnpm typecheck`、`pnpm harness:check`。
 - 任务 5: 已通过 `pnpm vitest run tests/unit/hooks-manager.test.ts tests/renderer/hooks-lifecycle-view.test.tsx`、`pnpm typecheck`、`pnpm harness:check`。
 - 任务 6: 已通过 `pnpm vitest run tests/renderer/hooks-lifecycle-view.test.tsx`、`pnpm typecheck`、`pnpm harness:check`。
+- 任务 7: 已通过 `pnpm vitest run tests/renderer/hooks-lifecycle-view.test.tsx`、`pnpm vitest run tests/unit/health-check.test.ts`、`pnpm typecheck`、`pnpm harness:check`。

@@ -361,6 +361,26 @@
         "broadToolMatcher": "会对每个匹配工具运行",
         "managed": "由外部管理"
       },
+      "health": {
+        "title": "Hook 健康检查",
+        "loading": "检查中",
+        "ok": "当前视角没有需要处理的 Hook 健康检查。",
+        "summary": "{{count}} 个 Hook 检查需要处理",
+        "review": "查看 Hook 检查",
+        "detailsTitle": "Hook 检查详情",
+        "detailsBody": "这些检查来自概览页使用的同一个健康检查器, 这里只保留 Hook 且匹配当前 Agent 视角的项。",
+        "openSource": "打开来源",
+        "severity": {
+          "error": "{{count}} 个错误",
+          "warning": "{{count}} 个警告",
+          "info": "{{count}} 条信息"
+        },
+        "severityLabel": {
+          "error": "错误",
+          "warning": "警告",
+          "info": "信息"
+        }
+      },
       "stage": {
         "session-start": {
           "title": "会话开始",
