@@ -82,6 +82,31 @@ describe('HooksLifecycleView', () => {
     expect(screen.getAllByText(/Codex only applies tool hooks/).length).toBeGreaterThan(0)
   })
 
+  it('switches to cross-agent comparison mode in all view', async () => {
+    renderHooks('all', [
+      hookAsset('claude-pre', 'claude-code', 'PreToolUse'),
+      hookAsset('codex-stop', 'codex', 'Stop')
+    ])
+    await waitForEnablementStatus()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Compare agents' }))
+
+    expect(screen.getByText('Lifecycle comparison')).toBeInTheDocument()
+    expect(screen.getAllByText('Claude Code events').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Codex events').length).toBeGreaterThan(0)
+  })
+
+  it('hides unrelated comparison columns in Codex view', async () => {
+    renderHooks('codex', [hookAsset('codex-stop', 'codex', 'Stop')])
+    await waitForEnablementStatus()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Compare agents' }))
+
+    expect(screen.getByText('Lifecycle comparison')).toBeInTheDocument()
+    expect(screen.getAllByText('Codex events').length).toBeGreaterThan(0)
+    expect(screen.queryByText('Claude Code events')).not.toBeInTheDocument()
+  })
+
   it('keeps lifecycle explanations visible when there are no hooks', async () => {
     renderHooks('claude', [])
     await waitForEnablementStatus()

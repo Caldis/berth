@@ -33,6 +33,8 @@ interface HooksLifecycleViewProps {
   scope: 'all' | AssetScope
 }
 
+type HookDisplayMode = 'lifecycle' | 'comparison'
+
 const supportIconMap = {
   supported: CheckCircle2,
   partial: CircleAlert,
@@ -48,6 +50,7 @@ const supportClassMap = {
 export function HooksLifecycleView({ assets, agentView, search, scope }: HooksLifecycleViewProps): React.ReactElement {
   const { t } = useTranslation()
   const groups = useMemo(() => groupHookAssetsByStage(assets, agentView), [assets, agentView])
+  const [displayMode, setDisplayMode] = useState<HookDisplayMode>('lifecycle')
   const hookCount = assets.length
   const hasSearch = search.trim().length > 0
   const hasScopeFilter = scope !== 'all'
@@ -81,58 +84,79 @@ export function HooksLifecycleView({ assets, agentView, search, scope }: HooksLi
                 </div>
               ))}
             </div>
+            <div className="mt-3 inline-flex rounded-md border border-border bg-background p-1">
+              {(['lifecycle', 'comparison'] as HookDisplayMode[]).map((mode) => (
+                <button
+                  key={mode}
+                  type="button"
+                  onClick={() => setDisplayMode(mode)}
+                  className={cn(
+                    'rounded px-2.5 py-1 text-xs font-medium transition-colors',
+                    displayMode === mode
+                      ? 'bg-foreground text-background'
+                      : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+                  )}
+                >
+                  {t(`capabilities.hooks.viewMode.${mode}`)}
+                </button>
+              ))}
+            </div>
             <HookAgentEnablementPanel agentView={agentView} />
           </div>
         </div>
       </section>
 
-      <div className="grid gap-4 xl:grid-cols-[280px_minmax(0,1fr)]">
-        <aside className="xl:sticky xl:top-4 xl:self-start">
-          <div className="rounded-lg border border-border bg-card p-2">
-            <div className="px-2 pb-2 pt-1">
-              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                {t('capabilities.hooks.lifecycleIndex')}
-              </p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                {t('capabilities.hooks.lifecycleCount', { count: hookCount })}
-              </p>
-            </div>
-            <div className="flex gap-2 overflow-x-auto pb-1 xl:block xl:space-y-1 xl:overflow-visible">
-              {groups.map((group, index) => (
-                <button
-                  key={group.id}
-                  type="button"
-                  onClick={() => scrollToStage(group.id)}
-                  className="flex min-w-[210px] items-center gap-2 rounded-md px-2 py-2 text-left transition-colors hover:bg-accent xl:w-full xl:min-w-0"
-                >
-                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded bg-muted text-[10px] font-semibold text-muted-foreground">
-                    {String(index + 1).padStart(2, '0')}
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-xs font-medium text-foreground">
-                      {group.stage ? t(group.stage.titleKey) : t('capabilities.hooks.unknown.title')}
+      {displayMode === 'lifecycle' ? (
+        <div className="grid gap-4 xl:grid-cols-[280px_minmax(0,1fr)]">
+          <aside className="xl:sticky xl:top-4 xl:self-start">
+            <div className="rounded-lg border border-border bg-card p-2">
+              <div className="px-2 pb-2 pt-1">
+                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  {t('capabilities.hooks.lifecycleIndex')}
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {t('capabilities.hooks.lifecycleCount', { count: hookCount })}
+                </p>
+              </div>
+              <div className="flex gap-2 overflow-x-auto pb-1 xl:block xl:space-y-1 xl:overflow-visible">
+                {groups.map((group, index) => (
+                  <button
+                    key={group.id}
+                    type="button"
+                    onClick={() => scrollToStage(group.id)}
+                    className="flex min-w-[210px] items-center gap-2 rounded-md px-2 py-2 text-left transition-colors hover:bg-accent xl:w-full xl:min-w-0"
+                  >
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded bg-muted text-[10px] font-semibold text-muted-foreground">
+                      {String(index + 1).padStart(2, '0')}
                     </span>
-                    <span className="block text-[11px] text-muted-foreground">
-                      {t('capabilities.hooks.hookCount', { count: group.hooks.length })}
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-xs font-medium text-foreground">
+                        {group.stage ? t(group.stage.titleKey) : t('capabilities.hooks.unknown.title')}
+                      </span>
+                      <span className="block text-[11px] text-muted-foreground">
+                        {t('capabilities.hooks.hookCount', { count: group.hooks.length })}
+                      </span>
                     </span>
-                  </span>
-                </button>
-              ))}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
-        </aside>
+          </aside>
 
-        <div className="min-w-0 space-y-3">
-          {(hasSearch || hasScopeFilter) && (
-            <div className="rounded-md border border-border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
-              {t('capabilities.hooks.filteredHint')}
-            </div>
-          )}
-          {groups.map((group) => (
-            <HookStageSection key={group.id} group={group} agentView={agentView} />
-          ))}
+          <div className="min-w-0 space-y-3">
+            {(hasSearch || hasScopeFilter) && (
+              <div className="rounded-md border border-border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+                {t('capabilities.hooks.filteredHint')}
+              </div>
+            )}
+            {groups.map((group) => (
+              <HookStageSection key={group.id} group={group} agentView={agentView} />
+            ))}
+          </div>
         </div>
-      </div>
+      ) : (
+        <HookComparisonTable groups={groups} agentView={agentView} />
+      )}
     </div>
   )
 }
@@ -232,6 +256,77 @@ function HookAgentEnablementPanel({ agentView }: { agentView: AgentView }): Reac
           </div>
         ))}
       </div>
+    </div>
+  )
+}
+
+function HookComparisonTable({ groups, agentView }: { groups: HookStageGroup[]; agentView: AgentView }): React.ReactElement {
+  const { t } = useTranslation()
+  const visibleGroups = groups.filter((group) => group.stage || group.hooks.length > 0)
+
+  return (
+    <section className="rounded-lg border border-border bg-card">
+      <div className="border-b border-border px-4 py-4">
+        <h3 className="text-base font-semibold text-foreground">{t('capabilities.hooks.comparison.title')}</h3>
+        <p className="mt-1 max-w-[72ch] text-sm leading-6 text-muted-foreground">{t('capabilities.hooks.comparison.body')}</p>
+      </div>
+      <div className="divide-y divide-border/70">
+        {visibleGroups.map((group) => {
+          const supports = group.stage ? getVisibleStageSupport(group.stage, agentView) : []
+          return (
+            <div
+              key={group.id}
+              className="grid gap-3 px-4 py-4"
+              style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}
+            >
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-foreground">
+                  {group.stage ? t(group.stage.titleKey) : t('capabilities.hooks.unknown.title')}
+                </p>
+                <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                  {group.stage ? t(group.stage.behaviorKey) : t('capabilities.hooks.unknown.body')}
+                </p>
+                <p className="mt-2 text-[11px] text-muted-foreground">
+                  {t('capabilities.hooks.hookCount', { count: group.hooks.length })}
+                </p>
+              </div>
+              {supports.map((support) => (
+                <ComparisonSupportCell key={support.agent} support={support} />
+              ))}
+            </div>
+          )
+        })}
+      </div>
+    </section>
+  )
+}
+
+function ComparisonSupportCell({ support }: { support: HookAgentStageSupport }): React.ReactElement {
+  const { t } = useTranslation()
+  const Icon = supportIconMap[support.support]
+  const titleKey = support.agent === 'claude'
+    ? 'capabilities.hooks.comparison.claudeEvents'
+    : 'capabilities.hooks.comparison.codexEvents'
+
+  return (
+    <div className="min-w-0 rounded-md border border-border/70 bg-background/60 px-3 py-3">
+      <div className="flex flex-wrap items-center gap-2">
+        <p className="text-xs font-semibold text-foreground">{t(titleKey)}</p>
+        <span className={cn('inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-medium', supportClassMap[support.support])}>
+          <Icon className="h-3 w-3" />
+          {t(`capabilities.hooks.support.${support.support}`)}
+        </span>
+      </div>
+      <div className="mt-2 flex flex-wrap gap-1">
+        {support.events.length > 0 ? support.events.map((event) => (
+          <span key={event.eventType} className="rounded-md border border-border bg-muted/50 px-1.5 py-0.5 text-[11px] font-mono text-foreground">
+            {event.eventType}
+          </span>
+        )) : (
+          <span className="text-xs text-muted-foreground">{t('capabilities.hooks.comparison.noEvents')}</span>
+        )}
+      </div>
+      <p className="mt-2 text-xs leading-5 text-muted-foreground">{t(support.summaryKey)}</p>
     </div>
   )
 }

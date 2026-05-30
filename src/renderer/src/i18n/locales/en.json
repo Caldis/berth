@@ -308,6 +308,17 @@
       "lifecycleIndex": "Lifecycle",
       "lifecycleCount": "{{count}} configured hooks in this view",
       "filteredHint": "Filters only change the hook rows. Lifecycle explanations stay visible so you can still understand where each stage sits.",
+      "viewMode": {
+        "lifecycle": "Lifecycle",
+        "comparison": "Compare agents"
+      },
+      "comparison": {
+        "title": "Lifecycle comparison",
+        "body": "Use this view to compare which native events each visible agent exposes under the same abstract stage.",
+        "claudeEvents": "Claude Code events",
+        "codexEvents": "Codex events",
+        "noEvents": "No event in this stage"
+      },
       "intro": {
         "title": "What are hooks?",
         "all": "Hooks are local scripts or handlers that run when an agent reaches a specific moment, such as starting a session, receiving your prompt, using a tool, compacting context, or stopping. This view combines Claude Code and Codex into one lifecycle and calls out where their behavior differs.",

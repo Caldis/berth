@@ -308,6 +308,17 @@
       "lifecycleIndex": "生命周期",
       "lifecycleCount": "当前视角有 {{count}} 个已配置 Hook",
       "filteredHint": "筛选只影响 Hook 列表。生命周期说明会保留, 方便你继续理解每个阶段的位置。",
+      "viewMode": {
+        "lifecycle": "生命周期",
+        "comparison": "对照 Agent"
+      },
+      "comparison": {
+        "title": "生命周期对照",
+        "body": "这个视图把当前可见 Agent 在同一个抽象阶段下支持的原生事件并排展示。",
+        "claudeEvents": "Claude Code 事件",
+        "codexEvents": "Codex 事件",
+        "noEvents": "这个阶段没有事件"
+      },
       "intro": {
         "title": "Hooks 是什么?",
         "all": "Hooks 是本机配置的脚本或处理器, 会在 Agent 进入某个时刻时运行, 例如开始会话、收到你的提示、调用工具、压缩上下文或停止。当前视图把 Claude Code 和 Codex 合成到同一套生命周期里, 并标出两者行为差异。",
