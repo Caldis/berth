@@ -49,6 +49,25 @@ implement — explore + design 完成 (00-PRD / 01-ANALYSIS / 02-SPEC / 03-PLAN 
   修复: `instructions.tsx` 改为 `{activeGuide && <AssetGuidePanel .../>}` (无 guide 的 tab 不渲染该面板)。
   typecheck 0 error。教训: 新增 tab 必须配 guide 或对 AssetGuidePanel 加守卫。
 
+### 增强轮 (用户验收后追加: P0+P1+P2 + 收尾)
+- ✅ **P0 路径 bug** (5cb37e1): 两源把相对路径解析为绝对路径, 修复 "在资源管理器显示" 与路径标签;
+  新增 memory-service.test.ts 绝对路径回归守卫。
+- ✅ **P1**: 记忆视图加搜索 (标题/摘要/标签) + 按 updatedAt 倒序 + 手动刷新按钮。
+- ✅ **P2**: 详情展示关联笔记 (links 可点跳转+聚焦) + "查看原始" 复用 inspector drawer
+  (未引入 markdown 依赖, 富渲染转 issue)。
+- ✅ **收尾·服务层测试**: listMemory/readMemory 加可注入 sources[] (生产调用不变), 临时目录测两源 + 聚合/路由,
+  共 16 例; 替代之前的一次性探针。memory 测试合计 32/32 绿。
+- ✅ **收尾·约定 tab 说明面板**: conventions guide 复用既有 `guidance.memories` 文案 (描述持久指令, 正合
+  CLAUDE.md/AGENTS.md), 零新增 i18n; 记忆 tab 不再显示该面板 (渲染 MemoryView)。
+- ⛔ **收尾·i18n 提交受阻**: en/zh.json 仍混入并行 status-line session 未提交的 `statusLine.*`/`askList`/
+  yes-no 改动, 且各 session 正在活跃提交。文件级 `git add` 会连带其 WIP (违反不变量 11), 非交互环境无法安全拆分。
+  我的 memory.*/tabs.conventions 键已在工作区生效 (运行态正常), 暂不提交; 待该 session 落地后单独提交。
+- ⏳ GUI 截图验收 (pnpm dev → 指令 → 记忆 人工查看)。
+
+### 转 issues 的后续 (本任务不做)
+- `docs/issues/2026-05-31-IMPROVEMENT-memory-view-rich-rendering.md` (markdown 富渲染 + importance/tag 过滤 + 正文双链)
+- `docs/issues/2026-05-31-IMPROVEMENT-memory-source-robustness.md` (重复读取 / native N+1 / index 失准提示 / 路径穿越加固 / native 时间)
+
 ### 已知数据细节 (非 berth bug)
 - united-memory 返回 45 (依 index.json) 而磁盘 mem/ 仅 38 有效 (+8 畸形文件): index.json 偏旧。
   berth 以 index.json 为准是正确取舍; 指向缺失文件的条目 read() 时优雅降级。属 ~/.united-memory 仓库
