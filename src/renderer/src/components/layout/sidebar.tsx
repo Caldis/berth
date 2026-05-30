@@ -13,6 +13,7 @@ import { cn } from '@/lib/utils'
 import { useAppStore } from '@/stores/app'
 import { useTheme } from '@/components/theme-provider'
 import { navSections } from './nav-config'
+import { isMacPlatform } from '@/lib/platform'
 
 export function Sidebar(): React.ReactElement {
   const { t, i18n } = useTranslation()
@@ -23,7 +24,7 @@ export function Sidebar(): React.ReactElement {
   const toggleSidebar = useAppStore((s) => s.toggleSidebar)
   const setSearchOpen = useAppStore((s) => s.setSearchOpen)
 
-  const isMac = navigator.platform.includes('Mac')
+  const isMac = isMacPlatform()
 
   const isActive = (path: string): boolean => {
     if (path === '/') return location.pathname === '/'
@@ -84,7 +85,7 @@ export function Sidebar(): React.ReactElement {
             <>
               <span className="flex-1 text-left">{t('search.placeholder')}</span>
               <kbd className="rounded border border-sidebar-border px-1 py-0.5 text-[10px] font-medium">
-                {navigator.platform.includes('Mac') ? '⌘' : 'Ctrl+'}K
+                {isMac ? '⌘' : 'Ctrl+'}K
               </kbd>
             </>
           )}
