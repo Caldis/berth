@@ -1,4 +1,4 @@
-# /opsx:continue — 继续已有任务
+# opsx-continue — 继续已有任务
 
 输入: 任务目录名或 Jira ID (参数 $ARGUMENTS); 为空时列出 `docs/works/` 下所有未归档任务供选择。
 

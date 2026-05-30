@@ -5,7 +5,7 @@ import { readdirSync, readFileSync, existsSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { VERBS, parseFrontmatter } from './harness-lib.mjs'
-import { check as checkDistribution } from './harness-sync.mjs'
+import { check as checkDistribution, desiredArtifacts } from './harness-sync.mjs'
 
 function listTaskDirs(p) {
   if (!existsSync(p)) return []
@@ -34,13 +34,13 @@ export function collectStats(root) {
   const frictionActive = listMdFiles(join(root, 'docs/friction')).length
   const frictionArchived = listMdFiles(join(root, 'docs/friction/_archive')).length
 
-  // distribution: 8 verb x 4 产物 = 32, 复用 sync 的 check
+  // distribution: 复用 sync 的期望产物描述与 check
   const dist = checkDistribution(root)
 
   return {
     works: { active: worksActive, byPhase, archived: worksArchived },
     friction: { active: frictionActive, archived: frictionArchived },
-    distribution: { ok: dist.ok, expected: VERBS.length * 4, drift: dist.drift.length }
+    distribution: { ok: dist.ok, expected: desiredArtifacts(root).length, drift: dist.drift.length }
   }
 }
 

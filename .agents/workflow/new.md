@@ -1,4 +1,4 @@
-# /opsx:new — 启动新任务
+# opsx-new — 启动新任务
 
 输入: 任务描述 + 可选 Jira ID (参数 $ARGUMENTS)。
 
@@ -19,4 +19,4 @@
    - 将 item id / URL 回写 INDEX.md 的 gh project 段。
 
 产出: `docs/works/{task}/` 初始化完成, phase=explore (gh project item 已建或已记录待授权)。
-完成提示用户: 下一步 `/opsx:explore`。
+完成提示用户: 下一步 `opsx-explore`。

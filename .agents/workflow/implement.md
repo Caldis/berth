@@ -1,4 +1,4 @@
-# /opsx:implement — 实现 (Implementation 阶段)
+# opsx-implement — 实现 (Implementation 阶段)
 
 目标: 按 03-PLAN.md 落地实现。
 
@@ -12,4 +12,4 @@
    `docs/friction/{YYYYMMDD}-implement-{summary}.md` (模板见 docs/friction/_template.md)。
 5. 全部任务完成后, 更新 INDEX.phase = verify。
 
-产出: 代码 + 单测 + 更新后的 03-PLAN.md。完成提示用户: `/opsx:verify`。
+产出: 代码 + 单测 + 更新后的 03-PLAN.md。完成提示用户: `opsx-verify`。

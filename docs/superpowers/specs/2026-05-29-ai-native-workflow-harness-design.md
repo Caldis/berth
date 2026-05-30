@@ -22,7 +22,7 @@
 | 指令 | Project Map; 渐进式披露; AGENTS.md < 500 行; 结构化; 唯一来源; 规则化 | `AGENTS.md` 增 Harness 索引章节 + 新建 `docs/ARCHITECTURE.md` |
 | 工具 | 向 Agent 暴露 CLI/MCP, 让其主动获取上下文 | `.agents/tools.md` 仅列 berth 自用工具 |
 | 状态 | 受 OpenSpec 启发, 每任务一份任务清单, 命名 `{DATE}-{JIRA}-{SUMMARY}` | `docs/works/{date}[-{jira}]-{summary}/` |
-| 反馈 | Code Review + 工程摩擦; 机械检查交 CI; 不通过回写 PLAN | CI + PR 模板 + `/opsx:verify` + `docs/friction/` |
+| 反馈 | Code Review + 工程摩擦; 机械检查交 CI; 不通过回写 PLAN | CI + PR 模板 + `opsx-verify` + `docs/friction/` |
 
 ### 2.2 四阶段流程
 
@@ -62,25 +62,25 @@ berth 现有 `plans/` 采用 `{DATE}-{SHORT_DESC}` 命名, `issues/` 存 bug, �
 
 实现机制经官方一手来源核实, 结论如下 (含置信度):
 
-1. Claude Code `.claude/commands/` 子目录是否渲染为冒号命名空间 `/opsx:new`: OpenSpec 生产文档 (commands.md, supported-tools.md) 明确 Claude 用冒号、其他工具用连字符, 归因于 `.claude/commands/opsx/<id>.md` 子目录机制。置信中。与 skills.md 表述存在冲突, 列为实现首步亲验。
+1. Claude Code `.claude/commands/` 子目录命名空间在不同资料与版本中存在不一致。当前实现不依赖冒号命名空间, 改用 `.claude/commands/opsx-<verb>.md` 扁平命名。
 2. Claude Code `.claude/commands/` 不跟随符号链接 (GitHub issue 39475, 10573)。置信中。故命令桩须复制而非软链。
-3. Claude Code `.claude/skills/` 跟随符号链接。置信中。
+3. Claude Code `.claude/skills/` 可用软链, 但 Windows checkout 可能把 Git symlink 落成普通文本文件。当前实现允许软链或目录副本。
 4. Codex custom prompts 已废弃并在 HEAD 删除 (commit 48144a7), 且仅支持全局 `~/.codex/prompts/`, 无项目级。官方文档建议改用 skills。置信高。
-5. Codex skills (`.codex/skills/<name>/SKILL.md`) 项目级、支持子目录、跟随符号链接 (commit fff576cf 确认文件软链)。置信高。目录软链是否跟随列为实现首步亲验。
+5. Codex repo 级 skills 当前入口是 `.agents/skills/<name>/SKILL.md`, 从当前目录向仓库根逐级发现。项目不再分发 `.codex/skills`。
 6. 两工具均原生读取仓库根 `AGENTS.md`。置信高。
 
 ### 4.2 决策
 
-由证据收敛: skill 是两工具唯一对称且跟随软链的载体。故单一真源以 skill 指针形式存放于 `.agents/`, 软链分发到两工具 skills 目录; 真正的操作性 playbook 抽到 `.agents/workflow/`, skill 仅作薄指针 (贯彻文档「唯一性」原则)。
+由证据收敛: skill 是两工具唯一对称的载体。故单一真源以 skill 指针形式存放于 `.agents/`; Codex 直接读取 `.agents/skills`; Claude Code 通过 `.claude/skills` 的软链或目录副本读取。真正的操作性 playbook 抽到 `.agents/workflow/`, skill 仅作薄指针 (贯彻文档「唯一性」原则)。
 
-为换回源文档要求的 `/opsx:new` 冒号 UX, 额外为 Claude 复制薄命令桩到 `.claude/commands/opsx/<verb>.md` (因 commands 不跟随软链, 只能复制; 命令桩静态, 由同步脚本生成)。
+为兼容 Claude Code 的命令入口, 额外复制薄命令桩到 `.claude/commands/opsx-<verb>.md` (因 commands 不跟随软链, 只能复制; 命令桩静态, 由同步脚本生成)。
 
 调用形态:
 
 | 工具 | 主通道 | 次通道 |
 |---|---|---|
-| Claude Code | `/opsx:<verb>` (命令桩) | `opsx-<verb>` skill |
-| Codex | `opsx-<verb>` skill | 无 |
+| Claude Code | `/opsx-<verb>` (命令或 skill) | 无 |
+| Codex | `$opsx-<verb>` skill | 无 |
 
 ## 5. 目录结构
 
@@ -95,18 +95,15 @@ berth/
 │   │   ├── explore.md      design.md
 │   │   ├── implement.md    verify.md
 │   │   └── archive.md      optimization.md
-│   └── skills/                                # 薄指针 skill (软链源)
+│   └── skills/                                # 薄指针 skill (Codex 直接读取, Claude 分发源)
 │       └── opsx-<verb>/SKILL.md               # 共 8 个
 │
 ├── .claude/
-│   ├── skills/opsx-<verb>  -> ../../.agents/skills/opsx-<verb>     # symlink x8
-│   └── commands/opsx/<verb>.md                # 复制的命令桩 x8 -> /opsx:<verb>
-│
-├── .codex/
-│   └── skills/opsx-<verb>  -> ../../.agents/skills/opsx-<verb>     # symlink x8
+│   ├── skills/opsx-<verb>                     # symlink 或目录副本 x8
+│   └── commands/opsx-<verb>.md                # 复制的命令桩 x8 -> /opsx-<verb>
 │
 ├── scripts/
-│   ├── harness-sync.mjs                       # 幂等重建软链 + 生成命令桩
+│   ├── harness-sync.mjs                       # 幂等生成 Claude skill 分发 + 命令桩
 │   └── harness-check.mjs                      # 校验任务产物/模板/命名/分发
 │
 ├── docs/
@@ -243,17 +240,17 @@ description: 工作流 Explore 阶段. 读取并执行 .agents/workflow/explore.
 
 `SKILL.md` 正文为工具无关指令: 读取 `.agents/workflow/explore.md` 并按其执行, 任务标识取自参数。
 
-命令桩 `.claude/commands/opsx/explore.md` 内容等价, 触发 `opsx-explore` 行为。
+命令桩 `.claude/commands/opsx-explore.md` 内容等价, 触发 `opsx-explore` 行为。
 
 ## 9. 分发同步脚本 harness-sync.mjs
 
 职责:
 
-1. 为每个 verb 在 `.claude/skills/` 与 `.codex/skills/` 创建指向 `.agents/skills/opsx-<verb>` 的相对软链
-2. 为每个 verb 在 `.claude/commands/opsx/` 生成命令桩 (从 skill 指针派生, 内容确定)
+1. 为每个 verb 在 `.claude/skills/` 创建指向 `.agents/skills/opsx-<verb>` 的相对软链; Windows/EPERM 时回退为目录副本
+2. 为每个 verb 在 `.claude/commands/` 生成 `opsx-<verb>.md` 命令桩 (从 skill 指针派生, 内容确定)
 3. 幂等: 重复运行无变更; 提供 `--check` 模式供 CI 校验分发未漂移
 
-跨平台: berth 支持 macOS 与 Windows。Windows 无符号链接权限时, 软链策略回退为复制, 并在 `--check` 模式按平台放宽。软链层级策略: 优先目录软链; 若实现首步验证 Codex 不跟随目录软链, 降级为「真实目录 + SKILL.md 文件软链」; 再否则复制。
+跨平台: berth 支持 macOS 与 Windows。Windows 无符号链接权限时, Claude skill 分发回退为复制目录; check 同时接受 symlink 与目录副本。Codex 不走 `.codex/skills`, 直接读取 `.agents/skills`。
 
 ## 10. 校验器与测试
 
@@ -262,7 +259,7 @@ description: 工作流 Explore 阶段. 读取并执行 .agents/workflow/explore.
 1. 每个 works 任务按 INDEX 声明的 phase 具备必需产物 (explore 须有 ANALYSIS; design 须有 SPEC + PLAN; feature 须有 00-PRD; bug 须有 00-BUG)
 2. `_template/` 模板齐全
 3. works 命名符合 `{date}[-{jira}]-{summary}`, friction 命名符合 `{yyyymmdd}-{phase}-{summary}`
-4. 分发完整: 8 个 verb 的 skill 软链与命令桩存在且指向正确
+4. 分发完整: 8 个 verb 的 skill 分发与命令桩存在且内容正确
 
 `tests/harness/check.test.ts`: fixture 驱动, 覆盖合规与各类违规场景。
 
@@ -304,8 +301,8 @@ description: 工作流 Explore 阶段. 读取并执行 .agents/workflow/explore.
 
 | 项 | 置信 | 验证方式 | 回退 |
 |---|---|---|---|
-| Claude `.claude/commands/opsx/` 渲染为 `/opsx:` 冒号 | 中 | 建桩后在 Claude Code `/` 菜单观察 | 降级 `/opsx-<verb>` skill 调用 |
-| Codex 跟随目录软链 | 中 | 建软链后 Codex skill 列表观察 | 真实目录 + 文件软链, 或复制 |
+| Claude `.claude/commands/opsx-<verb>.md` 渲染为 `/opsx-<verb>` | 高 | Claude Code `/` 菜单观察 | 直接用同名 skill |
+| Codex 读取 `.agents/skills` | 高 | Codex skill 列表观察 | 无需 `.codex/skills` 分发 |
 | Codex skill 触发语法 | 高 | 文档 + 实测 | - |
 
 ## 16. 范围外 (非目标)

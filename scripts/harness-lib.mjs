@@ -25,7 +25,7 @@ description: AI Native Workflow ${verb} 阶段. 读取并执行 .agents/workflow
 `
 }
 
-// .claude/commands/opsx/<verb>.md 命令桩内容 (复制, 因 commands 不跟随软链)
+// .claude/commands/opsx-<verb>.md 命令桩内容 (复制, 因 commands 不跟随软链)
 export function commandStubContent(verb) {
   return `---
 description: AI Native Workflow ${verb} 阶段. 读取并执行 .agents/workflow/${verb}.md
@@ -40,7 +40,7 @@ argument-hint: [task-id]
 
 // 提取并解析 markdown 顶部的 YAML frontmatter; 无则返回 null
 export function parseFrontmatter(md) {
-  const m = /^---\n([\s\S]*?)\n---\n?/.exec(md)
+  const m = /^---\r?\n([\s\S]*?)\r?\n---\r?\n?/.exec(md)
   if (!m) return null
   try {
     const obj = yaml.load(m[1])

@@ -1,4 +1,4 @@
-# /opsx:verify — 验证 (Verify 阶段)
+# opsx-verify — 验证 (Verify 阶段)
 
 目标: 完成完整测试 + code review + 前端视觉/交互验收。人在此确认验收。
 
@@ -18,6 +18,6 @@
    - 截图前轮询确认 electron 主进程存活 (上面的完整模式), 而非仅看 vite 端口; 按窗口 id 截图。截图存 /tmp, 禁止入项目目录。
    - UI 改动 (布局/间距/样式) 的视觉验收必须用 `/frontend-design:frontend-design` 指导设计判断, 不靠拍脑袋调数值; 间距/对齐需有明确依据 (与既有元素对齐、符合平台 HIG)。
 4. 不通过项: 回写为 03-PLAN.md 新任务, 将 INDEX.phase 退回 implement, 重新进入开发循环。
-5. 全部通过后, 提示用户确认验收, 然后 `/opsx:archive`。
+5. 全部通过后, 提示用户确认验收, 然后 `opsx-archive`。
 
 评审记录留在 PR/CI, 不进入项目持久层。

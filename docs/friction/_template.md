@@ -13,4 +13,4 @@
 ## 应沉淀的上下文或规则
 
 ## 建议的流程改进
-(由 /opsx:optimization 消费)
+(由 opsx-optimization 消费)

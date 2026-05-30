@@ -1,6 +1,6 @@
 // scripts/harness-sync.mjs
-// 幂等分发: 生成 .agents/skills/*/SKILL.md + .claude/commands/opsx/*.md
-// + .claude/skills 与 .codex/skills 的相对软链 (Windows/EPERM 回退复制)。
+// 幂等分发: 生成 .agents/skills/*/SKILL.md + .claude/commands/opsx-*.md
+// + .claude/skills 的相对软链 (Windows/EPERM 回退复制)。
 import {
   mkdirSync,
   readFileSync,
@@ -27,7 +27,7 @@ export function desiredArtifacts(root) {
     })
     items.push({
       kind: 'file',
-      path: join(root, '.claude/commands/opsx', `${v}.md`),
+      path: join(root, '.claude/commands', `opsx-${v}.md`),
       content: commandStubContent(v)
     })
     items.push({
@@ -35,17 +35,16 @@ export function desiredArtifacts(root) {
       path: join(root, '.claude/skills', `opsx-${v}`),
       target: `../../.agents/skills/opsx-${v}`
     })
-    items.push({
-      kind: 'link',
-      path: join(root, '.codex/skills', `opsx-${v}`),
-      target: `../../.agents/skills/opsx-${v}`
-    })
   }
   return items
 }
 
+function normalizeText(value) {
+  return value.replace(/\r\n/g, '\n')
+}
+
 function fileInSync(path, content) {
-  return existsSync(path) && readFileSync(path, 'utf8') === content
+  return existsSync(path) && normalizeText(readFileSync(path, 'utf8')) === normalizeText(content)
 }
 
 function linkInSync(root, path, target) {
@@ -59,7 +58,7 @@ function linkInSync(root, path, target) {
   const srcSkill = join(root, target.replace(/^(\.\.\/)+/, ''), 'SKILL.md')
   const dstSkill = join(path, 'SKILL.md')
   return existsSync(dstSkill) && existsSync(srcSkill) &&
-    readFileSync(dstSkill, 'utf8') === readFileSync(srcSkill, 'utf8')
+    normalizeText(readFileSync(dstSkill, 'utf8')) === normalizeText(readFileSync(srcSkill, 'utf8'))
 }
 
 export function apply(root) {

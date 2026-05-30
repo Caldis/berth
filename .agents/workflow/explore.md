@@ -1,4 +1,4 @@
-# /opsx:explore — 探索 (Explore 阶段)
+# opsx-explore — 探索 (Explore 阶段)
 
 目标: 把外部需求与内部现实对齐, 建立对现状的真实理解。
 
@@ -15,4 +15,4 @@
    - 未决问题 (留给 design 向人澄清)
 5. 更新 INDEX.phase = design。
 
-不编码。摩擦记入 docs/friction。完成提示用户: `/opsx:design`。
+不编码。摩擦记入 docs/friction。完成提示用户: `opsx-design`。

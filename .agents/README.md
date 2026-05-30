@@ -14,23 +14,24 @@ berth 的 Agent 工作流单一真源, 同时服务 Claude Code 与 Codex。
 
 `pnpm harness:sync` 幂等生成:
 - `.agents/skills/opsx-<verb>/SKILL.md`
-- `.claude/skills/opsx-<verb>` 与 `.codex/skills/opsx-<verb>` 软链
-- `.claude/commands/opsx/<verb>.md` 命令桩 (commands 不跟随软链, 故复制)
+- `.claude/skills/opsx-<verb>` 软链或目录副本
+- `.claude/commands/opsx-<verb>.md` 命令桩 (commands 不跟随软链, 故复制)
+- Codex 原生读取 `.agents/skills`, 不再分发 `.codex/skills`
 
 `pnpm harness:check` 校验产物/模板/命名/分发。CI 强制。
 
 ## 调用
 
-- Claude Code: `/opsx:<verb>` (命令) 或 `opsx-<verb>` (skill)
-- Codex: `opsx-<verb>` (skill)
+- Claude Code: `/opsx-<verb>` (命令或 skill)
+- Codex: `$opsx-<verb>` (skill)
 
 verb: new · continue · explore · design · implement · verify · archive · optimization
 
 ## 何时进入
 
-- feature / bug 开发任务: 落代码前必须 `/opsx:new` 建任务态, 禁止跳过直接实现或调试。
+- feature / bug 开发任务: 落代码前必须用 `opsx-new` 建任务态, 禁止跳过直接实现或调试。
 - 小改动 (单行/拼写/纯文案注释, 或单一文件·单一关注点·门禁即可验收的小改动如弃用 API 替换) 直接处理 + 跑门禁, 不建任务态。
-- 存疑默认走 harness; 进行中的任务用 `/opsx:continue` 续跑。
+- 存疑默认走 harness; 进行中的任务用 `opsx-continue` 续跑。
 
 ## 四阶段
 

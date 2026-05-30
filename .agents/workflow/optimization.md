@@ -1,4 +1,4 @@
-# /opsx:optimization — 流程优化
+# opsx-optimization — 流程优化
 
 目标: 消费 docs/friction 的经验, 优化工作流本身。
 

@@ -30,6 +30,15 @@ describe('checkWorks', () => {
     expect(checkWorks(root)).toEqual([])
   })
 
+  it('接受 CRLF frontmatter', () => {
+    const dir = join(root, 'docs/works/2026-05-29-crlf')
+    mkdirSync(dir, { recursive: true })
+    writeFileSync(join(dir, 'INDEX.md'), '---\r\ntask: t\r\ntype: feature\r\nphase: design\r\ncreated: 2026-05-29\r\n---\r\n')
+    writeFileSync(join(dir, '00-PRD.md'), 'x')
+    writeFileSync(join(dir, '01-ANALYSIS.md'), 'x')
+    expect(checkWorks(root)).toEqual([])
+  })
+
   it('design 阶段缺 01-ANALYSIS 报错', () => {
     task('2026-05-29-order-notes', 'task: t\ntype: feature\nphase: design\ncreated: 2026-05-29', ['00-PRD.md'])
     const errs = checkWorks(root)

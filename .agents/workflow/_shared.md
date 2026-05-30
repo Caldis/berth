@@ -29,7 +29,7 @@ artifacts:
 ---
 ```
 
-`phase` 表示任务当前所处阶段, 即 `/opsx:continue` 将续跑的步骤。
+`phase` 表示任务当前所处阶段, 即 `opsx-continue` 将续跑的步骤。
 
 ## 阶段门禁
 

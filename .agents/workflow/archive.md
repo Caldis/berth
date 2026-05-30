@@ -1,4 +1,4 @@
-# /opsx:archive — 归档
+# opsx-archive — 归档
 
 目标: 完成一个任务。
 
