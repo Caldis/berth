@@ -627,6 +627,8 @@
     "inputTokens": "Input",
     "outputTokens": "Output",
     "cacheTokens": "Cache",
+    "cacheReadTokens": "read",
+    "cacheWriteTokens": "write",
     "reasoningTokens": "Reasoning",
     "unknownTokens": "Unknown",
     "inputTokensShort": "I",

@@ -627,6 +627,8 @@
     "inputTokens": "输入",
     "outputTokens": "输出",
     "cacheTokens": "缓存",
+    "cacheReadTokens": "读",
+    "cacheWriteTokens": "写",
     "reasoningTokens": "推理",
     "unknownTokens": "未知",
     "inputTokensShort": "入",

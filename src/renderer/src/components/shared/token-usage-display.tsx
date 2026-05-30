@@ -1,7 +1,11 @@
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { TokenUsageBreakdown } from '@shared/types/asset'
-import { tokenUsageSegments, type TokenUsageSegmentId } from '@shared/token-usage'
+import {
+  tokenUsageCacheDetails,
+  tokenUsageSegments,
+  type TokenUsageSegmentId
+} from '@shared/token-usage'
 import { formatNumber, cn } from '@/lib/utils'
 
 interface TokenUsageDisplayProps {
@@ -36,9 +40,13 @@ export function TokenUsageDisplay({
   className
 }: TokenUsageDisplayProps): React.ReactElement {
   const { t } = useTranslation()
-  const cacheTokens = usage.cacheReadInputTokens + usage.cacheCreationInputTokens
+  const cacheDetails = useMemo(() => tokenUsageCacheDetails(usage), [usage])
+  const cacheTokens = cacheDetails.totalTokens
   const hasUnknownTokens = usage.unknownTokens > 0
   const segments = useMemo(() => tokenUsageSegments(usage), [usage])
+  const cacheLabel = cacheDetails.hasDetails
+    ? `${t('usage.cacheTokens')}: ${formatNumber(cacheDetails.totalTokens)} (${t('usage.cacheReadTokens')} ${formatNumber(cacheDetails.readTokens)} / ${t('usage.cacheWriteTokens')} ${formatNumber(cacheDetails.writeTokens)})`
+    : `${t('usage.cacheTokens')}: ${formatNumber(cacheDetails.totalTokens)}`
   const title = useMemo(() => {
     if (!usage.hasBreakdown) {
       return [
@@ -49,11 +57,11 @@ export function TokenUsageDisplay({
     return [
       `${t('usage.inputTokens')}: ${formatNumber(usage.inputTokens)}`,
       `${t('usage.outputTokens')}: ${formatNumber(usage.outputTokens)}`,
-      `${t('usage.cacheTokens')}: ${formatNumber(cacheTokens)}`,
+      cacheLabel,
       `${t('usage.reasoningTokens')}: ${formatNumber(usage.reasoningOutputTokens)}`,
       hasUnknownTokens ? `${t('usage.unknownTokens')}: ${formatNumber(usage.unknownTokens)}` : null
     ].filter(Boolean).join(' | ')
-  }, [cacheTokens, hasUnknownTokens, t, usage])
+  }, [cacheLabel, hasUnknownTokens, t, usage])
 
   if (mode === 'detail') {
     return (
@@ -65,7 +73,7 @@ export function TokenUsageDisplay({
           <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
             <span>{t('usage.inputTokens')}: {formatNumber(usage.inputTokens)}</span>
             <span>{t('usage.outputTokens')}: {formatNumber(usage.outputTokens)}</span>
-            {cacheTokens > 0 && <span>{t('usage.cacheTokens')}: {formatNumber(cacheTokens)}</span>}
+            {cacheTokens > 0 && <span>{cacheLabel}</span>}
             {usage.reasoningOutputTokens > 0 && (
               <span>{t('usage.reasoningTokens')}: {formatNumber(usage.reasoningOutputTokens)}</span>
             )}
@@ -89,7 +97,7 @@ export function TokenUsageDisplay({
                   key={segment.id}
                   className={SEGMENT_CLASS[segment.id]}
                   style={{ width: `${segment.percentage}%` }}
-                  title={`${t(SEGMENT_LABEL_KEYS[segment.id])}: ${formatNumber(segment.tokens)} (${formatPercentage(segment.percentage)})`}
+                  title={`${segment.id === 'cache' ? cacheLabel : `${t(SEGMENT_LABEL_KEYS[segment.id])}: ${formatNumber(segment.tokens)}`} (${formatPercentage(segment.percentage)})`}
                 />
               ))}
             </div>

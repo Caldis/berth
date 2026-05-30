@@ -7,9 +7,10 @@
   - 验证: `pnpm test -- tests/renderer/sessions-pages.test.tsx`, `pnpm typecheck:web`。
   - 结果: 已通过 `pnpm test -- tests/renderer/sessions-pages.test.tsx -t "passes selected cost mode"`、`pnpm typecheck:web`; 该 Vitest 命令实际运行了整个 `sessions-pages` 文件, jsdom 下仍有 Recharts 0 宽高警告。
 
-- [ ] 任务 2: token cache read/write tooltip
+- [x] 任务 2: token cache read/write tooltip
   - 改 `src/shared/token-usage.ts` 和 `TokenUsageDisplay`。
   - 验证: `pnpm test -- tests/unit/token-usage.test.ts tests/renderer/sessions-pages.test.tsx`, `pnpm typecheck:web`。
+  - 结果: 已通过 `pnpm test -- tests/unit/token-usage.test.ts tests/renderer/sessions-pages.test.tsx`、`pnpm typecheck:web`; 该页面测试仍有 Recharts 0 宽高警告。
 
 - [ ] 任务 3: pricing gap override 默认收起与复制按钮
   - 改 `Usage` 页和 en/zh i18n。

@@ -190,6 +190,7 @@ describe('session pages', () => {
 
     expect(await screen.findByText('Input: 10')).toBeInTheDocument()
     expect(screen.getByText('Output: 5')).toBeInTheDocument()
+    expect(screen.getByText('Cache: 23 (read 20 / write 3)')).toBeInTheDocument()
     expect(screen.getByText('Unknown cost')).toBeInTheDocument()
     expect(screen.queryByText('$0.00')).not.toBeInTheDocument()
     expect(screen.getAllByText('38 tok').length).toBeGreaterThan(0)

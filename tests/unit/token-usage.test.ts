@@ -3,6 +3,7 @@ import {
   addTokenUsage,
   emptyTokenUsage,
   normalizeTokenUsage,
+  tokenUsageCacheDetails,
   tokenUsageSegments,
   tokenUsageTotal
 } from '../../src/shared/token-usage'
@@ -88,6 +89,22 @@ describe('token usage helpers', () => {
       { id: 'cache', tokens: 23, percentage: 57.5 },
       { id: 'reasoning', tokens: 2, percentage: 5 }
     ])
+  })
+
+  it('keeps cache read and write counts available for display', () => {
+    const details = tokenUsageCacheDetails(
+      normalizeTokenUsage({
+        cacheReadInputTokens: 20,
+        cacheCreationInputTokens: 3
+      })
+    )
+
+    expect(details).toEqual({
+      readTokens: 20,
+      writeTokens: 3,
+      totalTokens: 23,
+      hasDetails: true
+    })
   })
 
   it('uses unknown as the only segment when only total tokens are known', () => {

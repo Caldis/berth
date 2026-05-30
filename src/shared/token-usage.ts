@@ -19,6 +19,13 @@ export interface TokenUsageSegment {
   percentage: number
 }
 
+export interface TokenUsageCacheDetails {
+  readTokens: number
+  writeTokens: number
+  totalTokens: number
+  hasDetails: boolean
+}
+
 const FIELD_ALIASES: Record<TokenField, string[]> = {
   inputTokens: ['inputTokens', 'input_tokens'],
   outputTokens: ['outputTokens', 'output_tokens'],
@@ -126,6 +133,19 @@ export function tokenUsageSegments(usage: TokenUsageBreakdown): TokenUsageSegmen
     ...segment,
     percentage: roundPercentage((segment.tokens / usage.totalTokens) * 100)
   }))
+}
+
+export function tokenUsageCacheDetails(usage: TokenUsageBreakdown): TokenUsageCacheDetails {
+  const readTokens = usage.cacheReadInputTokens
+  const writeTokens = usage.cacheCreationInputTokens
+  const totalTokens = readTokens + writeTokens
+
+  return {
+    readTokens,
+    writeTokens,
+    totalTokens,
+    hasDetails: totalTokens > 0
+  }
 }
 
 function roundPercentage(value: number): number {
