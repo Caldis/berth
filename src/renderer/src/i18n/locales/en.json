@@ -142,6 +142,8 @@
     "breakdownUnavailable": "Breakdown unavailable",
     "estimatedCost": "Estimated cost",
     "actualCost": "Actual cost",
+    "mixedCost": "Mixed cost",
+    "unknownCost": "Unknown cost",
     "dailyCost": "Daily Cost",
     "byModel": "By Model",
     "byProject": "By Project",

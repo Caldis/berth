@@ -180,6 +180,8 @@ describe('session pages', () => {
 
     expect(await screen.findByText('Input: 10')).toBeInTheDocument()
     expect(screen.getByText('Output: 5')).toBeInTheDocument()
+    expect(screen.getByText('Unknown cost')).toBeInTheDocument()
+    expect(screen.queryByText('$0.00')).not.toBeInTheDocument()
     expect(screen.getAllByText('38 tok').length).toBeGreaterThan(0)
     expect(screen.getByText('claude-sonnet-4-20250514')).toBeInTheDocument()
   })

@@ -16,10 +16,10 @@
   - 替换 Overview、Sessions、Session Detail、Usage 中的 token 总数显示。
   - 更新 en/zh i18n。
   - 验证: `pnpm test -- tests/renderer/sessions-pages.test.tsx`, `pnpm typecheck:web`。
-- [ ] 任务 5: pricing catalog 与 cost source 基础模型
+- [x] 任务 5: pricing catalog 与 cost source 基础模型
   - 增加 pricing 类型和估算 helper, 暂不把估算冒充真实账单。
   - 支持内置 catalog / local override / missing pricing 结果。
-  - 验证: 新增 pricing 单测, 覆盖 actual / estimated / unknown。
+  - 验证: `pnpm test -- tests/unit/pricing.test.ts tests/unit/usage-summary.test.ts tests/renderer/sessions-pages.test.tsx`, `pnpm typecheck:node`, `pnpm typecheck:web`。
 - [ ] 任务 6: 总门禁与人工视觉检查
   - `pnpm harness:check`
   - `pnpm test`

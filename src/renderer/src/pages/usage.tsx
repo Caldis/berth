@@ -52,6 +52,17 @@ export function Usage(): React.ReactElement {
   const hasModelData = usage && usage.byModel.length > 0
   const hasProjectData = usage && usage.byProject.length > 0
   const hasRateLimits = usage && usage.rateLimits.length > 0
+  const costLabelKey =
+    usage?.costSource === 'actual'
+      ? 'usage.actualCost'
+      : usage?.costSource === 'estimated'
+        ? 'usage.estimatedCost'
+        : usage?.costSource === 'mixed'
+          ? 'usage.mixedCost'
+          : 'usage.unknownCost'
+  const costValue = usage && usage.costSource !== 'unknown'
+    ? formatCurrency(usage.totalCost)
+    : '—'
 
   return (
     <div className="space-y-6">
@@ -82,11 +93,11 @@ export function Usage(): React.ReactElement {
           <div className="flex items-center gap-2 text-muted-foreground">
             <DollarSign className="h-4 w-4" />
             <span className="text-xs font-medium uppercase tracking-wide">
-              {t('usage.totalSpent')}
+              {t(costLabelKey)}
             </span>
           </div>
           <p className="mt-2 text-3xl font-bold tabular-nums">
-            {formatCurrency(usage?.totalCost ?? 0)}
+            {costValue}
           </p>
         </div>
         <div className="rounded-xl border border-border bg-card p-5">

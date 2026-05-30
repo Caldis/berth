@@ -1,8 +1,19 @@
 import { describe, expect, it } from 'vitest'
 import { buildUsageSummary } from '../../src/main/engine/usage'
+import type { ModelPricing } from '../../src/main/engine/pricing'
 import type { Asset } from '../../src/shared/types/asset'
 
 describe('buildUsageSummary', () => {
+  const localPricing: ModelPricing = {
+    model: 'priced-model',
+    provider: 'test',
+    inputCostPerToken: 0.01,
+    outputCostPerToken: 0.02,
+    cacheReadInputCostPerToken: 0.001,
+    cacheCreationInputCostPerToken: 0.005,
+    source: 'local'
+  }
+
   it('uses stats-cache token and model data when usage-data is absent', () => {
     const statsCache: Asset = {
       id: 'stats-cache',
@@ -83,9 +94,40 @@ describe('buildUsageSummary', () => {
     expect(summary.totalTokens).toBe(500)
     expect(summary.tokenUsage).toMatchObject({ unknownTokens: 500, totalTokens: 500 })
     expect(summary.totalCost).toBe(1.25)
+    expect(summary.costSource).toBe('actual')
     expect(summary.byModel).toMatchObject([{ model: 'claude-opus', percentage: 100, cost: 1.25, tokens: 500 }])
     expect(summary.byProject).toMatchObject([{ project: 'D--Code-berth', percentage: 100, cost: 1.25, tokens: 500 }])
     expect(summary.dailyCosts).toEqual([{ date: '2026-05-30', cost: 1.25 }])
+  })
+
+  it('estimates usage-data cost from pricing catalog when actual cost is absent', () => {
+    const usageData: Asset = {
+      id: 'usage-data-estimated',
+      agentId: 'codex',
+      category: 'observability',
+      type: 'usage-data',
+      scope: 'user',
+      name: '2026-05-30',
+      path: 'C:\\Users\\test\\.codex\\usage-data\\2026-05-30.json',
+      meta: {
+        date: '2026-05-30',
+        model: 'test/priced-model',
+        project: 'D--Code-berth',
+        inputTokens: 10,
+        outputTokens: 2,
+        cacheReadInputTokens: 3,
+        cacheCreationInputTokens: 4,
+        reasoningOutputTokens: 5
+      }
+    }
+
+    const summary = buildUsageSummary([usageData], { pricingCatalog: [localPricing] })
+
+    expect(summary.totalCost).toBeCloseTo(0.263, 6)
+    expect(summary.costSource).toBe('estimated')
+    expect(summary.dailyCosts[0].cost).toBeCloseTo(0.263, 6)
+    expect(summary.byModel).toMatchObject([{ model: 'test/priced-model', cost: 0.263, tokens: 24 }])
+    expect(summary.byProject).toMatchObject([{ project: 'D--Code-berth', cost: 0.263, tokens: 24 }])
   })
 
   it('filters usage-data daily cost and token totals by day range', () => {

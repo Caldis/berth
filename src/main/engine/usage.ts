@@ -1,14 +1,20 @@
-import type { Asset, TokenUsageBreakdown, UsageSummary } from '@shared/types/asset'
+import type { Asset, CostSource, TokenUsageBreakdown, UsageSummary } from '@shared/types/asset'
 import {
   addTokenUsage,
   emptyTokenUsage,
   normalizeTokenUsage
 } from '@shared/token-usage'
+import {
+  mergeCostSources,
+  resolveUsageCost,
+  type ModelPricing
+} from './pricing'
 
 type Numberish = number | null | undefined
 type UsageSummaryOptions = {
   days?: number
   now?: Date | string
+  pricingCatalog?: readonly ModelPricing[]
 }
 type UsageEntry = {
   cost: number
@@ -48,17 +54,25 @@ function summarizeUsageData(usageAssets: Asset[], options: UsageSummaryOptions):
   const projectMap = new Map<string, UsageEntry>()
   const dailyMap = new Map<string, number>()
   const dailyTokenMap = new Map<string, TokenUsageBreakdown>()
+  const costSources: CostSource[] = []
 
   for (const asset of usageAssets) {
     const date = dateFromMeta(asset.meta, 'date')
     if (!dateInRange(date, options)) continue
 
-    const cost = readNumber(asset.meta.costUSD, asset.meta.cost) ?? 0
     const entryTokenUsage = normalizeTokenUsage(asset.meta.tokenUsage ?? asset.meta)
+    const model = typeof asset.meta.model === 'string' ? asset.meta.model : undefined
+    const costResult = resolveUsageCost({
+      actualCost: readNumber(asset.meta.costUSD, asset.meta.totalCost, asset.meta.cost),
+      model,
+      tokenUsage: entryTokenUsage,
+      pricingCatalog: options.pricingCatalog
+    })
+    const cost = costResult.cost
+    costSources.push(costResult.source)
     totalCost += cost
     tokenUsage = addTokenUsage(tokenUsage, entryTokenUsage)
 
-    const model = typeof asset.meta.model === 'string' ? asset.meta.model : undefined
     if (model) {
       const entry = modelMap.get(model) ?? { cost: 0, tokenUsage: emptyTokenUsage() }
       entry.cost += cost
@@ -75,7 +89,7 @@ function summarizeUsageData(usageAssets: Asset[], options: UsageSummaryOptions):
     }
 
     if (date) {
-      if (cost > 0) dailyMap.set(date, (dailyMap.get(date) ?? 0) + cost)
+      if (cost > 0 && costResult.source !== 'unknown') dailyMap.set(date, (dailyMap.get(date) ?? 0) + cost)
       dailyTokenMap.set(date, addTokenUsage(dailyTokenMap.get(date) ?? emptyTokenUsage(), entryTokenUsage))
     }
   }
@@ -88,7 +102,7 @@ function summarizeUsageData(usageAssets: Asset[], options: UsageSummaryOptions):
     totalCost,
     totalTokens,
     tokenUsage,
-    costSource: totalCost > 0 ? 'actual' : 'unknown',
+    costSource: mergeCostSources(costSources),
     dailyCosts: Array.from(dailyMap, ([date, cost]) => ({ date, cost })).sort((a, b) =>
       a.date.localeCompare(b.date)
     ),
@@ -143,16 +157,31 @@ function summarizeStatsCache(statsAsset: Asset, options: UsageSummaryOptions): U
     : {}
   const dailyTokenMap = collectDailyModelTokens(meta, options)
   const modelEntries = new Map<string, UsageEntry>()
+  const costSources: CostSource[] = []
 
   for (const [model, value] of Object.entries(modelUsage)) {
-    const cost = readNumber(value.costUSD, value.cost) ?? 0
     const tokenUsage = normalizeTokenUsage(value)
+    const costResult = resolveUsageCost({
+      actualCost: readNumber(value.costUSD, value.totalCost, value.cost),
+      model,
+      tokenUsage,
+      pricingCatalog: options.pricingCatalog
+    })
+    const cost = costResult.cost
+    costSources.push(costResult.source)
     modelEntries.set(model, { cost, tokenUsage })
   }
 
   for (const [model, tokens] of dailyTokenMap) {
     if (!modelEntries.has(model)) {
-      modelEntries.set(model, { cost: 0, tokenUsage: normalizeTokenUsage({ tokens }) })
+      const tokenUsage = normalizeTokenUsage({ tokens })
+      const costResult = resolveUsageCost({
+        model,
+        tokenUsage,
+        pricingCatalog: options.pricingCatalog
+      })
+      costSources.push(costResult.source)
+      modelEntries.set(model, { cost: costResult.cost, tokenUsage })
     }
   }
 
@@ -183,7 +212,7 @@ function summarizeStatsCache(statsAsset: Asset, options: UsageSummaryOptions): U
     totalCost,
     totalTokens,
     tokenUsage,
-    costSource: totalCost > 0 ? 'actual' : 'unknown',
+    costSource: mergeCostSources(costSources),
     dailyCosts,
     dailyTokenUsage,
     byModel: Array.from(modelEntries, ([model, entry]) => ({
