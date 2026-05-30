@@ -4,7 +4,7 @@
 
 - [x] 任务 1: 扩展 `HealthCheck` IPC 类型与 `runHealthChecks` options, 增加基础分组字段; verify: `pnpm test -- tests/unit/health-check.test.ts`。
 - [x] 任务 2: 引入结构化 TOML parser, 增加 Codex config/custom agent parser; verify: 新增/更新 Codex parser 单测。
-- [ ] 任务 3: 扩展 Codex adapter 扫描 config、hooks、AGENTS.md、agents、skills 和 sessions; verify: `pnpm test -- tests/unit/codex-adapter.test.ts`。
+- [x] 任务 3: 扩展 Codex adapter 扫描 config、hooks、AGENTS.md、agents、skills 和 sessions; verify: `pnpm test -- tests/unit/codex-adapter.test.ts`。
 - [ ] 任务 4: 修正 Claude subagent Markdown frontmatter 扫描和解析; verify: `pnpm test -- tests/unit/claude-scanner.test.ts`。
 - [ ] 任务 5: 完成 health engine 检查项: source/syntax/structure/reference/configuration/session; verify: `pnpm test -- tests/unit/health-check.test.ts`。
 - [ ] 任务 6: 更新 `assets:health-check` IPC, 复用 scanner assets/errors; verify: 相关 unit/renderer 测试通过。

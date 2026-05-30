@@ -1,5 +1,6 @@
 import * as fs from 'fs'
 import * as path from 'path'
+import * as yaml from 'js-yaml'
 import { parse as parseToml } from 'smol-toml'
 import { emptyTokenUsage, normalizeTokenUsage } from '@shared/token-usage'
 import type { Asset, AssetScope } from '../types'
@@ -52,6 +53,42 @@ export function parseCodexHooksJson(filePath: string, scope: AssetScope): Asset[
   const root = asRecord(parsed)
   const hooks = asRecord(root.hooks) ?? root
   return parseCodexHooks(filePath, scope, hooks)
+}
+
+export function parseCodexAgentsMd(filePath: string, scope: AssetScope): Asset {
+  const raw = fs.readFileSync(filePath, 'utf-8')
+  const imports = extractAtImports(raw)
+  return {
+    id: `codex-agents-md-${safeId(scope)}-${hashString(filePath)}`,
+    agentId: 'codex',
+    category: 'instruction',
+    type: 'agents-md',
+    scope,
+    name: path.basename(filePath),
+    path: filePath,
+    meta: { imports, lineCount: raw.split('\n').length },
+    raw
+  }
+}
+
+export function parseCodexSkill(filePath: string, scope: AssetScope): Asset {
+  const raw = fs.readFileSync(filePath, 'utf-8')
+  const { frontmatter, body } = splitFrontmatter(raw)
+  const skillDir = path.basename(path.dirname(filePath))
+  return {
+    id: `codex-skill-${safeId((frontmatter?.name as string | undefined) ?? skillDir)}-${hashString(filePath)}`,
+    agentId: 'codex',
+    category: 'instruction',
+    type: 'skill',
+    scope,
+    name: (frontmatter?.name as string | undefined) ?? skillDir,
+    path: filePath,
+    meta: {
+      ...(frontmatter ?? {}),
+      bodyLength: body.length
+    },
+    raw
+  }
 }
 
 interface MutableArtifacts {
@@ -132,6 +169,37 @@ function parseCodexHooks(
   }
 
   return assets
+}
+
+function extractAtImports(content: string): string[] {
+  const results: string[] = []
+  for (const line of content.split('\n')) {
+    const trimmed = line.trim()
+    if (/^@[\w./\\]/.test(trimmed)) {
+      results.push(trimmed.slice(1).trim())
+    }
+  }
+  return results
+}
+
+function splitFrontmatter(raw: string): {
+  frontmatter: Record<string, unknown> | null
+  body: string
+} {
+  if (!raw.startsWith('---')) return { frontmatter: null, body: raw }
+  const end = raw.indexOf('\n---', 3)
+  if (end === -1) return { frontmatter: null, body: raw }
+  const yamlText = raw.slice(3, end).trim()
+  const body = raw.slice(end + 4)
+  try {
+    const parsed = yaml.load(yamlText)
+    return {
+      frontmatter: isRecord(parsed) ? parsed : null,
+      body
+    }
+  } catch {
+    return { frontmatter: null, body }
+  }
 }
 
 export function parseCodexSessionMeta(filePath: string): Asset {

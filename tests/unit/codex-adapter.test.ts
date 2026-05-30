@@ -56,4 +56,88 @@ describe('CodexAdapter', () => {
       ]
     })
   })
+
+  it('scans Codex user and project instructions and capabilities', async () => {
+    const projectDir = path.join(tempDir!, 'project')
+    const codexDir = path.join(mockHome.dir, '.codex')
+    fs.mkdirSync(path.join(codexDir, 'agents'), { recursive: true })
+    fs.mkdirSync(path.join(mockHome.dir, '.agents', 'skills', 'user-skill'), { recursive: true })
+    fs.mkdirSync(path.join(projectDir, '.codex', 'agents'), { recursive: true })
+    fs.mkdirSync(path.join(projectDir, '.agents', 'skills', 'project-skill'), { recursive: true })
+
+    fs.writeFileSync(path.join(codexDir, 'AGENTS.md'), '# User agents\n')
+    fs.writeFileSync(
+      path.join(codexDir, 'config.toml'),
+      ['[mcp_servers.user]', 'command = "user-mcp"'].join('\n')
+    )
+    fs.writeFileSync(
+      path.join(codexDir, 'hooks.json'),
+      JSON.stringify({ hooks: { Stop: [{ hooks: [{ type: 'command', command: 'echo stop' }] }] } })
+    )
+    fs.writeFileSync(
+      path.join(codexDir, 'agents', 'reviewer.toml'),
+      [
+        'name = "reviewer"',
+        'description = "Reviews code."',
+        'developer_instructions = "Check behavior."'
+      ].join('\n')
+    )
+    fs.writeFileSync(
+      path.join(mockHome.dir, '.agents', 'skills', 'user-skill', 'SKILL.md'),
+      ['---', 'name: user-skill', 'description: User skill', '---', 'Body'].join('\n')
+    )
+
+    fs.writeFileSync(path.join(projectDir, 'AGENTS.md'), '# Project agents\n')
+    fs.writeFileSync(
+      path.join(projectDir, '.codex', 'config.toml'),
+      ['[mcp_servers.project]', 'command = "project-mcp"'].join('\n')
+    )
+    fs.writeFileSync(
+      path.join(projectDir, '.codex', 'agents', 'mapper.toml'),
+      [
+        'name = "mapper"',
+        'description = "Maps code."',
+        'developer_instructions = "Read only."'
+      ].join('\n')
+    )
+    fs.writeFileSync(
+      path.join(projectDir, '.agents', 'skills', 'project-skill', 'SKILL.md'),
+      ['---', 'name: project-skill', 'description: Project skill', '---', 'Body'].join('\n')
+    )
+
+    const adapter = new CodexAdapter(projectDir)
+    const result = await adapter.scanAll()
+
+    expect(result.errors).toEqual([])
+    expect(result.assets.map((asset) => [asset.agentId, asset.type, asset.scope, asset.name])).toEqual(
+      expect.arrayContaining([
+        ['codex', 'agents-md', 'user', 'AGENTS.md'],
+        ['codex', 'agents-md', 'project', 'AGENTS.md'],
+        ['codex', 'mcp-server', 'user', 'user'],
+        ['codex', 'mcp-server', 'project', 'project'],
+        ['codex', 'hook', 'user', 'echo stop'],
+        ['codex', 'agent', 'user', 'reviewer'],
+        ['codex', 'agent', 'project', 'mapper'],
+        ['codex', 'skill', 'user', 'user-skill'],
+        ['codex', 'skill', 'project', 'project-skill']
+      ])
+    )
+  })
+
+  it('records parser errors without stopping the Codex scan', async () => {
+    const codexDir = path.join(mockHome.dir, '.codex')
+    fs.mkdirSync(codexDir, { recursive: true })
+    fs.writeFileSync(path.join(codexDir, 'config.toml'), '[mcp_servers.bad\ncommand = "bad"')
+    const adapter = new CodexAdapter()
+
+    const result = await adapter.scanAll()
+
+    expect(result.assets).toEqual([])
+    expect(result.errors).toEqual([
+      expect.objectContaining({
+        path: path.join(codexDir, 'config.toml'),
+        type: 'codex-config'
+      })
+    ])
+  })
 })
