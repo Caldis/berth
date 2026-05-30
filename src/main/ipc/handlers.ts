@@ -15,6 +15,7 @@ import type {
 } from '@shared/types/ipc'
 import { getScanner } from '../engine/scanner'
 import { getSearch } from '../engine/search'
+import { buildUsageSummary } from '../engine/usage'
 import { resolveRelations, buildImportChain } from '../engine/relations'
 import { parseMcpServers } from '../adapters/claude-code/parsers'
 
@@ -70,8 +71,8 @@ export function registerAssetHandlers(): void {
 
   ipcMain.handle(
     'sessions:list',
-    (_event, opts: { projectFilter?: string; limit?: number }): SessionListResult => {
-      const scanner = getScanner()
+    async (_event, opts: { projectFilter?: string; limit?: number }): Promise<SessionListResult> => {
+      const scanner = await ensureScanned()
       let sessions = scanner
         .getAllAssets()
         .filter((a) => a.type === 'session')
@@ -115,8 +116,8 @@ export function registerAssetHandlers(): void {
 
   ipcMain.handle(
     'sessions:get',
-    (_event, id: string): SessionDetailResult | null => {
-      const scanner = getScanner()
+    async (_event, id: string): Promise<SessionDetailResult | null> => {
+      const scanner = await ensureScanned()
       const asset = scanner.getAsset(id)
       if (!asset || asset.type !== 'session') return null
       return {
@@ -145,25 +146,10 @@ export function registerAssetHandlers(): void {
 
   ipcMain.handle(
     'usage:summary',
-    (_event, opts: { days: number }): UsageSummary => {
+    async (_event, opts: { days: number }): Promise<UsageSummary> => {
       void opts
-      // Aggregate from usage-data assets
-      const scanner = getScanner()
-      const usageAssets = scanner.getAllAssets().filter((a) => a.type === 'usage-data')
-      let totalCost = 0
-      let totalTokens = 0
-      for (const ua of usageAssets) {
-        totalCost += (ua.meta.cost as number) ?? 0
-        totalTokens += (ua.meta.tokens as number) ?? 0
-      }
-      return {
-        totalCost,
-        totalTokens,
-        dailyCosts: [],
-        byModel: [],
-        byProject: [],
-        rateLimits: []
-      }
+      const scanner = await ensureScanned()
+      return buildUsageSummary(scanner.getAllAssets())
     }
   )
 
@@ -184,6 +170,14 @@ export function registerAssetHandlers(): void {
   ipcMain.handle('shell:openExternal', (_event, url: string) => {
     shell.openExternal(url)
   })
+}
+
+async function ensureScanned(): Promise<ReturnType<typeof getScanner>> {
+  const scanner = getScanner()
+  if (!scanner.hasScanned()) {
+    await scanner.scanAll()
+  }
+  return scanner
 }
 
 // ---------------------------------------------------------------------------

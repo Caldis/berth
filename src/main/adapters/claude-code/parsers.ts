@@ -218,15 +218,36 @@ export function parseHooks(filePath: string, scope: AssetScope): Asset[] {
   if (!settings?.hooks) return []
   const assets: Asset[] = []
   for (const [event, handlers] of Object.entries(settings.hooks)) {
-    assets.push({
-      id: makeId('hook'),
-      agentId: 'claude-code',
-      category: 'capability',
-      type: 'hook',
-      scope,
-      name: event,
-      path: filePath,
-      meta: { event, handlers, handlerCount: Array.isArray(handlers) ? handlers.length : 0 }
+    if (!Array.isArray(handlers)) continue
+
+    handlers.forEach((handler, handlerIndex) => {
+      const handlerRecord = isRecord(handler) ? handler : {}
+      const matcher = typeof handlerRecord.matcher === 'string' ? handlerRecord.matcher : undefined
+      const nestedHooks = Array.isArray(handlerRecord.hooks) ? handlerRecord.hooks : [handlerRecord]
+
+      nestedHooks.forEach((hook, hookIndex) => {
+        const hookRecord = isRecord(hook) ? hook : {}
+        const command = typeof hookRecord.command === 'string' ? hookRecord.command : undefined
+        const hookType = typeof hookRecord.type === 'string' ? hookRecord.type : undefined
+        assets.push({
+          id: makeId('hook'),
+          agentId: 'claude-code',
+          category: 'capability',
+          type: 'hook',
+          scope,
+          name: command ?? `${event} hook ${handlerIndex + 1}`,
+          path: filePath,
+          meta: {
+            event,
+            eventType: event,
+            matcher,
+            command,
+            hookType,
+            handlerIndex,
+            hookIndex
+          }
+        })
+      })
     })
   }
   return assets
@@ -590,4 +611,8 @@ function readSettingsJson(filePath: string): SettingsJson | null {
   } catch {
     return null
   }
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value != null && typeof value === 'object' && !Array.isArray(value)
 }

@@ -244,7 +244,8 @@ export function scanCapabilities(ctx: ScanContext): Asset[] {
 export function scanState(ctx: ScanContext): Asset[] {
   const assets: Asset[] = []
 
-  // Sessions from ~/.claude/projects/<encoded-path>/*.jsonl
+  // Sessions are the top-level project JSONL files defined by the v0.1 PRD.
+  // Nested subagents/*.jsonl files are execution children, not standalone sessions.
   const projectsDir = path.join(ctx.claudeDir, 'projects')
   if (fs.existsSync(projectsDir)) {
     try {

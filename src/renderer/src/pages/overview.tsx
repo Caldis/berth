@@ -14,14 +14,15 @@ import {
 import { Bar, BarChart, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts'
 import { cn } from '@/lib/utils'
 import { formatCurrency, formatRelativeTime, formatNumber } from '@/lib/utils'
-import { useAssets, useSessions, useUsageSummary, useHealthChecks } from '@/hooks/use-ipc'
+import { useSessions, useUsageSummary, useHealthChecks } from '@/hooks/use-ipc'
+import { useAppStore } from '@/stores/app'
 import { StatCard } from '@/components/shared/stat-card'
 import { EmptyState } from '@/components/shared/empty-state'
 
 export function Overview(): React.ReactElement {
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const { stats } = useAssets()
+  const stats = useAppStore((s) => s.stats)
   const { sessions } = useSessions({ limit: 5 })
   const { usage } = useUsageSummary(7)
   const { checks } = useHealthChecks()

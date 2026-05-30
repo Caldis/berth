@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import type { Asset, AssetStats, SessionSummary, UsageSummary } from '@shared/types/asset'
 import type { SessionDetailResult, HealthCheck } from '@shared/types/ipc'
+import { useAppStore } from '@/stores/app'
 
 const emptyStats: AssetStats = {
   skills: 0,
@@ -19,16 +20,19 @@ export function useAssets(): {
   loading: boolean
   refresh: () => void
 } {
-  const [assets, setAssets] = useState<Asset[]>([])
-  const [stats, setStats] = useState<AssetStats>(emptyStats)
-  const [loading, setLoading] = useState(true)
+  const assets = useAppStore((s) => s.assets)
+  const stats = useAppStore((s) => s.stats)
+  const loading = useAppStore((s) => s.scanning)
+  const setAssets = useAppStore((s) => s.setAssets)
+  const setStats = useAppStore((s) => s.setStats)
+  const setScanning = useAppStore((s) => s.setScanning)
 
   const refresh = useCallback(() => {
     if (!window.api?.assets?.scanAll) {
-      setLoading(false)
+      setScanning(false)
       return
     }
-    setLoading(true)
+    setScanning(true)
     window.api.assets
       .scanAll()
       .then((result) => {
@@ -38,8 +42,8 @@ export function useAssets(): {
         }
       })
       .catch(() => {})
-      .finally(() => setLoading(false))
-  }, [])
+      .finally(() => setScanning(false))
+  }, [setAssets, setScanning, setStats])
 
   useEffect(() => {
     refresh()

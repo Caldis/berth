@@ -3,9 +3,11 @@ import { Sidebar } from './sidebar'
 import { SearchDialog } from './search-dialog'
 import { InspectorDrawer } from './inspector-drawer'
 import { useAppStore } from '@/stores/app'
+import { useAssets } from '@/hooks/use-ipc'
 
 export function AppLayout({ children }: { children: ReactNode }): React.ReactElement {
   const sidebarCollapsed = useAppStore((s) => s.sidebarCollapsed)
+  useAssets()
 
   return (
     <div className="flex h-screen overflow-hidden bg-background text-foreground">

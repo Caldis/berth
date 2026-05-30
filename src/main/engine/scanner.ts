@@ -6,14 +6,28 @@ export class AssetScanner {
   private adapter: ClaudeCodeAdapter
   private cachedAssets: Asset[] = []
   private assetMap = new Map<string, Asset>()
+  private scanned = false
+  private scanPromise: Promise<ScanResult> | null = null
 
   constructor(projectDir?: string) {
     this.adapter = new ClaudeCodeAdapter(projectDir)
   }
 
   async scanAll(): Promise<ScanResult> {
+    if (this.scanPromise) return this.scanPromise
+
+    this.scanPromise = this.runScanAll()
+    try {
+      return await this.scanPromise
+    } finally {
+      this.scanPromise = null
+    }
+  }
+
+  private async runScanAll(): Promise<ScanResult> {
     const { assets, errors } = await this.adapter.scanAll()
     this.cachedAssets = assets
+    this.scanned = true
     this.assetMap.clear()
     for (const a of assets) {
       this.assetMap.set(a.id, a)
@@ -35,6 +49,10 @@ export class AssetScanner {
 
   getAllAssets(): Asset[] {
     return this.cachedAssets
+  }
+
+  hasScanned(): boolean {
+    return this.scanned
   }
 
   getAdapter(): ClaudeCodeAdapter {
