@@ -8,7 +8,11 @@ import type { Asset, AssetScope } from '@shared/types/asset'
 import type {
   HealthCheck,
   HealthCheckCategory,
+  HealthCheckConfidence,
+  HealthCheckEvidence,
+  HealthCheckFix,
   HealthCheckSeverity,
+  HealthCheckTarget,
   ScanError
 } from '@shared/types/ipc'
 
@@ -33,6 +37,10 @@ interface HealthCheckInput {
   path?: string
   assetId?: string
   assetType?: string
+  evidence?: HealthCheckEvidence[]
+  fix?: HealthCheckFix
+  target?: HealthCheckTarget
+  confidence?: HealthCheckConfidence
 }
 
 interface HealthPaths {
@@ -47,6 +55,38 @@ const AGENT_NAMES: Record<HealthCheck['agentId'], string> = {
   'claude-code': 'Claude Code',
   codex: 'Codex'
 }
+
+const EVIDENCE = {
+  codexConfig: { label: 'Codex config reference', url: 'https://developers.openai.com/codex/config-reference' },
+  codexHooks: { label: 'Codex hooks', url: 'https://developers.openai.com/codex/hooks' },
+  codexSkills: { label: 'Codex skills', url: 'https://developers.openai.com/codex/skills' },
+  codexSubagents: { label: 'Codex custom agents', url: 'https://developers.openai.com/codex/subagents' },
+  codexAgentsMd: { label: 'Codex AGENTS.md', url: 'https://developers.openai.com/codex/guides/agents-md' },
+  codexWindows: { label: 'Codex Windows and WSL homes', url: 'https://developers.openai.com/codex/app/windows#share-config-auth-and-sessions-with-wsl' },
+  claudeSettings: { label: 'Claude Code settings', url: 'https://code.claude.com/docs/en/settings' },
+  claudeHooks: { label: 'Claude Code hooks', url: 'https://code.claude.com/docs/en/hooks' },
+  claudeMcp: { label: 'Claude Code MCP', url: 'https://code.claude.com/docs/en/mcp' },
+  claudeSkills: { label: 'Claude Code skills', url: 'https://code.claude.com/docs/en/skills' },
+  claudeSubagents: { label: 'Claude Code subagents', url: 'https://code.claude.com/docs/en/sub-agents' },
+  claudeMemory: { label: 'Claude Code memory', url: 'https://code.claude.com/docs/en/memory' },
+  claudeSessions: { label: 'Claude Code sessions', url: 'https://code.claude.com/docs/en/sessions' }
+} satisfies Record<string, HealthCheckEvidence>
+
+const CODEX_PROJECT_IGNORED_KEYS = new Set([
+  'openai_base_url',
+  'chatgpt_base_url',
+  'apps_mcp_product_sku',
+  'model_provider',
+  'model_providers',
+  'notify',
+  'profile',
+  'profiles',
+  'experimental_realtime_ws_base_url',
+  'otel'
+])
+
+const CODEX_RUNNABLE_HOOK_TYPE = 'command'
+const CLAUDE_HOOK_TYPES = new Set(['command', 'http', 'mcp_tool', 'prompt', 'agent'])
 
 export function runHealthChecks(options: HealthCheckOptions | string = {}): HealthCheck[] {
   const normalized = normalizeOptions(options)
@@ -235,7 +275,37 @@ function checkClaudeHooks(
         assetType: 'hook'
       }))
     }
-    if (platform === 'win32' && hook.command && hook.shell !== 'powershell') {
+    if (hook.type && !CLAUDE_HOOK_TYPES.has(hook.type)) {
+      checks.push(makeCheck({
+        id: `claude-code:structure:${scope}-hook-${slug(hook.event)}-unknown-type-${slug(hook.type)}`,
+        severity: 'warning',
+        category: 'structure',
+        agentId: 'claude-code',
+        title: 'Claude hook type is not documented',
+        message: `${hook.event} uses hook type "${hook.type}".`,
+        suggestion: 'Use a documented hook type, such as command, http, mcp_tool, prompt, or agent.',
+        scope,
+        path: filePath,
+        assetType: 'hook',
+        confidence: 'high'
+      }))
+    }
+    if (hook.args.length > 0 && hook.shell) {
+      checks.push(makeCheck({
+        id: `claude-code:configuration:${scope}-hook-shell-ignored-with-args`,
+        severity: 'info',
+        category: 'configuration',
+        agentId: 'claude-code',
+        title: 'Claude hook shell is ignored when args are set',
+        message: 'A command hook defines args and shell; Claude Code ignores shell in this shape.',
+        suggestion: 'Remove shell or move the full command into command when shell selection matters.',
+        scope,
+        path: filePath,
+        assetType: 'hook',
+        confidence: 'high'
+      }))
+    }
+    if (platform === 'win32' && hook.command && hook.shell !== 'powershell' && looksPowerShellCommand(hook.command)) {
       checks.push(makeCheck({
         id: `claude-code:configuration:${scope}-hook-windows-shell`,
         severity: 'warning',
@@ -246,7 +316,8 @@ function checkClaudeHooks(
         suggestion: 'Set "shell": "powershell" when the hook command is written for PowerShell.',
         scope,
         path: filePath,
-        assetType: 'hook'
+        assetType: 'hook',
+        confidence: 'medium'
       }))
     }
   }
@@ -302,6 +373,7 @@ function checkCodexConfig(
     const config = parseCodexToml(filePath)
     checkMcpServers(checks, 'codex', config, 'mcp_servers', scope, filePath)
     checkCodexHooks(checks, asRecord(config.hooks), scope, filePath, platform)
+    checkCodexProjectIgnoredKeys(checks, config, scope, filePath)
     return config
   } catch (err) {
     checks.push(makeCheck({
@@ -368,6 +440,22 @@ function checkCodexHooks(
   platform: NodeJS.Platform
 ): void {
   for (const hook of collectHooks(hooks)) {
+    if (hook.type && hook.type !== CODEX_RUNNABLE_HOOK_TYPE) {
+      checks.push(makeCheck({
+        id: `codex:configuration:${scope}-hook-${slug(hook.event)}-skipped-type-${slug(hook.type)}`,
+        severity: 'info',
+        category: 'configuration',
+        agentId: 'codex',
+        title: 'Codex hook type is parsed but skipped',
+        message: `Codex currently parses ${hook.type} hooks but only command hooks run.`,
+        suggestion: 'Use type = "command" when this hook should run today.',
+        scope,
+        path: filePath,
+        assetType: 'hook',
+        confidence: 'high'
+      }))
+      continue
+    }
     if (hook.type === 'command' && !hook.command) {
       checks.push(makeCheck({
         id: `codex:structure:${scope}-hook-${slug(hook.event)}-missing-command`,
@@ -382,7 +470,7 @@ function checkCodexHooks(
         assetType: 'hook'
       }))
     }
-    if (platform === 'win32' && hook.command && !hook.commandWindows) {
+    if (platform === 'win32' && hook.command && !hook.commandWindows && looksWindowsSpecificCommand(hook.command)) {
       checks.push(makeCheck({
         id: `codex:configuration:${scope}-hook-windows-command`,
         severity: 'warning',
@@ -393,10 +481,35 @@ function checkCodexHooks(
         suggestion: 'Add commandWindows or command_windows when the command differs on Windows.',
         scope,
         path: filePath,
-        assetType: 'hook'
+        assetType: 'hook',
+        confidence: 'medium'
       }))
     }
   }
+}
+
+function checkCodexProjectIgnoredKeys(
+  checks: HealthCheck[],
+  config: Record<string, unknown>,
+  scope: AssetScope,
+  filePath: string
+): void {
+  if (scope !== 'project') return
+  const ignoredKeys = Object.keys(config).filter((key) => CODEX_PROJECT_IGNORED_KEYS.has(key))
+  if (ignoredKeys.length === 0) return
+  checks.push(makeCheck({
+    id: `codex:configuration:${scope}-config-ignored-local-keys`,
+    severity: 'warning',
+    category: 'configuration',
+    agentId: 'codex',
+    title: 'Project Codex config contains ignored local keys',
+    message: `Codex ignores project-level local keys: ${ignoredKeys.join(', ')}.`,
+    suggestion: 'Move these keys to user config if they are intended to affect Codex.',
+    scope,
+    path: filePath,
+    assetType: 'mcp-server',
+    confidence: 'high'
+  }))
 }
 
 function checkMcpServers(
@@ -545,6 +658,27 @@ function checkSkillFrontmatter(
       path: filePath,
       assetType: 'skill'
     }))
+  }
+  if (agentId === 'codex' && !parsed.error) {
+    const missing = [
+      stringValue(parsed.frontmatter?.name) ? '' : 'name',
+      stringValue(parsed.frontmatter?.description) ? '' : 'description'
+    ].filter(Boolean)
+    if (missing.length > 0) {
+      checks.push(makeCheck({
+        id: `codex:structure:${scope}-skill-${slug(path.basename(path.dirname(filePath)))}-frontmatter-missing-required`,
+        severity: 'warning',
+        category: 'structure',
+        agentId,
+        title: 'Codex skill metadata is incomplete',
+        message: `SKILL.md is missing required Codex field(s): ${missing.join(', ')}.`,
+        suggestion: 'Add name and description frontmatter to SKILL.md.',
+        scope,
+        path: filePath,
+        assetType: 'skill',
+        confidence: 'high'
+      }))
+    }
   }
 }
 
@@ -762,6 +896,7 @@ function collectHooks(hooks: Record<string, unknown> | undefined): Array<{
   commandWindows?: string
   shell?: string
   type?: string
+  args: string[]
 }> {
   if (!hooks) return []
   const result: Array<{
@@ -770,6 +905,7 @@ function collectHooks(hooks: Record<string, unknown> | undefined): Array<{
     commandWindows?: string
     shell?: string
     type?: string
+    args: string[]
   }> = []
 
   for (const [event, handlers] of Object.entries(hooks)) {
@@ -787,7 +923,10 @@ function collectHooks(hooks: Record<string, unknown> | undefined): Array<{
           commandWindows:
             stringValue(hookRecord.commandWindows) ?? stringValue(hookRecord.command_windows),
           shell: stringValue(hookRecord.shell),
-          type: stringValue(hookRecord.type)
+          type: stringValue(hookRecord.type),
+          args: Array.isArray(hookRecord.args)
+            ? hookRecord.args.filter((arg): arg is string => typeof arg === 'string')
+            : []
         })
       }
     }
@@ -880,10 +1019,74 @@ function hasCodexData(paths: HealthPaths): boolean {
 }
 
 function makeCheck(input: HealthCheckInput): HealthCheck {
+  const suggestion = input.suggestion
   return {
     ...input,
-    agentName: AGENT_NAMES[input.agentId]
+    agentName: AGENT_NAMES[input.agentId],
+    evidence: input.evidence ?? evidenceFor(input),
+    fix: input.fix ?? (suggestion ? { label: 'Suggested fix', description: suggestion } : undefined),
+    target: input.target ?? targetFor(input),
+    confidence: input.confidence ?? confidenceFor(input)
   }
+}
+
+function evidenceFor(input: HealthCheckInput): HealthCheckEvidence[] {
+  if (input.agentId === 'codex') {
+    if (input.assetType === 'hook') return [EVIDENCE.codexHooks]
+    if (input.assetType === 'skill') return [EVIDENCE.codexSkills]
+    if (input.assetType === 'agent') return [EVIDENCE.codexSubagents]
+    if (input.assetType === 'agents-md') return [EVIDENCE.codexAgentsMd]
+    if (input.category === 'session') return [EVIDENCE.codexWindows]
+    return [EVIDENCE.codexConfig]
+  }
+
+  if (input.agentId === 'claude-code') {
+    if (input.assetType === 'hook') return [EVIDENCE.claudeHooks]
+    if (input.assetType === 'mcp-server') return [EVIDENCE.claudeMcp]
+    if (input.assetType === 'skill') return [EVIDENCE.claudeSkills]
+    if (input.assetType === 'agent') return [EVIDENCE.claudeSubagents]
+    if (input.assetType === 'claude-md' || input.assetType === 'agents-md') return [EVIDENCE.claudeMemory]
+    if (input.category === 'session') return [EVIDENCE.claudeSessions]
+    return [EVIDENCE.claudeSettings]
+  }
+
+  return []
+}
+
+function targetFor(input: HealthCheckInput): HealthCheckTarget | undefined {
+  if (input.assetId && input.assetType === 'session') return { route: `/sessions/${input.assetId}`, assetId: input.assetId, path: input.path }
+
+  const route = routeForAssetType(input.assetType)
+  if (route || input.assetId || input.path) {
+    return {
+      route,
+      assetId: input.assetId,
+      path: input.path
+    }
+  }
+
+  return undefined
+}
+
+function routeForAssetType(assetType: string | undefined): string | undefined {
+  if (!assetType) return undefined
+  if (assetType === 'hook') return '/configuration/capabilities?tab=hooks'
+  if (assetType === 'mcp-server') return '/configuration/capabilities?tab=mcp'
+  if (assetType === 'permission') return '/configuration/capabilities?tab=permissions'
+  if (assetType === 'env') return '/configuration/capabilities?tab=env'
+  if (assetType === 'plugin') return '/configuration/capabilities?tab=plugins'
+  if (assetType === 'statusline') return '/configuration/capabilities?tab=statusLine'
+  if (['skill', 'agent', 'claude-md', 'agents-md', 'command', 'output-mode', 'team'].includes(assetType)) {
+    return '/configuration/instructions'
+  }
+  return undefined
+}
+
+function confidenceFor(input: HealthCheckInput): HealthCheckConfidence {
+  if (input.category === 'syntax' || input.severity === 'error') return 'high'
+  if (input.category === 'configuration') return 'medium'
+  if (input.category === 'session' || input.severity === 'info') return 'low'
+  return 'high'
 }
 
 function dedupeChecks(checks: HealthCheck[]): HealthCheck[] {
@@ -946,8 +1149,20 @@ function stringValue(value: unknown): string | undefined {
   return typeof value === 'string' && value.trim() ? value : undefined
 }
 
+function looksPowerShellCommand(command: string): boolean {
+  return /\b(powershell|pwsh)\b/i.test(command) || /\b[A-Z][A-Za-z]+-[A-Za-z]+\b/.test(command)
+}
+
+function looksWindowsSpecificCommand(command: string): boolean {
+  return (
+    looksPowerShellCommand(command) ||
+    /\bcmd(\.exe)?\s*\/c\b/i.test(command) ||
+    /\.(ps1|bat|cmd)(\s|$)/i.test(command)
+  )
+}
+
 function slug(value: string): string {
-  return value.replace(/[^a-z0-9_-]+/gi, '-').replace(/^-+|-+$/g, '').slice(0, 80) || 'unknown'
+  return value.toLowerCase().replace(/[^a-z0-9_-]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 80) || 'unknown'
 }
 
 function hashString(value: string): string {

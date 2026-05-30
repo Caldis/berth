@@ -22,7 +22,7 @@ describe('runHealthChecks', () => {
     const checks = runHealthChecks({ homeDir: tempDir! })
 
     expect(checks).toEqual([
-      {
+      expect.objectContaining({
         id: 'all:source:no-agent-data',
         severity: 'warning',
         category: 'source',
@@ -30,8 +30,13 @@ describe('runHealthChecks', () => {
         agentName: 'All agents',
         title: 'No supported agent data found',
         message: 'Berth scans Claude Code and Codex local data when present.',
-        suggestion: 'Install or run Claude Code or Codex once, then refresh Berth.'
-      }
+        suggestion: 'Install or run Claude Code or Codex once, then refresh Berth.',
+        fix: {
+          label: 'Suggested fix',
+          description: 'Install or run Claude Code or Codex once, then refresh Berth.'
+        },
+        confidence: 'high'
+      })
     ])
   })
 
@@ -94,7 +99,7 @@ describe('runHealthChecks', () => {
         'matcher = "Bash"',
         '[[hooks.PreToolUse.hooks]]',
         'type = "command"',
-        'command = "python hook.py"'
+        'command = "powershell -File hook.ps1"'
       ].join('\n')
     )
     fs.writeFileSync(
@@ -115,6 +120,12 @@ describe('runHealthChecks', () => {
       ])
     )
     expect(checks.some((check) => check.id.startsWith('codex:reference:user-agents-md-missing-import'))).toBe(true)
+    expect(checks.find((check) => check.id === 'codex:configuration:user-hook-windows-command')).toMatchObject({
+      evidence: [expect.objectContaining({ url: 'https://developers.openai.com/codex/hooks' })],
+      target: expect.objectContaining({ route: '/configuration/capabilities?tab=hooks' }),
+      fix: expect.objectContaining({ label: 'Suggested fix' }),
+      confidence: 'medium'
+    })
   })
 
   it('reports invalid Codex TOML', () => {
@@ -147,7 +158,7 @@ describe('runHealthChecks', () => {
       JSON.stringify({
         permissions: { allow: ['Bash(*)'] },
         hooks: {
-          PreToolUse: [{ hooks: [{ type: 'command', command: 'echo check' }] }]
+          PreToolUse: [{ hooks: [{ type: 'command', command: 'Get-ChildItem' }] }]
         }
       })
     )
@@ -170,5 +181,76 @@ describe('runHealthChecks', () => {
       ])
     )
     expect(checks.some((check) => check.id.startsWith('claude-code:reference:user-claude-md-missing-import'))).toBe(true)
+  })
+
+  it('does not warn for portable Claude and Codex hook commands on Windows', () => {
+    const claudeDir = path.join(tempDir!, '.claude')
+    const codexDir = path.join(tempDir!, '.codex')
+    fs.mkdirSync(claudeDir, { recursive: true })
+    fs.mkdirSync(codexDir, { recursive: true })
+    fs.writeFileSync(path.join(claudeDir, 'CLAUDE.md'), '# Claude\n')
+    fs.writeFileSync(
+      path.join(claudeDir, 'settings.json'),
+      JSON.stringify({ hooks: { PreToolUse: [{ hooks: [{ type: 'command', command: 'echo check' }] }] } })
+    )
+    fs.writeFileSync(
+      path.join(codexDir, 'config.toml'),
+      [
+        '[[hooks.PreToolUse]]',
+        '[[hooks.PreToolUse.hooks]]',
+        'type = "command"',
+        'command = "python hook.py"'
+      ].join('\n')
+    )
+
+    const checks = runHealthChecks({ homeDir: tempDir!, platform: 'win32' })
+
+    expect(checks.map((check) => check.id)).not.toContain('claude-code:configuration:user-hook-windows-shell')
+    expect(checks.map((check) => check.id)).not.toContain('codex:configuration:user-hook-windows-command')
+  })
+
+  it('reports official Codex ignored project config keys and skipped hook types', () => {
+    const projectDir = path.join(tempDir!, 'project')
+    const codexDir = path.join(projectDir, '.codex')
+    fs.mkdirSync(codexDir, { recursive: true })
+    fs.writeFileSync(
+      path.join(codexDir, 'config.toml'),
+      [
+        'model_provider = "custom"',
+        '[[hooks.Stop]]',
+        '[[hooks.Stop.hooks]]',
+        'type = "prompt"',
+        'prompt = "Summarize"'
+      ].join('\n')
+    )
+
+    const checks = runHealthChecks({ homeDir: tempDir!, projectDir })
+
+    expect(checks).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: 'codex:configuration:project-config-ignored-local-keys',
+          evidence: [expect.objectContaining({ url: 'https://developers.openai.com/codex/config-reference' })]
+        }),
+        expect.objectContaining({
+          id: 'codex:configuration:project-hook-stop-skipped-type-prompt',
+          severity: 'info',
+          evidence: [expect.objectContaining({ url: 'https://developers.openai.com/codex/hooks' })]
+        })
+      ])
+    )
+  })
+
+  it('does not treat optional Claude skill frontmatter fields as required', () => {
+    const claudeDir = path.join(tempDir!, '.claude')
+    const skillDir = path.join(claudeDir, 'skills', 'minimal')
+    fs.mkdirSync(skillDir, { recursive: true })
+    fs.writeFileSync(path.join(claudeDir, 'CLAUDE.md'), '# Claude\n')
+    fs.writeFileSync(path.join(skillDir, 'SKILL.md'), 'No frontmatter here.')
+
+    const checks = runHealthChecks({ homeDir: tempDir! })
+
+    expect(checks.map((check) => check.id)).not.toContain('claude-code:structure:user-skill-minimal-frontmatter-missing-required')
+    expect(checks.filter((check) => check.assetType === 'skill')).toEqual([])
   })
 })

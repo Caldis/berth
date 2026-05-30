@@ -136,9 +136,32 @@ export interface HealthCheck {
   path?: string
   assetId?: string
   assetType?: string
+  evidence?: HealthCheckEvidence[]
+  fix?: HealthCheckFix
+  target?: HealthCheckTarget
+  confidence?: HealthCheckConfidence
 }
 
 export type HealthCheckSeverity = 'info' | 'warning' | 'error'
+
+export type HealthCheckConfidence = 'high' | 'medium' | 'low'
+
+export interface HealthCheckEvidence {
+  label: string
+  url: string
+}
+
+export interface HealthCheckFix {
+  label: string
+  description: string
+  snippet?: string
+}
+
+export interface HealthCheckTarget {
+  route?: string
+  path?: string
+  assetId?: string
+}
 
 export type HealthCheckCategory =
   | 'source'
