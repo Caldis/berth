@@ -2,7 +2,7 @@
 task: 2026-05-30-session-detail-agent-timeline-codex-filter
 type: feature
 jira:
-phase: verify
+phase: archive
 created: 2026-05-30
 artifacts:
   source: 00-PRD.md

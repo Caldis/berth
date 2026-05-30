@@ -4,6 +4,10 @@
 
 IMPROVEMENT
 
+## 状态
+
+Done
+
 ## 背景
 
 用户验收会话基础字段修复后指出, Session Detail 仍缺少完整复盘能力:
@@ -38,3 +42,8 @@ IMPROVEMENT
 - Loaded assets 不再只依赖 Skill/MCP; 同时有工具摘要和真实使用过的资产列表。
 - Artifacts 展示 plans / todos / touched files / checkpoints 的真实明细或明确 unknown/empty。
 - 不把敏感正文、命令输出、文件内容默认塞进 renderer 数据。
+
+## 完成记录
+
+- 已在 `docs/works/_archive/2026-05-30-session-detail-agent-timeline-codex-filter/` 中完成并归档。
+- 覆盖 Claude Code transcript 和 Codex rollout session 解析、工具时间线、plans / todos / files / checkpoints 展示。
