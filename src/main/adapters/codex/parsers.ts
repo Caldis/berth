@@ -28,7 +28,8 @@ export function parseCodexConfig(filePath: string, scope: AssetScope): Asset[] {
   const config = parseCodexToml(filePath)
   return [
     ...parseCodexMcpServers(filePath, scope, config),
-    ...parseCodexHooks(filePath, scope, asRecord(config.hooks))
+    ...parseCodexHooks(filePath, scope, asRecord(config.hooks)),
+    ...parseCodexStatusLine(filePath, scope, config)
   ]
 }
 
@@ -180,6 +181,79 @@ function parseCodexHooks(
   }
 
   return assets
+}
+
+const CODEX_STATUS_LINE_ITEMS = new Set([
+  'model',
+  'model-name',
+  'model-with-reasoning',
+  'current-dir',
+  'project-name',
+  'project',
+  'project-root',
+  'git-branch',
+  'pull-request-number',
+  'branch-changes',
+  'run-state',
+  'status',
+  'permissions',
+  'approval-mode',
+  'approval',
+  'context-remaining',
+  'context-used',
+  'context-usage',
+  'five-hour-limit',
+  'weekly-limit',
+  'codex-version',
+  'context-window-size',
+  'used-tokens',
+  'total-input-tokens',
+  'total-output-tokens',
+  'thread-id',
+  'session-id',
+  'fast-mode',
+  'raw-output',
+  'thread-title',
+  'task-progress'
+])
+
+function parseCodexStatusLine(
+  filePath: string,
+  scope: AssetScope,
+  config: Record<string, unknown>
+): Asset[] {
+  const tui = asRecord(config.tui)
+  if (!tui || !Array.isArray(tui.status_line)) return []
+
+  const items = tui.status_line.filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
+  if (items.length === 0) return []
+
+  const knownItems = items.filter((item) => CODEX_STATUS_LINE_ITEMS.has(item))
+  const unknownItems = items.filter((item) => !CODEX_STATUS_LINE_ITEMS.has(item))
+  const useThemeColors = readBoolean(tui, 'status_line_use_colors')
+
+  return [
+    {
+      id: `codex-statusline-${safeId(scope)}-${hashString(filePath)}`,
+      agentId: 'codex',
+      category: 'capability',
+      type: 'statusline',
+      scope,
+      name: 'TUI Status Line',
+      path: filePath,
+      meta: {
+        provider: 'codex',
+        settingKey: 'tui.status_line',
+        statusLineKind: 'footer-items',
+        items,
+        knownItems,
+        unknownItems,
+        useThemeColors: useThemeColors ?? true,
+        source: filePath
+      },
+      raw: fs.readFileSync(filePath, 'utf-8')
+    }
+  ]
 }
 
 function readCodexHookSupportNote(hookType: string | undefined, asyncHook: boolean | undefined): string | undefined {

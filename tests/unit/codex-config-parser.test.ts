@@ -120,6 +120,55 @@ describe('Codex config parser', () => {
     expect(assets[2].meta.supportNote).toBe('capabilities.hooks.management.codexAsyncHookSkipped')
   })
 
+  it('parses Codex TUI status line items from config.toml', () => {
+    const configPath = path.join(tempDir!, 'config.toml')
+    fs.writeFileSync(
+      configPath,
+      [
+        '[tui]',
+        'status_line = ["model-with-reasoning", "current-dir", "unknown-future-item"]',
+        'status_line_use_colors = false'
+      ].join('\n')
+    )
+
+    const assets = parseCodexConfig(configPath, 'user')
+
+    expect(assets).toEqual([
+      expect.objectContaining({
+        agentId: 'codex',
+        category: 'capability',
+        type: 'statusline',
+        scope: 'user',
+        name: 'TUI Status Line',
+        path: configPath,
+        meta: expect.objectContaining({
+          provider: 'codex',
+          settingKey: 'tui.status_line',
+          statusLineKind: 'footer-items',
+          items: ['model-with-reasoning', 'current-dir', 'unknown-future-item'],
+          knownItems: ['model-with-reasoning', 'current-dir'],
+          unknownItems: ['unknown-future-item'],
+          useThemeColors: false
+        })
+      })
+    ])
+  })
+
+  it('does not create a Codex statusline asset when status_line is unset', () => {
+    const configPath = path.join(tempDir!, 'config.toml')
+    fs.writeFileSync(
+      configPath,
+      [
+        '[tui]',
+        'status_line_use_colors = true'
+      ].join('\n')
+    )
+
+    const assets = parseCodexConfig(configPath, 'user')
+
+    expect(assets.filter((asset) => asset.type === 'statusline')).toEqual([])
+  })
+
   it('parses standalone custom agent TOML', () => {
     const agentPath = path.join(tempDir!, 'reviewer.toml')
     fs.writeFileSync(

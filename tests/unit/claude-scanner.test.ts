@@ -2,8 +2,8 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'fs'
 import { join } from 'path'
 import { tmpdir } from 'os'
-import { scanInstructions, scanState } from '../../src/main/adapters/claude-code/scanner'
-import { parseHooks } from '../../src/main/adapters/claude-code/parsers'
+import { scanCapabilities, scanInstructions, scanState } from '../../src/main/adapters/claude-code/scanner'
+import { parseHooks, parseStatuslinesFromSettings } from '../../src/main/adapters/claude-code/parsers'
 
 let root: string | null = null
 
@@ -64,6 +64,93 @@ describe('Claude Code scanner', () => {
       command: 'echo pre-tool',
       hookType: 'command'
     })
+  })
+
+  it('parses Claude statusLine and subagentStatusLine settings', () => {
+    root = mkdtempSync(join(tmpdir(), 'berth-claude-statusline-'))
+    const settingsPath = join(root, 'settings.json')
+    const statuslineScript = join(root, 'statusline.ps1')
+    writeFileSync(statuslineScript, 'Write-Output status\n')
+    writeFileSync(
+      settingsPath,
+      JSON.stringify({
+        disableAllHooks: true,
+        statusLine: {
+          type: 'command',
+          command: `pwsh "${statuslineScript}"`,
+          padding: 2,
+          refreshInterval: 5,
+          hideVimModeIndicator: true
+        },
+        subagentStatusLine: {
+          type: 'command',
+          command: 'node subagent-statusline.js'
+        }
+      })
+    )
+
+    const assets = parseStatuslinesFromSettings(settingsPath, 'user')
+
+    expect(assets).toHaveLength(2)
+    expect(assets[0]).toMatchObject({
+      agentId: 'claude-code',
+      category: 'capability',
+      type: 'statusline',
+      scope: 'user',
+      name: 'Status Line',
+      path: settingsPath,
+      meta: {
+        provider: 'claude-code',
+        settingKey: 'statusLine',
+        statusLineKind: 'main',
+        commandType: 'command',
+        command: `pwsh "${statuslineScript}"`,
+        padding: 2,
+        refreshInterval: 5,
+        hideVimModeIndicator: true,
+        disabledByDisableAllHooks: true,
+        entryPaths: [statuslineScript]
+      }
+    })
+    expect(assets[1]).toMatchObject({
+      name: 'Subagent Status Line',
+      meta: {
+        settingKey: 'subagentStatusLine',
+        statusLineKind: 'subagent',
+        command: 'node subagent-statusline.js',
+        disabledByDisableAllHooks: true
+      }
+    })
+  })
+
+  it('scans Claude project local statusLine settings', () => {
+    root = mkdtempSync(join(tmpdir(), 'berth-claude-local-statusline-'))
+    const claudeDir = join(root, '.claude-home')
+    const projectDir = join(root, 'project')
+    const projectClaudeDir = join(projectDir, '.claude')
+    mkdirSync(projectClaudeDir, { recursive: true })
+    writeFileSync(
+      join(projectClaudeDir, 'settings.local.json'),
+      JSON.stringify({
+        statusLine: {
+          type: 'command',
+          command: 'echo local'
+        }
+      })
+    )
+
+    const assets = scanCapabilities({ claudeDir, projectDir, errors: [] })
+
+    expect(assets.filter((asset) => asset.type === 'statusline')).toEqual([
+      expect.objectContaining({
+        scope: 'project',
+        path: join(projectClaudeDir, 'settings.local.json'),
+        meta: expect.objectContaining({
+          settingKey: 'statusLine',
+          command: 'echo local'
+        })
+      })
+    ])
   })
 
   it('scans Claude subagents from Markdown frontmatter files', () => {

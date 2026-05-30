@@ -15,8 +15,8 @@ import {
   parseHooks,
   parsePermissions,
   parseEnv,
+  parseStatuslinesFromSettings,
   parsePlugin,
-  parseStatusline,
   parseSessionMeta,
   parsePlan,
   parseTodo,
@@ -203,6 +203,19 @@ export function scanCapabilities(ctx: ScanContext): Asset[] {
 
       const envs = safeScan(ctx, fp, 'env', () => parseEnv(fp, scope))
       if (envs) assets.push(...envs)
+
+      const statuslines = safeScan(ctx, fp, 'statusline', () => parseStatuslinesFromSettings(fp, scope))
+      if (statuslines) assets.push(...statuslines)
+    }
+  }
+
+  if (ctx.projectDir) {
+    const localSettings = path.join(ctx.projectDir, '.claude', 'settings.local.json')
+    if (fs.existsSync(localSettings)) {
+      const statuslines = safeScan(ctx, localSettings, 'statusline', () =>
+        parseStatuslinesFromSettings(localSettings, 'project')
+      )
+      if (statuslines) assets.push(...statuslines)
     }
   }
 
@@ -225,13 +238,6 @@ export function scanCapabilities(ctx: ScanContext): Asset[] {
         message: err instanceof Error ? err.message : String(err)
       })
     }
-  }
-
-  // Statusline scripts
-  const statuslineFiles = safeGlob('statusline*', ctx.claudeDir)
-  for (const fp of statuslineFiles) {
-    const a = safeScan(ctx, fp, 'statusline', () => parseStatusline(fp, 'user'))
-    if (a) assets.push(a)
   }
 
   return assets

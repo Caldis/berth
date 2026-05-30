@@ -234,6 +234,9 @@ export interface SettingsJson {
   hooks?: Record<string, unknown[]>
   permissions?: { allow?: string[]; deny?: string[] }
   env?: Record<string, string>
+  statusLine?: unknown
+  subagentStatusLine?: unknown
+  disableAllHooks?: boolean
   [key: string]: unknown
 }
 
@@ -335,6 +338,75 @@ export function parseEnv(filePath: string, scope: AssetScope): Asset[] {
 }
 
 // ---------------------------------------------------------------------------
+// Status line settings
+// ---------------------------------------------------------------------------
+
+export function parseStatuslinesFromSettings(filePath: string, scope: AssetScope): Asset[] {
+  const settings = readSettingsJson(filePath)
+  if (!settings) return []
+
+  const raw = readRawFile(filePath)
+  const disabledByDisableAllHooks = settings.disableAllHooks === true
+  return [
+    parseStatuslineSetting(filePath, scope, settings.statusLine, 'statusLine', 'main', disabledByDisableAllHooks, raw),
+    parseStatuslineSetting(
+      filePath,
+      scope,
+      settings.subagentStatusLine,
+      'subagentStatusLine',
+      'subagent',
+      disabledByDisableAllHooks,
+      raw
+    )
+  ].filter((asset): asset is Asset => asset != null)
+}
+
+function parseStatuslineSetting(
+  filePath: string,
+  scope: AssetScope,
+  setting: unknown,
+  settingKey: 'statusLine' | 'subagentStatusLine',
+  statusLineKind: 'main' | 'subagent',
+  disabledByDisableAllHooks: boolean,
+  raw: string | undefined
+): Asset | null {
+  if (!isRecord(setting)) return null
+
+  const commandType = readString(setting, 'type')
+  const command = readString(setting, 'command')
+  if (!commandType && !command) return null
+
+  const padding = readNumber(setting, 'padding')
+  const refreshInterval = readNumber(setting, 'refreshInterval')
+  const hideVimModeIndicator = readBoolean(setting, 'hideVimModeIndicator')
+  const entryPaths = command ? extractCommandEntryPaths(filePath, command) : []
+
+  return {
+    id: makeId('statusline'),
+    agentId: 'claude-code',
+    category: 'capability',
+    type: 'statusline',
+    scope,
+    name: settingKey === 'statusLine' ? 'Status Line' : 'Subagent Status Line',
+    path: filePath,
+    meta: {
+      provider: 'claude-code',
+      settingKey,
+      statusLineKind,
+      commandType: commandType ?? 'command',
+      command,
+      padding,
+      refreshInterval,
+      hideVimModeIndicator,
+      disabledByDisableAllHooks,
+      entryPaths,
+      source: filePath
+    },
+    raw
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Plugins
 // ---------------------------------------------------------------------------
 
@@ -367,6 +439,7 @@ export function parsePlugin(filePath: string): Asset {
 // ---------------------------------------------------------------------------
 
 export function parseStatusline(filePath: string, scope: AssetScope): Asset {
+  const raw = readRawFile(filePath)
   return {
     id: makeId('statusline'),
     agentId: 'claude-code',
@@ -375,7 +448,12 @@ export function parseStatusline(filePath: string, scope: AssetScope): Asset {
     scope,
     name: path.basename(filePath),
     path: filePath,
-    meta: {}
+    meta: {
+      provider: 'claude-code',
+      legacyFile: true,
+      source: filePath
+    },
+    raw
   }
 }
 
@@ -698,6 +776,12 @@ function readNumber(record: unknown, key: string): number | undefined {
   return typeof value === 'number' && Number.isFinite(value) ? value : undefined
 }
 
+function readBoolean(record: unknown, key: string): boolean | undefined {
+  if (!isRecord(record)) return undefined
+  const value = record[key]
+  return typeof value === 'boolean' ? value : undefined
+}
+
 function readValidDateString(record: unknown, key: string): string | undefined {
   const value = readString(record, key)
   if (!value) return undefined
@@ -783,6 +867,54 @@ function readSettingsJson(filePath: string): SettingsJson | null {
   } catch {
     return null
   }
+}
+
+function readRawFile(filePath: string): string | undefined {
+  try {
+    return fs.readFileSync(filePath, 'utf-8')
+  } catch {
+    return undefined
+  }
+}
+
+function extractCommandEntryPaths(filePath: string, command: string): string[] {
+  const baseDir = path.dirname(filePath)
+  const paths: string[] = []
+
+  for (const token of splitCommandTokens(command)) {
+    if (!looksLikeScriptPath(token)) continue
+    const candidate = resolveCommandPath(baseDir, token)
+    if (fs.existsSync(candidate)) paths.push(candidate)
+  }
+
+  return Array.from(new Set(paths))
+}
+
+function splitCommandTokens(command: string): string[] {
+  const tokens: string[] = []
+  const pattern = /"([^"]+)"|'([^']+)'|(\S+)/g
+  for (const match of command.matchAll(pattern)) {
+    const token = match[1] ?? match[2] ?? match[3]
+    if (token) tokens.push(token)
+  }
+  return tokens
+}
+
+function resolveCommandPath(baseDir: string, token: string): string {
+  const expanded = expandHomePath(token)
+  return path.isAbsolute(expanded) ? expanded : path.resolve(baseDir, expanded)
+}
+
+function expandHomePath(token: string): string {
+  if (token !== '~' && !token.startsWith('~/') && !token.startsWith('~\\')) return token
+  const homeDir = process.env.HOME ?? process.env.USERPROFILE
+  if (!homeDir) return token
+  if (token === '~') return homeDir
+  return path.join(homeDir, token.slice(2))
+}
+
+function looksLikeScriptPath(value: string): boolean {
+  return /\.(?:bat|cmd|cjs|js|mjs|ps1|py|rb|sh|ts|zsh)$/i.test(value)
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
