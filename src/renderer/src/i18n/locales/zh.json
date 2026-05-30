@@ -572,10 +572,16 @@
       },
       "summary": {
         "total": "已配置状态栏资产",
+        "effective": "当前生效",
         "claude": "Claude 命令展示面",
         "codexItems": "Codex footer items",
-        "disabled": "被设置禁用"
+        "disabled": "被设置禁用",
+        "warnings": "警告",
+        "blocked": "阻断"
       },
+      "effective": "生效",
+      "overridden": "被覆盖",
+      "overriddenBy": "被 {{scope}} 级别覆盖",
       "setting": "设置项",
       "command": "命令",
       "footerItems": "Footer items",
@@ -587,6 +593,25 @@
       "disabled": "被 disableAllHooks 禁用",
       "hidden": "status_line 显式为空, 因此 Codex 状态栏被隐藏, 不会回退到默认项。",
       "unknownItems": "{{count}} 个未知 item 会被当前 Codex 忽略。",
+      "redactedCommand": "当前视图已隐藏命令里的敏感片段。需要核对原文时使用“查看原始文件”。",
+      "health": {
+        "ok": "正常",
+        "warning": "警告",
+        "blocked": "阻断"
+      },
+      "diagnostics": {
+        "ok": "配置可读取。",
+        "overridden": "更高优先级的 {{scope}} 级别设置会让这条状态栏配置不生效。",
+        "disabled": "当前 settings 文件启用了 disableAllHooks。",
+        "hidden": "Codex status_line 被显式设置为空。",
+        "unknownItems": "存在 {{count}} 个未知 Codex item。",
+        "missingCommand": "Claude Code statusLine 没有 command。",
+        "unresolvedEntry": "命令看起来像脚本路径, 但 Berth 没有确认到可读取的本地脚本。"
+      },
+      "defaultCodex": {
+        "title": "Codex 默认 footer",
+        "body": "没有发现 tui.status_line 设置, 因此 Codex 会使用内置默认 footer items。"
+      },
       "empty": {
         "all": "没有发现状态栏配置。Claude Code 使用 settings.json 的命令配置；Codex 在 tui.status_line 未设置时会回退到 model-with-reasoning 和 current-dir。",
         "claude": "扫描到的 settings 文件里没有 Claude Code statusLine 或 subagentStatusLine 设置。",

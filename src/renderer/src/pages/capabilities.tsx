@@ -243,6 +243,131 @@ function asStringArray(value: unknown): string[] {
   return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : []
 }
 
+type StatusLineDiagnosticLevel = 'ok' | 'warning' | 'blocked'
+
+interface StatusLineDiagnostic {
+  level: StatusLineDiagnosticLevel
+  key: string
+  values?: Record<string, unknown>
+}
+
+interface StatusLineViewModel {
+  asset: Asset
+  effective: boolean
+  overriddenBy?: Asset
+  diagnostics: StatusLineDiagnostic[]
+  commandView: {
+    value: string
+    redacted: boolean
+  }
+}
+
+const CODEX_DEFAULT_STATUS_LINE_ITEMS = ['model-with-reasoning', 'current-dir']
+const SCOPE_RANK: Record<AssetScope, number> = {
+  enterprise: 4,
+  project: 3,
+  user: 2,
+  session: 1
+}
+
+function getStatusLineGroupKey(asset: Asset): string {
+  const provider = (asset.meta.provider as string | undefined) ?? asset.agentId
+  if (provider === 'codex') return 'codex:footer-items'
+  return `${provider}:${String(asset.meta.statusLineKind ?? asset.meta.settingKey ?? asset.name)}`
+}
+
+function rankStatusLineAsset(asset: Asset): number {
+  return SCOPE_RANK[asset.scope] ?? 0
+}
+
+function buildStatusLineViewModels(assets: Asset[]): StatusLineViewModel[] {
+  const bestByGroup = new Map<string, Asset>()
+
+  assets.forEach((asset) => {
+    const key = getStatusLineGroupKey(asset)
+    const current = bestByGroup.get(key)
+    if (!current || rankStatusLineAsset(asset) > rankStatusLineAsset(current)) {
+      bestByGroup.set(key, asset)
+    }
+  })
+
+  return assets.map((asset) => {
+    const effective = bestByGroup.get(getStatusLineGroupKey(asset))?.id === asset.id
+    const overriddenBy = effective ? undefined : bestByGroup.get(getStatusLineGroupKey(asset))
+    const command = (asset.meta.command as string | undefined) ?? ''
+    const commandView = redactStatusLineCommand(command)
+    return {
+      asset,
+      effective,
+      overriddenBy,
+      commandView,
+      diagnostics: getStatusLineDiagnostics(asset, effective, overriddenBy)
+    }
+  })
+}
+
+function redactStatusLineCommand(command: string): { value: string; redacted: boolean } {
+  const patterns: Array<[RegExp, string]> = [
+    [
+      /\b([A-Z0-9_]*(?:TOKEN|SECRET|PASSWORD|PASSWD|API_KEY|APIKEY|AUTHORIZATION|BEARER)[A-Z0-9_]*\s*=\s*)(?:"[^"]*"|'[^']*'|[^\s]+)/gi,
+      '$1[redacted]'
+    ],
+    [
+      /(\s--(?:token|api-key|apikey|password|secret|authorization)\s+)(?:"[^"]*"|'[^']*'|[^\s]+)/gi,
+      '$1[redacted]'
+    ],
+    [/\b(Bearer\s+)[A-Za-z0-9._~+/=-]+/gi, '$1[redacted]']
+  ]
+  const value = patterns.reduce((next, [pattern, replacement]) => next.replace(pattern, replacement), command)
+  return { value, redacted: value !== command }
+}
+
+function commandLooksLikeScriptReference(command: string): boolean {
+  return /(?:^|\s)(?:~[\\/]|\.{0,2}[\\/]|[A-Za-z]:\\)[^\s'"]+\.(?:sh|bash|zsh|ps1|py|js|mjs|cjs|bat|cmd)\b/i.test(command) ||
+    /\.(?:sh|bash|zsh|ps1|py|js|mjs|cjs|bat|cmd)(?:\s|$)/i.test(command)
+}
+
+function getStatusLineDiagnostics(asset: Asset, effective: boolean, overriddenBy?: Asset): StatusLineDiagnostic[] {
+  const provider = (asset.meta.provider as string | undefined) ?? asset.agentId
+  const command = (asset.meta.command as string | undefined) ?? ''
+  const entryPaths = asStringArray(asset.meta.entryPaths)
+  const unknownItems = asStringArray(asset.meta.unknownItems)
+  const diagnostics: StatusLineDiagnostic[] = []
+
+  if (!effective && overriddenBy) {
+    diagnostics.push({
+      level: 'warning',
+      key: 'overridden',
+      values: { scope: overriddenBy.scope }
+    })
+  }
+
+  if (provider === 'codex') {
+    if (asset.meta.hidden === true) diagnostics.push({ level: 'blocked', key: 'hidden' })
+    if (unknownItems.length > 0) {
+      diagnostics.push({
+        level: 'warning',
+        key: 'unknownItems',
+        values: { count: unknownItems.length }
+      })
+    }
+  } else {
+    if (asset.meta.disabledByDisableAllHooks === true) diagnostics.push({ level: 'blocked', key: 'disabled' })
+    if (!command.trim()) diagnostics.push({ level: 'warning', key: 'missingCommand' })
+    if (command && entryPaths.length === 0 && commandLooksLikeScriptReference(command)) {
+      diagnostics.push({ level: 'warning', key: 'unresolvedEntry' })
+    }
+  }
+
+  return diagnostics.length > 0 ? diagnostics : [{ level: 'ok', key: 'ok' }]
+}
+
+function getWorstDiagnosticLevel(diagnostics: StatusLineDiagnostic[]): StatusLineDiagnosticLevel {
+  if (diagnostics.some((diagnostic) => diagnostic.level === 'blocked')) return 'blocked'
+  if (diagnostics.some((diagnostic) => diagnostic.level === 'warning')) return 'warning'
+  return 'ok'
+}
+
 function StatusLineIntro({ agentView }: { agentView: AgentView }): React.ReactElement {
   const { t } = useTranslation()
 
@@ -271,17 +396,21 @@ function StatusLineIntro({ agentView }: { agentView: AgentView }): React.ReactEl
   )
 }
 
-function StatusLineSummary({ assets }: { assets: Asset[] }): React.ReactElement {
+function StatusLineSummary({ viewModels }: { viewModels: StatusLineViewModel[] }): React.ReactElement {
   const { t } = useTranslation()
+  const assets = viewModels.map((viewModel) => viewModel.asset)
   const claudeCount = assets.filter((asset) => asset.agentId === 'claude-code').length
-  const codexCount = assets.filter((asset) => asset.agentId === 'codex').length
-  const disabledCount = assets.filter((asset) => asset.meta.disabledByDisableAllHooks === true).length
+  const effectiveCount = viewModels.filter((viewModel) => viewModel.effective).length
+  const warningCount = viewModels.filter((viewModel) => getWorstDiagnosticLevel(viewModel.diagnostics) === 'warning').length
+  const blockedCount = viewModels.filter((viewModel) => getWorstDiagnosticLevel(viewModel.diagnostics) === 'blocked').length
   const codexItemCount = assets.reduce((total, asset) => total + asStringArray(asset.meta.items).length, 0)
   const cards = [
     { key: 'total', value: assets.length },
+    { key: 'effective', value: effectiveCount },
     { key: 'claude', value: claudeCount },
-    { key: 'codexItems', value: codexItemCount || codexCount },
-    { key: 'disabled', value: disabledCount }
+    { key: 'codexItems', value: codexItemCount },
+    { key: 'warnings', value: warningCount },
+    { key: 'blocked', value: blockedCount }
   ]
 
   return (
@@ -309,9 +438,53 @@ function ProviderBadge({ agentId }: { agentId: string }): React.ReactElement {
   )
 }
 
-function StatusLineCard({ asset }: { asset: Asset }): React.ReactElement {
+function StatusLineDiagnosticList({ diagnostics }: { diagnostics: StatusLineDiagnostic[] }): React.ReactElement {
+  const { t } = useTranslation()
+
+  return (
+    <div className="space-y-1">
+      {diagnostics.map((diagnostic) => {
+        const level = diagnostic.level
+        const Icon = level === 'ok' ? Check : level === 'warning' ? AlertTriangle : XIcon
+        const color = level === 'ok'
+          ? 'text-green-600 dark:text-green-400'
+          : level === 'warning'
+            ? 'text-amber-600 dark:text-amber-400'
+            : 'text-destructive'
+
+        return (
+          <p key={`${diagnostic.level}-${diagnostic.key}`} className={cn('flex items-start gap-1.5 text-xs leading-5', color)}>
+            <Icon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+            <span>{t(`capabilities.statusLine.diagnostics.${diagnostic.key}`, diagnostic.values)}</span>
+          </p>
+        )
+      })}
+    </div>
+  )
+}
+
+function CodexDefaultStatusLine(): React.ReactElement {
+  const { t } = useTranslation()
+
+  return (
+    <div className="rounded-lg border border-dashed border-border bg-muted/20 px-4 py-3">
+      <p className="text-sm font-medium text-foreground">{t('capabilities.statusLine.defaultCodex.title')}</p>
+      <p className="mt-1 text-xs leading-5 text-muted-foreground">{t('capabilities.statusLine.defaultCodex.body')}</p>
+      <div className="mt-2 flex flex-wrap gap-1.5">
+        {CODEX_DEFAULT_STATUS_LINE_ITEMS.map((item) => (
+          <span key={item} className="rounded-md border border-border bg-card px-2 py-1 font-mono text-xs text-foreground">
+            {item}
+          </span>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function StatusLineCard({ viewModel }: { viewModel: StatusLineViewModel }): React.ReactElement {
   const { t } = useTranslation()
   const openInspector = useAppStore((s) => s.openInspector)
+  const { asset, commandView, diagnostics, effective, overriddenBy } = viewModel
   const provider = (asset.meta.provider as string | undefined) ?? asset.agentId
   const isCodex = provider === 'codex'
   const entryPaths = asStringArray(asset.meta.entryPaths)
@@ -319,8 +492,8 @@ function StatusLineCard({ asset }: { asset: Asset }): React.ReactElement {
   const unknownItems = asStringArray(asset.meta.unknownItems)
   const command = (asset.meta.command as string | undefined) ?? ''
   const settingKey = (asset.meta.settingKey as string | undefined) ?? ''
-  const disabled = asset.meta.disabledByDisableAllHooks === true
   const hidden = asset.meta.hidden === true
+  const statusLevel = getWorstDiagnosticLevel(diagnostics)
 
   const handleViewFile = async (): Promise<void> => {
     try {
@@ -337,10 +510,16 @@ function StatusLineCard({ asset }: { asset: Asset }): React.ReactElement {
         <span className="text-sm font-medium text-foreground">{asset.name}</span>
         <ProviderBadge agentId={asset.agentId} />
         <ScopeBadge scope={asset.scope} />
-        {disabled && (
+        <span className={cn(
+          'inline-flex items-center rounded-md px-1.5 py-0.5 text-[10px] font-medium',
+          effective ? 'bg-green-500/10 text-green-600 dark:text-green-400' : 'bg-muted text-muted-foreground'
+        )}>
+          {effective ? t('capabilities.statusLine.effective') : t('capabilities.statusLine.overridden')}
+        </span>
+        {statusLevel !== 'ok' && (
           <span className="inline-flex items-center gap-1 rounded-md bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-medium text-amber-600 dark:text-amber-400">
             <AlertTriangle className="h-3 w-3" />
-            {t('capabilities.statusLine.disabled')}
+            {t(`capabilities.statusLine.health.${statusLevel}`)}
           </span>
         )}
       </div>
@@ -385,7 +564,12 @@ function StatusLineCard({ asset }: { asset: Asset }): React.ReactElement {
           </div>
         ) : (
           <div className="space-y-2">
-            {command && <DetailRow label={t('capabilities.statusLine.command')} value={command} mono />}
+            {command && <DetailRow label={t('capabilities.statusLine.command')} value={commandView.value} mono />}
+            {commandView.redacted && (
+              <p className="text-xs leading-5 text-amber-600 dark:text-amber-400">
+                {t('capabilities.statusLine.redactedCommand')}
+              </p>
+            )}
             {asset.meta.refreshInterval != null && (
               <DetailRow label={t('capabilities.statusLine.refreshInterval')} value={`${asset.meta.refreshInterval}s`} />
             )}
@@ -410,6 +594,12 @@ function StatusLineCard({ asset }: { asset: Asset }): React.ReactElement {
             )}
           </div>
         )}
+        <StatusLineDiagnosticList diagnostics={diagnostics} />
+        {overriddenBy && (
+          <p className="text-xs leading-5 text-muted-foreground">
+            {t('capabilities.statusLine.overriddenBy', { scope: overriddenBy.scope })}
+          </p>
+        )}
       </div>
 
       <div className="flex gap-2 pt-3">
@@ -427,17 +617,24 @@ function StatusLineCard({ asset }: { asset: Asset }): React.ReactElement {
 
 export function StatusLineSection({ assets, agentView }: { assets: Asset[]; agentView: AgentView }): React.ReactElement {
   const { t } = useTranslation()
+  const viewModels = useMemo(() => buildStatusLineViewModels(assets), [assets])
+  const hasCodexAsset = assets.some((asset) => asset.agentId === 'codex')
+  const showCodexDefault = agentView !== 'claude' && !hasCodexAsset
 
   return (
     <div className="space-y-3">
       <StatusLineIntro agentView={agentView} />
       {assets.length === 0 ? (
-        <EmptyState icon={Activity} message={t(`capabilities.statusLine.empty.${agentView}`)} />
+        <>
+          <EmptyState icon={Activity} message={t(`capabilities.statusLine.empty.${agentView}`)} />
+          {showCodexDefault && <CodexDefaultStatusLine />}
+        </>
       ) : (
         <>
-          <StatusLineSummary assets={assets} />
+          <StatusLineSummary viewModels={viewModels} />
+          {showCodexDefault && <CodexDefaultStatusLine />}
           <div className="space-y-2">
-            {assets.map((asset) => <StatusLineCard key={asset.id} asset={asset} />)}
+            {viewModels.map((viewModel) => <StatusLineCard key={viewModel.asset.id} viewModel={viewModel} />)}
           </div>
         </>
       )}

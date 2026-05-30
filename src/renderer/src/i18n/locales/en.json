@@ -572,10 +572,16 @@
       },
       "summary": {
         "total": "Configured status line assets",
+        "effective": "Currently effective",
         "claude": "Claude command surfaces",
         "codexItems": "Codex footer items",
-        "disabled": "Disabled by settings"
+        "disabled": "Disabled by settings",
+        "warnings": "Warnings",
+        "blocked": "Blocked"
       },
+      "effective": "Effective",
+      "overridden": "Overridden",
+      "overriddenBy": "Overridden by {{scope}} scope",
       "setting": "Setting",
       "command": "Command",
       "footerItems": "Footer items",
@@ -587,6 +593,25 @@
       "disabled": "Disabled by disableAllHooks",
       "hidden": "status_line is explicitly empty, so the Codex status line is hidden instead of using defaults.",
       "unknownItems": "{{count}} unknown item(s) will be ignored by current Codex builds.",
+      "redactedCommand": "Sensitive command fragments are hidden in this view. Use View Raw to inspect the source file.",
+      "health": {
+        "ok": "OK",
+        "warning": "Warning",
+        "blocked": "Blocked"
+      },
+      "diagnostics": {
+        "ok": "Configuration is readable.",
+        "overridden": "A higher-priority {{scope}} scope setting wins for this status line kind.",
+        "disabled": "disableAllHooks is enabled in this settings file.",
+        "hidden": "Codex status_line is explicitly empty.",
+        "unknownItems": "{{count}} unknown Codex item(s) are present.",
+        "missingCommand": "Claude Code statusLine does not contain a command.",
+        "unresolvedEntry": "The command looks like a script path, but Berth did not confirm a readable local script."
+      },
+      "defaultCodex": {
+        "title": "Codex default footer",
+        "body": "No tui.status_line setting was found, so Codex falls back to its built-in default footer items."
+      },
       "empty": {
         "all": "No status line config was found. Claude Code uses settings.json command config; Codex falls back to model-with-reasoning and current-dir when tui.status_line is unset.",
         "claude": "No Claude Code statusLine or subagentStatusLine setting was found in the scanned settings files.",

@@ -5,13 +5,13 @@ import '../../src/renderer/src/i18n'
 import { StatusLineSection } from '../../src/renderer/src/pages/capabilities'
 import type { AgentView, Asset } from '../../src/shared/types/asset'
 
-function statusLineAsset(id: string, agentId: string, meta: Record<string, unknown>): Asset {
+function statusLineAsset(id: string, agentId: string, meta: Record<string, unknown>, scope: Asset['scope'] = 'user'): Asset {
   return {
     id,
     agentId,
     category: 'capability',
     type: 'statusline',
-    scope: 'user',
+    scope,
     name: agentId === 'codex' ? 'TUI Status Line' : 'Status Line',
     path: agentId === 'codex' ? 'C:\\Users\\test\\.codex\\config.toml' : 'C:\\Users\\test\\.claude\\settings.json',
     meta
@@ -40,7 +40,7 @@ describe('StatusLineSection', () => {
     expect(screen.getByText(/Claude Code status lines are command-backed settings from settings.json/)).toBeInTheDocument()
     expect(screen.getByText('statusLine')).toBeInTheDocument()
     expect(screen.getByText('pwsh C:\\Users\\test\\.claude\\statusline.ps1')).toBeInTheDocument()
-    expect(screen.getByText('Disabled by disableAllHooks')).toBeInTheDocument()
+    expect(screen.getByText('disableAllHooks is enabled in this settings file.')).toBeInTheDocument()
     expect(screen.getByText('C:\\Users\\test\\.claude\\statusline.ps1')).toBeInTheDocument()
   })
 
@@ -75,7 +75,7 @@ describe('StatusLineSection', () => {
       })
     ])
 
-    expect(screen.getByText(/status_line is explicitly empty/)).toBeInTheDocument()
+    expect(screen.getAllByText(/status_line is explicitly empty/).length).toBeGreaterThan(0)
   })
 
   it('keeps an explanatory empty state visible', () => {
@@ -83,5 +83,61 @@ describe('StatusLineSection', () => {
 
     expect(screen.getByText('Status lines show live session state')).toBeInTheDocument()
     expect(screen.getByText(/No status line config was found/)).toBeInTheDocument()
+    expect(screen.getByText('Codex default footer')).toBeInTheDocument()
+    expect(screen.getByText('model-with-reasoning')).toBeInTheDocument()
+  })
+
+  it('marks the highest-priority status line as effective', () => {
+    renderStatusLine('claude', [
+      statusLineAsset('user-status', 'claude-code', {
+        provider: 'claude-code',
+        settingKey: 'statusLine',
+        statusLineKind: 'main',
+        command: 'echo user'
+      }),
+      statusLineAsset('project-status', 'claude-code', {
+        provider: 'claude-code',
+        settingKey: 'statusLine',
+        statusLineKind: 'main',
+        command: 'echo project'
+      }, 'project')
+    ])
+
+    expect(screen.getByText('echo project')).toBeInTheDocument()
+    expect(screen.getByText('echo user')).toBeInTheDocument()
+    expect(screen.getByText('Overridden by project scope')).toBeInTheDocument()
+    expect(screen.getAllByText('Effective')).toHaveLength(1)
+    expect(screen.getAllByText('Overridden')).toHaveLength(1)
+  })
+
+  it('redacts sensitive command fragments by default', () => {
+    renderStatusLine('claude', [
+      statusLineAsset('secret-status', 'claude-code', {
+        provider: 'claude-code',
+        settingKey: 'statusLine',
+        statusLineKind: 'main',
+        command: 'TOKEN=abc123 node statusline.js --api-key sk-test Bearer raw-token'
+      })
+    ])
+
+    expect(screen.getByText(/TOKEN=\[redacted\]/)).toBeInTheDocument()
+    expect(screen.getByText(/--api-key \[redacted\]/)).toBeInTheDocument()
+    expect(screen.getByText(/Bearer \[redacted\]/)).toBeInTheDocument()
+    expect(screen.queryByText(/sk-test/)).not.toBeInTheDocument()
+    expect(screen.getByText(/Sensitive command fragments are hidden/)).toBeInTheDocument()
+  })
+
+  it('warns when a Claude command looks like an unresolved script path', () => {
+    renderStatusLine('claude', [
+      statusLineAsset('missing-script-status', 'claude-code', {
+        provider: 'claude-code',
+        settingKey: 'statusLine',
+        statusLineKind: 'main',
+        command: 'C:\\Users\\test\\.claude\\missing-statusline.ps1',
+        entryPaths: []
+      })
+    ])
+
+    expect(screen.getByText(/did not confirm a readable local script/)).toBeInTheDocument()
   })
 })
