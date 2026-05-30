@@ -25,7 +25,7 @@
   - Usage 显示 unknown pricing notice、pricing gaps、actual vs estimated 差异。
   - i18n en/zh 同步。
   - 验证: renderer 测试 + `pnpm typecheck:web`。
-- [ ] 任务 6: 总验证
+- [x] 任务 6: 总验证
   - `pnpm harness:check`
   - `pnpm test`
   - `pnpm typecheck`

@@ -2,7 +2,7 @@
 task: 2026-05-30-pricing-catalog-improvements
 type: feature
 jira:
-phase: implement
+phase: verify
 created: 2026-05-30
 artifacts:
   source: 00-PRD.md
