@@ -5,6 +5,7 @@ import { registerAllHandlers } from './ipc'
 import { initScanner } from './engine/scanner'
 import { getWatcher } from './engine/watcher'
 import { resolveDefaultProjectDir } from './project-dir'
+import { configureAgentDevProfile, shouldRequestSingleInstanceLock } from './dev-instance'
 
 function createWindow(): BrowserWindow {
   const isWindows = process.platform === 'win32'
@@ -71,7 +72,14 @@ function createWindow(): BrowserWindow {
 // or re-running `pnpm dev` without killing the previous one) fails to acquire
 // the lock and quits immediately, focusing the existing window instead of
 // opening a duplicate. Prevents the multi-window issue in dev and production.
-const gotTheLock = app.requestSingleInstanceLock()
+const agentDevProfile = configureAgentDevProfile(app, {
+  isDev: is.dev,
+  argv: process.argv,
+  env: process.env
+})
+const gotTheLock = shouldRequestSingleInstanceLock(agentDevProfile)
+  ? app.requestSingleInstanceLock()
+  : true
 
 if (!gotTheLock) {
   app.quit()
