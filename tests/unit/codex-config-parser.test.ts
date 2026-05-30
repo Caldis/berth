@@ -4,7 +4,8 @@ import * as path from 'path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import {
   parseCodexConfig,
-  parseCodexCustomAgent
+  parseCodexCustomAgent,
+  parseCodexHooksJson
 } from '../../src/main/adapters/codex/parsers'
 
 let tempDir: string | null = null
@@ -23,6 +24,8 @@ afterEach(() => {
 describe('Codex config parser', () => {
   it('parses mcp servers and hooks from config.toml', () => {
     const configPath = path.join(tempDir!, 'config.toml')
+    const hookPath = path.join(tempDir!, 'hook.py')
+    fs.writeFileSync(hookPath, 'print("hook")\n')
     fs.writeFileSync(
       configPath,
       [
@@ -35,7 +38,8 @@ describe('Codex config parser', () => {
         '[[hooks.PreToolUse.hooks]]',
         'type = "command"',
         'command = "python hook.py"',
-        'command_windows = "py hook.py"'
+        'command_windows = "py hook.py"',
+        'enabled = true'
       ].join('\n')
     )
 
@@ -62,9 +66,58 @@ describe('Codex config parser', () => {
         matcher: 'Bash',
         command: 'python hook.py',
         commandWindows: 'py hook.py',
-        hookType: 'command'
+        hookType: 'command',
+        enabled: true,
+        entryPaths: [hookPath]
       }
     })
+  })
+
+  it('parses hooks.json and records skipped Codex hook handlers', () => {
+    const hooksPath = path.join(tempDir!, 'hooks.json')
+    const stopHookPath = path.join(tempDir!, 'stop.ps1')
+    fs.writeFileSync(stopHookPath, 'Write-Output stop\n')
+    fs.writeFileSync(
+      hooksPath,
+      JSON.stringify({
+        hooks: {
+          Stop: [
+            {
+              matcher: 'main',
+              managed: true,
+              hooks: [
+                { type: 'command', command: `pwsh "${stopHookPath}"`, disabled: true },
+                { type: 'prompt', command: 'prompt text' },
+                { type: 'command', command: 'echo async', async: true }
+              ]
+            }
+          ]
+        }
+      })
+    )
+
+    const assets = parseCodexHooksJson(hooksPath, 'user')
+
+    expect(assets).toHaveLength(3)
+    expect(assets[0]).toMatchObject({
+      agentId: 'codex',
+      category: 'capability',
+      type: 'hook',
+      scope: 'user',
+      name: `pwsh "${stopHookPath}"`,
+      path: hooksPath,
+      meta: {
+        eventType: 'Stop',
+        matcher: 'main',
+        command: `pwsh "${stopHookPath}"`,
+        hookType: 'command',
+        managed: true,
+        enabled: false,
+        entryPaths: [stopHookPath]
+      }
+    })
+    expect(assets[1].meta.supportNote).toBe('capabilities.hooks.management.codexUnsupportedHookType')
+    expect(assets[2].meta.supportNote).toBe('capabilities.hooks.management.codexAsyncHookSkipped')
   })
 
   it('parses standalone custom agent TOML', () => {

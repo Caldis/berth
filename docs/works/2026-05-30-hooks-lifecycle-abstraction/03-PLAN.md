@@ -9,7 +9,7 @@
   - 内容: 定义 stage、agent support、native event 映射、view 过滤、asset 分组、unknown event 保留策略、hook management action availability。
   - 验证: 运行 lifecycle 映射相关测试。
 
-- [ ] 任务 2: 接入 Codex user-level hooks 数据
+- [x] 任务 2: 接入 Codex user-level hooks 数据
   - 改动: `src/main/adapters/codex/parsers.ts`, `src/main/adapters/codex/index.ts`, Codex parser / adapter 测试。
   - 内容: 解析 `~/.codex/hooks.json`, 输出 `agentId:'codex'` 的 hook assets; 提取来源文件、matcher、command、entryPaths、managed/enabled 可判定状态; 不解析 repo-local / TOML / plugin hooks。
   - 验证: Codex parser / adapter 测试通过。

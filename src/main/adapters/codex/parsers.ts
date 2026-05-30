@@ -51,6 +51,7 @@ export function parseCodexHooksJson(filePath: string, scope: AssetScope): Asset[
   const raw = fs.readFileSync(filePath, 'utf-8')
   const parsed: unknown = JSON.parse(raw)
   const root = asRecord(parsed)
+  if (!root) return []
   const hooks = asRecord(root.hooks) ?? root
   return parseCodexHooks(filePath, scope, hooks)
 }
@@ -144,6 +145,11 @@ function parseCodexHooks(
         const commandWindows =
           readString(hookRecord, 'commandWindows') ?? readString(hookRecord, 'command_windows')
         const hookType = readString(hookRecord, 'type')
+        const asyncHook = readBoolean(hookRecord, 'async')
+        const managed = readBoolean(hookRecord, 'managed') ?? readBoolean(handlerRecord, 'managed')
+        const enabled = readHookEnabled(hookRecord)
+        const entryPaths = extractHookEntryPaths(filePath, [command, commandWindows])
+        const supportNote = readCodexHookSupportNote(hookType, asyncHook)
         assets.push({
           id: `codex-hook-${safeId(event)}-${handlerIndex}-${hookIndex}-${hashString(filePath)}`,
           agentId: 'codex',
@@ -159,6 +165,11 @@ function parseCodexHooks(
             command,
             commandWindows,
             hookType,
+            async: asyncHook,
+            managed,
+            enabled,
+            entryPaths,
+            supportNote,
             handlerIndex,
             hookIndex,
             source: filePath
@@ -169,6 +180,49 @@ function parseCodexHooks(
   }
 
   return assets
+}
+
+function readCodexHookSupportNote(hookType: string | undefined, asyncHook: boolean | undefined): string | undefined {
+  if (hookType && hookType !== 'command') return 'capabilities.hooks.management.codexUnsupportedHookType'
+  if (asyncHook === true) return 'capabilities.hooks.management.codexAsyncHookSkipped'
+  return undefined
+}
+
+function readHookEnabled(hookRecord: Record<string, unknown>): boolean | undefined {
+  const enabled = readBoolean(hookRecord, 'enabled')
+  if (enabled != null) return enabled
+  const disabled = readBoolean(hookRecord, 'disabled')
+  return disabled == null ? undefined : !disabled
+}
+
+function extractHookEntryPaths(filePath: string, commands: Array<string | undefined>): string[] {
+  const baseDir = path.dirname(filePath)
+  const paths: string[] = []
+
+  for (const command of commands) {
+    if (!command) continue
+    for (const token of splitCommandTokens(command)) {
+      if (!looksLikeScriptPath(token)) continue
+      const candidate = path.isAbsolute(token) ? token : path.resolve(baseDir, token)
+      if (fs.existsSync(candidate)) paths.push(candidate)
+    }
+  }
+
+  return uniqueStrings(paths)
+}
+
+function splitCommandTokens(command: string): string[] {
+  const tokens: string[] = []
+  const pattern = /"([^"]+)"|'([^']+)'|(\S+)/g
+  for (const match of command.matchAll(pattern)) {
+    const token = match[1] ?? match[2] ?? match[3]
+    if (token) tokens.push(token)
+  }
+  return tokens
+}
+
+function looksLikeScriptPath(value: string): boolean {
+  return /\.(?:bat|cmd|cjs|js|mjs|ps1|py|rb|sh|ts|zsh)$/i.test(value)
 }
 
 function extractAtImports(content: string): string[] {
@@ -654,6 +708,12 @@ function readString(record: unknown, key: string): string | undefined {
   if (!isRecord(record)) return undefined
   const value = record[key]
   return typeof value === 'string' && value.trim() ? value : undefined
+}
+
+function readBoolean(record: unknown, key: string): boolean | undefined {
+  if (!isRecord(record)) return undefined
+  const value = record[key]
+  return typeof value === 'boolean' ? value : undefined
 }
 
 function readValidDateString(record: unknown, key: string): string | undefined {
