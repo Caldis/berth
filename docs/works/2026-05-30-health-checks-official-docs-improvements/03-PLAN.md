@@ -12,7 +12,7 @@
 - [x] 任务 8: Overview evidence 官方文档链接可点击打开; verify: renderer health checks 单测。
 - [x] 任务 9: 低风险 fix snippet 支持复制, 先不自动写用户配置; verify: renderer health checks 单测。
 - [x] 任务 10: 降噪与忽略规则, 支持按 check id + path 忽略 info 级建议; verify: renderer health checks 单测。
-- [ ] 任务 11: 增加 Claude Code / Codex 兼容提示, 明确哪些配置只对某一工具生效; verify: health 单测与 overview 渲染单测。
+- [x] 任务 11: 增加 Claude Code / Codex 兼容提示, 明确哪些配置只对某一工具生效; verify: health 单测与 overview 渲染单测。
 
 ## verify 回写
 - 2026-05-30: 任务 5 已通过 `pnpm test -- tests/unit/health-check.test.ts` 与 `pnpm typecheck`。后续任务 A/B 仍作为独立改进项保留。
@@ -21,4 +21,5 @@
 - 2026-05-31: 任务 8 已通过 `pnpm test -- tests/renderer/overview-health-checks.test.tsx`。
 - 2026-05-31: 任务 9 已通过 `pnpm test -- tests/renderer/overview-health-checks.test.tsx` 与 `pnpm typecheck:web`。
 - 2026-05-31: 任务 10 已通过 `pnpm test -- tests/renderer/overview-health-checks.test.tsx` 与 `pnpm typecheck:web`。
+- 2026-05-31: 任务 11 已通过 `pnpm test -- tests/unit/health-check.test.ts tests/renderer/overview-health-checks.test.tsx` 与 `pnpm typecheck`。
 - verify 不通过项作为新任务追加于此, phase 退回 implement。

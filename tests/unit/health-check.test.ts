@@ -352,4 +352,45 @@ describe('runHealthChecks', () => {
 
     expect(checks.map((check) => check.id)).not.toContain('all:source:no-agent-data')
   })
+
+  it('reports project instruction files that only one supported agent reads', () => {
+    const projectDir = path.join(tempDir!, 'project')
+    fs.mkdirSync(projectDir, { recursive: true })
+    fs.writeFileSync(path.join(projectDir, 'CLAUDE.md'), '# Claude only\n')
+
+    const claudeOnlyChecks = runHealthChecks({ homeDir: tempDir!, projectDir })
+
+    expect(claudeOnlyChecks).toContainEqual(
+      expect.objectContaining({
+        id: 'all:reference:project-claude-md-without-agents-md',
+        severity: 'info',
+        evidence: [
+          expect.objectContaining({ url: 'https://code.claude.com/docs/en/memory' }),
+          expect.objectContaining({ url: 'https://developers.openai.com/codex/guides/agents-md' })
+        ],
+        fix: expect.objectContaining({
+          snippet: '# Shared project instructions'
+        })
+      })
+    )
+
+    fs.rmSync(path.join(projectDir, 'CLAUDE.md'))
+    fs.writeFileSync(path.join(projectDir, 'AGENTS.md'), '# Codex only\n')
+
+    const codexOnlyChecks = runHealthChecks({ homeDir: tempDir!, projectDir })
+
+    expect(codexOnlyChecks).toContainEqual(
+      expect.objectContaining({
+        id: 'all:reference:project-agents-md-without-claude-md',
+        severity: 'info',
+        evidence: [
+          expect.objectContaining({ url: 'https://developers.openai.com/codex/guides/agents-md' }),
+          expect.objectContaining({ url: 'https://code.claude.com/docs/en/memory' })
+        ],
+        fix: expect.objectContaining({
+          snippet: '@AGENTS.md'
+        })
+      })
+    )
+  })
 })

@@ -115,6 +115,7 @@ export function runHealthChecks(options: HealthCheckOptions | string = {}): Heal
 
   if (hasClaude) checks.push(...checkClaude(paths, normalized.platform))
   if (hasCodex) checks.push(...checkCodex(paths, normalized.platform))
+  if (paths.projectDir) checkProjectInstructionCompatibility(checks, paths.projectDir)
   checks.push(...checksFromScanErrors(normalized.scanErrors ?? []))
   checks.push(...checksFromSessionAssets(normalized.assets ?? []))
 
@@ -719,6 +720,60 @@ function checkClaudeProjectAgentsImport(checks: HealthCheck[], projectDir: strin
     },
     confidence: 'medium'
   }))
+}
+
+function checkProjectInstructionCompatibility(checks: HealthCheck[], projectDir: string): void {
+  const agentsMd = path.join(projectDir, 'AGENTS.md')
+  const claudeMdCandidates = [
+    path.join(projectDir, 'CLAUDE.md'),
+    path.join(projectDir, '.claude', 'CLAUDE.md')
+  ]
+  const claudeMd = claudeMdCandidates.find(fileExists)
+  const hasAgentsMd = fileExists(agentsMd)
+
+  if (claudeMd && !hasAgentsMd) {
+    checks.push(makeCheck({
+      id: 'all:reference:project-claude-md-without-agents-md',
+      severity: 'info',
+      category: 'reference',
+      agentId: 'all',
+      title: 'Project instructions are Claude Code-only',
+      message: 'Claude Code reads CLAUDE.md, but Codex reads AGENTS.md. No project AGENTS.md was found.',
+      suggestion: 'Create AGENTS.md when shared project instructions should also apply to Codex.',
+      scope: 'project',
+      path: claudeMd,
+      assetType: 'claude-md',
+      evidence: [EVIDENCE.claudeMemory, EVIDENCE.codexAgentsMd],
+      fix: {
+        label: 'Add Codex project instructions',
+        description: 'Create AGENTS.md and keep only instructions that should apply to Codex.',
+        snippet: '# Shared project instructions'
+      },
+      confidence: 'high'
+    }))
+  }
+
+  if (hasAgentsMd && !claudeMd) {
+    checks.push(makeCheck({
+      id: 'all:reference:project-agents-md-without-claude-md',
+      severity: 'info',
+      category: 'reference',
+      agentId: 'all',
+      title: 'Project instructions are Codex-only',
+      message: 'Codex reads AGENTS.md, but Claude Code reads CLAUDE.md. No project CLAUDE.md was found.',
+      suggestion: 'Create CLAUDE.md with @AGENTS.md when shared project instructions should also apply to Claude Code.',
+      scope: 'project',
+      path: agentsMd,
+      assetType: 'agents-md',
+      evidence: [EVIDENCE.codexAgentsMd, EVIDENCE.claudeMemory],
+      fix: {
+        label: 'Import shared instructions for Claude Code',
+        description: 'Create CLAUDE.md and import the shared AGENTS.md file.',
+        snippet: '@AGENTS.md'
+      },
+      confidence: 'high'
+    }))
+  }
 }
 
 function checkSkillDirectories(
