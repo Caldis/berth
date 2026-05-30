@@ -2,6 +2,7 @@ import type {
   AgentView,
   Asset,
   AssetCategory,
+  AssetScope,
   AssetStats,
   ScanRoot,
   SessionSummary,
@@ -124,11 +125,28 @@ export interface SearchResult {
 
 export interface HealthCheck {
   id: string
-  severity: 'info' | 'warning' | 'error'
+  severity: HealthCheckSeverity
+  category: HealthCheckCategory
+  agentId: 'all' | 'claude-code' | 'codex'
+  agentName: string
+  title: string
   message: string
+  suggestion?: string
+  scope?: AssetScope
+  path?: string
   assetId?: string
   assetType?: string
 }
+
+export type HealthCheckSeverity = 'info' | 'warning' | 'error'
+
+export type HealthCheckCategory =
+  | 'source'
+  | 'syntax'
+  | 'structure'
+  | 'reference'
+  | 'configuration'
+  | 'session'
 
 export interface MCPMergeInfo {
   serverId: string

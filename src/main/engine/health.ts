@@ -1,21 +1,55 @@
 import * as fs from 'fs'
 import * as os from 'os'
 import * as path from 'path'
-import type { HealthCheck } from '@shared/types/ipc'
+import type { AssetScope } from '@shared/types/asset'
+import type { HealthCheck, HealthCheckCategory, HealthCheckSeverity } from '@shared/types/ipc'
 
-export function runHealthChecks(homeDir = os.homedir()): HealthCheck[] {
+export interface HealthCheckOptions {
+  homeDir?: string
+  projectDir?: string
+  platform?: NodeJS.Platform
+  env?: NodeJS.ProcessEnv
+}
+
+interface HealthCheckInput {
+  id: string
+  severity: HealthCheckSeverity
+  category: HealthCheckCategory
+  agentId: HealthCheck['agentId']
+  title: string
+  message: string
+  suggestion?: string
+  scope?: AssetScope
+  path?: string
+  assetId?: string
+  assetType?: string
+}
+
+const AGENT_NAMES: Record<HealthCheck['agentId'], string> = {
+  all: 'All agents',
+  'claude-code': 'Claude Code',
+  codex: 'Codex'
+}
+
+export function runHealthChecks(options: HealthCheckOptions | string = {}): HealthCheck[] {
+  const normalized = normalizeOptions(options)
+  const homeDir = normalized.homeDir
   const checks: HealthCheck[] = []
   const claudeDir = path.join(homeDir, '.claude')
-  const codexDir = path.join(homeDir, '.codex')
+  const codexDir = normalized.env.CODEX_HOME || path.join(homeDir, '.codex')
   const hasClaude = fs.existsSync(claudeDir)
   const hasCodex = fs.existsSync(codexDir)
 
   if (!hasClaude && !hasCodex) {
-    checks.push({
-      id: 'no-agent-data',
+    checks.push(makeCheck({
+      id: 'all:source:no-agent-data',
       severity: 'warning',
-      message: 'No supported agent data found. Berth scans Claude Code and Codex local data when present.'
-    })
+      category: 'source',
+      agentId: 'all',
+      title: 'No supported agent data found',
+      message: 'Berth scans Claude Code and Codex local data when present.',
+      suggestion: 'Install or run Claude Code or Codex once, then refresh Berth.'
+    }))
     return checks
   }
 
@@ -23,11 +57,17 @@ export function runHealthChecks(homeDir = os.homedir()): HealthCheck[] {
 
   // Check for CLAUDE.md
   if (!fs.existsSync(path.join(claudeDir, 'CLAUDE.md'))) {
-    checks.push({
-      id: 'no-user-claude-md',
+    checks.push(makeCheck({
+      id: 'claude-code:source:user-claude-md-missing',
       severity: 'info',
-      message: 'No user-level CLAUDE.md found. Consider creating ~/.claude/CLAUDE.md.'
-    })
+      category: 'source',
+      agentId: 'claude-code',
+      title: 'User CLAUDE.md not found',
+      message: 'No user-level CLAUDE.md found.',
+      suggestion: 'Create ~/.claude/CLAUDE.md if you want shared Claude Code instructions.',
+      scope: 'user',
+      path: path.join(claudeDir, 'CLAUDE.md')
+    }))
   }
 
   // Check settings.json readability
@@ -36,12 +76,18 @@ export function runHealthChecks(homeDir = os.homedir()): HealthCheck[] {
     try {
       JSON.parse(fs.readFileSync(settingsPath, 'utf-8'))
     } catch {
-      checks.push({
-        id: 'invalid-settings',
+      checks.push(makeCheck({
+        id: 'claude-code:syntax:user-settings-invalid',
         severity: 'error',
+        category: 'syntax',
+        agentId: 'claude-code',
+        title: 'Invalid settings.json',
         message: 'settings.json contains invalid JSON.',
+        suggestion: 'Fix the JSON syntax in ~/.claude/settings.json.',
+        scope: 'user',
+        path: settingsPath,
         assetType: 'hook'
-      })
+      }))
     }
   }
 
@@ -59,11 +105,17 @@ export function runHealthChecks(homeDir = os.homedir()): HealthCheck[] {
         }
       })
       if (emptyDirs.length > 0) {
-        checks.push({
-          id: 'empty-project-dirs',
+        checks.push(makeCheck({
+          id: 'claude-code:session:empty-project-dirs',
           severity: 'info',
-          message: `${emptyDirs.length} empty project directories found in ~/.claude/projects/`
-        })
+          category: 'session',
+          agentId: 'claude-code',
+          title: 'Empty Claude project directories',
+          message: `${emptyDirs.length} empty project directories found in ~/.claude/projects/.`,
+          suggestion: 'This is usually harmless. Remove stale directories if they are no longer useful.',
+          scope: 'session',
+          path: projectsDir
+        }))
       }
     } catch {
       // ignore
@@ -71,4 +123,31 @@ export function runHealthChecks(homeDir = os.homedir()): HealthCheck[] {
   }
 
   return checks
+}
+
+type NormalizedHealthCheckOptions =
+  Required<Pick<HealthCheckOptions, 'homeDir' | 'platform' | 'env'>> &
+  Omit<HealthCheckOptions, 'homeDir' | 'platform' | 'env'>
+
+function normalizeOptions(options: HealthCheckOptions | string): NormalizedHealthCheckOptions {
+  if (typeof options === 'string') {
+    return {
+      homeDir: options,
+      platform: process.platform,
+      env: process.env
+    }
+  }
+  return {
+    ...options,
+    homeDir: options.homeDir ?? os.homedir(),
+    platform: options.platform ?? process.platform,
+    env: options.env ?? process.env
+  }
+}
+
+function makeCheck(input: HealthCheckInput): HealthCheck {
+  return {
+    ...input,
+    agentName: AGENT_NAMES[input.agentId]
+  }
 }

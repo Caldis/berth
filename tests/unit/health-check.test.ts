@@ -19,13 +19,18 @@ afterEach(() => {
 
 describe('runHealthChecks', () => {
   it('reports no supported agent data only when both Claude and Codex are missing', () => {
-    const checks = runHealthChecks(tempDir!)
+    const checks = runHealthChecks({ homeDir: tempDir! })
 
     expect(checks).toEqual([
       {
-        id: 'no-agent-data',
+        id: 'all:source:no-agent-data',
         severity: 'warning',
-        message: 'No supported agent data found. Berth scans Claude Code and Codex local data when present.'
+        category: 'source',
+        agentId: 'all',
+        agentName: 'All agents',
+        title: 'No supported agent data found',
+        message: 'Berth scans Claude Code and Codex local data when present.',
+        suggestion: 'Install or run Claude Code or Codex once, then refresh Berth.'
       }
     ])
   })
@@ -33,9 +38,9 @@ describe('runHealthChecks', () => {
   it('does not report a global Claude error in a Codex-only environment', () => {
     fs.mkdirSync(path.join(tempDir!, '.codex', 'sessions'), { recursive: true })
 
-    const checks = runHealthChecks(tempDir!)
+    const checks = runHealthChecks({ homeDir: tempDir! })
 
-    expect(checks.map((check) => check.id)).not.toContain('no-claude-dir')
+    expect(checks.map((check) => check.id)).not.toContain('claude-code:source:no-claude-dir')
     expect(checks).toEqual([])
   })
 
@@ -44,11 +49,28 @@ describe('runHealthChecks', () => {
     fs.mkdirSync(claudeDir, { recursive: true })
     fs.writeFileSync(path.join(claudeDir, 'settings.json'), '{ invalid json')
 
-    const checks = runHealthChecks(tempDir!)
+    const checks = runHealthChecks({ homeDir: tempDir! })
 
     expect(checks.map((check) => check.id)).toEqual([
-      'no-user-claude-md',
-      'invalid-settings'
+      'claude-code:source:user-claude-md-missing',
+      'claude-code:syntax:user-settings-invalid'
     ])
+    expect(checks[0]).toMatchObject({
+      severity: 'info',
+      category: 'source',
+      agentId: 'claude-code',
+      agentName: 'Claude Code',
+      title: 'User CLAUDE.md not found',
+      path: path.join(claudeDir, 'CLAUDE.md')
+    })
+    expect(checks[1]).toMatchObject({
+      severity: 'error',
+      category: 'syntax',
+      agentId: 'claude-code',
+      agentName: 'Claude Code',
+      title: 'Invalid settings.json',
+      path: path.join(claudeDir, 'settings.json'),
+      assetType: 'hook'
+    })
   })
 })
