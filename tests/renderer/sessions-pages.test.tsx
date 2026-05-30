@@ -1,4 +1,4 @@
-import { act, render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import React from 'react'
 import { describe, expect, it, vi } from 'vitest'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
@@ -225,10 +225,35 @@ describe('session pages', () => {
 
     expect(await screen.findByText('Input: 10')).toBeInTheDocument()
     expect(screen.getByText('Unknown: 5')).toBeInTheDocument()
-    expect(window.api.usage.summary).toHaveBeenCalledWith({ days: 30, agentView: 'codex' })
+    expect(window.api.usage.summary).toHaveBeenCalledWith({
+      days: 30,
+      agentView: 'codex',
+      costMode: 'auto'
+    })
     unmount()
     act(() => {
       useAppStore.setState({ agentView: 'all' })
+    })
+  })
+
+  it('passes selected cost mode to usage summary', async () => {
+    mockSessionApis()
+
+    render(
+      <MemoryRouter>
+        <Usage />
+      </MemoryRouter>
+    )
+
+    expect(await screen.findByText('Input: 10')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Estimated' }))
+
+    await waitFor(() => {
+      expect(window.api.usage.summary).toHaveBeenLastCalledWith({
+        days: 30,
+        agentView: 'all',
+        costMode: 'estimated'
+      })
     })
   })
 
@@ -276,6 +301,21 @@ describe('session pages', () => {
       actualCost: 0.3,
       estimatedCost: 0.26,
       costDelta: 0.04,
+      costMode: 'auto',
+      costExplanation: {
+        formula: 'mixed',
+        pricingSources: [{ source: 'local', count: 1 }],
+        catalog: {
+          generatedAt: '2026-05-30T14:51:53.037Z',
+          sources: [
+            {
+              name: 'litellm',
+              url: 'https://raw.githubusercontent.com/BerriAI/litellm/main/model_prices_and_context_window.json',
+              fetchedAt: '2026-05-30T14:51:53.151Z'
+            }
+          ]
+        }
+      },
       totalTokens: tokenUsage.totalTokens,
       tokenUsage,
       costSource: 'mixed',
@@ -329,5 +369,10 @@ describe('session pages', () => {
     expect(screen.getByText('Delta')).toBeInTheDocument()
     expect(screen.getByText('missing-model · 12 tok')).toBeInTheDocument()
     expect(screen.getAllByText('Mixed').length).toBeGreaterThan(0)
+    expect(screen.getByText('Cost explanation')).toBeInTheDocument()
+    expect(screen.getByText('Local override · 1 model match(es)')).toBeInTheDocument()
+    expect(screen.getByText(/LiteLLM/)).toBeInTheDocument()
+    expect(screen.getByText('Local override example')).toBeInTheDocument()
+    expect(screen.getByText(/inputCostPerToken/)).toBeInTheDocument()
   })
 })

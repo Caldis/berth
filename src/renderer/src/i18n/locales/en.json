@@ -484,10 +484,46 @@
       "mixed": "Mixed",
       "unknown": "Unknown"
     },
+    "costModeLabel": "Cost mode",
+    "costMode": {
+      "auto": "Auto",
+      "actual": "Actual",
+      "estimated": "Estimated"
+    },
+    "costExplanationTitle": "Cost explanation",
+    "costFormulaLabel": "Formula",
+    "costFormula": {
+      "actual": "Provider actual",
+      "estimated": "Catalog estimate",
+      "mixed": "Mixed",
+      "unknown": "Unknown",
+      "actualDesc": "The displayed total uses provider-reported costs when they are available.",
+      "estimatedDesc": "The displayed total is calculated from token usage and the pricing catalog.",
+      "mixedDesc": "The displayed total combines provider-reported costs and catalog estimates.",
+      "unknownDesc": "The displayed total cannot be calculated because price or token details are missing."
+    },
+    "pricingSourcesLabel": "Matched prices",
+    "pricingCatalogLabel": "Catalog snapshot",
+    "pricingSourcesEmpty": "No matched price records",
+    "pricingSourceCount": "{{count}} model match(es)",
+    "pricingSource": {
+      "litellm": "LiteLLM",
+      "modelsDev": "models.dev",
+      "local": "Local override"
+    },
     "pricingGapsTitle": "Pricing gaps",
     "pricingGapsBody": "{{count}} model price or token breakdown could not be estimated.",
     "pricingGapsMore": "+{{count}} more",
     "pricingGapShort": "{{count}} pricing gap",
+    "pricingGapReason": {
+      "missingModelPricing": "No model price",
+      "missingModelPricingDesc": "Add a local pricing override for this model id or alias.",
+      "missingTokenBreakdown": "No token split",
+      "missingTokenBreakdownDesc": "Only a total token count is available, so input and output prices cannot be applied.",
+      "missingPriceComponent": "Missing component price",
+      "missingPriceComponentDesc": "The model price is matched, but cache or reasoning token prices are missing."
+    },
+    "pricingOverrideExample": "Local override example",
     "dailyCost": "Daily Cost",
     "byModel": "By Model",
     "byProject": "By Project",

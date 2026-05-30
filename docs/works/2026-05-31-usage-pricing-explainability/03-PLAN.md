@@ -9,7 +9,7 @@
 - [x] 任务 2: cost mode 与 cost explanation 主进程契约
   - 扩展 shared 类型、pricing estimate、catalog metadata、usage 聚合和 IPC/preload。
   - 验证: `pnpm test -- tests/unit/pricing.test.ts tests/unit/usage-summary.test.ts`, `pnpm typecheck:node`。
-- [ ] 任务 3: Usage 页面解释区、cost mode 控件和 pricing gap 操作提示
+- [x] 任务 3: Usage 页面解释区、cost mode 控件和 pricing gap 操作提示
   - 修改 `Usage` 页面和 en/zh i18n。
   - 验证: `pnpm test -- tests/renderer/sessions-pages.test.tsx`, `pnpm typecheck:web`。
 - [ ] 任务 4: token 结构分析展示

@@ -11,9 +11,16 @@ import {
   Pie,
   Cell
 } from 'recharts'
-import { AlertTriangle, DollarSign, Coins, Gauge, FlaskConical } from 'lucide-react'
+import { AlertTriangle, Calculator, DollarSign, Coins, Gauge, FlaskConical } from 'lucide-react'
 import { cn, formatNumber, formatCurrency } from '@/lib/utils'
-import type { PricingMiss, UsageSummary } from '@shared/types/asset'
+import type {
+  CostMode,
+  PricingMiss,
+  PricingMissReason,
+  PricingSourceName,
+  UsageCostFormula,
+  UsageSummary
+} from '@shared/types/asset'
 import { normalizeUsageSummary } from '@shared/usage-summary'
 import { TokenUsageDisplay } from '@/components/shared/token-usage-display'
 import { useAppStore } from '@/stores/app'
@@ -33,6 +40,37 @@ const TIME_RANGES = [
   { value: 365, labelKey: 'overview.timeRange.all' }
 ] as const
 
+const COST_MODES: { value: CostMode; labelKey: string }[] = [
+  { value: 'auto', labelKey: 'usage.costMode.auto' },
+  { value: 'actual', labelKey: 'usage.costMode.actual' },
+  { value: 'estimated', labelKey: 'usage.costMode.estimated' }
+]
+
+const FORMULA_LABEL_KEYS: Record<UsageCostFormula, string> = {
+  actual: 'usage.costFormula.actual',
+  estimated: 'usage.costFormula.estimated',
+  mixed: 'usage.costFormula.mixed',
+  unknown: 'usage.costFormula.unknown'
+}
+
+const PRICING_SOURCE_LABEL_KEYS: Record<PricingSourceName, string> = {
+  litellm: 'usage.pricingSource.litellm',
+  'models.dev': 'usage.pricingSource.modelsDev',
+  local: 'usage.pricingSource.local'
+}
+
+const PRICING_MISS_LABEL_KEYS: Record<PricingMissReason, string> = {
+  'missing-model-pricing': 'usage.pricingGapReason.missingModelPricing',
+  'missing-token-breakdown': 'usage.pricingGapReason.missingTokenBreakdown',
+  'missing-price-component': 'usage.pricingGapReason.missingPriceComponent'
+}
+
+const PRICING_MISS_DESCRIPTION_KEYS: Record<PricingMissReason, string> = {
+  'missing-model-pricing': 'usage.pricingGapReason.missingModelPricingDesc',
+  'missing-token-breakdown': 'usage.pricingGapReason.missingTokenBreakdownDesc',
+  'missing-price-component': 'usage.pricingGapReason.missingPriceComponentDesc'
+}
+
 function formatSignedCurrency(amount: number): string {
   if (amount === 0) return formatCurrency(0)
   return amount > 0 ? `+${formatCurrency(amount)}` : `-${formatCurrency(Math.abs(amount))}`
@@ -42,16 +80,48 @@ function pricingMissLabel(miss: PricingMiss): string {
   return miss.model ?? 'unknown'
 }
 
+function canShowPricingOverrideExample(miss: PricingMiss): boolean {
+  return miss.reason === 'missing-model-pricing' || miss.reason === 'missing-price-component'
+}
+
+function pricingOverrideExample(miss: PricingMiss): string {
+  const id = miss.model ?? 'provider/model-id'
+  return JSON.stringify(
+    {
+      models: [
+        {
+          id,
+          inputCostPerToken: 0.000003,
+          outputCostPerToken: 0.000015,
+          cacheReadInputCostPerToken: 0.0000003,
+          cacheCreationInputCostPerToken: 0.00000375,
+          reasoningOutputCostPerToken: 0.000015
+        }
+      ]
+    },
+    null,
+    2
+  )
+}
+
+function formatCatalogDate(value: string | undefined): string {
+  if (!value) return '—'
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return value
+  return date.toLocaleDateString()
+}
+
 export function Usage(): React.ReactElement {
   const { t } = useTranslation()
   const [days, setDays] = useState(30)
+  const [costMode, setCostMode] = useState<CostMode>('auto')
   const [usage, setUsage] = useState<UsageSummary | null>(null)
   const agentView = useAppStore((s) => s.agentView)
 
   useEffect(() => {
     let cancelled = false
     window.api?.usage
-      .summary({ days, agentView })
+      .summary({ days, agentView, costMode })
       .then((data) => {
         if (!cancelled) setUsage(normalizeUsageSummary(data))
       })
@@ -59,7 +129,7 @@ export function Usage(): React.ReactElement {
     return () => {
       cancelled = true
     }
-  }, [agentView, days])
+  }, [agentView, costMode, days])
 
   const hasCostData = usage && usage.dailyCosts.length > 0
   const hasModelData = usage && usage.byModel.length > 0
@@ -78,27 +148,50 @@ export function Usage(): React.ReactElement {
   const costValue = usage && usage.costSource !== 'unknown'
     ? formatCurrency(usage.totalCost)
     : '—'
+  const pricingOverrideMiss = usage?.pricingMisses.find(canShowPricingOverrideExample)
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-semibold tracking-tight">{t('usage.title')}</h1>
-        <div className="flex gap-1 rounded-lg border border-border bg-muted/50 p-1">
-          {TIME_RANGES.map((range) => (
-            <button
-              key={range.value}
-              onClick={() => setDays(range.value)}
-              className={cn(
-                'rounded-md px-3 py-1 text-xs font-medium transition-colors',
-                days === range.value
-                  ? 'bg-background text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground'
-              )}
-            >
-              {t(range.labelKey)}
-            </button>
-          ))}
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          <div
+            className="flex gap-1 rounded-lg border border-border bg-muted/50 p-1"
+            aria-label={t('usage.costModeLabel')}
+          >
+            {COST_MODES.map((mode) => (
+              <button
+                key={mode.value}
+                onClick={() => setCostMode(mode.value)}
+                aria-pressed={costMode === mode.value}
+                className={cn(
+                  'rounded-md px-3 py-1 text-xs font-medium transition-colors',
+                  costMode === mode.value
+                    ? 'bg-background text-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground'
+                )}
+              >
+                {t(mode.labelKey)}
+              </button>
+            ))}
+          </div>
+          <div className="flex gap-1 rounded-lg border border-border bg-muted/50 p-1">
+            {TIME_RANGES.map((range) => (
+              <button
+                key={range.value}
+                onClick={() => setDays(range.value)}
+                className={cn(
+                  'rounded-md px-3 py-1 text-xs font-medium transition-colors',
+                  days === range.value
+                    ? 'bg-background text-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground'
+                )}
+              >
+                {t(range.labelKey)}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -149,6 +242,74 @@ export function Usage(): React.ReactElement {
         </div>
       </div>
 
+      {usage && (
+        <div className="rounded-xl border border-border bg-card p-5">
+          <div className="flex items-center gap-2 text-sm font-medium">
+            <Calculator className="h-4 w-4 text-muted-foreground" />
+            {t('usage.costExplanationTitle')}
+          </div>
+          <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]">
+            <div>
+              <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                {t('usage.costFormulaLabel')}
+              </div>
+              <div className="mt-1 flex flex-wrap items-center gap-2">
+                <CostSourceBadge source={usage.costSource} />
+                <span className="text-sm font-medium">
+                  {t(FORMULA_LABEL_KEYS[usage.costExplanation.formula])}
+                </span>
+              </div>
+              <p className="mt-2 text-sm text-muted-foreground">
+                {t(`usage.costFormula.${usage.costExplanation.formula}Desc`)}
+              </p>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div>
+                <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  {t('usage.pricingSourcesLabel')}
+                </div>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {usage.costExplanation.pricingSources.length > 0 ? (
+                    usage.costExplanation.pricingSources.map((source) => (
+                      <span
+                        key={`${source.source}-${source.sourceUrl ?? ''}-${source.updatedAt ?? ''}`}
+                        className="rounded-md border border-border bg-muted/50 px-2 py-1 text-xs text-muted-foreground"
+                      >
+                        {t(PRICING_SOURCE_LABEL_KEYS[source.source])} ·{' '}
+                        {t('usage.pricingSourceCount', { count: source.count })}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="text-sm text-muted-foreground">
+                      {t('usage.pricingSourcesEmpty')}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  {t('usage.pricingCatalogLabel')}
+                </div>
+                <div className="mt-2 space-y-1 text-sm text-muted-foreground">
+                  {usage.costExplanation.catalog.sources.length > 0 ? (
+                    usage.costExplanation.catalog.sources.map((source) => (
+                      <div key={`${source.name}-${source.url}`} className="truncate">
+                        {t(PRICING_SOURCE_LABEL_KEYS[source.name])} ·{' '}
+                        {formatCatalogDate(source.fetchedAt)}
+                      </div>
+                    ))
+                  ) : (
+                    <div>{t('usage.pricingSourcesEmpty')}</div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {hasPricingMisses && (
         <div className="rounded-xl border border-amber-500/25 bg-amber-500/10 p-4">
           <div className="flex items-start gap-3">
@@ -158,21 +319,39 @@ export function Usage(): React.ReactElement {
               <p className="mt-1 text-sm text-muted-foreground">
                 {t('usage.pricingGapsBody', { count: usage.pricingMisses.length })}
               </p>
-              <div className="mt-2 flex flex-wrap gap-2">
+              <div className="mt-3 grid gap-2 md:grid-cols-2">
                 {usage.pricingMisses.slice(0, 4).map((miss) => (
-                  <span
+                  <div
                     key={`${miss.model ?? 'unknown'}-${miss.reason}`}
-                    className="max-w-full truncate rounded-md border border-border bg-background px-2 py-1 text-xs text-muted-foreground"
+                    className="rounded-md border border-amber-500/20 bg-background/80 px-3 py-2"
                   >
-                    {pricingMissLabel(miss)} · {formatNumber(miss.tokens)} {t('usage.tokenUnit')}
-                  </span>
+                    <div className="flex items-center justify-between gap-2 text-xs">
+                      <span className="min-w-0 truncate font-medium text-foreground">
+                        {pricingMissLabel(miss)} · {formatNumber(miss.tokens)} {t('usage.tokenUnit')}
+                      </span>
+                      <span className="shrink-0 text-muted-foreground">
+                        {t(PRICING_MISS_LABEL_KEYS[miss.reason])}
+                      </span>
+                    </div>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {t(PRICING_MISS_DESCRIPTION_KEYS[miss.reason])}
+                    </p>
+                  </div>
                 ))}
                 {usage.pricingMisses.length > 4 && (
-                  <span className="rounded-md border border-border bg-background px-2 py-1 text-xs text-muted-foreground">
+                  <div className="rounded-md border border-amber-500/20 bg-background/80 px-3 py-2 text-xs text-muted-foreground">
                     {t('usage.pricingGapsMore', { count: usage.pricingMisses.length - 4 })}
-                  </span>
+                  </div>
                 )}
               </div>
+              {pricingOverrideMiss && (
+                <div className="mt-3 rounded-md border border-amber-500/20 bg-background/80 p-3">
+                  <div className="text-xs font-medium">{t('usage.pricingOverrideExample')}</div>
+                  <pre className="mt-2 max-h-40 overflow-auto rounded-md bg-muted/70 p-3 text-xs leading-relaxed text-muted-foreground">
+                    <code>{pricingOverrideExample(pricingOverrideMiss)}</code>
+                  </pre>
+                </div>
+              )}
             </div>
           </div>
         </div>

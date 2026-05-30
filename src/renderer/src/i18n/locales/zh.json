@@ -484,10 +484,46 @@
       "mixed": "混合",
       "unknown": "未知"
     },
+    "costModeLabel": "计价模式",
+    "costMode": {
+      "auto": "自动",
+      "actual": "真实",
+      "estimated": "估算"
+    },
+    "costExplanationTitle": "费用说明",
+    "costFormulaLabel": "计算方式",
+    "costFormula": {
+      "actual": "供应商真实费用",
+      "estimated": "价格表估算",
+      "mixed": "混合",
+      "unknown": "未知",
+      "actualDesc": "当前总额使用供应商返回的真实费用。",
+      "estimatedDesc": "当前总额按 token 用量和价格表计算。",
+      "mixedDesc": "当前总额同时包含供应商真实费用和价格表估算。",
+      "unknownDesc": "缺少价格或 token 明细, 当前总额无法计算。"
+    },
+    "pricingSourcesLabel": "匹配到的价格",
+    "pricingCatalogLabel": "价格表快照",
+    "pricingSourcesEmpty": "没有匹配到价格记录",
+    "pricingSourceCount": "{{count}} 个模型匹配",
+    "pricingSource": {
+      "litellm": "LiteLLM",
+      "modelsDev": "models.dev",
+      "local": "本地覆盖"
+    },
     "pricingGapsTitle": "价格缺口",
     "pricingGapsBody": "{{count}} 个模型价格或 token 明细无法估算。",
     "pricingGapsMore": "另有 {{count}} 个",
     "pricingGapShort": "{{count}} 个价格缺口",
+    "pricingGapReason": {
+      "missingModelPricing": "缺少模型价格",
+      "missingModelPricingDesc": "为这个模型 id 或别名补一条本地价格覆盖。",
+      "missingTokenBreakdown": "缺少 token 拆分",
+      "missingTokenBreakdownDesc": "只有总 token 数, 无法套用输入和输出价格。",
+      "missingPriceComponent": "缺少分项价格",
+      "missingPriceComponentDesc": "模型价格已经命中, 但缓存或推理 token 的价格缺失。"
+    },
+    "pricingOverrideExample": "本地覆盖示例",
     "dailyCost": "每日花费",
     "byModel": "按模型",
     "byProject": "按项目",
