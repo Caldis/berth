@@ -21,7 +21,9 @@
    - 自绘窗口 chrome、标题栏按钮、拖拽区、系统窗口按钮等原生命中相关改动, 最小验收为: hover 有视觉反馈、真实 OS 鼠标点击生效、主进程窗口状态可观测变化 (如 maximize/restore 后读取 `BrowserWindow.isMaximized()` 或 Win32 `IsZoomed`)。
    - 这类命中验证禁止只用 Playwright/CDP 的 `locator.click()` 作为最终证据; CDP 点击可能绕过系统非客户区与 draggable region 命中。Windows 需要用 Win32 `SetCursorPos` + `mouse_event` 或同等级真实输入; macOS 需要用系统级鼠标事件工具。
    - Windows 进程检查需区分主进程和 helper 进程: 用 `Get-CimInstance Win32_Process` 查看 `electron.exe` 命令行, 主进程通常是 `electron.exe .` 或加载 `out/main/index.js`, helper 进程带 `--type=`。验证前后都要确认目标窗口对应的是刚冷启动的新进程。
+   - Windows UI 截图需用真实 `electron.exe` 主进程窗口, Playwright/CDP 只负责交互。不要用 `_electron.launch()` 返回进程的 `MainWindowHandle` 当截图句柄; 该 PID 可能没有主窗口句柄。高 DPI/显示缩放下, 优先用 Win32 枚举目标进程可见窗口, 再用 DWM `DWMWA_EXTENDED_FRAME_BOUNDS` 获取物理像素窗口边界后 `CopyFromScreen` 裁剪。
+   - verify 过程中若遇到已验证的工具链 workaround、截图/进程/环境类问题、或用户纠正, 不等最终复盘: 先写入 `docs/friction/{YYYYMMDD}-verify-{summary}.md`, 必要时同步更新 workflow 规则, 跑 `pnpm harness:check` 通过后再继续最终汇报。
 4. 不通过项: 回写为 03-PLAN.md 新任务, 将 INDEX.phase 退回 implement, 重新进入开发循环。
-5. 全部通过后, 提示用户确认验收, 然后 `opsx-archive`。
+5. 全部通过后, 提示用户确认验收, 然后 `opsx-archive`。如果用户已明确认为任务完成或要求提交, 不要停在未提交工作区: 立即进入 archive 的归档与提交流程。若等待用户确认而暂不 archive, 最终说明必须明确“尚未提交, 下一步 archive/commit”。
 
 评审记录留在 PR/CI, 不进入项目持久层。

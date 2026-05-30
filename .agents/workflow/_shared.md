@@ -49,7 +49,7 @@ artifacts:
 3. design 遇 PRD 级歧义 → phase 置 blocked 并在 INDEX 标注待澄清项, 不进 implement。
 4. verify 不通过项回写 03-PLAN.md 新任务, phase 退回 implement。
 5. 工程摩擦不就地处理, 沉到 docs/friction/{YYYYMMDD}-{phase}-{summary}.md。
-6. 用户在任务过程中给出的纠正/意见/偏好, 一经验证有效, 必须主动沉淀为 friction 并当轮落地优化, 无需用户提示。沉淀产物本身须先过 `pnpm harness:check` 才能提交 (phase 段限 8 个 verb: new|continue|explore|design|implement|verify|archive|optimization)。
+6. 用户在任务过程中给出的纠正/意见/偏好, 一经验证有效, 必须主动沉淀为 friction 并当轮落地优化, 无需用户提示。遇到已验证的工具链 workaround、环境/截图/进程类问题也一样处理; 不等最终复盘或用户追问。沉淀产物本身须先过 `pnpm harness:check` 才能提交 (phase 段限 8 个 verb: new|continue|explore|design|implement|verify|archive|optimization)。
 7. 用户提出流程改善意见时, 先判断是否为代价非常小的修正; 若是, 先询问用户是落到 friction 并改规则, 还是只作为当前会话行为校准直接调整。
 8. 小改动豁免前必须先声明豁免依据并征得用户确认。确认前不得直接跳过 `opsx-new`; 若实施中发现影响面超出声明范围, 停下重新申请或切入 harness。
 
