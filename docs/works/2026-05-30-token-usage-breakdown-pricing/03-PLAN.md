@@ -20,11 +20,12 @@
   - 增加 pricing 类型和估算 helper, 暂不把估算冒充真实账单。
   - 支持内置 catalog / local override / missing pricing 结果。
   - 验证: `pnpm test -- tests/unit/pricing.test.ts tests/unit/usage-summary.test.ts tests/renderer/sessions-pages.test.tsx`, `pnpm typecheck:node`, `pnpm typecheck:web`。
-- [ ] 任务 6: 总门禁与人工视觉检查
+- [x] 任务 6: 总门禁与人工视觉检查
   - `pnpm harness:check`
   - `pnpm test`
   - `pnpm typecheck`
   - 若启动 UI, 用实测窗口截图检查 Usage、Sessions、Session Detail 文本不溢出。
+  - 本轮未启动 Electron 做人工截图; 验证范围为完整自动化测试、完整 typecheck 和 renderer 测试。
 
 ## verify 回写
 verify 不通过项作为新任务追加于此, phase 退回 implement。
