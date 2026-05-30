@@ -10,8 +10,12 @@ artifacts:
   spec: 02-SPEC.md
   plan: 03-PLAN.md
 gh_project:
-  status: skipped
-  reason: "gh project list --owner Caldis failed: token missing read:project scope"
+  status: tracked
+  project_id: PVT_kwHOADXbEs4BZHvQ
+  project_number: 6
+  project_url: https://github.com/users/Caldis/projects/6
+  item_id: PVTI_lAHOADXbEs4BZHvQzguPY8E
+  item_status: In Progress
 ---
 
 # dev-project-dir-scope
