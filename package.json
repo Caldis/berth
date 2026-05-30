@@ -8,7 +8,8 @@
   "homepage": "https://github.com/user/berth",
   "main": "./out/main/index.js",
   "scripts": {
-    "dev": "electron-vite dev",
+    "dev": "electron-vite dev --watch",
+    "dev:agent": "node scripts/agent-dev.mjs",
     "build": "electron-vite build",
     "postinstall": "electron-builder install-app-deps",
     "package": "electron-vite build && electron-builder --publish never",
