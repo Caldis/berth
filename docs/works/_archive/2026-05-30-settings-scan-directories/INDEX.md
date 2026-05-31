@@ -18,7 +18,7 @@ artifacts:
 ## GitHub Project
 - project: berth (#6)
 - item: PVTI_lAHOADXbEs4BZHvQzguP6hQ
-- status: In Progress
+- status: Done
 
 ## 产物
 - [x] 00-BUG.md — 原始输入快照
