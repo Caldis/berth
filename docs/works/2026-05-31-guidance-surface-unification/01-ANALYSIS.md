@@ -71,6 +71,10 @@
 
 ## 未决问题
 
-1. 统一 guide 是否要覆盖 Overview / Usage / Settings 这类页面, 还是只覆盖资产类页面和 sessions?
-2. `AssetGuidePanel` 是继续演进为通用 `FeatureGuidePanel`, 还是保留给资产页, 另建更轻的页面级 guide?
-3. memories 的 guide 放在 `Instructions` 页统一区域, 还是放进 `MemoryView` 自己内部, 由它和搜索/来源筛选共同管理密度?
+已由用户在 2026-05-31 澄清:
+
+1. 目标是组件提取复用、风格统一、缺失内容补全。
+2. Hooks / 状态栏里已有较好的提示模块, 要合并冗余并优化。
+3. 这些模块里较成熟的设计意图和概念可以推广到其他说明模块。
+
+设计阶段据此进入 implement, 不需要 blocked。
