@@ -32,18 +32,20 @@
   - 验证: `pnpm test -- tests/renderer/sessions-pages.test.tsx`, `pnpm typecheck:web`。
   - 结果: 已通过 `pnpm test -- tests/renderer/sessions-pages.test.tsx`、`pnpm typecheck:web`; Recharts 0 宽高警告仍为既有 jsdom 噪声。
 
-- [ ] 任务 7: 总验证
+- [x] 任务 7: 总验证
   - `pnpm harness:check`
   - `pnpm test`
   - `pnpm typecheck`
   - `pnpm build`
   - 可选: `pnpm test:e2e -- tests/e2e/app.e2e.ts -g "can navigate to usage"`。
   - 结果:
+    - `pnpm lint` 通过。
     - `pnpm harness:check` 通过。
+    - `pnpm test` 通过: 42 个测试文件、271 个测试。
     - `pnpm typecheck` 通过。
     - `pnpm build` 通过。
-    - `pnpm test` 未通过: `tests/unit/claude-scanner.test.ts` 的 `detects Claude hook entry files from project-root commands` 和 `tests/unit/codex-config-parser.test.ts` 的 `detects Codex hook entry files from project-root and config-dir variables` 失败, 都是 hooks entryPaths 相关断言; 失败文件不属于本次用量页改动范围。
-    - 本任务相关目标测试均已通过: `tests/renderer/sessions-pages.test.tsx`, `tests/unit/token-usage.test.ts`, `typecheck:web`。
+    - `pnpm test:e2e -- tests/e2e/app.e2e.ts -g "can navigate to usage"` 通过。
+    - 真实 Electron 视觉检查: 已进入 Usage 页, 看到计价模式、cache 读写拆分、费用口径提示、价格缺口和默认收起的本地覆盖示例; 未见白屏、明显重叠或按钮文字溢出。截图在系统临时目录, 未入库。
 
 ## verify 回写
 
