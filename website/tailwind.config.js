@@ -9,10 +9,11 @@ export default {
       colors: {
         paper: 'rgb(var(--paper) / <alpha-value>)',
         surface: 'rgb(var(--surface) / <alpha-value>)',
+        cream: 'rgb(var(--cream) / <alpha-value>)',
         ink: 'rgb(var(--ink) / <alpha-value>)',
         muted: 'rgb(var(--muted) / <alpha-value>)',
         line: 'rgb(var(--line) / <alpha-value>)',
-        /* primary accent (indigo). token name kept for stability across components */
+        /* small color accent (gradient blue); buttons use ink, not this */
         harbor: {
           DEFAULT: 'rgb(var(--harbor) / <alpha-value>)',
           deep: 'rgb(var(--harbor-deep) / <alpha-value>)',
@@ -22,7 +23,7 @@ export default {
       },
       fontFamily: {
         sans: [
-          '"Plus Jakarta Sans"',
+          'Inter',
           '"PingFang SC"',
           '"Microsoft YaHei"',
           '"Hiragino Sans"',
@@ -33,24 +34,24 @@ export default {
           'sans-serif',
         ],
         display: [
-          '"Plus Jakarta Sans"',
-          '"PingFang SC"',
-          '"Microsoft YaHei"',
-          '"Hiragino Sans"',
-          '"Apple SD Gothic Neo"',
-          'system-ui',
-          'sans-serif',
+          'Newsreader',
+          '"Source Han Serif SC"',
+          '"Songti SC"',
+          '"Noto Serif SC"',
+          '"Hiragino Mincho ProN"',
+          'Georgia',
+          'serif',
         ],
         mono: ['"JetBrains Mono"', 'ui-monospace', 'SFMono-Regular', 'monospace'],
       },
       borderRadius: {
         xl: '1rem',
-        '2xl': '1.25rem',
-        '3xl': '1.75rem',
+        '2xl': '1.5rem',
+        '3xl': '2rem',
       },
       boxShadow: {
-        soft: '0 1px 3px rgb(30 27 75 / 0.05), 0 12px 32px rgb(30 27 75 / 0.08)',
-        lift: '0 4px 14px rgb(30 27 75 / 0.10), 0 28px 64px rgb(30 27 75 / 0.16)',
+        soft: '0 1px 2px rgb(20 18 14 / 0.03), 0 14px 36px rgb(20 18 14 / 0.07)',
+        lift: '0 6px 18px rgb(20 18 14 / 0.08), 0 30px 70px rgb(20 18 14 / 0.12)',
       },
       maxWidth: {
         content: '72rem',

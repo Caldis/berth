@@ -15,7 +15,7 @@ export function Footer() {
       <div className="container-page grid gap-10 py-14 md:grid-cols-[1.6fr_1fr_1fr_auto]">
         <div className="max-w-xs">
           <div className="flex items-center gap-2.5">
-            <span className="grid h-7 w-7 place-items-center rounded-lg bg-harbor font-display text-sm font-bold text-white">
+            <span className="grid h-7 w-7 place-items-center rounded-xl bg-ink font-display text-sm font-bold text-paper">
               B
             </span>
             <span className="font-display text-lg font-semibold">Berth</span>

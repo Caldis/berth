@@ -3,28 +3,32 @@
 @tailwind utilities;
 
 :root {
-  /* Handhold-inspired — light, cool, friendly. --harbor is the indigo accent. */
-  --paper: 250 250 254;
+  /* Handhold-inspired — warm off-white, ink, flat rounded surfaces.
+     Color comes from the hero gradient, not the UI chrome.
+     --harbor = small blue accent; --amber = warm accent (echo the gradient). */
+  --paper: 249 248 244;
   --surface: 255 255 255;
-  --ink: 26 23 45;
-  --muted: 100 97 122;
-  --line: 233 231 246;
-  --harbor: 79 70 229;
-  --harbor-deep: 67 56 202;
-  --harbor-soft: 238 236 254;
-  --amber: 139 92 246;
+  --cream: 242 241 237;
+  --ink: 23 22 20;
+  --muted: 112 108 100;
+  --line: 229 227 220;
+  --harbor: 47 107 246;
+  --harbor-deep: 30 78 200;
+  --harbor-soft: 232 238 254;
+  --amber: 230 158 70;
 }
 
 .dark {
-  --paper: 17 16 28;
-  --surface: 25 23 40;
-  --ink: 237 236 248;
-  --muted: 158 155 178;
-  --line: 44 41 64;
-  --harbor: 129 124 255;
-  --harbor-deep: 110 100 245;
-  --harbor-soft: 38 34 60;
-  --amber: 167 139 250;
+  --paper: 20 19 17;
+  --surface: 28 27 24;
+  --cream: 33 31 28;
+  --ink: 240 238 232;
+  --muted: 165 160 150;
+  --line: 48 45 40;
+  --harbor: 122 156 255;
+  --harbor-deep: 100 140 245;
+  --harbor-soft: 32 40 60;
+  --amber: 233 178 110;
 }
 
 @layer base {
@@ -36,7 +40,7 @@
     text-rendering: optimizeLegibility;
   }
   ::selection {
-    background-color: rgb(var(--harbor) / 0.18);
+    background-color: rgb(var(--amber) / 0.25);
   }
 }
 
@@ -45,18 +49,18 @@
     @apply mx-auto w-full max-w-content px-5 sm:px-8;
   }
   .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-semibold transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-harbor/40;
+    @apply inline-flex items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-semibold transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink/20;
   }
   .btn-primary {
-    @apply btn bg-harbor text-white shadow-soft hover:bg-harbor-deep hover:shadow-lift;
+    @apply btn bg-ink text-paper hover:opacity-90;
   }
   .btn-ghost {
-    @apply btn border border-line bg-surface text-ink hover:border-harbor/40 hover:bg-harbor-soft/50;
+    @apply btn border border-line bg-surface text-ink hover:bg-cream;
   }
   .card {
-    @apply rounded-3xl border border-line bg-surface p-6 shadow-soft transition-all duration-200;
+    @apply rounded-3xl border border-line bg-surface p-7 transition-all duration-200;
   }
   .eyebrow {
-    @apply inline-flex items-center gap-2 rounded-full border border-line bg-surface px-3.5 py-1.5 text-xs font-semibold text-harbor-deep;
+    @apply inline-flex items-center gap-2 rounded-full border border-line bg-surface px-3.5 py-1.5 text-xs font-semibold text-muted;
   }
 }
