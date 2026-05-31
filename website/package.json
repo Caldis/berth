@@ -6,14 +6,13 @@
   "description": "Official website for Berth — local AI Agent asset manager",
   "scripts": {
     "dev": "vite-react-ssg dev --host",
-    "build": "vite-react-ssg build",
+    "build": "vite-react-ssg build && node scripts/postbuild.mjs",
     "preview": "vite preview --host",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run --config vitest.config.ts"
   },
   "dependencies": {
     "clsx": "^2.1.1",
-    "framer-motion": "^12.40.0",
     "i18next": "^26.3.0",
     "lucide-react": "^1.17.0",
     "react": "^19.2.6",
@@ -24,11 +23,14 @@
     "vite-react-ssg": "0.9.0"
   },
   "devDependencies": {
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
     "@types/node": "^25.9.1",
     "@types/react": "^19.2.15",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.2",
     "autoprefixer": "^10.5.0",
+    "jsdom": "^29.1.1",
     "postcss": "^8.5.15",
     "tailwindcss": "^3.4.19",
     "tailwindcss-animate": "^1.0.7",
