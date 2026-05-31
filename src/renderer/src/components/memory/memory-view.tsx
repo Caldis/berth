@@ -28,6 +28,31 @@ const importanceColors: Record<MemoryImportance, string> = {
   unknown: 'bg-muted/60 text-muted-foreground/70'
 }
 
+// i18n defaults live in-component so the view stays readable even when the shared
+// en/zh.json locale files lag behind (they are edited concurrently by other work).
+// When the real keys land, t() picks them up automatically.
+const importanceHintFallback: Record<MemoryImportance, string> = {
+  core: 'Core — loaded into context every session',
+  active: 'Active — loaded on demand when relevant',
+  archive: 'Archive — kept for reference, not auto-loaded',
+  unknown: 'Importance not specified'
+}
+
+const emptyFallback: Record<string, { title: string; hint: string }> = {
+  noSources: {
+    title: 'No memory sources found',
+    hint: 'Berth looks for native Claude Code memory and united-memory (~/.united-memory).'
+  },
+  empty: {
+    title: 'No memories yet',
+    hint: 'Your memory sources are connected but hold no notes.'
+  },
+  noResults: {
+    title: 'No matching memories',
+    hint: 'No notes match the current search or source filter.'
+  }
+}
+
 function sourceIcon(id: string): React.ComponentType<{ className?: string }> {
   return id === 'united-memory' ? Database : Brain
 }
@@ -46,7 +71,7 @@ function ImportanceBadge({ importance }: { importance: MemoryImportance }): Reac
   const { t } = useTranslation()
   return (
     <span
-      title={t(`memory.importanceHint.${importance}`)}
+      title={t(`memory.importanceHint.${importance}`, importanceHintFallback[importance])}
       className={cn('inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold', importanceColors[importance] ?? importanceColors.unknown)}
     >
       {importance}
@@ -159,7 +184,7 @@ function NoteCard({
           {note.links.length > 0 && (
             <div className="flex flex-wrap items-center gap-1">
               <Link2 className="h-3 w-3 text-muted-foreground" />
-              <span className="mr-1 text-xs text-muted-foreground">{t('memory.relations')}</span>
+              <span className="mr-1 text-xs text-muted-foreground">{t('memory.relations', 'Related')}</span>
               {note.links.map((link) => (
                 <button
                   key={link}
@@ -235,7 +260,7 @@ function SourceFilter({
   )
   return (
     <div className="flex flex-wrap gap-2">
-      {chip('all', t('memory.allSources'), total)}
+      {chip('all', t('memory.allSources', 'All sources'), total)}
       {sources.map((s) =>
         chip(
           s.id,
@@ -243,7 +268,9 @@ function SourceFilter({
           s.noteCount,
           s.available,
           // Surface the otherwise-silent source error on hover of a disabled chip.
-          s.error ? t('memory.sourceError', { error: s.error }) : s.rootPath
+          s.error
+            ? t('memory.sourceError', { defaultValue: 'Source unavailable: {{error}}', error: s.error })
+            : s.rootPath
         )
       )}
     </div>
@@ -307,15 +334,15 @@ export function MemoryView(): React.ReactElement {
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder={t('memory.searchPlaceholder')}
+            placeholder={t('memory.searchPlaceholder', 'Search memories...')}
             className="h-9 w-full rounded-md border border-input bg-background pl-8 pr-3 text-sm outline-none ring-ring focus:ring-1"
           />
         </div>
         <button
           onClick={refresh}
           disabled={refreshing}
-          title={t('memory.refresh')}
-          aria-label={t('memory.refresh')}
+          title={t('memory.refresh', 'Refresh')}
+          aria-label={t('memory.refresh', 'Refresh')}
           className="flex h-9 items-center gap-1.5 rounded-md border border-input bg-background px-3 text-sm text-foreground transition-colors hover:bg-accent disabled:opacity-60"
         >
           <RefreshCw className={cn('h-3.5 w-3.5', refreshing && 'animate-spin')} />
@@ -327,8 +354,8 @@ export function MemoryView(): React.ReactElement {
       {notes.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border py-16">
           <Brain className="mb-3 h-10 w-10 text-muted-foreground/40" />
-          <p className="text-sm text-muted-foreground">{t(`memory.${emptyKind}.title`)}</p>
-          <p className="mt-1 text-xs text-muted-foreground/70">{t(`memory.${emptyKind}.hint`)}</p>
+          <p className="text-sm text-muted-foreground">{t(`memory.${emptyKind}.title`, emptyFallback[emptyKind].title)}</p>
+          <p className="mt-1 text-xs text-muted-foreground/70">{t(`memory.${emptyKind}.hint`, emptyFallback[emptyKind].hint)}</p>
           {emptyKind === 'noResults' && hasFilters && (
             <button
               onClick={() => {
@@ -337,7 +364,7 @@ export function MemoryView(): React.ReactElement {
               }}
               className="mt-3 rounded-md border border-border px-3 py-1 text-xs font-medium text-foreground transition-colors hover:bg-accent"
             >
-              {t('memory.clearFilters')}
+              {t('memory.clearFilters', 'Clear filters')}
             </button>
           )}
         </div>
