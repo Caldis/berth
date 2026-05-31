@@ -13,17 +13,19 @@ import {
   Link2,
   Eye
 } from 'lucide-react'
-import { cn } from '@/lib/utils'
-import { truncatePath } from '@/lib/utils'
+import { cn, truncatePath, formatOptionalRelativeTime } from '@/lib/utils'
 import { useMemory } from '@/hooks/use-memory'
 import { useAppStore } from '@/stores/app'
 import type { MemoryNote, MemorySourceStatus, MemoryImportance } from '@shared/types/memory'
 
+// Color marks the exception, not the rule: `core` gets an emphasis hue (amber,
+// not red — these are important, not errors), archive/unknown fade into neutral.
+// `active` (the common case) stays quiet so the rare cases stand out.
 const importanceColors: Record<MemoryImportance, string> = {
-  core: 'bg-red-500/10 text-red-600 dark:text-red-400',
-  active: 'bg-green-500/10 text-green-600 dark:text-green-400',
-  archive: 'bg-muted text-muted-foreground',
-  unknown: 'bg-muted text-muted-foreground'
+  core: 'bg-amber-500/15 text-amber-700 dark:text-amber-400',
+  active: 'bg-muted text-muted-foreground',
+  archive: 'bg-muted/60 text-muted-foreground/70',
+  unknown: 'bg-muted/60 text-muted-foreground/70'
 }
 
 function sourceIcon(id: string): React.ComponentType<{ className?: string }> {
@@ -41,8 +43,12 @@ function byRecency(a: MemoryNote, b: MemoryNote): number {
 }
 
 function ImportanceBadge({ importance }: { importance: MemoryImportance }): React.ReactElement {
+  const { t } = useTranslation()
   return (
-    <span className={cn('inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold', importanceColors[importance] ?? importanceColors.unknown)}>
+    <span
+      title={t(`memory.importanceHint.${importance}`)}
+      className={cn('inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold', importanceColors[importance] ?? importanceColors.unknown)}
+    >
       {importance}
     </span>
   )
@@ -135,7 +141,7 @@ function NoteCard({
           {note.summary && <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">{note.summary}</p>}
         </div>
         {note.updatedAt && (
-          <span className="shrink-0 text-[10px] text-muted-foreground/70">{note.updatedAt}</span>
+          <span title={note.updatedAt} className="shrink-0 text-[11px] text-muted-foreground">{formatOptionalRelativeTime(note.updatedAt)}</span>
         )}
       </button>
 
@@ -173,7 +179,7 @@ function NoteCard({
           ) : null}
 
           <div className="flex items-center justify-between gap-2 pt-1">
-            <span className="truncate text-xs text-muted-foreground font-mono">{truncatePath(note.path)}</span>
+            <span title={note.path} className="truncate text-xs text-muted-foreground font-mono">{truncatePath(note.path)}</span>
             <div className="flex shrink-0 gap-2">
               {body !== '' && (
                 <button onClick={viewRaw} className="flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-accent">
@@ -205,11 +211,18 @@ function SourceFilter({
   onChange: (id: string) => void
 }): React.ReactElement {
   const { t } = useTranslation()
-  const chip = (id: string, label: string, count: number, available = true): React.ReactElement => (
+  const chip = (
+    id: string,
+    label: string,
+    count: number,
+    available = true,
+    hint?: string
+  ): React.ReactElement => (
     <button
       key={id}
       onClick={() => onChange(id)}
       disabled={!available && id !== 'all'}
+      title={hint}
       className={cn(
         'inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors',
         active === id ? 'border-primary bg-primary/10 text-primary' : 'border-border text-muted-foreground hover:bg-accent',
@@ -223,14 +236,23 @@ function SourceFilter({
   return (
     <div className="flex flex-wrap gap-2">
       {chip('all', t('memory.allSources'), total)}
-      {sources.map((s) => chip(s.id, s.label, s.noteCount, s.available))}
+      {sources.map((s) =>
+        chip(
+          s.id,
+          s.label,
+          s.noteCount,
+          s.available,
+          // Surface the otherwise-silent source error on hover of a disabled chip.
+          s.error ? t('memory.sourceError', { error: s.error }) : s.rootPath
+        )
+      )}
     </div>
   )
 }
 
 export function MemoryView(): React.ReactElement {
   const { t } = useTranslation()
-  const { result, loading, refresh } = useMemory()
+  const { result, loading, refreshing, refresh } = useMemory()
   const [activeSource, setActiveSource] = useState('all')
   const [search, setSearch] = useState('')
   const [focusId, setFocusId] = useState<string | null>(null)
@@ -250,6 +272,16 @@ export function MemoryView(): React.ReactElement {
       .slice()
       .sort(byRecency)
   }, [result.notes, activeSource, search])
+
+  // Distinguish the three "nothing to show" states so the empty copy is honest:
+  // no sources at all / sources exist but hold no notes / this query filtered all out.
+  const hasFilters = search.trim().length > 0 || activeSource !== 'all'
+  const emptyKind =
+    result.sources.length === 0
+      ? 'noSources'
+      : result.notes.length === 0
+        ? 'empty'
+        : 'noResults'
 
   const navigate = useCallback((globalId: string) => {
     // Clear filters so the target is guaranteed visible, then focus it.
@@ -275,16 +307,18 @@ export function MemoryView(): React.ReactElement {
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder={t('search.placeholder')}
+            placeholder={t('memory.searchPlaceholder')}
             className="h-9 w-full rounded-md border border-input bg-background pl-8 pr-3 text-sm outline-none ring-ring focus:ring-1"
           />
         </div>
         <button
           onClick={refresh}
+          disabled={refreshing}
           title={t('memory.refresh')}
-          className="flex h-9 items-center gap-1.5 rounded-md border border-input bg-background px-3 text-sm text-foreground transition-colors hover:bg-accent"
+          aria-label={t('memory.refresh')}
+          className="flex h-9 items-center gap-1.5 rounded-md border border-input bg-background px-3 text-sm text-foreground transition-colors hover:bg-accent disabled:opacity-60"
         >
-          <RefreshCw className="h-3.5 w-3.5" />
+          <RefreshCw className={cn('h-3.5 w-3.5', refreshing && 'animate-spin')} />
         </button>
       </div>
 
@@ -293,9 +327,18 @@ export function MemoryView(): React.ReactElement {
       {notes.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border py-16">
           <Brain className="mb-3 h-10 w-10 text-muted-foreground/40" />
-          <p className="text-sm text-muted-foreground">{t('memory.empty')}</p>
-          {result.sources.length === 0 && (
-            <p className="mt-1 text-xs text-muted-foreground/70">{t('memory.noSources')}</p>
+          <p className="text-sm text-muted-foreground">{t(`memory.${emptyKind}.title`)}</p>
+          <p className="mt-1 text-xs text-muted-foreground/70">{t(`memory.${emptyKind}.hint`)}</p>
+          {emptyKind === 'noResults' && hasFilters && (
+            <button
+              onClick={() => {
+                setSearch('')
+                setActiveSource('all')
+              }}
+              className="mt-3 rounded-md border border-border px-3 py-1 text-xs font-medium text-foreground transition-colors hover:bg-accent"
+            >
+              {t('memory.clearFilters')}
+            </button>
           )}
         </div>
       ) : (
