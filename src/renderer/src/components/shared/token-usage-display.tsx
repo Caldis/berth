@@ -70,7 +70,7 @@ export function TokenUsageDisplay({
   if (mode === 'detail') {
     return (
       <div className={cn('min-w-0 space-y-1', className)} title={title}>
-        <div className={cn('font-medium tabular-nums', legendDensity === 'compact' && 'text-sm')}>
+        <div className={cn('font-medium tabular-nums', legendDensity === 'compact' && 'text-xl font-semibold')}>
           {formatNumber(usage.totalTokens)} {t('usage.tokenUnit')}
         </div>
         {showTextBreakdown && usage.hasBreakdown ? (
@@ -95,7 +95,7 @@ export function TokenUsageDisplay({
         ) : null}
         {segments.length > 0 && (
           <div className={cn('space-y-1.5 pt-1.5', legendDensity === 'compact' && 'space-y-1 pt-1')}>
-            <div className="flex h-1.5 overflow-hidden rounded-full bg-muted">
+            <div className={cn('flex overflow-hidden rounded-full bg-muted', legendDensity === 'compact' ? 'h-2' : 'h-1.5')}>
               {segments.map((segment) => (
                 <div
                   key={segment.id}
@@ -108,7 +108,7 @@ export function TokenUsageDisplay({
             <div
               className={cn(
                 'flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground',
-                legendDensity === 'compact' && 'gap-x-2 text-[10px] leading-4'
+                legendDensity === 'compact' && 'gap-x-3 text-xs leading-5'
               )}
             >
               {segments.map((segment) => (

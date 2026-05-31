@@ -921,13 +921,25 @@ function MetaItem({
   icon?: React.ComponentType<{ className?: string }>
 }): React.ReactElement {
   return (
-    <div className="flex min-h-[92px] min-w-0 flex-col justify-between rounded-lg border border-border/70 bg-muted/15 p-3">
-      <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-        {label}
-      </p>
-      <div className="mt-2 flex min-w-0 items-start gap-1.5 text-sm font-medium text-card-foreground">
-        {Icon && <Icon className="h-3.5 w-3.5 text-muted-foreground" />}
-        {typeof value === 'string' ? <span className="min-w-0 truncate">{value}</span> : <div className="min-w-0 flex-1">{value}</div>}
+    <div className="flex min-h-[118px] min-w-0 flex-col rounded-lg border border-border/70 bg-muted/15 p-4">
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+          {label}
+        </p>
+        {Icon && (
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-background text-muted-foreground">
+            <Icon className="h-4 w-4" />
+          </span>
+        )}
+      </div>
+      <div className="mt-auto min-w-0 pt-6">
+        {typeof value === 'string' ? (
+          <span className="block min-w-0 truncate text-2xl font-semibold tabular-nums text-card-foreground">
+            {value}
+          </span>
+        ) : (
+          <div className="min-w-0 text-card-foreground">{value}</div>
+        )}
       </div>
     </div>
   )
