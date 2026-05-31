@@ -1,0 +1,206 @@
+{
+  "nav": {
+    "features": "功能",
+    "knowledge": "知识库",
+    "download": "下载"
+  },
+  "hero": {
+    "badge": "本地优先 · 只读 · 零遥测",
+    "title": "让本地 AI Agent 资产，",
+    "titleAccent": "一目了然。",
+    "subtitle": "Berth 扫描散落在你电脑各处的 Skills、MCP、Hooks、子代理与会话，把它们关联成一张可浏览、可搜索的全景图——你终于看清自己装了什么、它们如何协作、用得怎么样。",
+    "ctaPrimary": "下载 Berth",
+    "ctaSecondary": "在 GitHub 查看",
+    "note": "macOS 11+ / Windows 10+ · 免费开源（MIT）"
+  },
+  "trust": {
+    "items": [
+      "只读，绝不改动你的文件",
+      "完全在本机运行",
+      "零遥测、无账号",
+      "凭证永不显示"
+    ]
+  },
+  "value": {
+    "eyebrow": "为什么需要 Berth",
+    "heading": "看不见的资产，管不好的能力",
+    "items": [
+      {
+        "title": "资产可见化",
+        "body": "把纯文本的 skill、hook、MCP，从散落的文件树升级为结构化、可关联的对象。"
+      },
+      {
+        "title": "跨 Agent 统一",
+        "body": "Claude Code 与 Codex 的配置、能力、会话，集中在一处对照查看。"
+      },
+      {
+        "title": "本地优先",
+        "body": "一切都在你的机器上运行——零遥测、无云同步、无需账号。"
+      },
+      {
+        "title": "只读且安全",
+        "body": "v0.1 不修改任何文件；API Key 与 Token 只探测状态，永不显示。"
+      }
+    ]
+  },
+  "features": {
+    "eyebrow": "核心功能",
+    "heading": "一处看清你的 Agent 全貌",
+    "items": [
+      {
+        "name": "Overview",
+        "title": "总览仪表盘",
+        "body": "资产数量、最近会话、本周花费与健康检查，一屏掌握。",
+        "points": ["资产清点", "最近活动", "成本与健康检查"]
+      },
+      {
+        "name": "Sessions",
+        "title": "会话浏览",
+        "body": "按项目或时间浏览历史会话，查看加载的 Skill、连接的 MCP、触发的 Hook 与产物。",
+        "points": ["按项目或时间分组", "每个会话的加载资产", "工具时间线"]
+      },
+      {
+        "name": "Configuration",
+        "title": "盘点你的装备",
+        "body": "Instructions 与 Capabilities 两栏，跨 user / project / enterprise 作用域合并展示，标注来源与冲突。",
+        "points": ["Instructions 与 Capabilities", "作用域合并", "冲突检测"]
+      },
+      {
+        "name": "Usage",
+        "title": "用量与成本",
+        "body": "按模型、按项目、按天的花费与 Token 走势，速率限制余量一目了然。",
+        "points": ["按模型 / 项目 / 天", "Token 拆解", "速率限制"]
+      }
+    ]
+  },
+  "bridge": {
+    "eyebrow": "知识库",
+    "heading": "先看懂 AI Agent 能做什么",
+    "body": "在管理这些资产之前，先用通俗的语言认识 Agent 之所以为 Agent——感知、规划、工具调用、记忆，以及自主多步执行。每一条解释都标注一手参考来源。",
+    "cta": "进入知识库"
+  },
+  "kb": {
+    "eyebrow": "三大板块",
+    "heading": "不只是功能罗列，更是认识 Agent 的入口",
+    "pillars": [
+      {
+        "tag": "科普",
+        "title": "认识 AI Agent",
+        "body": "用通俗语言和可信来源，讲清 Agent 与聊天模型的区别，以及它的核心能力。",
+        "cta": "开始了解"
+      },
+      {
+        "tag": "功能",
+        "title": "Berth 功能详解",
+        "body": "逐一拆解 Overview、Sessions、Configuration、Usage，以及它们背后的资产模型。",
+        "cta": "查看功能"
+      },
+      {
+        "tag": "教程",
+        "title": "实操教程",
+        "body": "排查 Hook 为何不触发、看懂你的成本、为团队建立配置基线。",
+        "cta": "跟着做"
+      }
+    ]
+  },
+  "faq": {
+    "eyebrow": "常见问题",
+    "heading": "你可能想知道",
+    "items": [
+      {
+        "q": "Berth 会修改我的文件吗？",
+        "a": "不会。v0.1 完全只读——只扫描和展示，绝不写入任何配置或资产文件。"
+      },
+      {
+        "q": "我的数据会被上传吗？",
+        "a": "不会。Berth 完全在本机运行：零遥测、无云同步、无账号体系。"
+      },
+      {
+        "q": "支持哪些 Agent？",
+        "a": "v0.1 聚焦 Claude Code，并已为 Codex 等设计了适配层，后续版本逐步扩展。"
+      },
+      {
+        "q": "是免费的吗？",
+        "a": "是。Berth 开源并采用 MIT 许可——欢迎在 GitHub 参与贡献。"
+      }
+    ]
+  },
+  "cta": {
+    "heading": "看清你的 AI Agent，从 Berth 开始",
+    "body": "免费、开源、本地优先。下载即用，或在 GitHub 上了解更多。",
+    "primary": "下载 Berth",
+    "secondary": "在 GitHub Star",
+    "meta": "macOS 11+ / Windows 10+ · MIT"
+  },
+  "footer": {
+    "tagline": "本地 AI Agent 资产管理器。",
+    "productTitle": "产品",
+    "featuresLink": "功能",
+    "knowledgeLink": "知识库",
+    "changelogLink": "更新日志",
+    "resourcesTitle": "资源",
+    "githubLink": "GitHub",
+    "aboutLink": "关于",
+    "privacyLink": "隐私政策",
+    "copyright": "© 2026 Berth · MIT License",
+    "madeBy": "由 Caldis 打造"
+  },
+  "meta": {
+    "home": {
+      "title": "Berth — 看清每一个本地 AI Agent 资产",
+      "description": "Berth 是一款本地优先、只读的桌面应用，扫描并可视化你的 AI Agent 资产——Skills、MCP、Hooks、子代理、会话与成本，支持 Claude Code 与 Codex。"
+    },
+    "features": {
+      "title": "功能 — Berth",
+      "description": "Overview、Sessions、Configuration 与 Usage：Berth 如何让本地 AI Agent 资产变得可见。"
+    },
+    "knowledge": {
+      "title": "知识库 — Berth",
+      "description": "认识 AI Agent、了解 Berth 功能、跟随实操教程。通俗易懂，且标注一手来源。"
+    },
+    "about": {
+      "title": "关于 — Berth",
+      "description": "Berth 是一款由 Caldis 打造的开源、本地优先的 AI Agent 资产管理器。"
+    },
+    "privacy": {
+      "title": "隐私政策 — Berth",
+      "description": "Berth 完全在你的机器上运行：无遥测、无云同步、无账号。"
+    },
+    "changelog": {
+      "title": "更新日志 — Berth",
+      "description": "Berth 的最新进展。"
+    }
+  },
+  "pages": {
+    "knowledgeIntro": "三大板块，一个目标：帮你认识 AI Agent，并从容地管理它们。深度文章将陆续上线，每篇都标注一手参考来源。",
+    "featuresIntro": "Berth 把 AI Agent 背后的纯文本资产，变成结构化、可浏览的对象。下面是这款应用的全貌。",
+    "about": {
+      "body1": "Berth 让 AI Agent 背后看不见的资产变得可见。随着 Claude Code、Codex 等工具快速演进，你在本地积累的 skills、MCP、hooks 与记忆，大多是缺乏可见性的纯文本。Berth 扫描它们、关联它们，把它们呈现为一等公民般的对象。",
+      "body2": "Berth 开源并采用 MIT 许可，由 Caldis 打造。v0.1 在设计上即只读、本地优先。"
+    },
+    "privacy": {
+      "body1": "Berth 完全在你的机器上运行。它不发送任何遥测、没有账号体系，你的数据永不离开你的电脑。",
+      "body2": "Berth 为了展示而读取 Agent 的配置与会话文件；v0.1 绝不写入它们。API Key、Token 等凭证仅用于探测状态，永不显示其内容。"
+    },
+    "changelog": {
+      "intro": "Berth 还很年轻，这是它目前的状态。",
+      "items": [
+        {
+          "version": "v0.1",
+          "date": "2026",
+          "notes": [
+            "面向 Claude Code 的只读资产可视化",
+            "Overview、Sessions、Configuration、Usage",
+            "作用域合并、健康检查、全局搜索",
+            "English / 简体中文 / 日本語 / 한국어"
+          ]
+        }
+      ]
+    }
+  },
+  "notFound": {
+    "title": "页面未找到",
+    "body": "你访问的页面不存在。",
+    "cta": "返回首页"
+  }
+}

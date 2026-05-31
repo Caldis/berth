@@ -1,0 +1,66 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Handhold-inspired — warm off-white, ink, flat rounded surfaces.
+     Color comes from the hero gradient, not the UI chrome.
+     --harbor = small blue accent; --amber = warm accent (echo the gradient). */
+  --paper: 254 253 251;
+  --surface: 255 255 255;
+  --cream: 248 247 244;
+  --ink: 23 22 20;
+  --muted: 112 108 100;
+  --line: 229 227 220;
+  --harbor: 47 107 246;
+  --harbor-deep: 30 78 200;
+  --harbor-soft: 232 238 254;
+  --amber: 230 158 70;
+}
+
+.dark {
+  --paper: 20 19 17;
+  --surface: 28 27 24;
+  --cream: 33 31 28;
+  --ink: 240 238 232;
+  --muted: 165 160 150;
+  --line: 48 45 40;
+  --harbor: 122 156 255;
+  --harbor-deep: 100 140 245;
+  --harbor-soft: 32 40 60;
+  --amber: 233 178 110;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply bg-paper text-ink font-sans antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  ::selection {
+    background-color: rgb(var(--amber) / 0.25);
+  }
+}
+
+@layer components {
+  .container-page {
+    @apply mx-auto w-full max-w-content px-5 sm:px-8;
+  }
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-semibold transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink/20;
+  }
+  .btn-primary {
+    @apply btn bg-ink text-paper hover:opacity-90;
+  }
+  .btn-ghost {
+    @apply btn border border-line bg-surface text-ink hover:bg-cream;
+  }
+  .card {
+    @apply rounded-3xl border border-line bg-surface p-7 transition-all duration-200;
+  }
+  .eyebrow {
+    @apply inline-flex items-center gap-2 rounded-full border border-line bg-surface px-3.5 py-1.5 text-xs font-semibold text-muted;
+  }
+}

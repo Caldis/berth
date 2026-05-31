@@ -1,0 +1,13 @@
+{
+  "name": "Berth",
+  "description": "Local-first, read-only desktop app that scans and visualizes your AI agent assets — Skills, MCP servers, hooks, subagents, sessions and cost — for Claude Code and Codex.",
+  "url": "https://berth.caldis.me",
+  "documentation": "https://berth.caldis.me/en/knowledge",
+  "repository": "https://github.com/Caldis/berth",
+  "license": "MIT",
+  "contextFiles": [
+    "https://berth.caldis.me/llms.txt",
+    "https://berth.caldis.me/llms-full.txt"
+  ],
+  "languages": ["en", "zh", "ja", "ko"]
+}

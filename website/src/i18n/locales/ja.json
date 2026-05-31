@@ -1,0 +1,206 @@
+{
+  "nav": {
+    "features": "機能",
+    "knowledge": "ナレッジ",
+    "download": "ダウンロード"
+  },
+  "hero": {
+    "badge": "ローカルファースト · 読み取り専用 · テレメトリなし",
+    "title": "ローカルの AI エージェント資産を、",
+    "titleAccent": "ひと目で。",
+    "subtitle": "Berth はマシン中に散らばった Skills、MCP、Hooks、サブエージェント、セッションをスキャンし、閲覧・検索できる一枚のマップにつなぎます。何を持ち、どう連携し、いくらかかっているのかが、ようやく分かります。",
+    "ctaPrimary": "Berth をダウンロード",
+    "ctaSecondary": "GitHub で見る",
+    "note": "macOS 11+ / Windows 10+ · 無料・オープンソース（MIT）"
+  },
+  "trust": {
+    "items": [
+      "読み取り専用——ファイルを変更しません",
+      "完全にローカルで動作",
+      "テレメトリなし、アカウント不要",
+      "認証情報は表示しません"
+    ]
+  },
+  "value": {
+    "eyebrow": "Berth が必要な理由",
+    "heading": "見えない資産、管理できない能力",
+    "items": [
+      {
+        "title": "資産を見える化",
+        "body": "テキストの skill・hook・MCP を、散らばったファイルツリーから構造化された関連オブジェクトへ。"
+      },
+      {
+        "title": "エージェント横断で一望",
+        "body": "Claude Code と Codex の設定・能力・セッションを、一か所に並べて確認。"
+      },
+      {
+        "title": "ローカルファースト",
+        "body": "すべてマシン上で動作——テレメトリなし、クラウド同期なし、アカウント不要。"
+      },
+      {
+        "title": "読み取り専用で安全",
+        "body": "v0.1 はファイルを変更しません。API キーやトークンは状態のみ検出し、表示しません。"
+      }
+    ]
+  },
+  "features": {
+    "eyebrow": "主な機能",
+    "heading": "エージェント構成の全体を一目で",
+    "items": [
+      {
+        "name": "Overview",
+        "title": "すべてのダッシュボード",
+        "body": "資産数、最近のセッション、今週の費用、ヘルスチェックを一画面で。",
+        "points": ["資産インベントリ", "最近のアクティビティ", "費用とヘルスチェック"]
+      },
+      {
+        "name": "Sessions",
+        "title": "過去の作業を閲覧",
+        "body": "プロジェクトや日付でセッションをたどり、読み込まれた Skill、接続された MCP、発火した Hook、生成物を確認。",
+        "points": ["プロジェクト／日付でグループ化", "セッションごとの読み込み資産", "ツールのタイムライン"]
+      },
+      {
+        "name": "Configuration",
+        "title": "装備を棚卸し",
+        "body": "Instructions と Capabilities を二列で。user / project / enterprise スコープを統合し、出所と競合を明示。",
+        "points": ["Instructions と Capabilities", "スコープのマージ", "競合の検出"]
+      },
+      {
+        "name": "Usage",
+        "title": "費用とトークン",
+        "body": "モデル・プロジェクト・日別の費用とトークン推移。レート制限の余裕も常に表示。",
+        "points": ["モデル／プロジェクト／日別", "トークンの内訳", "レート制限"]
+      }
+    ]
+  },
+  "bridge": {
+    "eyebrow": "ナレッジベース",
+    "heading": "まず、AI エージェントに何ができるかを理解する",
+    "body": "資産を管理する前に、エージェントをエージェントたらしめるもの——知覚、計画、ツール利用、記憶、自律的な複数ステップ実行——をやさしい言葉で。すべての説明に一次情報の出典を明記しています。",
+    "cta": "ナレッジベースへ"
+  },
+  "kb": {
+    "eyebrow": "3 つのトラック",
+    "heading": "機能の羅列ではなく、エージェントを理解する入口",
+    "pillars": [
+      {
+        "tag": "学ぶ",
+        "title": "AI エージェントを理解する",
+        "body": "やさしい言葉と信頼できる出典で、チャットモデルとの違いとコア能力を解説。",
+        "cta": "学び始める"
+      },
+      {
+        "tag": "機能",
+        "title": "Berth の機能を詳しく",
+        "body": "Overview・Sessions・Configuration・Usage と、その背後の資産モデルを案内。",
+        "cta": "機能を見る"
+      },
+      {
+        "tag": "ガイド",
+        "title": "実践ガイド",
+        "body": "Hook が発火しない原因の特定、費用の読み解き、チームの設定ベースライン作り。",
+        "cta": "やってみる"
+      }
+    ]
+  },
+  "faq": {
+    "eyebrow": "FAQ",
+    "heading": "よくある質問",
+    "items": [
+      {
+        "q": "Berth はファイルを変更しますか？",
+        "a": "いいえ。v0.1 は完全に読み取り専用で、スキャンと表示のみ。設定や資産ファイルに書き込むことはありません。"
+      },
+      {
+        "q": "データはどこかにアップロードされますか？",
+        "a": "いいえ。Berth は完全にローカルで動作します。テレメトリなし、クラウド同期なし、アカウントなし。"
+      },
+      {
+        "q": "どのエージェントに対応していますか？",
+        "a": "v0.1 は Claude Code を中心に対応。Codex 等向けのアダプタ層も設計済みで、今後のリリースで拡張します。"
+      },
+      {
+        "q": "無料ですか？",
+        "a": "はい。Berth は MIT ライセンスのオープンソースです。GitHub での貢献を歓迎します。"
+      }
+    ]
+  },
+  "cta": {
+    "heading": "AI エージェントをはっきり見る——Berth から",
+    "body": "無料・オープンソース・ローカルファースト。ダウンロードしてすぐ使う、または GitHub で詳しく。",
+    "primary": "Berth をダウンロード",
+    "secondary": "GitHub で Star",
+    "meta": "macOS 11+ / Windows 10+ · MIT"
+  },
+  "footer": {
+    "tagline": "ローカル AI エージェント資産マネージャー。",
+    "productTitle": "プロダクト",
+    "featuresLink": "機能",
+    "knowledgeLink": "ナレッジ",
+    "changelogLink": "変更履歴",
+    "resourcesTitle": "リソース",
+    "githubLink": "GitHub",
+    "aboutLink": "概要",
+    "privacyLink": "プライバシー",
+    "copyright": "© 2026 Berth · MIT License",
+    "madeBy": "Caldis 制作"
+  },
+  "meta": {
+    "home": {
+      "title": "Berth — ローカルの AI エージェント資産をすべて見える化",
+      "description": "Berth はローカルファーストで読み取り専用のデスクトップアプリ。Skills・MCP・Hooks・サブエージェント・セッション・費用といった AI エージェント資産をスキャンして可視化します（Claude Code / Codex 対応）。"
+    },
+    "features": {
+      "title": "機能 — Berth",
+      "description": "Overview・Sessions・Configuration・Usage：Berth がローカルの AI エージェント資産を可視化する方法。"
+    },
+    "knowledge": {
+      "title": "ナレッジベース — Berth",
+      "description": "AI エージェントを理解し、Berth の機能を知り、実践ガイドをたどる。やさしく、一次情報の出典付き。"
+    },
+    "about": {
+      "title": "概要 — Berth",
+      "description": "Berth は Caldis が作る、オープンソースでローカルファーストの AI エージェント資産マネージャーです。"
+    },
+    "privacy": {
+      "title": "プライバシー — Berth",
+      "description": "Berth は完全にあなたのマシン上で動作します。テレメトリなし、クラウド同期なし、アカウントなし。"
+    },
+    "changelog": {
+      "title": "変更履歴 — Berth",
+      "description": "Berth の最新情報。"
+    }
+  },
+  "pages": {
+    "knowledgeIntro": "3 つのトラック、目標は一つ。AI エージェントを理解し、自信を持って管理できるように。一次情報を明記した詳しい記事を順次公開します。",
+    "featuresIntro": "Berth は AI エージェントの背後にあるテキスト資産を、構造化された閲覧可能なオブジェクトに変えます。これがアプリの全体像です。",
+    "about": {
+      "body1": "Berth は AI エージェントの背後にある見えない資産を可視化します。Claude Code や Codex のようなツールが進化するなか、ローカルにたまる skills・MCP・hooks・記憶は、可視性のないテキストとして積み上がります。Berth はそれらをスキャンし、関連づけ、一級のオブジェクトとして示します。",
+      "body2": "Berth は MIT ライセンスのオープンソースで、Caldis が制作しています。v0.1 は設計上、読み取り専用かつローカルファーストです。"
+    },
+    "privacy": {
+      "body1": "Berth は完全にあなたのマシン上で動作します。テレメトリを送信せず、アカウント機能もなく、データがコンピュータの外に出ることはありません。",
+      "body2": "Berth は表示のためにエージェントの設定・セッションファイルを読み取りますが、v0.1 が書き込むことはありません。API キーやトークンなどの認証情報は状態の検出のみに使い、内容を表示しません。"
+    },
+    "changelog": {
+      "intro": "Berth はまだ初期段階です。現状をまとめます。",
+      "items": [
+        {
+          "version": "v0.1",
+          "date": "2026",
+          "notes": [
+            "Claude Code 向けの読み取り専用資産可視化",
+            "Overview・Sessions・Configuration・Usage",
+            "スコープのマージ、ヘルスチェック、全文検索",
+            "English / 简体中文 / 日本語 / 한국어"
+          ]
+        }
+      ]
+    }
+  },
+  "notFound": {
+    "title": "ページが見つかりません",
+    "body": "お探しのページは存在しません。",
+    "cta": "ホームに戻る"
+  }
+}
