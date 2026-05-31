@@ -27,4 +27,4 @@ verify 不通过项作为新任务追加于此, phase 退回 implement。
 - [x] 任务 14: 默认汇总行增加来源状态计数。Claude / Codex 汇总行显示 scanned / not-scanned / missing 数量, 不展开也能看到覆盖状态。verify: renderer 测试覆盖默认视图计数, `pnpm test -- tests/renderer/settings-sources.test.tsx`, `pnpm typecheck` 通过。
 - [x] 任务 15: 来源说明改为稳定 code。main 只返回 source code 与必要 path/status, renderer 根据 code 生成标题和说明, 避免 main 写死英文 UI 文案。verify: renderer / scanner 测试覆盖 code 渲染, `pnpm test -- tests/unit/engine-scanner.test.ts tests/renderer/settings-sources.test.tsx` 通过; `pnpm typecheck` 被并行任务文件 `src/main/engine/hooks-manager.ts` 的未定义 `readBoolean` 阻塞。
 - [x] 任务 16: 未扫描项目来源给出明确下一步。session-derived 项目候选显示“打开该项目后扫描”, 当前项目缺失来源显示“已检查当前项目”, 不提供文件打开按钮。verify: renderer 测试覆盖提示与按钮状态, `pnpm test -- tests/renderer/settings-sources.test.tsx`, `pnpm typecheck` 通过。
-- [x] 任务 17: 最终验证。`pnpm test`, `pnpm typecheck`, `pnpm build`, `pnpm harness:check` 通过; `pnpm lint` 仍被非本任务文件 `src/shared/types/memory.ts` 第 1 行 `@typescript-eslint/ban-types` 阻塞, 另有并行 hooks 页面改动的 `react-hooks/exhaustive-deps` warning。
+- [x] 任务 17: 最终验证。`pnpm test`, `pnpm lint`, `pnpm typecheck`, `pnpm build`, `pnpm harness:check` 均通过。

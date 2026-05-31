@@ -36,3 +36,7 @@ Resolved
 - `pnpm typecheck`
 - `pnpm build`
 - `pnpm harness:check`
+
+## 归档
+
+- 任务归档路径: `docs/works/_archive/2026-05-30-settings-scan-directories/`
