@@ -2,7 +2,7 @@
 task: 2026-05-31-hooks-management-improvements
 type: feature
 jira:
-phase: verify
+phase: archive
 created: 2026-05-31
 artifacts:
   source: 00-PRD.md
@@ -11,8 +11,12 @@ artifacts:
   plan: 03-PLAN.md
 gh_project:
   project: berth
+  status: tracked
+  project_id: PVT_kwHOADXbEs4BZHvQ
+  project_number: 6
+  project_url: https://github.com/users/Caldis/projects/6
   item_id: PVTI_lAHOADXbEs4BZHvQzguQfQQ
-  status: Todo
+  item_status: Done
 ---
 
 # Hooks management improvements
@@ -26,3 +30,7 @@ gh_project:
 - [x] 03-PLAN.md — 活任务清单
 
 ## 待澄清 (blocked 时填)
+
+## 归档
+- archived: 2026-05-31
+- path: docs/works/_archive/2026-05-31-hooks-management-improvements
