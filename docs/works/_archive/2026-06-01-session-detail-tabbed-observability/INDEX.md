@@ -2,7 +2,7 @@
 task: 2026-06-01-session-detail-tabbed-observability
 type: feature
 jira:
-phase: implement
+phase: archive
 created: 2026-06-01
 artifacts:
   source: 00-PRD.md
@@ -24,6 +24,6 @@ artifacts:
 ## GitHub Project
 - project: https://github.com/users/Caldis/projects/6
 - item: PVTI_lAHOADXbEs4BZHvQzguTeJE
-- status: In Progress
+- status: Done
 
 ## 待澄清 (blocked 时填)

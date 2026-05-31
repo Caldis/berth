@@ -8,7 +8,7 @@
 - [x] 任务 4: 把 plans/todos/files/checkpoints 移入 Artifacts tab 并保持全宽展示, verify: `pnpm test -- tests/renderer/sessions-pages.test.tsx` 先切 tab 再覆盖文件路径和 checkpoint 摘要。
 - [x] 任务 5: 补齐 en/zh i18n 和无障碍属性, verify: `pnpm typecheck:web`。
 - [x] 任务 6: 真实 Electron 视觉验收 overview/timeline/artifacts 三个 tab, verify: agent-owned dev instance 截图记录无横向滚动、tab bar 不贴边、产物全宽。
-- [ ] 任务 7: 收口验证与任务态更新, verify: `pnpm test -- tests/renderer/sessions-pages.test.tsx`, `pnpm typecheck:web`, `pnpm harness:check`。
+- [x] 任务 7: 收口验证与任务态更新, verify: `pnpm test -- tests/renderer/sessions-pages.test.tsx`, `pnpm typecheck:web`, `pnpm harness:check`。
 
 ## verify 回写
 
