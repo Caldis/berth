@@ -54,9 +54,8 @@ describe('HooksLifecycleView', () => {
     renderHooks('codex', [hookAsset('codex-stop', 'codex', 'Stop')])
     await waitForEnablementStatus()
 
-    expect(screen.getByText('What are hooks?')).toBeInTheDocument()
-    expect(screen.getByText(/Hooks are Codex command handlers/)).toBeInTheDocument()
-    expect(screen.getByText(/This view only describes Codex hooks/)).toBeInTheDocument()
+    expect(screen.queryByText('What are hooks?')).not.toBeInTheDocument()
+    expect(screen.queryByText('Trigger point')).not.toBeInTheDocument()
     expect(screen.getAllByText('Agent stops').length).toBeGreaterThan(0)
     expect(screen.queryByText('Environment events')).not.toBeInTheDocument()
     expect(screen.queryByText('Claude Code')).not.toBeInTheDocument()
@@ -66,8 +65,8 @@ describe('HooksLifecycleView', () => {
     renderHooks('claude', [hookAsset('claude-stop', 'claude-code', 'Stop')])
     await waitForEnablementStatus()
 
-    expect(screen.getByText(/Hooks are Claude Code handlers/)).toBeInTheDocument()
-    expect(screen.getByText(/This view only describes Claude Code hooks/)).toBeInTheDocument()
+    expect(screen.queryByText('What are hooks?')).not.toBeInTheDocument()
+    expect(screen.queryByText('Trigger point')).not.toBeInTheDocument()
     expect(screen.queryByText(/Codex/)).not.toBeInTheDocument()
   })
 
@@ -78,7 +77,6 @@ describe('HooksLifecycleView', () => {
     ])
     await waitForEnablementStatus()
 
-    expect(screen.getByText(/combines Claude Code and Codex/)).toBeInTheDocument()
     expect(screen.getAllByText('Claude Code').length).toBeGreaterThan(0)
     expect(screen.getAllByText('Codex').length).toBeGreaterThan(0)
     expect(screen.getAllByText(/Codex only applies tool hooks/).length).toBeGreaterThan(0)

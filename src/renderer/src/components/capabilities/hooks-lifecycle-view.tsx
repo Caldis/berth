@@ -8,8 +8,7 @@ import {
   FileCode2,
   FolderOpen,
   Info,
-  MoreHorizontal,
-  Webhook
+  MoreHorizontal
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { ScopeBadge } from '@/components/shared/scope-badge'
@@ -71,30 +70,10 @@ export function HooksLifecycleView({ assets, agentView, search, scope }: HooksLi
 
   return (
     <div className="space-y-4">
-      <section className="rounded-lg border border-border bg-card px-4 py-4">
-        <div className="flex items-start gap-3">
-          <div className="mt-0.5 rounded-md bg-primary/10 p-2 text-primary">
-            <Webhook className="h-4 w-4" />
-          </div>
-          <div className="min-w-0 flex-1">
-            <div className="flex flex-wrap items-center gap-2">
-              <h2 className="text-sm font-semibold text-foreground">{t('capabilities.hooks.intro.title')}</h2>
-              <span className="rounded-md bg-muted px-2 py-0.5 text-xs text-muted-foreground">
-                {t(`agentView.${agentView}`)}
-              </span>
-            </div>
-            <p className="mt-1 max-w-[72ch] text-sm leading-6 text-muted-foreground">
-              {t(`capabilities.hooks.intro.${agentView}`)}
-            </p>
-            <div className="mt-3 grid gap-2 md:grid-cols-3">
-              {['trigger', 'handler', 'difference'].map((key) => (
-                <div key={key} className="rounded-md border border-border/70 bg-background/60 px-3 py-2">
-                  <p className="text-xs font-medium text-foreground">{t(introTipTitleKey(key, agentView))}</p>
-                  <p className="mt-0.5 text-xs leading-5 text-muted-foreground">{t(introTipBodyKey(key, agentView))}</p>
-                </div>
-              ))}
-            </div>
-            <div className="mt-3 inline-flex rounded-md border border-border bg-background p-1">
+      <section className="rounded-lg border border-border bg-card px-4 py-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap gap-2">
+            <div className="inline-flex rounded-md border border-border bg-background p-1">
               {(['lifecycle', 'comparison'] as HookDisplayMode[]).map((mode) => (
                 <button
                   key={mode}
@@ -111,7 +90,7 @@ export function HooksLifecycleView({ assets, agentView, search, scope }: HooksLi
                 </button>
               ))}
             </div>
-            <div className="ml-0 mt-2 inline-flex rounded-md border border-border bg-background p-1 sm:ml-2 sm:mt-3">
+            <div className="inline-flex rounded-md border border-border bg-background p-1">
               {(['comfortable', 'compact'] as HookDensity[]).map((item) => (
                 <button
                   key={item}
@@ -128,10 +107,13 @@ export function HooksLifecycleView({ assets, agentView, search, scope }: HooksLi
                 </button>
               ))}
             </div>
-            <HookAgentEnablementPanel agentView={agentView} />
-            <HookHealthSummary checks={hookHealthChecks} loading={healthLoading} />
           </div>
+          <span className="rounded-md bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+            {t(`agentView.${agentView}`)}
+          </span>
         </div>
+        <HookAgentEnablementPanel agentView={agentView} />
+        <HookHealthSummary checks={hookHealthChecks} loading={healthLoading} />
       </section>
 
       {displayMode === 'lifecycle' ? (
@@ -188,16 +170,6 @@ export function HooksLifecycleView({ assets, agentView, search, scope }: HooksLi
       {hookHealthChecks.length > 0 && <HookHealthDetails checks={hookHealthChecks} />}
     </div>
   )
-}
-
-function introTipTitleKey(key: string, agentView: AgentView): string {
-  if (key === 'difference') return `capabilities.hooks.intro.tips.difference.title.${agentView}`
-  return `capabilities.hooks.intro.tips.${key}.title`
-}
-
-function introTipBodyKey(key: string, agentView: AgentView): string {
-  if (key === 'difference') return `capabilities.hooks.intro.tips.difference.body.${agentView}`
-  return `capabilities.hooks.intro.tips.${key}.body`
 }
 
 function HookHealthSummary({ checks, loading }: { checks: HealthCheck[]; loading: boolean }): React.ReactElement {

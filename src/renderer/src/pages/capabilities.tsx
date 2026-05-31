@@ -24,8 +24,8 @@ import { DetailRow } from '@/components/shared/detail-row'
 import { WarningBanner } from '@/components/shared/warning-banner'
 import { ScopeBadge } from '@/components/shared/scope-badge'
 import { HooksLifecycleView } from '@/components/capabilities/hooks-lifecycle-view'
-import { AssetGuidePanel } from '@/components/shared/asset-guide-panel'
-import { buildAssetGuideEvidence, capabilityGuideMap, type CapabilityGuideId } from '@/lib/asset-guidance'
+import { FeatureGuidePanel } from '@/components/shared/feature-guide-panel'
+import { buildFeatureGuideEvidence, capabilityGuideMap, type CapabilityGuideId } from '@/lib/feature-guidance'
 import {
   groupEnvVars,
   normalizeEnvVars,
@@ -879,7 +879,7 @@ export function Capabilities(): React.ReactElement {
         ? normalizeEnvVars(filteredAssets).filter((row) => row.sensitive).length
         : 0
 
-    return buildAssetGuideEvidence(filteredAssets, riskCount)
+    return buildFeatureGuideEvidence(filteredAssets, riskCount)
   }, [activeTab, filteredAssets])
 
   const renderContent = (): React.ReactElement => {
@@ -939,7 +939,7 @@ export function Capabilities(): React.ReactElement {
         />
       )}
 
-      <AssetGuidePanel guide={activeGuide} evidence={activeEvidence} />
+      <FeatureGuidePanel guide={activeGuide} evidence={activeEvidence} agentView={agentView} />
 
       {renderContent()}
     </div>

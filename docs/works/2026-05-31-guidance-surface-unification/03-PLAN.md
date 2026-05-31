@@ -20,10 +20,10 @@
   - `MemoryView` 空态改用扩展后的 `EmptyState`, 文案进入 i18n。
   - 验证: `pnpm test -- tests/renderer/instructions-guidance.test.tsx`。
 
-- [ ] 任务 4: 合并 Capabilities / Hooks 重复说明。
+- [x] 任务 4: 合并 Capabilities / Hooks 重复说明。
   - 外层 guide 承接 hooks 概念说明和三张 insight。
   - `HooksLifecycleView` 保留控制区、开关、健康摘要、生命周期和对比内容。
-  - 验证: hooks lifecycle renderer 测试。
+  - 验证: `pnpm test -- tests/renderer/hooks-lifecycle-view.test.tsx tests/renderer/capabilities-guidance.test.tsx tests/renderer/feature-guide-panel.test.tsx tests/renderer/feature-guidance.test.ts`。
 
 - [ ] 任务 5: 合并 Capabilities / Status Line 重复说明。
   - 外层 guide 承接 Claude / Codex 模型说明。
