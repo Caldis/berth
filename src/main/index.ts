@@ -6,8 +6,13 @@ import { initScanner } from './engine/scanner'
 import { getWatcher } from './engine/watcher'
 import { resolveDefaultProjectDir } from './project-dir'
 import { configureAgentDevProfile, shouldRequestSingleInstanceLock } from './dev-instance'
+import { shouldAutoOpenDevTools } from './devtools'
 
-function createWindow(): BrowserWindow {
+type CreateWindowOptions = {
+  openDevTools?: boolean
+}
+
+function createWindow(options: CreateWindowOptions = {}): BrowserWindow {
   const isWindows = process.platform === 'win32'
   const isMacOS = process.platform === 'darwin'
 
@@ -59,6 +64,12 @@ function createWindow(): BrowserWindow {
     return { action: 'deny' }
   })
 
+  if (options.openDevTools) {
+    mainWindow.webContents.once('did-finish-load', () => {
+      mainWindow.webContents.openDevTools({ mode: 'undocked' })
+    })
+  }
+
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
     mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
   } else {
@@ -80,6 +91,11 @@ const agentDevProfile = configureAgentDevProfile(app, {
 const gotTheLock = shouldRequestSingleInstanceLock(agentDevProfile)
   ? app.requestSingleInstanceLock()
   : true
+const openDevTools = shouldAutoOpenDevTools({
+  isDev: is.dev,
+  rendererUrl: process.env['ELECTRON_RENDERER_URL'],
+  isAgentDev: Boolean(agentDevProfile)
+})
 
 if (!gotTheLock) {
   app.quit()
@@ -106,12 +122,12 @@ if (!gotTheLock) {
     initScanner(projectDir)
     const watcher = getWatcher()
 
-    const mainWindow = createWindow()
+    const mainWindow = createWindow({ openDevTools })
     watcher.setWindow(mainWindow)
     watcher.start(projectDir)
 
     app.on('activate', () => {
-      if (BrowserWindow.getAllWindows().length === 0) createWindow()
+      if (BrowserWindow.getAllWindows().length === 0) createWindow({ openDevTools })
     })
   })
 
