@@ -42,7 +42,7 @@
   - Settings 本地来源空态迁移到共享 `EmptyState`。
   - 验证: `pnpm test -- tests/renderer/settings-sources.test.tsx`, `pnpm test -- tests/renderer/sessions-pages.test.tsx`, `pnpm typecheck:web`。
 
-- [ ] 任务 8: 收口验证。
+- [x] 任务 8: 收口验证。
   - `pnpm test -- tests/renderer/feature-guide-panel.test.tsx tests/renderer/feature-guidance.test.ts tests/renderer/hooks-lifecycle-view.test.tsx tests/renderer/status-line-section.test.tsx tests/renderer/sessions-pages.test.tsx`
   - `pnpm typecheck:web`
   - `pnpm harness:check`
@@ -50,5 +50,13 @@
   - 更新 `INDEX.md` 到 verify。
 
 ## verify 回写
+
+2026-05-31:
+- `pnpm test -- tests/renderer/feature-guide-panel.test.tsx tests/renderer/feature-guidance.test.ts tests/renderer/hooks-lifecycle-view.test.tsx tests/renderer/status-line-section.test.tsx tests/renderer/sessions-pages.test.tsx tests/renderer/instructions-guidance.test.tsx tests/renderer/capabilities-guidance.test.tsx tests/renderer/shared-guidance-primitives.test.tsx tests/renderer/settings-sources.test.tsx`: 9 files / 52 tests passed。
+- `pnpm lint`: passed。
+- `pnpm typecheck`: passed。
+- `pnpm test`: 48 files / 293 tests passed。Recharts 在 jsdom 中输出 0 尺寸 warning, 测试通过。
+- `pnpm harness:check`: passed。
+- 真实应用验收: `pnpm dev:agent guard before --id guidance-surface-verify --json`; `pnpm dev:agent start --id guidance-surface-verify --json` 启动成功, agent Electron 主进程 PID 354400。真实窗口截图确认应用可打开; 另用同一 agent dev server + mocked preload 检查 Sessions、Instructions / Memory、Capabilities / Hooks、Capabilities / Status Line、Usage 页面, 未见页面错误、明显重叠或文字溢出。`pnpm dev:agent stop guidance-surface-verify --json` 已停止本轮实例; `pnpm dev:agent guard after --id guidance-surface-verify --json` 通过, protected 用户 dev PID 204932 / 322572 未退出。
 
 verify 不通过项作为新任务追加于此, phase 退回 implement。
