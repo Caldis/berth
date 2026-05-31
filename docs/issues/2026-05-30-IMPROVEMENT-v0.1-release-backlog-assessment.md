@@ -1,9 +1,9 @@
 # 描述
-- 对 plans/v0.1-development.md 的 6 项 post-release 发布遗留做可行性评估, 标注归属与阻塞,
+- 对 `docs/works/_archive/2026-05-28-v0-1-development-plan/v0.1-development.md` 的 6 项 post-release 发布遗留做可行性评估, 标注归属与阻塞,
   并落地其中可自主、低风险的一项 (CI 加 production build 冒烟)。
 
 # 重现步骤
-- 参见 plans/v0.1-development.md "Remaining Work (post-release)"
+- 参见 `docs/works/_archive/2026-05-28-v0-1-development-plan/v0.1-development.md` "Remaining Work (post-release)"
 
 # 预期结果
 - 每项有明确状态: 可自主落地 / 需外部条件 / 当前不宜

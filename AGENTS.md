@@ -12,9 +12,6 @@
 # DOCS
 存放冷文档目录; harness 操作态例外为 `docs/works/`、`docs/friction/`、`docs/issues/`
 
-# PLANS
-存放任务计划和执行清单, 每次启动时先检索该目录, 并询问用户是否继续最近任务
-
 # ISSUES
 产品 bug、功能与改进项统一存放在 `docs/issues/`
 

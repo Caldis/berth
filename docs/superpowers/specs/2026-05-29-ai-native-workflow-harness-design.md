@@ -38,7 +38,7 @@ OpenSpec 风格自定义命令, 以 Jira Task ID 串联上下文, 流程绑定�
 
 - `AGENTS.md` (项目指令, 含 behavioral guidelines)
 - `CLAUDE.md` 仅含 `@AGENTS.md` 引用
-- `plans/` (历史任务计划), `docs/issues/` (产品 bug/feature/improvement 跟踪), 各含 AGENTS.md 约定
+- 旧任务计划文档, `docs/issues/` (产品 bug/feature/improvement 跟踪), 各含 AGENTS.md 约定
 - `docs/` (index.html, user-manual.md, CONTRIBUTING.md, prd/)
 - `tests/` (Vitest 单测 + Playwright e2e stub)
 - GitHub remote: `Caldis/berth`
@@ -54,7 +54,7 @@ OpenSpec 风格自定义命令, 以 Jira Task ID 串联上下文, 流程绑定�
 
 ### 3.3 现状冲突
 
-berth 现有 `plans/` 采用 `{DATE}-{SHORT_DESC}` 命名, `docs/issues/` 存产品问题, 与源文档的 `works/{DATE}-{JIRA}-{SUMMARY}` + `friction/` 命名与结构不一致, 需调和 (见第 11 节)。
+berth 旧任务计划文档采用 `{DATE}-{SHORT_DESC}` 命名, `docs/issues/` 存产品问题, 与源文档的 `works/{DATE}-{JIRA}-{SUMMARY}` + `friction/` 命名与结构不一致, 需调和 (见第 11 节)。
 
 ## 4. 架构决策: 单一真源 + 双工具分发
 
@@ -269,9 +269,9 @@ Claude Code 会从 `.claude/skills/opsx-explore/SKILL.md` 生成 `/opsx-explore`
 
 `package.json` 增 `harness:check` (运行校验器) 与 `harness:sync` (运行同步) 两个 script。
 
-## 11. 与现有 plans/ + docs/issues/ 调和
+## 11. 与现有任务计划 + docs/issues/ 调和
 
-- `plans/AGENTS.md`: 改为重定向说明, 活任务态移至 `docs/works/`; 保留 `v0.1-development.md` 作为历史记录
+- 活任务态移至 `docs/works/`; 保留 `v0.1-development.md` 作为历史记录
 - `docs/issues/AGENTS.md`: 说明产品问题清单语义, 过程摩擦移至 `docs/friction/`; `docs/issues/` 仍存产品 bug, 与 works/friction 双向交叉引用
 - 顶层 `AGENTS.md` 的 DOCS 段标注 works/friction/issues 为操作态例外 (非冷文档)
 

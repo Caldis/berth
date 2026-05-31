@@ -51,7 +51,7 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 **修改:**
 - `package.json` — `packageManager` 字段 + `harness:sync`/`harness:check` 脚本
 - `AGENTS.md` — 增 Harness 索引章节
-- `plans/AGENTS.md`, `docs/issues/AGENTS.md` — 改为重定向说明
+- `docs/issues/AGENTS.md` — 改为重定向说明
 
 **新建 (dogfood):**
 - `docs/friction/20260529-implement-pnpm-version-pinning.md`
@@ -1425,10 +1425,10 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 
 ---
 
-## Task 14: AGENTS.md 索引章节 + plans/docs/issues 重定向
+## Task 14: AGENTS.md 索引章节 + docs/issues 重定向
 
 **Files:**
-- Modify: `AGENTS.md`, `plans/AGENTS.md`, `docs/issues/AGENTS.md`
+- Modify: `AGENTS.md`, `docs/issues/AGENTS.md`
 
 - [ ] **Step 1: 在 AGENTS.md 末尾追加 Harness 索引章节**
 
@@ -1454,17 +1454,7 @@ wc -l AGENTS.md
 ```
 Expected: 行数 < 500
 
-- [ ] **Step 3: 改写 plans/AGENTS.md 为重定向 (在文件顶部追加说明, 保留原模板内容)**
-
-在 `plans/AGENTS.md` 第一行 `# PLANS` 之前插入:
-```markdown
-> 重定向: 任务的活动态 (Explore/Design/Implement/Verify 产物) 已迁至 AI Native Workflow 的
-> `docs/works/{date}[-{jira}]-{summary}/`, 由 `/opsx:*` 命令维护。本目录保留历史计划
-> (如 v0.1-development.md) 作为存档参考。新任务请用 `/opsx:new`。详见 `.agents/README.md`。
-
-```
-
-- [ ] **Step 4: 改写 docs/issues/AGENTS.md 为重定向 (在文件顶部追加说明, 保留原内容)**
+- [ ] **Step 3: 改写 docs/issues/AGENTS.md 为重定向 (在文件顶部追加说明, 保留原内容)**
 
 读取 `docs/issues/AGENTS.md` 现有内容, 在其首行之前插入:
 ```markdown
@@ -1474,12 +1464,12 @@ Expected: 行数 < 500
 
 ```
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 4: Commit**
 
 ```bash
 cd /Users/caldis/Desktop/Code/berth
-git add AGENTS.md plans/AGENTS.md docs/issues/AGENTS.md
-git commit -m "docs(harness): wire AGENTS index and redirect plans/docs-issues
+git add AGENTS.md docs/issues/AGENTS.md
+git commit -m "docs(harness): wire AGENTS index and docs issue guidance
 
 Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 ```
@@ -1695,7 +1685,7 @@ REQUIRED SUB-SKILL: 调用 `superpowers:finishing-a-development-branch` 决定�
 
 ## Self-Review
 
-**1. Spec coverage:** 第 1-3 节背景/映射/现状 → 体现在各 playbook 与 README (T6-9); 第 4 节双工具决策 → T2/T3/T12/T13; 第 5 节目录树 → 全量任务; 第 6 节四设施 → 指令(T11,T14)/工具(T9)/状态(T10)/反馈(T16,T8 verify,T15); 第 7 节四阶段 → T7/T8 playbook + _shared(T6); 第 8 节 verb 规格 → T7/T8; 第 9 节 sync → T3; 第 10 节 check+测试 → T4; 第 11 节 plans/docs/issues 调和 → T14; 第 12 节 pnpm → T1+T15; 第 13 节 CI/PR → T16; 第 14 节验收 → T17; 第 15 节亲验 → T13; 第 16 节范围外 (观测 v2) → README 占位(T9)。无遗漏。
+**1. Spec coverage:** 第 1-3 节背景/映射/现状 → 体现在各 playbook 与 README (T6-9); 第 4 节双工具决策 → T2/T3/T12/T13; 第 5 节目录树 → 全量任务; 第 6 节四设施 → 指令(T11,T14)/工具(T9)/状态(T10)/反馈(T16,T8 verify,T15); 第 7 节四阶段 → T7/T8 playbook + _shared(T6); 第 8 节 verb 规格 → T7/T8; 第 9 节 sync → T3; 第 10 节 check+测试 → T4; 第 11 节任务计划/docs/issues 调和 → T14; 第 12 节 pnpm → T1+T15; 第 13 节 CI/PR → T16; 第 14 节验收 → T17; 第 15 节亲验 → T13; 第 16 节范围外 (观测 v2) → README 占位(T9)。无遗漏。
 
 **2. Placeholder scan:** 模板文件中的 `{YYYY-MM-DD}` / `{SUMMARY}` 是模板占位符 (交付物的有意内容, 非计划缺口); 代码与命令步骤均含完整内容。无 TODO/TBD/"类似 Task N"。
 
