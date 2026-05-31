@@ -54,7 +54,11 @@ describe('Codex session parser', () => {
         JSON.stringify({
           type: 'response_item',
           timestamp: '2026-05-30T02:01:01.000Z',
-          payload: { type: 'function_call_output', call_id: 'call-shell' }
+          payload: {
+            type: 'function_call_output',
+            call_id: 'call-shell',
+            output: JSON.stringify({ metadata: { duration_seconds: 1.25 } })
+          }
         }),
         JSON.stringify({
           type: 'response_item',
@@ -96,6 +100,7 @@ describe('Codex session parser', () => {
       'apply_patch'
     ])
     expect(detail.toolTimeline[0].status).toBe('success')
+    expect(detail.toolTimeline[0].durationMs).toBe(1250)
     expect(detail.artifacts.todos[0]).toEqual({
       id: 'plan-0-Implement-Codex-parser',
       title: 'Implement Codex parser',

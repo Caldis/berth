@@ -67,6 +67,7 @@ export interface SessionToolEvent {
   status: SessionToolEventStatus
   startedAt: string | null
   endedAt: string | null
+  durationMs?: number | null
   summary?: string
   filePaths: string[]
   mcpServer?: string

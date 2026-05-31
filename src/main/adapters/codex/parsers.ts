@@ -507,6 +507,7 @@ export function parseCodexSessionDetail(filePath: string): ParsedCodexSessionDet
           if (!event) continue
           event.status = payload.is_error === true ? 'error' : 'success'
           event.endedAt = timestamp
+          event.durationMs = readToolOutputDurationMs(payload)
         }
       }
 
@@ -600,6 +601,39 @@ function isCodexToolOutput(itemType: string | undefined): boolean {
     itemType === 'tool_search_output' ||
     itemType === 'web_search_output'
   )
+}
+
+function readToolOutputDurationMs(payload: Record<string, unknown>): number | null {
+  const directMs = readNonNegativeFiniteNumber(payload, 'duration_ms')
+  if (directMs != null) return Math.round(directMs)
+
+  const directSeconds = readNonNegativeFiniteNumber(payload, 'duration_seconds')
+  if (directSeconds != null) return Math.round(directSeconds * 1000)
+
+  const output = payload.output
+  const parsedOutput = typeof output === 'string' ? parseMaybeJson(output) : output
+  const metadata = isRecord(parsedOutput) && isRecord(parsedOutput.metadata)
+    ? parsedOutput.metadata
+    : isRecord(payload.metadata)
+      ? payload.metadata
+      : undefined
+
+  if (!metadata) return null
+
+  const metadataMs = readNonNegativeFiniteNumber(metadata, 'duration_ms')
+  if (metadataMs != null) return Math.round(metadataMs)
+
+  const metadataSeconds = readNonNegativeFiniteNumber(metadata, 'duration_seconds')
+  return metadataSeconds == null ? null : Math.round(metadataSeconds * 1000)
+}
+
+function readNonNegativeFiniteNumber(
+  record: Record<string, unknown>,
+  key: string
+): number | undefined {
+  const value = record[key]
+  if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) return undefined
+  return value
 }
 
 function readToolName(payload: Record<string, unknown>, itemType: string | undefined): string {
