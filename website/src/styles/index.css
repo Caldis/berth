@@ -6,9 +6,9 @@
   /* Handhold-inspired — warm off-white, ink, flat rounded surfaces.
      Color comes from the hero gradient, not the UI chrome.
      --harbor = small blue accent; --amber = warm accent (echo the gradient). */
-  --paper: 249 248 244;
+  --paper: 254 253 251;
   --surface: 255 255 255;
-  --cream: 242 241 237;
+  --cream: 248 247 244;
   --ink: 23 22 20;
   --muted: 112 108 100;
   --line: 229 227 220;
