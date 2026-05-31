@@ -19,3 +19,11 @@ verify 不通过项作为新任务追加于此, phase 退回 implement。
   - `pnpm typecheck:web` 通过。
   - `pnpm harness:check` 通过。
   - 真实界面验收: 使用 `pnpm dev:agent start --id session-detail-observability-verify` 启动 agent-owned Electron 实例; 点击最近会话进入详情页; 已看到运行概览、去重后的 token 图例、连续工具时间线、工具耗时 chip 和右侧会话信号; 无白屏、明显错位或文本重叠。验收后已 `pnpm dev:agent stop session-detail-observability-verify`; `guard after` 确认用户 dev 进程未受影响。
+
+- 2026-05-31 verify feedback:
+  - [ ] 任务 6: 运行概览 token 指标等高 compact 化, verify: renderer 测试保留 token 总量和 breakdown, 视觉验收无明显高度突兀。
+  - [ ] 任务 7: 产物面板改为全宽区域, verify: 真实详情页中文件路径不再挤在右侧窄栏。
+  - [ ] 任务 8: Checkpoints 无文件明细时改为摘要展示, verify: renderer 测试覆盖多个 0 文件 checkpoint 不再逐条刷屏。
+  - [ ] 任务 9: 工具时间线改成高密度连续 rail 列表, verify: 真实 100+ 工具调用会话可扫描, rail 不再断裂。
+  - [ ] 任务 10: 增加工具耗时阈值 slider, verify: renderer 测试覆盖滑动后只显示高于阈值的工具。
+  - [ ] 任务 11: 增加工具说明 tips, verify: 高频工具能看到用途和常见慢因说明。

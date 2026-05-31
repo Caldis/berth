@@ -54,3 +54,14 @@ OpenClaw 提到的消息数、吞吐量、工具调用、缓存命中率、错�
 ## 未决问题
 
 无。消息数量、真实供应商吞吐量、API duration 与 permission wait 需要更完整的上游 trace/telemetry 数据, 不在本次本地 transcript 推导范围内硬算。
+
+## 2026-05-31 验收反馈分析
+
+用户在真实会话详情页上反馈了 6 个问题。它们都属于当前页面信息组织与密度问题, 不需要新增 IPC 数据源:
+
+- 顶部运行概览里 token 卡片因为 legend 竖排导致高度高于其它指标, 影响一行指标的视觉稳定性。
+- 产物区域被放进右侧窄栏后, 文件路径和产物内容空间不足; 这里应独占一整行。
+- 当前扫描到 45 个 checkpoints, 但每个 checkpoint 的文件数都是 0。真实本地样本中也出现同类情况: 扫描最近 120 个 transcript 得到 639 个 checkpoint, 其中 639 个都没有文件明细。因此逐条列出 “File history checkpoint / 0” 没有诊断价值。
+- 工具时间线仍以大行距展示, 对 185 个以上的工具调用不够紧凑; timeline rail 的线段应由容器统一绘制, 不应由每一行各自拼接。
+- 工具耗时已经可见, 但开发者还需要按耗时阈值筛出慢工具。OpenAI Codex 官方指标也把 `tool.call.duration_ms` 作为按工具与成功状态分组的 histogram, 所以这里适合做阈值筛选。
+- 真实本地样本中的高频工具包括 shell/Bash/PowerShell、Read/Edit/Write、Grep/Glob、WebFetch/WebSearch、Agent、AskUserQuestion、Skill、TaskCreate/TaskUpdate、MCP/browser/image 工具。Claude Code 官方 tools reference 已列出 `Agent` 是独立上下文子代理, `AskUserQuestion` 是多选澄清问题工具; Claude 博客说明 AskUserQuestion 会弹出问题并阻塞 agent loop 直到用户回答。因此 tooltip 应解释工具作用和常见慢因。

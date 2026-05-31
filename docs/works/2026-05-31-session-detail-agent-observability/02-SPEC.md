@@ -60,3 +60,22 @@
 | `TokenUsageDisplay.showTextBreakdown` 并只在详情页关闭重复明细 | 5, 7 |
 | 响应式两栏布局与 i18n | 1, 6 |
 | 目标测试、typecheck、harness | 8 |
+
+## 2026-05-31 追加方案
+
+- 运行概览改为等高 compact metric。token 指标只保留总量、分段条和横向 chips, 不再使用会把卡片撑高的竖向 legend。
+- 产物面板移出右侧栏, 放在工具时间线与会话信号下方, 使用全宽区域展示文件路径、计划、待办和 checkpoints。
+- Checkpoints 面板增加无明细摘要:
+  - 当只有 checkpoint 总数但每项文件数都为 0 时, 只展示 “记录了 N 个 checkpoint, transcript 未包含文件明细”。
+  - 当部分 checkpoint 有文件数时, 只展开有文件明细的 checkpoint, 其余无明细项折叠成一行说明。
+- 工具时间线改成高密度列表:
+  - 列表容器统一绘制一条纵向 rail, 每行只负责放置固定尺寸状态点。
+  - 每行控制在一行主信息内: 状态、工具名、类别、摘要、时间、耗时。
+  - 文件路径和长摘要使用截断与 hover title, 避免 100+ 条调用时页面过高。
+- 工具耗时筛选:
+  - 从当前 events 里可计算的耗时推导 slider 最大值。
+  - 阈值为 0 时显示全部工具; 阈值大于 0 时只显示耗时大于等于阈值的工具调用, 无耗时事件被隐藏。
+  - UI 显示 “当前显示数 / 总数” 和当前阈值。
+- 工具说明:
+  - 用一组本地静态分类把工具名映射到说明: shell、文件读写、搜索、Web、Agent、AskUserQuestion、Skill、task/todo、patch、MCP、browser、image、workspace、多代理、hook、通用。
+  - `Agent` 提示其耗时包含子代理完整任务; `AskUserQuestion` 提示其会等待用户回答, 因此耗时可能显著变长。
