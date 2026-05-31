@@ -1,0 +1,206 @@
+{
+  "nav": {
+    "features": "Features",
+    "knowledge": "Knowledge",
+    "download": "Download"
+  },
+  "hero": {
+    "badge": "Local-first · Read-only · Zero telemetry",
+    "title": "Your local AI agent assets,",
+    "titleAccent": "finally visible.",
+    "subtitle": "Berth scans the Skills, MCP servers, hooks, subagents and sessions scattered across your machine and connects them into one browsable, searchable map — so you finally know what you have, how it works together, and what it costs.",
+    "ctaPrimary": "Download Berth",
+    "ctaSecondary": "View on GitHub",
+    "note": "macOS 11+ / Windows 10+ · Free & open source (MIT)"
+  },
+  "trust": {
+    "items": [
+      "Read-only — never changes your files",
+      "Runs fully on your machine",
+      "No telemetry, no account",
+      "Credentials never shown"
+    ]
+  },
+  "value": {
+    "eyebrow": "Why Berth",
+    "heading": "Invisible assets, unmanaged capabilities",
+    "items": [
+      {
+        "title": "Make assets visible",
+        "body": "Turn plain-text skills, hooks and MCP servers from a scattered file tree into structured, connected objects."
+      },
+      {
+        "title": "One view across agents",
+        "body": "Configuration, capabilities and sessions for Claude Code and Codex, side by side in one place."
+      },
+      {
+        "title": "Local-first",
+        "body": "Everything runs on your machine — zero telemetry, no cloud sync, no account required."
+      },
+      {
+        "title": "Read-only & safe",
+        "body": "v0.1 never modifies a file. API keys and tokens are detected, never displayed."
+      }
+    ]
+  },
+  "features": {
+    "eyebrow": "Core features",
+    "heading": "Your whole agent setup, at a glance",
+    "items": [
+      {
+        "name": "Overview",
+        "title": "A dashboard for everything",
+        "body": "Asset counts, recent sessions, this week's spend and health checks — all on one screen.",
+        "points": ["Asset inventory", "Recent activity", "Cost & health checks"]
+      },
+      {
+        "name": "Sessions",
+        "title": "Browse past work",
+        "body": "Walk through sessions by project or date, and see the skills loaded, MCP servers connected, hooks fired and artifacts produced.",
+        "points": ["Group by project or date", "Loaded assets per session", "Tool timeline"]
+      },
+      {
+        "name": "Configuration",
+        "title": "Take inventory",
+        "body": "Instructions and Capabilities in two columns, merged across user, project and enterprise scope, with sources and conflicts marked.",
+        "points": ["Instructions & Capabilities", "Scope merge", "Conflict detection"]
+      },
+      {
+        "name": "Usage",
+        "title": "Spend & tokens",
+        "body": "Cost and token trends by model, project and day, with rate-limit headroom kept in plain sight.",
+        "points": ["By model / project / day", "Token breakdown", "Rate limits"]
+      }
+    ]
+  },
+  "bridge": {
+    "eyebrow": "Knowledge base",
+    "heading": "First, understand what AI agents can do",
+    "body": "Before managing these assets, get a plain-language grasp of what makes an agent an agent — perception, planning, tool use, memory, and autonomous multi-step execution. Every explanation cites a primary source.",
+    "cta": "Enter the knowledge base"
+  },
+  "kb": {
+    "eyebrow": "Three tracks",
+    "heading": "Not a feature dump — a way in to understanding agents",
+    "pillars": [
+      {
+        "tag": "Learn",
+        "title": "Understand AI agents",
+        "body": "In plain words and trusted sources: how an agent differs from a chat model, and its core capabilities.",
+        "cta": "Start learning"
+      },
+      {
+        "tag": "Features",
+        "title": "Berth features in depth",
+        "body": "A walk through Overview, Sessions, Configuration and Usage — and the asset model behind them.",
+        "cta": "Explore features"
+      },
+      {
+        "tag": "Guides",
+        "title": "Hands-on guides",
+        "body": "Diagnose why a hook isn't firing, make sense of your cost, set a config baseline for your team.",
+        "cta": "Follow along"
+      }
+    ]
+  },
+  "faq": {
+    "eyebrow": "FAQ",
+    "heading": "You might be wondering",
+    "items": [
+      {
+        "q": "Will Berth modify my files?",
+        "a": "No. v0.1 is fully read-only — it scans and displays, and never writes to any config or asset file."
+      },
+      {
+        "q": "Is my data uploaded anywhere?",
+        "a": "No. Berth runs entirely on your machine: zero telemetry, no cloud sync, no accounts."
+      },
+      {
+        "q": "Which agents are supported?",
+        "a": "v0.1 focuses on Claude Code, with an adapter layer already designed for Codex and more in later releases."
+      },
+      {
+        "q": "Is it free?",
+        "a": "Yes. Berth is open source under the MIT license — contributions welcome on GitHub."
+      }
+    ]
+  },
+  "cta": {
+    "heading": "See your AI agents clearly — start with Berth",
+    "body": "Free, open source, local-first. Download and go, or learn more on GitHub.",
+    "primary": "Download Berth",
+    "secondary": "Star on GitHub",
+    "meta": "macOS 11+ / Windows 10+ · MIT"
+  },
+  "footer": {
+    "tagline": "Local AI agent asset manager.",
+    "productTitle": "Product",
+    "featuresLink": "Features",
+    "knowledgeLink": "Knowledge",
+    "changelogLink": "Changelog",
+    "resourcesTitle": "Resources",
+    "githubLink": "GitHub",
+    "aboutLink": "About",
+    "privacyLink": "Privacy",
+    "copyright": "© 2026 Berth · MIT License",
+    "madeBy": "Built by Caldis"
+  },
+  "meta": {
+    "home": {
+      "title": "Berth — See every local AI agent asset",
+      "description": "Berth is a local-first, read-only desktop app that scans and visualizes your AI agent assets — Skills, MCP servers, hooks, subagents, sessions and cost — for Claude Code and Codex."
+    },
+    "features": {
+      "title": "Features — Berth",
+      "description": "Overview, Sessions, Configuration and Usage: how Berth makes your local AI agent assets visible."
+    },
+    "knowledge": {
+      "title": "Knowledge base — Berth",
+      "description": "Understand AI agents, explore Berth's features, and follow hands-on guides. Plain-language and primary-sourced."
+    },
+    "about": {
+      "title": "About — Berth",
+      "description": "Berth is an open-source, local-first AI agent asset manager built by Caldis."
+    },
+    "privacy": {
+      "title": "Privacy — Berth",
+      "description": "Berth runs entirely on your machine: no telemetry, no cloud sync, no account."
+    },
+    "changelog": {
+      "title": "Changelog — Berth",
+      "description": "What's new in Berth."
+    }
+  },
+  "pages": {
+    "knowledgeIntro": "Three tracks, one goal: help you understand AI agents and manage them with confidence. In-depth articles are landing here next, each citing primary sources.",
+    "featuresIntro": "Berth turns the plain-text assets behind your AI agents into structured, browsable objects. Here is the shape of the app.",
+    "about": {
+      "body1": "Berth makes the invisible assets behind your AI agents visible. As tools like Claude Code and Codex evolve, the skills, MCP servers, hooks and memories you accumulate locally pile up as plain text with no real visibility. Berth scans them, connects them, and shows them as first-class objects.",
+      "body2": "Berth is open source under the MIT license and built by Caldis. v0.1 is read-only and local-first by design."
+    },
+    "privacy": {
+      "body1": "Berth runs entirely on your machine. It sends no telemetry, has no account system, and your data never leaves your computer.",
+      "body2": "Berth reads agent configuration and session files in order to display them. v0.1 never writes to them. Credentials such as API keys and tokens are detected for status only and are never displayed."
+    },
+    "changelog": {
+      "intro": "Berth is early. Here is where it stands.",
+      "items": [
+        {
+          "version": "v0.1",
+          "date": "2026",
+          "notes": [
+            "Read-only asset visualization for Claude Code",
+            "Overview, Sessions, Configuration, Usage",
+            "Scope merge, health checks, global search",
+            "English / 简体中文 / 日本語 / 한국어"
+          ]
+        }
+      ]
+    }
+  },
+  "notFound": {
+    "title": "Page not found",
+    "body": "The page you're looking for doesn't exist.",
+    "cta": "Back to home"
+  }
+}

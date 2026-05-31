@@ -1,0 +1,63 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Timber & Rust — warm, earthy, masculine (R G B triplets).
+     --harbor is the primary rust accent; --amber the ochre secondary. */
+  --paper: 245 240 232;
+  --surface: 254 251 246;
+  --ink: 33 26 20;
+  --muted: 120 107 92;
+  --line: 229 219 204;
+  --harbor: 181 85 40;
+  --harbor-deep: 138 60 28;
+  --harbor-soft: 243 229 216;
+  --amber: 166 117 43;
+}
+
+.dark {
+  --paper: 24 19 15;
+  --surface: 33 26 20;
+  --ink: 240 231 219;
+  --muted: 168 152 133;
+  --line: 56 45 36;
+  --harbor: 224 122 66;
+  --harbor-deep: 201 100 52;
+  --harbor-soft: 48 34 24;
+  --amber: 211 159 87;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply bg-paper text-ink font-sans antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  ::selection {
+    background-color: rgb(var(--harbor) / 0.18);
+  }
+}
+
+@layer components {
+  .container-page {
+    @apply mx-auto w-full max-w-content px-5 sm:px-8;
+  }
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-harbor/50;
+  }
+  .btn-primary {
+    @apply btn bg-harbor text-white shadow-soft hover:bg-harbor-deep hover:shadow-lift;
+  }
+  .btn-ghost {
+    @apply btn border border-line bg-surface text-ink hover:border-harbor/40 hover:bg-harbor-soft/40;
+  }
+  .card {
+    @apply rounded-2xl border border-line bg-surface p-6 shadow-soft transition-all duration-200;
+  }
+  .eyebrow {
+    @apply inline-flex items-center gap-2 rounded-full border border-line bg-surface px-3 py-1 text-xs font-medium text-muted;
+  }
+}

@@ -1,0 +1,6 @@
+node_modules
+dist
+.vite-react-ssg
+stats.html
+*.local
+.DS_Store
