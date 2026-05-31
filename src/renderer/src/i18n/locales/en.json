@@ -66,6 +66,7 @@
     "title": "Instructions",
     "tabs": {
       "memories": "Memories",
+      "conventions": "Conventions",
       "skills": "Skills",
       "subagents": "Subagents",
       "commands": "Commands",
@@ -98,15 +99,43 @@
         "codexSubagents": "Codex subagents"
       },
       "memories": {
+        "title": "Memory notes across sources",
+        "summary": "Berth groups native memory files and durable local notes so you can see which long-lived facts may shape future sessions.",
+        "points": {
+          "role": "Use memory notes for durable facts, decisions, and preferences that should survive beyond one chat.",
+          "scope": "Source type tells you whether a note comes from native agent memory, repository guidance, or a local memory store.",
+          "review": "Review stale or high-priority notes when the agent keeps following outdated context."
+        },
+        "providers": {
+          "claude": "Claude Code memory files can hold user and project context.",
+          "codex": "Codex receives durable repository guidance through AGENTS.md and imported instructions.",
+          "abstract": "Berth also groups local memory notes that are not tied to one provider."
+        },
+        "insights": {
+          "sources": {
+            "title": "Source types",
+            "body": "Different sources have different loading rules. Treat the source as part of the meaning, not just a storage path."
+          },
+          "priority": {
+            "title": "Priority matters",
+            "body": "Core notes are stronger context than archive notes. They should be rare and regularly reviewed."
+          },
+          "review": {
+            "title": "Keep it current",
+            "body": "Memory is useful only while it stays true. Old decisions and temporary preferences should not become permanent rules."
+          }
+        }
+      },
+      "conventions": {
         "title": "Persistent instruction context",
-        "summary": "Memory files are durable instructions the agent loads as context before work. They carry project rules, team norms, personal preferences, and imports into the first turn.",
+        "summary": "Instruction files are durable guidance the agent loads as context before work. They carry project rules, team norms, personal preferences, and imports into the first turn.",
         "points": {
           "role": "Use them for facts and rules that should shape many tasks, not for one-off prompts.",
           "scope": "Scope tells you who receives the instruction: one user, this project, or an organization policy.",
           "review": "Check imports and precedence when the agent follows unexpected guidance."
         },
         "providers": {
-          "claude": "Claude Code loads project and user memory files into the working context.",
+          "claude": "Claude Code loads CLAUDE.md files into the working context.",
           "codex": "Codex reads AGENTS.md as repository instructions before work starts."
         }
       },
@@ -901,6 +930,37 @@
   },
   "inspector": {
     "copy": "Copy to clipboard"
+  },
+  "memory": {
+    "allSources": "All sources",
+    "searchPlaceholder": "Search memories...",
+    "refresh": "Refresh",
+    "relations": "Related",
+    "clearFilters": "Clear filters",
+    "sourceError": "Source unavailable: {{error}}",
+    "evidence": {
+      "notes": "notes",
+      "sources": "sources",
+      "availableSources": "available sources"
+    },
+    "importanceHint": {
+      "core": "Core — loaded into context every session",
+      "active": "Active — loaded on demand when relevant",
+      "archive": "Archive — kept for reference, not auto-loaded",
+      "unknown": "Importance not specified"
+    },
+    "empty": {
+      "title": "No memories yet",
+      "hint": "Your memory sources are connected but hold no notes."
+    },
+    "noSources": {
+      "title": "No memory sources found",
+      "hint": "Berth looks for native Claude Code memory and united-memory (~/.united-memory)."
+    },
+    "noResults": {
+      "title": "No matching memories",
+      "hint": "No notes match the current search or source filter."
+    }
   },
   "common": {
     "scope": {

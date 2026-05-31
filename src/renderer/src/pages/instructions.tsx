@@ -23,8 +23,14 @@ import { useAppStore } from '@/stores/app'
 import { TabGroup, type TabDef } from '@/components/shared/tab-group'
 import { FilterBar } from '@/components/shared/filter-bar'
 import { DetailRow } from '@/components/shared/detail-row'
-import { AssetGuidePanel } from '@/components/shared/asset-guide-panel'
-import { buildAssetGuideEvidence, instructionGuideMap, type InstructionGuideId } from '@/lib/asset-guidance'
+import { EmptyState } from '@/components/shared/empty-state'
+import { FeatureGuidePanel } from '@/components/shared/feature-guide-panel'
+import {
+  buildFeatureGuideEvidence,
+  instructionGuideMap,
+  type FeatureGuideEvidence,
+  type InstructionGuideId
+} from '@/lib/feature-guidance'
 import type { Asset, AssetScope } from '@shared/types/asset'
 import { MemoryView } from '@/components/memory/memory-view'
 import { useMemory } from '@/hooks/use-memory'
@@ -62,15 +68,6 @@ function ScopeBadge({ scope }: { scope: AssetScope }): React.ReactElement {
     <span className={cn('inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold', colors[scope] ?? 'bg-muted text-muted-foreground')}>
       {t(`common.scope.${scope}`)}
     </span>
-  )
-}
-
-function EmptyState({ icon: Icon, message }: { icon: React.ComponentType<{ className?: string }>; message: string }): React.ReactElement {
-  return (
-    <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border py-16">
-      <Icon className="mb-3 h-10 w-10 text-muted-foreground/40" />
-      <p className="text-sm text-muted-foreground">{message}</p>
-    </div>
   )
 }
 
@@ -389,7 +386,16 @@ export function Instructions(): React.ReactElement {
     })
   }, [visibleAssets, activeTab, search, scope])
   const activeGuide = instructionGuideMap[activeTab as InstructionGuideId]
-  const activeEvidence = useMemo(() => buildAssetGuideEvidence(filteredAssets), [filteredAssets])
+  const activeEvidence = useMemo<FeatureGuideEvidence[]>(() => {
+    if (activeTab !== 'memories') return buildFeatureGuideEvidence(filteredAssets)
+
+    const availableSources = memoryResult.sources.filter((source) => source.available).length
+    return [
+      { labelKey: 'memory.evidence.notes', value: memoryResult.notes.length },
+      { labelKey: 'memory.evidence.sources', value: memoryResult.sources.length },
+      { labelKey: 'memory.evidence.availableSources', value: availableSources }
+    ]
+  }, [activeTab, filteredAssets, memoryResult.notes.length, memoryResult.sources])
 
   const renderContent = (): React.ReactElement => {
     if (activeTab === 'memories') {
@@ -459,7 +465,7 @@ export function Instructions(): React.ReactElement {
         />
       )}
 
-      {activeGuide && <AssetGuidePanel guide={activeGuide} evidence={activeEvidence} />}
+      {activeGuide && <FeatureGuidePanel guide={activeGuide} evidence={activeEvidence} agentView={agentView} />}
 
       {renderContent()}
     </div>

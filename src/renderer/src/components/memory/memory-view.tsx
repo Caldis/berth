@@ -16,6 +16,7 @@ import {
 import { cn, truncatePath, formatOptionalRelativeTime } from '@/lib/utils'
 import { useMemory } from '@/hooks/use-memory'
 import { useAppStore } from '@/stores/app'
+import { EmptyState } from '@/components/shared/empty-state'
 import type { MemoryNote, MemorySourceStatus, MemoryImportance } from '@shared/types/memory'
 
 // Color marks the exception, not the rule: `core` gets an emphasis hue (amber,
@@ -352,22 +353,22 @@ export function MemoryView(): React.ReactElement {
       <SourceFilter sources={result.sources} active={activeSource} total={result.notes.length} onChange={setActiveSource} />
 
       {notes.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border py-16">
-          <Brain className="mb-3 h-10 w-10 text-muted-foreground/40" />
-          <p className="text-sm text-muted-foreground">{t(`memory.${emptyKind}.title`, emptyFallback[emptyKind].title)}</p>
-          <p className="mt-1 text-xs text-muted-foreground/70">{t(`memory.${emptyKind}.hint`, emptyFallback[emptyKind].hint)}</p>
-          {emptyKind === 'noResults' && hasFilters && (
+        <EmptyState
+          icon={Brain}
+          title={t(`memory.${emptyKind}.title`, emptyFallback[emptyKind].title)}
+          description={t(`memory.${emptyKind}.hint`, emptyFallback[emptyKind].hint)}
+          action={emptyKind === 'noResults' && hasFilters ? (
             <button
               onClick={() => {
                 setSearch('')
                 setActiveSource('all')
               }}
-              className="mt-3 rounded-md border border-border px-3 py-1 text-xs font-medium text-foreground transition-colors hover:bg-accent"
+              className="rounded-md border border-border px-3 py-1 text-xs font-medium text-foreground transition-colors hover:bg-accent"
             >
               {t('memory.clearFilters', 'Clear filters')}
             </button>
-          )}
-        </div>
+          ) : null}
+        />
       ) : (
         <div className="space-y-2">
           {notes.map((note) => (

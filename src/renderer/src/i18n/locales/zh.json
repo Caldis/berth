@@ -66,6 +66,7 @@
     "title": "指令",
     "tabs": {
       "memories": "记忆",
+      "conventions": "约定",
       "skills": "Skills",
       "subagents": "子代理",
       "commands": "命令",
@@ -98,15 +99,43 @@
         "codexSubagents": "Codex 子代理"
       },
       "memories": {
+        "title": "跨来源记忆笔记",
+        "summary": "Berth 会把原生记忆文件和本地长期笔记放在一起，帮助你看清哪些长期事实可能影响后续会话。",
+        "points": {
+          "role": "记忆适合保存会跨越单次聊天的事实、决策和偏好。",
+          "scope": "来源类型说明这条内容来自原生 Agent 记忆、仓库指令，还是本地记忆库。",
+          "review": "当 Agent 反复遵循过期上下文时，应检查陈旧或高优先级记忆。"
+        },
+        "providers": {
+          "claude": "Claude Code 记忆文件可保存用户级和项目级上下文。",
+          "codex": "Codex 通过 AGENTS.md 和导入指令接收持久仓库规则。",
+          "abstract": "Berth 也会汇总不绑定单一 provider 的本地记忆笔记。"
+        },
+        "insights": {
+          "sources": {
+            "title": "来源类型",
+            "body": "不同来源有不同加载规则。来源不是单纯存储路径，也是理解这条内容的一部分。"
+          },
+          "priority": {
+            "title": "优先级要克制",
+            "body": "核心记忆比归档记忆更强，应当更少，并定期复查。"
+          },
+          "review": {
+            "title": "保持当前有效",
+            "body": "记忆只有在仍然真实时才有价值。旧决策和临时偏好不应长期变成规则。"
+          }
+        }
+      },
+      "conventions": {
         "title": "持久指令上下文",
-        "summary": "记忆文件是 Agent 开始工作前会加载的持久指令。它们承载项目规则、团队约定、个人偏好和导入内容。",
+        "summary": "指令文件是 Agent 开始工作前会加载的持久规则。它们承载项目规则、团队约定、个人偏好和导入内容。",
         "points": {
           "role": "适合放会影响很多任务的事实和规则，不适合放一次性提示。",
           "scope": "作用域说明谁会收到这条指令: 单个用户、当前项目或组织策略。",
           "review": "当 Agent 遵循了意外规则时，先检查导入链和优先级。"
         },
         "providers": {
-          "claude": "Claude Code 会把项目级和用户级记忆文件加载到工作上下文。",
+          "claude": "Claude Code 会把 CLAUDE.md 文件加载到工作上下文。",
           "codex": "Codex 在开始工作前读取 AGENTS.md 作为仓库指令。"
         }
       },
@@ -900,6 +929,37 @@
   },
   "inspector": {
     "copy": "复制到剪贴板"
+  },
+  "memory": {
+    "allSources": "全部来源",
+    "searchPlaceholder": "搜索记忆…",
+    "refresh": "刷新",
+    "relations": "相关",
+    "clearFilters": "清除筛选",
+    "sourceError": "来源不可用: {{error}}",
+    "evidence": {
+      "notes": "条记忆",
+      "sources": "个来源",
+      "availableSources": "个可用来源"
+    },
+    "importanceHint": {
+      "core": "核心 — 每次会话都会进入上下文",
+      "active": "活跃 — 相关时按需加载",
+      "archive": "归档 — 仅作参考，不自动加载",
+      "unknown": "未指定重要性"
+    },
+    "empty": {
+      "title": "暂无记忆",
+      "hint": "记忆来源已连接，但还没有笔记。"
+    },
+    "noSources": {
+      "title": "未发现记忆来源",
+      "hint": "Berth 会查找原生 Claude Code 记忆和 united-memory (~/.united-memory)。"
+    },
+    "noResults": {
+      "title": "没有匹配的记忆",
+      "hint": "当前搜索或来源筛选下没有匹配笔记。"
+    }
   },
   "common": {
     "scope": {

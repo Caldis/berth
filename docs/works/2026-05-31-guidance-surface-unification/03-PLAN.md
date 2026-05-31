@@ -14,11 +14,11 @@
   - 新增 memories / sessions guide 定义。
   - 验证: `pnpm test -- tests/renderer/feature-guidance.test.ts`。
 
-- [ ] 任务 3: 补全 Instructions / Memories。
+- [x] 任务 3: 补全 Instructions / Memories。
   - memories tab 渲染统一功能说明。
   - conventions guide key 从 memories 命名拆出。
   - `MemoryView` 空态改用扩展后的 `EmptyState`, 文案进入 i18n。
-  - 验证: instructions / memory renderer 测试。
+  - 验证: `pnpm test -- tests/renderer/instructions-guidance.test.tsx`。
 
 - [ ] 任务 4: 合并 Capabilities / Hooks 重复说明。
   - 外层 guide 承接 hooks 概念说明和三张 insight。
