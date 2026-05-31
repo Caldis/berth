@@ -149,6 +149,12 @@ function mockSessionApis(): void {
   window.api.assets.healthCheck = vi.fn(async () => [])
 }
 
+function selectSessionDetailTab(label: RegExp): void {
+  const tab = screen.getByRole('tab', { name: label })
+  fireEvent.mouseDown(tab)
+  fireEvent.click(tab)
+}
+
 describe('session pages', () => {
   it('renders overview recent sessions with readable path, tokens, and unknown cost', async () => {
     mockSessionApis()
@@ -238,12 +244,21 @@ describe('session pages', () => {
     expect(screen.getByText('60.6%')).toBeInTheDocument()
     expect(screen.getByText('frontend-design')).toBeInTheDocument()
     expect(screen.getByText('plugin_playwright_playwright')).toBeInTheDocument()
-    expect(screen.getByText('Edit')).toBeInTheDocument()
-    expect(screen.getAllByText('2s').length).toBeGreaterThan(0)
-    expect(screen.getByText('Verify UI')).toBeInTheDocument()
-    expect(screen.getAllByText('D:\\Code\\berth\\src\\main.ts').length).toBeGreaterThan(0)
     expect(screen.getByText('Stop')).toBeInTheDocument()
     expect(screen.getByText('2x')).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: /Overview/ })).toHaveAttribute('data-state', 'active')
+    expect(screen.getByRole('tab', { name: /Timeline/ })).toHaveTextContent('2')
+    expect(screen.getByRole('tab', { name: /Artifacts/ })).toHaveTextContent('3')
+    expect(screen.queryByText('Edit')).not.toBeInTheDocument()
+    expect(screen.queryByText('Verify UI')).not.toBeInTheDocument()
+
+    selectSessionDetailTab(/Timeline/)
+    expect(screen.getByText('Edit')).toBeInTheDocument()
+    expect(screen.getAllByText('2s').length).toBeGreaterThan(0)
+
+    selectSessionDetailTab(/Artifacts/)
+    expect(screen.getByText('Verify UI')).toBeInTheDocument()
+    expect(screen.getAllByText('D:\\Code\\berth\\src\\main.ts').length).toBeGreaterThan(0)
   })
 
   it('filters session detail tools by minimum duration', async () => {
@@ -257,7 +272,9 @@ describe('session pages', () => {
       </MemoryRouter>
     )
 
-    expect(await screen.findByText('Edit')).toBeInTheDocument()
+    expect(await screen.findByText('Fix session metadata')).toBeInTheDocument()
+    selectSessionDetailTab(/Timeline/)
+    expect(screen.getByText('Edit')).toBeInTheDocument()
     expect(screen.getByTestId('tool-timeline-scroll')).toHaveClass('overflow-x-hidden')
 
     fireEvent.click(screen.getByRole('button', { name: /Failed/ }))
@@ -332,10 +349,14 @@ describe('session pages', () => {
       </MemoryRouter>
     )
 
-    expect(await screen.findByText('3 checkpoints recorded')).toBeInTheDocument()
+    expect(await screen.findByText('Fix session metadata')).toBeInTheDocument()
+    selectSessionDetailTab(/Artifacts/)
+    expect(screen.getByText('3 checkpoints recorded')).toBeInTheDocument()
     expect(screen.getByText(/Checkpoints are file-history snapshots/)).toBeInTheDocument()
     expect(screen.getByText('Missing details')).toBeInTheDocument()
     expect(screen.queryByText('File history checkpoint')).not.toBeInTheDocument()
+
+    selectSessionDetailTab(/Timeline/)
     expect(screen.getByText(/Runs a subagent in a separate context/)).toBeInTheDocument()
     expect(screen.getByText(/waits for your answer/)).toBeInTheDocument()
   })
@@ -366,8 +387,10 @@ describe('session pages', () => {
       </MemoryRouter>
     )
 
-    expect(await screen.findByText('No tool events recorded')).toBeInTheDocument()
-    expect(screen.getByText('No skills were loaded')).toBeInTheDocument()
+    expect(await screen.findByText('No skills were loaded')).toBeInTheDocument()
+    selectSessionDetailTab(/Timeline/)
+    expect(screen.getByText('No tool events recorded')).toBeInTheDocument()
+    selectSessionDetailTab(/Artifacts/)
     expect(screen.getByText('No artifacts recorded')).toBeInTheDocument()
     expect(screen.queryAllByText('Nothing here yet')).toHaveLength(0)
   })
