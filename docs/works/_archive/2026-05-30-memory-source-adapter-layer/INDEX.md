@@ -1,7 +1,7 @@
 ---
 task: 2026-05-30-memory-source-adapter-layer
 type: feature
-phase: verify
+phase: archive
 created: 2026-05-30
 artifacts:
   source: 00-PRD.md
