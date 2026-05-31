@@ -221,6 +221,15 @@
       "cacheSourceFromTranscript": "缓存 token 来自 transcript 里的 cache_read_input_tokens、cache_creation_input_tokens、cached_input_tokens 等 usage 字段。Berth 不会从文本内容猜缓存命中。",
       "cacheSourceUnavailable": "这个 transcript 没有暴露 token breakdown，因此 Berth 无法识别缓存 token。",
       "referenceLink": "打开官方模型资料"
+    },
+    "tabs": {
+      "label": "会话详情分区",
+      "overview": "概览",
+      "overviewDescription": "运行指标和会话信号",
+      "timeline": "时间线",
+      "timelineDescription": "工具调用、筛选和耗时",
+      "artifacts": "产物",
+      "artifactsDescription": "计划、待办、文件和 checkpoints"
     }
   },
   "instructions": {

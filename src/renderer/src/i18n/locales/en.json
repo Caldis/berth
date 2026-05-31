@@ -221,6 +221,15 @@
       "cacheSourceFromTranscript": "Cache tokens come from transcript usage fields such as cache_read_input_tokens, cache_creation_input_tokens, and cached_input_tokens. Berth does not infer cache hits from text.",
       "cacheSourceUnavailable": "This transcript did not expose a token breakdown, so Berth cannot identify cache tokens.",
       "referenceLink": "Open official model reference"
+    },
+    "tabs": {
+      "label": "Session detail sections",
+      "overview": "Overview",
+      "overviewDescription": "Run metrics and session signals",
+      "timeline": "Timeline",
+      "timelineDescription": "Tool calls, filters, and latency",
+      "artifacts": "Artifacts",
+      "artifactsDescription": "Plans, todos, files, checkpoints"
     }
   },
   "instructions": {
