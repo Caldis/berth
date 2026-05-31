@@ -41,8 +41,10 @@ verify 不通过项作为新任务追加于此, phase 退回 implement。
   - 真实界面验收: 使用 `pnpm dev:agent start --id session-overview-card-verify` 启动 agent-owned dev server; 因 5173 被占用, 继续使用 5174 renderer 启动临时 Electron 实例验收。截图确认运行概览主值、token 总量和 token 条形均已放大, 卡片内容不再显得过空。验收后已关闭临时 Electron、`pnpm dev:agent stop session-overview-card-verify`; `guard after` 确认用户 dev 进程未受影响。
 
 - 2026-06-01 follow-up feedback:
-  - [ ] 任务 13: 工具时间线移除横向滚动并按 bobcorn 样式调整滚动条内缩, verify: renderer 测试覆盖时间线容器不使用横向滚动, 真实界面无底部横向条。
-  - [ ] 任务 14: 工具时间线增加失败工具快速筛选, verify: renderer 测试覆盖只看失败工具。
-  - [ ] 任务 15: 重新设计耗时 slider, verify: renderer 测试保留最小耗时筛选能力, 真实界面确认控件不贴边且可读。
+  - [x] 任务 13: 工具时间线移除横向滚动并按 bobcorn 样式调整滚动条内缩, verify: renderer 测试覆盖时间线容器不使用横向滚动, 真实界面无底部横向条。
+  - [x] 任务 14: 工具时间线增加失败工具快速筛选, verify: renderer 测试覆盖只看失败工具。
+  - [x] 任务 15: 重新设计耗时 slider, verify: renderer 测试保留最小耗时筛选能力, 真实界面确认控件不贴边且可读。
   - [ ] 任务 16: 模型名称 hover 展示 provider、价格、上下文和 token 缓存来源说明, verify: renderer 测试覆盖模型信息 tooltip。
   - [ ] 任务 17: 运行概览移除项目卡片、时间卡片展示具体日期和相对时间, checkpoint 空明细改成可用解释和可展示字段摘要, verify: renderer 测试覆盖时间卡片与 checkpoint 摘要。
+  - `pnpm test -- tests/renderer/sessions-pages.test.tsx` 通过。
+  - `pnpm typecheck:web` 通过。

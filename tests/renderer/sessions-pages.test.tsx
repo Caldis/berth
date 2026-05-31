@@ -232,6 +232,15 @@ describe('session pages', () => {
     )
 
     expect(await screen.findByText('Edit')).toBeInTheDocument()
+    expect(screen.getByTestId('tool-timeline-scroll')).toHaveClass('overflow-x-hidden')
+
+    fireEvent.click(screen.getByRole('button', { name: /Failed/ }))
+    expect(screen.queryByText('Edit')).not.toBeInTheDocument()
+    expect(screen.getAllByText('Bash').length).toBeGreaterThan(0)
+    expect(screen.getByText('Showing 1 of 2')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: /All/ }))
+    expect(screen.getByText('Edit')).toBeInTheDocument()
 
     fireEvent.change(screen.getByLabelText('Minimum tool duration'), {
       target: { value: '1500' }

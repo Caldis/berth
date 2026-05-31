@@ -618,15 +618,21 @@ function CheckpointsContent({
 function ToolTimeline({ events }: { events: SessionToolEvent[] }): React.ReactElement {
   const { t } = useTranslation()
   const [durationThresholdMs, setDurationThresholdMs] = useState(0)
+  const [statusFilter, setStatusFilter] = useState<'all' | 'failed'>('all')
   const durationRange = useMemo(() => buildDurationFilterRange(events), [events])
   const activeThresholdMs = Math.min(durationThresholdMs, durationRange.maxMs)
+  const failedEvents = useMemo(() => events.filter((event) => event.status === 'error'), [events])
   const filteredEvents = useMemo(() => {
-    if (activeThresholdMs <= 0) return events
     return events.filter((event) => {
+      if (statusFilter === 'failed' && event.status !== 'error') return false
+      if (activeThresholdMs <= 0) return true
       const durationMs = getToolDurationMs(event)
       return durationMs != null && durationMs >= activeThresholdMs
     })
-  }, [activeThresholdMs, events])
+  }, [activeThresholdMs, events, statusFilter])
+  const durationProgress = durationRange.maxMs > 0
+    ? `${Math.min(100, (activeThresholdMs / durationRange.maxMs) * 100)}%`
+    : '0%'
 
   if (events.length === 0) {
     return (
@@ -640,41 +646,81 @@ function ToolTimeline({ events }: { events: SessionToolEvent[] }): React.ReactEl
   return (
     <div>
       <div className="border-b border-border bg-muted/10 px-4 py-3">
-        <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-center">
-          <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-            <span className="inline-flex items-center gap-1.5">
-              <SlidersHorizontal className="h-3.5 w-3.5" />
-              {t('sessions.toolFilter.showing', {
-                shown: filteredEvents.length,
-                total: events.length
-              })}
-            </span>
-            {activeThresholdMs > 0 && (
-              <span className="rounded-md bg-primary/10 px-1.5 py-0.5 font-medium tabular-nums text-primary">
-                {t('sessions.toolFilter.minDuration', {
-                  duration: formatDurationMs(activeThresholdMs)
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+              <span className="inline-flex items-center gap-1.5">
+                <SlidersHorizontal className="h-3.5 w-3.5" />
+                {t('sessions.toolFilter.showing', {
+                  shown: filteredEvents.length,
+                  total: events.length
                 })}
               </span>
-            )}
+              {activeThresholdMs > 0 && (
+                <span className="rounded-md bg-primary/10 px-1.5 py-0.5 font-medium tabular-nums text-primary">
+                  {t('sessions.toolFilter.minDuration', {
+                    duration: formatDurationMs(activeThresholdMs)
+                  })}
+                </span>
+              )}
+            </div>
+            <div className="inline-flex rounded-lg border border-border bg-background p-0.5 text-xs">
+              <button
+                type="button"
+                aria-pressed={statusFilter === 'all'}
+                onClick={() => setStatusFilter('all')}
+                className={cn(
+                  'inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 font-medium transition-colors',
+                  statusFilter === 'all'
+                    ? 'bg-card text-card-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-card-foreground'
+                )}
+              >
+                {t('sessions.toolFilter.allStatuses', { defaultValue: 'All' })}
+                <span className="tabular-nums text-muted-foreground">{events.length}</span>
+              </button>
+              <button
+                type="button"
+                aria-pressed={statusFilter === 'failed'}
+                onClick={() => setStatusFilter('failed')}
+                className={cn(
+                  'inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 font-medium transition-colors',
+                  statusFilter === 'failed'
+                    ? 'bg-destructive/10 text-destructive'
+                    : 'text-muted-foreground hover:text-card-foreground'
+                )}
+              >
+                {t('sessions.toolFilter.failedOnly', { defaultValue: 'Failed' })}
+                <span className="tabular-nums text-muted-foreground">{failedEvents.length}</span>
+              </button>
+            </div>
           </div>
-          <label className="grid gap-1 text-xs text-muted-foreground">
+
+          <label className="grid gap-2 text-xs text-muted-foreground">
             <span className="flex items-center justify-between">
               <span>{t('sessions.toolFilter.label')}</span>
               <span className="font-medium tabular-nums text-card-foreground">
                 {formatDurationThreshold(activeThresholdMs, t)}
               </span>
             </span>
-            <input
-              aria-label={t('sessions.toolFilter.ariaLabel')}
-              type="range"
-              min={0}
-              max={durationRange.maxMs}
-              step={durationRange.stepMs}
-              value={activeThresholdMs}
-              disabled={durationRange.maxMs === 0}
-              onChange={(event) => setDurationThresholdMs(Number(event.target.value))}
-              className="h-1.5 w-full cursor-pointer appearance-none rounded-full bg-muted accent-primary disabled:cursor-not-allowed disabled:opacity-50"
-            />
+            <div className="flex items-center gap-3">
+              <span className="w-5 shrink-0 tabular-nums text-muted-foreground">0</span>
+              <input
+                aria-label={t('sessions.toolFilter.ariaLabel')}
+                type="range"
+                min={0}
+                max={durationRange.maxMs}
+                step={durationRange.stepMs}
+                value={activeThresholdMs}
+                disabled={durationRange.maxMs === 0}
+                onChange={(event) => setDurationThresholdMs(Number(event.target.value))}
+                style={{ '--duration-filter-progress': durationProgress } as React.CSSProperties & Record<string, string>}
+                className="duration-filter-range min-w-0 flex-1 disabled:cursor-not-allowed disabled:opacity-50"
+              />
+              <span className="w-12 shrink-0 text-right tabular-nums text-card-foreground">
+                {durationRange.maxMs <= 0 ? '—' : formatDurationMs(durationRange.maxMs)}
+              </span>
+            </div>
           </label>
         </div>
       </div>
@@ -685,8 +731,8 @@ function ToolTimeline({ events }: { events: SessionToolEvent[] }): React.ReactEl
           description={t('sessions.toolFilter.emptyDescription')}
         />
       ) : (
-        <div className="max-h-[720px] overflow-auto">
-          <div className="relative min-w-[700px]">
+        <div data-testid="tool-timeline-scroll" className="max-h-[720px] overflow-y-auto overflow-x-hidden overscroll-contain">
+          <div className="relative min-w-0">
             <span className="absolute bottom-0 left-[25px] top-0 w-px bg-border" aria-hidden="true" />
             {filteredEvents.map((event) => {
               const durationMs = getToolDurationMs(event)
@@ -695,7 +741,7 @@ function ToolTimeline({ events }: { events: SessionToolEvent[] }): React.ReactEl
               return (
                 <div
                   key={event.id}
-                  className="relative grid min-h-9 grid-cols-[1.25rem_minmax(8rem,11rem)_minmax(0,1fr)_5.5rem_4.75rem] items-center gap-2 px-4 py-1.5 text-xs transition-colors hover:bg-accent/5"
+                  className="relative grid min-h-9 grid-cols-[1.25rem_minmax(0,1fr)_minmax(3.5rem,4rem)] items-center gap-2 px-4 py-1.5 text-xs transition-colors hover:bg-accent/5 sm:grid-cols-[1.25rem_minmax(0,10rem)_minmax(0,1fr)_minmax(3.75rem,4.5rem)_minmax(3.5rem,4.25rem)]"
                 >
                   <span className="relative z-10 flex h-5 w-5 items-center justify-center rounded-full bg-card">
                     <TimelineStatusIcon status={event.status} />
@@ -723,13 +769,13 @@ function ToolTimeline({ events }: { events: SessionToolEvent[] }): React.ReactEl
                       )}
                     </div>
                   </div>
-                  <span className="min-w-0 truncate text-muted-foreground" title={evidence}>
+                  <span className="hidden min-w-0 truncate text-muted-foreground sm:block" title={evidence}>
                     {evidence}
                   </span>
-                  <span className="text-right tabular-nums text-muted-foreground">
+                  <span className="hidden text-right tabular-nums text-muted-foreground sm:block">
                     {formatOptionalRelativeTime(event.startedAt)}
                   </span>
-                  <span className="rounded-md bg-primary/10 px-1.5 py-0.5 text-right font-medium tabular-nums text-primary">
+                  <span className="min-w-0 rounded-md bg-primary/10 px-1.5 py-0.5 text-right font-medium tabular-nums text-primary">
                     {durationMs == null ? t('sessions.durationUnknown') : formatDurationMs(durationMs)}
                   </span>
                 </div>
