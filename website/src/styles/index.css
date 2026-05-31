@@ -3,29 +3,28 @@
 @tailwind utilities;
 
 :root {
-  /* Timber & Rust — warm, earthy, masculine (R G B triplets).
-     --harbor is the primary rust accent; --amber the ochre secondary. */
-  --paper: 245 240 232;
-  --surface: 254 251 246;
-  --ink: 33 26 20;
-  --muted: 120 107 92;
-  --line: 229 219 204;
-  --harbor: 181 85 40;
-  --harbor-deep: 138 60 28;
-  --harbor-soft: 243 229 216;
-  --amber: 166 117 43;
+  /* Handhold-inspired — light, cool, friendly. --harbor is the indigo accent. */
+  --paper: 250 250 254;
+  --surface: 255 255 255;
+  --ink: 26 23 45;
+  --muted: 100 97 122;
+  --line: 233 231 246;
+  --harbor: 79 70 229;
+  --harbor-deep: 67 56 202;
+  --harbor-soft: 238 236 254;
+  --amber: 139 92 246;
 }
 
 .dark {
-  --paper: 24 19 15;
-  --surface: 33 26 20;
-  --ink: 240 231 219;
-  --muted: 168 152 133;
-  --line: 56 45 36;
-  --harbor: 224 122 66;
-  --harbor-deep: 201 100 52;
-  --harbor-soft: 48 34 24;
-  --amber: 211 159 87;
+  --paper: 17 16 28;
+  --surface: 25 23 40;
+  --ink: 237 236 248;
+  --muted: 158 155 178;
+  --line: 44 41 64;
+  --harbor: 129 124 255;
+  --harbor-deep: 110 100 245;
+  --harbor-soft: 38 34 60;
+  --amber: 167 139 250;
 }
 
 @layer base {
@@ -46,18 +45,18 @@
     @apply mx-auto w-full max-w-content px-5 sm:px-8;
   }
   .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-harbor/50;
+    @apply inline-flex items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-semibold transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-harbor/40;
   }
   .btn-primary {
     @apply btn bg-harbor text-white shadow-soft hover:bg-harbor-deep hover:shadow-lift;
   }
   .btn-ghost {
-    @apply btn border border-line bg-surface text-ink hover:border-harbor/40 hover:bg-harbor-soft/40;
+    @apply btn border border-line bg-surface text-ink hover:border-harbor/40 hover:bg-harbor-soft/50;
   }
   .card {
-    @apply rounded-2xl border border-line bg-surface p-6 shadow-soft transition-all duration-200;
+    @apply rounded-3xl border border-line bg-surface p-6 shadow-soft transition-all duration-200;
   }
   .eyebrow {
-    @apply inline-flex items-center gap-2 rounded-full border border-line bg-surface px-3 py-1 text-xs font-medium text-muted;
+    @apply inline-flex items-center gap-2 rounded-full border border-line bg-surface px-3.5 py-1.5 text-xs font-semibold text-harbor-deep;
   }
 }

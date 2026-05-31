@@ -12,6 +12,7 @@ export default {
         ink: 'rgb(var(--ink) / <alpha-value>)',
         muted: 'rgb(var(--muted) / <alpha-value>)',
         line: 'rgb(var(--line) / <alpha-value>)',
+        /* primary accent (indigo). token name kept for stability across components */
         harbor: {
           DEFAULT: 'rgb(var(--harbor) / <alpha-value>)',
           deep: 'rgb(var(--harbor-deep) / <alpha-value>)',
@@ -21,7 +22,7 @@ export default {
       },
       fontFamily: {
         sans: [
-          '"Hanken Grotesk"',
+          '"Plus Jakarta Sans"',
           '"PingFang SC"',
           '"Microsoft YaHei"',
           '"Hiragino Sans"',
@@ -32,7 +33,7 @@ export default {
           'sans-serif',
         ],
         display: [
-          '"Space Grotesk"',
+          '"Plus Jakarta Sans"',
           '"PingFang SC"',
           '"Microsoft YaHei"',
           '"Hiragino Sans"',
@@ -43,13 +44,13 @@ export default {
         mono: ['"JetBrains Mono"', 'ui-monospace', 'SFMono-Regular', 'monospace'],
       },
       borderRadius: {
-        xl: '0.875rem',
+        xl: '1rem',
         '2xl': '1.25rem',
         '3xl': '1.75rem',
       },
       boxShadow: {
-        soft: '0 1px 2px rgb(38 26 18 / 0.05), 0 8px 24px rgb(38 26 18 / 0.07)',
-        lift: '0 2px 6px rgb(38 26 18 / 0.07), 0 18px 44px rgb(38 26 18 / 0.12)',
+        soft: '0 1px 3px rgb(30 27 75 / 0.05), 0 12px 32px rgb(30 27 75 / 0.08)',
+        lift: '0 4px 14px rgb(30 27 75 / 0.10), 0 28px 64px rgb(30 27 75 / 0.16)',
       },
       maxWidth: {
         content: '72rem',
