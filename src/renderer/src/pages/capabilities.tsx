@@ -377,34 +377,6 @@ function getWorstDiagnosticLevel(diagnostics: StatusLineDiagnostic[]): StatusLin
   return 'ok'
 }
 
-function StatusLineIntro({ agentView }: { agentView: AgentView }): React.ReactElement {
-  const { t } = useTranslation()
-
-  return (
-    <div className="rounded-lg border border-border bg-card px-4 py-3">
-      <div className="flex items-start gap-3">
-        <Activity className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-        <div className="min-w-0">
-          <h2 className="text-sm font-semibold text-foreground">{t('capabilities.statusLine.intro.title')}</h2>
-          <p className="mt-1 max-w-[78ch] text-sm leading-6 text-muted-foreground">
-            {t(`capabilities.statusLine.intro.${agentView}`)}
-          </p>
-        </div>
-      </div>
-      <div className="mt-3 grid gap-3 md:grid-cols-2">
-        <div className="rounded-md border border-border/70 px-3 py-2">
-          <p className="text-xs font-medium text-foreground">{t('capabilities.statusLine.model.claude.title')}</p>
-          <p className="mt-1 text-xs leading-5 text-muted-foreground">{t('capabilities.statusLine.model.claude.body')}</p>
-        </div>
-        <div className="rounded-md border border-border/70 px-3 py-2">
-          <p className="text-xs font-medium text-foreground">{t('capabilities.statusLine.model.codex.title')}</p>
-          <p className="mt-1 text-xs leading-5 text-muted-foreground">{t('capabilities.statusLine.model.codex.body')}</p>
-        </div>
-      </div>
-    </div>
-  )
-}
-
 function StatusLineSummary({ viewModels }: { viewModels: StatusLineViewModel[] }): React.ReactElement {
   const { t } = useTranslation()
   const assets = viewModels.map((viewModel) => viewModel.asset)
@@ -632,7 +604,6 @@ export function StatusLineSection({ assets, agentView }: { assets: Asset[]; agen
 
   return (
     <div className="space-y-3">
-      <StatusLineIntro agentView={agentView} />
       {assets.length === 0 ? (
         <>
           <EmptyState icon={Activity} message={t(`capabilities.statusLine.empty.${agentView}`)} />

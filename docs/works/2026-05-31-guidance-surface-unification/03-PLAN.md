@@ -25,11 +25,11 @@
   - `HooksLifecycleView` 保留控制区、开关、健康摘要、生命周期和对比内容。
   - 验证: `pnpm test -- tests/renderer/hooks-lifecycle-view.test.tsx tests/renderer/capabilities-guidance.test.tsx tests/renderer/feature-guide-panel.test.tsx tests/renderer/feature-guidance.test.ts`。
 
-- [ ] 任务 5: 合并 Capabilities / Status Line 重复说明。
+- [x] 任务 5: 合并 Capabilities / Status Line 重复说明。
   - 外层 guide 承接 Claude / Codex 模型说明。
   - `StatusLineIntro` 删除或内联消解为 guide insight。
   - `StatusLineSection` 保留 summary、default footer、cards、diagnostics。
-  - 验证: status line renderer 测试。
+  - 验证: `pnpm test -- tests/renderer/status-line-section.test.tsx tests/renderer/capabilities-guidance.test.tsx tests/renderer/feature-guide-panel.test.tsx tests/renderer/feature-guidance.test.ts`。
 
 - [ ] 任务 6: 补全 Sessions。
   - sessions 列表页新增统一功能说明。

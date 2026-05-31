@@ -22,6 +22,24 @@ function hookAsset(): Asset {
   }
 }
 
+function statusLineAsset(): Asset {
+  return {
+    id: 'codex-status',
+    agentId: 'codex',
+    category: 'capability',
+    type: 'statusline',
+    scope: 'user',
+    name: 'TUI Status Line',
+    path: 'C:\\Users\\test\\.codex\\config.toml',
+    meta: {
+      provider: 'codex',
+      settingKey: 'tui.status_line',
+      statusLineKind: 'footer-items',
+      items: ['model-with-reasoning', 'current-dir']
+    }
+  }
+}
+
 describe('Capabilities guidance surfaces', () => {
   beforeEach(() => {
     useAppStore.setState({ assets: [hookAsset()], agentView: 'all' })
@@ -37,5 +55,18 @@ describe('Capabilities guidance surfaces', () => {
     expect(screen.getByText('Agent differences')).toBeInTheDocument()
     expect(screen.queryByText('What are hooks?')).not.toBeInTheDocument()
     expect(screen.getByText('Hook health checks')).toBeInTheDocument()
+  })
+
+  it('keeps status line model guidance in the page guide instead of the status tool', async () => {
+    useAppStore.setState({ assets: [statusLineAsset()], agentView: 'all' })
+    render(<Capabilities />)
+
+    fireEvent.click(screen.getByRole('button', { name: /Status Line/ }))
+
+    expect(await screen.findByText('Runtime status surface')).toBeInTheDocument()
+    expect(screen.getAllByText('Claude Code command')).toHaveLength(1)
+    expect(screen.getAllByText(/Reads \[tui\]\.status_line from config\.toml/)).toHaveLength(1)
+    expect(screen.queryByText('Status lines show live session state')).not.toBeInTheDocument()
+    expect(screen.getByText('tui.status_line')).toBeInTheDocument()
   })
 })

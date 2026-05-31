@@ -37,7 +37,8 @@ describe('StatusLineSection', () => {
       })
     ])
 
-    expect(screen.getByText(/Claude Code status lines are command-backed settings from settings.json/)).toBeInTheDocument()
+    expect(screen.queryByText('Status lines show live session state')).not.toBeInTheDocument()
+    expect(screen.queryByText('Claude Code command')).not.toBeInTheDocument()
     expect(screen.getByText('statusLine')).toBeInTheDocument()
     expect(screen.getByText('pwsh C:\\Users\\test\\.claude\\statusline.ps1')).toBeInTheDocument()
     expect(screen.getByText('disableAllHooks is enabled in this settings file.')).toBeInTheDocument()
@@ -56,7 +57,8 @@ describe('StatusLineSection', () => {
       })
     ])
 
-    expect(screen.getByText(/Codex status lines are built-in TUI footer items persisted in config.toml/)).toBeInTheDocument()
+    expect(screen.queryByText('Status lines show live session state')).not.toBeInTheDocument()
+    expect(screen.queryByText(/Reads \[tui\]\.status_line from config\.toml/)).not.toBeInTheDocument()
     expect(screen.getByText('tui.status_line')).toBeInTheDocument()
     expect(screen.getByText('model-with-reasoning')).toBeInTheDocument()
     expect(screen.getByText('not-a-real-item')).toBeInTheDocument()
@@ -81,7 +83,7 @@ describe('StatusLineSection', () => {
   it('keeps an explanatory empty state visible', () => {
     renderStatusLine('all', [])
 
-    expect(screen.getByText('Status lines show live session state')).toBeInTheDocument()
+    expect(screen.queryByText('Status lines show live session state')).not.toBeInTheDocument()
     expect(screen.getByText(/No status line config was found/)).toBeInTheDocument()
     expect(screen.getByText('Codex default footer')).toBeInTheDocument()
     expect(screen.getByText('model-with-reasoning')).toBeInTheDocument()
