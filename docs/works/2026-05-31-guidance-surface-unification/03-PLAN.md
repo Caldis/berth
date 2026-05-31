@@ -37,10 +37,10 @@
   - session detail 只补 section 空态说明, 不加大 guide。
   - 验证: `pnpm test -- tests/renderer/sessions-pages.test.tsx`。
 
-- [ ] 任务 7: 统一剩余提示风格。
+- [x] 任务 7: 统一剩余提示风格。
   - Usage 的刷新失败、价格缺口迁移到 `NoticePanel`。
-  - Overview / Settings 中明显的空态和局部提示保持轻量一致。
-  - 验证: 相关 renderer 测试和 `pnpm typecheck:web`。
+  - Settings 本地来源空态迁移到共享 `EmptyState`。
+  - 验证: `pnpm test -- tests/renderer/settings-sources.test.tsx`, `pnpm test -- tests/renderer/sessions-pages.test.tsx`, `pnpm typecheck:web`。
 
 - [ ] 任务 8: 收口验证。
   - `pnpm test -- tests/renderer/feature-guide-panel.test.tsx tests/renderer/feature-guidance.test.ts tests/renderer/hooks-lifecycle-view.test.tsx tests/renderer/status-line-section.test.tsx tests/renderer/sessions-pages.test.tsx`

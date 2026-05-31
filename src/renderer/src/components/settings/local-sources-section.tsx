@@ -7,6 +7,7 @@ import {
   FileText,
   FolderOpen
 } from 'lucide-react'
+import { EmptyState } from '@/components/shared/empty-state'
 import { cn } from '@/lib/utils'
 import type {
   AssetCategory,
@@ -56,7 +57,13 @@ export function LocalSourcesSection({
       <div className="rounded-lg border border-border bg-card">
         {loading && <div className="p-4 text-sm text-muted-foreground">{t('common.loading')}</div>}
         {!loading && groups.length === 0 && (
-          <div className="p-4 text-sm text-muted-foreground">{t('settings.localSourcesEmpty')}</div>
+          <div className="p-4">
+            <EmptyState
+              icon={FolderOpen}
+              message={t('settings.localSourcesEmpty')}
+              className="border-0 py-8"
+            />
+          </div>
         )}
         {!loading &&
           groups.map((group, groupIndex) => {
@@ -144,8 +151,12 @@ export function LocalSourcesSection({
                     ))}
                   </div>
                 ) : expanded ? (
-                  <div className="border-t border-border/70 px-4 py-3 text-xs text-muted-foreground">
-                    {t('settings.noSourceRoots')}
+                  <div className="border-t border-border/70 px-4 py-3">
+                    <EmptyState
+                      icon={FolderOpen}
+                      message={t('settings.noSourceRoots')}
+                      className="border-0 py-6"
+                    />
                   </div>
                 ) : null}
               </div>

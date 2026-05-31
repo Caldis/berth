@@ -11,7 +11,7 @@ import {
   Pie,
   Cell
 } from 'recharts'
-import { AlertTriangle, Calculator, DollarSign, Coins, Gauge, FlaskConical, Copy } from 'lucide-react'
+import { Calculator, DollarSign, Coins, Gauge, FlaskConical, Copy } from 'lucide-react'
 import { cn, formatNumber, formatCurrency } from '@/lib/utils'
 import type {
   CostMode,
@@ -25,6 +25,7 @@ import { normalizeUsageSummary } from '@shared/usage-summary'
 import { TokenUsageDisplay } from '@/components/shared/token-usage-display'
 import { useAppStore } from '@/stores/app'
 import { CostSourceBadge } from '@/components/shared/cost-source-badge'
+import { NoticePanel } from '@/components/shared/notice-panel'
 
 const CHART_COLORS = [
   'hsl(216, 57%, 25%)',
@@ -275,17 +276,12 @@ export function Usage(): React.ReactElement {
       ) : (
         <>
       {loadError && (
-        <div className="rounded-xl border border-destructive/25 bg-destructive/10 p-4">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div className="flex min-w-0 items-start gap-3">
-              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
-              <div className="min-w-0">
-                <div className="text-sm font-medium">{t('usage.loadErrorTitle')}</div>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  {t(usage ? 'usage.loadErrorStaleBody' : 'usage.loadErrorBody')}
-                </p>
-              </div>
-            </div>
+        <NoticePanel
+          tone="error"
+          title={t('usage.loadErrorTitle')}
+          message={t(usage ? 'usage.loadErrorStaleBody' : 'usage.loadErrorBody')}
+          className="rounded-xl"
+          action={
             <button
               type="button"
               onClick={() => setReloadKey((value) => value + 1)}
@@ -293,8 +289,8 @@ export function Usage(): React.ReactElement {
             >
               {t('common.retry')}
             </button>
-          </div>
-        </div>
+          }
+        />
       )}
 
       {loadError && !usage ? null : (
@@ -416,80 +412,76 @@ export function Usage(): React.ReactElement {
       )}
 
       {hasPricingMisses && (
-        <div className="rounded-xl border border-amber-500/25 bg-amber-500/10 p-4">
-          <div className="flex items-start gap-3">
-            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-700 dark:text-amber-300" />
-            <div className="min-w-0 flex-1">
-              <div className="text-sm font-medium">{t('usage.pricingGapsTitle')}</div>
-              <p className="mt-1 text-sm text-muted-foreground">
-                {t('usage.pricingGapsBody', { count: usage.pricingMisses.length })}
-              </p>
-              <div className="mt-3 grid gap-2 md:grid-cols-2">
-                {usage.pricingMisses.slice(0, 4).map((miss) => (
-                  <div
-                    key={`${miss.model ?? 'unknown'}-${miss.reason}`}
-                    className="rounded-md border border-amber-500/20 bg-background/80 px-3 py-2"
-                  >
-                    <div className="flex items-center justify-between gap-2 text-xs">
-                      <span className="min-w-0 truncate font-medium text-foreground">
-                        {pricingMissLabel(miss)} · {formatNumber(miss.tokens)} {t('usage.tokenUnit')}
-                      </span>
-                      <span className="shrink-0 text-muted-foreground">
-                        {t(PRICING_MISS_LABEL_KEYS[miss.reason])}
-                      </span>
-                    </div>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      {t(PRICING_MISS_DESCRIPTION_KEYS[miss.reason])}
-                    </p>
-                  </div>
-                ))}
-                {usage.pricingMisses.length > 4 && (
-                  <div className="rounded-md border border-amber-500/20 bg-background/80 px-3 py-2 text-xs text-muted-foreground">
-                    {t('usage.pricingGapsMore', { count: usage.pricingMisses.length - 4 })}
-                  </div>
-                )}
-              </div>
-              {pricingOverrideMiss && (
-                <div className="mt-3 rounded-md border border-amber-500/20 bg-background/80 p-3">
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <div className="text-xs font-medium">{t('usage.pricingOverrideExample')}</div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      {showPricingOverride && (
-                        <button
-                          type="button"
-                          onClick={copyPricingOverride}
-                          className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-2 py-1 text-xs font-medium text-muted-foreground hover:text-foreground"
-                        >
-                          <Copy className="h-3.5 w-3.5" />
-                          {pricingOverrideCopied
-                            ? t('usage.copiedPricingOverride')
-                            : t('usage.copyPricingOverride')}
-                        </button>
-                      )}
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setShowPricingOverride((value) => !value)
-                          setPricingOverrideCopied(false)
-                        }}
-                        className="rounded-md border border-border bg-background px-2 py-1 text-xs font-medium hover:bg-muted"
-                      >
-                        {showPricingOverride
-                          ? t('usage.hidePricingOverrideExample')
-                          : t('usage.showPricingOverrideExample')}
-                      </button>
-                    </div>
-                  </div>
-                  {showPricingOverride && (
-                    <pre className="mt-2 max-h-40 overflow-auto rounded-md bg-muted/70 p-3 text-xs leading-relaxed text-muted-foreground">
-                      <code>{pricingOverrideJson}</code>
-                    </pre>
-                  )}
+        <NoticePanel
+          tone="warning"
+          title={t('usage.pricingGapsTitle')}
+          message={t('usage.pricingGapsBody', { count: usage.pricingMisses.length })}
+          className="rounded-xl"
+        >
+          <div className="mt-3 grid gap-2 md:grid-cols-2">
+            {usage.pricingMisses.slice(0, 4).map((miss) => (
+              <div
+                key={`${miss.model ?? 'unknown'}-${miss.reason}`}
+                className="rounded-md border border-amber-500/20 bg-background/80 px-3 py-2"
+              >
+                <div className="flex items-center justify-between gap-2 text-xs">
+                  <span className="min-w-0 truncate font-medium text-foreground">
+                    {pricingMissLabel(miss)} · {formatNumber(miss.tokens)} {t('usage.tokenUnit')}
+                  </span>
+                  <span className="shrink-0 text-muted-foreground">
+                    {t(PRICING_MISS_LABEL_KEYS[miss.reason])}
+                  </span>
                 </div>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {t(PRICING_MISS_DESCRIPTION_KEYS[miss.reason])}
+                </p>
+              </div>
+            ))}
+            {usage.pricingMisses.length > 4 && (
+              <div className="rounded-md border border-amber-500/20 bg-background/80 px-3 py-2 text-xs text-muted-foreground">
+                {t('usage.pricingGapsMore', { count: usage.pricingMisses.length - 4 })}
+              </div>
+            )}
+          </div>
+          {pricingOverrideMiss && (
+            <div className="mt-3 rounded-md border border-amber-500/20 bg-background/80 p-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="text-xs font-medium">{t('usage.pricingOverrideExample')}</div>
+                <div className="flex flex-wrap items-center gap-2">
+                  {showPricingOverride && (
+                    <button
+                      type="button"
+                      onClick={copyPricingOverride}
+                      className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-2 py-1 text-xs font-medium text-muted-foreground hover:text-foreground"
+                    >
+                      <Copy className="h-3.5 w-3.5" />
+                      {pricingOverrideCopied
+                        ? t('usage.copiedPricingOverride')
+                        : t('usage.copyPricingOverride')}
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowPricingOverride((value) => !value)
+                      setPricingOverrideCopied(false)
+                    }}
+                    className="rounded-md border border-border bg-background px-2 py-1 text-xs font-medium hover:bg-muted"
+                  >
+                    {showPricingOverride
+                      ? t('usage.hidePricingOverrideExample')
+                      : t('usage.showPricingOverrideExample')}
+                  </button>
+                </div>
+              </div>
+              {showPricingOverride && (
+                <pre className="mt-2 max-h-40 overflow-auto rounded-md bg-muted/70 p-3 text-xs leading-relaxed text-muted-foreground">
+                  <code>{pricingOverrideJson}</code>
+                </pre>
               )}
             </div>
-          </div>
-        </div>
+          )}
+        </NoticePanel>
       )}
 
       {/* Daily cost chart */}
