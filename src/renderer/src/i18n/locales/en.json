@@ -60,7 +60,94 @@
     "files": "Files",
     "checkpoints": "Checkpoints",
     "fileHistory": "File history checkpoints",
-    "started": "Started"
+    "started": "Started",
+    "evidence": {
+      "sessions": "sessions",
+      "projects": "projects",
+      "agents": "agents"
+    },
+    "guidance": {
+      "docs": {
+        "claudeSettings": "Claude Code settings",
+        "codexCli": "Codex CLI"
+      },
+      "index": {
+        "title": "Local conversation history",
+        "summary": "Sessions are local transcript records. Berth groups them by project, date, and agent so you can review what happened without relying on a cloud account.",
+        "points": {
+          "role": "Use the list to find past work, cost and token shape, loaded assets, and tool activity.",
+          "scope": "A session belongs to one local agent history, but the project grouping helps compare Claude Code and Codex work together.",
+          "review": "Open a detail page when you need transcript-derived assets, tool events, artifacts, or file checkpoints."
+        },
+        "providers": {
+          "claude": "Claude Code stores local transcript files for sessions it runs.",
+          "codex": "Codex stores local session history for CLI work.",
+          "abstract": "Berth treats all providers as local conversation timelines."
+        },
+        "insights": {
+          "group": {
+            "title": "Grouped for recall",
+            "body": "Project and date grouping make it easier to find a previous task without knowing the exact transcript file."
+          },
+          "detail": {
+            "title": "Detail keeps evidence",
+            "body": "The detail view keeps tool events, loaded assets, and artifacts separate so you can inspect what changed."
+          },
+          "local": {
+            "title": "Local first",
+            "body": "Berth reads local files. Missing sessions usually mean the local history was not found or has not been scanned yet."
+          }
+        }
+      }
+    },
+    "empty": {
+      "title": "No sessions found",
+      "description": "Berth scans local Claude Code and Codex session history. Start a local agent session, then refresh the scan.",
+      "noResultsTitle": "No matching sessions",
+      "noResultsDescription": "No scanned session matches the current filter. Clear the search or switch the agent view."
+    },
+    "emptyStates": {
+      "toolTimeline": {
+        "title": "No tool events recorded",
+        "description": "This transcript did not expose tool calls that Berth could summarize."
+      },
+      "loadedAssets": {
+        "title": "No loaded assets recorded",
+        "description": "This session did not report skills, MCP servers, or hooks in the scanned metadata."
+      },
+      "skills": {
+        "title": "No skills were loaded",
+        "description": "Berth did not find skill usage for this session."
+      },
+      "mcp": {
+        "title": "No MCP servers were connected",
+        "description": "No MCP server activity was found in this session metadata."
+      },
+      "hooks": {
+        "title": "No hooks fired",
+        "description": "No hook events were recorded for this session."
+      },
+      "artifacts": {
+        "title": "No artifacts recorded",
+        "description": "This transcript did not expose plans, todos, file changes, or checkpoints."
+      },
+      "plans": {
+        "title": "No plans recorded",
+        "description": "No plan artifacts were found in this session."
+      },
+      "todos": {
+        "title": "No todos recorded",
+        "description": "No todo artifacts were found in this session."
+      },
+      "files": {
+        "title": "No file changes recorded",
+        "description": "No file artifact summary was found in this session."
+      },
+      "checkpoints": {
+        "title": "No checkpoints recorded",
+        "description": "No file history checkpoint was found in this session."
+      }
+    }
   },
   "instructions": {
     "title": "Instructions",

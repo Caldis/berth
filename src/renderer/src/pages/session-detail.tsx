@@ -59,6 +59,10 @@ export function SessionDetail(): React.ReactElement {
   const hooksByEvent = detail?.hooksFired ?? []
   const artifacts = detail?.artifacts ?? emptyArtifacts()
   const toolTimeline = detail?.toolTimeline ?? []
+  const loadedAssetCount = detail
+    ? detail.skillsUsed.length + detail.mcpServers.length + hooksByEvent.length
+    : 0
+  const artifactCount = artifacts.plans.length + artifacts.todos.length + artifacts.files.length + artifacts.checkpoints.length
 
   return (
     <div className="space-y-6">
@@ -141,6 +145,13 @@ export function SessionDetail(): React.ReactElement {
               <h2 className="text-sm font-medium">{t('sessions.loadedAssets')}</h2>
             </div>
 
+            {loadedAssetCount === 0 && (
+              <SectionEmpty
+                title={t('sessions.emptyStates.loadedAssets.title')}
+                description={t('sessions.emptyStates.loadedAssets.description')}
+              />
+            )}
+
             {/* Skills used */}
             <CollapsibleSection
               title={t('sessions.skillsUsed')}
@@ -150,7 +161,10 @@ export function SessionDetail(): React.ReactElement {
               onToggle={() => toggleSection('skills')}
             >
               {detail.skillsUsed.length === 0 ? (
-                <p className="px-4 py-2 text-xs text-muted-foreground">{t('common.empty')}</p>
+                <SectionEmpty
+                  title={t('sessions.emptyStates.skills.title')}
+                  description={t('sessions.emptyStates.skills.description')}
+                />
               ) : (
                 <div className="divide-y divide-border">
                   {detail.skillsUsed.map((skill) => (
@@ -178,7 +192,10 @@ export function SessionDetail(): React.ReactElement {
               onToggle={() => toggleSection('mcp')}
             >
               {detail.mcpServers.length === 0 ? (
-                <p className="px-4 py-2 text-xs text-muted-foreground">{t('common.empty')}</p>
+                <SectionEmpty
+                  title={t('sessions.emptyStates.mcp.title')}
+                  description={t('sessions.emptyStates.mcp.description')}
+                />
               ) : (
                 <div className="divide-y divide-border">
                   {detail.mcpServers.map((server) => {
@@ -217,7 +234,10 @@ export function SessionDetail(): React.ReactElement {
               onToggle={() => toggleSection('hooks')}
             >
               {hooksByEvent.length === 0 ? (
-                <p className="px-4 py-2 text-xs text-muted-foreground">{t('common.empty')}</p>
+                <SectionEmpty
+                  title={t('sessions.emptyStates.hooks.title')}
+                  description={t('sessions.emptyStates.hooks.description')}
+                />
               ) : (
                 <div className="divide-y divide-border">
                   {hooksByEvent.map((h) => (
@@ -243,132 +263,153 @@ export function SessionDetail(): React.ReactElement {
               <h2 className="text-sm font-medium">{t('sessions.artifacts')}</h2>
             </div>
 
-            {/* Plans */}
-            <CollapsibleSection
-              title={t('sessions.plans')}
-              count={artifacts.plans.length}
-              icon={FileText}
-              expanded={expandedSections.has('plans')}
-              onToggle={() => toggleSection('plans')}
-            >
-              {artifacts.plans.length === 0 ? (
-                <p className="px-4 py-2 text-xs text-muted-foreground">{t('common.empty')}</p>
-              ) : (
-                <div className="divide-y divide-border">
-                  {artifacts.plans.map((plan) => (
-                    <div
-                      key={plan.id}
-                      className="flex items-center gap-3 px-4 py-2 text-sm"
-                    >
-                      <FileText className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                      <span className="truncate text-card-foreground">{plan.title}</span>
+            {artifactCount === 0 ? (
+              <SectionEmpty
+                title={t('sessions.emptyStates.artifacts.title')}
+                description={t('sessions.emptyStates.artifacts.description')}
+              />
+            ) : (
+              <>
+                {/* Plans */}
+                <CollapsibleSection
+                  title={t('sessions.plans')}
+                  count={artifacts.plans.length}
+                  icon={FileText}
+                  expanded={expandedSections.has('plans')}
+                  onToggle={() => toggleSection('plans')}
+                >
+                  {artifacts.plans.length === 0 ? (
+                    <SectionEmpty
+                      title={t('sessions.emptyStates.plans.title')}
+                      description={t('sessions.emptyStates.plans.description')}
+                    />
+                  ) : (
+                    <div className="divide-y divide-border">
+                      {artifacts.plans.map((plan) => (
+                        <div
+                          key={plan.id}
+                          className="flex items-center gap-3 px-4 py-2 text-sm"
+                        >
+                          <FileText className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                          <span className="truncate text-card-foreground">{plan.title}</span>
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-              )}
-            </CollapsibleSection>
+                  )}
+                </CollapsibleSection>
 
-            {/* Todos */}
-            <CollapsibleSection
-              title={t('sessions.todos')}
-              count={artifacts.todos.length}
-              icon={CheckSquare}
-              expanded={expandedSections.has('todos')}
-              onToggle={() => toggleSection('todos')}
-            >
-              {artifacts.todos.length === 0 ? (
-                <p className="px-4 py-2 text-xs text-muted-foreground">{t('common.empty')}</p>
-              ) : (
-                <div className="divide-y divide-border">
-                  {artifacts.todos.map((todo) => (
-                    <div
-                      key={todo.id}
-                      className="flex items-center gap-3 px-4 py-2 text-sm"
-                    >
-                      {todo.done ? (
-                        <CheckSquare className="h-3.5 w-3.5 shrink-0 text-green-500" />
-                      ) : (
-                        <Square className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                      )}
-                      <span
-                        className={cn(
-                          'truncate text-card-foreground',
-                          todo.done && 'line-through text-muted-foreground'
-                        )}
-                      >
-                        {todo.title}
-                      </span>
+                {/* Todos */}
+                <CollapsibleSection
+                  title={t('sessions.todos')}
+                  count={artifacts.todos.length}
+                  icon={CheckSquare}
+                  expanded={expandedSections.has('todos')}
+                  onToggle={() => toggleSection('todos')}
+                >
+                  {artifacts.todos.length === 0 ? (
+                    <SectionEmpty
+                      title={t('sessions.emptyStates.todos.title')}
+                      description={t('sessions.emptyStates.todos.description')}
+                    />
+                  ) : (
+                    <div className="divide-y divide-border">
+                      {artifacts.todos.map((todo) => (
+                        <div
+                          key={todo.id}
+                          className="flex items-center gap-3 px-4 py-2 text-sm"
+                        >
+                          {todo.done ? (
+                            <CheckSquare className="h-3.5 w-3.5 shrink-0 text-green-500" />
+                          ) : (
+                            <Square className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                          )}
+                          <span
+                            className={cn(
+                              'truncate text-card-foreground',
+                              todo.done && 'line-through text-muted-foreground'
+                            )}
+                          >
+                            {todo.title}
+                          </span>
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-              )}
-            </CollapsibleSection>
+                  )}
+                </CollapsibleSection>
 
-            {/* Files */}
-            <CollapsibleSection
-              title={t('sessions.files')}
-              count={artifacts.files.length}
-              icon={FileText}
-              expanded={expandedSections.has('files')}
-              onToggle={() => toggleSection('files')}
-            >
-              {artifacts.files.length === 0 ? (
-                <p className="px-4 py-2 text-xs text-muted-foreground">{t('common.empty')}</p>
-              ) : (
-                <div className="divide-y divide-border">
-                  {artifacts.files.map((file) => (
-                    <div
-                      key={file.id}
-                      className="flex items-center gap-3 px-4 py-2 text-sm"
-                    >
-                      <FileText className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                      <span className="min-w-0 flex-1 truncate font-mono text-xs text-card-foreground">
-                        {truncatePath(file.path, 96)}
-                      </span>
-                      {file.operation && (
-                        <span className="rounded-md bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
-                          {file.operation}
-                        </span>
-                      )}
-                      <span className="text-xs text-muted-foreground">{file.count}x</span>
+                {/* Files */}
+                <CollapsibleSection
+                  title={t('sessions.files')}
+                  count={artifacts.files.length}
+                  icon={FileText}
+                  expanded={expandedSections.has('files')}
+                  onToggle={() => toggleSection('files')}
+                >
+                  {artifacts.files.length === 0 ? (
+                    <SectionEmpty
+                      title={t('sessions.emptyStates.files.title')}
+                      description={t('sessions.emptyStates.files.description')}
+                    />
+                  ) : (
+                    <div className="divide-y divide-border">
+                      {artifacts.files.map((file) => (
+                        <div
+                          key={file.id}
+                          className="flex items-center gap-3 px-4 py-2 text-sm"
+                        >
+                          <FileText className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                          <span className="min-w-0 flex-1 truncate font-mono text-xs text-card-foreground">
+                            {truncatePath(file.path, 96)}
+                          </span>
+                          {file.operation && (
+                            <span className="rounded-md bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
+                              {file.operation}
+                            </span>
+                          )}
+                          <span className="text-xs text-muted-foreground">{file.count}x</span>
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-              )}
-            </CollapsibleSection>
+                  )}
+                </CollapsibleSection>
 
-            {/* Checkpoints */}
-            <CollapsibleSection
-              title={t('sessions.checkpoints')}
-              count={artifacts.checkpoints.length || detail.fileHistoryCount}
-              icon={History}
-              expanded={expandedSections.has('checkpoints')}
-              onToggle={() => toggleSection('checkpoints')}
-            >
-              {artifacts.checkpoints.length === 0 ? (
-                <p className="px-4 py-2 text-xs text-muted-foreground">{t('common.empty')}</p>
-              ) : (
-                <div className="divide-y divide-border">
-                  {artifacts.checkpoints.map((checkpoint) => (
-                    <div
-                      key={checkpoint.id}
-                      className="flex items-center gap-3 px-4 py-2 text-sm"
-                    >
-                      <History className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-card-foreground">{checkpoint.title}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {formatOptionalRelativeTime(checkpoint.timestamp)}
-                        </p>
-                      </div>
-                      <span className="text-xs text-muted-foreground">
-                        {checkpoint.fileCount}
-                      </span>
+                {/* Checkpoints */}
+                <CollapsibleSection
+                  title={t('sessions.checkpoints')}
+                  count={artifacts.checkpoints.length || detail.fileHistoryCount}
+                  icon={History}
+                  expanded={expandedSections.has('checkpoints')}
+                  onToggle={() => toggleSection('checkpoints')}
+                >
+                  {artifacts.checkpoints.length === 0 ? (
+                    <SectionEmpty
+                      title={t('sessions.emptyStates.checkpoints.title')}
+                      description={t('sessions.emptyStates.checkpoints.description')}
+                    />
+                  ) : (
+                    <div className="divide-y divide-border">
+                      {artifacts.checkpoints.map((checkpoint) => (
+                        <div
+                          key={checkpoint.id}
+                          className="flex items-center gap-3 px-4 py-2 text-sm"
+                        >
+                          <History className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-card-foreground">{checkpoint.title}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {formatOptionalRelativeTime(checkpoint.timestamp)}
+                            </p>
+                          </div>
+                          <span className="text-xs text-muted-foreground">
+                            {checkpoint.fileCount}
+                          </span>
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-              )}
-            </CollapsibleSection>
+                  )}
+                </CollapsibleSection>
+              </>
+            )}
           </div>
         </>
       )}
@@ -391,7 +432,12 @@ function ToolTimeline({ events }: { events: SessionToolEvent[] }): React.ReactEl
   const { t } = useTranslation()
 
   if (events.length === 0) {
-    return <p className="px-4 py-3 text-xs text-muted-foreground">{t('common.empty')}</p>
+    return (
+      <SectionEmpty
+        title={t('sessions.emptyStates.toolTimeline.title')}
+        description={t('sessions.emptyStates.toolTimeline.description')}
+      />
+    )
   }
 
   return (
@@ -440,6 +486,21 @@ function ToolTimeline({ events }: { events: SessionToolEvent[] }): React.ReactEl
           </div>
         </div>
       ))}
+    </div>
+  )
+}
+
+function SectionEmpty({
+  title,
+  description
+}: {
+  title: string
+  description: string
+}): React.ReactElement {
+  return (
+    <div className="px-4 py-3">
+      <p className="text-xs font-medium text-muted-foreground">{title}</p>
+      <p className="mt-1 max-w-[70ch] text-xs leading-5 text-muted-foreground/75">{description}</p>
     </div>
   )
 }

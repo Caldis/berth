@@ -60,7 +60,94 @@
     "files": "文件",
     "checkpoints": "Checkpoints",
     "fileHistory": "文件历史检查点",
-    "started": "开始时间"
+    "started": "开始时间",
+    "evidence": {
+      "sessions": "个会话",
+      "projects": "个项目",
+      "agents": "个 Agent"
+    },
+    "guidance": {
+      "docs": {
+        "claudeSettings": "Claude Code 设置",
+        "codexCli": "Codex CLI"
+      },
+      "index": {
+        "title": "本地会话历史",
+        "summary": "Sessions 是本地 transcript 记录。Berth 会按项目、日期和 Agent 汇总它们，方便你在不依赖云端账号的情况下回看发生过什么。",
+        "points": {
+          "role": "列表用于找回过去的工作、费用和 token 形态、加载过的资产，以及工具活动。",
+          "scope": "一个会话属于一个本地 Agent 历史；项目分组帮助把 Claude Code 和 Codex 的工作放在一起比较。",
+          "review": "需要查看 transcript 派生资产、工具事件、产物或文件 checkpoint 时，再打开详情页。"
+        },
+        "providers": {
+          "claude": "Claude Code 会为运行过的会话保存本地 transcript 文件。",
+          "codex": "Codex 会为 CLI 工作保存本地会话历史。",
+          "abstract": "Berth 把不同 provider 都视为本地会话时间线。"
+        },
+        "insights": {
+          "group": {
+            "title": "为回看而分组",
+            "body": "项目和日期分组能帮助你找回过去任务，不必知道具体 transcript 文件名。"
+          },
+          "detail": {
+            "title": "详情页保留证据",
+            "body": "详情页把工具事件、加载资产和产物分开，方便核对当时发生了什么。"
+          },
+          "local": {
+            "title": "以本地为准",
+            "body": "Berth 读取本地文件。缺少会话通常表示本地历史未发现，或还没有被扫描。"
+          }
+        }
+      }
+    },
+    "empty": {
+      "title": "未找到会话",
+      "description": "Berth 会扫描本地 Claude Code 和 Codex 会话历史。启动一次本地 Agent 会话后，再刷新扫描。",
+      "noResultsTitle": "没有匹配的会话",
+      "noResultsDescription": "当前筛选下没有匹配的已扫描会话。清除搜索或切换 Agent 视图。"
+    },
+    "emptyStates": {
+      "toolTimeline": {
+        "title": "没有记录到工具事件",
+        "description": "这个 transcript 没有暴露 Berth 可汇总的工具调用。"
+      },
+      "loadedAssets": {
+        "title": "没有记录到加载资产",
+        "description": "扫描到的元数据里没有 skills、MCP servers 或 hooks。"
+      },
+      "skills": {
+        "title": "没有加载 Skills",
+        "description": "Berth 没有在这个会话里发现 skill 使用记录。"
+      },
+      "mcp": {
+        "title": "没有连接 MCP servers",
+        "description": "这个会话元数据里没有 MCP server 活动。"
+      },
+      "hooks": {
+        "title": "没有触发 Hooks",
+        "description": "这个会话没有记录到 hook 事件。"
+      },
+      "artifacts": {
+        "title": "没有记录到产物",
+        "description": "这个 transcript 没有暴露 plans、todos、文件变化或 checkpoints。"
+      },
+      "plans": {
+        "title": "没有记录到计划",
+        "description": "这个会话没有 plan 产物。"
+      },
+      "todos": {
+        "title": "没有记录到待办",
+        "description": "这个会话没有 todo 产物。"
+      },
+      "files": {
+        "title": "没有记录到文件变化",
+        "description": "这个会话没有文件产物摘要。"
+      },
+      "checkpoints": {
+        "title": "没有记录到 checkpoint",
+        "description": "这个会话没有文件历史 checkpoint。"
+      }
+    }
   },
   "instructions": {
     "title": "指令",

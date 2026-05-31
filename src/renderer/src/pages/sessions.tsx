@@ -20,8 +20,10 @@ import {
 } from '@/lib/utils'
 import { useSessions } from '@/hooks/use-ipc'
 import { EmptyState } from '@/components/shared/empty-state'
+import { FeatureGuidePanel } from '@/components/shared/feature-guide-panel'
 import { useAppStore } from '@/stores/app'
 import { TokenUsageDisplay } from '@/components/shared/token-usage-display'
+import { sessionGuide, type FeatureGuideEvidence } from '@/lib/feature-guidance'
 
 type GroupBy = 'project' | 'date'
 
@@ -66,6 +68,18 @@ export function Sessions(): React.ReactElement {
     return result
   }, [filtered, groupBy, t])
 
+  const evidence = useMemo<FeatureGuideEvidence[]>(() => {
+    const projects = new Set(sessions.map((session) => session.projectPath || session.project).filter(Boolean))
+    const agents = new Set(sessions.map((session) => session.agentId).filter(Boolean))
+    return [
+      { labelKey: 'sessions.evidence.sessions', value: sessions.length },
+      { labelKey: 'sessions.evidence.projects', value: projects.size },
+      { labelKey: 'sessions.evidence.agents', value: agents.size }
+    ]
+  }, [sessions])
+
+  const hasFilter = filter.trim().length > 0
+
   const toggleGroup = (key: string): void => {
     setCollapsedGroups((prev) => {
       const next = new Set(prev)
@@ -78,6 +92,8 @@ export function Sessions(): React.ReactElement {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-semibold tracking-tight">{t('sessions.title')}</h1>
+
+      <FeatureGuidePanel guide={sessionGuide} evidence={evidence} agentView={agentView} />
 
       {/* Filter + group-by */}
       <div className="flex items-center gap-3">
@@ -123,7 +139,11 @@ export function Sessions(): React.ReactElement {
       {loading ? (
         <p className="text-sm text-muted-foreground">{t('common.loading')}</p>
       ) : filtered.length === 0 ? (
-        <EmptyState icon={MessageSquare} message={t('sessions.noSessions')} />
+        <EmptyState
+          icon={MessageSquare}
+          title={t(hasFilter ? 'sessions.empty.noResultsTitle' : 'sessions.empty.title')}
+          description={t(hasFilter ? 'sessions.empty.noResultsDescription' : 'sessions.empty.description')}
+        />
       ) : (
         <div className="space-y-2">
           {Object.entries(grouped).map(([groupKey, groupSessions]) => {

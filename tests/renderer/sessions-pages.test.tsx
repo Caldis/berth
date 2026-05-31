@@ -143,6 +143,7 @@ describe('session pages', () => {
       </MemoryRouter>
     )
 
+    expect(screen.getByText('Local conversation history')).toBeInTheDocument()
     expect(await screen.findByText('Fix session metadata')).toBeInTheDocument()
     expect(screen.getByText('D:\\Code\\berth')).toBeInTheDocument()
     expect(screen.queryByText('D--Code-berth')).not.toBeInTheDocument()
@@ -151,6 +152,20 @@ describe('session pages', () => {
     expect(screen.getByText('38 tok')).toBeInTheDocument()
     expect(screen.getByText(/I 10 \/ O 5/)).toBeInTheDocument()
     expect(screen.getByText('claude-sonnet-4-20250514')).toBeInTheDocument()
+  })
+
+  it('shows sessions guidance and an instructive empty state when no sessions are found', async () => {
+    window.api.sessions.list = vi.fn(async () => ({ sessions: [], totalCount: 0 }))
+
+    render(
+      <MemoryRouter>
+        <Sessions />
+      </MemoryRouter>
+    )
+
+    expect(await screen.findByText('Local conversation history')).toBeInTheDocument()
+    expect(screen.getByText('No sessions found')).toBeInTheDocument()
+    expect(screen.getByText(/Berth scans local Claude Code and Codex session history/)).toBeInTheDocument()
   })
 
   it('renders session detail metadata and transcript-derived assets', async () => {
@@ -177,6 +192,38 @@ describe('session pages', () => {
     expect(screen.getAllByText('D:\\Code\\berth\\src\\main.ts').length).toBeGreaterThan(0)
     expect(screen.getByText('Stop')).toBeInTheDocument()
     expect(screen.getByText('2x')).toBeInTheDocument()
+  })
+
+  it('uses explanatory section empty states in session detail', async () => {
+    window.api.sessions.get = vi.fn(async () => ({
+      summary,
+      skillsUsed: [],
+      mcpServers: [],
+      hooksFired: [],
+      toolTimeline: [],
+      artifacts: {
+        plans: [],
+        todos: [],
+        files: [],
+        checkpoints: []
+      },
+      plans: [],
+      todos: [],
+      fileHistoryCount: 0
+    }))
+
+    render(
+      <MemoryRouter initialEntries={['/sessions/session-session-abc']}>
+        <Routes>
+          <Route path="/sessions/:id" element={<SessionDetail />} />
+        </Routes>
+      </MemoryRouter>
+    )
+
+    expect(await screen.findByText('No tool events recorded')).toBeInTheDocument()
+    expect(screen.getByText('No skills were loaded')).toBeInTheDocument()
+    expect(screen.getByText('No artifacts recorded')).toBeInTheDocument()
+    expect(screen.queryAllByText('Nothing here yet')).toHaveLength(0)
   })
 
   it('renders usage token totals and model token counts', async () => {

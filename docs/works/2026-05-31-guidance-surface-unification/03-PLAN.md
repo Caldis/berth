@@ -31,11 +31,11 @@
   - `StatusLineSection` 保留 summary、default footer、cards、diagnostics。
   - 验证: `pnpm test -- tests/renderer/status-line-section.test.tsx tests/renderer/capabilities-guidance.test.tsx tests/renderer/feature-guide-panel.test.tsx tests/renderer/feature-guidance.test.ts`。
 
-- [ ] 任务 6: 补全 Sessions。
+- [x] 任务 6: 补全 Sessions。
   - sessions 列表页新增统一功能说明。
   - sessions 空态改成标题 + 说明。
   - session detail 只补 section 空态说明, 不加大 guide。
-  - 验证: sessions renderer 测试。
+  - 验证: `pnpm test -- tests/renderer/sessions-pages.test.tsx`。
 
 - [ ] 任务 7: 统一剩余提示风格。
   - Usage 的刷新失败、价格缺口迁移到 `NoticePanel`。
