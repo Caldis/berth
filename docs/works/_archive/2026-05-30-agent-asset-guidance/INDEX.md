@@ -2,7 +2,7 @@
 task: 2026-05-30-agent-asset-guidance
 type: feature
 jira:
-phase: verify
+phase: archive
 created: 2026-05-30
 artifacts:
   source: 00-PRD.md
@@ -18,7 +18,7 @@ artifacts:
 ## GitHub Project
 - project: https://github.com/users/Caldis/projects/6
 - item: PVTI_lAHOADXbEs4BZHvQzguQCsg
-- status: In Progress
+- status: Done
 
 ## 产物
 - [x] 00-PRD.md / 00-BUG.md — 原始输入快照
