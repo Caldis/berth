@@ -2,7 +2,7 @@
 task: 2026-05-31-dev-agent-guard-restart
 type: bug
 jira:
-phase: verify
+phase: archive
 created: 2026-05-31
 artifacts:
   source: 00-BUG.md
@@ -18,7 +18,7 @@ artifacts:
 ## GitHub Project
 - project: https://github.com/users/Caldis/projects/6
 - item_id: PVTI_lAHOADXbEs4BZHvQzguS6vg
-- status: In Progress
+- status: Done
 
 ## 产物
 - [x] 00-PRD.md / 00-BUG.md — 原始输入快照
