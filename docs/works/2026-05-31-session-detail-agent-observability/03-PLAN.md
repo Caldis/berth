@@ -44,7 +44,11 @@ verify 不通过项作为新任务追加于此, phase 退回 implement。
   - [x] 任务 13: 工具时间线移除横向滚动并按 bobcorn 样式调整滚动条内缩, verify: renderer 测试覆盖时间线容器不使用横向滚动, 真实界面无底部横向条。
   - [x] 任务 14: 工具时间线增加失败工具快速筛选, verify: renderer 测试覆盖只看失败工具。
   - [x] 任务 15: 重新设计耗时 slider, verify: renderer 测试保留最小耗时筛选能力, 真实界面确认控件不贴边且可读。
-  - [ ] 任务 16: 模型名称 hover 展示 provider、价格、上下文和 token 缓存来源说明, verify: renderer 测试覆盖模型信息 tooltip。
-  - [ ] 任务 17: 运行概览移除项目卡片、时间卡片展示具体日期和相对时间, checkpoint 空明细改成可用解释和可展示字段摘要, verify: renderer 测试覆盖时间卡片与 checkpoint 摘要。
+  - [x] 任务 16: 模型名称 hover 展示 provider、价格、上下文和 token 缓存来源说明, verify: renderer 测试覆盖模型信息 tooltip。
+  - [x] 任务 17: 运行概览移除项目卡片、时间卡片展示具体日期和相对时间, checkpoint 空明细改成可用解释和可展示字段摘要, verify: renderer 测试覆盖时间卡片与 checkpoint 摘要。
   - `pnpm test -- tests/renderer/sessions-pages.test.tsx` 通过。
   - `pnpm typecheck:web` 通过。
+  - `pnpm typecheck:node` 通过。
+  - `pnpm harness:check` 通过。
+  - 官方资料核对: OpenAI GPT-5.5 模型页用于价格、上下文、知识截止和快照日期; Anthropic Claude Opus 4.8 模型页用于 Claude 模型 provider / 资料链接参考。
+  - 真实界面验收: 使用 `pnpm dev:agent start --id session-detail-followup-verify` 启动 agent-owned dev server; 由于普通 Windows 鼠标事件没有触发 Electron 内部点击, 改用 Playwright Electron 临时实例进入详情页并截图。已确认顶部运行概览无项目卡片, 时间卡片显示具体日期和相对时间; 工具时间线无横向滚动条, 失败筛选和重绘后的耗时 slider 可见; 模型 badge hover 展示 OpenAI、2026-04-23、1.1M context、128k max output、US$5/US$30/US$0.50 每 100 万 token、缓存来源说明和官方资料入口。下滚确认产物区保持全宽, checkpoint 没有明细时显示解释性摘要。验收后已 `pnpm dev:agent stop session-detail-followup-verify`; `guard after` 确认用户 dev 进程未受影响。

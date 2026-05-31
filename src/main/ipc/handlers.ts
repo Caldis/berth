@@ -13,6 +13,7 @@ import type {
   ImportChainNode,
   SessionListResult,
   SessionDetailResult,
+  SessionModelInfo,
   MCPMergeInfo,
   SessionArtifacts,
   SessionToolEvent,
@@ -34,6 +35,7 @@ import { parseMcpServers } from '../adapters/claude-code/parsers'
 import { parseClaudeSessionDetail } from '../adapters/claude-code/session-detail'
 import { parseCodexSessionDetail } from '../adapters/codex/parsers'
 import { listMemory, readMemory } from '../memory'
+import { resolveModelPricing } from '../engine/pricing/catalog'
 
 export function registerAssetHandlers(): void {
   ipcMain.handle('window:minimize', (event: IpcMainInvokeEvent): void => {
@@ -159,8 +161,10 @@ export function registerAssetHandlers(): void {
         parsedDetail.artifacts.checkpoints.length ||
         readNumber(asset.meta, 'fileHistoryCount') ||
         0
+      const summary = toSessionSummary(asset)
       return {
-        summary: toSessionSummary(asset),
+        summary,
+        modelInfo: toSessionModelInfo(summary.model, asset.agentId),
         skillsUsed: resolveSessionNamedAssets(asset, allAssets, 'skill', readStringArray(asset.meta, 'skillsUsed')),
         mcpServers: resolveSessionNamedAssets(
           asset,
@@ -268,6 +272,137 @@ function toSessionSummary(asset: Asset): SessionSummary {
     mcpServers: readStringArray(asset.meta, 'mcpServers'),
     hooksFired: readNumber(asset.meta, 'hooksFired') ?? 0
   }
+}
+
+function toSessionModelInfo(model: string, agentId: string): SessionModelInfo {
+  const knownModel = findKnownModelMetadata(model)
+  const provider = inferModelProvider(model, agentId)
+  const pricing = resolvePreferredModelPricing(model, knownModel?.provider ?? provider.name)
+  const inferredReleaseDate = inferModelDate(model)
+  const releaseDate = inferredReleaseDate ?? knownModel?.releaseDate ?? null
+
+  return {
+    provider: knownModel?.provider ?? provider.name ?? pricing?.provider ?? null,
+    providerSource: provider.source ?? (pricing?.provider ? 'pricing-catalog' : 'unknown'),
+    releaseDate,
+    releaseDateSource: inferredReleaseDate ? 'model-id' : knownModel?.releaseDate ? 'model-catalog' : null,
+    knowledgeCutoff: knownModel?.knowledgeCutoff ?? inferKnowledgeCutoff(model),
+    referenceUrl: knownModel?.referenceUrl,
+    pricing: pricing
+      ? {
+          matchedModel: pricing.model,
+          matchedProvider: pricing.provider,
+          inputCostPerMillion: pricing.inputCostPerToken * 1_000_000,
+          outputCostPerMillion: pricing.outputCostPerToken * 1_000_000,
+          cacheReadInputCostPerMillion: toPerMillion(pricing.cacheReadInputCostPerToken),
+          cacheCreationInputCostPerMillion: toPerMillion(pricing.cacheCreationInputCostPerToken),
+          reasoningOutputCostPerMillion: toPerMillion(pricing.reasoningOutputCostPerToken),
+          contextWindow: pricing.contextWindow,
+          maxOutputTokens: pricing.maxOutputTokens,
+          source: pricing.source,
+          sourceUrl: pricing.sourceUrl,
+          updatedAt: pricing.updatedAt
+        }
+      : null
+  }
+}
+
+function resolvePreferredModelPricing(
+  model: string,
+  provider: string | null | undefined
+): ReturnType<typeof resolveModelPricing> {
+  const providerSlug = provider == null ? null : modelPricingProviderSlug(provider)
+  if (providerSlug) {
+    return resolveModelPricing(`${providerSlug}/${model}`) ?? resolveModelPricing(model)
+  }
+  return resolveModelPricing(model)
+}
+
+function modelPricingProviderSlug(provider: string): string | null {
+  const normalized = provider.toLowerCase()
+  if (normalized === 'openai') return 'openai'
+  if (normalized === 'anthropic') return 'anthropic'
+  if (normalized === 'google') return 'google'
+  if (normalized === 'deepseek') return 'deepseek'
+  if (normalized === 'xai') return 'xai'
+  return null
+}
+
+type KnownModelMetadata = {
+  pattern: RegExp
+  provider: string
+  releaseDate?: string
+  knowledgeCutoff?: string
+  referenceUrl: string
+}
+
+const KNOWN_MODEL_METADATA: readonly KnownModelMetadata[] = [
+  {
+    pattern: /^gpt-5\.5(?:-|$)/,
+    provider: 'OpenAI',
+    releaseDate: '2026-04-23',
+    knowledgeCutoff: '2025-12-01',
+    referenceUrl: 'https://developers.openai.com/api/docs/models/gpt-5.5'
+  },
+  {
+    pattern: /^claude-opus-4-8(?:-|$)/,
+    provider: 'Anthropic',
+    referenceUrl: 'https://platform.claude.com/docs/en/about-claude/models/whats-new-claude-4-8'
+  }
+]
+
+function findKnownModelMetadata(model: string): KnownModelMetadata | null {
+  const normalized = model.toLowerCase()
+  return KNOWN_MODEL_METADATA.find((entry) => entry.pattern.test(normalized)) ?? null
+}
+
+function inferModelProvider(
+  model: string,
+  agentId: string
+): { name: string | null; source: SessionModelInfo['providerSource'] | null } {
+  const normalized = model.toLowerCase()
+  if (normalized.startsWith('claude-')) return { name: 'Anthropic', source: 'model-id' }
+  if (/^(gpt-|chatgpt-|o\d)/.test(normalized)) return { name: 'OpenAI', source: 'model-id' }
+  if (normalized.startsWith('gemini-')) return { name: 'Google', source: 'model-id' }
+  if (normalized.startsWith('deepseek-')) return { name: 'DeepSeek', source: 'model-id' }
+  if (normalized.startsWith('qwen')) return { name: 'Alibaba Cloud', source: 'model-id' }
+  if (normalized.startsWith('kimi-')) return { name: 'Moonshot AI', source: 'model-id' }
+  if (normalized.startsWith('grok-')) return { name: 'xAI', source: 'model-id' }
+  if (agentId === 'claude-code' || agentId === 'claude') return { name: 'Anthropic', source: 'agent' }
+  if (agentId === 'codex') return { name: 'OpenAI', source: 'agent' }
+  return { name: null, source: null }
+}
+
+function inferModelDate(model: string): string | null {
+  const compact = model.match(/(?:^|[-_/])((?:20)\d{2})(\d{2})(\d{2})(?:$|[-_/])/)
+  if (compact) return normalizeDateParts(compact[1], compact[2], compact[3])
+
+  const dashed = model.match(/(?:^|[-_/])((?:20)\d{2})-(\d{2})-(\d{2})(?:$|[-_/])/)
+  if (dashed) return normalizeDateParts(dashed[1], dashed[2], dashed[3])
+
+  return null
+}
+
+function inferKnowledgeCutoff(model: string): string | null {
+  const normalized = model.toLowerCase()
+  if (normalized === 'gpt-5.5' || normalized.startsWith('gpt-5.5-')) return '2025-12-01'
+  if (normalized === 'gpt-5' || normalized.startsWith('gpt-5-')) return '2024-09-30'
+  return null
+}
+
+function normalizeDateParts(
+  year: string | undefined,
+  month: string | undefined,
+  day: string | undefined
+): string | null {
+  if (!year || !month || !day) return null
+  const date = new Date(`${year}-${month}-${day}T00:00:00.000Z`)
+  if (Number.isNaN(date.getTime())) return null
+  return `${year}-${month}-${day}`
+}
+
+function toPerMillion(value: number | undefined): number | undefined {
+  return value == null ? undefined : value * 1_000_000
 }
 
 function sessionMatchesAgentView(asset: Asset, view: AgentView | undefined): boolean {

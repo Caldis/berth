@@ -61,6 +61,7 @@
     "checkpoints": "Checkpoints",
     "fileHistory": "文件历史检查点",
     "started": "开始时间",
+    "time": "时间",
     "sessionOverview": "运行概览",
     "durationUnknown": "未知",
     "toolTimelineDescription": "工具调用、状态、耗时和从 transcript 推导出的证据。",
@@ -167,6 +168,8 @@
       "ariaLabel": "最小工具耗时",
       "showing": "显示 {{shown}} / {{total}}",
       "allDurations": "全部耗时",
+      "allStatuses": "全部",
+      "failedOnly": "失败",
       "minDuration": ">= {{duration}}",
       "emptyTitle": "这个区间里没有慢工具调用",
       "emptyDescription": "降低耗时筛选阈值即可看到更快的调用。"
@@ -193,8 +196,31 @@
     },
     "checkpointSummary": {
       "noDetailsTitle": "记录到 {{count}} 个 checkpoint",
-      "noDetailsDescription": "这个 transcript 只记录了 checkpoint 数量，没有包含每个 checkpoint 的文件列表。逐条展示空 checkpoint 没有额外证据价值。",
-      "omittedNoDetails": "已隐藏 {{count}} 个没有文件明细的 checkpoint。"
+      "noDetailsDescription": "Checkpoint 是文件历史快照。这个 transcript 记录了数量，但没有包含每个 checkpoint 对应的变更文件或 diff。",
+      "omittedNoDetails": "已隐藏 {{count}} 个没有文件明细的 checkpoint。",
+      "recordedCount": "记录数",
+      "fileLists": "文件列表",
+      "missingDetails": "缺少明细",
+      "availableFields": "如果后续 transcript 暴露 checkpoint 时间、变更路径或文件数量，Berth 可以把这些字段列在这里。"
+    },
+    "modelInfo": {
+      "provider": "Provider",
+      "releaseDate": "模型日期",
+      "contextWindow": "上下文",
+      "maxOutput": "最大输出",
+      "knowledgeCutoff": "知识截止",
+      "notRecorded": "未记录",
+      "pricingTitle": "每 100 万 token 价格",
+      "noPricing": "本地价格目录没有匹配到这个模型 ID。",
+      "pricingSource": "来源: {{source}} · 匹配 {{model}}",
+      "providerSourceModelId": "从模型 ID 推断",
+      "providerSourcePricing": "来自价格目录",
+      "providerSourceAgent": "从 agent 推断",
+      "releaseSourceModelId": "来自模型 ID",
+      "releaseSourceModelCatalog": "来自官方模型资料",
+      "cacheSourceFromTranscript": "缓存 token 来自 transcript 里的 cache_read_input_tokens、cache_creation_input_tokens、cached_input_tokens 等 usage 字段。Berth 不会从文本内容猜缓存命中。",
+      "cacheSourceUnavailable": "这个 transcript 没有暴露 token breakdown，因此 Berth 无法识别缓存 token。",
+      "referenceLink": "打开官方模型资料"
     }
   },
   "instructions": {

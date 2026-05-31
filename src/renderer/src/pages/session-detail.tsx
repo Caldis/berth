@@ -412,7 +412,7 @@ function SessionSummaryPanel({ detail }: { detail: SessionDetailResult }): React
   const { summary } = detail
 
   return (
-    <div className="overflow-hidden rounded-xl border border-border bg-card">
+    <div className="rounded-xl border border-border bg-card">
       <div className="border-b border-border px-4 py-4">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
           <div className="min-w-0">
@@ -426,12 +426,14 @@ function SessionSummaryPanel({ detail }: { detail: SessionDetailResult }): React
               {truncatePath(summary.projectPath || summary.project, 96)}
             </p>
           </div>
-          <span className="inline-flex w-fit items-center rounded-md bg-primary/10 px-2 py-1 text-xs font-medium text-primary">
-            {summary.model || t('common.unknown')}
-          </span>
+          <ModelBadge
+            model={summary.model}
+            modelInfo={detail.modelInfo}
+            tokenUsage={summary.tokenUsage}
+          />
         </div>
       </div>
-      <div className="grid grid-cols-1 gap-3 p-4 sm:grid-cols-2 lg:grid-cols-5">
+      <div className="grid grid-cols-1 gap-3 p-4 sm:grid-cols-2 lg:grid-cols-4">
         <MetaItem
           label={t('sessions.duration')}
           value={formatOptionalDuration(summary.duration)}
@@ -455,17 +457,219 @@ function SessionSummaryPanel({ detail }: { detail: SessionDetailResult }): React
           icon={Hash}
         />
         <MetaItem
-          label={t('sessions.started')}
-          value={formatOptionalRelativeTime(summary.startedAt)}
+          label={t('sessions.time', { defaultValue: 'Time' })}
+          value={<TimeMetaValue startedAt={summary.startedAt} />}
           icon={Clock}
-        />
-        <MetaItem
-          label={t('sessions.project')}
-          value={truncatePath(summary.projectPath || summary.project, 72)}
         />
       </div>
     </div>
   )
+}
+
+function ModelBadge({
+  model,
+  modelInfo,
+  tokenUsage
+}: {
+  model: string
+  modelInfo: SessionDetailResult['modelInfo']
+  tokenUsage: SessionDetailResult['summary']['tokenUsage']
+}): React.ReactElement {
+  const { t } = useTranslation()
+  const displayModel = model || t('common.unknown')
+  const pricing = modelInfo?.pricing ?? null
+  const provider = modelInfo?.provider ?? t('common.unknown')
+  const releaseDate = modelInfo?.releaseDate
+    ? formatDisplayDate(modelInfo.releaseDate)
+    : t('sessions.modelInfo.notRecorded', { defaultValue: 'Not recorded' })
+  const knowledgeCutoff = modelInfo?.knowledgeCutoff
+    ? formatDisplayDate(modelInfo.knowledgeCutoff)
+    : t('sessions.modelInfo.notRecorded', { defaultValue: 'Not recorded' })
+
+  return (
+    <span className="group relative inline-flex w-fit">
+      <span
+        tabIndex={0}
+        className="inline-flex max-w-[18rem] items-center gap-1.5 rounded-md bg-primary/10 px-2 py-1 text-xs font-medium text-primary outline-none transition-colors hover:bg-primary/15 focus-visible:ring-2 focus-visible:ring-ring"
+      >
+        <span className="truncate">{displayModel}</span>
+        <Info className="h-3 w-3 shrink-0" />
+      </span>
+      <span className="pointer-events-none absolute right-0 top-8 z-20 hidden w-[24rem] rounded-xl border border-border bg-popover p-3 text-left text-xs text-popover-foreground shadow-lg group-hover:block group-focus-within:block">
+        <span className="block truncate text-sm font-semibold text-card-foreground">
+          {displayModel}
+        </span>
+        <span className="mt-2 grid grid-cols-2 gap-2">
+          <ModelInfoField
+            label={t('sessions.modelInfo.provider', { defaultValue: 'Provider' })}
+            value={provider}
+            detail={formatProviderSource(modelInfo?.providerSource, t)}
+          />
+          <ModelInfoField
+            label={t('sessions.modelInfo.releaseDate', { defaultValue: 'Model date' })}
+            value={releaseDate}
+            detail={formatReleaseDateSource(modelInfo?.releaseDateSource, t)}
+          />
+          <ModelInfoField
+            label={t('sessions.modelInfo.contextWindow', { defaultValue: 'Context' })}
+            value={pricing?.contextWindow == null ? '—' : `${formatNumber(pricing.contextWindow)} tok`}
+          />
+          <ModelInfoField
+            label={t('sessions.modelInfo.maxOutput', { defaultValue: 'Max output' })}
+            value={pricing?.maxOutputTokens == null ? '—' : `${formatNumber(pricing.maxOutputTokens)} tok`}
+          />
+          <ModelInfoField
+            label={t('sessions.modelInfo.knowledgeCutoff', { defaultValue: 'Knowledge cutoff' })}
+            value={knowledgeCutoff}
+            className="col-span-2"
+          />
+        </span>
+
+        <span className="mt-3 block rounded-lg bg-muted/40 p-2">
+          <span className="block font-medium text-card-foreground">
+            {t('sessions.modelInfo.pricingTitle', { defaultValue: 'Price per 1M tokens' })}
+          </span>
+          {pricing ? (
+            <span className="mt-1 grid grid-cols-2 gap-x-3 gap-y-1 tabular-nums text-muted-foreground">
+              <span>{t('usage.inputTokens')}: {formatPerMillionCost(pricing.inputCostPerMillion)}</span>
+              <span>{t('usage.outputTokens')}: {formatPerMillionCost(pricing.outputCostPerMillion)}</span>
+              <span>{t('usage.cacheTokens')}: {formatOptionalPerMillionCost(pricing.cacheReadInputCostPerMillion)}</span>
+              <span>{t('usage.reasoningTokens')}: {formatOptionalPerMillionCost(pricing.reasoningOutputCostPerMillion)}</span>
+            </span>
+          ) : (
+            <span className="mt-1 block text-muted-foreground">
+              {t('sessions.modelInfo.noPricing', { defaultValue: 'No local pricing match for this model id.' })}
+            </span>
+          )}
+          {pricing && (
+            <span className="mt-1 block text-[11px] text-muted-foreground/80">
+              {t('sessions.modelInfo.pricingSource', {
+                defaultValue: 'Source: {{source}} · matched {{model}}',
+                source: pricing.source,
+                model: pricing.matchedProvider
+                  ? `${pricing.matchedProvider}/${pricing.matchedModel}`
+                  : pricing.matchedModel
+              })}
+            </span>
+          )}
+        </span>
+
+        <span className="mt-2 block text-[11px] leading-4 text-muted-foreground">
+          {tokenUsage.hasBreakdown
+            ? t('sessions.modelInfo.cacheSourceFromTranscript', {
+                defaultValue: 'Cache tokens come from transcript usage fields such as cache_read_input_tokens, cache_creation_input_tokens, and cached_input_tokens. Berth does not infer cache hits from text.'
+              })
+            : t('sessions.modelInfo.cacheSourceUnavailable', {
+                defaultValue: 'This transcript did not expose a token breakdown, so Berth cannot identify cache tokens.'
+              })}
+        </span>
+        {modelInfo?.referenceUrl && (
+          <a
+            href={modelInfo.referenceUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="mt-2 inline-flex text-[11px] font-medium text-primary hover:underline"
+          >
+            {t('sessions.modelInfo.referenceLink', { defaultValue: 'Open official model reference' })}
+          </a>
+        )}
+      </span>
+    </span>
+  )
+}
+
+function ModelInfoField({
+  label,
+  value,
+  detail,
+  className
+}: {
+  label: string
+  value: string
+  detail?: string
+  className?: string
+}): React.ReactElement {
+  return (
+    <span className={cn('min-w-0 rounded-md border border-border/70 bg-background px-2 py-1.5', className)}>
+      <span className="block text-[10px] uppercase tracking-wider text-muted-foreground">{label}</span>
+      <span className="mt-0.5 block truncate font-medium text-card-foreground">{value}</span>
+      {detail && <span className="mt-0.5 block truncate text-[10px] text-muted-foreground">{detail}</span>}
+    </span>
+  )
+}
+
+function TimeMetaValue({ startedAt }: { startedAt: string | null }): React.ReactElement {
+  return (
+    <div className="min-w-0">
+      <span className="block truncate text-2xl font-semibold tabular-nums text-card-foreground">
+        {formatSessionDateTime(startedAt)}
+      </span>
+      <span className="mt-1 block truncate text-xs text-muted-foreground">
+        {formatOptionalRelativeTime(startedAt)}
+      </span>
+    </div>
+  )
+}
+
+function formatProviderSource(
+  source: string | undefined,
+  t: Translate
+): string | undefined {
+  if (source === 'model-id') {
+    return t('sessions.modelInfo.providerSourceModelId', { defaultValue: 'inferred from model id' })
+  }
+  if (source === 'pricing-catalog') {
+    return t('sessions.modelInfo.providerSourcePricing', { defaultValue: 'from pricing catalog' })
+  }
+  if (source === 'agent') {
+    return t('sessions.modelInfo.providerSourceAgent', { defaultValue: 'inferred from agent' })
+  }
+  return undefined
+}
+
+function formatReleaseDateSource(
+  source: string | null | undefined,
+  t: Translate
+): string | undefined {
+  if (source === 'model-id') {
+    return t('sessions.modelInfo.releaseSourceModelId', { defaultValue: 'from model id' })
+  }
+  if (source === 'model-catalog') {
+    return t('sessions.modelInfo.releaseSourceModelCatalog', { defaultValue: 'from model reference' })
+  }
+  return undefined
+}
+
+function formatSessionDateTime(value: string | null): string {
+  if (!value) return '—'
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return '—'
+  return [
+    `${date.getFullYear()}-${padDatePart(date.getMonth() + 1)}-${padDatePart(date.getDate())}`,
+    `${padDatePart(date.getHours())}:${padDatePart(date.getMinutes())}`
+  ].join(' ')
+}
+
+function formatDisplayDate(value: string): string {
+  const date = new Date(`${value}T00:00:00.000Z`)
+  if (Number.isNaN(date.getTime())) return value
+  return `${date.getUTCFullYear()}-${padDatePart(date.getUTCMonth() + 1)}-${padDatePart(date.getUTCDate())}`
+}
+
+function padDatePart(value: number): string {
+  return String(value).padStart(2, '0')
+}
+
+function formatPerMillionCost(value: number): string {
+  return `${new Intl.NumberFormat(undefined, {
+    style: 'currency',
+    currency: 'USD',
+    maximumFractionDigits: value < 1 ? 3 : 2
+  }).format(value)}/1M`
+}
+
+function formatOptionalPerMillionCost(value: number | undefined): string {
+  return value == null ? '—' : formatPerMillionCost(value)
 }
 
 function SessionSignalsPanel({ signals }: { signals: SessionSignals }): React.ReactElement {
@@ -580,10 +784,33 @@ function CheckpointsContent({
 
   if (checkpointsWithFiles.length === 0) {
     return (
-      <SectionEmpty
-        title={t('sessions.checkpointSummary.noDetailsTitle', { count: totalCount })}
-        description={t('sessions.checkpointSummary.noDetailsDescription')}
-      />
+      <div className="px-4 py-3">
+        <p className="text-xs font-medium text-card-foreground">
+          {t('sessions.checkpointSummary.noDetailsTitle', { count: totalCount })}
+        </p>
+        <p className="mt-1 max-w-[70ch] text-xs leading-5 text-muted-foreground">
+          {t('sessions.checkpointSummary.noDetailsDescription')}
+        </p>
+        <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
+          <CheckpointMetric
+            label={t('sessions.checkpointSummary.recordedCount', { defaultValue: 'Recorded' })}
+            value={formatNumber(totalCount)}
+          />
+          <CheckpointMetric
+            label={t('sessions.checkpointSummary.fileLists', { defaultValue: 'File lists' })}
+            value={formatNumber(checkpointsWithFiles.length)}
+          />
+          <CheckpointMetric
+            label={t('sessions.checkpointSummary.missingDetails', { defaultValue: 'Missing details' })}
+            value={formatNumber(checkpointsWithoutDetails)}
+          />
+        </div>
+        <p className="mt-3 text-xs leading-5 text-muted-foreground/80">
+          {t('sessions.checkpointSummary.availableFields', {
+            defaultValue: 'If the transcript exposes checkpoint timestamps, changed paths, or file counts later, Berth can list those fields here.'
+          })}
+        </p>
+      </div>
     )
   }
 
@@ -611,6 +838,21 @@ function CheckpointsContent({
           {t('sessions.checkpointSummary.omittedNoDetails', { count: checkpointsWithoutDetails })}
         </div>
       )}
+    </div>
+  )
+}
+
+function CheckpointMetric({
+  label,
+  value
+}: {
+  label: string
+  value: string
+}): React.ReactElement {
+  return (
+    <div className="rounded-lg border border-border/70 bg-muted/20 px-3 py-2">
+      <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">{label}</p>
+      <p className="mt-1 text-lg font-semibold tabular-nums text-card-foreground">{value}</p>
     </div>
   )
 }

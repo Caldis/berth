@@ -35,6 +35,27 @@ const summary: SessionSummary = {
   hooksFired: 2
 }
 
+const modelInfo = {
+  provider: 'Anthropic',
+  providerSource: 'model-id' as const,
+  releaseDate: '2025-05-14',
+  releaseDateSource: 'model-id' as const,
+  knowledgeCutoff: null,
+  pricing: {
+    matchedModel: 'claude-sonnet-4-20250514',
+    matchedProvider: 'anthropic',
+    inputCostPerMillion: 3,
+    outputCostPerMillion: 15,
+    cacheReadInputCostPerMillion: 0.3,
+    cacheCreationInputCostPerMillion: 3.75,
+    contextWindow: 200000,
+    maxOutputTokens: 64000,
+    source: 'models.dev' as const,
+    sourceUrl: 'https://models.dev/api.json',
+    updatedAt: '2026-05-30T14:51:53.037Z'
+  }
+}
+
 function makeAsset(type: Asset['type'], name: string): Asset {
   return {
     id: `${type}-${name}`,
@@ -52,6 +73,7 @@ function mockSessionApis(): void {
   window.api.sessions.list = vi.fn(async () => ({ sessions: [summary], totalCount: 1 }))
   window.api.sessions.get = vi.fn(async () => ({
     summary,
+    modelInfo,
     skillsUsed: [makeAsset('skill', 'frontend-design')],
     mcpServers: [makeAsset('mcp-server', 'plugin_playwright_playwright')],
     hooksFired: [{ event: 'Stop', count: 2 }],
@@ -162,7 +184,7 @@ describe('session pages', () => {
     expect(screen.getByText('5m')).toBeInTheDocument()
     expect(screen.getByText('38 tok')).toBeInTheDocument()
     expect(screen.getByText(/I 10 \/ O 5/)).toBeInTheDocument()
-    expect(screen.getByText('claude-sonnet-4-20250514')).toBeInTheDocument()
+    expect(screen.getAllByText('claude-sonnet-4-20250514').length).toBeGreaterThan(0)
   })
 
   it('shows sessions guidance and an instructive empty state when no sessions are found', async () => {
@@ -192,7 +214,11 @@ describe('session pages', () => {
 
     expect(await screen.findByText('Fix session metadata')).toBeInTheDocument()
     expect(screen.getAllByText('D:\\Code\\berth').length).toBeGreaterThan(0)
-    expect(screen.getByText('claude-sonnet-4-20250514')).toBeInTheDocument()
+    expect(screen.getAllByText('claude-sonnet-4-20250514').length).toBeGreaterThan(0)
+    expect(screen.getByText(/2026-05-30/)).toBeInTheDocument()
+    expect(screen.getByText('Provider')).toBeInTheDocument()
+    expect(screen.getByText('Anthropic')).toBeInTheDocument()
+    expect(screen.getByText(/Cache tokens come from transcript usage fields/)).toBeInTheDocument()
     expect(screen.getByText('5m')).toBeInTheDocument()
     expect(screen.queryByText('Input: 10')).not.toBeInTheDocument()
     expect(screen.queryByText('Output: 5')).not.toBeInTheDocument()
@@ -307,6 +333,8 @@ describe('session pages', () => {
     )
 
     expect(await screen.findByText('3 checkpoints recorded')).toBeInTheDocument()
+    expect(screen.getByText(/Checkpoints are file-history snapshots/)).toBeInTheDocument()
+    expect(screen.getByText('Missing details')).toBeInTheDocument()
     expect(screen.queryByText('File history checkpoint')).not.toBeInTheDocument()
     expect(screen.getByText(/Runs a subagent in a separate context/)).toBeInTheDocument()
     expect(screen.getByText(/waits for your answer/)).toBeInTheDocument()

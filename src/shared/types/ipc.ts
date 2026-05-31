@@ -4,6 +4,7 @@ import type {
   AssetCategory,
   CostMode,
   AssetScope,
+  PricingSourceName,
   AssetStats,
   ScanRoot,
   SessionSummary,
@@ -108,8 +109,34 @@ export interface SessionArtifacts {
   checkpoints: SessionArtifactCheckpoint[]
 }
 
+export interface SessionModelPricingInfo {
+  matchedModel: string
+  matchedProvider?: string
+  inputCostPerMillion: number
+  outputCostPerMillion: number
+  cacheReadInputCostPerMillion?: number
+  cacheCreationInputCostPerMillion?: number
+  reasoningOutputCostPerMillion?: number
+  contextWindow?: number
+  maxOutputTokens?: number
+  source: PricingSourceName
+  sourceUrl?: string
+  updatedAt?: string
+}
+
+export interface SessionModelInfo {
+  provider: string | null
+  providerSource: 'model-id' | 'pricing-catalog' | 'agent' | 'unknown'
+  releaseDate: string | null
+  releaseDateSource: 'model-id' | 'model-catalog' | null
+  knowledgeCutoff: string | null
+  referenceUrl?: string
+  pricing: SessionModelPricingInfo | null
+}
+
 export interface SessionDetailResult {
   summary: SessionSummary
+  modelInfo?: SessionModelInfo
   skillsUsed: Asset[]
   mcpServers: Asset[]
   hooksFired: { event: string; count: number }[]

@@ -61,6 +61,7 @@
     "checkpoints": "Checkpoints",
     "fileHistory": "File history checkpoints",
     "started": "Started",
+    "time": "Time",
     "sessionOverview": "Run overview",
     "durationUnknown": "unknown",
     "toolTimelineDescription": "Tool calls, status, duration, and transcript-derived evidence.",
@@ -167,6 +168,8 @@
       "ariaLabel": "Minimum tool duration",
       "showing": "Showing {{shown}} of {{total}}",
       "allDurations": "All durations",
+      "allStatuses": "All",
+      "failedOnly": "Failed",
       "minDuration": ">= {{duration}}",
       "emptyTitle": "No slow tool calls in this range",
       "emptyDescription": "Lower the duration filter to include faster calls."
@@ -193,8 +196,31 @@
     },
     "checkpointSummary": {
       "noDetailsTitle": "{{count}} checkpoints recorded",
-      "noDetailsDescription": "This transcript records checkpoint count, but does not include per-checkpoint file lists. Showing every empty checkpoint would not add useful evidence.",
-      "omittedNoDetails": "{{count}} checkpoints without file details are hidden."
+      "noDetailsDescription": "Checkpoints are file-history snapshots. This transcript records the count, but does not include the changed files or diff for each checkpoint.",
+      "omittedNoDetails": "{{count}} checkpoints without file details are hidden.",
+      "recordedCount": "Recorded",
+      "fileLists": "File lists",
+      "missingDetails": "Missing details",
+      "availableFields": "If the transcript exposes checkpoint timestamps, changed paths, or file counts later, Berth can list those fields here."
+    },
+    "modelInfo": {
+      "provider": "Provider",
+      "releaseDate": "Model date",
+      "contextWindow": "Context",
+      "maxOutput": "Max output",
+      "knowledgeCutoff": "Knowledge cutoff",
+      "notRecorded": "Not recorded",
+      "pricingTitle": "Price per 1M tokens",
+      "noPricing": "No local pricing match for this model id.",
+      "pricingSource": "Source: {{source}} · matched {{model}}",
+      "providerSourceModelId": "inferred from model id",
+      "providerSourcePricing": "from pricing catalog",
+      "providerSourceAgent": "inferred from agent",
+      "releaseSourceModelId": "from model id",
+      "releaseSourceModelCatalog": "from official model reference",
+      "cacheSourceFromTranscript": "Cache tokens come from transcript usage fields such as cache_read_input_tokens, cache_creation_input_tokens, and cached_input_tokens. Berth does not infer cache hits from text.",
+      "cacheSourceUnavailable": "This transcript did not expose a token breakdown, so Berth cannot identify cache tokens.",
+      "referenceLink": "Open official model reference"
     }
   },
   "instructions": {
