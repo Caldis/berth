@@ -8,11 +8,11 @@
   - 新增 `NoticePanel`, 并让 `WarningBanner` 可继续兼容。
   - 验证: `pnpm test -- tests/renderer/feature-guide-panel.test.tsx tests/renderer/shared-guidance-primitives.test.tsx`。
 
-- [ ] 任务 2: 建统一 guide 数据层。
+- [x] 任务 2: 建统一 guide 数据层。
   - 新增或迁移 `feature-guidance.ts`。
   - 迁移现有 instructions / capabilities guide 定义。
   - 新增 memories / sessions guide 定义。
-  - 验证: guidance definition 测试。
+  - 验证: `pnpm test -- tests/renderer/feature-guidance.test.ts`。
 
 - [ ] 任务 3: 补全 Instructions / Memories。
   - memories tab 渲染统一功能说明。
