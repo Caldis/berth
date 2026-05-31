@@ -33,3 +33,6 @@ verify 不通过项作为新任务追加于此, phase 退回 implement。
   - `pnpm typecheck:web` 通过。
   - `pnpm harness:check` 通过。
   - 真实界面验收: 使用 `pnpm dev:agent start --id session-detail-density-verify` 启动 agent-owned Electron 实例。因 5173 被另一个本地页面占用, 该实例主窗口加载到了错误端口; 未清理用户进程, 改用同一 dev server 的 5174 renderer 启动临时 Electron 实例验收。已在真实详情页看到运行概览等高卡片、紧凑工具时间线、连续 rail、耗时 slider、工具说明入口, 并下滚确认产物文件列表占满主内容宽度。验收后已关闭临时 Electron、`pnpm dev:agent stop session-detail-density-verify`; `guard after` 确认用户 dev 进程未受影响。
+
+- 2026-06-01 verify feedback:
+  - [ ] 任务 12: 运行概览卡片内容放大并重新排版, verify: renderer 测试、`pnpm typecheck:web`、真实界面截图确认卡片不再显空。

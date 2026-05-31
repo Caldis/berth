@@ -2,7 +2,7 @@
 task: 2026-05-31-session-detail-agent-observability
 type: feature
 jira:
-phase: verify
+phase: implement
 created: 2026-05-31
 artifacts:
   source: 00-PRD.md
