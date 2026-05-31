@@ -66,6 +66,17 @@ function mockSessionApis(): void {
         endedAt: '2026-05-30T01:02:01.000Z',
         summary: 'D:\\Code\\berth\\src\\main.ts',
         filePaths: ['D:\\Code\\berth\\src\\main.ts']
+      },
+      {
+        id: 'tool-bash',
+        callId: 'tool-bash',
+        name: 'Bash',
+        category: 'builtin',
+        status: 'error',
+        startedAt: '2026-05-30T01:03:00.000Z',
+        endedAt: '2026-05-30T01:03:02.000Z',
+        summary: 'pnpm test',
+        filePaths: []
       }
     ],
     artifacts: {
@@ -128,7 +139,7 @@ describe('session pages', () => {
 
     expect(await screen.findByText('Fix session metadata')).toBeInTheDocument()
     expect(window.api.sessions.list).toHaveBeenCalledWith({ projectFilter: undefined, limit: 5, agentView: 'all' })
-    expect(screen.getByText('D:\\Code\\berth')).toBeInTheDocument()
+    expect(screen.getAllByText('D:\\Code\\berth').length).toBeGreaterThan(0)
     expect(screen.getByText('38 tok')).toBeInTheDocument()
     expect(screen.getByText(/I 10 \/ O 5/)).toBeInTheDocument()
     expect(screen.getAllByText('—').length).toBeGreaterThan(0)
@@ -145,7 +156,7 @@ describe('session pages', () => {
 
     expect(screen.getByText('Local conversation history')).toBeInTheDocument()
     expect(await screen.findByText('Fix session metadata')).toBeInTheDocument()
-    expect(screen.getByText('D:\\Code\\berth')).toBeInTheDocument()
+    expect(screen.getAllByText('D:\\Code\\berth').length).toBeGreaterThan(0)
     expect(screen.queryByText('D--Code-berth')).not.toBeInTheDocument()
     expect(screen.queryByText(/Invalid Date/i)).not.toBeInTheDocument()
     expect(screen.getByText('5m')).toBeInTheDocument()
@@ -180,14 +191,29 @@ describe('session pages', () => {
     )
 
     expect(await screen.findByText('Fix session metadata')).toBeInTheDocument()
-    expect(screen.getByText('D:\\Code\\berth')).toBeInTheDocument()
+    expect(screen.getAllByText('D:\\Code\\berth').length).toBeGreaterThan(0)
     expect(screen.getByText('claude-sonnet-4-20250514')).toBeInTheDocument()
     expect(screen.getByText('5m')).toBeInTheDocument()
-    expect(screen.getByText('Input: 10')).toBeInTheDocument()
-    expect(screen.getByText('Output: 5')).toBeInTheDocument()
+    expect(screen.queryByText('Input: 10')).not.toBeInTheDocument()
+    expect(screen.queryByText('Output: 5')).not.toBeInTheDocument()
+    expect(screen.getByText('Input 10')).toBeInTheDocument()
+    expect(screen.getByText('Output 5')).toBeInTheDocument()
+    expect(screen.getByText('Session signals')).toBeInTheDocument()
+    expect(screen.getByText('Avg tool time')).toBeInTheDocument()
+    expect(screen.getByText('1.5s')).toBeInTheDocument()
+    expect(screen.getByText('Slowest tool')).toBeInTheDocument()
+    expect(screen.getAllByText('Bash').length).toBeGreaterThan(0)
+    expect(screen.getByText('Failed tools')).toBeInTheDocument()
+    expect(screen.getByText('1 / 2')).toBeInTheDocument()
+    expect(screen.getByText('50%')).toBeInTheDocument()
+    expect(screen.getByText('Token rate')).toBeInTheDocument()
+    expect(screen.getByText('7.6 tok/min')).toBeInTheDocument()
+    expect(screen.getByText('Cache read share')).toBeInTheDocument()
+    expect(screen.getByText('60.6%')).toBeInTheDocument()
     expect(screen.getByText('frontend-design')).toBeInTheDocument()
     expect(screen.getByText('plugin_playwright_playwright')).toBeInTheDocument()
     expect(screen.getByText('Edit')).toBeInTheDocument()
+    expect(screen.getAllByText('2s').length).toBeGreaterThan(0)
     expect(screen.getByText('Verify UI')).toBeInTheDocument()
     expect(screen.getAllByText('D:\\Code\\berth\\src\\main.ts').length).toBeGreaterThan(0)
     expect(screen.getByText('Stop')).toBeInTheDocument()

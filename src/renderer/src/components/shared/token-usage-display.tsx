@@ -12,6 +12,7 @@ interface TokenUsageDisplayProps {
   usage: TokenUsageBreakdown
   mode?: 'compact' | 'detail'
   className?: string
+  showTextBreakdown?: boolean
 }
 
 const SEGMENT_CLASS: Record<TokenUsageSegmentId, string> = {
@@ -37,7 +38,8 @@ function formatPercentage(value: number): string {
 export function TokenUsageDisplay({
   usage,
   mode = 'compact',
-  className
+  className,
+  showTextBreakdown = true
 }: TokenUsageDisplayProps): React.ReactElement {
   const { t } = useTranslation()
   const cacheDetails = useMemo(() => tokenUsageCacheDetails(usage), [usage])
@@ -69,7 +71,7 @@ export function TokenUsageDisplay({
         <div className="font-medium tabular-nums">
           {formatNumber(usage.totalTokens)} {t('usage.tokenUnit')}
         </div>
-        {usage.hasBreakdown ? (
+        {showTextBreakdown && usage.hasBreakdown ? (
           <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
             <span>{t('usage.inputTokens')}: {formatNumber(usage.inputTokens)}</span>
             <span>{t('usage.outputTokens')}: {formatNumber(usage.outputTokens)}</span>
@@ -81,14 +83,14 @@ export function TokenUsageDisplay({
               <span>{t('usage.unknownTokens')}: {formatNumber(usage.unknownTokens)}</span>
             )}
           </div>
-        ) : (
+        ) : showTextBreakdown ? (
           <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
             <span>{t('usage.breakdownUnavailable')}</span>
             {hasUnknownTokens && (
               <span>{t('usage.unknownTokens')}: {formatNumber(usage.unknownTokens)}</span>
             )}
           </div>
-        )}
+        ) : null}
         {segments.length > 0 && (
           <div className="space-y-1.5 pt-1.5">
             <div className="flex h-1.5 overflow-hidden rounded-full bg-muted">

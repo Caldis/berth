@@ -61,6 +61,20 @@
     "checkpoints": "Checkpoints",
     "fileHistory": "文件历史检查点",
     "started": "开始时间",
+    "sessionOverview": "运行概览",
+    "durationUnknown": "未知",
+    "toolTimelineDescription": "工具调用、状态、耗时和从 transcript 推导出的证据。",
+    "signals": {
+      "title": "会话信号",
+      "description": "这些指标来自本地 transcript 推导，可能与供应商账单或遥测不同。",
+      "toolCalls": "工具调用",
+      "failedTools": "失败工具",
+      "avgToolTime": "平均工具耗时",
+      "slowestTool": "最慢工具",
+      "tokenRate": "Token 速率",
+      "costRate": "费用速率",
+      "cacheReadShare": "缓存读占比"
+    },
     "evidence": {
       "sessions": "个会话",
       "projects": "个项目",

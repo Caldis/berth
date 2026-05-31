@@ -61,6 +61,20 @@
     "checkpoints": "Checkpoints",
     "fileHistory": "File history checkpoints",
     "started": "Started",
+    "sessionOverview": "Run overview",
+    "durationUnknown": "unknown",
+    "toolTimelineDescription": "Tool calls, status, duration, and transcript-derived evidence.",
+    "signals": {
+      "title": "Session signals",
+      "description": "Local metrics derived from this transcript. Billing and provider telemetry may differ.",
+      "toolCalls": "Tool calls",
+      "failedTools": "Failed tools",
+      "avgToolTime": "Avg tool time",
+      "slowestTool": "Slowest tool",
+      "tokenRate": "Token rate",
+      "costRate": "Cost rate",
+      "cacheReadShare": "Cache read share"
+    },
     "evidence": {
       "sessions": "sessions",
       "projects": "projects",
