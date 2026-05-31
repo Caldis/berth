@@ -423,12 +423,50 @@ export function collectProtectedUserDevProcesses(processes, context) {
   return processes.filter((processInfo) => isProtectedUserDevProcess(processInfo, context))
 }
 
+function isElectronMainProcess(processInfo) {
+  const command = normalizeForCompare(processInfo.commandLine)
+  const name = normalizeForCompare(processInfo.name)
+  return (
+    name.includes('electron') &&
+    command.includes('electron') &&
+    !command.includes('--type=') &&
+    !command.includes('--berth-agent-instance=')
+  )
+}
+
+function findRestartedElectronReplacement(previousProcess, currentProcesses, currentPids) {
+  if (!isElectronMainProcess(previousProcess)) return undefined
+  if (!currentPids.has(Number(previousProcess.parentPid))) return undefined
+
+  return currentProcesses.find(
+    (processInfo) =>
+      Number(processInfo.pid) !== Number(previousProcess.pid) &&
+      Number(processInfo.parentPid) === Number(previousProcess.parentPid) &&
+      isElectronMainProcess(processInfo)
+  )
+}
+
 export function evaluateGuardAfter(snapshot, currentProcesses) {
   const currentPids = new Set(currentProcesses.map((processInfo) => Number(processInfo.pid)))
-  const missing = snapshot.protectedProcesses.filter((processInfo) => !currentPids.has(Number(processInfo.pid)))
+  const missing = []
+  const restarted = []
+
+  for (const processInfo of snapshot.protectedProcesses) {
+    if (currentPids.has(Number(processInfo.pid))) continue
+
+    const replacement = findRestartedElectronReplacement(processInfo, currentProcesses, currentPids)
+    if (replacement) {
+      restarted.push({ previous: processInfo, replacement })
+      continue
+    }
+
+    missing.push(processInfo)
+  }
+
   return {
     ok: missing.length === 0,
-    missing
+    missing,
+    restarted
   }
 }
 
@@ -457,7 +495,12 @@ export function guardAfter(options, context = createAgentDevContext(), deps = {}
     throw new Error(`Protected user dev processes exited: ${result.missing.map((p) => p.pid).join(', ')}`)
   }
   safeRemove(context, file)
-  return { status: 'guard-ok', id, protectedProcesses: snapshot.protectedProcesses }
+  return {
+    status: 'guard-ok',
+    id,
+    protectedProcesses: snapshot.protectedProcesses,
+    restarted: result.restarted
+  }
 }
 
 export function formatResult(result, json = false) {
@@ -482,7 +525,8 @@ export function formatResult(result, json = false) {
     return `guarded ${result.id} protected=${result.protectedProcesses.length}\n`
   }
   if (result.status === 'guard-ok') {
-    return `guard-ok ${result.id} protected=${result.protectedProcesses.length}\n`
+    const restarted = result.restarted?.length ? ` restarted=${result.restarted.length}` : ''
+    return `guard-ok ${result.id} protected=${result.protectedProcesses.length}${restarted}\n`
   }
   return `${result.status}\n`
 }

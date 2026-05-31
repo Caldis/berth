@@ -178,6 +178,73 @@ describe('agent dev core', () => {
     ).toMatchObject({ ok: false, missing: [protectedProcesses[1]] })
   })
 
+  it('accepts user dev Electron main process restarts under the same dev server', () => {
+    const context = makeContext()
+    const devServer = {
+      pid: 1,
+      parentPid: 0,
+      name: 'node.exe',
+      commandLine: 'node D:\\Code\\berth\\node_modules\\electron-vite\\bin\\electron-vite.js dev --watch'
+    }
+    const previousElectron = {
+      pid: 2,
+      parentPid: 1,
+      name: 'electron.exe',
+      commandLine: 'D:\\Code\\berth\\node_modules\\.pnpm\\electron\\dist\\electron.exe .'
+    }
+    const replacementElectron = {
+      pid: 4,
+      parentPid: 1,
+      name: 'electron.exe',
+      commandLine: 'D:\\Code\\berth\\node_modules\\.pnpm\\electron\\dist\\electron.exe .'
+    }
+
+    expect(
+      evaluateGuardAfter(
+        { protectedProcesses: collectProtectedUserDevProcesses([devServer, previousElectron], context) },
+        [devServer, replacementElectron]
+      )
+    ).toMatchObject({
+      ok: true,
+      missing: [],
+      restarted: [{ previous: previousElectron, replacement: replacementElectron }]
+    })
+  })
+
+  it('does not accept agent-owned Electron processes as user dev restart replacements', () => {
+    const context = makeContext()
+    const devServer = {
+      pid: 1,
+      parentPid: 0,
+      name: 'node.exe',
+      commandLine: 'node D:\\Code\\berth\\node_modules\\electron-vite\\bin\\electron-vite.js dev --watch'
+    }
+    const previousElectron = {
+      pid: 2,
+      parentPid: 1,
+      name: 'electron.exe',
+      commandLine: 'D:\\Code\\berth\\node_modules\\.pnpm\\electron\\dist\\electron.exe .'
+    }
+    const agentElectron = {
+      pid: 4,
+      parentPid: 1,
+      name: 'electron.exe',
+      commandLine:
+        'D:\\Code\\berth\\node_modules\\.pnpm\\electron\\dist\\electron.exe . --berth-agent-instance=agent-1'
+    }
+
+    expect(
+      evaluateGuardAfter(
+        { protectedProcesses: collectProtectedUserDevProcesses([devServer, previousElectron], context) },
+        [devServer, agentElectron]
+      )
+    ).toMatchObject({
+      ok: false,
+      missing: [previousElectron],
+      restarted: []
+    })
+  })
+
   it('writes and validates guard snapshots', () => {
     const context = makeContext()
     const processes = [
