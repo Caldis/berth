@@ -59,14 +59,22 @@ implement — explore + design 完成 (00-PRD / 01-ANALYSIS / 02-SPEC / 03-PLAN 
   共 16 例; 替代之前的一次性探针。memory 测试合计 32/32 绿。
 - ✅ **收尾·约定 tab 说明面板**: conventions guide 复用既有 `guidance.memories` 文案 (描述持久指令, 正合
   CLAUDE.md/AGENTS.md), 零新增 i18n; 记忆 tab 不再显示该面板 (渲染 MemoryView)。
-- ⛔ **收尾·i18n 提交受阻**: en/zh.json 仍混入并行 status-line session 未提交的 `statusLine.*`/`askList`/
-  yes-no 改动, 且各 session 正在活跃提交。文件级 `git add` 会连带其 WIP (违反不变量 11), 非交互环境无法安全拆分。
-  我的 memory.*/tabs.conventions 键已在工作区生效 (运行态正常), 暂不提交; 待该 session 落地后单独提交。
-- ⏳ GUI 截图验收 (pnpm dev → 指令 → 记忆 人工查看)。
+- ✅ **收尾·i18n 改为组件内兜底** (ec1c609): en/zh.json 是并行 session 反复重写的共享资源, 我加的
+  memory.* 键被回退导致 Memory tab 显示原始键名。改用 `t(key, 默认值)` 在 memory-view.tsx 内置英文兜底
+  (search/refresh/relations/allSources/sourceError/clearFilters/importanceHint.*/空态), 彻底解耦易变 JSON:
+  键缺失即显示可读英文, 键到位则自动接管。只动自有文件, 不再连带他人 WIP。typecheck 0 / lint 0 / 测试 29/29。
+- ⏳ GUI 截图验收 (pnpm dev → 指令 → 记忆 人工查看; Windows 自动截图未做, 留作人工抽检)。
 
 ### 转 issues 的后续 (本任务不做)
 - `docs/issues/2026-05-31-IMPROVEMENT-memory-view-rich-rendering.md` (markdown 富渲染 + importance/tag 过滤 + 正文双链)
 - `docs/issues/2026-05-31-IMPROVEMENT-memory-source-robustness.md` (重复读取 / native N+1 / index 失准提示 / 路径穿越加固 / native 时间)
+- `docs/issues/2026-05-31-IMPROVEMENT-memory-view-motion-polish.md` (展开过渡 + 跳转高亮淡出, critique #5)
+
+## 验收结论 (archive)
+端到端闭环已交付并验证: 适配层 (MemorySource 正交抽象) + 两源 (united-memory / claude-native) + 聚合/IPC/UI
+(搜索/排序/刷新/来源过滤/关联跳转/详情) 全部落地; typecheck 0 / lint 0 / memory 测试 29/29 / harness:check 绿;
+运行态实证两源聚合 57 条。白屏与路径两个缺陷已修并加回归守卫。i18n 改组件内兜底彻底消除共享 JSON 竞态。
+非主线增强 (富渲染 / 健壮性 / 动效) 已转 3 个 issue。剩 GUI 截图人工抽检, 不阻断归档。
 
 ### 已知数据细节 (非 berth bug)
 - united-memory 返回 45 (依 index.json) 而磁盘 mem/ 仅 38 有效 (+8 畸形文件): index.json 偏旧。
