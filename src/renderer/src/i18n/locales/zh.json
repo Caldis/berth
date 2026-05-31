@@ -161,6 +161,40 @@
         "title": "没有记录到 checkpoint",
         "description": "这个会话没有文件历史 checkpoint。"
       }
+    },
+    "toolFilter": {
+      "label": "最小耗时",
+      "ariaLabel": "最小工具耗时",
+      "showing": "显示 {{shown}} / {{total}}",
+      "allDurations": "全部耗时",
+      "minDuration": ">= {{duration}}",
+      "emptyTitle": "这个区间里没有慢工具调用",
+      "emptyDescription": "降低耗时筛选阈值即可看到更快的调用。"
+    },
+    "toolTips": {
+      "agent": "在独立上下文里运行子代理。耗时包含被委派任务的完整执行过程，所以通常会比一次直接工具调用更长。",
+      "askUser": "弹出结构化问题并等待用户回答。耗时很长通常表示 agent 在等人输入。",
+      "shell": "在本地环境执行 shell 命令。测试、构建、安装、网络请求或 watch 命令通常会让耗时变长。",
+      "fileRead": "读取本地文件或资源，让 agent 在下一步行动前先核对当前状态。",
+      "fileWrite": "创建或编辑文件。失败常见原因是文件在读取后又被改过，或精确匹配的编辑目标没有命中。",
+      "fileSearch": "搜索文件、符号或文本。通常很快，但在大目录里跑宽泛模式也会变慢。",
+      "web": "执行 Web 搜索或抓取。耗时取决于网络、provider 限制、跳转和页面抽取。",
+      "skill": "加载 skill 指令包。这里有用的信息是后续步骤受哪个 workflow 影响。",
+      "tasks": "更新 agent 的任务或待办状态。这类调用解释计划状态，不代表应用行为。",
+      "patch": "通过本地编辑 helper 应用代码补丁。耗时短通常表示补丁干净命中。",
+      "mcp": "调用外部 MCP 或插件工具。耗时包含 connector 以及背后的本地或远端服务。",
+      "browser": "控制浏览器或 Playwright 会话，用于 UI 检查和验证。",
+      "image": "读取或附加图片，让 agent 检查视觉证据。",
+      "workspace": "加载本地工具使用的打包运行时或文档辅助库。",
+      "multiAgent": "协调另一个本地 agent 进程。耗时可能包含排队和另一个 agent 的工作时间。",
+      "hook": "执行会话或工具调用周边的 hook 逻辑。",
+      "plan": "切换计划模式状态，或在继续改代码前请求计划批准。",
+      "generic": "transcript 里的工具事件。主要看摘要、文件路径、状态和耗时。"
+    },
+    "checkpointSummary": {
+      "noDetailsTitle": "记录到 {{count}} 个 checkpoint",
+      "noDetailsDescription": "这个 transcript 只记录了 checkpoint 数量，没有包含每个 checkpoint 的文件列表。逐条展示空 checkpoint 没有额外证据价值。",
+      "omittedNoDetails": "已隐藏 {{count}} 个没有文件明细的 checkpoint。"
     }
   },
   "instructions": {

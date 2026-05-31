@@ -13,6 +13,7 @@ interface TokenUsageDisplayProps {
   mode?: 'compact' | 'detail'
   className?: string
   showTextBreakdown?: boolean
+  legendDensity?: 'normal' | 'compact'
 }
 
 const SEGMENT_CLASS: Record<TokenUsageSegmentId, string> = {
@@ -39,7 +40,8 @@ export function TokenUsageDisplay({
   usage,
   mode = 'compact',
   className,
-  showTextBreakdown = true
+  showTextBreakdown = true,
+  legendDensity = 'normal'
 }: TokenUsageDisplayProps): React.ReactElement {
   const { t } = useTranslation()
   const cacheDetails = useMemo(() => tokenUsageCacheDetails(usage), [usage])
@@ -68,7 +70,7 @@ export function TokenUsageDisplay({
   if (mode === 'detail') {
     return (
       <div className={cn('min-w-0 space-y-1', className)} title={title}>
-        <div className="font-medium tabular-nums">
+        <div className={cn('font-medium tabular-nums', legendDensity === 'compact' && 'text-sm')}>
           {formatNumber(usage.totalTokens)} {t('usage.tokenUnit')}
         </div>
         {showTextBreakdown && usage.hasBreakdown ? (
@@ -92,7 +94,7 @@ export function TokenUsageDisplay({
           </div>
         ) : null}
         {segments.length > 0 && (
-          <div className="space-y-1.5 pt-1.5">
+          <div className={cn('space-y-1.5 pt-1.5', legendDensity === 'compact' && 'space-y-1 pt-1')}>
             <div className="flex h-1.5 overflow-hidden rounded-full bg-muted">
               {segments.map((segment) => (
                 <div
@@ -103,7 +105,12 @@ export function TokenUsageDisplay({
                 />
               ))}
             </div>
-            <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
+            <div
+              className={cn(
+                'flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground',
+                legendDensity === 'compact' && 'gap-x-2 text-[10px] leading-4'
+              )}
+            >
               {segments.map((segment) => (
                 <span key={segment.id} className="inline-flex items-center gap-1.5">
                   <span className={cn('h-2 w-2 rounded-full', SEGMENT_CLASS[segment.id])} />

@@ -220,6 +220,89 @@ describe('session pages', () => {
     expect(screen.getByText('2x')).toBeInTheDocument()
   })
 
+  it('filters session detail tools by minimum duration', async () => {
+    mockSessionApis()
+
+    render(
+      <MemoryRouter initialEntries={['/sessions/session-session-abc']}>
+        <Routes>
+          <Route path="/sessions/:id" element={<SessionDetail />} />
+        </Routes>
+      </MemoryRouter>
+    )
+
+    expect(await screen.findByText('Edit')).toBeInTheDocument()
+
+    fireEvent.change(screen.getByLabelText('Minimum tool duration'), {
+      target: { value: '1500' }
+    })
+
+    expect(screen.queryByText('Edit')).not.toBeInTheDocument()
+    expect(screen.getAllByText('Bash').length).toBeGreaterThan(0)
+    expect(screen.getByText('Showing 1 of 2')).toBeInTheDocument()
+  })
+
+  it('summarizes empty checkpoints and explains long-running built-in tools', async () => {
+    mockSessionApis()
+    window.api.sessions.get = vi.fn(async () => ({
+      summary,
+      skillsUsed: [],
+      mcpServers: [],
+      hooksFired: [],
+      toolTimeline: [
+        {
+          id: 'tool-agent',
+          callId: 'tool-agent',
+          name: 'Agent',
+          category: 'builtin',
+          status: 'success',
+          startedAt: '2026-05-30T01:01:00.000Z',
+          endedAt: '2026-05-30T01:03:00.000Z',
+          summary: 'Explore session data',
+          filePaths: []
+        },
+        {
+          id: 'tool-question',
+          callId: 'tool-question',
+          name: 'AskUserQuestion',
+          category: 'builtin',
+          status: 'success',
+          startedAt: '2026-05-30T01:03:00.000Z',
+          endedAt: '2026-05-30T01:08:00.000Z',
+          summary: 'Choose implementation scope',
+          filePaths: []
+        }
+      ],
+      artifacts: {
+        plans: [],
+        todos: [],
+        files: [],
+        checkpoints: Array.from({ length: 3 }, (_, index) => ({
+          id: `checkpoint-${index}`,
+          title: 'File history checkpoint',
+          timestamp: '2026-05-30T01:05:00.000Z',
+          fileCount: 0
+        }))
+      },
+      plans: [],
+      todos: [],
+      fileHistoryCount: 3
+    }))
+
+    render(
+      <MemoryRouter initialEntries={['/sessions/session-session-abc']}>
+        <Routes>
+          <Route path="/sessions/:id" element={<SessionDetail />} />
+        </Routes>
+      </MemoryRouter>
+    )
+
+    expect(await screen.findByText('3 checkpoints recorded')).toBeInTheDocument()
+    expect(screen.queryByText('File history checkpoint')).not.toBeInTheDocument()
+    expect(screen.getByText(/Runs a subagent in a separate context/)).toBeInTheDocument()
+    expect(screen.getByText(/waits for your answer/)).toBeInTheDocument()
+  })
+
   it('uses explanatory section empty states in session detail', async () => {
     window.api.sessions.get = vi.fn(async () => ({
       summary,

@@ -22,7 +22,9 @@ import {
   Wrench,
   CheckCircle2,
   XCircle,
-  Circle
+  Circle,
+  Info,
+  SlidersHorizontal
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import {
@@ -37,6 +39,8 @@ import { ScopeBadge } from '@/components/shared/scope-badge'
 import { EmptyState } from '@/components/shared/empty-state'
 import { TokenUsageDisplay } from '@/components/shared/token-usage-display'
 import type { SessionArtifacts, SessionDetailResult, SessionToolEvent } from '@shared/types/ipc'
+
+type Translate = ReturnType<typeof useTranslation>['t']
 
 export function SessionDetail(): React.ReactElement {
   const { id } = useParams<{ id: string }>()
@@ -67,7 +71,8 @@ export function SessionDetail(): React.ReactElement {
   const loadedAssetCount = detail
     ? detail.skillsUsed.length + detail.mcpServers.length + hooksByEvent.length
     : 0
-  const artifactCount = artifacts.plans.length + artifacts.todos.length + artifacts.files.length + artifacts.checkpoints.length
+  const checkpointCount = artifacts.checkpoints.length || detail?.fileHistoryCount || 0
+  const artifactCount = artifacts.plans.length + artifacts.todos.length + artifacts.files.length + checkpointCount
 
   return (
     <div className="space-y-6">
@@ -239,6 +244,9 @@ export function SessionDetail(): React.ReactElement {
             </CollapsibleSection>
           </div>
 
+            </div>
+          </div>
+
           {/* Artifacts */}
           <div className="rounded-xl border border-border bg-card">
             <div className="border-b border-border px-4 py-3">
@@ -358,42 +366,18 @@ export function SessionDetail(): React.ReactElement {
                 {/* Checkpoints */}
                 <CollapsibleSection
                   title={t('sessions.checkpoints')}
-                  count={artifacts.checkpoints.length || detail.fileHistoryCount}
+                  count={checkpointCount}
                   icon={History}
                   expanded={expandedSections.has('checkpoints')}
                   onToggle={() => toggleSection('checkpoints')}
                 >
-                  {artifacts.checkpoints.length === 0 ? (
-                    <SectionEmpty
-                      title={t('sessions.emptyStates.checkpoints.title')}
-                      description={t('sessions.emptyStates.checkpoints.description')}
-                    />
-                  ) : (
-                    <div className="divide-y divide-border">
-                      {artifacts.checkpoints.map((checkpoint) => (
-                        <div
-                          key={checkpoint.id}
-                          className="flex items-center gap-3 px-4 py-2 text-sm"
-                        >
-                          <History className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                          <div className="min-w-0 flex-1">
-                            <p className="truncate text-card-foreground">{checkpoint.title}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {formatOptionalRelativeTime(checkpoint.timestamp)}
-                            </p>
-                          </div>
-                          <span className="text-xs text-muted-foreground">
-                            {checkpoint.fileCount}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                  <CheckpointsContent
+                    checkpoints={artifacts.checkpoints}
+                    totalCount={checkpointCount}
+                  />
                 </CollapsibleSection>
               </>
             )}
-          </div>
-            </div>
           </div>
         </>
       )}
@@ -447,7 +431,7 @@ function SessionSummaryPanel({ detail }: { detail: SessionDetailResult }): React
           </span>
         </div>
       </div>
-      <div className="grid grid-cols-2 gap-4 p-4 sm:grid-cols-3 xl:grid-cols-5">
+      <div className="grid grid-cols-1 gap-3 p-4 sm:grid-cols-2 lg:grid-cols-5">
         <MetaItem
           label={t('sessions.duration')}
           value={formatOptionalDuration(summary.duration)}
@@ -465,6 +449,7 @@ function SessionSummaryPanel({ detail }: { detail: SessionDetailResult }): React
               usage={summary.tokenUsage}
               mode="detail"
               showTextBreakdown={false}
+              legendDensity="compact"
             />
           }
           icon={Hash}
@@ -573,8 +558,75 @@ function SignalMetric({
   )
 }
 
+function CheckpointsContent({
+  checkpoints,
+  totalCount
+}: {
+  checkpoints: SessionArtifacts['checkpoints']
+  totalCount: number
+}): React.ReactElement {
+  const { t } = useTranslation()
+  const checkpointsWithFiles = checkpoints.filter((checkpoint) => checkpoint.fileCount > 0)
+  const checkpointsWithoutDetails = Math.max(0, totalCount - checkpointsWithFiles.length)
+
+  if (totalCount === 0) {
+    return (
+      <SectionEmpty
+        title={t('sessions.emptyStates.checkpoints.title')}
+        description={t('sessions.emptyStates.checkpoints.description')}
+      />
+    )
+  }
+
+  if (checkpointsWithFiles.length === 0) {
+    return (
+      <SectionEmpty
+        title={t('sessions.checkpointSummary.noDetailsTitle', { count: totalCount })}
+        description={t('sessions.checkpointSummary.noDetailsDescription')}
+      />
+    )
+  }
+
+  return (
+    <div className="divide-y divide-border">
+      {checkpointsWithFiles.map((checkpoint) => (
+        <div
+          key={checkpoint.id}
+          className="flex items-center gap-3 px-4 py-2 text-sm"
+        >
+          <History className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-card-foreground">{checkpoint.title}</p>
+            <p className="text-xs text-muted-foreground">
+              {formatOptionalRelativeTime(checkpoint.timestamp)}
+            </p>
+          </div>
+          <span className="text-xs text-muted-foreground">
+            {checkpoint.fileCount}
+          </span>
+        </div>
+      ))}
+      {checkpointsWithoutDetails > 0 && (
+        <div className="px-4 py-2 text-xs text-muted-foreground">
+          {t('sessions.checkpointSummary.omittedNoDetails', { count: checkpointsWithoutDetails })}
+        </div>
+      )}
+    </div>
+  )
+}
+
 function ToolTimeline({ events }: { events: SessionToolEvent[] }): React.ReactElement {
   const { t } = useTranslation()
+  const [durationThresholdMs, setDurationThresholdMs] = useState(0)
+  const durationRange = useMemo(() => buildDurationFilterRange(events), [events])
+  const activeThresholdMs = Math.min(durationThresholdMs, durationRange.maxMs)
+  const filteredEvents = useMemo(() => {
+    if (activeThresholdMs <= 0) return events
+    return events.filter((event) => {
+      const durationMs = getToolDurationMs(event)
+      return durationMs != null && durationMs >= activeThresholdMs
+    })
+  }, [activeThresholdMs, events])
 
   if (events.length === 0) {
     return (
@@ -586,64 +638,177 @@ function ToolTimeline({ events }: { events: SessionToolEvent[] }): React.ReactEl
   }
 
   return (
-    <div className="max-h-[680px] overflow-y-auto">
-      {events.map((event, index) => {
-        const durationMs = getToolDurationMs(event)
-        return (
-        <div
-          key={event.id}
-          className="grid grid-cols-[1.25rem_minmax(0,1fr)] gap-3 px-4 py-3"
-        >
-          <div className="relative flex justify-center">
-            {index > 0 && <span className="absolute top-0 h-1/2 w-px bg-border" />}
-            {index < events.length - 1 && <span className="absolute bottom-0 h-1/2 w-px bg-border" />}
-            <span className="relative z-10 mt-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-card ring-4 ring-card">
-              <TimelineStatusIcon status={event.status} />
+    <div>
+      <div className="border-b border-border bg-muted/10 px-4 py-3">
+        <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-center">
+          <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+            <span className="inline-flex items-center gap-1.5">
+              <SlidersHorizontal className="h-3.5 w-3.5" />
+              {t('sessions.toolFilter.showing', {
+                shown: filteredEvents.length,
+                total: events.length
+              })}
             </span>
+            {activeThresholdMs > 0 && (
+              <span className="rounded-md bg-primary/10 px-1.5 py-0.5 font-medium tabular-nums text-primary">
+                {t('sessions.toolFilter.minDuration', {
+                  duration: formatDurationMs(activeThresholdMs)
+                })}
+              </span>
+            )}
           </div>
-          <div className="min-w-0 flex-1">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-sm font-medium text-card-foreground">{event.name}</span>
-              <span className="rounded-md bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
-                {event.category}
+          <label className="grid gap-1 text-xs text-muted-foreground">
+            <span className="flex items-center justify-between">
+              <span>{t('sessions.toolFilter.label')}</span>
+              <span className="font-medium tabular-nums text-card-foreground">
+                {formatDurationThreshold(activeThresholdMs, t)}
               </span>
-              {event.mcpServer && (
-                <span className="rounded-md bg-green-500/10 px-1.5 py-0.5 text-[10px] text-green-600 dark:text-green-400">
-                  {event.mcpServer}
-                </span>
-              )}
-              {event.skillName && (
-                <span className="rounded-md bg-blue-500/10 px-1.5 py-0.5 text-[10px] text-blue-600 dark:text-blue-400">
-                  {event.skillName}
-                </span>
-              )}
-              <span className="ml-auto rounded-md bg-background px-1.5 py-0.5 text-xs tabular-nums text-muted-foreground">
-                {formatOptionalRelativeTime(event.startedAt)}
-              </span>
-              <span className="rounded-md bg-primary/10 px-1.5 py-0.5 text-xs font-medium tabular-nums text-primary">
-                {durationMs == null ? t('sessions.durationUnknown') : formatDurationMs(durationMs)}
-              </span>
-            </div>
-            {event.summary && (
-              <p className="mt-1 truncate text-xs text-muted-foreground">{event.summary}</p>
-            )}
-            {event.filePaths.length > 0 && (
-              <div className="mt-2 flex flex-wrap gap-1">
-                {event.filePaths.slice(0, 4).map((filePath) => (
-                  <span
-                    key={filePath}
-                    className="max-w-full truncate rounded-md bg-background px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground"
-                  >
-                    {truncatePath(filePath, 72)}
+            </span>
+            <input
+              aria-label={t('sessions.toolFilter.ariaLabel')}
+              type="range"
+              min={0}
+              max={durationRange.maxMs}
+              step={durationRange.stepMs}
+              value={activeThresholdMs}
+              disabled={durationRange.maxMs === 0}
+              onChange={(event) => setDurationThresholdMs(Number(event.target.value))}
+              className="h-1.5 w-full cursor-pointer appearance-none rounded-full bg-muted accent-primary disabled:cursor-not-allowed disabled:opacity-50"
+            />
+          </label>
+        </div>
+      </div>
+
+      {filteredEvents.length === 0 ? (
+        <SectionEmpty
+          title={t('sessions.toolFilter.emptyTitle')}
+          description={t('sessions.toolFilter.emptyDescription')}
+        />
+      ) : (
+        <div className="max-h-[720px] overflow-auto">
+          <div className="relative min-w-[700px]">
+            <span className="absolute bottom-0 left-[25px] top-0 w-px bg-border" aria-hidden="true" />
+            {filteredEvents.map((event) => {
+              const durationMs = getToolDurationMs(event)
+              const toolTip = getToolTip(event, t)
+              const evidence = getToolEvidence(event)
+              return (
+                <div
+                  key={event.id}
+                  className="relative grid min-h-9 grid-cols-[1.25rem_minmax(8rem,11rem)_minmax(0,1fr)_5.5rem_4.75rem] items-center gap-2 px-4 py-1.5 text-xs transition-colors hover:bg-accent/5"
+                >
+                  <span className="relative z-10 flex h-5 w-5 items-center justify-center rounded-full bg-card">
+                    <TimelineStatusIcon status={event.status} />
                   </span>
-                ))}
-              </div>
-            )}
+                  <div className="min-w-0">
+                    <div className="flex min-w-0 items-center gap-1.5">
+                      <span className="truncate font-medium text-card-foreground" title={event.name}>
+                        {event.name}
+                      </span>
+                      <ToolTipButton toolName={event.name} tip={toolTip} />
+                    </div>
+                    <div className="mt-0.5 flex items-center gap-1.5">
+                      <span className="rounded bg-muted px-1 py-0.5 text-[10px] leading-none text-muted-foreground">
+                        {event.category}
+                      </span>
+                      {event.mcpServer && (
+                        <span className="truncate rounded bg-green-500/10 px-1 py-0.5 text-[10px] leading-none text-green-600 dark:text-green-400">
+                          {event.mcpServer}
+                        </span>
+                      )}
+                      {event.skillName && (
+                        <span className="truncate rounded bg-blue-500/10 px-1 py-0.5 text-[10px] leading-none text-blue-600 dark:text-blue-400">
+                          {event.skillName}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <span className="min-w-0 truncate text-muted-foreground" title={evidence}>
+                    {evidence}
+                  </span>
+                  <span className="text-right tabular-nums text-muted-foreground">
+                    {formatOptionalRelativeTime(event.startedAt)}
+                  </span>
+                  <span className="rounded-md bg-primary/10 px-1.5 py-0.5 text-right font-medium tabular-nums text-primary">
+                    {durationMs == null ? t('sessions.durationUnknown') : formatDurationMs(durationMs)}
+                  </span>
+                </div>
+              )
+            })}
           </div>
         </div>
-        )
-      })}
+      )}
     </div>
+  )
+}
+
+function buildDurationFilterRange(events: SessionToolEvent[]): { maxMs: number; stepMs: number } {
+  const maxDuration = events.reduce((max, event) => {
+    const durationMs = getToolDurationMs(event)
+    return durationMs == null ? max : Math.max(max, durationMs)
+  }, 0)
+  if (maxDuration <= 0) return { maxMs: 0, stepMs: 1 }
+  if (maxDuration <= 1000) return { maxMs: Math.ceil(maxDuration / 100) * 100, stepMs: 50 }
+  if (maxDuration <= 10_000) return { maxMs: Math.ceil(maxDuration / 500) * 500, stepMs: 250 }
+  if (maxDuration <= 60_000) return { maxMs: Math.ceil(maxDuration / 1000) * 1000, stepMs: 1000 }
+  return { maxMs: Math.ceil(maxDuration / 10_000) * 10_000, stepMs: 5000 }
+}
+
+function getToolEvidence(event: SessionToolEvent): string {
+  if (event.summary) return event.summary
+  if (event.filePaths.length > 0) return event.filePaths.map((filePath) => truncatePath(filePath, 96)).join(', ')
+  if (event.skillName) return event.skillName
+  if (event.mcpServer) return event.mcpServer
+  return '—'
+}
+
+function getToolTip(event: SessionToolEvent, t: Translate): string {
+  return t(`sessions.toolTips.${getToolTipKey(event)}`)
+}
+
+function getToolTipKey(event: SessionToolEvent): string {
+  const name = event.name.toLowerCase()
+  if (name === 'askuserquestion') return 'askUser'
+  if (name === 'agent' || name === 'task') return 'agent'
+  if (name === 'skill') return 'skill'
+  if (name === 'bash' || name === 'powershell' || name.includes('shell') || name.includes('exec')) return 'shell'
+  if (name === 'read' || name === 'ls' || name.includes('readmcpresource')) return 'fileRead'
+  if (name === 'edit' || name === 'multiedit' || name === 'write' || name === 'notebookedit') return 'fileWrite'
+  if (name === 'grep' || name === 'glob' || name === 'lsp' || name.includes('search_openai_docs')) return 'fileSearch'
+  if (name === 'webfetch' || name === 'websearch' || name === 'web_search' || name.includes('fetch_openai_doc')) return 'web'
+  if (name.startsWith('task') || name === 'todowrite' || name === 'update_plan') return 'tasks'
+  if (name === 'apply_patch' || name === 'patch_apply') return 'patch'
+  if (event.category === 'mcp' || name.includes('mcp') || name.startsWith('mcp__')) return 'mcp'
+  if (name.startsWith('browser_') || name.includes('playwright')) return 'browser'
+  if (name === 'view_image' || name === 'senduserfile') return 'image'
+  if (name === 'load_workspace_dependencies') return 'workspace'
+  if (name === 'spawn_agent' || name === 'wait_agent' || name === 'close_agent') return 'multiAgent'
+  if (name.includes('hook')) return 'hook'
+  if (name.includes('planmode')) return 'plan'
+  return 'generic'
+}
+
+function ToolTipButton({
+  toolName,
+  tip
+}: {
+  toolName: string
+  tip: string
+}): React.ReactElement {
+  return (
+    <span className="group relative inline-flex">
+      <button
+        type="button"
+        aria-label={`${toolName}: ${tip}`}
+        title={`${toolName}: ${tip}`}
+        className="flex h-4 w-4 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-accent/10 hover:text-card-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      >
+        <Info className="h-3 w-3" />
+      </button>
+      <span className="pointer-events-none absolute left-0 top-5 z-20 hidden w-72 rounded-lg border border-border bg-popover px-3 py-2 text-xs leading-5 text-popover-foreground shadow-lg group-hover:block group-focus-within:block">
+        {tip}
+      </span>
+    </span>
   )
 }
 
@@ -707,6 +872,10 @@ function formatDurationMs(value: number): string {
   return `${Number.isInteger(minutes) ? minutes.toFixed(0) : minutes.toFixed(1)}m`
 }
 
+function formatDurationThreshold(value: number, t: Translate): string {
+  return value <= 0 ? t('sessions.toolFilter.allDurations') : formatDurationMs(value)
+}
+
 function formatRate(value: number): string {
   return Number.isInteger(value) ? formatNumber(value) : value.toFixed(1)
 }
@@ -752,13 +921,13 @@ function MetaItem({
   icon?: React.ComponentType<{ className?: string }>
 }): React.ReactElement {
   return (
-    <div>
+    <div className="flex min-h-[92px] min-w-0 flex-col justify-between rounded-lg border border-border/70 bg-muted/15 p-3">
       <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
         {label}
       </p>
-      <div className="mt-1 flex items-center gap-1.5 text-sm font-medium text-card-foreground">
+      <div className="mt-2 flex min-w-0 items-start gap-1.5 text-sm font-medium text-card-foreground">
         {Icon && <Icon className="h-3.5 w-3.5 text-muted-foreground" />}
-        {typeof value === 'string' ? <span>{value}</span> : value}
+        {typeof value === 'string' ? <span className="min-w-0 truncate">{value}</span> : <div className="min-w-0 flex-1">{value}</div>}
       </div>
     </div>
   )
