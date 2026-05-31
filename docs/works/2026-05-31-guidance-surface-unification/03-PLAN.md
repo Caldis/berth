@@ -2,11 +2,11 @@
 
 从 02-SPEC 拆解。每任务可独立执行与验证, 顺序确定。implement 阶段维护此清单。
 
-- [ ] 任务 1: 建共享提示组件。
+- [x] 任务 1: 建共享提示组件。
   - 新增 `FeatureGuidePanel`。
   - 扩展 `EmptyState`。
   - 新增 `NoticePanel`, 并让 `WarningBanner` 可继续兼容。
-  - 验证: 共享组件 renderer 测试。
+  - 验证: `pnpm test -- tests/renderer/feature-guide-panel.test.tsx tests/renderer/shared-guidance-primitives.test.tsx`。
 
 - [ ] 任务 2: 建统一 guide 数据层。
   - 新增或迁移 `feature-guidance.ts`。
