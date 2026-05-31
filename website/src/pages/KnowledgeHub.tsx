@@ -1,7 +1,10 @@
+import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { ArrowUpRight } from 'lucide-react'
+import { ArrowRight } from 'lucide-react'
 import { Seo } from '@/components/Seo'
+import { getArticles, PILLAR_ORDER } from '@/content'
 import { useLang } from '@/lib/useLang'
+import type { Lang } from '@/lib/langs'
 
 interface Pillar {
   tag: string
@@ -10,33 +13,66 @@ interface Pillar {
   cta: string
 }
 
+const COMING_SOON: Record<Lang, string> = {
+  zh: '内容陆续上线中',
+  en: 'Articles coming soon',
+  ja: '記事は順次公開予定',
+  ko: '곧 공개됩니다',
+}
+
 export function KnowledgeHub() {
   const { t } = useTranslation()
   const lang = useLang()
+  const base = `/${lang}`
   const pillars = t('kb.pillars', { returnObjects: true }) as Pillar[]
 
   return (
     <>
       <Seo lang={lang} path="/knowledge" title={t('meta.knowledge.title')} description={t('meta.knowledge.description')} />
       <section className="container-page py-16 sm:py-20">
-        <span className="eyebrow">{t('kb.eyebrow')}</span>
-        <h1 className="mt-4 font-display text-4xl font-semibold tracking-tight">{t('kb.heading')}</h1>
-        <p className="mt-4 max-w-2xl text-lg leading-relaxed text-muted">{t('pages.knowledgeIntro')}</p>
+        <div className="mx-auto max-w-2xl text-center">
+          <span className="eyebrow">{t('kb.eyebrow')}</span>
+          <h1 className="mt-5 font-display text-4xl font-semibold tracking-tight sm:text-[2.75rem]">{t('kb.heading')}</h1>
+          <p className="mt-4 text-lg leading-relaxed text-muted">{t('pages.knowledgeIntro')}</p>
+        </div>
 
-        <div className="mt-12 grid gap-5 md:grid-cols-3">
-          {pillars.map((p) => (
-            <article key={p.title} className="card flex flex-col">
-              <span className="self-start rounded-full bg-harbor/10 px-2.5 py-1 text-xs font-medium text-harbor-deep">
-                {p.tag}
-              </span>
-              <h2 className="mt-4 font-display text-xl font-semibold">{p.title}</h2>
-              <p className="mt-2 flex-1 text-sm leading-relaxed text-muted">{p.body}</p>
-              <span className="mt-5 inline-flex items-center gap-1.5 text-sm font-medium text-harbor/70">
-                {p.cta}
-                <ArrowUpRight className="h-4 w-4" />
-              </span>
-            </article>
-          ))}
+        <div className="mx-auto mt-16 max-w-3xl space-y-12">
+          {PILLAR_ORDER.map((key, i) => {
+            const meta = pillars[i]
+            const articles = getArticles(lang, key)
+            return (
+              <div key={key}>
+                <div className="flex items-baseline gap-3">
+                  <span className="rounded-full bg-cream px-3 py-1 text-xs font-semibold text-ink">{meta?.tag}</span>
+                  <h2 className="font-display text-2xl font-semibold tracking-tight">{meta?.title}</h2>
+                </div>
+                <p className="mt-2 text-sm leading-relaxed text-muted">{meta?.body}</p>
+
+                {articles.length > 0 ? (
+                  <ul className="mt-5 divide-y divide-line overflow-hidden rounded-3xl border border-line">
+                    {articles.map((a) => (
+                      <li key={a.slug}>
+                        <Link
+                          to={`${base}/knowledge/${a.pillar}/${a.slug}`}
+                          className="group flex items-center gap-4 bg-surface px-6 py-5 transition-colors hover:bg-cream"
+                        >
+                          <div className="min-w-0 flex-1">
+                            <div className="font-medium">{a.title}</div>
+                            <p className="mt-1 truncate text-sm text-muted">{a.summary}</p>
+                          </div>
+                          <ArrowRight className="h-4 w-4 shrink-0 text-muted transition-transform group-hover:translate-x-0.5 group-hover:text-ink" />
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="mt-5 rounded-3xl border border-dashed border-line bg-cream/50 px-6 py-5 text-sm text-muted">
+                    {COMING_SOON[lang]}
+                  </p>
+                )}
+              </div>
+            )
+          })}
         </div>
       </section>
     </>
