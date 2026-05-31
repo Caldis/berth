@@ -19,7 +19,7 @@ function detectLang(): Lang {
 
 export function RootRedirect() {
   useEffect(() => {
-    window.location.replace(`/${detectLang()}/`)
+    window.location.replace(`/${detectLang()}`)
   }, [])
 
   return (
@@ -27,11 +27,11 @@ export function RootRedirect() {
       <Head>
         <title>Berth — Local AI Agent Asset Manager</title>
         <meta name="robots" content="noindex" />
-        <meta httpEquiv="refresh" content="0; url=/en/" />
+        <meta httpEquiv="refresh" content="0; url=/en" />
         {LANGS.map((l) => (
-          <link key={l} rel="alternate" hrefLang={HREFLANG[l]} href={`${SITE_URL}/${l}/`} />
+          <link key={l} rel="alternate" hrefLang={HREFLANG[l]} href={`${SITE_URL}/${l}`} />
         ))}
-        <link rel="alternate" hrefLang="x-default" href={`${SITE_URL}/en/`} />
+        <link rel="alternate" hrefLang="x-default" href={`${SITE_URL}/en`} />
       </Head>
       <div className="grid min-h-screen place-items-center p-8 text-center">
         <div>
@@ -43,7 +43,7 @@ export function RootRedirect() {
             <ul className="mt-4 flex justify-center gap-4">
               {LANGS.map((l) => (
                 <li key={l}>
-                  <a className="text-harbor underline" href={`/${l}/`}>
+                  <a className="text-harbor underline" href={`/${l}`}>
                     {l}
                   </a>
                 </li>

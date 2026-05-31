@@ -7,7 +7,7 @@ export function NotFound() {
         </div>
         <h1 className="mt-6 font-display text-2xl font-semibold">Page not found</h1>
         <p className="mt-2 text-muted">The page you&rsquo;re looking for doesn&rsquo;t exist.</p>
-        <a href="/en/" className="btn-primary mt-6">
+        <a href="/en" className="btn-primary mt-6">
           Back to home
         </a>
       </div>
