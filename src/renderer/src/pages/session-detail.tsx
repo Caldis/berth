@@ -783,8 +783,8 @@ function ModelInfoField({
 function TimeMetaValue({ startedAt }: { startedAt: string | null }): React.ReactElement {
   return (
     <div className="min-w-0">
-      <span className="block truncate text-2xl font-semibold tabular-nums text-card-foreground">
-        {formatSessionDateTime(startedAt)}
+      <span className="block text-xl font-semibold tabular-nums text-card-foreground">
+        {formatSessionDate(startedAt)}
       </span>
       <span className="mt-1 block truncate text-xs text-muted-foreground">
         {formatOptionalRelativeTime(startedAt)}
@@ -822,14 +822,11 @@ function formatReleaseDateSource(
   return undefined
 }
 
-function formatSessionDateTime(value: string | null): string {
+function formatSessionDate(value: string | null): string {
   if (!value) return '—'
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return '—'
-  return [
-    `${date.getFullYear()}-${padDatePart(date.getMonth() + 1)}-${padDatePart(date.getDate())}`,
-    `${padDatePart(date.getHours())}:${padDatePart(date.getMinutes())}`
-  ].join(' ')
+  return `${date.getFullYear()}-${padDatePart(date.getMonth() + 1)}-${padDatePart(date.getDate())}`
 }
 
 function formatDisplayDate(value: string): string {
