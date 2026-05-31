@@ -2,7 +2,7 @@
 task: 2026-05-31-session-detail-agent-observability
 type: feature
 jira:
-phase: verify
+phase: archive
 created: 2026-05-31
 artifacts:
   source: 00-PRD.md
@@ -24,6 +24,6 @@ artifacts:
 ## GitHub Project
 - project: https://github.com/users/Caldis/projects/6
 - item: PVTI_lAHOADXbEs4BZHvQzguTDkY
-- status: In Progress
+- status: Done
 
 ## 待澄清 (blocked 时填)
