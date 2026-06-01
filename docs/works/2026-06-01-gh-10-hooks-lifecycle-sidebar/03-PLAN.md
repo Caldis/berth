@@ -88,3 +88,8 @@ verify 不通过项作为新任务追加于此, phase 退回 implement。
 - Electron 视觉验收: 先执行 `pnpm dev:agent guard before --id shared-guide-details-verify --json`, 记录用户 dev PID 226164 和 Electron 主进程 PID 493864; 手动启动独立实例 `shared-guide-details-remote`, 带 `--remote-debugging-port=9337`; CDP 进入能力 Hooks 页面, 断言默认状态下 `触发点` 标题、说明正文和统计解释均不可见, 点击 `详情` 后 `触发点`、说明正文、`统计口径` 和资产统计解释均可见。
 - 截图证据: 用真实 Electron 主进程 PID 62580 的窗口句柄 + DWM bounds + `PrintWindow` 截图, `C:\Users\mail\AppData\Local\Temp\berth-shared-guide-details-expanded-printwindow.png` 展示详情区平铺后的提示说明和统计口径。
 - 清理: 按精确 owner PID 停止 `shared-guide-details-remote` 进程树; `pnpm dev:agent guard after --id shared-guide-details-verify --json` 返回 `guard-ok`, 用户 dev 进程未丢失。
+
+- [ ] 任务 11: 将 Hook 检查状态并入生命周期侧栏
+  - feedback: `[Hook 检查 : 正常]` 不再占用主内容顶部, 移入生命周期侧边菜单; 正常、警告、错误、信息这些状态 tag 都需要 hover/focus 展示对应说明卡片, 正常状态也要有说明。
+  - tests: `tests/renderer/hooks-lifecycle-view.test.tsx`
+  - verify: pending
