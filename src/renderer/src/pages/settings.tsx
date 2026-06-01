@@ -9,7 +9,8 @@ import {
   ExternalLink
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { useScanSources } from '@/hooks/use-ipc'
+import { useAgentCapabilityPlugins, useScanSources } from '@/hooks/use-ipc'
+import { AgentCapabilityPluginsSection } from '@/components/settings/agent-capability-plugins-section'
 import { LocalSourcesSection } from '@/components/settings/local-sources-section'
 
 function Toggle({
@@ -52,6 +53,11 @@ export function SettingsContent({
   const { theme, setTheme } = useTheme()
   const [advancedMode, setAdvancedMode] = useState(false)
   const { groups: scanSourceGroups, loading: scanSourcesLoading } = useScanSources()
+  const {
+    plugins: agentPlugins,
+    loading: agentPluginsLoading,
+    error: agentPluginsError
+  } = useAgentCapabilityPlugins()
   const [platformInfo, setPlatformInfo] = useState<{
     homeDir: string
     version: string
@@ -163,6 +169,12 @@ export function SettingsContent({
           </div>
         </div>
       </section>
+
+      <AgentCapabilityPluginsSection
+        plugins={agentPlugins}
+        loading={agentPluginsLoading}
+        error={agentPluginsError}
+      />
 
       <LocalSourcesSection groups={scanSourceGroups} loading={scanSourcesLoading} />
 

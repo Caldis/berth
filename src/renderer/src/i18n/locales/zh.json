@@ -1127,6 +1127,82 @@
     "language": "语言",
     "scanning": "扫描",
     "scanDirectories": "扫描目录",
+    "agentPlugins": "Agent Capability Plugins",
+    "agentPluginsEmpty": "插件注册表当前不可用。",
+    "agentPluginsLoadError": "插件注册表加载失败: {{error}}",
+    "agentPluginBuiltIn": "内置",
+    "agentPluginEnabled": "已启用",
+    "agentPluginDisabled": "已禁用",
+    "agentPluginDetected": "已发现",
+    "agentPluginNotDetected": "无本地数据",
+    "agentPluginVersion": "v{{version}}",
+    "agentPluginTarget": "目标: {{agent}}",
+    "agentPluginCapabilityCount": "{{count}} 项能力",
+    "agentPluginPermissionsTitle": "权限",
+    "agentPluginSourcesTitle": "来源",
+    "agentPluginCapabilitiesTitle": "能力",
+    "agentPluginReferencesTitle": "参考",
+    "agentPluginSourceTotal": "{{count}} 个来源",
+    "agentPluginSourceSummary": "{{scanned}} 已扫描 · {{missing}} 缺失 · {{notScanned}} 未扫描",
+    "agentPluginPermissionKinds": {
+      "read": "读取",
+      "write": "写入",
+      "execute": "执行"
+    },
+    "agentPluginSourceStatus": {
+      "scanned": "{{count}} 已扫描",
+      "missing": "{{count}} 缺失",
+      "not-scanned": "{{count}} 未扫描"
+    },
+    "agentPluginCapabilityStatus": {
+      "available": "可用",
+      "partial": "部分可用",
+      "planned": "计划中"
+    },
+    "agentPluginCapabilities": {
+      "sourceDiscovery": {
+        "label": "来源发现",
+        "description": "发现这个 Agent 支持的用户级、项目级、企业级和会话级文件。"
+      },
+      "assetParsing": {
+        "label": "资产解析",
+        "description": "把本地文件解析为 Berth 资产, 例如指令、Hooks、会话和集成。"
+      },
+      "hookSchema": {
+        "label": "Hook schema",
+        "description": "描述支持的 hook event、handler type、展示字段和运行限制。"
+      },
+      "hookActions": {
+        "label": "Hook 操作",
+        "description": "在 Berth 有安全写入路径时支持用户级 Hook 启停和恢复元数据。"
+      },
+      "healthChecks": {
+        "label": "健康检查",
+        "description": "检查语法、结构、配置和已知风险状态。"
+      },
+      "sessionUsageParsing": {
+        "label": "会话和用量解析",
+        "description": "读取本地 transcript 和用量记录, 用于会话详情、工具活动、token 和费用估算。"
+      },
+      "uiGuidance": {
+        "label": "界面说明",
+        "description": "提供标签和用户可见说明, 让 Agent 差异更容易理解。"
+      }
+    },
+    "agentPluginCapabilityDetails": {
+      "claudeHookSchema": "Claude Code 暴露 command、http、mcp_tool、prompt 和 agent hook handler；Berth 的 Hook 页面仍有部分展示逻辑在旧代码里。",
+      "codexHookSchema": "Codex 当前会执行 command hooks。prompt、agent 和 async handler 只会被解析或标记, 不应视为可运行。",
+      "claudeHookActions": "Claude Code 用户级 Hook 启停使用软删除和 Berth sidecar 恢复点。项目级和 managed Hooks 仍保持只读。",
+      "codexHookActions": "Codex 用户级 Hook 启停写入 config.toml 的 hooks.state。项目级和 managed Hooks 仍保持只读。",
+      "healthChecksNotPluginOwned": "健康检查当前可用, 但规则仍在 health engine 中, 还没有迁入插件注册表。",
+      "uiGuidanceInProgress": "设置页已经使用这组插件元数据。其他页面仍有 Agent 专属展示代码。"
+    },
+    "agentPluginPermissionReasons": {
+      "claudeRead": "Berth 会从这些位置读取 Claude Code 指令、能力、会话、用量数据、集成和 managed policy 文件。",
+      "claudeWrite": "Berth 只写用户级 Hook 状态: disableAllHooks、软禁用 Hook 恢复数据和恢复记录清理。",
+      "codexRead": "Berth 会从这些位置读取 Codex 配置、Hooks、指令、skills、agents、会话和共享 skill 来源。",
+      "codexWrite": "Berth 只写用户级 Codex Hook 状态, 包括 config.toml 中的 features.hooks 和 hooks.state 条目。"
+    },
     "localSources": "本地来源",
     "localSourcesEmpty": "未发现支持的本地来源。",
     "sourceCount": "{{count}} 个来源",

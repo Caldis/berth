@@ -1127,6 +1127,84 @@
     "language": "Language",
     "scanning": "Scanning",
     "scanDirectories": "Scan Directories",
+    "agentPlugins": "Agent Capability Plugins",
+    "agentPluginsEmpty": "The plugin registry is not available.",
+    "agentPluginsLoadError": "Plugin registry failed to load: {{error}}",
+    "agentPluginBuiltIn": "Built-in",
+    "agentPluginEnabled": "Enabled",
+    "agentPluginDisabled": "Disabled",
+    "agentPluginDetected": "Detected",
+    "agentPluginNotDetected": "No local data",
+    "agentPluginVersion": "v{{version}}",
+    "agentPluginTarget": "Target: {{agent}}",
+    "agentPluginCapabilityCount_one": "{{count}} capability",
+    "agentPluginCapabilityCount_other": "{{count}} capabilities",
+    "agentPluginPermissionsTitle": "Permissions",
+    "agentPluginSourcesTitle": "Sources",
+    "agentPluginCapabilitiesTitle": "Capabilities",
+    "agentPluginReferencesTitle": "References",
+    "agentPluginSourceTotal_one": "{{count}} source",
+    "agentPluginSourceTotal_other": "{{count}} sources",
+    "agentPluginSourceSummary": "{{scanned}} scanned · {{missing}} missing · {{notScanned}} not scanned",
+    "agentPluginPermissionKinds": {
+      "read": "Read",
+      "write": "Write",
+      "execute": "Execute"
+    },
+    "agentPluginSourceStatus": {
+      "scanned": "{{count}} scanned",
+      "missing": "{{count}} missing",
+      "not-scanned": "{{count}} not scanned"
+    },
+    "agentPluginCapabilityStatus": {
+      "available": "Available",
+      "partial": "Partial",
+      "planned": "Planned"
+    },
+    "agentPluginCapabilities": {
+      "sourceDiscovery": {
+        "label": "Source discovery",
+        "description": "Finds supported user, project, enterprise, and session files for this Agent."
+      },
+      "assetParsing": {
+        "label": "Asset parsing",
+        "description": "Parses local files into Berth assets such as instructions, hooks, sessions, and integrations."
+      },
+      "hookSchema": {
+        "label": "Hook schema",
+        "description": "Describes supported hook events, handler types, display fields, and runtime limits."
+      },
+      "hookActions": {
+        "label": "Hook actions",
+        "description": "Supports user-level hook toggles and restore metadata where Berth has a safe write path."
+      },
+      "healthChecks": {
+        "label": "Health checks",
+        "description": "Runs local validation for syntax, structure, configuration, and known risky states."
+      },
+      "sessionUsageParsing": {
+        "label": "Session and usage parsing",
+        "description": "Reads local transcripts and usage records for session detail, tool activity, tokens, and cost estimates."
+      },
+      "uiGuidance": {
+        "label": "UI guidance",
+        "description": "Provides labels and user-facing explanations that keep Agent-specific behavior understandable."
+      }
+    },
+    "agentPluginCapabilityDetails": {
+      "claudeHookSchema": "Claude Code exposes command, http, mcp_tool, prompt, and agent hook handlers; Berth still renders parts of the hook UI through existing code.",
+      "codexHookSchema": "Codex currently executes command hooks. prompt, agent, and async handlers are parsed or flagged, not treated as runnable.",
+      "claudeHookActions": "Claude Code user hook toggles use soft removal plus a Berth sidecar restore point. Project and managed hooks stay read-only.",
+      "codexHookActions": "Codex user hook toggles update hooks.state in config.toml. Project and managed hooks stay read-only.",
+      "healthChecksNotPluginOwned": "Health checks are available today, but their rules still live in the health engine instead of the plugin registry.",
+      "uiGuidanceInProgress": "Settings uses this plugin metadata now. Other pages still have Agent-specific presentation code."
+    },
+    "agentPluginPermissionReasons": {
+      "claudeRead": "Berth reads Claude Code instructions, capabilities, sessions, usage data, integrations, and managed policy files from these locations.",
+      "claudeWrite": "Berth writes only user-level hook state: disableAllHooks, soft-disabled hook restore data, and recovery cleanup.",
+      "codexRead": "Berth reads Codex configuration, hooks, instructions, skills, agents, sessions, and shared skill sources from these locations.",
+      "codexWrite": "Berth writes only user-level Codex hook state in config.toml, including features.hooks and hooks.state entries."
+    },
     "localSources": "Local Sources",
     "localSourcesEmpty": "No supported local sources found.",
     "sourceCount_one": "{{count}} source",
