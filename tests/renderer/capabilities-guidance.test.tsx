@@ -51,6 +51,8 @@ describe('Capabilities guidance surfaces', () => {
     fireEvent.click(screen.getByRole('button', { name: /Hooks/ }))
 
     expect(await screen.findByText('Lifecycle automation')).toBeInTheDocument()
+    expect(screen.queryByText('Trigger point')).not.toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: /Details/ }))
     expect(screen.getByText('Trigger point')).toBeInTheDocument()
     expect(screen.getByText('Agent differences')).toBeInTheDocument()
     expect(screen.queryByText('What are hooks?')).not.toBeInTheDocument()
@@ -64,9 +66,10 @@ describe('Capabilities guidance surfaces', () => {
     fireEvent.click(screen.getByRole('button', { name: /Status Line/ }))
 
     expect(await screen.findByText('Runtime status surface')).toBeInTheDocument()
-    expect(screen.getAllByText('Claude Code command')).toHaveLength(1)
+    expect(screen.queryByText('Claude Code command')).not.toBeInTheDocument()
     expect(screen.queryByText(/Reads \[tui\]\.status_line from config\.toml/)).not.toBeInTheDocument()
-    fireEvent.mouseEnter(screen.getAllByText('Codex footer items')[0])
+    fireEvent.click(screen.getByRole('button', { name: /Details/ }))
+    expect(screen.getAllByText('Claude Code command')).toHaveLength(1)
     expect(screen.getAllByText(/Reads \[tui\]\.status_line from config\.toml/)).toHaveLength(1)
     expect(screen.queryByText('Status lines show live session state')).not.toBeInTheDocument()
     expect(screen.getByText('tui.status_line')).toBeInTheDocument()

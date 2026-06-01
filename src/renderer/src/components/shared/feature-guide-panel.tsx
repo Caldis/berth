@@ -27,7 +27,24 @@ export function FeatureGuidePanel({
   const pointKeys = guide.pointKeys ?? []
   const providerMappings = guide.providerMappings ?? []
   const docLinks = guide.docLinks ?? []
-  const hasDetails = pointKeys.length > 0 || providerMappings.length > 0 || docLinks.length > 0
+  const evidenceDetails = evidence
+    .map((item) => {
+      const helpKey = item.helpKey ?? item.labelKey.replace('.evidence.', '.evidenceHelp.')
+      const help = t(helpKey, { defaultValue: '' })
+      if (!help) return undefined
+      return {
+        item,
+        label: t(item.labelKey),
+        help
+      }
+    })
+    .filter((item): item is { item: FeatureGuideEvidence; label: string; help: string } => Boolean(item))
+  const hasDetails =
+    insights.length > 0 ||
+    evidenceDetails.length > 0 ||
+    pointKeys.length > 0 ||
+    providerMappings.length > 0 ||
+    docLinks.length > 0
 
   const openDoc = (url: string): void => {
     void window.api?.shell.openExternal(url)
@@ -65,25 +82,38 @@ export function FeatureGuidePanel({
             </div>
           )}
 
-          {insights.length > 0 && (
-            <div className="mt-3 flex flex-wrap items-center gap-2">
-              <span className="text-xs font-medium text-muted-foreground">{t('assetGuide.tips')}</span>
-              {insights.map((item) => (
-                <HoverInfo
-                  key={`${item.titleKey}:${item.bodyKey}`}
-                  id={`feature-guide-${guide.id}-${item.titleKey}`}
-                  title={t(item.titleKey)}
-                  body={t(item.bodyKey)}
-                  triggerClassName="rounded-md border border-border bg-background px-2 py-1 text-xs font-medium text-foreground transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                >
-                  {t(item.titleKey)}
-                </HoverInfo>
-              ))}
-            </div>
-          )}
-
           {expanded && hasDetails && (
-            <div className="mt-4 border-t border-border pt-3">
+            <div className="mt-4 space-y-4 border-t border-border pt-3">
+              {insights.length > 0 && (
+                <div>
+                  <p className="text-[11px] font-medium uppercase text-muted-foreground">{t('assetGuide.tips')}</p>
+                  <div className="mt-2 grid gap-x-4 gap-y-3 md:grid-cols-3">
+                    {insights.map((item) => (
+                      <div key={`${item.titleKey}:${item.bodyKey}`} className="border-l border-border pl-3">
+                        <p className="text-xs font-semibold text-foreground">{t(item.titleKey)}</p>
+                        <p className="mt-1 text-xs leading-5 text-muted-foreground">{t(item.bodyKey)}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {evidenceDetails.length > 0 && (
+                <div>
+                  <p className="text-[11px] font-medium uppercase text-muted-foreground">{t('assetGuide.evidenceDetails')}</p>
+                  <div className="mt-2 grid gap-x-4 gap-y-3 md:grid-cols-2">
+                    {evidenceDetails.map(({ item, label, help }) => (
+                      <div key={item.labelKey} className="border-l border-border pl-3">
+                        <p className="text-xs font-semibold text-foreground">
+                          {item.value} {label}
+                        </p>
+                        <p className="mt-1 text-xs leading-5 text-muted-foreground">{help}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {pointKeys.length > 0 && (
                 <ul className="grid gap-1.5 text-xs leading-5 text-muted-foreground md:grid-cols-3">
                   {pointKeys.map((key) => (
@@ -142,78 +172,16 @@ export function FeatureGuidePanel({
 function EvidenceTag({ item }: { item: FeatureGuideEvidence }): React.ReactElement {
   const { t } = useTranslation()
   const label = t(item.labelKey)
-  const fallbackHelpKey = item.labelKey.replace('.evidence.', '.evidenceHelp.')
-  const helpKey = item.helpKey ?? fallbackHelpKey
-  const help = t(helpKey, { defaultValue: '' })
   const className = cn(
     'inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs',
     item.tone === 'warning'
       ? 'border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300'
       : 'border-border bg-muted/40 text-muted-foreground'
   )
-  const content = (
-    <>
+  return (
+    <span className={className}>
       <span className="font-semibold text-foreground">{item.value}</span>
       {label}
-    </>
-  )
-
-  if (!help) {
-    return <span className={className}>{content}</span>
-  }
-
-  return (
-    <HoverInfo
-      id={`feature-guide-evidence-${item.labelKey}`}
-      title={`${item.value} ${label}`}
-      body={help}
-      triggerClassName={cn(className, 'cursor-help transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring')}
-    >
-      {content}
-    </HoverInfo>
-  )
-}
-
-function HoverInfo({
-  id,
-  title,
-  body,
-  triggerClassName,
-  children
-}: {
-  id: string
-  title: string
-  body: string
-  triggerClassName: string
-  children: React.ReactNode
-}): React.ReactElement {
-  const [open, setOpen] = useState(false)
-
-  return (
-    <span
-      className="relative inline-flex"
-      onMouseEnter={() => setOpen(true)}
-      onMouseLeave={() => setOpen(false)}
-    >
-      <span
-        tabIndex={0}
-        aria-describedby={open ? id : undefined}
-        onFocus={() => setOpen(true)}
-        onBlur={() => setOpen(false)}
-        className={triggerClassName}
-      >
-        {children}
-      </span>
-      {open && (
-        <span
-          id={id}
-          role="tooltip"
-          className="absolute left-0 top-full z-30 mt-2 w-80 max-w-[calc(100vw-2rem)] rounded-md border border-border bg-popover p-3 text-popover-foreground shadow-lg"
-        >
-          <span className="block text-xs font-semibold text-foreground">{title}</span>
-          <span className="mt-1 block text-xs leading-5 text-muted-foreground">{body}</span>
-        </span>
-      )}
     </span>
   )
 }

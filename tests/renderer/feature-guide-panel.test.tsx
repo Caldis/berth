@@ -44,7 +44,7 @@ describe('FeatureGuidePanel', () => {
     window.api.shell.openExternal = vi.fn(async () => {})
   })
 
-  it('renders a compact feature guide with hover insights and explained evidence tags', () => {
+  it('keeps guide explanations flat inside details instead of hover tips', () => {
     render(
       <FeatureGuidePanel
         guide={guide}
@@ -58,19 +58,18 @@ describe('FeatureGuidePanel', () => {
 
     expect(screen.getByText('Reusable workflow packages')).toBeInTheDocument()
     expect(screen.getByText(/Skills package repeatable procedures/)).toBeInTheDocument()
-    expect(screen.getByText('Trigger point')).toBeInTheDocument()
+    expect(screen.queryByText('Trigger point')).not.toBeInTheDocument()
     expect(screen.queryByText(/runs when the agent reaches/)).not.toBeInTheDocument()
     expect(screen.getByText('4')).toBeInTheDocument()
     expect(screen.getByText('assets')).toBeInTheDocument()
     expect(screen.getByText('1')).toBeInTheDocument()
     expect(screen.getByText('risks')).toBeInTheDocument()
+    expect(screen.queryByText(/visible local asset rows/i)).not.toBeInTheDocument()
 
-    fireEvent.mouseEnter(screen.getByText('Trigger point'))
+    fireEvent.click(screen.getByRole('button', { name: /Details/ }))
 
+    expect(screen.getByText('Trigger point')).toBeInTheDocument()
     expect(screen.getByText(/runs when the agent reaches/)).toBeInTheDocument()
-
-    fireEvent.mouseEnter(screen.getByText('assets'))
-
     expect(screen.getByText(/visible local asset rows/i)).toBeInTheDocument()
   })
 

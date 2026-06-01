@@ -75,7 +75,7 @@ verify 不通过项作为新任务追加于此, phase 退回 implement。
 - 截图证据: 用真实 Electron 主进程 PID 229980 的窗口句柄 + DWM bounds + `PrintWindow` 截图, `C:\Users\mail\AppData\Local\Temp\berth-shared-guide-tip-hover-printwindow.png` 展示 tips hover 浮层, `C:\Users\mail\AppData\Local\Temp\berth-shared-guide-evidence-hover-printwindow.png` 展示统计 tag hover 浮层。
 - 清理: 按精确 owner PID 停止 `shared-guide-hover-remote` 进程树; `pnpm dev:agent guard after --id shared-guide-hover-verify --json` 返回 `guard-ok`, 用户 dev 进程未丢失; 截图 helper 摩擦已记录为 `docs/friction/20260601-4.0-verify-powershell-drawing-screenshot.md`。
 
-- [ ] 任务 10: 将共享引导说明改入详情区平铺展示
+- [x] 任务 10: 将共享引导说明改入详情区平铺展示
   - feedback: hover tips 和统计 tag 说明不再做悬浮提示, 统一放入 `[详情]` 展开内容里平铺展示。
-  - tests: `tests/renderer/feature-guide-panel.test.tsx`, `tests/renderer/capabilities-guidance.test.tsx`
-  - verify: pending
+  - tests: `tests/renderer/feature-guide-panel.test.tsx`, `tests/renderer/capabilities-guidance.test.tsx`, `tests/renderer/instructions-guidance.test.tsx`, `tests/renderer/sessions-pages.test.tsx`
+  - verify: 旧实现下 feature guide 和 capabilities guidance 新断言失败; 实现后 feature guide 3 项通过, capabilities guidance 2 项通过, instructions guidance 2 项通过, sessions pages 16 项通过; `pnpm typecheck:web` 通过; `pnpm harness:check` 通过

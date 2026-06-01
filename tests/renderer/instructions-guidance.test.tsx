@@ -21,6 +21,8 @@ describe('Instructions guidance surfaces', () => {
 
     expect(await screen.findByText('Memory notes across sources')).toBeInTheDocument()
     expect(screen.getByText(/Berth groups native memory files and durable local notes/)).toBeInTheDocument()
+    expect(screen.queryByText('Source types')).not.toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: /Details/ }))
     expect(screen.getByText('Source types')).toBeInTheDocument()
     expect(screen.queryByText('instructions.guidance.memories.insights.sources.title')).not.toBeInTheDocument()
   })
