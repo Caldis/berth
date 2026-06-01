@@ -12,9 +12,9 @@
 - [x] 任务 3: 补 MemoryView missing 展示测试并实现缺失提示。
   - tests: `pnpm test -- tests/renderer/memory-view.test.tsx`
   - verify: 1 个 renderer test passed; 缺失 tag 与展开说明可见; View Raw / Show in Explorer 不出现; 页面结构和信息密度不变。
-- [ ] 任务 4: 跑 node/web 类型和 harness 验证, 更新 issue resolved 与归档。
+- [x] 任务 4: 跑 node/web 类型和 harness 验证, 更新 issue resolved 与归档。
   - tests: `pnpm typecheck:node`; `pnpm typecheck:web`; `pnpm harness:check`
-  - verify: 本任务不需要 Electron 截图 - UI 改动为单组件状态提示, renderer 测试覆盖用户可见行为。
+  - verify: `pnpm test -- tests/unit/memory-service.test.ts tests/unit/memory-claude-native.test.ts tests/renderer/memory-view.test.tsx` 通过, 3 个 test files / 26 tests passed; `pnpm typecheck:node` 通过; `pnpm typecheck:web` 通过; `pnpm harness:check` 通过。本任务不需要 Electron 截图 - UI 改动为单组件状态提示, renderer 测试覆盖用户可见行为。
 
 ## verify 回写
 
