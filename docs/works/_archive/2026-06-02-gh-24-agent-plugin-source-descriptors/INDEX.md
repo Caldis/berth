@@ -2,21 +2,21 @@
 task: 2026-06-02-gh-24-agent-plugin-source-descriptors
 task_id: GH-24
 type: feature
-phase: verify
+phase: archive
 created: 2026-06-02
 issue:
   number: 24
   repo: Caldis/berth
   url: https://github.com/Caldis/berth/issues/24
   id: I_kwDOSpnDwc8AAAABECCnbw
-  state: OPEN
+  state: CLOSED
 gh_project:
   status: tracked
   project_number: 6
   project_url: https://github.com/users/Caldis/projects/6
   project_id: PVT_kwHOADXbEs4BZHvQ
   item_id: PVTI_lAHOADXbEs4BZHvQzguaW1Y
-  item_status: In Progress
+  item_status: Done
 artifacts:
   source: 00-PRD.md
   analysis: 01-ANALYSIS.md

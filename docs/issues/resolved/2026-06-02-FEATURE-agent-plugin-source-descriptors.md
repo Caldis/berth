@@ -6,7 +6,7 @@ FEATURE
 
 ## 状态
 
-Open
+Resolved
 
 ## GitHub
 
@@ -16,6 +16,14 @@ Open
 ## 关联任务
 
 - 来源: `docs/issues/2026-06-01-FEATURE-agent-capability-plugin-system.md`
+- 完成归档: `docs/works/_archive/2026-06-02-gh-24-agent-plugin-source-descriptors/`
+
+## 完成记录
+
+- 完成日期: 2026-06-02
+- GitHub Issue: #24 已关闭
+- 解决方案: 新增内置 Claude Code / Codex source descriptors, registry 通过 source code 将运行时 source coverage 与 descriptor 对齐, 并保留 scanner 追加的 `project.*` 通用候选为 undeclared runtime sources。
+- 验证: `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm harness:check`, `node scripts/harness-projects.mjs check --strict` 均通过。
 
 ## PRD
 
