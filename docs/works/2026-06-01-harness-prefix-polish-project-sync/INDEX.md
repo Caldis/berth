@@ -2,7 +2,7 @@
 task: 2026-06-01-harness-prefix-polish-project-sync
 type: feature
 jira:
-phase: polish
+phase: implement
 created: 2026-06-01
 artifacts:
   source: 00-PRD.md

@@ -10,6 +10,11 @@
 - [x] 任务 8: 只读执行 `pnpm harness:projects:check`, 记录当前 Project 漂移; verify: `harness-projects: all project statuses match local task state`。
 - [x] 任务 9: 最终验证与任务态收口到 verify; verify: `pnpm test tests/harness/sync.test.ts tests/harness/check.test.ts tests/harness/projects.test.ts`, `pnpm typecheck:node`, `pnpm harness:check`。
 - [x] 任务 10: 根据 implement 阶段测试纪律反馈, 补强 design / implement / verify / 模板与 harness-check; tests: `pnpm test tests/harness/check.test.ts`; verify: `pnpm harness:check`。
+- [ ] 任务 11: 将 GitHub Issue 任务 ID 契约写入 workflow / 模板 / 入口规则, 取代 Jira 字段; tests: not needed - 纯流程文档与模板契约改动, 由 `pnpm harness:check` 校验; verify: `pnpm harness:check`。
+- [ ] 任务 12: 扩展 `harness-projects` 支持 issue 绑定、Project ensure/start 和严格审计; tests: 先补 `tests/harness/projects.test.ts` 失败用例, 再实现; verify: `pnpm test tests/harness/projects.test.ts`, `pnpm typecheck:node`。
+- [ ] 任务 13: 扩展 `harness-check` 校验 active works 的 `task_id` / `issue` / `gh_project.item_id` 与 `gh-{number}` 目录名; tests: 先补 `tests/harness/check.test.ts` 失败用例, 再实现; verify: `pnpm test tests/harness/check.test.ts`, `pnpm harness:check`。
+- [ ] 任务 14: 迁移当前 active works 到 `{date}-gh-{number}-{desc}` 并回写 GitHub Issue/Project 元数据; tests: not needed - 元数据和目录迁移, 用 `pnpm harness:check` 与 `pnpm harness:projects:check` 验证; verify: `pnpm harness:check`, `pnpm harness:projects:check`。
+- [ ] 任务 15: 扫描并清理非历史文档中的 Jira 遗留引用; tests: not needed - 文案/历史边界清理, 用 `rg -n "jira|Jira|JIRA"` 和 `pnpm harness:check` 验证; verify: `rg -n "jira|Jira|JIRA" .agents docs scripts tests AGENTS.md package.json --glob "!docs/works/_archive/**" --glob "!docs/friction/_archive/**"`。
 
 ## 验证记录
 
@@ -19,3 +24,7 @@
 - `pnpm harness:projects:check` - all project statuses match local task state。
 - `pnpm test tests/harness/check.test.ts` - 1 file / 23 tests passed。
 - `pnpm harness:check` - test evidence rule check passed。
+
+## Polish 后续实现记录
+
+- 用户确认继续处理 GitHub Issue/Project 任务 ID 迁移。当前任务从 `polish` 回到 `implement`, 只处理当前 harness 工作流本身。
