@@ -6,7 +6,8 @@ import { fileURLToPath } from 'node:url'
 import { VERBS, parseFrontmatter } from './harness-lib.mjs'
 import { check as checkDistribution } from './harness-sync.mjs'
 
-const WORK_NAME = /^\d{4}-\d{2}-\d{2}(-[A-Z][A-Z0-9]+-\d+)?-[a-z0-9-]+$/
+const WORK_NAME = /^\d{4}-\d{2}-\d{2}-gh-(\d+)-[a-z0-9-]+$/
+const TASK_ID = /^GH-(\d+)$/
 const FRICTION_NAME = new RegExp(`^\\d{8}-(${VERBS.join('|')})-[a-z0-9-]+\\.md$`)
 const PHASES = ['explore', 'design', 'blocked', 'implement', 'verify', 'polish', 'archive']
 const PHASE_RANK = { explore: 0, design: 1, blocked: 1, implement: 2, verify: 3, polish: 4, archive: 5 }
@@ -32,10 +33,12 @@ export function checkWorks(root) {
   const base = join(root, 'docs/works')
   for (const name of listDirs(base)) {
     const dir = join(base, name)
-    if (!WORK_NAME.test(name)) {
-      errors.push(`works: bad naming "${name}" (expect {YYYY-MM-DD}[-{JIRA}]-{summary})`)
+    const workName = WORK_NAME.exec(name)
+    if (!workName) {
+      errors.push(`works: bad naming "${name}" (expect {YYYY-MM-DD}-gh-{number}-{summary})`)
       continue
     }
+    const issueNumberFromName = Number(workName[1])
     const indexPath = join(dir, 'INDEX.md')
     if (!existsSync(indexPath)) {
       errors.push(`works/${name}: missing INDEX.md`)
@@ -49,6 +52,28 @@ export function checkWorks(root) {
     for (const key of ['task', 'type', 'phase', 'created']) {
       if (!fm[key]) errors.push(`works/${name}: frontmatter missing "${key}"`)
     }
+    if (fm.task && fm.task !== name)
+      errors.push(`works/${name}: frontmatter task must match directory name`)
+    if (!fm.task_id) {
+      errors.push(`works/${name}: frontmatter missing "task_id"`)
+    } else {
+      const taskId = TASK_ID.exec(String(fm.task_id))
+      if (!taskId) errors.push(`works/${name}: task_id must use GH-{number}`)
+      else if (Number(taskId[1]) !== issueNumberFromName)
+        errors.push(`works/${name}: task_id ${fm.task_id} does not match directory issue number ${issueNumberFromName}`)
+    }
+    const issue = fm.issue || {}
+    if (!issue.number)
+      errors.push(`works/${name}: frontmatter missing "issue.number"`)
+    else if (Number(issue.number) !== issueNumberFromName)
+      errors.push(`works/${name}: issue.number ${issue.number} does not match directory issue number ${issueNumberFromName}`)
+    if (!issue.url)
+      errors.push(`works/${name}: frontmatter missing "issue.url"`)
+    else if (!String(issue.url).endsWith(`/issues/${issueNumberFromName}`))
+      errors.push(`works/${name}: issue.url does not match directory issue number ${issueNumberFromName}`)
+    const gh = fm.gh_project || {}
+    if (!gh.item_id)
+      errors.push(`works/${name}: frontmatter missing "gh_project.item_id"`)
     if (fm.type && !['feature', 'bug'].includes(fm.type))
       errors.push(`works/${name}: invalid type "${fm.type}"`)
     if (fm.phase && !PHASES.includes(fm.phase))

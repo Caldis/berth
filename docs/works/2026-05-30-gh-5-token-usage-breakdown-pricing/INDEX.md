@@ -1,9 +1,21 @@
 ---
-task: 2026-05-31-usage-pricing-explainability
+task: 2026-05-30-gh-5-token-usage-breakdown-pricing
+task_id: GH-5
 type: feature
-jira:
 phase: verify
-created: 2026-05-31
+created: 2026-05-30
+issue:
+  number: 5
+  repo: Caldis/berth
+  url: https://github.com/Caldis/berth/issues/5
+  id: I_kwDOSpnDwc8AAAABD-Bt8g
+gh_project:
+  status: tracked
+  project_id: PVT_kwHOADXbEs4BZHvQ
+  project_number: 6
+  project_url: https://github.com/users/Caldis/projects/6
+  item_id: PVTI_lAHOADXbEs4BZHvQzguP9-4
+  item_status: In Progress
 artifacts:
   source: 00-PRD.md
   analysis: 01-ANALYSIS.md
@@ -11,13 +23,13 @@ artifacts:
   plan: 03-PLAN.md
 ---
 
-# Usage pricing explainability
+# Token usage breakdown and pricing
 
 任务索引与交接锚。phase 字段为唯一状态源, `harness-continue` 据此续跑。
 
 ## GitHub Project
 - project: https://github.com/users/Caldis/projects/6
-- item_id: PVTI_lAHOADXbEs4BZHvQzguQZwQ
+- item_id: PVTI_lAHOADXbEs4BZHvQzguP9-4
 - status: In Progress
 
 ## 产物

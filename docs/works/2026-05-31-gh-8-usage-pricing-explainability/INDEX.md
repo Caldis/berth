@@ -1,9 +1,21 @@
 ---
-task: 2026-05-31-devtools-auto-open
+task: 2026-05-31-gh-8-usage-pricing-explainability
+task_id: GH-8
 type: feature
-jira:
 phase: verify
 created: 2026-05-31
+issue:
+  number: 8
+  repo: Caldis/berth
+  url: https://github.com/Caldis/berth/issues/8
+  id: I_kwDOSpnDwc8AAAABD-BvCg
+gh_project:
+  status: tracked
+  project_id: PVT_kwHOADXbEs4BZHvQ
+  project_number: 6
+  project_url: https://github.com/users/Caldis/projects/6
+  item_id: PVTI_lAHOADXbEs4BZHvQzguQZwQ
+  item_status: In Progress
 artifacts:
   source: 00-PRD.md
   analysis: 01-ANALYSIS.md
@@ -11,13 +23,13 @@ artifacts:
   plan: 03-PLAN.md
 ---
 
-# DevTools auto open
+# Usage pricing explainability
 
 任务索引与交接锚。phase 字段为唯一状态源, `harness-continue` 据此续跑。
 
 ## GitHub Project
 - project: https://github.com/users/Caldis/projects/6
-- item_id: PVTI_lAHOADXbEs4BZHvQzguSICs
+- item_id: PVTI_lAHOADXbEs4BZHvQzguQZwQ
 - status: In Progress
 
 ## 产物

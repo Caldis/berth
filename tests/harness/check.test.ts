@@ -30,9 +30,27 @@ function task(name: string, frontmatter: string, files: string[]): void {
   for (const f of files) writeFileSync(join(dir, f), 'x')
 }
 
+function trackedFrontmatter(name: string, options: { type?: string; phase?: string; number?: number; itemId?: string } = {}): string {
+  const number = options.number ?? Number(/-gh-(\d+)-/.exec(name)?.[1] || 1)
+  return [
+    `task: ${name}`,
+    `task_id: GH-${number}`,
+    `type: ${options.type || 'feature'}`,
+    `phase: ${options.phase || 'explore'}`,
+    'created: 2026-06-01',
+    'issue:',
+    `  number: ${number}`,
+    '  repo: Caldis/berth',
+    `  url: https://github.com/Caldis/berth/issues/${number}`,
+    'gh_project:',
+    `  item_id: ${options.itemId || `PVTI_${number}`}`
+  ].join('\n')
+}
+
 describe('checkWorks', () => {
   it('feature 在 design 阶段须有 00-PRD + 01-ANALYSIS', () => {
-    task('2026-05-29-SPFOODY-1-order-notes', 'task: t\ntype: feature\nphase: design\ncreated: 2026-05-29', [
+    const name = '2026-05-29-gh-1-order-notes'
+    task(name, trackedFrontmatter(name, { phase: 'design' }), [
       '00-PRD.md',
       '01-ANALYSIS.md'
     ])
@@ -40,16 +58,18 @@ describe('checkWorks', () => {
   })
 
   it('接受 CRLF frontmatter', () => {
-    const dir = join(root, 'docs/works/2026-05-29-crlf')
+    const name = '2026-05-29-gh-2-crlf'
+    const dir = join(root, `docs/works/${name}`)
     mkdirSync(dir, { recursive: true })
-    writeFileSync(join(dir, 'INDEX.md'), '---\r\ntask: t\r\ntype: feature\r\nphase: design\r\ncreated: 2026-05-29\r\n---\r\n')
+    writeFileSync(join(dir, 'INDEX.md'), `---\r\n${trackedFrontmatter(name, { phase: 'design', number: 2 }).replace(/\n/g, '\r\n')}\r\n---\r\n`)
     writeFileSync(join(dir, '00-PRD.md'), 'x')
     writeFileSync(join(dir, '01-ANALYSIS.md'), 'x')
     expect(checkWorks(root)).toEqual([])
   })
 
   it('design 阶段缺 01-ANALYSIS 报错', () => {
-    task('2026-05-29-order-notes', 'task: t\ntype: feature\nphase: design\ncreated: 2026-05-29', ['00-PRD.md'])
+    const name = '2026-05-29-gh-3-order-notes'
+    task(name, trackedFrontmatter(name, { phase: 'design', number: 3 }), ['00-PRD.md'])
     const errs = checkWorks(root)
     expect(errs.some((e: string) => e.includes('01-ANALYSIS.md'))).toBe(true)
   })
@@ -60,12 +80,14 @@ describe('checkWorks', () => {
   })
 
   it('非法 phase 枚举报错', () => {
-    task('2026-05-29-x', 'task: t\ntype: feature\nphase: coding\ncreated: 2026-05-29', ['00-PRD.md'])
+    const name = '2026-05-29-gh-4-x'
+    task(name, trackedFrontmatter(name, { phase: 'coding', number: 4 }), ['00-PRD.md'])
     expect(checkWorks(root).some((e: string) => e.includes('phase'))).toBe(true)
   })
 
   it('archive 阶段仍在 works 顶层报错', () => {
-    task('2026-05-29-x', 'task: t\ntype: feature\nphase: archive\ncreated: 2026-05-29', [
+    const name = '2026-05-29-gh-5-x'
+    task(name, trackedFrontmatter(name, { phase: 'archive', number: 5 }), [
       '00-PRD.md',
       '01-ANALYSIS.md',
       '02-SPEC.md',
@@ -75,7 +97,8 @@ describe('checkWorks', () => {
   })
 
   it('polish 阶段须有 04-POLISH', () => {
-    task('2026-05-29-x', 'task: t\ntype: feature\nphase: polish\ncreated: 2026-05-29', [
+    const name = '2026-05-29-gh-6-x'
+    task(name, trackedFrontmatter(name, { phase: 'polish', number: 6 }), [
       '00-PRD.md',
       '01-ANALYSIS.md',
       '02-SPEC.md',
@@ -85,7 +108,8 @@ describe('checkWorks', () => {
   })
 
   it('polish 阶段产物完整时通过', () => {
-    task('2026-05-29-x', 'task: t\ntype: feature\nphase: polish\ncreated: 2026-05-29', [
+    const name = '2026-05-29-gh-7-x'
+    task(name, trackedFrontmatter(name, { phase: 'polish', number: 7 }), [
       '00-PRD.md',
       '01-ANALYSIS.md',
       '02-SPEC.md',
@@ -93,6 +117,27 @@ describe('checkWorks', () => {
       '04-POLISH.md'
     ])
     expect(checkWorks(root)).toEqual([])
+  })
+
+  it('active work 必须使用 gh issue 命名和 task_id', () => {
+    task('2026-05-29-order-notes', trackedFrontmatter('2026-05-29-order-notes', { number: 8 }), ['00-PRD.md'])
+    expect(checkWorks(root).some((e: string) => e.includes('{YYYY-MM-DD}-gh-{number}-{summary}'))).toBe(true)
+  })
+
+  it('active work 必须记录 issue 和 Project item 元数据', () => {
+    const name = '2026-05-29-gh-9-order-notes'
+    task(name, 'task: t\ntask_id: GH-9\ntype: feature\nphase: explore\ncreated: 2026-05-29', ['00-PRD.md'])
+    const errs = checkWorks(root)
+    expect(errs.some((e: string) => e.includes('issue.number'))).toBe(true)
+    expect(errs.some((e: string) => e.includes('gh_project.item_id'))).toBe(true)
+  })
+
+  it('目录 issue number 必须与 task_id 和 issue.number 一致', () => {
+    const name = '2026-05-29-gh-10-order-notes'
+    task(name, trackedFrontmatter(name, { number: 11 }), ['00-PRD.md'])
+    const errs = checkWorks(root)
+    expect(errs.some((e: string) => e.includes('task_id'))).toBe(true)
+    expect(errs.some((e: string) => e.includes('issue.number'))).toBe(true)
   })
 })
 

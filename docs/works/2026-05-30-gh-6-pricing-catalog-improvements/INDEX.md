@@ -1,9 +1,21 @@
 ---
-task: 2026-05-30-pricing-catalog-improvements
+task: 2026-05-30-gh-6-pricing-catalog-improvements
+task_id: GH-6
 type: feature
-jira:
 phase: verify
 created: 2026-05-30
+issue:
+  number: 6
+  repo: Caldis/berth
+  url: https://github.com/Caldis/berth/issues/6
+  id: I_kwDOSpnDwc8AAAABD-BuTw
+gh_project:
+  status: tracked
+  project_id: PVT_kwHOADXbEs4BZHvQ
+  project_number: 6
+  project_url: https://github.com/users/Caldis/projects/6
+  item_id: PVTI_lAHOADXbEs4BZHvQzguQCXo
+  item_status: In Progress
 artifacts:
   source: 00-PRD.md
   analysis: 01-ANALYSIS.md
