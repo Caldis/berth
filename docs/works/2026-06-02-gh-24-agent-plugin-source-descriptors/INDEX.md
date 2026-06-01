@@ -2,7 +2,7 @@
 task: 2026-06-02-gh-24-agent-plugin-source-descriptors
 task_id: GH-24
 type: feature
-phase: implement
+phase: verify
 created: 2026-06-02
 issue:
   number: 24
