@@ -2,21 +2,21 @@
 task: 2026-06-02-gh-25-agent-plugin-asset-descriptors
 task_id: GH-25
 type: feature
-phase: verify
+phase: archive
 created: 2026-06-02
 issue:
   number: 25
   repo: Caldis/berth
   url: https://github.com/Caldis/berth/issues/25
   id: I_kwDOSpnDwc8AAAABECHMXA
-  state: OPEN
+  state: CLOSED
 gh_project:
   status: tracked
   project_number: 6
   project_url: https://github.com/users/Caldis/projects/6
   project_id: PVT_kwHOADXbEs4BZHvQ
   item_id: PVTI_lAHOADXbEs4BZHvQzguaa-U
-  item_status: In Progress
+  item_status: Done
 artifacts:
   source: 00-PRD.md
   analysis: 01-ANALYSIS.md

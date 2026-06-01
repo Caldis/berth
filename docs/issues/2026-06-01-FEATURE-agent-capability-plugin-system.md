@@ -22,7 +22,8 @@ Open
 
 - 2026-06-02: 第一阶段已完成。已加入内置 Claude Code / Codex plugin registry、只读 IPC、设置页 `Agent Capability Plugins` 区块、权限/能力/来源覆盖展示和测试。
 - 2026-06-02: source descriptors 已完成。内置插件现在声明 Claude Code / Codex 的来源 code、scope、kind、categories 和 path pattern, runtime coverage 可按 code 对齐 descriptor。
-- 后续仍有效: asset parsing / health checks 迁入 plugin 定义, Hook schema-driven UI, 第三方插件 manifest 和版本兼容。
+- 2026-06-02: asset descriptors 已完成。内置插件现在声明 Claude Code / Codex 当前能解析的顶层资产类型、category、scopes、source code 关联和 sensitive 标记。
+- 后续仍有效: health checks 迁入 plugin 定义, Hook schema-driven UI, 第三方插件 manifest 和版本兼容。
 
 ## PRD
 

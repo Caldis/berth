@@ -6,7 +6,7 @@ FEATURE
 
 ## 状态
 
-Open
+Resolved
 
 ## GitHub
 
@@ -16,6 +16,14 @@ Open
 ## 关联任务
 
 - 来源: `docs/issues/2026-06-01-FEATURE-agent-capability-plugin-system.md`
+- 完成归档: `docs/works/_archive/2026-06-02-gh-25-agent-plugin-asset-descriptors/`
+
+## 完成记录
+
+- 完成日期: 2026-06-02
+- GitHub Issue: #25 已关闭
+- 解决方案: 新增内置 Claude Code / Codex asset descriptors, 覆盖当前 parser 实际产出的顶层 `Asset.type`, 排除预留和不支持的类型, 并保持 Settings 默认视图不增加资产清单。
+- 验证: `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm harness:check`, `node scripts/harness-projects.mjs check --strict` 均通过。
 
 ## PRD
 
