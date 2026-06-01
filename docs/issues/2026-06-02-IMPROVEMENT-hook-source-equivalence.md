@@ -8,6 +8,10 @@ IMPROVEMENT
 
 Open
 
+## 关联任务
+
+- 来源归档: `docs/works/_archive/2026-06-01-gh-11-claude-hook-soft-disable/`
+
 ## 背景
 
 同一个 Hook 可能同时来自 user、project、plugin、managed 或 Codex inline config / `hooks.json`。用户在 UI 中点“禁用”时, 当前操作往往只影响当前来源。如果另一个来源仍有等价 Hook, 实际效果可能不是用户以为的“这个 Hook 已经不运行”。

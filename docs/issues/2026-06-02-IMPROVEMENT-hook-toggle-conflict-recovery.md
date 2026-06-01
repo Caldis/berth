@@ -8,6 +8,10 @@ IMPROVEMENT
 
 Open
 
+## 关联任务
+
+- 来源归档: `docs/works/_archive/2026-06-01-gh-11-claude-hook-soft-disable/`
+
 ## 背景
 
 GH-11 已经让 Claude Code 用户级 Hook 可以通过 Berth 软禁用: 保存恢复点、从 `settings.json` 移除目标 Hook、恢复时再插回去。当前实现也已经有 per-file mutex、目标 Hook 子项 hash、写入前备份和 temp + rename。

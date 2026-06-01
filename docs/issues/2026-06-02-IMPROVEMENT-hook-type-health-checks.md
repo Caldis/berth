@@ -8,6 +8,10 @@ IMPROVEMENT
 
 Open
 
+## 关联任务
+
+- 来源归档: `docs/works/_archive/2026-06-01-gh-11-claude-hook-soft-disable/`
+
 ## 背景
 
 Hook 行已经开始展示 handler `type` 和常见字段。下一步健康检查也应该理解这些字段, 否则用户只能看到 JSON, 但不能快速知道配置是否可能不会运行。
