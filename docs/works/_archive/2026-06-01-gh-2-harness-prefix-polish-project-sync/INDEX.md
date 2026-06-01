@@ -2,7 +2,7 @@
 task: 2026-06-01-gh-2-harness-prefix-polish-project-sync
 task_id: GH-2
 type: feature
-phase: verify
+phase: archive
 created: 2026-06-01
 issue:
   number: 2
@@ -15,7 +15,7 @@ gh_project:
   project_number: 6
   project_url: https://github.com/users/Caldis/projects/6
   item_id: PVTI_lAHOADXbEs4BZHvQzguV4rw
-  item_status: In Progress
+  item_status: Done
 artifacts:
   source: 00-PRD.md
   analysis: 01-ANALYSIS.md
