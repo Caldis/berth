@@ -5,10 +5,10 @@
 
 - [ ] 任务 1:
   - tests:
-  - verify:
+  - verify: 包含界面质量与交互验收项; 非 UI 任务写“不适用”
 - [ ] 任务 2:
   - tests:
-  - verify:
+  - verify: 包含界面质量与交互验收项; 非 UI 任务写“不适用”
 
 ## verify 回写
 verify 不通过项作为新任务追加于此, phase 退回 implement。

@@ -13,6 +13,7 @@ const PHASES = ['explore', 'design', 'blocked', 'implement', 'verify', 'polish',
 const PHASE_RANK = { explore: 0, design: 1, blocked: 1, implement: 2, verify: 3, polish: 4, archive: 5 }
 export const SMALL_CHANGE_EXEMPTION_CONSENT = '小改动豁免前必须先声明豁免依据并征得用户确认。'
 export const TEST_DISCIPLINE_RULE = '测试证据或明确例外理由'
+export const FRONTEND_TASTE_RULE = '界面质量与交互验收'
 const SUPERPOWERS_FLOW_POLICY = ['默认流程是 harness workflow', 'Superpowers 只能作为方法参考', 'Agent 自主判断并行或顺序执行']
 const ARCHIVE_BACKLOG_REMINDER = ['5.1-friction', '5.2-issues', '本次产生或关联的 friction / issues']
 const ALLOWED_SUPERPOWERS_DOCS = new Set([
@@ -214,6 +215,23 @@ export function checkEntryRules(root) {
     const content = readFileSync(path, 'utf8')
     if (!content.includes('自己相关') || !content.includes('git diff --cached'))
       errors.push(`entry-rules: ${rel} missing frequent scoped commit rule`)
+  }
+  for (const rel of [
+    '.agents/workflow/_shared.md',
+    '.agents/workflow/1.0-explore.md',
+    '.agents/workflow/2.0-design.md',
+    '.agents/workflow/4.0-verify.md',
+    'docs/works/_template/01-ANALYSIS.md',
+    'docs/works/_template/02-SPEC.md',
+    'docs/works/_template/03-PLAN.md'
+  ]) {
+    const path = join(root, rel)
+    if (!existsSync(path)) {
+      errors.push(`entry-rules: missing ${rel}`)
+      continue
+    }
+    if (!readFileSync(path, 'utf8').includes(FRONTEND_TASTE_RULE))
+      errors.push(`entry-rules: ${rel} missing frontend taste rule`)
   }
   for (const rel of [
     '.agents/workflow/_shared.md',

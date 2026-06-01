@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 // @ts-expect-error mjs sin tipos
 import {
+  FRONTEND_TASTE_RULE,
   SMALL_CHANGE_EXEMPTION_CONSENT,
   TEST_DISCIPLINE_RULE,
   checkWorks,
@@ -298,6 +299,19 @@ describe('checkEntryRules', () => {
     mkdirSync(join(root, 'docs/works/_template'), { recursive: true })
     for (const rel of [
       '.agents/workflow/_shared.md',
+      '.agents/workflow/1.0-explore.md',
+      '.agents/workflow/2.0-design.md',
+      '.agents/workflow/4.0-verify.md',
+      'docs/works/_template/01-ANALYSIS.md',
+      'docs/works/_template/02-SPEC.md',
+      'docs/works/_template/03-PLAN.md'
+    ]) {
+      const path = join(root, rel)
+      const current = existsSync(path) ? readFileSync(path, 'utf8') : ''
+      writeFileSync(path, current + '\n' + FRONTEND_TASTE_RULE)
+    }
+    for (const rel of [
+      '.agents/workflow/_shared.md',
       '.agents/workflow/2.0-design.md',
       '.agents/workflow/3.0-implement.md',
       '.agents/workflow/4.0-verify.md',
@@ -341,6 +355,12 @@ describe('checkEntryRules', () => {
     writeEntryRules({ agents: true, readme: true })
     writeFileSync(join(root, '.agents/workflow/3.0-implement.md'), 'docs/issues 不属于当前主线\n自己相关 git diff --cached')
     expect(checkEntryRules(root).some((e: string) => e.includes('test evidence'))).toBe(true)
+  })
+
+  it('缺少界面质量与交互验收规则时报错', () => {
+    writeEntryRules({ agents: true, readme: true })
+    writeFileSync(join(root, '.agents/workflow/2.0-design.md'), 'docs/issues 不属于当前主线\nSuperpowers 只能作为方法参考')
+    expect(checkEntryRules(root).some((e: string) => e.includes('frontend taste rule'))).toBe(true)
   })
 
   it('缺少 Superpowers 降级为方法参考规则时报错', () => {
