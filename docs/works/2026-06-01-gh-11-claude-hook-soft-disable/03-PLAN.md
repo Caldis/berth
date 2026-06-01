@@ -40,7 +40,7 @@
   - [x] 实现恢复: 读取 sidecar、去重、插回 settings、清理恢复点。
   - [x] 实现 sidecar schema 校验。
   - [ ] 实现损坏恢复点提示。
-  - [ ] 写 settings 前创建时间戳备份; settings 和 sidecar 都用 temp + rename。
+  - [x] 写 settings 前创建时间戳备份; settings 和 sidecar 都用 temp + rename。
   - [ ] 覆盖同 scenario 下重复 hookHash、同 matcher group 多组、目标 hook 已手动修改、active 已手动恢复、外部文件变更、sidecar 损坏等分支。
   - verify: `tests/unit/hooks-manager.test.ts`。
 

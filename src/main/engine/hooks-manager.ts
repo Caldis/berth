@@ -330,12 +330,25 @@ function writeTextFile(filePath: string, content: string): void {
   fs.mkdirSync(path.dirname(filePath), { recursive: true })
   if (fs.existsSync(filePath)) {
     fs.copyFileSync(filePath, `${filePath}.bak`)
+    fs.copyFileSync(filePath, timestampBackupPath(filePath))
   }
-  fs.writeFileSync(filePath, content)
+  const tempPath = `${filePath}.${process.pid}.${Date.now()}.tmp`
+  fs.writeFileSync(tempPath, content)
+  try {
+    fs.renameSync(tempPath, filePath)
+  } catch (error) {
+    fs.rmSync(tempPath, { force: true })
+    throw error
+  }
 }
 
 function getClaudeHookStatePath(homeDir: string): string {
   return path.join(homeDir, '.claude', '.berth', 'hooks-state.json')
+}
+
+function timestampBackupPath(filePath: string): string {
+  const stamp = new Date().toISOString().replace(/[:.]/g, '-')
+  return `${filePath}.${stamp}.bak`
 }
 
 function parseHookKey(hookKey: string, expectedProvider: HooksAgentId): ParsedHookKey {

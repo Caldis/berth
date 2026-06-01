@@ -38,6 +38,9 @@ describe('hooks manager', () => {
       disableAllHooks: false
     })
     expect(fs.existsSync(`${settingsPath}.bak`)).toBe(true)
+    expect(fs.readdirSync(path.dirname(settingsPath)).some((name) =>
+      name.startsWith('settings.json.') && name.endsWith('.bak')
+    )).toBe(true)
   })
 
   it('reads and writes Codex features.hooks in config.toml', () => {
