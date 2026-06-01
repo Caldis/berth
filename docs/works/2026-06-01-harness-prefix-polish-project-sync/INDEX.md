@@ -2,7 +2,7 @@
 task: 2026-06-01-harness-prefix-polish-project-sync
 type: feature
 jira:
-phase: verify
+phase: polish
 created: 2026-06-01
 artifacts:
   source: 00-PRD.md
@@ -28,6 +28,6 @@ gh_project:
 - [x] 01-ANALYSIS.md - Explore 产物
 - [x] 02-SPEC.md - Design 产物
 - [x] 03-PLAN.md - 活任务清单
-- [ ] 04-POLISH.md - 可选抛光记录
+- [x] 04-POLISH.md - 可选抛光记录
 
 ## 待澄清 (blocked 时填)
