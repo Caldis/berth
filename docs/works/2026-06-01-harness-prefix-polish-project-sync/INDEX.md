@@ -2,7 +2,7 @@
 task: 2026-06-01-harness-prefix-polish-project-sync
 type: feature
 jira:
-phase: implement
+phase: verify
 created: 2026-06-01
 artifacts:
   source: 00-PRD.md
@@ -21,7 +21,7 @@ gh_project:
 
 # Harness Prefix Polish Project Sync
 
-任务索引与交接锚。phase 字段为唯一状态源, `opsx-continue` 据此续跑。
+任务索引与交接锚。phase 字段为唯一状态源, `harness-continue` 据此续跑。
 
 ## 产物
 - [x] 00-PRD.md - 原始输入快照
