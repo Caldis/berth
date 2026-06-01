@@ -3,7 +3,7 @@
 从 02-SPEC 拆解。每任务可独立执行与验证, 顺序确定。implement 阶段维护此清单。
 每个实现项必须有测试证据或明确例外理由。
 
-- [ ] P1. 新增共享 plugin 类型和主进程 registry
+- [x] P1. 新增共享 plugin 类型和主进程 registry
   - 变更: `src/shared/types/agent-plugin.ts`, `src/main/agent-plugins/registry.ts`
   - 验证: `pnpm test -- tests/unit/agent-capability-plugins.test.ts`, `pnpm typecheck:node`
 - [ ] P2. 接入只读 IPC / preload / renderer hook
