@@ -16,6 +16,12 @@ Open
 ## 关联任务
 
 - 来源归档: `docs/works/_archive/2026-06-01-gh-11-claude-hook-soft-disable/`
+- 第一阶段实现: `docs/works/_archive/2026-06-02-gh-12-agent-capability-plugin-system/`
+
+## 当前进度
+
+- 2026-06-02: 第一阶段已完成。已加入内置 Claude Code / Codex plugin registry、只读 IPC、设置页 `Agent Capability Plugins` 区块、权限/能力/来源覆盖展示和测试。
+- 后续仍有效: source discovery / asset parsing / health checks 迁入 plugin 定义, Hook schema-driven UI, 第三方插件 manifest 和版本兼容。
 
 ## PRD
 

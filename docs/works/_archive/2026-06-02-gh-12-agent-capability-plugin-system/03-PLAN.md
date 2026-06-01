@@ -14,7 +14,7 @@
   - 验证: `pnpm test -- tests/renderer/settings-agent-plugins.test.tsx`, `pnpm typecheck:web`
 - [x] P4. 全量相关门禁与视觉检查
   - 验证: `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm harness:check`, 设置页截图检查
-- [ ] P5. 归档 GH-12 第一阶段
+- [x] P5. 归档 GH-12 第一阶段
   - 验证: `pnpm harness:check`, `node scripts/harness-projects.mjs check --strict`
 
 ## verify 回写
