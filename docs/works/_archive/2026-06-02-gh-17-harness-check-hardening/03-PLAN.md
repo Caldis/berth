@@ -9,9 +9,9 @@
 - [x] 任务 2: 验证两个 `_archive/.gitkeep` 均被 git 跟踪。
   - tests: not needed - 静态 git index 状态检查。
   - verify: `git ls-files docs/works/_archive/.gitkeep docs/friction/_archive/.gitkeep` 输出两个路径。
-- [ ] 任务 3: 将 GH-17 本地 issue 移入 resolved, 同步 GitHub issue 状态。
+- [x] 任务 3: 将 GH-17 本地 issue 移入 resolved, 同步 GitHub issue 状态。
   - tests: `pnpm harness:issues`; `pnpm harness:check`
-  - verify: 不适用 UI; active issue 列表不再包含 GH-17, GitHub issue 关闭。
+  - verify: 不适用 UI; 本地 issue 已移入 `docs/issues/resolved/`; GitHub issue 已关闭; `pnpm harness:issues` 显示 active=10 resolved=7; `pnpm harness:check` 通过; `node scripts/harness-projects.mjs check --strict` 通过。
 
 ## verify 回写
 

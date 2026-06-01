@@ -2,19 +2,19 @@
 task: 2026-06-02-gh-17-harness-check-hardening
 task_id: GH-17
 type: bug
-phase: verify
+phase: archive
 created: 2026-06-02
 issue:
   number: 17
   repo: Caldis/berth
   url: https://github.com/Caldis/berth/issues/17
   id: I_kwDOSpnDwc8AAAABEBRlow
-  state: OPEN
+  state: CLOSED
 gh_project:
   status: tracked
   project_number: 6
   project_url: https://github.com/users/Caldis/projects/6
-  item_status: In Progress
+  item_status: Done
   project_id: PVT_kwHOADXbEs4BZHvQ
   item_id: PVTI_lAHOADXbEs4BZHvQzguZuQE
 artifacts:
