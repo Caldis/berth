@@ -1,6 +1,32 @@
 import { describe, expect, it } from 'vitest'
 import { listAgentCapabilityPlugins } from '../../src/main/agent-plugins/registry'
 import type { AgentScanSourceGroup } from '../../src/shared/types/ipc'
+import type { ScanSourceCode } from '../../src/shared/types/asset'
+
+const claudeDescriptorCodes: ScanSourceCode[] = [
+  'claude.user.data-directory',
+  'claude.user.global-config',
+  'claude.project.directory',
+  'claude.project.mcp-config',
+  'claude.enterprise.managed-settings',
+  'claude.enterprise.managed-mcp'
+]
+
+const codexDescriptorCodes: ScanSourceCode[] = [
+  'codex.user.config',
+  'codex.user.hooks',
+  'codex.user.agents-md',
+  'codex.user.agents-directory',
+  'codex.user.codex-home-skills',
+  'codex.user.sessions',
+  'codex.session.archived-sessions',
+  'codex.user.shared-skills',
+  'codex.project.agents-md',
+  'codex.project.config',
+  'codex.project.hooks',
+  'codex.project.agents-directory',
+  'codex.project.skills'
+]
 
 const scanGroups: AgentScanSourceGroup[] = [
   {
@@ -74,6 +100,59 @@ describe('agent capability plugin registry', () => {
     expect(claude?.sourceCoverage.counts.missing).toBe(1)
     expect(codex?.detected).toBe(false)
     expect(codex?.sourceCoverage.counts['not-scanned']).toBe(1)
+  })
+
+  it('exposes source descriptors for built-in plugins', () => {
+    const result = listAgentCapabilityPlugins(scanGroups)
+    const claude = result.plugins.find((plugin) => plugin.id === 'claude-code')
+    const codex = result.plugins.find((plugin) => plugin.id === 'codex')
+
+    expect(claude?.sourceDescriptors.map((descriptor) => descriptor.code)).toEqual(
+      claudeDescriptorCodes
+    )
+    expect(codex?.sourceDescriptors.map((descriptor) => descriptor.code)).toEqual(
+      codexDescriptorCodes
+    )
+    expect(claude?.sourceDescriptors[0]).toMatchObject({
+      scope: 'user',
+      kind: 'directory',
+      pathPattern: '~/.claude'
+    })
+    expect(claude?.sourceDescriptors[0]?.categories).toEqual([
+      'instruction',
+      'capability',
+      'state',
+      'observability',
+      'integration'
+    ])
+    expect(codex?.sourceDescriptors.find((descriptor) => descriptor.code === 'codex.project.hooks'))
+      .toMatchObject({
+        scope: 'project',
+        kind: 'file',
+        categories: ['capability'],
+        pathPattern: '<project>/.codex/hooks.json'
+      })
+  })
+
+  it('joins runtime source coverage with descriptors by source code', () => {
+    const result = listAgentCapabilityPlugins(scanGroups)
+    const claude = result.plugins.find((plugin) => plugin.id === 'claude-code')
+    const codex = result.plugins.find((plugin) => plugin.id === 'codex')
+
+    expect(claude?.sourceCoverage.sources[0]).toMatchObject({
+      code: 'claude.user.data-directory',
+      declared: true,
+      labelKey: 'settings.agentPluginSources.claude.user.data-directory.label',
+      pathPattern: '~/.claude'
+    })
+    expect(claude?.sourceCoverage.sources[1]).toMatchObject({
+      code: 'project.current-candidate',
+      declared: false
+    })
+    expect(codex?.sourceCoverage.sources[0]).toMatchObject({
+      code: 'project.session-derived-candidate',
+      declared: false
+    })
   })
 
   it('keeps permissions accurate to Berth actions', () => {

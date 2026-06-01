@@ -39,6 +39,16 @@ export interface AgentCapabilityPluginPermission {
   sensitive?: boolean
 }
 
+export interface AgentCapabilityPluginSourceDescriptor {
+  code: ScanSourceCode
+  scope: AssetScope
+  kind: ScanSourceKind
+  categories: AssetCategory[]
+  pathPattern: string
+  labelKey: string
+  descriptionKey: string
+}
+
 export interface AgentCapabilityPluginSource {
   path: string
   scope: AssetScope
@@ -46,6 +56,10 @@ export interface AgentCapabilityPluginSource {
   code?: ScanSourceCode
   kind?: ScanSourceKind
   categories?: AssetCategory[]
+  declared?: boolean
+  labelKey?: string
+  descriptionKey?: string
+  pathPattern?: string
 }
 
 export interface AgentCapabilityPluginSourceCoverage {
@@ -74,6 +88,7 @@ export interface AgentCapabilityPlugin {
   }
   capabilities: AgentCapabilityPluginCapability[]
   permissions: AgentCapabilityPluginPermission[]
+  sourceDescriptors: AgentCapabilityPluginSourceDescriptor[]
   sourceCoverage: AgentCapabilityPluginSourceCoverage
   references: AgentCapabilityPluginReference[]
 }

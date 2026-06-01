@@ -5,12 +5,12 @@
 
 ## 实现项
 
-- [ ] 扩展 Agent Capability Plugin source descriptor 类型与 registry 元数据。
+- [x] 扩展 Agent Capability Plugin source descriptor 类型与 registry 元数据。
   - tests: `tests/unit/agent-capability-plugins.test.ts`
-  - verify: `pnpm exec vitest run tests/unit/agent-capability-plugins.test.ts`
-- [ ] 将运行时 source coverage 与 descriptor 按 `code` 对齐, 并保留 scanner 通用项目候选。
+  - verify: `pnpm exec vitest run tests/unit/agent-capability-plugins.test.ts` (passed, 6 tests)
+- [x] 将运行时 source coverage 与 descriptor 按 `code` 对齐, 并保留 scanner 通用项目候选。
   - tests: `tests/unit/agent-capability-plugins.test.ts`
-  - verify: `pnpm exec vitest run tests/unit/agent-capability-plugins.test.ts`
+  - verify: `pnpm exec vitest run tests/unit/agent-capability-plugins.test.ts` (passed, 6 tests)
 - [ ] 更新 Settings renderer fixture, 确认插件列表与展开详情不退化。
   - tests: `tests/renderer/settings-agent-plugins.test.tsx`
   - verify: `pnpm exec vitest run tests/renderer/settings-agent-plugins.test.tsx`
