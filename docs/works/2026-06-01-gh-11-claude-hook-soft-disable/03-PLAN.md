@@ -13,16 +13,20 @@
   - [ ] 在 `hooks-manager.ts#setHookEnabled()` 中分发 Codex 与 Claude Code。
   - [ ] 实现 Claude user settings 路径校验、hookKey 校验、managed 拒绝。
   - [ ] 实现 per-file mutex、局部 hook hash 匹配、写前复读 hash 和最多 3 次重算。
+  - [ ] 实现文本级最小 JSON patch, 默认只改目标 hook 节点或目标容器。
   - [ ] 实现禁用: 定位 hook、写 sidecar、移除 JSON 节点。
   - [ ] 实现恢复: 读取 sidecar、去重、插回 settings、清理恢复点。
+  - [ ] 实现 sidecar schema 校验和损坏恢复点提示。
   - [ ] 写 settings 前创建时间戳备份; settings 和 sidecar 都用 temp + rename。
-  - [ ] 覆盖同 hash 多条、同 matcher group 多组、目标 hook 已手动修改、active 已手动恢复、外部文件变更等冲突分支。
+  - [ ] 覆盖同 hash 多条、同 matcher group 多组、目标 hook 已手动修改、active 已手动恢复、外部文件变更、sidecar 损坏等冲突分支。
   - verify: `tests/unit/hooks-manager.test.ts`。
 
 - [ ] 调整 lifecycle 与 Hooks 页面
   - [ ] Claude user hook 从 unavailable 改为 confirmation action。
   - [ ] 删除 renderer 的 codex-only toggle guard。
   - [ ] 增加 Claude soft disable / restore 确认文案。
+  - [ ] 恢复确认展示 command、event、sourcePath、disabledAt。
+  - [ ] 同一 hook 在其他来源存在时显示提示, 明确当前操作只影响 user source。
   - [ ] disabled 行显示为 Berth 恢复点状态, 不新增大块提示。
   - verify: `tests/unit/hook-lifecycle.test.ts` + `tests/renderer/hooks-lifecycle-view.test.tsx`。
 

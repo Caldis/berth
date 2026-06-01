@@ -181,6 +181,62 @@ interface ClaudeDisabledHookEntry {
 
 这里的“同名段落”按 Claude Hook 结构解释为 `event + matcher group`。真正表示“同一条 hook”的依据只能是 `definitionHash`。
 
+### 风险与进一步优化
+
+1. 文本被整文件重写
+   - 风险: 当前仓库对 Claude settings 使用 `JSON.parse` / `JSON.stringify`。如果实现沿用这个方式, 即使只删除一个 hook, 文件缩进、换行和 key 顺序也可能被重写。
+   - 影响: 语义正确, 但用户手动维护的格式会丢失, 外部工具也更容易看到大面积 diff。
+   - 规避: 实现前引入文本级 JSON patch。优先用 AST 定位 `hooks[event][handlerIndex].hooks[hookIndex]` 或 direct handler 的文本范围, 只删除或插入目标数组元素。解析失败时不写。整文件 `JSON.stringify` 只作为测试夹具或明确的 fallback, 不作为默认写入路径。
+2. 目标 hook 被用户改了
+   - 风险: 用户在页面扫描后改了 command、type 或 matcher。此时原 `definitionHash` 找不到。
+   - 影响: Berth 不知道用户想禁用“旧 hook”还是“改过后的新 hook”。
+   - 规避: 返回 stale conflict, 提示刷新后重试。不按相似 command 或同名 matcher 猜测。
+3. 同一 hook 被复制成多份
+   - 风险: 当前文件里出现多条相同 `definitionHash`。
+   - 影响: 如果原 index 仍命中, 可以安全删除该位置; 如果原位置已经移动或变成别的 hook, 无法知道用户要删哪一条。
+   - 规避: 原 index 命中时删除原 index; 否则返回 ambiguous conflict。后续可在 row 中显示重复来源和 index, 让用户手动选择。
+4. 同一 event + matcher group 出现多份
+   - 风险: 恢复时有多个可插入容器。
+   - 影响: 插错 group 可能改变执行顺序或触发条件。
+   - 规避: 原 handlerIndex 命中时使用原位置; 否则返回 ambiguous conflict。不要为了成功恢复而随便选第一组。
+5. 用户手动恢复了 hook
+   - 风险: sidecar 还在, active settings 里已经有同一 hook。
+   - 影响: 页面可能出现 active 与 disabled 两条重复记录。
+   - 规避: parser 隐藏 sidecar duplicate; enable 操作只清理 sidecar, 不再插入重复 hook。
+6. sidecar 被删或损坏
+   - 风险: disabled hook 不再能单独恢复。
+   - 影响: 用户只能从整文件备份或手动配置恢复。
+   - 规避: sidecar 解析失败只影响 disabled 恢复点, 不阻断 active hooks 扫描; 页面显示恢复点损坏提示。禁用时仍保留时间戳整文件备份。
+7. sidecar 被手动或恶意篡改
+   - 风险: 恢复操作可能把 sidecar 里的命令写回 Claude settings。
+   - 影响: 本地有写权限的进程本来就能直接改 settings, 但 Berth 不应静默恢复可疑内容。
+   - 规避: 恢复必须由用户确认; 确认中展示 command、event、sourcePath 和 disabledAt。sidecar entry 必须通过 schema 校验, sourcePath 必须是当前 user settings。
+8. 全局 `disableAllHooks` 与单 hook 软禁用混淆
+   - 风险: `disableAllHooks: true` 时, active settings 里存在的 hook 也不会实际运行。
+   - 影响: 行级 `enabled` 容易被误读为“运行中”。
+   - 规避: Claude hook 行里的 `enabled` 只表示“是否被 Berth soft disable”。全局是否运行由 Agent 级 hooks 状态展示。必要时给行状态增加 hover 说明。
+9. 其他 scope 中存在同一 hook
+   - 风险: 禁用 user settings 中的一条 hook 后, project/local/managed 里仍有同一 hook。
+   - 影响: 用户可能以为已禁用, 但 Claude 最终仍可能从其他来源执行同类 hook。
+   - 规避: 扫描时按 `definitionHash` 汇总跨来源 duplicate。行内提示“其他来源仍存在同一 hook”, 禁用操作只声明影响当前 user source。
+10. 写入期间外部进程持续修改文件
+    - 风险: 写前复读和重算一直遇到变化。
+    - 影响: 操作失败。
+    - 规避: 最多重试 3 次后返回 conflict。不要长时间阻塞 UI, 也不要覆盖外部正在写入的内容。
+11. Windows 文件占用或权限问题
+    - 风险: 杀毒软件、编辑器或权限设置导致 backup、tmp write、rename 失败。
+    - 影响: 操作失败, 可能留下 tmp 文件。
+    - 规避: 写失败时清理 tmp; 返回具体文件错误; 不修改 sidecar 清理状态。整文件备份必须先于 settings rename 成功。
+12. 备份文件增长
+    - 风险: 高频开关会产生很多 `settings.json.berth-backup-*`。
+    - 影响: 用户目录里积累备份文件。
+    - 规避: 初版不自动删除备份, 避免误删恢复材料。后续可做只清理 Berth 命名备份的保留策略, 例如保留最近 50 个并在 UI 中提供清理入口。
+
+实现优先级:
+
+1. 必做: 文本级最小 JSON patch、局部 hash 匹配、per-file mutex、写前复读重算、sidecar schema 校验、跨来源 duplicate 提示。
+2. 可后续: 备份保留策略、重复 hook 手动选择 UI、从整文件备份恢复单条 hook。
+
 ### 写入顺序
 
 禁用优先保证可恢复:
