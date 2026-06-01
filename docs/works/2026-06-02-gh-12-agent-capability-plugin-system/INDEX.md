@@ -2,7 +2,7 @@
 task: 2026-06-02-gh-12-agent-capability-plugin-system
 task_id: GH-12
 type: feature
-phase: implement
+phase: verify
 created: 2026-06-02
 issue:
   number: 12
@@ -34,6 +34,6 @@ artifacts:
 - [x] 01-ANALYSIS.md — Explore 产物
 - [x] 02-SPEC.md — Design 产物
 - [x] 03-PLAN.md — 活任务清单
-- [ ] 04-POLISH.md — 可选抛光记录
+- [x] 04-POLISH.md — 可选抛光记录
 
 ## 待澄清 (blocked 时填)

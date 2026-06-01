@@ -12,7 +12,7 @@
 - [x] P3. 新增 Settings 的 Agent Capability Plugins 区块
   - 变更: `src/renderer/src/components/settings/agent-capability-plugins-section.tsx`, `src/renderer/src/pages/settings.tsx`, `src/renderer/src/i18n/locales/{zh,en}.json`
   - 验证: `pnpm test -- tests/renderer/settings-agent-plugins.test.tsx`, `pnpm typecheck:web`
-- [ ] P4. 全量相关门禁与视觉检查
+- [x] P4. 全量相关门禁与视觉检查
   - 验证: `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm harness:check`, 设置页截图检查
 - [ ] P5. 归档 GH-12 第一阶段
   - 验证: `pnpm harness:check`, `node scripts/harness-projects.mjs check --strict`
