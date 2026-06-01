@@ -25,6 +25,11 @@ function listDirs(p) {
   return readdirSync(p).filter((n) => !n.startsWith('_') && statSync(join(p, n)).isDirectory())
 }
 
+function workNameFromArg(work) {
+  const normalized = String(work || '').replace(/[\\/]+$/, '')
+  return normalized.split(/[\\/]/).pop()
+}
+
 function requiredArtifacts(type, phase) {
   const req = [type === 'bug' ? '00-BUG.md' : '00-PRD.md']
   const rank = PHASE_RANK[phase]
@@ -34,10 +39,14 @@ function requiredArtifacts(type, phase) {
   return req
 }
 
-export function checkWorks(root) {
+export function checkWorks(root, options = {}) {
   const errors = []
   const base = join(root, 'docs/works')
-  for (const name of listDirs(base)) {
+  const workFilter = options.work ? workNameFromArg(options.work) : undefined
+  const dirs = listDirs(base)
+  const names = workFilter ? dirs.filter((name) => name === workFilter) : dirs
+  if (workFilter && names.length === 0) errors.push(`works: --work target not found "${workFilter}"`)
+  for (const name of names) {
     const dir = join(base, name)
     const workName = WORK_NAME.exec(name)
     if (!workName) {
@@ -254,12 +263,12 @@ export function checkEntryRules(root) {
   return errors
 }
 
-export function checkAll(root) {
+export function checkAll(root, options = {}) {
   const errors = [
     ...checkWorkflowSources(root),
     ...checkEntryRules(root),
     ...checkTemplates(root),
-    ...checkWorks(root),
+    ...checkWorks(root, options),
     ...checkFriction(root),
     ...checkIssues(root),
     ...checkSuperpowers(root)
@@ -269,8 +278,31 @@ export function checkAll(root) {
   return { ok: errors.length === 0, errors }
 }
 
+function parseArgs(argv) {
+  const options = {}
+  for (let i = 0; i < argv.length; i += 1) {
+    const arg = argv[i]
+    if (arg === '--work') {
+      const work = argv[i + 1]
+      if (!work || work.startsWith('--')) throw new Error('--work requires docs/works/{task} or task directory name')
+      options.work = work
+      i += 1
+      continue
+    }
+    throw new Error(`unknown option: ${arg}`)
+  }
+  return options
+}
+
 function main() {
-  const { ok, errors } = checkAll(process.cwd())
+  let options
+  try {
+    options = parseArgs(process.argv.slice(2))
+  } catch (error) {
+    console.error(`harness-check: ${error.message}`)
+    process.exit(2)
+  }
+  const { ok, errors } = checkAll(process.cwd(), options)
   if (ok) {
     console.log('harness-check: all checks passed')
     process.exit(0)

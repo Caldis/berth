@@ -140,6 +140,22 @@ describe('checkWorks', () => {
     expect(errs.some((e: string) => e.includes('task_id'))).toBe(true)
     expect(errs.some((e: string) => e.includes('issue.number'))).toBe(true)
   })
+
+  it('可限定只检查当前 work, 不被其他 active work 阻塞', () => {
+    const valid = '2026-05-29-gh-11-current'
+    const invalid = '2026-05-29-gh-12-other'
+    task(valid, trackedFrontmatter(valid, { phase: 'design', number: 11 }), ['00-PRD.md', '01-ANALYSIS.md'])
+    task(invalid, trackedFrontmatter(invalid, { phase: 'design', number: 12 }), ['00-PRD.md'])
+
+    expect(checkWorks(root).some((e: string) => e.includes('01-ANALYSIS.md'))).toBe(true)
+    expect(checkWorks(root, { work: `docs/works/${valid}` })).toEqual([])
+  })
+
+  it('限定的 work 不存在时报错', () => {
+    expect(checkWorks(root, { work: 'docs/works/missing-task' })).toEqual([
+      'works: --work target not found "missing-task"'
+    ])
+  })
 })
 
 describe('checkFriction', () => {
