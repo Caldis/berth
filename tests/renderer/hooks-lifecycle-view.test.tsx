@@ -41,6 +41,10 @@ async function waitForHookHealthIdle(): Promise<void> {
 
 describe('HooksLifecycleView', () => {
   beforeEach(() => {
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { writeText: vi.fn(async () => undefined) }
+    })
     window.api.assets.healthCheck = vi.fn(async () => [])
     window.api.shell.openPath = vi.fn(async () => {})
     window.api.hooks.statuses = vi.fn(async (agentId: HooksAgentId) => [
@@ -216,6 +220,35 @@ describe('HooksLifecycleView', () => {
 
     fireEvent.click(screen.getAllByText('JSON')[0])
     expect(screen.getByText(/"type": "http"/)).toBeInTheDocument()
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Copy JSON' })[0])
+    await waitFor(() => {
+      expect(navigator.clipboard.writeText).toHaveBeenCalledWith(expect.stringContaining('"type": "http"'))
+    })
+    expect(screen.getByRole('button', { name: 'Copied JSON' })).toBeInTheDocument()
+  })
+
+  it('shows readable hook toggle errors for stale restore points', async () => {
+    window.api.hooks.setHookEnabled = vi.fn(async () => {
+      throw new Error('Claude Code hook restore point was not found')
+    })
+
+    renderHooks('claude', [
+      hookAsset('claude-stop', 'claude-code', 'Stop', {
+        hookKey: 'claude-code:scenario:hook',
+        enabled: false,
+        canToggleHook: true,
+        toggleStrategy: 'soft-remove',
+        disabledAt: '2026-06-02T00:00:00.000Z'
+      })
+    ])
+    await waitForHookHealthIdle()
+
+    fireEvent.click(screen.getByText('Enable'))
+
+    await waitFor(() => {
+      expect(screen.getByText(/No restore point was found for this hook/)).toBeInTheDocument()
+    })
   })
 
   it('shows row-level risk hints for broad hooks without entry files', async () => {

@@ -64,16 +64,18 @@
 - [ ] 文案与 i18n
   - [x] 替换旧 `claudeNoSingleHookToggle` 展示语义。
   - [x] 增加 user-only、soft-disable、restore 文案。
-  - [ ] 增加 stale conflict / 恢复点异常文案。
-  - verify: renderer 目标测试。
+  - [x] 增加 stale conflict / 恢复点异常文案。
+  - [x] 清理已删除工具栏留下的旧 i18n key。
+  - verify: `pnpm test -- tests/renderer/hooks-lifecycle-view.test.tsx`; `pnpm typecheck:web`。
 
 - [x] Hook 行配置展示
   - [x] 复核官方 hooks 文档: Claude Code handler 类型为 `command`、`http`、`mcp_tool`、`prompt`、`agent`; Codex 当前运行 `command`, `prompt`/`agent` 解析但跳过, `async` 解析但跳过。
   - [x] parser 保留 `rawHook`, 并提取常见字段: `type`、`timeout`、`statusMessage`、`if`、`args`、`url`、`server/tool`、`prompt/model`。
   - [x] UI 按 handler type 展示主信息, 不再只展示 `command`。
   - [x] Hook 行支持展开查看关联 JSON 原文。
+  - [x] JSON 原文支持 icon copy, 默认继续折叠, 内容高度受限。
   - [x] 单 Hook 操作按钮文案收短为 `启用` / `禁用`。
-  - verify: parser + renderer 目标测试。
+  - verify: parser + renderer 目标测试; `pnpm test -- tests/renderer/hooks-lifecycle-view.test.tsx`; `pnpm typecheck:web`。
 
 - [x] 收口分流
   - [x] 并发修改、最小 JSON patch、恢复点深度修复拆到 `docs/issues/2026-06-02-IMPROVEMENT-hook-toggle-conflict-recovery.md`。

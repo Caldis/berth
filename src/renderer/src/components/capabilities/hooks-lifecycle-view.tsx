@@ -4,6 +4,8 @@ import {
   CheckCircle2,
   CircleAlert,
   CircleSlash,
+  Check,
+  Copy,
   ExternalLink,
   FileCode2,
   FolderOpen,
@@ -495,10 +497,12 @@ function HookAssetRow({ hook, agentView }: { hook: Asset; agentView: AgentView }
   const [hookEnabled, setHookEnabled] = useState(initialHookEnabled)
   const [toggleBusy, setToggleBusy] = useState(false)
   const [toggleError, setToggleError] = useState<string | null>(null)
+  const [rawCopied, setRawCopied] = useState(false)
 
   useEffect(() => {
     setHookEnabled(initialHookEnabled)
     setToggleError(null)
+    setRawCopied(false)
   }, [hook.id, initialHookEnabled])
 
   const toggleHook = async (): Promise<void> => {
@@ -523,10 +527,16 @@ function HookAssetRow({ hook, agentView }: { hook: Asset; agentView: AgentView }
       })
       setHookEnabled(result.enabled)
     } catch (err) {
-      setToggleError(err instanceof Error ? err.message : String(err))
+      setToggleError(formatHookToggleError(t, err))
     } finally {
       setToggleBusy(false)
     }
+  }
+
+  const copyRawHookJson = async (): Promise<void> => {
+    if (!rawHookJson || !navigator.clipboard) return
+    await navigator.clipboard.writeText(rawHookJson)
+    setRawCopied(true)
   }
 
   return (
@@ -567,14 +577,25 @@ function HookAssetRow({ hook, agentView }: { hook: Asset; agentView: AgentView }
             <span className="min-w-0 truncate font-mono">{hook.path}</span>
           </div>
           {rawHookJson && (
-            <details className="mt-2">
-              <summary className="inline-flex cursor-pointer select-none items-center rounded-md border border-border px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground">
-                {t('capabilities.hooks.management.rawJson')}
-              </summary>
-              <pre className="mt-2 max-h-64 overflow-auto rounded-md border border-border/70 bg-muted/40 p-3 text-[11px] leading-5 text-foreground">
-                {rawHookJson}
-              </pre>
-            </details>
+            <div className="mt-2 flex items-start gap-2">
+              <details className="min-w-0 flex-1">
+                <summary className="inline-flex cursor-pointer select-none items-center rounded-md border border-border px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground">
+                  {t('capabilities.hooks.management.rawJson')}
+                </summary>
+                <pre className="mt-2 max-h-64 overflow-auto rounded-md border border-border/70 bg-muted/40 p-3 text-[11px] leading-5 text-foreground">
+                  {rawHookJson}
+                </pre>
+              </details>
+              <button
+                type="button"
+                aria-label={rawCopied ? t('capabilities.hooks.management.copiedRawJson') : t('capabilities.hooks.management.copyRawJson')}
+                title={rawCopied ? t('capabilities.hooks.management.copiedRawJson') : t('capabilities.hooks.management.copyRawJson')}
+                onClick={() => void copyRawHookJson()}
+                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              >
+                {rawCopied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+              </button>
+            </div>
           )}
           {supportNote && (
             <p className="mt-2 flex gap-1.5 text-xs leading-5 text-amber-600 dark:text-amber-400">
@@ -717,6 +738,23 @@ function getHookToggleConfirmMessage(
   return enabled
     ? t('capabilities.hooks.management.confirmEnableHook', { path: hook.path })
     : t('capabilities.hooks.management.confirmDisableHook', { path: hook.path })
+}
+
+function formatHookToggleError(t: ReturnType<typeof useTranslation>['t'], error: unknown): string {
+  const message = error instanceof Error ? error.message : String(error)
+  if (message.includes('no longer exists in the target scenario')) {
+    return t('capabilities.hooks.management.errorStaleTarget')
+  }
+  if (message.includes('restore point was not found')) {
+    return t('capabilities.hooks.management.errorRestorePointMissing')
+  }
+  if (message.includes('Invalid Claude hooks state')) {
+    return t('capabilities.hooks.management.errorRestorePointInvalid')
+  }
+  if (message.includes('already being modified')) {
+    return t('capabilities.hooks.management.errorConcurrentWrite')
+  }
+  return message
 }
 
 function HookRiskHints({ hints }: { hints: HookRiskHint[] }): React.ReactElement | null {
