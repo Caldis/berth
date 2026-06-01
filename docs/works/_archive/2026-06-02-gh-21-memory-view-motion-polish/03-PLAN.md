@@ -9,9 +9,9 @@
 - [x] 任务 2: 实现详情区 grid rows 过渡与 focus timer 清理。
   - tests: `pnpm test -- tests/renderer/memory-view.test.tsx`
   - verify: 通过, 3 tests passed。不新增可见说明文案; 只改善展开/跳转反馈。
-- [ ] 任务 3: 运行 web 类型检查和 harness 检查, 更新任务状态。
+- [x] 任务 3: 运行 web 类型检查和 harness 检查, 更新任务状态。
   - tests: `pnpm typecheck:web`; `pnpm harness:check`
-  - verify: `pnpm typecheck:web` 已通过; `pnpm harness:check` 待 Project 配额恢复并写入 item_id 后执行。
+  - verify: `pnpm typecheck:web` 通过; `pnpm harness:check` 通过。
 
 ## verify 回写
 

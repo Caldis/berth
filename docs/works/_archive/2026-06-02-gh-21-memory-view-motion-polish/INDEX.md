@@ -2,20 +2,20 @@
 task: 2026-06-02-gh-21-memory-view-motion-polish
 task_id: GH-21
 type: bug
-phase: verify
+phase: archive
 created: 2026-06-02
 issue:
   number: 21
   repo: Caldis/berth
   url: https://github.com/Caldis/berth/issues/21
   id: I_kwDOSpnDwc8AAAABEBRnvw
-  state: OPEN
+  state: CLOSED
 gh_project:
   status: tracked
   project_number: 6
   project_url: https://github.com/users/Caldis/projects/6
   item_id: PVTI_lAHOADXbEs4BZHvQzguZ2gE
-  item_status: In Progress
+  item_status: Done
   project_id: PVT_kwHOADXbEs4BZHvQ
 artifacts:
   source: 00-BUG.md
