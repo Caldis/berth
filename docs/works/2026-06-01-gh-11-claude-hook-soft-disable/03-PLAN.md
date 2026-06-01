@@ -39,11 +39,11 @@
   - [ ] disabled 行显示为 Berth 恢复点状态, 不新增大块提示。
   - verify: `tests/unit/hook-lifecycle.test.ts` + `tests/renderer/hooks-lifecycle-view.test.tsx`。
 
-- [ ] 收口 adapter 边界
-  - [ ] 新增内部 `AgentCapabilityAdapter` / hook action descriptor 类型。
-  - [ ] Claude/Codex adapter 先实现 hook action descriptor, renderer 不再写死 agentId。
-  - [ ] `hooks-manager.ts` 通过 adapter registry 分发 hook 操作。
-  - [ ] 记录外部 plugin manifest 草案, 本任务不实现外部 plugin 加载。
+- [ ] 引入 Agent Capability Plugin 的 hooks 切片
+  - [ ] 新增内部 `AgentCapabilityPlugin` / hook action descriptor 类型。
+  - [ ] Claude/Codex 作为内置 Plugin 先实现 hook action descriptor, renderer 不再写死 agentId。
+  - [ ] `hooks-manager.ts` 通过 plugin registry 分发 hook 操作。
+  - [ ] 记录完整 Agent Capability Plugin 系统到产品问题, 本任务不实现外部 plugin 加载。
   - verify: `tests/unit/hooks-manager.test.ts` + `tests/unit/engine-scanner.test.ts`。
 
 - [ ] 文案与 i18n

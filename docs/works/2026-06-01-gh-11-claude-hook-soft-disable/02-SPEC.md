@@ -10,7 +10,7 @@
 - Codex 现有 `[hooks.state]` 切换能力保持不变。
 - 初版只支持 Claude Code user scope; project/local/enterprise 继续只读。
 
-同时把 Hooks 页面从“写死 Claude/Codex 判断”收窄到统一的 hook capability 模型。短期只覆盖 Claude Code 和 Codex, 但接口设计要允许后续接入 Hermes、PI 或其他 Agent。
+同时把 Hooks 页面从“写死 Claude/Codex 判断”收窄到统一的 hook capability 模型。短期只覆盖 Claude Code 和 Codex, 但接口设计要沿着 `Agent Capability Plugin` 方向走, 以后可以接 Hermes、PI 或其他 Agent。
 
 ## 不做
 
@@ -465,14 +465,25 @@ Codex 不需要 Claude 的 sidecar soft remove, 但需要进入同一套 UI 与�
 - Codex: `toggleHook(enabled)` -> 写 `[hooks.state]`。
 - UI: 只看 `toggleStrategy`、`enabled`、`effectiveEnabled`、`equivalentSources`。
 
-## Agent capability adapter
+## Agent Capability Plugin
 
-仓库现在已经有 `AgentAdapter`, 但它主要负责 detect / scan / relation。hook 管理仍散在 parser、`hooks-manager.ts` 和 renderer 的 `agentId` 判断里。建议新增内部 `AgentCapabilityAdapter` 层, 先不做外部可安装 plugin:
+仓库现在已经有 `AgentAdapter`, 但它主要负责 detect / scan / relation。hook 管理仍散在 parser、`hooks-manager.ts` 和 renderer 的 `agentId` 判断里。产品概念应改为 `Agent Capability Plugin`:
+
+- 对用户: 叫 Plugin。Claude Code 和 Codex 是内置插件。
+- 对代码: 可以复用现有 `AgentAdapter` 的扫描能力, 但新增 capability action 描述和操作入口。
+- 对后续扩展: Hermes / PI 这类 Agent 通过新增插件接入, 不再让页面和 IPC 到处写 `if agentId`。
+
+GH-11 只实现 hooks 这一个切片, 不实现完整插件市场、插件下载和版本管理。完整插件系统记录到 `docs/issues/2026-06-01-FEATURE-agent-capability-plugin-system.md`。
+
+内部接口先命名为 `AgentCapabilityPlugin`:
 
 ```ts
-interface AgentCapabilityAdapter {
+interface AgentCapabilityPlugin {
   id: string
   displayName: string
+  version: string
+  builtin: boolean
+  supportedAgentVersions?: string
   scan(): Promise<{ assets: Asset[]; errors: ScanError[] }>
   getHookStatus?(scope: AssetScope): HooksEnablementStatus
   setHooksEnabled?(request: SetHooksEnabledRequest): SetHooksEnabledResult
@@ -499,37 +510,67 @@ interface HookIdentity {
 
 迁移顺序:
 
-1. 把现有 `ClaudeCodeAdapter` 和 `CodexAdapter` 扩展为 capability adapter。
-2. `hooks-manager.ts` 不再按 `agentId` 写死分支, 改为查 adapter registry。
+1. 把现有 `ClaudeCodeAdapter` 和 `CodexAdapter` 包装成内置 `AgentCapabilityPlugin`。
+2. `hooks-manager.ts` 不再按 `agentId` 写死分支, 改为查 plugin registry。
 3. renderer 不再判断 `hook.agentId === 'codex'`, 改为消费 `HookActionDescriptor`。
 4. health check、source coverage 仍可暂时保留原实现, 不在本任务中迁移。
 
-为什么不现在做外部 plugin:
+### 全应用范围
+
+完整 `Agent Capability Plugin` 应覆盖整个应用, 不只 hooks:
+
+- 来源发现: 用户级、项目级、会话级、managed 配置在哪里。
+- 资产解析: instructions、skills、subagents、MCP、hooks、sessions、usage、statusline、permissions 等。
+- 操作能力: 打开来源、启停 hooks、写配置、清理恢复点、刷新缓存。
+- 健康检查: 插件提供检查项、证据、修复建议。
+- UI 描述: 名称、图标、来源分组、能力可用性、确认文案。
+- 版本兼容: 插件版本、目标 Agent 版本、配置 schema 版本。
+
+设置页应新增 `Agent Capability Plugins` 入口:
+
+- 展示内置插件: Claude Code、Codex。
+- 展示插件版本、目标 Agent、已扫描来源、启用状态。
+- 后续支持安装第三方插件、更新、禁用、查看权限。
+- 写操作权限要单独列出, 例如 “可修改 `~/.claude/settings.json`”。
+
+为什么不在 GH-11 一次实现外部 plugin:
 
 - hook 写入涉及本地配置文件修改, 需要文件路径校验、备份、并发控制和 UI 确认。外部 plugin 一旦能执行写操作, 权限模型会变复杂。
-- Hermes / PI 的官方配置格式还需要逐个确认, 现在先稳定内部接口更现实。
-- 先做内置 registry, 后续再把 adapter manifest 拆成磁盘 plugin:
+- Hermes / PI 的官方配置格式还需要逐个确认, 现在先稳定内置 Plugin 接口更现实。
+- 先做内置 registry, 后续再把 manifest 拆成可下载插件:
 
 ```ts
 interface AgentPluginManifest {
   id: string
   displayName: string
+  version: string
+  agentCompatibility: {
+    name: string
+    versionRange?: string
+  }
   docs: string[]
   sources: SourceDescriptor[]
   assetTypes: AssetTypeDescriptor[]
   actions: ActionDescriptor[]
+  permissions: Array<{
+    kind: 'read' | 'write' | 'execute'
+    paths?: string[]
+    reason: string
+  }>
 }
 ```
 
-后续接入新 Agent 的最小流程:
+后续接入新 Agent 的理想流程:
 
-1. 读官方文档, 写 `AgentPluginManifest`。
-2. 写 source resolver, 说明用户级、项目级、managed 配置在哪里。
-3. 写 parser, 输出统一 `Asset` 和 `HookAssetMeta`。
-4. 如需写入, 实现 capability action, 并提供冲突处理与备份策略。
-5. 补目标测试和 UI snapshot。
+1. 输入 Agent 源码和官方文档。
+2. 生成 `AgentPluginManifest` 草案。
+3. 生成 source resolver, 说明用户级、项目级、managed 配置在哪里。
+4. 生成 parser, 输出统一 `Asset` 和对应 meta。
+5. 如需写入, 生成 capability action, 并提供冲突处理与备份策略。
+6. 生成目标测试和 UI fixture。
+7. 人工 review 权限、写文件路径和危险操作后才允许启用写操作。
 
-这让 Hermes / PI 的接入点集中在 adapter/plugin, 而不是分散到页面、IPC、health check 和 parser 的多处 `if agentId`。
+这让 Hermes / PI 的接入点集中在 Plugin, 而不是分散到页面、IPC、health check 和 parser 的多处 `if agentId`。
 
 ## 文案
 
