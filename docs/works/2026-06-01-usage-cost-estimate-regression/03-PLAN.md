@@ -9,10 +9,10 @@
   - 在 `tests/renderer/sessions-pages.test.tsx` 更新默认请求断言, 并覆盖 30 天与 All 按钮传参。
   - 先跑测试看到当前实现失败, 再改 `src/renderer/src/pages/usage.tsx`。
   - 验证: `pnpm test -- tests/renderer/sessions-pages.test.tsx` 先按预期失败, 修复后通过, 16 tests passed。
-- [ ] 任务 3: 阶段收口
+- [x] 任务 3: 阶段收口
   - 跑目标测试、web/node typecheck、harness check。
   - 更新本清单和 INDEX.phase 到 verify。
-  - 验证: `pnpm test -- tests/unit/usage-summary.test.ts tests/renderer/sessions-pages.test.tsx`, `pnpm typecheck:web`, `pnpm typecheck:node`, `pnpm harness:check`。
+  - 验证: `pnpm test -- tests/unit/usage-summary.test.ts tests/renderer/sessions-pages.test.tsx` 通过, 27 tests passed; `pnpm typecheck:web` 通过; `pnpm typecheck:node` 通过; `pnpm harness:check` 通过。
 
 ## verify 回写
 

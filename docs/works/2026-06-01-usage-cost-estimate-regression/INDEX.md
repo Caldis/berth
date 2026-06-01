@@ -2,7 +2,7 @@
 task: 2026-06-01-usage-cost-estimate-regression
 type: bug
 jira:
-phase: implement
+phase: verify
 created: 2026-06-01
 artifacts:
   source: 00-BUG.md
