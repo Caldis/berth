@@ -27,6 +27,7 @@
   "assetGuide": {
     "showDetails": "详情",
     "hideDetails": "收起详情",
+    "tips": "提示",
     "suggestedPath": "建议查看顺序",
     "path": {
       "instructions": "指令",
@@ -39,6 +40,12 @@
       "sources": "个来源",
       "providers": "个 provider",
       "risks": "个风险"
+    },
+    "evidenceHelp": {
+      "assets": "当前视图里通过 Agent、模块、搜索和作用域筛选后仍可见的本地资产条目数。",
+      "sources": "这些可见资产来自多少个不同的本地来源路径或配置文件。",
+      "providers": "这些可见资产覆盖多少类 Agent 或 provider, 例如 Claude Code、Codex 或抽象本地资产。",
+      "risks": "Berth 在当前视图里标记为敏感、过宽、被覆盖、不兼容或需要复查的条目数。"
     },
     "providerMap": {
       "provider": "Provider",
@@ -170,6 +177,11 @@
       "sessions": "个会话",
       "projects": "个项目",
       "agents": "个 Agent"
+    },
+    "evidenceHelp": {
+      "sessions": "当前 Agent 视角下发现的本地 transcript 会话数量。",
+      "projects": "这些可见会话覆盖的不同项目路径数量。",
+      "agents": "这些可见会话覆盖的不同本地 Agent 历史数量。"
     },
     "guidance": {
       "docs": {
@@ -1097,6 +1109,11 @@
       "notes": "条记忆",
       "sources": "个来源",
       "availableSources": "个可用来源"
+    },
+    "evidenceHelp": {
+      "notes": "当前已连接本地记忆来源中发现的记忆笔记数量。",
+      "sources": "Berth 在当前视图里检查过的记忆来源数量。",
+      "availableSources": "当前可访问且可读取的记忆来源数量。"
     },
     "importanceHint": {
       "core": "核心 — 每次会话都会进入上下文",

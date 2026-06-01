@@ -65,6 +65,8 @@ describe('Capabilities guidance surfaces', () => {
 
     expect(await screen.findByText('Runtime status surface')).toBeInTheDocument()
     expect(screen.getAllByText('Claude Code command')).toHaveLength(1)
+    expect(screen.queryByText(/Reads \[tui\]\.status_line from config\.toml/)).not.toBeInTheDocument()
+    fireEvent.mouseEnter(screen.getAllByText('Codex footer items')[0])
     expect(screen.getAllByText(/Reads \[tui\]\.status_line from config\.toml/)).toHaveLength(1)
     expect(screen.queryByText('Status lines show live session state')).not.toBeInTheDocument()
     expect(screen.getByText('tui.status_line')).toBeInTheDocument()

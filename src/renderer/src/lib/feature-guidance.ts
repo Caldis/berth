@@ -27,6 +27,7 @@ export interface FeatureGuideDefinition {
 
 export interface FeatureGuideEvidence {
   labelKey: string
+  helpKey?: string
   value: number | string
   tone?: 'default' | 'warning'
 }
@@ -236,9 +237,9 @@ export function buildFeatureGuideEvidence(assets: { agentId: string; path: strin
   const providerCount = new Set(assets.map((asset) => asset.agentId).filter(Boolean)).size
 
   return [
-    { labelKey: 'assetGuide.evidence.assets', value: assets.length },
-    { labelKey: 'assetGuide.evidence.sources', value: sourceCount },
-    { labelKey: 'assetGuide.evidence.providers', value: providerCount },
-    { labelKey: 'assetGuide.evidence.risks', value: riskCount, tone: riskCount > 0 ? 'warning' : 'default' }
+    { labelKey: 'assetGuide.evidence.assets', helpKey: 'assetGuide.evidenceHelp.assets', value: assets.length },
+    { labelKey: 'assetGuide.evidence.sources', helpKey: 'assetGuide.evidenceHelp.sources', value: sourceCount },
+    { labelKey: 'assetGuide.evidence.providers', helpKey: 'assetGuide.evidenceHelp.providers', value: providerCount },
+    { labelKey: 'assetGuide.evidence.risks', helpKey: 'assetGuide.evidenceHelp.risks', value: riskCount, tone: riskCount > 0 ? 'warning' : 'default' }
   ]
 }

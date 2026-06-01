@@ -27,6 +27,7 @@
   "assetGuide": {
     "showDetails": "Details",
     "hideDetails": "Hide details",
+    "tips": "Tips",
     "suggestedPath": "Suggested path",
     "path": {
       "instructions": "Instructions",
@@ -39,6 +40,12 @@
       "sources": "sources",
       "providers": "providers",
       "risks": "risks"
+    },
+    "evidenceHelp": {
+      "assets": "Visible local asset rows in the current view after agent, tab, search, and scope filters.",
+      "sources": "Distinct local source paths that produced the visible assets.",
+      "providers": "Distinct agent or provider buckets represented by the visible assets, such as Claude Code, Codex, or abstract local assets.",
+      "risks": "Visible items Berth marked as sensitive, broad, overridden, incompatible, or otherwise worth reviewing."
     },
     "providerMap": {
       "provider": "Provider",
@@ -170,6 +177,11 @@
       "sessions": "sessions",
       "projects": "projects",
       "agents": "agents"
+    },
+    "evidenceHelp": {
+      "sessions": "Local transcript sessions found for the current agent view.",
+      "projects": "Distinct project paths represented by the visible session history.",
+      "agents": "Distinct local agent histories represented by the visible sessions."
     },
     "guidance": {
       "docs": {
@@ -1098,6 +1110,11 @@
       "notes": "notes",
       "sources": "sources",
       "availableSources": "available sources"
+    },
+    "evidenceHelp": {
+      "notes": "Memory notes currently found across connected local memory sources.",
+      "sources": "Configured memory sources Berth checked for this view.",
+      "availableSources": "Memory sources that are currently reachable and readable."
     },
     "importanceHint": {
       "core": "Core — loaded into context every session",

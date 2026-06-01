@@ -50,10 +50,10 @@ describe('feature guidance definitions', () => {
     ], 1)
 
     expect(evidence).toEqual([
-      { labelKey: 'assetGuide.evidence.assets', value: 3 },
-      { labelKey: 'assetGuide.evidence.sources', value: 2 },
-      { labelKey: 'assetGuide.evidence.providers', value: 2 },
-      { labelKey: 'assetGuide.evidence.risks', value: 1, tone: 'warning' }
+      { labelKey: 'assetGuide.evidence.assets', helpKey: 'assetGuide.evidenceHelp.assets', value: 3 },
+      { labelKey: 'assetGuide.evidence.sources', helpKey: 'assetGuide.evidenceHelp.sources', value: 2 },
+      { labelKey: 'assetGuide.evidence.providers', helpKey: 'assetGuide.evidenceHelp.providers', value: 2 },
+      { labelKey: 'assetGuide.evidence.risks', helpKey: 'assetGuide.evidenceHelp.risks', value: 1, tone: 'warning' }
     ])
   })
 })
