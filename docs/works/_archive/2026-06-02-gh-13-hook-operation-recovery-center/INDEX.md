@@ -2,16 +2,21 @@
 task: 2026-06-02-gh-13-hook-operation-recovery-center
 task_id: GH-13
 type: feature
-phase: blocked
+phase: archive
 created: 2026-06-02
 issue:
   number: 13
   repo: Caldis/berth
   url: https://github.com/Caldis/berth/issues/13
+  id: I_kwDOSpnDwc8AAAABEBRIzQ
+  state: CLOSED
 gh_project:
-  status: pending-auth
+  status: tracked
   project_number: 6
   project_url: https://github.com/users/Caldis/projects/6
+  project_id: PVT_kwHOADXbEs4BZHvQ
+  item_id: PVTI_lAHOADXbEs4BZHvQzguaZ2M
+  item_status: Done
 artifacts:
   source: 00-PRD.md
   analysis: 01-ANALYSIS.md
@@ -29,8 +34,6 @@ artifacts:
 - [x] 01-ANALYSIS.md — Explore 产物
 - [x] 02-SPEC.md — Design 产物
 - [x] 03-PLAN.md — 活任务清单
-- [ ] 04-POLISH.md — 可选抛光记录
+- [x] 04-POLISH.md — 可选抛光记录
 
 ## 待澄清 (blocked 时填)
-
-- 本地实现与验证已完成, 但 GitHub Project 绑定/归档缺少 `project,read:project` scope。需在本机运行 `gh auth refresh -h github.com -s project,read:project`, 然后执行 `node scripts/harness-projects.mjs ensure docs/works/2026-06-02-gh-13-hook-operation-recovery-center` 回写真实 `PVTI_...` item id, 再继续 archive。

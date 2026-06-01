@@ -6,7 +6,7 @@ FEATURE
 
 ## 状态
 
-Open
+Resolved
 
 ## GitHub
 
@@ -16,6 +16,14 @@ Open
 ## 关联任务
 
 - 来源归档: `docs/works/_archive/2026-06-01-gh-11-claude-hook-soft-disable/`
+- 完成归档: `docs/works/_archive/2026-06-02-gh-13-hook-operation-recovery-center/`
+
+## 完成记录
+
+- 完成日期: 2026-06-02
+- GitHub Issue: #13 已关闭
+- 解决方案: 增加恢复点 IPC / preload 契约、Claude sidecar 恢复点枚举与清理、Hooks 页面恢复中心 UI、状态解释和相关测试。
+- 验证: `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm harness:check`, `node scripts/harness-projects.mjs check --strict` 均通过。
 
 ## PRD
 
