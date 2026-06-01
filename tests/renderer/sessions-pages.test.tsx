@@ -275,6 +275,10 @@ describe('session pages', () => {
     expect(await screen.findByText('Fix session metadata')).toBeInTheDocument()
     selectSessionDetailTab(/Timeline/)
     expect(screen.getByText('Edit')).toBeInTheDocument()
+    const timelineTab = screen.getByTestId('session-timeline-tab')
+    expect(timelineTab).not.toHaveClass('rounded-xl')
+    expect(timelineTab).not.toHaveClass('border')
+    expect(timelineTab).not.toHaveClass('bg-card')
     expect(screen.getByTestId('tool-timeline-scroll')).toHaveClass('overflow-x-hidden')
 
     fireEvent.click(screen.getByRole('button', { name: /Failed/ }))

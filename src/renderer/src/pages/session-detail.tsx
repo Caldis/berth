@@ -406,20 +406,20 @@ function SessionTimelineTab({ events }: { events: SessionToolEvent[] }): React.R
   const { t } = useTranslation()
 
   return (
-    <div className="rounded-xl border border-border bg-card">
-      <div className="flex items-center justify-between border-b border-border px-4 py-3">
-        <div>
-          <h2 className="text-sm font-medium">{t('sessions.toolTimeline')}</h2>
-          <p className="mt-0.5 text-xs text-muted-foreground">
+    <section data-testid="session-timeline-tab" className="min-w-0 space-y-3">
+      <div className="flex flex-col gap-2 border-b border-border pb-3 sm:flex-row sm:items-end sm:justify-between">
+        <div className="min-w-0">
+          <h2 className="text-base font-semibold tracking-tight text-card-foreground">{t('sessions.toolTimeline')}</h2>
+          <p className="mt-1 max-w-2xl text-xs text-muted-foreground">
             {t('sessions.toolTimelineDescription')}
           </p>
         </div>
-        <span className="rounded-md bg-muted px-2 py-1 text-xs text-muted-foreground">
+        <span className="inline-flex w-fit items-center rounded-md bg-muted px-2 py-1 text-xs font-medium tabular-nums text-muted-foreground">
           {formatNumber(events.length)}
         </span>
       </div>
       <ToolTimeline events={events} />
-    </div>
+    </section>
   )
 }
 
@@ -1065,8 +1065,8 @@ function ToolTimeline({ events }: { events: SessionToolEvent[] }): React.ReactEl
   }
 
   return (
-    <div>
-      <div className="border-b border-border bg-muted/10 px-4 py-3">
+    <div className="min-w-0">
+      <div className="border-b border-border bg-background/80 py-3">
         <div className="flex flex-col gap-3">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
@@ -1152,9 +1152,9 @@ function ToolTimeline({ events }: { events: SessionToolEvent[] }): React.ReactEl
           description={t('sessions.toolFilter.emptyDescription')}
         />
       ) : (
-        <div data-testid="tool-timeline-scroll" className="max-h-[720px] overflow-y-auto overflow-x-hidden overscroll-contain">
+        <div data-testid="tool-timeline-scroll" className="min-h-[420px] max-h-[calc(100vh-17rem)] overflow-y-auto overflow-x-hidden overscroll-contain pr-2 [scrollbar-gutter:stable]">
           <div className="relative min-w-0">
-            <span className="absolute bottom-0 left-[25px] top-0 w-px bg-border" aria-hidden="true" />
+            <span className="absolute bottom-0 left-[18px] top-0 w-px bg-border" aria-hidden="true" />
             {filteredEvents.map((event) => {
               const durationMs = getToolDurationMs(event)
               const toolTip = getToolTip(event, t)
@@ -1162,9 +1162,9 @@ function ToolTimeline({ events }: { events: SessionToolEvent[] }): React.ReactEl
               return (
                 <div
                   key={event.id}
-                  className="relative grid min-h-9 grid-cols-[1.25rem_minmax(0,1fr)_minmax(3.5rem,4rem)] items-center gap-2 px-4 py-1.5 text-xs transition-colors hover:bg-accent/5 sm:grid-cols-[1.25rem_minmax(0,10rem)_minmax(0,1fr)_minmax(3.75rem,4.5rem)_minmax(3.5rem,4.25rem)]"
+                  className="relative grid min-h-8 grid-cols-[1.25rem_minmax(0,1fr)_minmax(3.5rem,4rem)] items-center gap-2 px-2 py-1.5 text-xs transition-colors hover:bg-accent/5 sm:grid-cols-[1.25rem_minmax(0,11rem)_minmax(0,1fr)_minmax(3.75rem,4.5rem)_minmax(3.5rem,4.25rem)]"
                 >
-                  <span className="relative z-10 flex h-5 w-5 items-center justify-center rounded-full bg-card">
+                  <span className="relative z-10 flex h-5 w-5 items-center justify-center rounded-full bg-background">
                     <TimelineStatusIcon status={event.status} />
                   </span>
                   <div className="min-w-0">
