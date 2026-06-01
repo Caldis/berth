@@ -833,6 +833,12 @@ function formatHookToggleError(t: ReturnType<typeof useTranslation>['t'], error:
   if (message.includes('no longer exists in the target scenario')) {
     return t('capabilities.hooks.management.errorStaleTarget')
   }
+  if (message.includes('target changed or was removed')) {
+    return t('capabilities.hooks.management.errorTargetChanged')
+  }
+  if (message.includes('source changed while Berth was updating')) {
+    return t('capabilities.hooks.management.errorSourceChanged')
+  }
   if (message.includes('restore point was not found')) {
     return t('capabilities.hooks.management.errorRestorePointMissing')
   }

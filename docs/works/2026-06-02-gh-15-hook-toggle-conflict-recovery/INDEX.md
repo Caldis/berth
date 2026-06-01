@@ -2,7 +2,7 @@
 task: 2026-06-02-gh-15-hook-toggle-conflict-recovery
 task_id: GH-15
 type: feature
-phase: implement
+phase: verify
 created: 2026-06-02
 issue:
   number: 15

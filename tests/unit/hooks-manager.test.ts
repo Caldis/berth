@@ -195,6 +195,88 @@ describe('hooks manager', () => {
     expect(fs.existsSync(`${settingsPath}.bak`)).toBe(true)
   })
 
+  it('retries Claude hook disable when the source changes before write and preserves unrelated edits', () => {
+    const settingsPath = path.join(tempDir!, '.claude', 'settings.json')
+    const targetHook = { type: 'command', command: 'python hook.py' }
+    const hookKey = buildHookKey('claude-code', 'SessionStart', 'startup', targetHook)
+    let writesObserved = 0
+    fs.mkdirSync(path.dirname(settingsPath), { recursive: true })
+    fs.writeFileSync(
+      settingsPath,
+      JSON.stringify({
+        env: { EXISTING: '1' },
+        hooks: {
+          SessionStart: [{ matcher: 'startup', hooks: [targetHook] }]
+        }
+      }, null, 2)
+    )
+
+    const result = setHookEnabled({
+      agentId: 'claude-code',
+      scope: 'user',
+      hookKey,
+      sourcePath: settingsPath,
+      enabled: false
+    }, tempDir!, {
+      onBeforeClaudeSettingsWrite: () => {
+        writesObserved += 1
+        if (writesObserved !== 1) return
+        const current = JSON.parse(fs.readFileSync(settingsPath, 'utf-8'))
+        current.env.ADDED_EXTERNALLY = '1'
+        fs.writeFileSync(settingsPath, JSON.stringify(current, null, 2))
+      }
+    })
+    const settings = JSON.parse(fs.readFileSync(settingsPath, 'utf-8'))
+
+    expect(result.changed).toBe(true)
+    expect(writesObserved).toBe(2)
+    expect(settings.env).toEqual({ EXISTING: '1', ADDED_EXTERNALLY: '1' })
+    expect(settings.hooks).toEqual({})
+  })
+
+  it('stops Claude hook disable when the target hook changes during retry', () => {
+    const settingsPath = path.join(tempDir!, '.claude', 'settings.json')
+    const targetHook = { type: 'command', command: 'python hook.py' }
+    const changedHook = { type: 'command', command: 'python changed.py' }
+    const hookKey = buildHookKey('claude-code', 'SessionStart', 'startup', targetHook)
+    let writesObserved = 0
+    fs.mkdirSync(path.dirname(settingsPath), { recursive: true })
+    fs.writeFileSync(
+      settingsPath,
+      JSON.stringify({
+        hooks: {
+          SessionStart: [{ matcher: 'startup', hooks: [targetHook] }]
+        }
+      }, null, 2)
+    )
+
+    expect(() =>
+      setHookEnabled({
+        agentId: 'claude-code',
+        scope: 'user',
+        hookKey,
+        sourcePath: settingsPath,
+        enabled: false
+      }, tempDir!, {
+        onBeforeClaudeSettingsWrite: () => {
+          writesObserved += 1
+          if (writesObserved !== 1) return
+          fs.writeFileSync(
+            settingsPath,
+            JSON.stringify({
+              hooks: {
+                SessionStart: [{ matcher: 'startup', hooks: [changedHook] }]
+              }
+            }, null, 2)
+          )
+        }
+      })
+    ).toThrow(/hook target changed or was removed/)
+
+    const settings = JSON.parse(fs.readFileSync(settingsPath, 'utf-8'))
+    expect(settings.hooks.SessionStart[0].hooks).toEqual([changedHook])
+  })
+
   it('restores a Claude Code hook from the Berth sidecar into the current matcher group', () => {
     const settingsPath = path.join(tempDir!, '.claude', 'settings.json')
     const sidecarPath = path.join(tempDir!, '.claude', '.berth', 'hooks-state.json')
@@ -300,7 +382,37 @@ describe('hooks manager', () => {
     }, tempDir!)
     const sidecar = JSON.parse(fs.readFileSync(sidecarPath, 'utf-8'))
 
-    expect(result.changed).toBe(true)
+    expect(result.changed).toBe(false)
     expect(sidecar.disabled[hookKey]).toBeUndefined()
+  })
+
+  it('does not write settings when the Claude restore sidecar is invalid', () => {
+    const settingsPath = path.join(tempDir!, '.claude', 'settings.json')
+    const sidecarPath = path.join(tempDir!, '.claude', '.berth', 'hooks-state.json')
+    const targetHook = { type: 'command', command: 'python hook.py' }
+    const hookKey = buildHookKey('claude-code', 'SessionStart', 'startup', targetHook)
+    fs.mkdirSync(path.dirname(settingsPath), { recursive: true })
+    fs.mkdirSync(path.dirname(sidecarPath), { recursive: true })
+    fs.writeFileSync(
+      settingsPath,
+      JSON.stringify({
+        hooks: {
+          SessionStart: [{ matcher: 'startup', hooks: [targetHook] }]
+        }
+      }, null, 2)
+    )
+    const before = fs.readFileSync(settingsPath, 'utf-8')
+    fs.writeFileSync(sidecarPath, JSON.stringify({ version: 1, disabled: { [hookKey]: { broken: true } } }))
+
+    expect(() =>
+      setHookEnabled({
+        agentId: 'claude-code',
+        scope: 'user',
+        hookKey,
+        sourcePath: settingsPath,
+        enabled: true
+      }, tempDir!)
+    ).toThrow(/Invalid Claude hooks state/)
+    expect(fs.readFileSync(settingsPath, 'utf-8')).toBe(before)
   })
 })

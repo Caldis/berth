@@ -927,6 +927,8 @@
         "copyRawJson": "Copy JSON",
         "copiedRawJson": "Copied JSON",
         "errorStaleTarget": "This hook was changed or removed by another edit. Refresh before trying again.",
+        "errorTargetChanged": "This hook changed while Berth was preparing the update. Refresh the Hooks view before trying again.",
+        "errorSourceChanged": "This hook source kept changing during the update. Wait for the other write to finish, then refresh and try again.",
         "errorRestorePointMissing": "No restore point was found for this hook. It may already be restored or the restore record was removed.",
         "errorRestorePointInvalid": "The hook restore point file is invalid. Berth stopped before writing; inspect .claude/.berth/hooks-state.json first.",
         "errorConcurrentWrite": "This hook source file is already being modified by another operation. Try again shortly."

@@ -251,6 +251,28 @@ describe('HooksLifecycleView', () => {
     })
   })
 
+  it('shows readable hook toggle errors for target conflicts', async () => {
+    window.api.hooks.setHookEnabled = vi.fn(async () => {
+      throw new Error('Claude Code hook target changed or was removed before Berth could update it')
+    })
+
+    renderHooks('claude', [
+      hookAsset('claude-stop', 'claude-code', 'Stop', {
+        hookKey: 'claude-code:scenario:hook',
+        enabled: true,
+        canToggleHook: true,
+        toggleStrategy: 'soft-remove'
+      })
+    ])
+    await waitForHookHealthIdle()
+
+    fireEvent.click(screen.getByText('Disable'))
+
+    await waitFor(() => {
+      expect(screen.getByText(/This hook changed while Berth was preparing the update/)).toBeInTheDocument()
+    })
+  })
+
   it('shows row-level risk hints for broad hooks without entry files', async () => {
     renderHooks('codex', [
       hookAsset('codex-pre', 'codex', 'PreToolUse', {

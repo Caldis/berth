@@ -927,6 +927,8 @@
         "copyRawJson": "复制 JSON 原文",
         "copiedRawJson": "已复制 JSON 原文",
         "errorStaleTarget": "这个 Hook 已经被其他修改变更或移除。请刷新后再操作。",
+        "errorTargetChanged": "这个 Hook 在 Berth 准备更新时已经变化。请刷新 Hooks 视图后再操作。",
+        "errorSourceChanged": "这个 Hook 来源文件在更新期间持续变化。请等待其他写入结束, 刷新后再试。",
         "errorRestorePointMissing": "没有找到这个 Hook 的恢复点。它可能已经被恢复或恢复记录已被清理。",
         "errorRestorePointInvalid": "Hook 恢复点文件损坏。Berth 已停止写入, 请先检查 .claude/.berth/hooks-state.json。",
         "errorConcurrentWrite": "这个 Hook 来源文件正在被另一个操作修改。请稍后重试。"

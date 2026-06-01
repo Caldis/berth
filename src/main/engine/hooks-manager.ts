@@ -16,7 +16,29 @@ const hookFileLocks = new Set<string>()
 
 interface AgentHookCapabilityPlugin {
   agentId: HooksAgentId
-  setHookEnabled: (request: SetHookEnabledRequest, homeDir: string) => SetHookEnabledResult
+  setHookEnabled: (request: SetHookEnabledRequest, homeDir: string, options: HookManagerOptions) => SetHookEnabledResult
+}
+
+interface HookManagerOptions {
+  onBeforeClaudeSettingsWrite?: (context: {
+    filePath: string
+    attempt: number
+    operation: 'disable' | 'restore'
+  }) => void
+}
+
+class HookSourceChangedError extends Error {
+  constructor(filePath: string) {
+    super(`Claude Code hook source changed while Berth was updating it: ${filePath}`)
+    this.name = 'HookSourceChangedError'
+  }
+}
+
+class HookTargetConflictError extends Error {
+  constructor() {
+    super('Claude Code hook target changed or was removed before Berth could update it')
+    this.name = 'HookTargetConflictError'
+  }
 }
 
 export function getAgentHooksStatus(agentId: HooksAgentId, homeDir = os.homedir()): HooksEnablementStatus {
@@ -65,7 +87,8 @@ export function setAgentHooksEnabled(
 
 export function setHookEnabled(
   request: SetHookEnabledRequest,
-  homeDir = os.homedir()
+  homeDir = os.homedir(),
+  options: HookManagerOptions = {}
 ): SetHookEnabledResult {
   if (request.scope !== 'user') {
     throw new Error(`Unsupported hook state scope: ${request.scope}`)
@@ -77,7 +100,7 @@ export function setHookEnabled(
     throw new Error('managed hooks cannot be changed from user hook state')
   }
   const plugin = hookCapabilityPlugins.find((item) => item.agentId === request.agentId)
-  if (plugin) return plugin.setHookEnabled(request, homeDir)
+  if (plugin) return plugin.setHookEnabled(request, homeDir, options)
   throw new Error(`Single hook enablement is not supported for ${request.agentId}`)
 }
 
@@ -94,7 +117,8 @@ const hookCapabilityPlugins: AgentHookCapabilityPlugin[] = [
 
 function setCodexHookEnabled(
   request: SetHookEnabledRequest,
-  homeDir: string
+  homeDir: string,
+  _options: HookManagerOptions
 ): SetHookEnabledResult {
   const sourcePath = path.join(homeDir, '.codex', 'config.toml')
   const config = readTomlObject(sourcePath) ?? {}
@@ -154,7 +178,8 @@ interface RemovedClaudeHook {
 
 function setClaudeHookEnabled(
   request: SetHookEnabledRequest,
-  homeDir: string
+  homeDir: string,
+  options: HookManagerOptions
 ): SetHookEnabledResult {
   const sourcePath = path.join(homeDir, '.claude', 'settings.json')
   if (!samePath(request.sourcePath, sourcePath)) {
@@ -163,9 +188,10 @@ function setClaudeHookEnabled(
 
   return withHookFileLock(sourcePath, () => {
     const hookKey = parseHookKey(request.hookKey, 'claude-code')
-    return request.enabled
-      ? restoreClaudeHook(request, sourcePath, hookKey)
-      : disableClaudeHook(request, sourcePath, hookKey, homeDir)
+    return withClaudeHookRetry((attempt) => request.enabled
+      ? restoreClaudeHook(request, sourcePath, hookKey, options, attempt)
+      : disableClaudeHook(request, sourcePath, hookKey, homeDir, options, attempt)
+    )
   })
 }
 
@@ -173,11 +199,15 @@ function disableClaudeHook(
   request: SetHookEnabledRequest,
   sourcePath: string,
   hookKey: ParsedHookKey,
-  homeDir: string
+  homeDir: string,
+  options: HookManagerOptions,
+  attempt = 1
 ): SetHookEnabledResult {
   const sidecarPath = getClaudeHookStatePath(homeDir)
-  const state = readClaudeHooksState(sidecarPath)
-  const settings = readJsonObject(sourcePath) ?? {}
+  const sidecar = readClaudeHooksStateWithText(sidecarPath)
+  const state = sidecar.state
+  const settingsDoc = readJsonObjectWithText(sourcePath)
+  const settings = settingsDoc.value ?? {}
   const removed = removeClaudeHookMatches(settings, hookKey.scenarioHash, hookKey.hookHash)
 
   if (removed.length === 0) {
@@ -189,7 +219,7 @@ function disableClaudeHook(
         sourcePath
       }
     }
-    throw new Error('Claude Code hook no longer exists in the target scenario')
+    throw new HookTargetConflictError()
   }
 
   state.disabled[request.hookKey] = buildClaudeDisabledHookEntry(
@@ -197,8 +227,16 @@ function disableClaudeHook(
     hookKey,
     removed
   )
-  writeJsonFile(sidecarPath, state)
-  writeJsonFile(sourcePath, settings)
+  const settingsText = toJsonText(settings)
+  writeTextFileIfUnchanged(sourcePath, settingsText, settingsDoc.text, () =>
+    options.onBeforeClaudeSettingsWrite?.({ filePath: sourcePath, attempt, operation: 'disable' })
+  )
+  try {
+    writeJsonFileIfUnchanged(sidecarPath, state, sidecar.text)
+  } catch (error) {
+    restoreTextFileIfUnchanged(sourcePath, settingsDoc.text, settingsText)
+    throw error
+  }
 
   return {
     hookKey: request.hookKey,
@@ -211,12 +249,16 @@ function disableClaudeHook(
 function restoreClaudeHook(
   request: SetHookEnabledRequest,
   sourcePath: string,
-  hookKey: ParsedHookKey
+  hookKey: ParsedHookKey,
+  options: HookManagerOptions,
+  attempt = 1
 ): SetHookEnabledResult {
   const sidecarPath = path.join(path.dirname(sourcePath), '.berth', 'hooks-state.json')
-  const state = readClaudeHooksState(sidecarPath)
+  const sidecar = readClaudeHooksStateWithText(sidecarPath)
+  const state = sidecar.state
   const entry = state.disabled[request.hookKey]
-  const settings = readJsonObject(sourcePath) ?? {}
+  const settingsDoc = readJsonObjectWithText(sourcePath)
+  const settings = settingsDoc.value ?? {}
 
   if (!entry) {
     if (hasClaudeHook(settings, hookKey.scenarioHash, hookKey.hookHash)) {
@@ -230,11 +272,33 @@ function restoreClaudeHook(
     throw new Error('Claude Code hook restore point was not found')
   }
 
+  if (hasClaudeHook(settings, hookKey.scenarioHash, hookKey.hookHash)) {
+    delete state.disabled[request.hookKey]
+    writeJsonFileIfUnchanged(sidecarPath, state, sidecar.text)
+    return {
+      hookKey: request.hookKey,
+      enabled: true,
+      changed: false,
+      sourcePath
+    }
+  }
+
   const inserted = insertClaudeHook(settings, entry)
   delete state.disabled[request.hookKey]
 
-  if (inserted) writeJsonFile(sourcePath, settings)
-  writeJsonFile(sidecarPath, state)
+  let settingsText: string | null = null
+  if (inserted) {
+    settingsText = toJsonText(settings)
+    writeTextFileIfUnchanged(sourcePath, settingsText, settingsDoc.text, () =>
+      options.onBeforeClaudeSettingsWrite?.({ filePath: sourcePath, attempt, operation: 'restore' })
+    )
+  }
+  try {
+    writeJsonFileIfUnchanged(sidecarPath, state, sidecar.text)
+  } catch (error) {
+    if (settingsText) restoreTextFileIfUnchanged(sourcePath, settingsDoc.text, settingsText)
+    throw error
+  }
 
   return {
     hookKey: request.hookKey,
@@ -331,6 +395,14 @@ function readJsonObject(filePath: string): Record<string, unknown> | null {
   return parsed
 }
 
+function readJsonObjectWithText(filePath: string): { value: Record<string, unknown> | null; text: string | null } {
+  if (!fs.existsSync(filePath)) return { value: null, text: null }
+  const text = fs.readFileSync(filePath, 'utf-8')
+  const parsed: unknown = JSON.parse(text)
+  if (!isRecord(parsed)) throw new Error(`${filePath} must contain a JSON object`)
+  return { value: parsed, text }
+}
+
 function readTomlObject(filePath: string): Record<string, unknown> | null {
   if (!fs.existsSync(filePath)) return null
   const parsed = parseToml(fs.readFileSync(filePath, 'utf-8'))
@@ -339,7 +411,41 @@ function readTomlObject(filePath: string): Record<string, unknown> | null {
 }
 
 function writeJsonFile(filePath: string, value: unknown): void {
-  writeTextFile(filePath, `${JSON.stringify(value, null, 2)}\n`)
+  writeTextFile(filePath, toJsonText(value))
+}
+
+function writeJsonFileIfUnchanged(filePath: string, value: unknown, expectedText: string | null): void {
+  writeTextFileIfUnchanged(filePath, toJsonText(value), expectedText)
+}
+
+function writeTextFileIfUnchanged(
+  filePath: string,
+  content: string,
+  expectedText: string | null,
+  beforeWrite?: () => void
+): void {
+  beforeWrite?.()
+  if (readTextIfExists(filePath) !== expectedText) {
+    throw new HookSourceChangedError(filePath)
+  }
+  writeTextFile(filePath, content)
+}
+
+function restoreTextFileIfUnchanged(filePath: string, originalText: string | null, writtenText: string): void {
+  if (readTextIfExists(filePath) !== writtenText) return
+  if (originalText === null) {
+    fs.rmSync(filePath, { force: true })
+    return
+  }
+  writeTextFile(filePath, originalText)
+}
+
+function readTextIfExists(filePath: string): string | null {
+  return fs.existsSync(filePath) ? fs.readFileSync(filePath, 'utf-8') : null
+}
+
+function toJsonText(value: unknown): string {
+  return `${JSON.stringify(value, null, 2)}\n`
 }
 
 function writeTextFile(filePath: string, content: string): void {
@@ -378,9 +484,25 @@ function parseHookKey(hookKey: string, expectedProvider: HooksAgentId): ParsedHo
   }
 }
 
-function readClaudeHooksState(sidecarPath: string): ClaudeHooksStateFile {
-  if (!fs.existsSync(sidecarPath)) return { version: 1, disabled: {} }
-  const parsed = readJsonObject(sidecarPath)
+function withClaudeHookRetry(operation: (attempt: number) => SetHookEnabledResult): SetHookEnabledResult {
+  const maxAttempts = 3
+  let lastError: unknown
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    try {
+      return operation(attempt)
+    } catch (error) {
+      if (!(error instanceof HookSourceChangedError)) throw error
+      lastError = error
+    }
+  }
+  throw lastError
+}
+
+function readClaudeHooksStateWithText(sidecarPath: string): { state: ClaudeHooksStateFile; text: string | null } {
+  if (!fs.existsSync(sidecarPath)) {
+    return { state: { version: 1, disabled: {} }, text: null }
+  }
+  const { value: parsed, text } = readJsonObjectWithText(sidecarPath)
   if (!parsed || parsed.version !== 1 || !isRecord(parsed.disabled)) {
     throw new Error('Invalid Claude hooks state file')
   }
@@ -390,7 +512,7 @@ function readClaudeHooksState(sidecarPath: string): ClaudeHooksStateFile {
     if (!entry) throw new Error(`Invalid Claude hooks state entry: ${key}`)
     disabled[key] = entry
   }
-  return { version: 1, disabled }
+  return { state: { version: 1, disabled }, text }
 }
 
 function parseClaudeDisabledHookEntry(value: unknown): ClaudeDisabledHookEntry | null {
