@@ -74,3 +74,8 @@ verify 不通过项作为新任务追加于此, phase 退回 implement。
 - Electron 视觉验收: 先执行 `pnpm dev:agent guard before --id shared-guide-hover-verify --json`, 记录用户 dev PID 226164 和 Electron 主进程 PID 493864; 手动启动独立实例 `shared-guide-hover-remote`, 带 `--remote-debugging-port=9336`; CDP 进入能力 Hooks 页面, 断言 `触发点` 说明初始隐藏、hover 后出现, `3 个资产` 统计 tag hover 后出现解释; 继续断言会话页 `为回看而分组` 和指令页记忆 `来源类型` 都是初始隐藏、hover 后出现, 对应统计 tag hover 说明可见。
 - 截图证据: 用真实 Electron 主进程 PID 229980 的窗口句柄 + DWM bounds + `PrintWindow` 截图, `C:\Users\mail\AppData\Local\Temp\berth-shared-guide-tip-hover-printwindow.png` 展示 tips hover 浮层, `C:\Users\mail\AppData\Local\Temp\berth-shared-guide-evidence-hover-printwindow.png` 展示统计 tag hover 浮层。
 - 清理: 按精确 owner PID 停止 `shared-guide-hover-remote` 进程树; `pnpm dev:agent guard after --id shared-guide-hover-verify --json` 返回 `guard-ok`, 用户 dev 进程未丢失; 截图 helper 摩擦已记录为 `docs/friction/20260601-4.0-verify-powershell-drawing-screenshot.md`。
+
+- [ ] 任务 10: 将共享引导说明改入详情区平铺展示
+  - feedback: hover tips 和统计 tag 说明不再做悬浮提示, 统一放入 `[详情]` 展开内容里平铺展示。
+  - tests: `tests/renderer/feature-guide-panel.test.tsx`, `tests/renderer/capabilities-guidance.test.tsx`
+  - verify: pending
