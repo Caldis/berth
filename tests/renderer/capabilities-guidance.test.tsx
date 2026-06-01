@@ -1,11 +1,12 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import React from 'react'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { MemoryRouter, useLocation } from 'react-router-dom'
 import '../../src/renderer/src/i18n'
 import { Capabilities } from '../../src/renderer/src/pages/capabilities'
 import { useAppStore } from '../../src/renderer/src/stores/app'
 import type { Asset } from '../../src/shared/types/asset'
+import type { AgentCapabilityPlugin } from '../../src/shared/types/agent-plugin'
 
 function hookAsset(): Asset {
   return {
@@ -41,6 +42,72 @@ function statusLineAsset(): Asset {
   }
 }
 
+function codexPromptHookAsset(): Asset {
+  return {
+    id: 'codex-prompt',
+    agentId: 'codex',
+    category: 'capability',
+    type: 'hook',
+    scope: 'user',
+    name: 'Prompt hook',
+    path: 'C:\\Users\\test\\.codex\\hooks.json',
+    meta: {
+      eventType: 'Stop',
+      hookType: 'prompt',
+      prompt: 'Summarize this turn before stopping.'
+    }
+  }
+}
+
+function codexHookSchemaPlugin(): AgentCapabilityPlugin {
+  return {
+    id: 'codex',
+    displayName: 'Codex',
+    version: '0.1.0',
+    schemaVersion: 1,
+    builtin: true,
+    enabled: true,
+    detected: true,
+    agentCompatibility: {
+      agentId: 'codex',
+      name: 'Codex'
+    },
+    capabilities: [],
+    permissions: [],
+    sourceDescriptors: [],
+    assetDescriptors: [],
+    hookSchema: {
+      agentId: 'codex',
+      events: [],
+      handlers: [
+        {
+          type: 'prompt',
+          runMode: 'parsed-only',
+          primaryFieldNames: ['prompt'],
+          labelKey: 'settings.agentPluginHookHandlers.codex.prompt.label',
+          descriptionKey: 'settings.agentPluginHookHandlers.codex.prompt.description',
+          fields: [
+            {
+              name: 'prompt',
+              kind: 'string',
+              primary: true,
+              labelKey: 'settings.agentPluginHookHandlers.codex.prompt.fields.prompt.label',
+              descriptionKey: 'settings.agentPluginHookHandlers.codex.prompt.fields.prompt.description'
+            }
+          ]
+        }
+      ]
+    },
+    healthCheckDescriptors: [],
+    sourceCoverage: {
+      total: 0,
+      counts: { scanned: 0, missing: 0, 'not-scanned': 0 },
+      sources: []
+    },
+    references: []
+  }
+}
+
 function LocationProbe(): React.ReactElement {
   const location = useLocation()
   return <span data-testid="location">{location.pathname}{location.search}</span>
@@ -58,6 +125,7 @@ function renderCapabilities(initialEntry = '/configuration/capabilities'): void 
 describe('Capabilities guidance surfaces', () => {
   beforeEach(() => {
     useAppStore.setState({ assets: [hookAsset()], agentView: 'all' })
+    window.api.agentPlugins.list = vi.fn(async () => ({ plugins: [] }))
   })
 
   it('keeps hook concept guidance in the page guide instead of the lifecycle tool', async () => {
@@ -111,5 +179,15 @@ describe('Capabilities guidance surfaces', () => {
 
     expect(await screen.findByText('Runtime status surface')).toBeInTheDocument()
     expect(screen.getByTestId('location')).toHaveTextContent('/configuration/capabilities?tab=statusLine')
+  })
+
+  it('passes agent plugin hook schema into the Hooks tab', async () => {
+    useAppStore.setState({ assets: [codexPromptHookAsset()], agentView: 'all' })
+    window.api.agentPlugins.list = vi.fn(async () => ({ plugins: [codexHookSchemaPlugin()] }))
+
+    renderCapabilities('/configuration/capabilities?tab=hooks')
+
+    expect(await screen.findByText('Summarize this turn before stopping.')).toBeInTheDocument()
+    expect(await screen.findByText('Parsed only')).toBeInTheDocument()
   })
 })

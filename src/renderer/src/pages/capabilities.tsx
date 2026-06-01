@@ -19,6 +19,7 @@ import {
 import { cn } from '@/lib/utils'
 import { filterAssetsByAgentView } from '@/lib/agent-view'
 import { useAppStore } from '@/stores/app'
+import { useAgentCapabilityPlugins } from '@/hooks/use-ipc'
 import { TabGroup, type TabDef } from '@/components/shared/tab-group'
 import { FilterBar } from '@/components/shared/filter-bar'
 import { DetailRow } from '@/components/shared/detail-row'
@@ -817,6 +818,7 @@ export function Capabilities(): React.ReactElement {
   const { t } = useTranslation()
   const assets = useAppStore((s) => s.assets)
   const agentView = useAppStore((s) => s.agentView)
+  const { plugins } = useAgentCapabilityPlugins()
   const [searchParams, setSearchParams] = useSearchParams()
   const queryTab = normalizeCapabilityTab(searchParams.get('tab'))
   const [activeTab, setActiveTab] = useState(queryTab)
@@ -889,7 +891,7 @@ export function Capabilities(): React.ReactElement {
         )
 
       case 'hooks': {
-        return <HooksLifecycleView assets={filteredAssets} agentView={agentView} search={search} scope={scope} />
+        return <HooksLifecycleView assets={filteredAssets} agentView={agentView} search={search} scope={scope} plugins={plugins} />
       }
 
       case 'plugins':

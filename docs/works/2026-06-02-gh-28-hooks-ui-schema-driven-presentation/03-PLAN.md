@@ -8,7 +8,7 @@
 - [x] 任务 2: Hooks 行级展示读取 handler schema 的 primary fields、runMode 和 support note。
   - tests: `pnpm vitest run tests/renderer/hooks-lifecycle-view.test.tsx`
   - verify: `command`、`http`、`mcp_tool`、`prompt`、`commandWindows` 常见字段展示正确; Codex `prompt` / `agent` 显示 parsed-only; raw JSON、copy、toggle、recovery、health hover 行为不变; 长文本不横向撑开。
-- [ ] 任务 3: Capabilities Hooks tab 接入 `useAgentCapabilityPlugins()` 并传入 Hooks 视图。
+- [x] 任务 3: Capabilities Hooks tab 接入 `useAgentCapabilityPlugins()` 并传入 Hooks 视图。
   - tests: `pnpm vitest run tests/renderer/capabilities-guidance.test.tsx tests/renderer/hooks-lifecycle-view.test.tsx`
   - verify: plugin list 加载失败或为空时 Hooks 仍使用 fallback; schema 存在时页面级渲染能展示 schema-driven 主字段; Settings 插件页不受影响。
 - [ ] 任务 4: 补齐 i18n 短文案并进入 verify 前检查。
