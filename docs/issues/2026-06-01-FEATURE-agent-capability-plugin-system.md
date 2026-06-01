@@ -24,7 +24,8 @@ Open
 - 2026-06-02: source descriptors 已完成。内置插件现在声明 Claude Code / Codex 的来源 code、scope、kind、categories 和 path pattern, runtime coverage 可按 code 对齐 descriptor。
 - 2026-06-02: asset descriptors 已完成。内置插件现在声明 Claude Code / Codex 当前能解析的顶层资产类型、category、scopes、source code 关联和 sensitive 标记。
 - 2026-06-02: health check descriptors 已完成。内置插件现在声明当前 Claude Code / Codex agent-specific 健康检查规则族, 运行时检查仍由 health engine 执行。
-- 后续仍有效: Hook schema-driven UI, 第三方插件 manifest 和版本兼容。
+- 2026-06-02: hook schema descriptors 已完成。内置插件现在声明 Claude Code / Codex 的 Hook event、lifecycle stage、matcher 支持、handler type、主展示字段、必填字段和运行模式。
+- 后续仍有效: Hook schema-driven UI 接入, 第三方插件 manifest 和版本兼容。
 
 ## PRD
 

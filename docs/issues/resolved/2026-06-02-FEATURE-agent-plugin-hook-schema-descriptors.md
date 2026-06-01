@@ -6,7 +6,7 @@ FEATURE
 
 ## 状态
 
-Open
+Resolved
 
 ## GitHub
 
@@ -16,6 +16,7 @@ Open
 ## 关联任务
 
 - 来源: `docs/issues/2026-06-01-FEATURE-agent-capability-plugin-system.md`
+- 已归档: `docs/works/_archive/2026-06-02-gh-27-agent-plugin-hook-schema-descriptors/`
 
 ## PRD
 
