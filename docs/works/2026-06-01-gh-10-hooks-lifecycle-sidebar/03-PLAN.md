@@ -27,3 +27,10 @@ verify 不通过项作为新任务追加于此, phase 退回 implement。
   - source: https://code.claude.com/docs/en/hooks; https://developers.openai.com/codex/hooks
   - tests: `tests/unit/hook-lifecycle.test.ts`
   - verify: `pnpm test -- tests/unit/hook-lifecycle.test.ts` 14 项通过
+
+## verify 回写 2026-06-01
+- `pnpm lint` 通过
+- `pnpm typecheck` 通过
+- `pnpm test` 50 个文件 / 327 项通过; 仍有既有 Recharts 0 宽高 warning, 不影响结果
+- `pnpm harness:check` 通过
+- Electron 视觉验收: 启动独立 agent-owned 实例 `hooks-feedback-remote`, 带 `--remote-debugging-port=9333`; CDP 点击进入 Hooks 页面; `PrintWindow` 截图 `C:\Users\mail\AppData\Local\Temp\berth-hooks-feedback-hooks-top.png` 和 `C:\Users\mail\AppData\Local\Temp\berth-hooks-feedback-hooks-scrolled.png`; 下滚后左侧生命周期侧栏仍固定在页内, 数量为数字 tag, 副标题为阶段短说明, 右侧显示“建议操作”短标签; 最后按精确 PID 停止该实例。
