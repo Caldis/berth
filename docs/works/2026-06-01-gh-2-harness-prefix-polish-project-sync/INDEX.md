@@ -2,7 +2,7 @@
 task: 2026-06-01-gh-2-harness-prefix-polish-project-sync
 task_id: GH-2
 type: feature
-phase: verify
+phase: implement
 created: 2026-06-01
 issue:
   number: 2

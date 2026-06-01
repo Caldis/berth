@@ -15,6 +15,7 @@
 - [x] 任务 13: 扩展 `harness-check` 校验 active works 的 `task_id` / `issue` / `gh_project.item_id` 与 `gh-{number}` 目录名; tests: `pnpm test tests/harness/check.test.ts`; verify: `pnpm harness:check`。
 - [x] 任务 14: 迁移当前 active works 到 `{date}-gh-{number}-{desc}` 并回写 GitHub Issue/Project 元数据; tests: not needed - 元数据和目录迁移, 用 `pnpm harness:check` 与 `node scripts/harness-projects.mjs check --strict` 验证; verify: `pnpm harness:check`, `node scripts/harness-projects.mjs check --strict`。
 - [x] 任务 15: 扫描并清理非历史文档中的旧企业 ticket 遗留引用; tests: not needed - 文案/历史边界清理, 用旧字段关键字扫描和 `pnpm harness:check` 验证; verify: active paths keyword scan excluding `_archive` and `docs/superpowers` history。
+- [ ] 任务 16: 处理 Superpowers 与 harness 的流程冲突, 写入默认 harness、受控借鉴、禁止新增 active Superpowers plan/spec 和并行自主决策规则; tests: 先补 `tests/harness/check.test.ts` 失败用例, 再实现; verify: `pnpm test tests/harness/check.test.ts`, `pnpm harness:check`。
 
 ## 验证记录
 
@@ -43,6 +44,12 @@
 
 - Converted Project draft items for local active works to GitHub Issues #2-#9.
 - Local active tracked works now use `task_id: GH-{number}` and `docs/works/{date}-gh-{number}-{summary}/`.
+
+## Superpowers 冲突处理记录
+
+- 用户确认后续默认走 harness workflow; Superpowers 只能作为方法参考, 不能接管任务状态、目录或执行问答。
+- `brainstorming` 可吸收到 design, 但必须限流到少量关键问题。
+- 并行与顺序执行由 Agent 按文件范围、模块边界和测试耦合度自行判断, 不再要求用户选择 subagent 或主 session。
 
 ## Polish 后续实现记录
 
