@@ -6,7 +6,7 @@ FEATURE
 
 ## 状态
 
-Open
+Resolved
 
 ## GitHub
 
@@ -36,3 +36,9 @@ Agent Capability Plugin 已经能声明 Claude Code / Codex 的 Hook event、lif
 - Claude Code / Codex 差异尽可能来自 plugin metadata。
 - 现有 Hooks lifecycle、health hover、recovery center 和 toggle 测试继续通过。
 - UI 保持紧凑, 不增加默认解释噪音。
+
+## 解决记录
+
+- 完成任务: `docs/works/_archive/2026-06-02-gh-28-hooks-ui-schema-driven-presentation/`
+- GitHub Project: Done
+- 验证: `pnpm lint`; `pnpm typecheck`; `pnpm test`; `pnpm harness:check`; `node scripts/harness-projects.mjs check --strict`

@@ -2,7 +2,7 @@
 task: 2026-06-02-gh-28-hooks-ui-schema-driven-presentation
 task_id: GH-28
 type: feature
-phase: polish
+phase: archive
 created: 2026-06-02
 issue:
   number: 28
@@ -16,7 +16,7 @@ gh_project:
   project_url: https://github.com/users/Caldis/projects/6
   project_id: PVT_kwHOADXbEs4BZHvQ
   item_id: PVTI_lAHOADXbEs4BZHvQzguanRo
-  item_status: In Progress
+  item_status: Done
 artifacts:
   source: 00-PRD.md
   analysis: 01-ANALYSIS.md
