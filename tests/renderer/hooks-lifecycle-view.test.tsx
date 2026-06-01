@@ -74,7 +74,7 @@ describe('HooksLifecycleView', () => {
     expect(screen.queryByText('Trigger point')).not.toBeInTheDocument()
     expect(screen.getAllByText('Agent stops').length).toBeGreaterThan(0)
     expect(screen.queryByText('Environment events')).not.toBeInTheDocument()
-    expect(screen.queryByText('Claude Code')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Claude Code' })).not.toBeInTheDocument()
   })
 
   it('shows Claude-only copy without Codex hints in Claude view', async () => {
@@ -83,44 +83,27 @@ describe('HooksLifecycleView', () => {
 
     expect(screen.queryByText('What are hooks?')).not.toBeInTheDocument()
     expect(screen.queryByText('Trigger point')).not.toBeInTheDocument()
-    expect(screen.queryByText(/Codex/)).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Codex' })).not.toBeInTheDocument()
   })
 
-  it('shows cross-agent differences in all view', async () => {
+  it('keeps cross-agent differences in hover tips instead of flat support rows', async () => {
     renderHooks('all', [
       hookAsset('claude-pre', 'claude-code', 'PreToolUse'),
       hookAsset('codex-stop', 'codex', 'Stop')
     ])
     await waitForHookHealthIdle()
 
-    expect(screen.getAllByText('Claude Code').length).toBeGreaterThan(0)
-    expect(screen.getAllByText('Codex').length).toBeGreaterThan(0)
-    expect(screen.getAllByText(/Codex only applies tool hooks/).length).toBeGreaterThan(0)
-  })
+    const toolStage = screen.getByRole('heading', { name: 'Before a tool runs' }).closest('section')
+    expect(toolStage).not.toBeNull()
+    const codexTipTrigger = within(toolStage!).getByRole('button', { name: 'Codex' })
 
-  it('switches to cross-agent comparison mode in all view', async () => {
-    renderHooks('all', [
-      hookAsset('claude-pre', 'claude-code', 'PreToolUse'),
-      hookAsset('codex-stop', 'codex', 'Stop')
-    ])
-    await waitForHookHealthIdle()
+    expect(within(toolStage!).getByRole('button', { name: 'Claude Code' })).toBeInTheDocument()
+    expect(within(toolStage!).queryByText(/Codex PreToolUse is available/)).not.toBeInTheDocument()
 
-    fireEvent.click(screen.getByRole('button', { name: 'Compare agents' }))
+    fireEvent.mouseEnter(codexTipTrigger)
 
-    expect(screen.getByText('Lifecycle comparison')).toBeInTheDocument()
-    expect(screen.getAllByText('Claude Code events').length).toBeGreaterThan(0)
-    expect(screen.getAllByText('Codex events').length).toBeGreaterThan(0)
-  })
-
-  it('hides unrelated comparison columns in Codex view', async () => {
-    renderHooks('codex', [hookAsset('codex-stop', 'codex', 'Stop')])
-    await waitForHookHealthIdle()
-
-    fireEvent.click(screen.getByRole('button', { name: 'Compare agents' }))
-
-    expect(screen.getByText('Lifecycle comparison')).toBeInTheDocument()
-    expect(screen.getAllByText('Codex events').length).toBeGreaterThan(0)
-    expect(screen.queryByText('Claude Code events')).not.toBeInTheDocument()
+    expect(within(toolStage!).getByText(/Codex PreToolUse is available/)).toBeInTheDocument()
+    expect(within(toolStage!).getByText(/Codex only applies tool hooks/)).toBeInTheDocument()
   })
 
   it('keeps lifecycle explanations visible when there are no hooks', async () => {
@@ -189,15 +172,16 @@ describe('HooksLifecycleView', () => {
     expect(screen.getByText('Runs for every matching tool')).toBeInTheDocument()
   })
 
-  it('keeps only view switching controls in the hooks toolbar', async () => {
+  it('removes the hooks display mode switcher and obsolete toolbar controls', async () => {
     renderHooks('codex', [hookAsset('codex-stop', 'codex', 'Stop')])
 
     await waitFor(() => {
       expect(window.api.assets.healthCheck).toHaveBeenCalled()
     })
 
-    expect(screen.getByRole('button', { name: 'Lifecycle' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Compare agents' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Lifecycle' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Compare agents' })).not.toBeInTheDocument()
+    expect(screen.queryByText('Lifecycle comparison')).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Comfortable' })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Compact' })).not.toBeInTheDocument()
     expect(screen.queryByText('Agent-level hooks switch')).not.toBeInTheDocument()

@@ -771,6 +771,9 @@
           "tertiary": "观察外部变化"
         }
       },
+      "agentTips": {
+        "label": "Agent 差异"
+      },
       "agentSupport": {
         "session-start": {
           "claude": { "summary": "Claude Code 可以在准备会话时运行 setup 和 session-start hooks。" },

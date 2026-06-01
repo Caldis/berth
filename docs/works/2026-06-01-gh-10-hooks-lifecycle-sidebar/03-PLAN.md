@@ -35,7 +35,7 @@ verify 不通过项作为新任务追加于此, phase 退回 implement。
 - `pnpm harness:check` 通过
 - Electron 视觉验收: 启动独立 agent-owned 实例 `hooks-feedback-remote`, 带 `--remote-debugging-port=9333`; CDP 点击进入 Hooks 页面; `PrintWindow` 截图 `C:\Users\mail\AppData\Local\Temp\berth-hooks-feedback-hooks-top.png` 和 `C:\Users\mail\AppData\Local\Temp\berth-hooks-feedback-hooks-scrolled.png`; 下滚后左侧生命周期侧栏仍固定在页内, 数量为数字 tag, 副标题为阶段短说明, 右侧显示“建议操作”短标签; 最后按精确 PID 停止该实例。
 
-- [ ] 任务 7: 删除对照 Agent 视图, 将 Agent 差异改为 hover tips
+- [x] 任务 7: 删除对照 Agent 视图, 将 Agent 差异改为 hover tips
   - feedback: 生命周期卡片内不再平铺 Claude Code / Codex 说明; 用户 hover 在 Agent 名称上时再展示支持状态、事件和差异说明; Hooks 顶部不再需要“生命周期 / 对照 Agent”切换器。
   - tests: `tests/renderer/hooks-lifecycle-view.test.tsx`
-  - verify: pending
+  - verify: `pnpm test -- tests/renderer/hooks-lifecycle-view.test.tsx` 13 项通过; `pnpm typecheck:web` 通过

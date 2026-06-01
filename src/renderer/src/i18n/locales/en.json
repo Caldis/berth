@@ -771,6 +771,9 @@
           "tertiary": "Watch external changes"
         }
       },
+      "agentTips": {
+        "label": "Agent differences"
+      },
       "agentSupport": {
         "session-start": {
           "claude": { "summary": "Claude Code can run setup and session-start hooks when it prepares a session." },
