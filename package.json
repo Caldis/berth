@@ -25,6 +25,7 @@
     "harness:sync": "node scripts/harness-sync.mjs",
     "harness:check": "node scripts/harness-check.mjs",
     "harness:stats": "node scripts/harness-stats.mjs",
+    "harness:projects:check": "node scripts/harness-projects.mjs check",
     "pricing:update": "node scripts/update-pricing-catalog.mjs"
   },
   "dependencies": {
