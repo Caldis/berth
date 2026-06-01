@@ -6,7 +6,7 @@
 - [x] P1. 新增共享 plugin 类型和主进程 registry
   - 变更: `src/shared/types/agent-plugin.ts`, `src/main/agent-plugins/registry.ts`
   - 验证: `pnpm test -- tests/unit/agent-capability-plugins.test.ts`, `pnpm typecheck:node`
-- [ ] P2. 接入只读 IPC / preload / renderer hook
+- [x] P2. 接入只读 IPC / preload / renderer hook
   - 变更: `src/shared/types/ipc.ts`, `src/main/ipc/handlers.ts`, `src/preload/index.ts`, `src/preload/index.d.ts`, `src/renderer/src/hooks/use-ipc.ts`, `tests/setup.ts`
   - 验证: `pnpm typecheck:node`, `pnpm typecheck:web`
 - [ ] P3. 新增 Settings 的 Agent Capability Plugins 区块
