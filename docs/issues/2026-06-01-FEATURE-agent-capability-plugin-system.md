@@ -26,7 +26,8 @@ Open
 - 2026-06-02: health check descriptors 已完成。内置插件现在声明当前 Claude Code / Codex agent-specific 健康检查规则族, 运行时检查仍由 health engine 执行。
 - 2026-06-02: hook schema descriptors 已完成。内置插件现在声明 Claude Code / Codex 的 Hook event、lifecycle stage、matcher 支持、handler type、主展示字段、必填字段和运行模式。
 - 2026-06-02: Hook schema-driven UI 已完成。Hooks 页面现在从 plugin `hookSchema` 读取 event/stage/support 和 handler 主字段/runMode, 并保留 fallback。
-- 后续仍有效: 第三方插件 manifest 和版本兼容。
+- 2026-06-02: 第三方插件 manifest 和版本兼容已拆为 `docs/issues/2026-06-02-FEATURE-agent-plugin-manifest-version-compatibility.md` / GH-29。
+- 后续仍有效: 等 GH-29 完成后再判断本父 issue 是否可移入 resolved。
 
 ## PRD
 
