@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { listAgentCapabilityPlugins } from '../../src/main/agent-plugins/registry'
 import type { AgentScanSourceGroup } from '../../src/shared/types/ipc'
-import type { ScanSourceCode } from '../../src/shared/types/asset'
+import type { AssetType, ScanSourceCode } from '../../src/shared/types/asset'
 
 const claudeDescriptorCodes: ScanSourceCode[] = [
   'claude.user.data-directory',
@@ -26,6 +26,40 @@ const codexDescriptorCodes: ScanSourceCode[] = [
   'codex.project.hooks',
   'codex.project.agents-directory',
   'codex.project.skills'
+]
+
+const claudeAssetTypes: AssetType[] = [
+  'claude-md',
+  'agents-md',
+  'skill',
+  'agent',
+  'command',
+  'output-mode',
+  'team',
+  'mcp-server',
+  'hook',
+  'permission',
+  'env',
+  'statusline',
+  'plugin',
+  'session',
+  'plan',
+  'todo',
+  'history',
+  'stats-cache',
+  'usage-data',
+  'ide-lock',
+  'credential'
+]
+
+const codexAssetTypes: AssetType[] = [
+  'agents-md',
+  'agent',
+  'skill',
+  'mcp-server',
+  'hook',
+  'statusline',
+  'session'
 ]
 
 const scanGroups: AgentScanSourceGroup[] = [
@@ -153,6 +187,59 @@ describe('agent capability plugin registry', () => {
       code: 'project.session-derived-candidate',
       declared: false
     })
+  })
+
+  it('exposes asset descriptors for built-in plugins', () => {
+    const result = listAgentCapabilityPlugins(scanGroups)
+    const claude = result.plugins.find((plugin) => plugin.id === 'claude-code')
+    const codex = result.plugins.find((plugin) => plugin.id === 'codex')
+
+    expect(claude?.assetDescriptors.map((descriptor) => descriptor.type)).toEqual(
+      claudeAssetTypes
+    )
+    expect(codex?.assetDescriptors.map((descriptor) => descriptor.type)).toEqual(
+      codexAssetTypes
+    )
+    expect(claude?.assetDescriptors.find((descriptor) => descriptor.type === 'credential'))
+      .toMatchObject({
+        category: 'integration',
+        scopes: ['user'],
+        sensitive: true,
+        sourceCodes: ['claude.user.data-directory']
+      })
+    expect(claude?.assetDescriptors.find((descriptor) => descriptor.type === 'session'))
+      .toMatchObject({
+        category: 'state',
+        scopes: ['session']
+      })
+    expect(codex?.assetDescriptors.find((descriptor) => descriptor.type === 'session'))
+      .toMatchObject({
+        category: 'state',
+        scopes: ['session'],
+        sourceCodes: ['codex.user.sessions', 'codex.session.archived-sessions']
+      })
+  })
+
+  it('does not declare reserved or unsupported asset types', () => {
+    const result = listAgentCapabilityPlugins(scanGroups)
+    const claude = result.plugins.find((plugin) => plugin.id === 'claude-code')
+    const codex = result.plugins.find((plugin) => plugin.id === 'codex')
+    const reservedTypes: AssetType[] = [
+      'marketplace',
+      'file-history',
+      'shell-snapshot',
+      'statsig',
+      'debug',
+      'worktree',
+      'backup'
+    ]
+
+    expect(claude?.assetDescriptors.map((descriptor) => descriptor.type)).not.toEqual(
+      expect.arrayContaining(reservedTypes)
+    )
+    expect(codex?.assetDescriptors.map((descriptor) => descriptor.type)).not.toEqual(
+      expect.arrayContaining([...reservedTypes, 'permission', 'env', 'plugin'])
+    )
   })
 
   it('keeps permissions accurate to Berth actions', () => {

@@ -1,6 +1,7 @@
 import type {
   AssetCategory,
   AssetScope,
+  AssetType,
   ScanSourceCode,
   ScanSourceKind,
   ScanSourceStatus
@@ -49,6 +50,16 @@ export interface AgentCapabilityPluginSourceDescriptor {
   descriptionKey: string
 }
 
+export interface AgentCapabilityPluginAssetDescriptor {
+  type: AssetType
+  category: AssetCategory
+  scopes: AssetScope[]
+  sourceCodes?: ScanSourceCode[]
+  sensitive?: boolean
+  labelKey: string
+  descriptionKey: string
+}
+
 export interface AgentCapabilityPluginSource {
   path: string
   scope: AssetScope
@@ -89,6 +100,7 @@ export interface AgentCapabilityPlugin {
   capabilities: AgentCapabilityPluginCapability[]
   permissions: AgentCapabilityPluginPermission[]
   sourceDescriptors: AgentCapabilityPluginSourceDescriptor[]
+  assetDescriptors: AgentCapabilityPluginAssetDescriptor[]
   sourceCoverage: AgentCapabilityPluginSourceCoverage
   references: AgentCapabilityPluginReference[]
 }

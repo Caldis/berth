@@ -1,6 +1,7 @@
 import type { AgentScanSourceGroup } from '@shared/types/ipc'
 import type {
   AgentCapabilityPlugin,
+  AgentCapabilityPluginAssetDescriptor,
   AgentCapabilityPluginCapability,
   AgentCapabilityPluginListResult,
   AgentCapabilityPluginPermission,
@@ -11,6 +12,7 @@ import type {
 import type {
   AssetCategory,
   AssetScope,
+  AssetType,
   ScanRoot,
   ScanSourceCode,
   ScanSourceKind,
@@ -137,6 +139,202 @@ const CODEX_SOURCE_DESCRIPTORS: AgentCapabilityPluginSourceDescriptor[] = [
   )
 ]
 
+const CLAUDE_ASSET_DESCRIPTORS: AgentCapabilityPluginAssetDescriptor[] = [
+  assetDescriptor(
+    'claude-md',
+    'instruction',
+    ['user', 'project'],
+    ['claude.user.data-directory', 'claude.project.directory']
+  ),
+  assetDescriptor(
+    'agents-md',
+    'instruction',
+    ['user', 'project'],
+    ['claude.user.data-directory', 'claude.project.directory']
+  ),
+  assetDescriptor(
+    'skill',
+    'instruction',
+    ['user', 'project'],
+    ['claude.user.data-directory', 'claude.project.directory']
+  ),
+  assetDescriptor(
+    'agent',
+    'instruction',
+    ['user', 'project'],
+    ['claude.user.data-directory', 'claude.project.directory']
+  ),
+  assetDescriptor(
+    'command',
+    'instruction',
+    ['user', 'project'],
+    ['claude.user.data-directory', 'claude.project.directory']
+  ),
+  assetDescriptor(
+    'output-mode',
+    'instruction',
+    ['user'],
+    ['claude.user.data-directory']
+  ),
+  assetDescriptor(
+    'team',
+    'instruction',
+    ['user', 'project'],
+    ['claude.user.data-directory', 'claude.project.directory']
+  ),
+  assetDescriptor(
+    'mcp-server',
+    'capability',
+    ['user', 'project', 'enterprise'],
+    [
+      'claude.user.global-config',
+      'claude.user.data-directory',
+      'claude.project.mcp-config',
+      'claude.enterprise.managed-mcp'
+    ]
+  ),
+  assetDescriptor(
+    'hook',
+    'capability',
+    ['user', 'project', 'enterprise'],
+    [
+      'claude.user.data-directory',
+      'claude.project.directory',
+      'claude.enterprise.managed-settings'
+    ]
+  ),
+  assetDescriptor(
+    'permission',
+    'capability',
+    ['user', 'project', 'enterprise'],
+    [
+      'claude.user.data-directory',
+      'claude.project.directory',
+      'claude.enterprise.managed-settings'
+    ]
+  ),
+  assetDescriptor(
+    'env',
+    'capability',
+    ['user', 'project', 'enterprise'],
+    [
+      'claude.user.data-directory',
+      'claude.project.directory',
+      'claude.enterprise.managed-settings'
+    ]
+  ),
+  assetDescriptor(
+    'statusline',
+    'capability',
+    ['user', 'project', 'enterprise'],
+    [
+      'claude.user.data-directory',
+      'claude.project.directory',
+      'claude.enterprise.managed-settings'
+    ]
+  ),
+  assetDescriptor(
+    'plugin',
+    'capability',
+    ['user'],
+    ['claude.user.data-directory']
+  ),
+  assetDescriptor(
+    'session',
+    'state',
+    ['session'],
+    ['claude.user.data-directory']
+  ),
+  assetDescriptor(
+    'plan',
+    'state',
+    ['user'],
+    ['claude.user.data-directory']
+  ),
+  assetDescriptor(
+    'todo',
+    'state',
+    ['user'],
+    ['claude.user.data-directory']
+  ),
+  assetDescriptor(
+    'history',
+    'state',
+    ['user'],
+    ['claude.user.data-directory']
+  ),
+  assetDescriptor(
+    'stats-cache',
+    'observability',
+    ['user'],
+    ['claude.user.data-directory']
+  ),
+  assetDescriptor(
+    'usage-data',
+    'observability',
+    ['user'],
+    ['claude.user.data-directory']
+  ),
+  assetDescriptor(
+    'ide-lock',
+    'integration',
+    ['user'],
+    ['claude.user.data-directory']
+  ),
+  assetDescriptor(
+    'credential',
+    'integration',
+    ['user'],
+    ['claude.user.data-directory'],
+    { sensitive: true }
+  )
+]
+
+const CODEX_ASSET_DESCRIPTORS: AgentCapabilityPluginAssetDescriptor[] = [
+  assetDescriptor(
+    'agents-md',
+    'instruction',
+    ['user', 'project'],
+    ['codex.user.agents-md', 'codex.project.agents-md']
+  ),
+  assetDescriptor(
+    'agent',
+    'instruction',
+    ['user', 'project'],
+    ['codex.user.agents-directory', 'codex.project.agents-directory']
+  ),
+  assetDescriptor(
+    'skill',
+    'instruction',
+    ['user', 'project'],
+    ['codex.user.codex-home-skills', 'codex.user.shared-skills', 'codex.project.skills']
+  ),
+  assetDescriptor(
+    'mcp-server',
+    'capability',
+    ['user', 'project'],
+    ['codex.user.config', 'codex.project.config']
+  ),
+  assetDescriptor(
+    'hook',
+    'capability',
+    ['user', 'project'],
+    ['codex.user.config', 'codex.user.hooks', 'codex.project.config', 'codex.project.hooks']
+  ),
+  assetDescriptor(
+    'statusline',
+    'capability',
+    ['user', 'project'],
+    ['codex.user.config', 'codex.project.config']
+  ),
+  assetDescriptor(
+    'session',
+    'state',
+    ['session'],
+    ['codex.user.sessions', 'codex.session.archived-sessions']
+  )
+]
+
 export function listAgentCapabilityPlugins(
   groups: AgentScanSourceGroup[] = []
 ): AgentCapabilityPluginListResult {
@@ -185,6 +383,7 @@ function buildClaudeCodePlugin(group: AgentScanSourceGroup | undefined): AgentCa
       ], 'claudeWrite')
     ],
     sourceDescriptors: CLAUDE_SOURCE_DESCRIPTORS,
+    assetDescriptors: CLAUDE_ASSET_DESCRIPTORS,
     sourceCoverage: buildSourceCoverage(group, CLAUDE_SOURCE_DESCRIPTORS),
     references: [
       {
@@ -240,6 +439,7 @@ function buildCodexPlugin(group: AgentScanSourceGroup | undefined): AgentCapabil
       ], 'codexWrite')
     ],
     sourceDescriptors: CODEX_SOURCE_DESCRIPTORS,
+    assetDescriptors: CODEX_ASSET_DESCRIPTORS,
     sourceCoverage: buildSourceCoverage(group, CODEX_SOURCE_DESCRIPTORS),
     references: [
       {
@@ -302,6 +502,24 @@ function sourceDescriptor(
     pathPattern,
     labelKey: `settings.agentPluginSources.${code}.label`,
     descriptionKey: `settings.agentPluginSources.${code}.description`
+  }
+}
+
+function assetDescriptor(
+  type: AssetType,
+  category: AssetCategory,
+  scopes: AssetScope[],
+  sourceCodes?: ScanSourceCode[],
+  options: { sensitive?: boolean } = {}
+): AgentCapabilityPluginAssetDescriptor {
+  return {
+    type,
+    category,
+    scopes,
+    sourceCodes,
+    sensitive: options.sensitive,
+    labelKey: `settings.agentPluginAssets.${type}.label`,
+    descriptionKey: `settings.agentPluginAssets.${type}.description`
   }
 }
 
