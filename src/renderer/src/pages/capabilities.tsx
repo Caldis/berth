@@ -1,5 +1,6 @@
-import { useState, useMemo, useCallback } from 'react'
+import { useState, useMemo, useCallback, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useSearchParams } from 'react-router-dom'
 import {
   Plug,
   Webhook,
@@ -48,6 +49,8 @@ const tabs: TabDef[] = [
   { id: 'env', labelKey: 'capabilities.tabs.env', icon: Variable }
 ]
 
+const DEFAULT_CAPABILITY_TAB = 'mcp'
+
 const tabTypeMap: Record<string, string[]> = {
   mcp: ['mcp-server'],
   hooks: ['hook'],
@@ -55,6 +58,10 @@ const tabTypeMap: Record<string, string[]> = {
   statusLine: ['statusline'],
   permissions: ['permission'],
   env: ['env']
+}
+
+function normalizeCapabilityTab(value: string | null): string {
+  return value && tabTypeMap[value] ? value : DEFAULT_CAPABILITY_TAB
 }
 
 function EmptyState({ icon: Icon, message }: { icon: React.ComponentType<{ className?: string }>; message: string }): React.ReactElement {
@@ -810,10 +817,25 @@ export function Capabilities(): React.ReactElement {
   const { t } = useTranslation()
   const assets = useAppStore((s) => s.assets)
   const agentView = useAppStore((s) => s.agentView)
-  const [activeTab, setActiveTab] = useState('mcp')
+  const [searchParams, setSearchParams] = useSearchParams()
+  const queryTab = normalizeCapabilityTab(searchParams.get('tab'))
+  const [activeTab, setActiveTab] = useState(queryTab)
   const [search, setSearch] = useState('')
   const [scope, setScope] = useState<ScopeFilter>('all')
   const visibleAssets = useMemo(() => filterAssetsByAgentView(assets, agentView), [assets, agentView])
+
+  useEffect(() => {
+    setActiveTab((current) => current === queryTab ? current : queryTab)
+  }, [queryTab])
+
+  const handleTabChange = useCallback((tabId: string) => {
+    setActiveTab(tabId)
+    setSearchParams((current) => {
+      const next = new URLSearchParams(current)
+      next.set('tab', tabId)
+      return next
+    })
+  }, [setSearchParams])
 
   // Build tab counts
   const tabCounts = useMemo(() => {
@@ -898,7 +920,7 @@ export function Capabilities(): React.ReactElement {
     <div className="space-y-4">
       <h1 className="text-2xl font-semibold tracking-tight">{t('capabilities.title')}</h1>
 
-      <TabGroup tabs={tabs} activeTab={activeTab} onTabChange={setActiveTab} counts={tabCounts} />
+      <TabGroup tabs={tabs} activeTab={activeTab} onTabChange={handleTabChange} counts={tabCounts} />
 
       {showFilter && (
         <FilterBar
