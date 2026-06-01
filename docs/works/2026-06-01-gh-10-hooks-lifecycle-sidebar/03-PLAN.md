@@ -47,7 +47,7 @@ verify 不通过项作为新任务追加于此, phase 退回 implement。
 - `pnpm harness:check` 通过
 - Electron 视觉验收: 启动独立 agent-owned 实例 `hooks-agent-tips-verify`, 带 `--remote-debugging-port=9334`; CDP 点击进入 Hooks 页面, 确认顶部不再有“生命周期 / 对照 Agent”切换器, 生命周期卡片内不再平铺 Claude Code / Codex 说明; CDP 移动鼠标到 Agent 名称 `Codex` 后出现支持状态、事件和差异说明浮层; `PrintWindow` 截图 `C:\Users\mail\AppData\Local\Temp\berth-hooks-agent-tips-hover.png`; 左侧生命周期侧栏在滚动后仍固定在页面内。
 
-- [ ] 任务 8: 重设 Hooks 健康检查展示方式
+- [x] 任务 8: 重设 Hooks 健康检查展示方式
   - feedback: 现有健康检查所在区域和卡片已经过时; 需要改为更贴近当前生命周期页结构的轻量展示, 健康检查逻辑保留。
   - tests: `tests/renderer/hooks-lifecycle-view.test.tsx`
-  - verify: pending
+  - verify: 旧实现下新增测试失败 2 项; 实现后 `pnpm test -- tests/renderer/hooks-lifecycle-view.test.tsx` 14 项通过

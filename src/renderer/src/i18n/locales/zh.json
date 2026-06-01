@@ -648,9 +648,9 @@
         "managed": "由外部管理"
       },
       "health": {
-        "title": "Hook 健康检查",
+        "title": "Hook 检查",
         "loading": "检查中",
-        "ok": "当前视角没有需要处理的 Hook 健康检查。",
+        "ok": "正常",
         "summary": "{{count}} 个 Hook 检查需要处理",
         "review": "查看 Hook 检查",
         "detailsTitle": "Hook 检查详情",

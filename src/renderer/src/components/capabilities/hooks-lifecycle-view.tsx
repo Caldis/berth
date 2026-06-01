@@ -65,14 +65,13 @@ export function HooksLifecycleView({ assets, agentView, search, scope }: HooksLi
 
   return (
     <div className="space-y-4">
-      <section className="rounded-lg border border-border bg-card px-4 py-3">
-        <div className="flex flex-wrap items-center justify-end gap-3">
-          <span className="rounded-md bg-muted px-2 py-0.5 text-xs text-muted-foreground">
-            {t(`agentView.${agentView}`)}
-          </span>
-        </div>
-        <HookHealthSummary checks={hookHealthChecks} loading={healthLoading} />
-      </section>
+      <header className="flex flex-wrap items-center justify-between gap-2">
+        <HookHealthSignal checks={hookHealthChecks} loading={healthLoading} />
+        <span className="rounded-md bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+          {t(`agentView.${agentView}`)}
+        </span>
+      </header>
+      {hookHealthChecks.length > 0 && <HookHealthIssues checks={hookHealthChecks} />}
 
       <div className="grid gap-4 lg:grid-cols-[280px_minmax(0,1fr)]">
         <aside
@@ -130,59 +129,46 @@ export function HooksLifecycleView({ assets, agentView, search, scope }: HooksLi
           ))}
         </div>
       </div>
-      {hookHealthChecks.length > 0 && <HookHealthDetails checks={hookHealthChecks} />}
     </div>
   )
 }
 
-function HookHealthSummary({ checks, loading }: { checks: HealthCheck[]; loading: boolean }): React.ReactElement {
+function HookHealthSignal({ checks, loading }: { checks: HealthCheck[]; loading: boolean }): React.ReactElement {
   const { t } = useTranslation()
   const counts = countHealthSeverities(checks)
   const hasChecks = checks.length > 0
-  const scrollToDetails = (): void => {
-    document.getElementById('hook-health-checks')?.scrollIntoView?.({ block: 'start', behavior: 'smooth' })
-  }
+  const Icon = hasChecks ? CircleAlert : loading ? Info : CheckCircle2
 
   return (
-    <div className="mt-3 rounded-md border border-border/70 bg-background/60 px-3 py-3">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
-            <p className="text-xs font-medium text-foreground">{t('capabilities.hooks.health.title')}</p>
-            {loading && (
-              <span className="rounded-md bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
-                {t('capabilities.hooks.health.loading')}
-              </span>
-            )}
-          </div>
-          <p className="mt-0.5 max-w-[70ch] text-xs leading-5 text-muted-foreground">
-            {hasChecks
-              ? t('capabilities.hooks.health.summary', { count: checks.length })
-              : t('capabilities.hooks.health.ok')}
-          </p>
-          {hasChecks && (
-            <div className="mt-2 flex flex-wrap gap-1.5">
-              {counts.error > 0 && <HealthCountChip severity="error" count={counts.error} />}
-              {counts.warning > 0 && <HealthCountChip severity="warning" count={counts.warning} />}
-              {counts.info > 0 && <HealthCountChip severity="info" count={counts.info} />}
-            </div>
-          )}
-        </div>
-        {hasChecks && (
-          <button
-            type="button"
-            onClick={scrollToDetails}
-            className="shrink-0 rounded-md border border-border px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-accent active:translate-y-px"
-          >
-            {t('capabilities.hooks.health.review')}
-          </button>
-        )}
-      </div>
+    <div className="flex min-w-0 flex-wrap items-center gap-2 text-xs">
+      <span className="font-medium text-muted-foreground">{t('capabilities.hooks.health.title')}</span>
+      <span className={cn(
+        'inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 font-medium',
+        loading
+          ? 'bg-muted text-muted-foreground'
+          : hasChecks
+          ? 'bg-amber-500/10 text-amber-700 dark:text-amber-300'
+          : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+      )}>
+        <Icon className="h-3.5 w-3.5" />
+        {loading
+          ? t('capabilities.hooks.health.loading')
+          : hasChecks
+            ? t('capabilities.hooks.health.summary', { count: checks.length })
+            : t('capabilities.hooks.health.ok')}
+      </span>
+      {hasChecks && (
+        <>
+          {counts.error > 0 && <HealthCountChip severity="error" count={counts.error} />}
+          {counts.warning > 0 && <HealthCountChip severity="warning" count={counts.warning} />}
+          {counts.info > 0 && <HealthCountChip severity="info" count={counts.info} />}
+        </>
+      )}
     </div>
   )
 }
 
-function HookHealthDetails({ checks }: { checks: HealthCheck[] }): React.ReactElement {
+function HookHealthIssues({ checks }: { checks: HealthCheck[] }): React.ReactElement {
   const { t } = useTranslation()
   const sortedChecks = useMemo(
     () => [...checks].sort((a, b) => healthSeverityRank(a.severity) - healthSeverityRank(b.severity)),
@@ -190,13 +176,11 @@ function HookHealthDetails({ checks }: { checks: HealthCheck[] }): React.ReactEl
   )
 
   return (
-    <section id="hook-health-checks" className="scroll-mt-4 rounded-lg border border-border bg-card">
-      <div className="border-b border-border px-4 py-4">
-        <h3 className="text-base font-semibold text-foreground">{t('capabilities.hooks.health.detailsTitle')}</h3>
-        <p className="mt-1 max-w-[72ch] text-sm leading-6 text-muted-foreground">
-          {t('capabilities.hooks.health.detailsBody')}
-        </p>
-      </div>
+    <section
+      id="hook-health-checks"
+      aria-label={t('capabilities.hooks.health.title')}
+      className="scroll-mt-4 border-y border-border/70 bg-muted/20 px-1 py-1"
+    >
       <div className="divide-y divide-border/70">
         {sortedChecks.map((check) => (
           <HookHealthCheckRow key={check.id} check={check} />
@@ -211,7 +195,7 @@ function HookHealthCheckRow({ check }: { check: HealthCheck }): React.ReactEleme
   const targetPath = check.target?.path ?? check.path
 
   return (
-    <div className="grid gap-3 px-4 py-3 md:grid-cols-[minmax(0,1fr)_auto]">
+    <div className="grid gap-3 px-2 py-3 md:grid-cols-[minmax(0,1fr)_auto]">
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-2">
           <HealthSeverityBadge severity={check.severity} />

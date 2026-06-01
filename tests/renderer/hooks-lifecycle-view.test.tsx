@@ -239,12 +239,17 @@ describe('HooksLifecycleView', () => {
     expect(screen.queryByText(/Use this stage for guardrails/)).not.toBeInTheDocument()
   })
 
-  it('summarizes visible hook health checks and jumps to the details', async () => {
-    const scrollIntoView = vi.fn()
-    Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', {
-      configurable: true,
-      value: scrollIntoView
-    })
+  it('keeps a clean hook health state as a compact signal instead of a card', async () => {
+    const { container } = renderHooks('codex', [hookAsset('codex-stop', 'codex', 'Stop')])
+    await waitForHookHealthIdle()
+
+    expect(screen.getByText('Hook checks')).toBeInTheDocument()
+    expect(screen.getByText('Clear')).toBeInTheDocument()
+    expect(screen.queryByText('No hook health checks need attention for this view.')).not.toBeInTheDocument()
+    expect(container.querySelector('#hook-health-checks')).toBeNull()
+  })
+
+  it('renders visible hook health checks inline before the lifecycle content', async () => {
     const checks: HealthCheck[] = [
       {
         id: 'codex:configuration:user-hook-windows-command',
@@ -283,15 +288,17 @@ describe('HooksLifecycleView', () => {
     ]
     window.api.assets.healthCheck = vi.fn(async () => checks)
 
-    renderHooks('codex', [hookAsset('codex-stop', 'codex', 'Stop')])
+    const { container } = renderHooks('codex', [hookAsset('codex-stop', 'codex', 'Stop')])
 
     expect(await screen.findByText('1 hook check needs attention')).toBeInTheDocument()
     expect(screen.getByText('Codex hook has no Windows command override')).toBeInTheDocument()
     expect(screen.queryByText('Claude Code hook is missing command')).not.toBeInTheDocument()
     expect(screen.queryByText('Codex MCP server is disabled')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Review hook checks' })).not.toBeInTheDocument()
+    expect(screen.queryByText('Hook check details')).not.toBeInTheDocument()
 
-    fireEvent.click(screen.getByRole('button', { name: 'Review hook checks' }))
-
-    expect(scrollIntoView).toHaveBeenCalled()
+    const healthPanel = container.querySelector('#hook-health-checks')
+    expect(healthPanel?.className).toContain('border-y')
+    expect(healthPanel?.className).not.toContain('rounded-lg')
   })
 })

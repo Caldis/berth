@@ -648,9 +648,9 @@
         "managed": "Managed externally"
       },
       "health": {
-        "title": "Hook health checks",
+        "title": "Hook checks",
         "loading": "Checking",
-        "ok": "No hook health checks need attention for this view.",
+        "ok": "Clear",
         "summary": "{{count}} hook check needs attention",
         "review": "Review hook checks",
         "detailsTitle": "Hook check details",
