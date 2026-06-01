@@ -1,0 +1,26 @@
+# 企业 ticket 字段遗留会误导开源项目任务追踪
+
+> 可在正文交叉引用 task_id / issue, 不拆子目录。优化后移入 _archive/。
+
+## 发生阶段
+
+implement
+
+## 现象
+
+harness 已改成基于 GitHub Project 做任务状态同步, 但入口规则、workflow 和 active works 仍保留旧企业 ticket 字段与对应命名说明。对开源仓库来说, 这会让 Agent 继续按企业内部流程建任务, 而不是以 GitHub Issue / Project item 为主键。
+
+## 工程师介入动作
+
+用户指出 GitHub Project 没有企业 ticket 那种 `ABCD-1234` 键, 希望所有 works 任务都基于一个 id 追踪, 目录改为 `{date}-{task_id}-{desc}`。需要把主键改为 GitHub Issue 派生的 `GH-{number}`, 并把 Project item id 作为状态同步句柄。
+
+## 沉淀的上下文/规则
+
+- active work 的可读任务号用 `task_id: GH-{issue_number}`。
+- 目录命名用 `{YYYY-MM-DD}-gh-{issue_number}-{summary}`。
+- `issue.number` 是人工和 GitHub 页面可见的主键; `gh_project.item_id` 是脚本同步 Project 状态用的 GraphQL node id。
+- 旧归档任务可保留历史字段, active works 不再新增企业 ticket 字段。
+
+## 建议的流程改进
+
+`harness-new` 应先创建或绑定 GitHub Issue, 再创建 work 目录并 ensure Project item; `harness-check` 应检查 active works 的 `task_id`、`issue.number`、目录名和 Project item 元数据一致。
