@@ -19,6 +19,7 @@
 - [x] 任务 17: 引入有序 action id, 重命名 workflow 源文件与 skill 分发产物, 并迁移 active friction 命名; tests: `pnpm test tests/harness/sync.test.ts tests/harness/check.test.ts`; verify: `pnpm harness:sync -- --check`, `pnpm harness:check`。
 - [x] 任务 18: 新增 issues 收敛动作 `5.2-issues` 与 `pnpm harness:issues` 清单命令; tests: `pnpm test tests/harness/issues.test.ts`; verify: `pnpm typecheck:node`。
 - [x] 任务 19: 在 archive 流程加入 friction/issues 堆积提醒, 但不自动执行可选清理动作; tests: `pnpm test tests/harness/check.test.ts`; verify: `pnpm harness:check`。
+- [x] 任务 20: 将 `5.1-optimization` 改名为 `5.1-friction`, 清理旧 skill/playbook 分发并同步规则文档; tests: `pnpm test tests/harness/sync.test.ts tests/harness/check.test.ts`; verify: `pnpm harness:sync -- --check`, `pnpm harness:check`。
 
 ## 验证记录
 
@@ -56,12 +57,22 @@
 - `pnpm typecheck:node` - passed after `harness-issues` implementation。
 - `pnpm harness:issues` - active=10 resolved=2; listed active docs/issues backlog for optional `harness-5.2-issues` cleanup。
 - `pnpm harness:check` - all checks passed after `feat(harness): add ordered workflow actions` commit。
+- `pnpm test tests/harness/sync.test.ts tests/harness/check.test.ts` - RED: expected failures before `5.1-friction` implementation; GREEN: 2 files / 36 tests passed。
+- `pnpm harness:sync -- --check` - distribution in sync after `5.1-friction` generation。
+- `pnpm harness:check` - all checks passed after friction action rename。
+- `pnpm typecheck:node` - passed after friction action rename。
+- `pnpm test tests/harness/sync.test.ts tests/harness/check.test.ts tests/harness/issues.test.ts tests/harness/stats.test.ts` - 4 files / 42 tests passed after friction action rename。
 
 ## 有序 action 与 issues 收敛补充记录
 
 - 用户要求 workflow 步骤和动作带顺序前缀, 可选步骤用关联步骤的子编号。
-- 用户要求 issues 也有与 `optimization` 对应的收敛动作。
+- 用户要求 issues 也有与 friction 对应的收敛动作。
 - 用户要求 archive 后提醒本次产生或关联的 friction / issues, 但不自动执行清理。
+
+## Friction 动作命名修正记录
+
+- 用户确认将 `5.1-optimization` 改为更具体的 friction 收敛动作。
+- 目标命名为 `5.1-friction`; `5.2-issues` 保持不变。
 
 ## GitHub Issue 迁移记录
 

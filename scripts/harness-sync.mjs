@@ -14,7 +14,7 @@ import {
 } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { LEGACY_SKILL_PREFIXES, LEGACY_VERBS, WORKFLOW_ACTIONS, skillMdContent, skillName } from './harness-lib.mjs'
+import { LEGACY_ACTION_IDS, LEGACY_SKILL_PREFIXES, LEGACY_VERBS, WORKFLOW_ACTIONS, skillMdContent, skillName } from './harness-lib.mjs'
 
 // 期望产物描述符
 export function desiredArtifacts(root) {
@@ -65,7 +65,12 @@ function legacySkillPaths(root) {
     join(root, '.claude/skills', `harness-${v}`),
     join(root, '.codex/skills', `harness-${v}`)
   ])
-  return [...prefixedLegacy, ...unnumberedHarness]
+  const numberedHarness = LEGACY_ACTION_IDS.flatMap((id) => [
+    join(root, '.agents/skills', `harness-${id}`),
+    join(root, '.claude/skills', `harness-${id}`),
+    join(root, '.codex/skills', `harness-${id}`)
+  ])
+  return [...prefixedLegacy, ...unnumberedHarness, ...numberedHarness]
 }
 
 function legacyArtifactPaths(root) {

@@ -29,7 +29,7 @@ active work 使用 GitHub Issue number 作为可读主键: `task_id: GH-{number}
 - Claude Code: `/harness-<action-id>` (由 `.claude/skills/harness-<action-id>/SKILL.md` 提供, 也可自动触发)
 - Codex: `$harness-<action-id>` (skill)
 
-action: 0.0-new · 0.1-continue · 1.0-explore · 2.0-design · 3.0-implement · 3.1-polish · 4.0-verify · 5.0-archive · 5.1-optimization · 5.2-issues
+action: 0.0-new · 0.1-continue · 1.0-explore · 2.0-design · 3.0-implement · 3.1-polish · 4.0-verify · 5.0-archive · 5.1-friction · 5.2-issues
 
 ## 何时进入
 
@@ -43,7 +43,7 @@ Explore → Design → Implementation → Verify。Verify 后可选 Polish, Arch
 Polish 只在用户主动要求, 或 Agent 对复杂任务先询问并得到同意后执行; Agent 不得自行进入。
 Archive 必须先把 GitHub Project item 置为 Done 并回读确认, 失败则停止归档。
 状态见各任务 `docs/works/{task}/INDEX.md`; 摩擦见 `docs/friction/`; 产品问题见 `docs/issues/`。
-Archive 后提醒本次产生或关联的 friction / issues; 用户可选运行 `harness-5.1-optimization` 或 `harness-5.2-issues`, Agent 不自动执行。
+Archive 后提醒本次产生或关联的 friction / issues; 用户可选运行 `harness-5.1-friction` 或 `harness-5.2-issues`, Agent 不自动执行。
 
 ## 观测 (v2)
 

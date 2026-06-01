@@ -31,6 +31,8 @@ describe('harness-sync', () => {
     apply(root)
     expect(existsSync(join(root, '.agents/skills/harness-1.0-explore/SKILL.md'))).toBe(true)
     expect(existsSync(join(root, '.agents/skills/harness-3.1-polish/SKILL.md'))).toBe(true)
+    expect(existsSync(join(root, '.agents/skills/harness-5.1-friction/SKILL.md'))).toBe(true)
+    expect(existsSync(join(root, '.agents/skills/harness-5.1-optimization'))).toBe(false)
     expect(existsSync(join(root, '.agents/skills/harness-5.2-issues/SKILL.md'))).toBe(true)
     expect(existsSync(join(root, '.agents/skills/harness-explore'))).toBe(false)
     expect(existsSync(join(root, '.claude/commands/opsx-explore.md'))).toBe(false)
@@ -72,18 +74,22 @@ describe('harness-sync', () => {
     expect(check(root).ok).toBe(true)
   })
 
-  it('check/apply: 旧 opsx 与未编号 harness skill 分发会被视为漂移并清理', () => {
+  it('check/apply: 旧 opsx、未编号 harness 与旧编号 action skill 分发会被视为漂移并清理', () => {
     apply(root)
     const legacyAgentSkill = join(root, '.agents/skills/opsx-new')
     const legacyClaudeSkill = join(root, '.claude/skills/opsx-new')
     const legacyCodexSkill = join(root, '.codex/skills/opsx-new')
     const legacyUnnumberedSkill = join(root, '.agents/skills/harness-new')
     const legacyUnnumberedClaudeSkill = join(root, '.claude/skills/harness-new')
+    const legacyNumberedSkill = join(root, '.agents/skills/harness-5.1-optimization')
+    const legacyNumberedClaudeSkill = join(root, '.claude/skills/harness-5.1-optimization')
     mkdirSync(legacyAgentSkill, { recursive: true })
     mkdirSync(legacyClaudeSkill, { recursive: true })
     mkdirSync(legacyCodexSkill, { recursive: true })
     mkdirSync(legacyUnnumberedSkill, { recursive: true })
     mkdirSync(legacyUnnumberedClaudeSkill, { recursive: true })
+    mkdirSync(legacyNumberedSkill, { recursive: true })
+    mkdirSync(legacyNumberedClaudeSkill, { recursive: true })
 
     const drift = check(root)
     expect(drift.ok).toBe(false)
@@ -92,7 +98,9 @@ describe('harness-sync', () => {
       legacyClaudeSkill,
       legacyCodexSkill,
       legacyUnnumberedSkill,
-      legacyUnnumberedClaudeSkill
+      legacyUnnumberedClaudeSkill,
+      legacyNumberedSkill,
+      legacyNumberedClaudeSkill
     ]))
 
     apply(root)
@@ -101,6 +109,8 @@ describe('harness-sync', () => {
     expect(existsSync(legacyCodexSkill)).toBe(false)
     expect(existsSync(legacyUnnumberedSkill)).toBe(false)
     expect(existsSync(legacyUnnumberedClaudeSkill)).toBe(false)
+    expect(existsSync(legacyNumberedSkill)).toBe(false)
+    expect(existsSync(legacyNumberedClaudeSkill)).toBe(false)
     expect(check(root).ok).toBe(true)
   })
 })

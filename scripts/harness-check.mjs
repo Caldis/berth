@@ -14,7 +14,7 @@ const PHASE_RANK = { explore: 0, design: 1, blocked: 1, implement: 2, verify: 3,
 export const SMALL_CHANGE_EXEMPTION_CONSENT = '小改动豁免前必须先声明豁免依据并征得用户确认。'
 export const TEST_DISCIPLINE_RULE = '测试证据或明确例外理由'
 const SUPERPOWERS_FLOW_POLICY = ['默认流程是 harness workflow', 'Superpowers 只能作为方法参考', 'Agent 自主判断并行或顺序执行']
-const ARCHIVE_BACKLOG_REMINDER = ['5.1-optimization', '5.2-issues', '本次产生或关联的 friction / issues']
+const ARCHIVE_BACKLOG_REMINDER = ['5.1-friction', '5.2-issues', '本次产生或关联的 friction / issues']
 const ALLOWED_SUPERPOWERS_DOCS = new Set([
   'docs/superpowers/specs/2026-05-29-ai-native-workflow-harness-design.md',
   'docs/superpowers/plans/2026-05-29-ai-native-workflow-harness.md'

@@ -119,4 +119,4 @@ Agent 工作流体系, 单一真源在 `.agents/`, 同时服务 Claude Code 与 
 - `brainstorming` 可作为 design 的受控方法: 最多 3 个关键问题, 且问题必须影响范围、方案或验收标准。
 - Agent 自主判断并行或顺序执行: 按文件是否重叠、模块边界、任务依赖和测试耦合度决定; 不把 subagent 并行或主 session 执行作为用户选择题。
 
-入口: harness-0.0-new · harness-0.1-continue · harness-1.0-explore · harness-2.0-design · harness-3.0-implement · harness-3.1-polish · harness-4.0-verify · harness-5.0-archive · harness-5.1-optimization · harness-5.2-issues
+入口: harness-0.0-new · harness-0.1-continue · harness-1.0-explore · harness-2.0-design · harness-3.0-implement · harness-3.1-polish · harness-4.0-verify · harness-5.0-archive · harness-5.1-friction · harness-5.2-issues

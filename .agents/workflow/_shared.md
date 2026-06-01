@@ -59,7 +59,7 @@ artifacts:
 | 3.1-polish | 可选 implement 子步骤 |
 | 4.0-verify | verify 阶段 |
 | 5.0-archive | archive 阶段 |
-| 5.1-optimization | 可选归档后 friction 收敛 |
+| 5.1-friction | 可选归档后 friction 收敛 |
 | 5.2-issues | 可选归档后 issue 收敛 |
 
 ## 阶段门禁
@@ -81,7 +81,7 @@ artifacts:
 3. design 遇 PRD 级歧义 → phase 置 blocked 并在 INDEX 标注待澄清项, 不进 implement。
 4. verify 不通过项回写 03-PLAN.md 新任务, phase 退回 implement。
 5. 工程摩擦不就地处理, 沉到 docs/friction/{YYYYMMDD}-{action-id}-{summary}.md。
-6. 用户在任务过程中给出的纠正/意见/偏好, 一经验证有效, 必须主动沉淀为 friction 并当轮改进规则, 无需用户提示。遇到已验证的工具链 workaround、环境/截图/进程类问题也一样处理; 不等最终复盘或用户追问。沉淀产物本身须先过 `pnpm harness:check` 才能提交 (action 段限 10 个值: 0.0-new|0.1-continue|1.0-explore|2.0-design|3.0-implement|3.1-polish|4.0-verify|5.0-archive|5.1-optimization|5.2-issues)。
+6. 用户在任务过程中给出的纠正/意见/偏好, 一经验证有效, 必须主动沉淀为 friction 并当轮改进规则, 无需用户提示。遇到已验证的工具链 workaround、环境/截图/进程类问题也一样处理; 不等最终复盘或用户追问。沉淀产物本身须先过 `pnpm harness:check` 才能提交 (action 段限 10 个值: 0.0-new|0.1-continue|1.0-explore|2.0-design|3.0-implement|3.1-polish|4.0-verify|5.0-archive|5.1-friction|5.2-issues)。
 7. 用户提出流程改善意见时, 先判断是否为代价非常小的修正; 若是, 先询问用户是落到 friction 并改规则, 还是只作为当前会话行为校准直接调整。
 8. 小改动豁免前必须先声明豁免依据并征得用户确认。确认前不得直接跳过 `harness-0.0-new`; 若实施中发现影响面超出声明范围, 停下重新申请或切入 harness。
 9. 涉及外部产品/平台/SDK/CLI 的功能行为、字段契约、费用口径、配置选项、文件格式、指标含义等可能随版本变化的内容时, Explore / Design 阶段必须先用英文检索官方文档或 primary source, 再写判断和方案; 官方无公开契约时, 才可使用本机样本作为 fallback, 并在产物中明确标注其经验性。
@@ -94,7 +94,7 @@ artifacts:
 16. 默认流程是 harness workflow。只有用户明确要求使用 Superpowers 流程时, Superpowers 才能接管流程; 否则只把 Superpowers 当作方法库。
 17. 进入 harness 后, Superpowers 只能作为方法参考: 不创建 active `docs/superpowers/plans` 或 `docs/superpowers/specs`, 不要求 worktree, 不覆盖 INDEX.phase, 不把 `writing-plans` / `executing-plans` 的流程问答注入当前任务。所有 spec / plan 输出都写入当前 work 的 `02-SPEC.md` / `03-PLAN.md`。
 18. Agent 自主判断并行或顺序执行。文件不重叠、模块边界清楚、测试可独立运行时可并行; 同一批文件反复修改、测试强耦合、任务依赖前一步结果、或涉及全局迁移/状态机/脚本入口时顺序执行。不得把 subagent 并行或主 session 执行作为用户选择题。
-19. Archive 后必须提醒本次产生或关联的 friction / issues, 并给出可选下一步: `harness-5.1-optimization` 处理 friction, `harness-5.2-issues` 处理 docs/issues。提醒不等于自动执行, 未经用户要求不得进入这两个可选动作。
+19. Archive 后必须提醒本次产生或关联的 friction / issues, 并给出可选下一步: `harness-5.1-friction` 处理 friction, `harness-5.2-issues` 处理 docs/issues。提醒不等于自动执行, 未经用户要求不得进入这两个可选动作。
 
 ## 工具
 

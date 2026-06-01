@@ -18,6 +18,8 @@ export const LEGACY_VERBS = [
   'optimization'
 ]
 
+export const LEGACY_ACTION_IDS = ['5.1-optimization']
+
 export const WORKFLOW_ACTIONS = [
   { id: '0.0-new', verb: 'new', title: '启动新任务' },
   { id: '0.1-continue', verb: 'continue', title: '继续已有任务' },
@@ -27,7 +29,7 @@ export const WORKFLOW_ACTIONS = [
   { id: '3.1-polish', verb: 'polish', title: '抛光' },
   { id: '4.0-verify', verb: 'verify', title: '验证' },
   { id: '5.0-archive', verb: 'archive', title: '归档' },
-  { id: '5.1-optimization', verb: 'optimization', title: '流程优化' },
+  { id: '5.1-friction', verb: 'friction', title: '流程摩擦收敛' },
   { id: '5.2-issues', verb: 'issues', title: '问题收敛' }
 ]
 
@@ -48,7 +50,7 @@ export function workflowFileName(actionOrVerb) {
   return `${workflowAction(actionOrVerb).id}.md`
 }
 
-// .agents/skills/<prefix>-<verb>/SKILL.md 的内容 (软链目标, 由 sync 生成)
+// .agents/skills/<prefix>-<action-id>/SKILL.md 的内容 (软链目标, 由 sync 生成)
 export function skillMdContent(actionOrVerb) {
   const action = workflowAction(actionOrVerb)
   return `---

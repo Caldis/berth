@@ -156,7 +156,7 @@ describe('checkFriction', () => {
 
   it('接受全部 10 个 action id 作为 action 段', () => {
     mkdirSync(join(root, 'docs/friction'), { recursive: true })
-    const actions = ['0.0-new', '0.1-continue', '1.0-explore', '2.0-design', '3.0-implement', '3.1-polish', '4.0-verify', '5.0-archive', '5.1-optimization', '5.2-issues']
+    const actions = ['0.0-new', '0.1-continue', '1.0-explore', '2.0-design', '3.0-implement', '3.1-polish', '4.0-verify', '5.0-archive', '5.1-friction', '5.2-issues']
     for (const p of actions) writeFileSync(join(root, `docs/friction/20260530-${p}-sample.md`), 'x')
     expect(checkFriction(root)).toEqual([])
   })
@@ -209,7 +209,7 @@ describe('checkTemplates', () => {
 })
 
 describe('checkWorkflowSources', () => {
-  const ACTIONS = ['0.0-new', '0.1-continue', '1.0-explore', '2.0-design', '3.0-implement', '3.1-polish', '4.0-verify', '5.0-archive', '5.1-optimization', '5.2-issues']
+  const ACTIONS = ['0.0-new', '0.1-continue', '1.0-explore', '2.0-design', '3.0-implement', '3.1-polish', '4.0-verify', '5.0-archive', '5.1-friction', '5.2-issues']
   function writeWorkflow(empty: string[] = []): void {
     const dir = join(root, '.agents/workflow')
     mkdirSync(dir, { recursive: true })
@@ -268,7 +268,7 @@ describe('checkEntryRules', () => {
       const archivePath = join(root, '.agents/workflow/5.0-archive.md')
       writeFileSync(
         archivePath,
-        readFileSync(archivePath, 'utf8') + '\n5.1-optimization 5.2-issues 本次产生或关联的 friction / issues'
+        readFileSync(archivePath, 'utf8') + '\n5.1-friction 5.2-issues 本次产生或关联的 friction / issues'
       )
     }
     if (options.superpowersPolicy !== false) {

@@ -8,9 +8,9 @@
 
 - `SKILL_PREFIX = 'harness'`
 - `LEGACY_SKILL_PREFIXES = ['opsx']`
-- `VERBS = ['new', 'continue', 'explore', 'design', 'implement', 'verify', 'polish', 'archive', 'optimization']`
+- `WORKFLOW_ACTIONS = ['0.0-new', '0.1-continue', '1.0-explore', '2.0-design', '3.0-implement', '3.1-polish', '4.0-verify', '5.0-archive', '5.1-friction', '5.2-issues']`
 
-`skillName(verb)` 返回 `harness-${verb}`。所有分发路径和 SKILL.md frontmatter 均从该函数生成。
+`skillName(actionId)` 返回 `harness-${actionId}`。所有分发路径和 SKILL.md frontmatter 均从该函数生成。
 
 对应验收: A1, A2, A3。
 
@@ -55,7 +55,7 @@ gh_project:
 1. `scripts/harness-lib.mjs`
    - 增加 `SKILL_PREFIX`, `LEGACY_SKILL_PREFIXES`, `skillName()`。
    - `VERBS` 增加 `polish`。
-   - `skillMdContent()` 使用 `harness-${verb}`。
+   - `skillMdContent()` 使用 `harness-${action-id}`。
 
 2. `scripts/harness-sync.mjs`
    - `desiredArtifacts()` 使用 `skillName()`。
@@ -87,7 +87,7 @@ gh_project:
    - 明确不得自动执行、不得越界、默认只产出建议。
 
 7. workflow 文档和模板
-   - `.agents/workflow/_shared.md`, `new.md`, `verify.md`, `archive.md`, `optimization.md` 等改为 `harness-*`。
+   - `.agents/workflow/_shared.md`, `0.0-new.md`, `4.0-verify.md`, `5.0-archive.md`, `5.1-friction.md` 等改为 `harness-*`。
    - `archive.md` 增加 Project Done 硬门禁。
    - `docs/works/_template/INDEX.md` 与新增 `04-POLISH.md`。
    - `docs/friction/_template.md`, `docs/issues/AGENTS.md`, `.agents/README.md`, `AGENTS.md` 同步入口和规则。
@@ -102,7 +102,7 @@ gh_project:
 2. `tests/harness/check.test.ts`
    - 断言 `phase=polish` 缺 `04-POLISH.md` 报错。
    - 断言 friction 命名接受 `polish`。
-   - 断言 workflow sources 要求 `polish.md`。
+   - 断言 workflow sources 要求 `3.1-polish.md`。
 
 3. `tests/harness/projects.test.ts`
    - 覆盖 Status field / Done option 查找。
@@ -152,7 +152,7 @@ gh_project:
 - `3.1-polish` (可选, 关联 implement)
 - `4.0-verify`
 - `5.0-archive`
-- `5.1-optimization` (可选, 归档后收敛 friction)
+- `5.1-friction` (可选, 归档后收敛 friction)
 - `5.2-issues` (可选, 归档后收敛 docs/issues)
 
 后续分发产物使用 `harness-{action-id}` 作为 skill 名, 例如 `harness-3.0-implement`。workflow 源文件使用 `.agents/workflow/{action-id}.md`。
@@ -168,4 +168,12 @@ friction 文件名从 `{YYYYMMDD}-{phase}-{summary}.md` 改为 `{YYYYMMDD}-{acti
 - 重复或过期: 写明原因后移入 resolved。
 - 与当前任务相关但不在当前验收范围: 保持交叉引用, 不顺手修。
 
-`archive` 完成时不自动执行 `5.1-optimization` 或 `5.2-issues`, 只在归档报告中提醒本次产生/关联的 friction 与 issues, 并列出可选下一步。
+`archive` 完成时不自动执行 `5.1-friction` 或 `5.2-issues`, 只在归档报告中提醒本次产生/关联的 friction 与 issues, 并列出可选下一步。
+
+### 追加命名修正
+
+`5.1-optimization` 改名为 `5.1-friction`。理由:
+
+- `optimization` 容易被理解为代码性能、上下文或泛化优化。
+- 该动作实际输入队列是 `docs/friction/`, 与 `5.2-issues` 的命名方式应保持一致。
+- 旧 `harness-5.1-optimization` 作为 legacy 产物由 `pnpm harness:sync` 清理。

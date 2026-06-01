@@ -13,7 +13,7 @@
    - `docs/issues/AGENTS.md`
    - `docs/friction/_template.md`
    - `tests/harness/sync.test.ts`
-3. `scripts/harness-check.mjs` 用 `VERBS` 检查 workflow playbook 是否齐全, 当前 verb 为 8 个: `new`, `continue`, `explore`, `design`, `implement`, `verify`, `archive`, `optimization`。
+3. `scripts/harness-check.mjs` 用 action id 检查 workflow playbook 是否齐全, 当前动作从 `0.0-new` 到 `5.2-issues`。
 4. 现有阶段枚举没有 `polish`; `checkWorks()` 不接受 `phase=polish`。
 5. GitHub Project 规则写在 `.agents/workflow/0.0-new.md` 与 `.agents/workflow/5.0-archive.md`, 但没有脚本强制执行。`5.0-archive.md` 要求把 item 置 Done, 实际靠 Agent 手动操作。
 6. 远端 Project #6 可访问, 已确认:
