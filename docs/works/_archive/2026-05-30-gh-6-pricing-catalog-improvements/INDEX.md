@@ -2,7 +2,7 @@
 task: 2026-05-30-gh-6-pricing-catalog-improvements
 task_id: GH-6
 type: feature
-phase: verify
+phase: archive
 created: 2026-05-30
 issue:
   number: 6
@@ -15,7 +15,7 @@ gh_project:
   project_number: 6
   project_url: https://github.com/users/Caldis/projects/6
   item_id: PVTI_lAHOADXbEs4BZHvQzguQCXo
-  item_status: In Progress
+  item_status: Done
 artifacts:
   source: 00-PRD.md
   analysis: 01-ANALYSIS.md
