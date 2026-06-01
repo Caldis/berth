@@ -129,22 +129,23 @@ This repo ships an **AI Native Workflow harness** — a repo-contained workflow 
 |------|---------|
 | `.agents/workflow/*.md` | Single source of truth — the workflow playbooks (hand-written) |
 | `.agents/README.md` | Harness overview and how distribution works |
-| `.claude/commands/opsx/`, `.claude/skills/`, `.codex/skills/` | Generated entry points for each tool (symlinks + stubs) |
+| `.agents/skills/`, `.claude/skills/` | Generated skill entry points for Codex and Claude Code |
 | `docs/ARCHITECTURE.md` | Project Map — process/module boundaries, IPC contract |
 | `docs/works/` · `docs/friction/` · `docs/issues/` | Per-task state · captured engineering friction · product issues |
 | `scripts/harness-sync.mjs` · `scripts/harness-check.mjs` | Regenerate distribution · validate it |
 
 ### Using it
 
-The workflow is four phases — **Explore → Design → Implementation → Verify** — driven by slash commands. In Claude Code or Codex, from the repo root:
+The workflow is **Explore → Design → Implementation → Verify**, with optional **Polish** before archive. Invoke the matching skill from the repo root (`/harness-new` in Claude Code, `$harness-new` in Codex):
 
 ```
-/opsx:new <task description>   # scaffold a task under docs/works/
-/opsx:explore                  # gather context → 01-ANALYSIS.md
-/opsx:design                   # tech design (asks you to clarify) → 02-SPEC.md + 03-PLAN.md
-/opsx:implement                # build per the plan, with tests
-/opsx:verify                   # full tests + review + UI acceptance
-/opsx:archive                  # archive the task, commit
+harness-new <task description> # scaffold a task under docs/works/
+harness-explore                # gather context → 01-ANALYSIS.md
+harness-design                 # tech design (asks you to clarify) → 02-SPEC.md + 03-PLAN.md
+harness-implement              # build per the plan, with tests
+harness-verify                 # full tests + review + UI acceptance
+harness-polish                 # optional, only when explicitly requested or approved
+harness-archive                # sync GitHub Project to Done, archive the task, commit
 ```
 
 Humans steer at `design` (clarify intent) and `verify` (confirm acceptance); the agent runs the rest. Full command list and contract: see [`.agents/README.md`](.agents/README.md).

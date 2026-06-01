@@ -37,7 +37,7 @@ archive (任务收尾归档时), 但根因贯穿整轮的 git/shell 操作纪律
   连带 Cancel, 制造"满屏报错"的假象与排错噪音。
 
 ## 建议的流程改进
-(由 opsx-optimization 消费)
+(由 harness-optimization 消费)
 - archive playbook 第 3 步"提交前只暂存自己相关文件"补一句显式反模式: **禁止 `git add -A`/`git add .`/
   目录级 add**, 改为列举自有文件路径; 移动任务目录用 `git mv` 后, 只 `git add` 该任务目录的新旧两处路径。
 - 工具使用约定 (.agents/tools.md 或 AGENTS.md BUILD_ENV) 补: 跨平台临时文件禁用 `/tmp`; 不可靠命令

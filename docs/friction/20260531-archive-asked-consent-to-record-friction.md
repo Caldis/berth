@@ -31,7 +31,7 @@ archive (收尾自查沉淀项时), 属 harness 元摩擦 (关于"如何沉淀"�
   (见 `20260531-archive-shared-tree-git-add-and-parallel-batch.md`)。
 
 ## 建议的流程改进
-(由 opsx-optimization 消费)
+(由 harness-optimization 消费)
 - 已落地: AGENTS.md EVOLUATION 段加显式规则 "friction 沉淀是自主职责, 严禁征求记录同意"。
 - 可选: 在 `_shared.md` 不变量 6 或 archive/verify playbook 补一句对称提醒 —— 沉淀类产物
   (friction/issues) 直接落 + 事后汇报; 仅对"改代码/外部副作用/不可逆"的决策才征求同意。

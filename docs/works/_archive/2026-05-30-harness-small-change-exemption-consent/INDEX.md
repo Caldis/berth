@@ -13,7 +13,7 @@ artifacts:
 
 # Harness 小改动豁免确认
 
-任务索引与交接锚。phase 字段为唯一状态源, `opsx-continue` 据此续跑。
+任务索引与交接锚。phase 字段为唯一状态源, `harness-continue` 据此续跑。
 
 ## GitHub Project
 

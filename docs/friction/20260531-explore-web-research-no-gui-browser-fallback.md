@@ -24,4 +24,4 @@ explore
 
 ## 建议的流程改进
 
-(由 opsx-optimization 消费) 在派研究类子 Agent 的标准提示模板中固化两条: (1) 仅用 WebSearch / WebFetch, 禁止 GUI 浏览器降级; (2) 抓取失败的处理阶梯 (.md 版本 -> 官方镜像 -> 摘要 -> 跳过并标注)。Explore 阶段 checklist 增加一项 "网络检索工具合规"。
+(由 harness-optimization 消费) 在派研究类子 Agent 的标准提示模板中固化两条: (1) 仅用 WebSearch / WebFetch, 禁止 GUI 浏览器降级; (2) 抓取失败的处理阶梯 (.md 版本 -> 官方镜像 -> 摘要 -> 跳过并标注)。Explore 阶段 checklist 增加一项 "网络检索工具合规"。

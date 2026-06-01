@@ -19,7 +19,7 @@ gh_project:
 
 # Windows command/capability/usage data empty
 
-任务索引与交接锚。phase 字段为唯一状态源, `opsx-continue` 据此续跑。
+任务索引与交接锚。phase 字段为唯一状态源, `harness-continue` 据此续跑。
 
 ## 产物
 - [x] 00-BUG.md — 原始输入快照

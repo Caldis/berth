@@ -1,5 +1,4 @@
 .agents/skills/**/SKILL.md text eol=lf
-.claude/commands/opsx-*.md text eol=lf
 .claude/skills/**/SKILL.md text eol=lf
 scripts/harness-*.mjs text eol=lf
 tests/harness/*.ts text eol=lf
