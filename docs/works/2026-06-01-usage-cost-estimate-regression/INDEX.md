@@ -2,7 +2,7 @@
 task: 2026-06-01-usage-cost-estimate-regression
 type: bug
 jira:
-phase: explore
+phase: design
 created: 2026-06-01
 artifacts:
   source: 00-BUG.md
@@ -22,7 +22,7 @@ artifacts:
 
 ## 产物
 - [x] 00-PRD.md / 00-BUG.md — 原始输入快照
-- [ ] 01-ANALYSIS.md — Explore 产物
+- [x] 01-ANALYSIS.md — Explore 产物
 - [ ] 02-SPEC.md — Design 产物
 - [ ] 03-PLAN.md — 活任务清单
 
