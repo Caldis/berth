@@ -49,6 +49,11 @@ const plugins: AgentCapabilityPlugin[] = [
     ],
     sourceDescriptors: [],
     assetDescriptors: [],
+    hookSchema: {
+      agentId: 'claude-code',
+      events: [],
+      handlers: []
+    },
     healthCheckDescriptors: [],
     sourceCoverage: {
       total: 2,
@@ -103,6 +108,11 @@ const plugins: AgentCapabilityPlugin[] = [
     ],
     sourceDescriptors: [],
     assetDescriptors: [],
+    hookSchema: {
+      agentId: 'codex',
+      events: [],
+      handlers: []
+    },
     healthCheckDescriptors: [],
     sourceCoverage: {
       total: 1,

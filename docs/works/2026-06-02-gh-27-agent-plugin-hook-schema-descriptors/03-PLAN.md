@@ -8,7 +8,7 @@
 - [x] 任务 2: 在内置 Claude Code / Codex plugin 中声明 hook event 和 handler schema。
   - tests: `pnpm vitest run tests/unit/agent-capability-plugins.test.ts`
   - verify: Claude 覆盖 29 个当前官方事件和 5 种 handler; Codex 覆盖当前 10 个事件, `command` runnable, `prompt` / `agent` parsed-only; 不改 parser / hooks-manager / health engine。
-- [ ] 任务 3: 补齐 Settings 和 Hooks renderer 兼容测试。
+- [x] 任务 3: 补齐 Settings 和 Hooks renderer 兼容测试。
   - tests: `pnpm vitest run tests/renderer/settings-agent-plugins.test.tsx tests/renderer/hooks-lifecycle-view.test.tsx`
   - verify: Settings 摘要不增加详情噪音; Hooks 生命周期侧栏、健康 hover、恢复中心、行级启用/禁用行为不变。
 - [ ] 任务 4: 进入 verify 阶段前跑类型与 harness 目标检查。
