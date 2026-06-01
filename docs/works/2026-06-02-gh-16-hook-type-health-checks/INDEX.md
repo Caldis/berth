@@ -2,7 +2,7 @@
 task: 2026-06-02-gh-16-hook-type-health-checks
 task_id: GH-16
 type: feature
-phase: implement
+phase: verify
 created: 2026-06-02
 issue:
   number: 16

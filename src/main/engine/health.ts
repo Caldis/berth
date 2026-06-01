@@ -317,6 +317,54 @@ function checkClaudeHooks(
         assetType: 'hook'
       }))
     }
+    if (hook.type === 'http' && !hook.url) {
+      checks.push(makeCheck({
+        id: `claude-code:structure:${scope}-hook-${slug(hook.event)}-http-missing-url`,
+        severity: 'error',
+        category: 'structure',
+        agentId: 'claude-code',
+        title: 'Claude HTTP hook is missing url',
+        message: `${hook.event} contains an http hook without a url.`,
+        suggestion: 'Add a url value or remove the hook entry.',
+        scope,
+        path: filePath,
+        assetType: 'hook'
+      }))
+    }
+    if (hook.type === 'mcp_tool') {
+      const missingFields = [
+        hook.server ? '' : 'server',
+        hook.tool ? '' : 'tool'
+      ].filter(Boolean)
+      for (const field of missingFields) {
+        checks.push(makeCheck({
+          id: `claude-code:structure:${scope}-hook-${slug(hook.event)}-mcp-tool-missing-${field}`,
+          severity: 'error',
+          category: 'structure',
+          agentId: 'claude-code',
+          title: 'Claude MCP tool hook is incomplete',
+          message: `${hook.event} contains an mcp_tool hook without ${field}.`,
+          suggestion: 'Add both server and tool values, or remove the hook entry.',
+          scope,
+          path: filePath,
+          assetType: 'hook'
+        }))
+      }
+    }
+    if ((hook.type === 'prompt' || hook.type === 'agent') && !hook.prompt) {
+      checks.push(makeCheck({
+        id: `claude-code:structure:${scope}-hook-${slug(hook.event)}-${hook.type}-missing-prompt`,
+        severity: 'error',
+        category: 'structure',
+        agentId: 'claude-code',
+        title: 'Claude prompt hook is missing prompt',
+        message: `${hook.event} contains a ${hook.type} hook without a prompt.`,
+        suggestion: 'Add a prompt value or remove the hook entry.',
+        scope,
+        path: filePath,
+        assetType: 'hook'
+      }))
+    }
     if (hook.type && !CLAUDE_HOOK_TYPES.has(hook.type)) {
       checks.push(makeCheck({
         id: `claude-code:structure:${scope}-hook-${slug(hook.event)}-unknown-type-${slug(hook.type)}`,
@@ -511,6 +559,21 @@ function checkCodexHooks(
   platform: NodeJS.Platform
 ): void {
   for (const hook of collectHooks(hooks)) {
+    if (hook.async) {
+      checks.push(makeCheck({
+        id: `codex:configuration:${scope}-hook-${slug(hook.event)}-async-skipped`,
+        severity: 'info',
+        category: 'configuration',
+        agentId: 'codex',
+        title: 'Codex async hook is skipped',
+        message: 'Codex parses async hook handlers, but async command hooks are not supported yet.',
+        suggestion: 'Remove async when this hook should run today.',
+        scope,
+        path: filePath,
+        assetType: 'hook',
+        confidence: 'high'
+      }))
+    }
     if (hook.type && hook.type !== CODEX_RUNNABLE_HOOK_TYPE) {
       checks.push(makeCheck({
         id: `codex:configuration:${scope}-hook-${slug(hook.event)}-skipped-type-${slug(hook.type)}`,
@@ -554,6 +617,21 @@ function checkCodexHooks(
         path: filePath,
         assetType: 'hook',
         confidence: 'medium'
+      }))
+    }
+    if (platform === 'win32' && hook.command && hook.commandWindows) {
+      checks.push(makeCheck({
+        id: `codex:configuration:${scope}-hook-${slug(hook.event)}-windows-command-override`,
+        severity: 'info',
+        category: 'configuration',
+        agentId: 'codex',
+        title: 'Codex hook uses a Windows command override',
+        message: 'Codex will use commandWindows instead of command on Windows.',
+        suggestion: 'Keep both commands aligned when updating this hook.',
+        scope,
+        path: filePath,
+        assetType: 'hook',
+        confidence: 'high'
       }))
     }
   }
@@ -1064,6 +1142,11 @@ function collectHooks(hooks: Record<string, unknown> | undefined): Array<{
   commandWindows?: string
   shell?: string
   type?: string
+  url?: string
+  server?: string
+  tool?: string
+  prompt?: string
+  async?: boolean
   args: string[]
 }> {
   if (!hooks) return []
@@ -1073,6 +1156,11 @@ function collectHooks(hooks: Record<string, unknown> | undefined): Array<{
     commandWindows?: string
     shell?: string
     type?: string
+    url?: string
+    server?: string
+    tool?: string
+    prompt?: string
+    async?: boolean
     args: string[]
   }> = []
 
@@ -1092,6 +1180,11 @@ function collectHooks(hooks: Record<string, unknown> | undefined): Array<{
             stringValue(hookRecord.commandWindows) ?? stringValue(hookRecord.command_windows),
           shell: stringValue(hookRecord.shell),
           type: stringValue(hookRecord.type),
+          url: stringValue(hookRecord.url),
+          server: stringValue(hookRecord.server),
+          tool: stringValue(hookRecord.tool),
+          prompt: stringValue(hookRecord.prompt),
+          async: booleanValue(hookRecord.async) ?? booleanValue(hookRecord.async_),
           args: Array.isArray(hookRecord.args)
             ? hookRecord.args.filter((arg): arg is string => typeof arg === 'string')
             : []
@@ -1327,6 +1420,10 @@ function asRecord(value: unknown): Record<string, unknown> | undefined {
 
 function stringValue(value: unknown): string | undefined {
   return typeof value === 'string' && value.trim() ? value : undefined
+}
+
+function booleanValue(value: unknown): boolean | undefined {
+  return typeof value === 'boolean' ? value : undefined
 }
 
 function looksPowerShellCommand(command: string): boolean {

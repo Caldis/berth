@@ -241,6 +241,96 @@ describe('runHealthChecks', () => {
     )
   })
 
+  it('reports Claude typed hook handlers with missing required fields', () => {
+    const claudeDir = path.join(tempDir!, '.claude')
+    fs.mkdirSync(claudeDir, { recursive: true })
+    fs.writeFileSync(
+      path.join(claudeDir, 'settings.json'),
+      JSON.stringify({
+        hooks: {
+          PreToolUse: [
+            {
+              hooks: [
+                { type: 'http' },
+                { type: 'mcp_tool', server: 'memory' },
+                { type: 'prompt' },
+                { type: 'agent' }
+              ]
+            }
+          ]
+        }
+      })
+    )
+
+    const checks = runHealthChecks({ homeDir: tempDir! })
+
+    expect(checks).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: 'claude-code:structure:user-hook-pretooluse-http-missing-url',
+          severity: 'error',
+          evidence: [expect.objectContaining({ url: 'https://code.claude.com/docs/en/hooks' })],
+          target: expect.objectContaining({ route: '/configuration/capabilities?tab=hooks' })
+        }),
+        expect.objectContaining({
+          id: 'claude-code:structure:user-hook-pretooluse-mcp-tool-missing-tool',
+          severity: 'error'
+        }),
+        expect.objectContaining({
+          id: 'claude-code:structure:user-hook-pretooluse-prompt-missing-prompt',
+          severity: 'error'
+        }),
+        expect.objectContaining({
+          id: 'claude-code:structure:user-hook-pretooluse-agent-missing-prompt',
+          severity: 'error'
+        })
+      ])
+    )
+  })
+
+  it('reports Codex async hooks and Windows command overrides', () => {
+    const codexDir = path.join(tempDir!, '.codex')
+    fs.mkdirSync(codexDir, { recursive: true })
+    fs.writeFileSync(
+      path.join(codexDir, 'hooks.json'),
+      JSON.stringify({
+        hooks: {
+          Stop: [
+            {
+              hooks: [
+                {
+                  type: 'command',
+                  command: 'bash hooks/stop.sh',
+                  commandWindows: 'pwsh hooks\\stop.ps1',
+                  async: true
+                }
+              ]
+            }
+          ]
+        }
+      })
+    )
+
+    const checks = runHealthChecks({ homeDir: tempDir!, platform: 'win32' })
+    const ids = checks.map((check) => check.id)
+
+    expect(checks).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: 'codex:configuration:user-hook-stop-async-skipped',
+          severity: 'info',
+          evidence: [expect.objectContaining({ url: 'https://developers.openai.com/codex/hooks' })],
+          target: expect.objectContaining({ route: '/configuration/capabilities?tab=hooks' })
+        }),
+        expect.objectContaining({
+          id: 'codex:configuration:user-hook-stop-windows-command-override',
+          severity: 'info'
+        })
+      ])
+    )
+    expect(ids).not.toContain('codex:configuration:user-hook-windows-command')
+  })
+
   it('does not treat optional Claude skill frontmatter fields as required', () => {
     const claudeDir = path.join(tempDir!, '.claude')
     const skillDir = path.join(claudeDir, 'skills', 'minimal')
