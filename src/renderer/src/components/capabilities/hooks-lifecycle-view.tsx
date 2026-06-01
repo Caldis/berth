@@ -69,6 +69,12 @@ export function HooksLifecycleView({ assets, agentView, search, scope }: HooksLi
 
   return (
     <div className="space-y-4">
+      {(hasSearch || hasScopeFilter) && (
+        <div className="rounded-md border border-border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+          {t('capabilities.hooks.filteredHint')}
+        </div>
+      )}
+      <HookRecoveryCenter />
       <div className="grid gap-4 lg:grid-cols-[280px_minmax(0,1fr)]">
         <aside
           aria-label={t('capabilities.hooks.lifecycleIndex')}
@@ -124,12 +130,6 @@ export function HooksLifecycleView({ assets, agentView, search, scope }: HooksLi
         </aside>
 
         <div className="min-w-0 space-y-3">
-          {(hasSearch || hasScopeFilter) && (
-            <div className="rounded-md border border-border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
-              {t('capabilities.hooks.filteredHint')}
-            </div>
-          )}
-          <HookRecoveryCenter />
           {groups.map((group) => (
             <HookStageSection key={group.id} group={group} agentView={agentView} />
           ))}
@@ -345,7 +345,7 @@ function HookRecoveryPointRow({
           )}
           {createdAt && <span className="text-[11px] text-muted-foreground">{createdAt}</span>}
         </div>
-        <p className="mt-1 break-all font-mono text-xs text-foreground">{point.summary}</p>
+        <p className="mt-1 break-words font-mono text-xs text-foreground">{point.summary}</p>
         <p className="mt-1 text-xs leading-5 text-muted-foreground">{statusDescription}</p>
         {rowError && <p className="mt-1 text-xs leading-5 text-destructive">{rowError}</p>}
         <p className="mt-1 truncate font-mono text-[11px] text-muted-foreground">{point.sourcePath}</p>
