@@ -26,6 +26,8 @@
 - `pnpm harness:check` - test evidence rule check passed。
 - `pnpm test tests/harness/projects.test.ts` - RED: 5 expected failures before implementation; GREEN: 1 file / 12 tests passed。
 - `pnpm typecheck:node` - passed after `harness-projects ensure/start` implementation。
+- `pnpm test tests/harness/projects.test.ts` - RED: archive missing item_id test failed before fix; GREEN: 1 file / 13 tests passed。
+- `pnpm typecheck:node` - passed after archive missing item_id guard。
 - `pnpm harness:check` - passed after GitHub Issue task ID workflow/template contract update。
 - `pnpm test tests/harness/check.test.ts` - RED: 3 expected failures before implementation; GREEN: 1 file / 26 tests passed。
 - `pnpm harness:check` - passed after active works were renamed to `gh-{number}` and INDEX metadata was rewritten。

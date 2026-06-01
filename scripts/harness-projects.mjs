@@ -314,14 +314,16 @@ export function ensureStartedTask(taskDir, options = {}) {
   console.log(`harness-projects: ${frontmatter.task || basename(taskDir)} is In Progress`)
 }
 
-function setDone(taskDir) {
+export function markDoneTask(taskDir, options = {}) {
+  const gh = options.gh || ghJson
   const { indexPath, markdown, frontmatter } = readTaskIndex(taskDir)
-  let context = ensureProject(projectContext(frontmatter))
+  if (!frontmatter.gh_project || !frontmatter.gh_project.item_id)
+    throw new Error('INDEX.md missing gh_project.item_id; run harness-projects ensure before archive')
+  const context = ensureProject(projectContext(frontmatter), gh)
+  setProjectStatus(context, 'Done', gh)
+  const items = gh(['project', 'item-list', String(context.number), '--owner', context.owner, '--format', 'json', '--limit', '500'])
   const issue = issueContext(frontmatter)
-  context = ensureItem(context, taskDir, frontmatter, issue)
-  setProjectStatus(context, 'Done')
-  const items = ghJson(['project', 'item-list', String(context.number), '--owner', context.owner, '--format', 'json', '--limit', '200'])
-  const item = findProjectItem(items, { itemId: context.itemId, task: frontmatter.task, title: taskTitle(frontmatter, taskDir) })
+  const item = findProjectItem(items, { itemId: context.itemId, task: frontmatter.task, title: taskTitle(frontmatter, taskDir), issueUrl: issue.url })
   if (!item || item.status !== 'Done') throw new Error(`GitHub Project item ${context.itemId} was not verified as Done`)
   const next = updateGhProjectFrontmatter(markdown, {
     status: 'tracked',
@@ -364,7 +366,7 @@ function main() {
   }
   if (cmd === 'done') {
     if (!taskDirArg) throw new Error('usage: node scripts/harness-projects.mjs done <task-dir>')
-    setDone(taskDirArg)
+    markDoneTask(taskDirArg)
     return
   }
   if (cmd === 'check' || !cmd) {

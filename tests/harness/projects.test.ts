@@ -11,6 +11,7 @@ import {
   findProjectItem,
   findStatusField,
   issueNumberFromTaskId,
+  markDoneTask,
   taskIdFromIssueNumber,
   updateTaskTrackingFrontmatter,
   updateGhProjectFrontmatter
@@ -191,5 +192,17 @@ describe('harness-projects helpers', () => {
       'missing item: active task missing gh_project.item_id',
       'missing issue: active task missing issue.number'
     ])
+  })
+
+  it('markDoneTask 缺少 gh_project.item_id 时停止, 不补建 Project item', () => {
+    const dir = join(root, 'docs/works/2026-06-01-gh-123-sample')
+    writeIndex(
+      dir,
+      ['---', 'task: sample', 'task_id: GH-123', 'type: feature', 'phase: verify', 'created: 2026-06-01', 'issue:', '  number: 123', '---'].join('\n')
+    )
+    const gh = (): unknown => {
+      throw new Error('gh should not be called')
+    }
+    expect(() => markDoneTask(dir, { gh })).toThrow('gh_project.item_id')
   })
 })
