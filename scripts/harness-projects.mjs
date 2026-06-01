@@ -9,6 +9,7 @@ import { parseFrontmatter } from './harness-lib.mjs'
 const DEFAULT_OWNER = 'Caldis'
 const DEFAULT_PROJECT_NUMBER = 6
 const AUTH_HINT = 'gh auth refresh -h github.com -s project,read:project'
+const DEFAULT_REPO = 'Caldis/berth'
 
 function ghJson(args) {
   try {
@@ -35,11 +36,38 @@ export function findStatusField(fieldsJson) {
   return done ? { fieldId: field.id, doneOptionId: done.id, inProgressOptionId: inProgress && inProgress.id } : null
 }
 
-export function findProjectItem(itemsJson, { itemId, task, title }) {
+export function taskIdFromIssueNumber(number) {
+  const value = Number(number)
+  if (!Number.isInteger(value) || value <= 0) throw new Error(`invalid GitHub Issue number: ${number}`)
+  return `GH-${value}`
+}
+
+export function issueNumberFromTaskId(taskId) {
+  const match = /^GH-(\d+)$/i.exec(String(taskId || '').trim())
+  return match ? Number(match[1]) : null
+}
+
+function normalizeUrl(url) {
+  return url ? String(url).replace(/\/$/, '') : ''
+}
+
+function repoFromIssueUrl(url) {
+  const match = /^https:\/\/github\.com\/([^/]+\/[^/]+)\/issues\/\d+$/i.exec(String(url || ''))
+  return match ? match[1] : null
+}
+
+export function findProjectItem(itemsJson, { itemId, task, title, issueUrl }) {
   const items = itemsJson.items || []
   if (itemId) {
     const exact = items.find((item) => item.id === itemId)
     if (exact) return exact
+  }
+  const normalizedIssueUrl = normalizeUrl(issueUrl)
+  if (normalizedIssueUrl) {
+    const byIssueUrl = items.find((item) => {
+      return normalizeUrl(item.url) === normalizedIssueUrl || normalizeUrl(item.content && item.content.url) === normalizedIssueUrl
+    })
+    if (byIssueUrl) return byIssueUrl
   }
   const normalizedTitle = title && title.trim().toLowerCase()
   if (normalizedTitle) {
@@ -72,14 +100,30 @@ function findFrontmatterEnd(lines) {
   return -1
 }
 
-export function updateGhProjectFrontmatter(markdown, updates) {
+function updateFrontmatterScalar(markdown, key, value, afterKey = 'task') {
+  if (value === undefined || value === null || value === '') return markdown
+  const lines = markdown.replace(/\r\n/g, '\n').split('\n')
+  const end = findFrontmatterEnd(lines)
+  if (end < 0) throw new Error('INDEX.md missing frontmatter')
+  const line = `${key}: ${value}`
+  const existing = lines.findIndex((candidate, index) => index > 0 && index < end && candidate.startsWith(`${key}:`))
+  if (existing >= 0) {
+    lines[existing] = line
+    return lines.join('\n')
+  }
+  const after = lines.findIndex((candidate, index) => index > 0 && index < end && candidate.startsWith(`${afterKey}:`))
+  lines.splice(after >= 0 ? after + 1 : end, 0, line)
+  return lines.join('\n')
+}
+
+function updateNestedFrontmatterBlock(markdown, blockName, updates) {
   const lines = markdown.replace(/\r\n/g, '\n').split('\n')
   const end = findFrontmatterEnd(lines)
   if (end < 0) throw new Error('INDEX.md missing frontmatter')
 
-  let start = lines.findIndex((line, index) => index > 0 && index < end && line === 'gh_project:')
+  let start = lines.findIndex((line, index) => index > 0 && index < end && line === `${blockName}:`)
   if (start < 0) {
-    const inserted = ['gh_project:']
+    const inserted = [`${blockName}:`]
     for (const [key, value] of Object.entries(updates)) {
       if (value !== undefined && value !== null && value !== '') inserted.push(`  ${key}: ${value}`)
     }
@@ -105,6 +149,18 @@ export function updateGhProjectFrontmatter(markdown, updates) {
   return lines.join('\n')
 }
 
+export function updateGhProjectFrontmatter(markdown, updates) {
+  return updateNestedFrontmatterBlock(markdown, 'gh_project', updates)
+}
+
+export function updateTaskTrackingFrontmatter(markdown, updates) {
+  let next = markdown
+  next = updateFrontmatterScalar(next, 'task_id', updates.task_id)
+  if (updates.issue) next = updateNestedFrontmatterBlock(next, 'issue', updates.issue)
+  if (updates.gh_project) next = updateGhProjectFrontmatter(next, updates.gh_project)
+  return next
+}
+
 function taskTitle(frontmatter, taskDir) {
   return frontmatter.task || basename(taskDir)
 }
@@ -120,71 +176,74 @@ function projectContext(frontmatter) {
   }
 }
 
-function ensureProject(context) {
+function issueContext(frontmatter) {
+  const issue = frontmatter.issue || {}
+  const number = issue.number ? Number(issue.number) : issueNumberFromTaskId(frontmatter.task_id)
+  const repo = issue.repo || process.env.HARNESS_ISSUE_REPO || DEFAULT_REPO
+  return {
+    id: issue.id,
+    number,
+    repo,
+    url: issue.url || (number ? `https://github.com/${repo}/issues/${number}` : undefined),
+    state: issue.state
+  }
+}
+
+function readIssue(frontmatter, gh) {
+  const issue = issueContext(frontmatter)
+  if (!issue.number && !issue.url) throw new Error('INDEX.md must include issue.number or task_id=GH-{number}')
+  const args = ['issue', 'view', issue.number ? String(issue.number) : issue.url, '--json', 'number,url,id,title,state']
+  if (issue.number && issue.repo) args.push('--repo', issue.repo)
+  const viewed = gh(args)
+  const url = viewed.url || issue.url
+  return {
+    id: viewed.id || issue.id,
+    number: Number(viewed.number || issue.number),
+    repo: issue.repo || repoFromIssueUrl(url) || DEFAULT_REPO,
+    url,
+    state: viewed.state || issue.state
+  }
+}
+
+function ensureProject(context, gh = ghJson) {
   if (context.projectId) return context
-  const projectList = ghJson(['project', 'list', '--owner', context.owner, '--format', 'json', '--limit', '100'])
+  const projectList = gh(['project', 'list', '--owner', context.owner, '--format', 'json', '--limit', '100'])
   const project = findProject(projectList, context.number)
   if (!project) throw new Error(`GitHub Project #${context.number} not found for ${context.owner}`)
   return { ...context, projectId: project.id, projectUrl: project.url }
 }
 
-function ensureItem(context, taskDir, frontmatter) {
+function ensureItem(context, taskDir, frontmatter, issue, gh = ghJson) {
   if (context.itemId) return context
-  const items = ghJson(['project', 'item-list', String(context.number), '--owner', context.owner, '--format', 'json', '--limit', '200'])
+  const items = gh(['project', 'item-list', String(context.number), '--owner', context.owner, '--format', 'json', '--limit', '500'])
   const title = taskTitle(frontmatter, taskDir)
-  const existing = findProjectItem(items, { task: frontmatter.task || basename(taskDir), title })
+  const existing = findProjectItem(items, { task: frontmatter.task || basename(taskDir), title, issueUrl: issue && issue.url })
   if (existing) return { ...context, itemId: existing.id }
-  const created = ghJson([
-    'project',
-    'item-create',
-    String(context.number),
-    '--owner',
-    context.owner,
-    '--title',
-    title,
-    '--body',
-    `Work: ${taskDir}`,
-    '--format',
-    'json'
-  ])
+  const created = issue && issue.url
+    ? gh(['project', 'item-add', String(context.number), '--owner', context.owner, '--url', issue.url, '--format', 'json'])
+    : gh([
+        'project',
+        'item-create',
+        String(context.number),
+        '--owner',
+        context.owner,
+        '--title',
+        title,
+        '--body',
+        `Work: ${taskDir}`,
+        '--format',
+        'json'
+      ])
   return { ...context, itemId: created.id }
 }
 
-export function listTaskDirs(base) {
-  if (!existsSync(base)) return []
-  return readdirSync(base)
-    .filter((name) => !name.startsWith('_') && statSync(join(base, name)).isDirectory())
-    .map((name) => join(base, name))
-}
-
-export function auditTasks(root, itemsJson) {
-  const errors = []
-  for (const dir of listTaskDirs(join(root, 'docs/works'))) {
-    const { frontmatter } = readTaskIndex(dir)
-    const gh = frontmatter.gh_project || {}
-    if (!gh.item_id) continue
-    const item = findProjectItem(itemsJson, { itemId: gh.item_id, task: frontmatter.task, title: taskTitle(frontmatter, dir) })
-    if (item && item.status === 'Done') errors.push(`${frontmatter.task}: active task has Done project status`)
-  }
-  for (const dir of listTaskDirs(join(root, 'docs/works/_archive'))) {
-    const { frontmatter } = readTaskIndex(dir)
-    const gh = frontmatter.gh_project || {}
-    if (!gh.item_id) continue
-    const item = findProjectItem(itemsJson, { itemId: gh.item_id, task: frontmatter.task, title: taskTitle(frontmatter, dir) })
-    if (!item) errors.push(`${frontmatter.task}: archived task project item not found`)
-    else if (item.status !== 'Done') errors.push(`${frontmatter.task}: archived task project status is ${item.status || 'empty'}`)
-  }
-  return errors
-}
-
-function setDone(taskDir) {
-  const { indexPath, markdown, frontmatter } = readTaskIndex(taskDir)
-  let context = ensureProject(projectContext(frontmatter))
-  context = ensureItem(context, taskDir, frontmatter)
-  const fields = ghJson(['project', 'field-list', String(context.number), '--owner', context.owner, '--format', 'json'])
+function setProjectStatus(context, statusName, gh = ghJson) {
+  const fields = gh(['project', 'field-list', String(context.number), '--owner', context.owner, '--format', 'json'])
   const status = findStatusField(fields)
   if (!status) throw new Error('GitHub Project Status field with Done option not found')
-  ghJson([
+  const optionId = statusName === 'Done' ? status.doneOptionId : status.inProgressOptionId
+  if (!optionId) throw new Error(`GitHub Project Status field missing ${statusName} option`)
+  gh([
     'project',
     'item-edit',
     '--id',
@@ -194,10 +253,73 @@ function setDone(taskDir) {
     '--field-id',
     status.fieldId,
     '--single-select-option-id',
-    status.doneOptionId,
+    optionId,
     '--format',
     'json'
   ])
+}
+
+export function listTaskDirs(base) {
+  if (!existsSync(base)) return []
+  return readdirSync(base)
+    .filter((name) => !name.startsWith('_') && statSync(join(base, name)).isDirectory())
+    .map((name) => join(base, name))
+}
+
+export function auditTasks(root, itemsJson, options = {}) {
+  const errors = []
+  const strict = Boolean(options.strict)
+  for (const dir of listTaskDirs(join(root, 'docs/works'))) {
+    const { frontmatter } = readTaskIndex(dir)
+    const gh = frontmatter.gh_project || {}
+    const issue = frontmatter.issue || {}
+    if (strict && !issue.number) errors.push(`${frontmatter.task}: active task missing issue.number`)
+    if (strict && !gh.item_id) errors.push(`${frontmatter.task}: active task missing gh_project.item_id`)
+    if (!gh.item_id) continue
+    const item = findProjectItem(itemsJson, { itemId: gh.item_id, task: frontmatter.task, title: taskTitle(frontmatter, dir), issueUrl: issue.url })
+    if (item && item.status === 'Done') errors.push(`${frontmatter.task}: active task has Done project status`)
+  }
+  for (const dir of listTaskDirs(join(root, 'docs/works/_archive'))) {
+    const { frontmatter } = readTaskIndex(dir)
+    const gh = frontmatter.gh_project || {}
+    if (!gh.item_id) continue
+    const issue = frontmatter.issue || {}
+    const item = findProjectItem(itemsJson, { itemId: gh.item_id, task: frontmatter.task, title: taskTitle(frontmatter, dir), issueUrl: issue.url })
+    if (!item) errors.push(`${frontmatter.task}: archived task project item not found`)
+    else if (item.status !== 'Done') errors.push(`${frontmatter.task}: archived task project status is ${item.status || 'empty'}`)
+  }
+  return errors
+}
+
+export function ensureStartedTask(taskDir, options = {}) {
+  const gh = options.gh || ghJson
+  const { indexPath, markdown, frontmatter } = readTaskIndex(taskDir)
+  const issue = readIssue(frontmatter, gh)
+  let context = ensureProject(projectContext(frontmatter), gh)
+  context = ensureItem(context, taskDir, frontmatter, issue, gh)
+  setProjectStatus(context, 'In Progress', gh)
+  const next = updateTaskTrackingFrontmatter(markdown, {
+    task_id: taskIdFromIssueNumber(issue.number),
+    issue,
+    gh_project: {
+      status: 'tracked',
+      project_id: context.projectId,
+      project_number: context.number,
+      project_url: context.projectUrl || `https://github.com/users/${context.owner}/projects/${context.number}`,
+      item_id: context.itemId,
+      item_status: 'In Progress'
+    }
+  })
+  writeFileSync(indexPath, next)
+  console.log(`harness-projects: ${frontmatter.task || basename(taskDir)} is In Progress`)
+}
+
+function setDone(taskDir) {
+  const { indexPath, markdown, frontmatter } = readTaskIndex(taskDir)
+  let context = ensureProject(projectContext(frontmatter))
+  const issue = issueContext(frontmatter)
+  context = ensureItem(context, taskDir, frontmatter, issue)
+  setProjectStatus(context, 'Done')
   const items = ghJson(['project', 'item-list', String(context.number), '--owner', context.owner, '--format', 'json', '--limit', '200'])
   const item = findProjectItem(items, { itemId: context.itemId, task: frontmatter.task, title: taskTitle(frontmatter, taskDir) })
   if (!item || item.status !== 'Done') throw new Error(`GitHub Project item ${context.itemId} was not verified as Done`)
@@ -225,7 +347,7 @@ function checkProjects(root) {
     '--limit',
     '200'
   ])
-  const errors = auditTasks(root, items)
+  const errors = auditTasks(root, items, { strict: process.argv.includes('--strict') })
   if (errors.length > 0) {
     console.error('harness-projects: FAILED\n' + errors.map((error) => `  - ${error}`).join('\n'))
     process.exit(1)
@@ -235,6 +357,11 @@ function checkProjects(root) {
 
 function main() {
   const [cmd, taskDirArg] = process.argv.slice(2)
+  if (cmd === 'ensure' || cmd === 'start') {
+    if (!taskDirArg) throw new Error('usage: node scripts/harness-projects.mjs ensure <task-dir>')
+    ensureStartedTask(taskDirArg)
+    return
+  }
   if (cmd === 'done') {
     if (!taskDirArg) throw new Error('usage: node scripts/harness-projects.mjs done <task-dir>')
     setDone(taskDirArg)
