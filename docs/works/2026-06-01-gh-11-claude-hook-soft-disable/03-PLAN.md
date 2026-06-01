@@ -45,13 +45,13 @@
   - verify: `tests/unit/hooks-manager.test.ts`。
 
 - [ ] 调整 lifecycle 与 Hooks 页面
-  - [ ] Claude user hook 从 unavailable 改为 confirmation action。
-  - [ ] 删除 renderer 的 codex-only toggle guard, 改按 `toggleStrategy` 判断。
-  - [ ] 增加 Claude soft disable / restore 确认文案。
+  - [x] Claude user hook 从 unavailable 改为 confirmation action。
+  - [x] 删除 renderer 的 codex-only toggle guard, 改按 `toggleStrategy` 判断。
+  - [x] 增加 Claude soft disable / restore 确认文案。
   - [ ] 恢复确认展示 command、event、sourcePath、disabledAt。
   - [ ] 同一 hook 在其他来源存在时显示提示, 明确当前操作只影响 user source。
-  - [ ] 区分注册状态 `enabled` 和实际影响 `effectiveEnabled`。
-  - [ ] disabled 行显示为 Berth 恢复点状态, 不新增大块提示。
+  - [x] 区分注册状态 `enabled` 和实际影响 `effectiveEnabled`。
+  - [x] disabled 行显示为 Berth 恢复点状态, 不新增大块提示。
   - verify: `tests/unit/hook-lifecycle.test.ts` + `tests/renderer/hooks-lifecycle-view.test.tsx`。
 
 - [ ] 引入 Agent Capability Plugin 的 hooks 切片
@@ -62,8 +62,9 @@
   - verify: `tests/unit/hooks-manager.test.ts` + `tests/unit/engine-scanner.test.ts`。
 
 - [ ] 文案与 i18n
-  - [ ] 替换旧 `claudeNoSingleHookToggle` 展示语义。
-  - [ ] 增加 user-only、soft-disable、restore、stale conflict 文案。
+  - [x] 替换旧 `claudeNoSingleHookToggle` 展示语义。
+  - [x] 增加 user-only、soft-disable、restore 文案。
+  - [ ] 增加 stale conflict 文案。
   - verify: renderer 目标测试。
 
 - [ ] 总体验证

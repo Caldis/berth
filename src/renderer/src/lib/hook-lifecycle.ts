@@ -59,6 +59,7 @@ export interface HookManagementState {
   targetPath?: string
   hookKey?: string
   enabled?: boolean
+  toggleStrategy?: string
 }
 
 export type HookRiskLevel = 'info' | 'warning'
@@ -463,41 +464,41 @@ function getToggleHookState(asset: Asset): HookManagementState {
     }
   }
 
+  const hookKey = firstString(asset.meta.hookKey)
+  if (!hookKey) {
+    return {
+      action: 'toggle-hook',
+      availability: 'unavailable',
+      reasonKey: 'capabilities.hooks.management.singleHookMissingKey'
+    }
+  }
+
+  const toggleStrategy = firstString(asset.meta.toggleStrategy)
+  if (asset.meta.canToggleHook === true && (toggleStrategy === 'native-state' || toggleStrategy === 'soft-remove')) {
+    return {
+      action: 'toggle-hook',
+      availability: 'needs-confirmation',
+      targetPath: asset.path,
+      hookKey,
+      enabled: asset.meta.enabled !== false,
+      toggleStrategy
+    }
+  }
+
   if (asset.agentId === 'claude-code' || asset.agentId === 'claude') {
     return {
       action: 'toggle-hook',
       availability: 'unavailable',
-      reasonKey: 'capabilities.hooks.management.claudeNoSingleHookToggle'
+      reasonKey: 'capabilities.hooks.management.claudeSingleHookUserOnly'
     }
   }
-
   if (asset.agentId === 'codex') {
-    const hookKey = firstString(asset.meta.hookKey)
-    if (!hookKey) {
-      return {
-        action: 'toggle-hook',
-        availability: 'unavailable',
-        reasonKey: 'capabilities.hooks.management.codexSingleHookMissingKey'
-      }
-    }
-
-    if (asset.meta.canToggleHook === true) {
-      return {
-        action: 'toggle-hook',
-        availability: 'needs-confirmation',
-        targetPath: asset.path,
-        hookKey,
-        enabled: asset.meta.enabled !== false
-      }
-    }
-
     return {
       action: 'toggle-hook',
       availability: 'unavailable',
       reasonKey: 'capabilities.hooks.management.codexSingleHookNotConnected'
     }
   }
-
   return {
     action: 'toggle-hook',
     availability: 'unavailable',

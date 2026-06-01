@@ -16,7 +16,7 @@ function hookAsset(overrides: Partial<Asset> & { id: string; agentId: string; ev
     agentId: overrides.agentId,
     category: 'capability',
     type: 'hook',
-    scope: 'user',
+    scope: overrides.scope ?? 'user',
     name: overrides.name ?? overrides.id,
     path: overrides.path ?? '/tmp/hooks.json',
     meta: {
@@ -145,15 +145,49 @@ describe('hook lifecycle model', () => {
     })
   })
 
-  it('marks Claude single hook toggle as unavailable', () => {
+  it('allows Claude user hooks with a soft-remove key to toggle', () => {
     const states = getHookManagementState(
-      hookAsset({ id: 'claude-hook', agentId: 'claude-code', eventType: 'Stop' }),
+      hookAsset({
+        id: 'claude-hook',
+        agentId: 'claude-code',
+        eventType: 'Stop',
+        meta: {
+          hookKey: 'claude-code:scenario:hook',
+          enabled: true,
+          canToggleHook: true,
+          toggleStrategy: 'soft-remove'
+        }
+      }),
+      'claude'
+    )
+
+    expect(states.find((state) => state.action === 'toggle-hook')).toMatchObject({
+      availability: 'needs-confirmation',
+      hookKey: 'claude-code:scenario:hook',
+      enabled: true,
+      toggleStrategy: 'soft-remove'
+    })
+  })
+
+  it('keeps non-user Claude hooks unavailable', () => {
+    const states = getHookManagementState(
+      hookAsset({
+        id: 'claude-hook',
+        agentId: 'claude-code',
+        eventType: 'Stop',
+        scope: 'project',
+        meta: {
+          hookKey: 'claude-code:scenario:hook',
+          canToggleHook: false,
+          toggleStrategy: 'read-only'
+        }
+      }),
       'claude'
     )
 
     expect(states.find((state) => state.action === 'toggle-hook')).toMatchObject({
       availability: 'unavailable',
-      reasonKey: 'capabilities.hooks.management.claudeNoSingleHookToggle'
+      reasonKey: 'capabilities.hooks.management.claudeSingleHookUserOnly'
     })
   })
 
@@ -166,7 +200,8 @@ describe('hook lifecycle model', () => {
         meta: {
           hookKey: 'C:\\Users\\test\\.codex\\hooks.json:stop:0:0',
           enabled: true,
-          canToggleHook: true
+          canToggleHook: true,
+          toggleStrategy: 'native-state'
         }
       }),
       'codex'
@@ -187,7 +222,7 @@ describe('hook lifecycle model', () => {
 
     expect(states.find((state) => state.action === 'toggle-hook')).toMatchObject({
       availability: 'unavailable',
-      reasonKey: 'capabilities.hooks.management.codexSingleHookMissingKey'
+      reasonKey: 'capabilities.hooks.management.singleHookMissingKey'
     })
   })
 

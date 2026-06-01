@@ -893,9 +893,11 @@
         "noTargetPath": "No file path is available for this action.",
         "noEntryFile": "No local script entry was detected in this command.",
         "managedHook": "This hook is managed by policy or an external source, so Berth cannot disable it here.",
-        "claudeNoSingleHookToggle": "Claude Code does not provide a supported way to disable one hook while keeping it registered.",
+        "claudeNoSingleHookToggle": "Berth can soft-disable user-level Claude Code hooks by saving a restore point.",
+        "claudeSingleHookUserOnly": "Berth currently supports soft-disable only for user-level Claude Code hooks.",
         "codexSingleHookNotConnected": "Codex can disable non-managed hooks in its hook browser, but Berth has not wired that write path yet.",
         "codexSingleHookMissingKey": "Berth could not compute Codex's hook state key for this row, so it cannot change this hook safely.",
+        "singleHookMissingKey": "Berth could not compute a stable hook key for this row, so it cannot change this hook safely.",
         "unknownAgent": "Berth does not know how this agent stores hook state.",
         "projectReadOnly": "Project-level hook switches are shown for review only. Edit the source file directly.",
         "scope": {
@@ -915,7 +917,9 @@
         "confirmEnable": "Enable hooks for {{agent}}? Berth will update {{path}} and rescan local assets.",
         "confirmDisable": "Disable hooks for {{agent}}? Berth will update {{path}} and rescan local assets.",
         "confirmEnableHook": "Enable this Codex hook? Berth will update hooks.state in your user config. Source: {{path}}",
-        "confirmDisableHook": "Disable this Codex hook? Berth will update hooks.state in your user config. Source: {{path}}"
+        "confirmDisableHook": "Disable this Codex hook? Berth will update hooks.state in your user config. Source: {{path}}",
+        "confirmRestoreClaudeHook": "Restore this Claude Code hook? Berth will write it back from the restore point into user settings. Source: {{path}}",
+        "confirmSoftDisableClaudeHook": "Disable this Claude Code hook? Berth will remove the hook from user settings, then keep a restore point and backup. Source: {{path}}"
       }
     },
     "plugins": {

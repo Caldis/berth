@@ -893,9 +893,11 @@
         "noTargetPath": "这个操作没有可用的文件路径。",
         "noEntryFile": "这条命令里没有检测到本地脚本入口。",
         "managedHook": "这个 Hook 由 policy 或外部来源管理, Berth 不能在这里禁用它。",
-        "claudeNoSingleHookToggle": "Claude Code 没有支持“保留注册但单独禁用一个 Hook”的机制。",
+        "claudeNoSingleHookToggle": "Claude Code 用户级 Hook 可以通过 Berth 保存恢复点后软禁用。",
+        "claudeSingleHookUserOnly": "Berth 目前只支持用户级 Claude Code Hook 的软禁用。",
         "codexSingleHookNotConnected": "Codex 可以在自己的 hook browser 里禁用 non-managed hook, 但 Berth 还没有接入这条写入路径。",
         "codexSingleHookMissingKey": "Berth 没有算出 Codex 这一行的 hook state key, 因此不能安全修改这个 Hook。",
+        "singleHookMissingKey": "Berth 没有算出这一行的稳定 Hook key, 因此不能安全修改这个 Hook。",
         "unknownAgent": "Berth 还不知道这个 Agent 如何保存 Hook 状态。",
         "projectReadOnly": "项目级 Hooks 开关只在这里展示, 如需修改请直接编辑来源文件。",
         "scope": {
@@ -915,7 +917,9 @@
         "confirmEnable": "要启用 {{agent}} 的 Hooks 吗? Berth 会更新 {{path}} 并重新扫描本地资产。",
         "confirmDisable": "要禁用 {{agent}} 的 Hooks 吗? Berth 会更新 {{path}} 并重新扫描本地资产。",
         "confirmEnableHook": "要启用这个 Codex Hook 吗? Berth 会更新用户配置里的 hooks.state。来源: {{path}}",
-        "confirmDisableHook": "要禁用这个 Codex Hook 吗? Berth 会更新用户配置里的 hooks.state。来源: {{path}}"
+        "confirmDisableHook": "要禁用这个 Codex Hook 吗? Berth 会更新用户配置里的 hooks.state。来源: {{path}}",
+        "confirmRestoreClaudeHook": "要恢复这个 Claude Code Hook 吗? Berth 会从恢复点写回用户级 settings。来源: {{path}}",
+        "confirmSoftDisableClaudeHook": "要禁用这个 Claude Code Hook 吗? Berth 会从用户级 settings 移除这段 Hook, 并保存恢复点和备份。来源: {{path}}"
       }
     },
     "plugins": {

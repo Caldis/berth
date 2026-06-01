@@ -26,7 +26,7 @@ import {
   type HookStageGroup
 } from '@/lib/hook-lifecycle'
 import type { AgentView, Asset, AssetScope } from '@shared/types/asset'
-import type { HealthCheck } from '@shared/types/ipc'
+import type { HealthCheck, HooksAgentId } from '@shared/types/ipc'
 
 interface HooksLifecycleViewProps {
   assets: Asset[]
@@ -501,11 +501,11 @@ function HookAssetRow({ hook, agentView }: { hook: Asset; agentView: AgentView }
   }, [hook.id, initialHookEnabled])
 
   const toggleHook = async (): Promise<void> => {
-    if (!toggleState?.hookKey || hook.agentId !== 'codex') return
+    if (!toggleState?.hookKey || toggleState.availability !== 'needs-confirmation') return
+    const agentId = hookToggleAgentId(hook)
+    if (!agentId) return
     const enabled = !hookEnabled
-    const confirmMessage = enabled
-      ? t('capabilities.hooks.management.confirmEnableHook', { path: hook.path })
-      : t('capabilities.hooks.management.confirmDisableHook', { path: hook.path })
+    const confirmMessage = getHookToggleConfirmMessage(t, agentId, enabled, hook.path)
 
     if (!window.confirm(confirmMessage)) return
 
@@ -513,7 +513,7 @@ function HookAssetRow({ hook, agentView }: { hook: Asset; agentView: AgentView }
     setToggleError(null)
     try {
       const result = await window.api.hooks.setHookEnabled({
-        agentId: 'codex',
+        agentId,
         scope: 'user',
         hookKey: toggleState.hookKey,
         sourcePath: hook.path,
@@ -535,7 +535,7 @@ function HookAssetRow({ hook, agentView }: { hook: Asset; agentView: AgentView }
           <div className="flex min-w-0 flex-wrap items-center gap-2">
             <span className="min-w-0 max-w-full break-all font-mono text-xs text-foreground">{command || hook.name}</span>
             <ScopeBadge scope={hook.scope} />
-            {hook.agentId === 'codex' && (
+            {hookCanShowEnabledBadge(hook, toggleState) && (
               <span className={cn(
                 'rounded-md px-1.5 py-0.5 text-[10px] font-medium',
                 hookEnabled ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'bg-muted text-muted-foreground'
@@ -584,6 +584,32 @@ function HookAssetRow({ hook, agentView }: { hook: Asset; agentView: AgentView }
       </div>
     </div>
   )
+}
+
+function hookToggleAgentId(hook: Asset): HooksAgentId | null {
+  if (hook.agentId === 'claude-code') return 'claude-code'
+  if (hook.agentId === 'codex') return 'codex'
+  return null
+}
+
+function hookCanShowEnabledBadge(hook: Asset, toggleState: HookManagementState | undefined): boolean {
+  return toggleState?.hookKey != null || typeof hook.meta.enabled === 'boolean' || hook.meta.disabledByBerth === true
+}
+
+function getHookToggleConfirmMessage(
+  t: ReturnType<typeof useTranslation>['t'],
+  agentId: HooksAgentId,
+  enabled: boolean,
+  path: string
+): string {
+  if (agentId === 'claude-code') {
+    return enabled
+      ? t('capabilities.hooks.management.confirmRestoreClaudeHook', { path })
+      : t('capabilities.hooks.management.confirmSoftDisableClaudeHook', { path })
+  }
+  return enabled
+    ? t('capabilities.hooks.management.confirmEnableHook', { path })
+    : t('capabilities.hooks.management.confirmDisableHook', { path })
 }
 
 function HookRiskHints({ hints }: { hints: HookRiskHint[] }): React.ReactElement | null {

@@ -114,11 +114,30 @@ describe('HooksLifecycleView', () => {
     expect(screen.getAllByText('No hook is configured for this stage.').length).toBeGreaterThan(0)
   })
 
-  it('explains why Claude single hook toggles are not available', async () => {
-    renderHooks('claude', [hookAsset('claude-stop', 'claude-code', 'Stop')])
+  it('toggles a Claude user hook through Berth soft-disable', async () => {
+    renderHooks('claude', [
+      hookAsset('claude-stop', 'claude-code', 'Stop', {
+        hookKey: 'claude-code:scenario:hook',
+        enabled: true,
+        canToggleHook: true,
+        toggleStrategy: 'soft-remove'
+      })
+    ])
     await waitForHookHealthIdle()
 
-    expect(screen.getByText(/Claude Code does not provide a supported way/)).toBeInTheDocument()
+    fireEvent.click(screen.getByText('Disable hook'))
+
+    await waitFor(() => {
+      expect(window.api.hooks.setHookEnabled).toHaveBeenCalledWith({
+        agentId: 'claude-code',
+        scope: 'user',
+        hookKey: 'claude-code:scenario:hook',
+        sourcePath: 'C:\\Users\\test\\.claude\\settings.json',
+        enabled: false,
+        managed: false
+      })
+    })
+    expect(screen.getByText('Disabled')).toBeInTheDocument()
   })
 
   it('toggles a Codex non-managed hook through hooks.state', async () => {
@@ -126,7 +145,8 @@ describe('HooksLifecycleView', () => {
       hookAsset('codex-stop', 'codex', 'Stop', {
         hookKey: 'C:\\Users\\test\\.codex\\hooks.json:stop:0:0',
         enabled: true,
-        canToggleHook: true
+        canToggleHook: true,
+        toggleStrategy: 'native-state'
       })
     ])
     await waitForHookHealthIdle()
