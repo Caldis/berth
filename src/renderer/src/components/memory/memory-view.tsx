@@ -11,7 +11,8 @@ import {
   Search,
   RefreshCw,
   Link2,
-  Eye
+  Eye,
+  AlertTriangle
 } from 'lucide-react'
 import { cn, truncatePath, formatOptionalRelativeTime } from '@/lib/utils'
 import { useMemory } from '@/hooks/use-memory'
@@ -90,6 +91,16 @@ function SourceBadge({ label, id }: { label: string; id: string }): React.ReactE
   )
 }
 
+function MissingBadge(): React.ReactElement {
+  const { t } = useTranslation()
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-700 dark:text-amber-300">
+      <AlertTriangle className="h-2.5 w-2.5" />
+      {t('memory.fileMissing', 'File missing')}
+    </span>
+  )
+}
+
 function NoteCard({
   note,
   focused,
@@ -107,6 +118,7 @@ function NoteCard({
   const openInspector = useAppStore((s) => s.openInspector)
 
   const ensureBody = useCallback(async (): Promise<string> => {
+    if (note.missing) return ''
     if (body != null) return body
     if (!window.api?.memory?.get) return ''
     setLoadingBody(true)
@@ -121,27 +133,28 @@ function NoteCard({
     } finally {
       setLoadingBody(false)
     }
-  }, [body, note.id])
+  }, [body, note.id, note.missing])
 
   const toggle = useCallback(async () => {
     const next = !expanded
     setExpanded(next)
-    if (next) void ensureBody()
-  }, [expanded, ensureBody])
+    if (next && !note.missing) void ensureBody()
+  }, [expanded, ensureBody, note.missing])
 
   // When this card becomes the navigation target, expand + scroll into view.
   useEffect(() => {
     if (focused) {
       setExpanded(true)
-      void ensureBody()
+      if (!note.missing) void ensureBody()
       ref.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [focused])
 
   const showInExplorer = useCallback(() => {
+    if (note.missing) return
     if (note.path) window.api?.shell.openPath(note.path)
-  }, [note.path])
+  }, [note.missing, note.path])
 
   const viewRaw = useCallback(async () => {
     const text = await ensureBody()
@@ -163,6 +176,7 @@ function NoteCard({
             <span className="truncate text-sm font-medium text-foreground">{note.title || note.id}</span>
             <SourceBadge label={note.sourceLabel} id={note.sourceId} />
             <ImportanceBadge importance={note.importance} />
+            {note.missing && <MissingBadge />}
           </div>
           {note.summary && <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">{note.summary}</p>}
         </div>
@@ -198,7 +212,12 @@ function NoteCard({
             </div>
           )}
 
-          {loadingBody ? (
+          {note.missing ? (
+            <div className="flex items-start gap-2 rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs leading-5 text-amber-700 dark:text-amber-300">
+              <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+              <span>{t('memory.fileMissingBody', 'The indexed note file is missing on disk.')}</span>
+            </div>
+          ) : loadingBody ? (
             <div className="flex items-center gap-2 text-xs text-muted-foreground"><Loader2 className="h-3 w-3 animate-spin" />{t('common.loading')}</div>
           ) : body ? (
             <pre className="max-h-80 overflow-auto whitespace-pre-wrap rounded-md bg-muted/40 p-3 text-xs leading-5 text-foreground">{body}</pre>
@@ -207,16 +226,18 @@ function NoteCard({
           <div className="flex items-center justify-between gap-2 pt-1">
             <span title={note.path} className="truncate text-xs text-muted-foreground font-mono">{truncatePath(note.path)}</span>
             <div className="flex shrink-0 gap-2">
-              {body !== '' && (
+              {!note.missing && body !== '' && (
                 <button onClick={viewRaw} className="flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-accent">
                   <Eye className="h-3 w-3" />
                   {t('common.viewRaw')}
                 </button>
               )}
-              <button onClick={showInExplorer} className="flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-accent">
-                <FolderOpen className="h-3 w-3" />
-                {t('instructions.showInExplorer')}
-              </button>
+              {!note.missing && (
+                <button onClick={showInExplorer} className="flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-accent">
+                  <FolderOpen className="h-3 w-3" />
+                  {t('instructions.showInExplorer')}
+                </button>
+              )}
             </div>
           </div>
         </div>

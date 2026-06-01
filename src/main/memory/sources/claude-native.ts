@@ -19,6 +19,42 @@ function asString(v: unknown): string | null {
   return typeof v === 'string' ? v : null
 }
 
+function asDateString(v: unknown): string | null {
+  if (typeof v === 'string') return v
+  if (v instanceof Date && !Number.isNaN(v.getTime())) {
+    const iso = v.toISOString()
+    return iso.endsWith('T00:00:00.000Z') ? iso.slice(0, 10) : iso
+  }
+  return null
+}
+
+function hasPathSeparator(value: string): boolean {
+  return value.includes('/') || value.includes('\\')
+}
+
+function isSafePathSegment(value: string): boolean {
+  return value.length > 0 && value !== '.' && value !== '..' && !hasPathSeparator(value) && path.basename(value) === value
+}
+
+function isSafeNoteFilename(value: string): boolean {
+  return isSafePathSegment(value) && value.toLowerCase().endsWith('.md') && value.toLowerCase() !== INDEX_FILE.toLowerCase()
+}
+
+function isInsidePath(parent: string, candidate: string): boolean {
+  const root = path.resolve(parent)
+  const target = path.resolve(candidate)
+  return target === root || target.startsWith(root + path.sep)
+}
+
+async function fileExists(filePath: string): Promise<boolean> {
+  try {
+    await fs.promises.access(filePath)
+    return true
+  } catch {
+    return false
+  }
+}
+
 function splitFrontmatter(content: string): {
   frontmatter: Record<string, unknown>
   body: string
@@ -82,8 +118,8 @@ export function parseNativeNote(
     scope: slug,
     path: filename,
     links: [],
-    createdAt: null,
-    updatedAt: null,
+    createdAt: asDateString(metadata.created),
+    updatedAt: asDateString(metadata.updated),
     body
   }
 }
@@ -110,6 +146,20 @@ export class ClaudeNativeSource implements MemorySource {
 
   private memoryDir(slug: string): string {
     return path.join(this.projectsRoot, slug, 'memory')
+  }
+
+  private notePath(slug: string, filename: string): string | null {
+    if (!isSafePathSegment(slug) || !isSafeNoteFilename(filename)) return null
+    const dir = this.memoryDir(slug)
+    const filePath = path.resolve(dir, filename)
+    return isInsidePath(dir, filePath) ? filePath : null
+  }
+
+  private parseLocalId(localId: string): { slug: string; filename: string } | null {
+    const parts = localId.split('/')
+    if (parts.length !== 2) return null
+    const [slug, filename] = parts
+    return this.notePath(slug, filename) ? { slug, filename } : null
   }
 
   /** Resolve the project slugs whose memory/ dir exists. */
@@ -152,6 +202,46 @@ export class ClaudeNativeSource implements MemorySource {
     }
   }
 
+  private async indexEntries(slug: string): Promise<NativeIndexEntry[] | null> {
+    try {
+      const md = await fs.promises.readFile(path.join(this.memoryDir(slug), INDEX_FILE), 'utf-8')
+      const entries = parseMemoryIndex(md)
+      return entries.length > 0 ? entries : null
+    } catch {
+      return null
+    }
+  }
+
+  private async listFromIndex(slug: string): Promise<MemoryNote[] | null> {
+    const entries = await this.indexEntries(slug)
+    if (!entries) return null
+    try {
+      const notes = await Promise.all(entries.map(async (entry): Promise<MemoryNote | null> => {
+        const filePath = this.notePath(slug, entry.file)
+        if (!filePath) return null
+        const exists = await fileExists(filePath)
+        return {
+          id: `${SOURCE_ID}:${slug}/${entry.file}`,
+          sourceId: SOURCE_ID,
+          sourceLabel: SOURCE_LABEL,
+          title: entry.title,
+          summary: entry.hook,
+          tags: [],
+          importance: 'active',
+          scope: slug,
+          path: filePath,
+          links: [],
+          createdAt: null,
+          updatedAt: null,
+          missing: exists ? undefined : true
+        }
+      }))
+      return notes.filter((note): note is MemoryNote => note !== null)
+    } catch {
+      return null
+    }
+  }
+
   async detect(): Promise<MemorySourceStatus> {
     const base: MemorySourceStatus = {
       id: this.id,
@@ -165,7 +255,8 @@ export class ClaudeNativeSource implements MemorySource {
 
     let count = 0
     for (const slug of slugs) {
-      count += (await this.noteFiles(slug)).length
+      const indexed = await this.indexEntries(slug)
+      count += indexed ? indexed.length : (await this.noteFiles(slug)).length
     }
     return { ...base, available: count > 0, noteCount: count }
   }
@@ -174,9 +265,15 @@ export class ClaudeNativeSource implements MemorySource {
     const slugs = await this.resolveSlugs()
     const notes: MemoryNote[] = []
     for (const slug of slugs) {
+      const indexed = await this.listFromIndex(slug)
+      if (indexed) {
+        notes.push(...indexed)
+        continue
+      }
       const files = await this.noteFiles(slug)
       for (const filename of files) {
-        const filePath = path.join(this.memoryDir(slug), filename)
+        const filePath = this.notePath(slug, filename)
+        if (!filePath) continue
         try {
           const md = await fs.promises.readFile(filePath, 'utf-8')
           const note = parseNativeNote(md, slug, filename)
@@ -194,12 +291,11 @@ export class ClaudeNativeSource implements MemorySource {
   }
 
   async read(localId: string): Promise<MemoryNote | null> {
-    // localId is `<slug>/<filename>`.
-    const slash = localId.indexOf('/')
-    if (slash < 0) return null
-    const slug = localId.slice(0, slash)
-    const filename = localId.slice(slash + 1)
-    const filePath = path.join(this.memoryDir(slug), filename)
+    const parsed = this.parseLocalId(localId)
+    if (!parsed) return null
+    const { slug, filename } = parsed
+    const filePath = this.notePath(slug, filename)
+    if (!filePath) return null
     try {
       const md = await fs.promises.readFile(filePath, 'utf-8')
       return { ...parseNativeNote(md, slug, filename), path: filePath }

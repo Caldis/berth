@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest'
+import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest'
 import * as fs from 'fs'
 import * as os from 'os'
 import * as path from 'path'
@@ -47,14 +47,24 @@ beforeAll(async () => {
     `---\nid: note-a\ntitle: Note A\ntags: [t1]\nlinks: [note-b]\nimportance: core\n---\n\n# Note A\n\n## TL;DR\n\nsummary a\n\n## Body\n\nfull body text\n`,
     'utf-8'
   )
+  await fs.promises.writeFile(
+    path.join(umRoot, 'outside.md'),
+    `---\ntitle: Outside\n---\n\n# Outside\n\nshould not be reachable\n`,
+    'utf-8'
+  )
 
   // claude-native fixture
   const memDir = path.join(projectsRoot, SLUG, 'memory')
   await fs.promises.mkdir(memDir, { recursive: true })
-  await fs.promises.writeFile(path.join(memDir, 'MEMORY.md'), '# Memory Index\n\n- [foo.md](foo.md) — a note\n', 'utf-8')
+  await fs.promises.writeFile(path.join(memDir, 'MEMORY.md'), '# Memory Index\n\n- [Foo Note](foo.md) — a note\n', 'utf-8')
   await fs.promises.writeFile(
     path.join(memDir, 'foo.md'),
-    `---\nname: Foo Note\ndescription: foo desc\nmetadata:\n  type: project\n---\n\n# Foo Note\n\nfoo body\n`,
+    `---\nname: Foo Note\ndescription: foo desc\nmetadata:\n  type: project\n  created: 2026-05-13T07:10:39.769Z\n  updated: 2026-05-14T07:10:39.769Z\n---\n\n# Foo Note\n\nfoo body\n`,
+    'utf-8'
+  )
+  await fs.promises.writeFile(
+    path.join(projectsRoot, SLUG, 'outside.md'),
+    `---\nname: Outside\n---\n\nshould not be reachable\n`,
     'utf-8'
   )
 })
@@ -85,6 +95,48 @@ describe('UnitedMemorySource (temp dir)', () => {
     expect(path.isAbsolute(note!.path)).toBe(true)
   })
 
+  it('read() rejects local ids that would escape the mem directory', async () => {
+    const source = new UnitedMemorySource(umRoot)
+    await expect(source.read('../outside')).resolves.toBeNull()
+    await expect(source.read('..\\outside')).resolves.toBeNull()
+    await expect(source.read('nested/note-a')).resolves.toBeNull()
+  })
+
+  it('marks indexed notes whose files are missing', async () => {
+    const root = path.join(tmp, '.united-memory-missing')
+    await fs.promises.mkdir(path.join(root, 'mem'), { recursive: true })
+    await fs.promises.writeFile(
+      path.join(root, 'index.json'),
+      JSON.stringify({
+        entries: [
+          {
+            id: 'missing-note',
+            file: 'mem/missing-note.md',
+            title: 'Missing note'
+          }
+        ]
+      }),
+      'utf-8'
+    )
+
+    const notes = await new UnitedMemorySource(root).list()
+    expect(notes).toHaveLength(1)
+    expect(notes[0].missing).toBe(true)
+  })
+
+  it('reuses the parsed index between detect() and list() on one source instance', async () => {
+    const source = new UnitedMemorySource(umRoot)
+    const readFile = vi.spyOn(fs.promises, 'readFile')
+    try {
+      await source.detect()
+      await source.list()
+      const indexReads = readFile.mock.calls.filter(([target]) => String(target) === path.join(umRoot, 'index.json'))
+      expect(indexReads).toHaveLength(1)
+    } finally {
+      readFile.mockRestore()
+    }
+  })
+
   it('detect() reports unavailable when the root is missing', async () => {
     const status = await new UnitedMemorySource(path.join(tmp, 'nope')).detect()
     expect(status.available).toBe(false)
@@ -97,6 +149,7 @@ describe('ClaudeNativeSource (temp dir)', () => {
     const notes = await new ClaudeNativeSource(SLUG, projectsRoot).list()
     expect(notes).toHaveLength(1)
     expect(notes[0].title).toBe('Foo Note')
+    expect(notes[0].summary).toBe('a note')
     expect(notes[0].scope).toBe(SLUG)
     expect(path.isAbsolute(notes[0].path)).toBe(true)
     expect(notes[0].path).toBe(path.join(projectsRoot, SLUG, 'memory', 'foo.md'))
@@ -107,6 +160,37 @@ describe('ClaudeNativeSource (temp dir)', () => {
     expect(note).not.toBeNull()
     expect(note!.body).toContain('foo body')
     expect(path.isAbsolute(note!.path)).toBe(true)
+    expect(note!.createdAt).toBe('2026-05-13T07:10:39.769Z')
+    expect(note!.updatedAt).toBe('2026-05-14T07:10:39.769Z')
+  })
+
+  it('read() rejects local ids outside the native note filename shape', async () => {
+    const source = new ClaudeNativeSource(SLUG, projectsRoot)
+    await expect(source.read(`${SLUG}/../outside.md`)).resolves.toBeNull()
+    await expect(source.read(`../${SLUG}/foo.md`)).resolves.toBeNull()
+    await expect(source.read(`${SLUG}/nested/foo.md`)).resolves.toBeNull()
+    await expect(source.read(`${SLUG}/MEMORY.md`)).resolves.toBeNull()
+    await expect(source.read(`${SLUG}/foo.txt`)).resolves.toBeNull()
+  })
+
+  it('list() uses MEMORY.md index entries and keeps missing files visible', async () => {
+    const slug = 'C--Users-missing'
+    const memDir = path.join(projectsRoot, slug, 'memory')
+    await fs.promises.mkdir(memDir, { recursive: true })
+    await fs.promises.writeFile(path.join(memDir, 'MEMORY.md'), '# Memory Index\n\n- [Missing](missing.md) — listed but absent\n', 'utf-8')
+
+    const notes = await new ClaudeNativeSource(slug, projectsRoot).list()
+    expect(notes).toHaveLength(1)
+    expect(notes[0]).toMatchObject({
+      id: `claude-native:${slug}/missing.md`,
+      title: 'Missing',
+      summary: 'listed but absent',
+      missing: true
+    })
+
+    const status = await new ClaudeNativeSource(slug, projectsRoot).detect()
+    expect(status.available).toBe(true)
+    expect(status.noteCount).toBe(1)
   })
 })
 

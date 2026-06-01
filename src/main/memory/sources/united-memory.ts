@@ -50,6 +50,33 @@ function asDateString(v: unknown): string | null {
   return null
 }
 
+function hasPathSeparator(value: string): boolean {
+  return value.includes('/') || value.includes('\\')
+}
+
+function isSafeLocalId(value: string): boolean {
+  return value.length > 0 && value !== '.' && value !== '..' && !hasPathSeparator(value) && path.basename(value) === value
+}
+
+function isInsidePath(parent: string, candidate: string): boolean {
+  const root = path.resolve(parent)
+  const target = path.resolve(candidate)
+  return target === root || target.startsWith(root + path.sep)
+}
+
+async function fileExists(filePath: string): Promise<boolean> {
+  try {
+    await fs.promises.access(filePath)
+    return true
+  } catch {
+    return false
+  }
+}
+
+function localIdFromNoteId(noteId: string): string {
+  return noteId.startsWith(`${SOURCE_ID}:`) ? noteId.slice(SOURCE_ID.length + 1) : noteId
+}
+
 /**
  * Split YAML frontmatter from a markdown body. Mirrors the convention used by
  * src/main/adapters/claude-code/parsers.ts.
@@ -155,6 +182,7 @@ export class UnitedMemorySource implements MemorySource {
   readonly id = SOURCE_ID
   readonly label = SOURCE_LABEL
   private readonly root: string
+  private cachedIndexNotes: MemoryNote[] | null | undefined
 
   constructor(root?: string) {
     this.root = root ?? path.join(os.homedir(), '.united-memory')
@@ -162,6 +190,35 @@ export class UnitedMemorySource implements MemorySource {
 
   private get indexPath(): string {
     return path.join(this.root, 'index.json')
+  }
+
+  private get memDir(): string {
+    return path.join(this.root, 'mem')
+  }
+
+  private async loadIndexNotes(): Promise<MemoryNote[] | null> {
+    if (this.cachedIndexNotes !== undefined) return this.cachedIndexNotes
+    try {
+      const json = await fs.promises.readFile(this.indexPath, 'utf-8')
+      this.cachedIndexNotes = parseUnitedIndex(json)
+      return this.cachedIndexNotes
+    } catch {
+      this.cachedIndexNotes = null
+      return null
+    }
+  }
+
+  private notePath(localId: string): string | null {
+    if (!isSafeLocalId(localId)) return null
+    const filePath = path.resolve(this.memDir, `${localId}.md`)
+    return isInsidePath(this.memDir, filePath) ? filePath : null
+  }
+
+  private indexedNotePath(note: MemoryNote): string {
+    const localId = localIdFromNoteId(note.id)
+    const fromIndex = path.resolve(this.root, note.path)
+    if (isInsidePath(this.memDir, fromIndex)) return fromIndex
+    return this.notePath(localId) ?? path.join(this.memDir, `${encodeURIComponent(localId)}.md`)
   }
 
   async detect(): Promise<MemorySourceStatus> {
@@ -172,31 +229,27 @@ export class UnitedMemorySource implements MemorySource {
       rootPath: this.root,
       noteCount: 0
     }
-    try {
-      const json = await fs.promises.readFile(this.indexPath, 'utf-8')
-      const notes = parseUnitedIndex(json)
-      return { ...base, available: true, noteCount: notes.length }
-    } catch {
-      return base
-    }
+    const notes = await this.loadIndexNotes()
+    return notes ? { ...base, available: true, noteCount: notes.length } : base
   }
 
   async list(): Promise<MemoryNote[]> {
-    try {
-      const json = await fs.promises.readFile(this.indexPath, 'utf-8')
-      // Pure parser returns a repo-relative path (`mem/<id>.md`); resolve to an
-      // absolute path here so "Show in Explorer" and the path label work.
-      return parseUnitedIndex(json).map((n) => ({
+    const notes = await this.loadIndexNotes()
+    if (!notes) return []
+    return Promise.all(notes.map(async (n) => {
+      const filePath = this.indexedNotePath(n)
+      const exists = await fileExists(filePath)
+      return {
         ...n,
-        path: path.join(this.root, n.path)
-      }))
-    } catch {
-      return []
-    }
+        path: filePath,
+        missing: exists ? undefined : true
+      }
+    }))
   }
 
   async read(localId: string): Promise<MemoryNote | null> {
-    const filePath = path.join(this.root, 'mem', `${localId}.md`)
+    const filePath = this.notePath(localId)
+    if (!filePath) return null
     try {
       const md = await fs.promises.readFile(filePath, 'utf-8')
       // filePath is already absolute; override the parser's relative path.

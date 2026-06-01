@@ -91,6 +91,8 @@ Body content here.
     expect(note.importance).toBe('active')
     expect(note.scope).toBe(SLUG)
     expect(note.path).toBe('macmini.md')
+    expect(note.createdAt).toBe('2026-05-13T07:10:39.769Z')
+    expect(note.updatedAt).toBe('2026-05-13T07:10:39.769Z')
     expect(note.body).toContain('SSH access via')
   })
 

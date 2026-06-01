@@ -16,6 +16,7 @@ export interface MemoryNote {
   createdAt: string | null
   updatedAt: string | null
   body?: string // 详情按需填充
+  missing?: boolean // index 中存在, 但本地 note 文件不存在或不可读
 }
 
 export interface MemorySourceStatus {
