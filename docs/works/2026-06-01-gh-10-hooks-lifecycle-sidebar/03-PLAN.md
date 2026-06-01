@@ -18,3 +18,12 @@
 
 ## verify 回写
 verify 不通过项作为新任务追加于此, phase 退回 implement。
+
+- [ ] 任务 5: 调整生命周期侧栏信息层级与阶段建议操作
+  - feedback: 左侧 Hook 数量改为数字 tag, 副标题展示阶段简短说明; 右侧长段 guide 改为 “建议操作” + 短标签。
+  - tests: `tests/renderer/hooks-lifecycle-view.test.tsx`
+  - verify: pending
+- [ ] 任务 6: 对照 Claude Code / Codex 官方 Hooks reference 固定完整事件分类
+  - source: https://code.claude.com/docs/en/hooks; https://developers.openai.com/codex/hooks
+  - tests: `tests/unit/hook-lifecycle.test.ts`
+  - verify: pending
