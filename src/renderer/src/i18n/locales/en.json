@@ -658,7 +658,9 @@
       "risk": {
         "noEntryFile": "Entry file not detected",
         "broadToolMatcher": "Runs for every matching tool",
-        "managed": "Managed externally"
+        "managed": "Managed externally",
+        "equivalentSources": "Equivalent sources",
+        "effectiveElsewhere": "Still enabled elsewhere"
       },
       "health": {
         "title": "Hook checks",
@@ -906,6 +908,15 @@
         "codexAsyncHookSkipped": "Codex currently skips async hook handlers.",
         "enabled": "Enabled",
         "disabled": "Disabled",
+        "sourceCount": "{{count}} sources",
+        "effectiveEnabled": "Effective",
+        "effectiveElsewhere": "Still effective",
+        "effectiveDisabled": "Inactive",
+        "sourceStatus": {
+          "enabled": "Enabled",
+          "disabled": "Disabled",
+          "managed": "managed"
+        },
         "enableHook": "Enable",
         "disableHook": "Disable",
         "confirmEnableHook": "Enable this Codex hook? Berth will update hooks.state in your user config. Source: {{path}}",

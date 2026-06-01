@@ -658,7 +658,9 @@
       "risk": {
         "noEntryFile": "未识别到入口文件",
         "broadToolMatcher": "会对每个匹配工具运行",
-        "managed": "由外部管理"
+        "managed": "由外部管理",
+        "equivalentSources": "存在等价来源",
+        "effectiveElsewhere": "其他来源仍会生效"
       },
       "health": {
         "title": "Hook 检查",
@@ -906,6 +908,15 @@
         "codexAsyncHookSkipped": "Codex 当前会跳过 async hook handler。",
         "enabled": "已启用",
         "disabled": "已禁用",
+        "sourceCount": "{{count}} 个来源",
+        "effectiveEnabled": "实际生效",
+        "effectiveElsewhere": "仍会生效",
+        "effectiveDisabled": "未生效",
+        "sourceStatus": {
+          "enabled": "已启用",
+          "disabled": "已禁用",
+          "managed": "受管理"
+        },
         "enableHook": "启用",
         "disableHook": "禁用",
         "confirmEnableHook": "要启用这个 Codex Hook 吗? Berth 会更新用户配置里的 hooks.state。来源: {{path}}",

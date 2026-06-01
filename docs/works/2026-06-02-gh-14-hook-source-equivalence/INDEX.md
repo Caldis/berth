@@ -2,7 +2,7 @@
 task: 2026-06-02-gh-14-hook-source-equivalence
 task_id: GH-14
 type: feature
-phase: implement
+phase: verify
 created: 2026-06-02
 issue:
   number: 14

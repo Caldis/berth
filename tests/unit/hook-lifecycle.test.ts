@@ -285,6 +285,46 @@ describe('hook lifecycle model', () => {
       expect.objectContaining({ key: 'capabilities.hooks.risk.broadToolMatcher', level: 'warning' })
     ])
   })
+
+  it('flags equivalent hook sources and current-source disabled but effective elsewhere state', () => {
+    const hints = getHookRiskHints(
+      hookAsset({
+        id: 'disabled-user-hook',
+        agentId: 'claude-code',
+        eventType: 'Stop',
+        meta: {
+          enabled: false,
+          effectiveEnabled: true,
+          equivalentSourceCount: 2,
+          equivalentSources: [
+            {
+              id: 'disabled-user-hook',
+              agentId: 'claude-code',
+              scope: 'user',
+              name: 'User stop hook',
+              path: 'C:\\Users\\test\\.claude\\settings.json',
+              enabled: false,
+              managed: false
+            },
+            {
+              id: 'project-stop-hook',
+              agentId: 'claude-code',
+              scope: 'project',
+              name: 'Project stop hook',
+              path: 'D:\\repo\\.claude\\settings.json',
+              enabled: true,
+              managed: true
+            }
+          ]
+        }
+      })
+    )
+
+    expect(hints).toEqual([
+      expect.objectContaining({ key: 'capabilities.hooks.risk.equivalentSources', level: 'info' }),
+      expect.objectContaining({ key: 'capabilities.hooks.risk.effectiveElsewhere', level: 'warning' })
+    ])
+  })
 })
 
 function eventsForAgent(agent: 'claude' | 'codex'): string[] {

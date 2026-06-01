@@ -6,6 +6,16 @@ import type { AgentScanSourceGroup, ScanResult } from '@shared/types/ipc'
 import { ClaudeCodeAdapter } from '../adapters/claude-code'
 import { CodexAdapter } from '../adapters/codex'
 
+interface HookEquivalentSource {
+  id: string
+  agentId: string
+  scope: Asset['scope']
+  name: string
+  path: string
+  enabled: boolean
+  managed: boolean
+}
+
 export class AssetScanner {
   private adapters: AgentAdapter[]
   private cachedAssets: Asset[] = []
@@ -47,6 +57,7 @@ export class AssetScanner {
         })
       }
     }
+    annotateEquivalentHookSources(assets)
     this.cachedAssets = assets
     this.cachedErrors = errors
     this.scanned = true
@@ -210,6 +221,48 @@ function samePath(a: string | undefined, b: string | undefined): boolean {
 function normalizePath(filePath: string): string {
   const resolved = path.resolve(filePath)
   return process.platform === 'win32' ? resolved.toLowerCase() : resolved
+}
+
+function annotateEquivalentHookSources(assets: Asset[]): void {
+  const groups = new Map<string, Asset[]>()
+  for (const asset of assets) {
+    if (asset.type !== 'hook') continue
+    const scenarioHash = readString(asset.meta, 'scenarioHash')
+    const hookHash = readString(asset.meta, 'hookHash')
+    if (!scenarioHash || !hookHash) continue
+
+    const groupKey = `${asset.agentId}:${scenarioHash}:${hookHash}`
+    const group = groups.get(groupKey) ?? []
+    group.push(asset)
+    groups.set(groupKey, group)
+  }
+
+  for (const group of groups.values()) {
+    if (group.length < 2) continue
+    const sources = group.map(toHookEquivalentSource)
+    const effectiveEnabled = sources.some((source) => source.enabled)
+
+    for (const asset of group) {
+      asset.meta = {
+        ...asset.meta,
+        equivalentSources: sources,
+        equivalentSourceCount: sources.length,
+        effectiveEnabled
+      }
+    }
+  }
+}
+
+function toHookEquivalentSource(asset: Asset): HookEquivalentSource {
+  return {
+    id: asset.id,
+    agentId: asset.agentId,
+    scope: asset.scope,
+    name: asset.name,
+    path: asset.path,
+    enabled: asset.meta.enabled !== false && asset.meta.disabledByBerth !== true,
+    managed: asset.meta.managed === true
+  }
 }
 
 function readString(record: Record<string, unknown>, key: string): string | undefined {

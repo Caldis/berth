@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import type { Asset } from '../../src/shared/types/asset'
 
 const mocks = vi.hoisted(() => ({
   claudeScanAll: vi.fn(async () => ({ assets: [], errors: [] })),
@@ -183,6 +184,66 @@ describe('AssetScanner', () => {
     expect(mocks.claudeScanAll).toHaveBeenCalledTimes(1)
   })
 
+  it('annotates equivalent hook sources across the same agent and hook identity', async () => {
+    const userHook = hookAsset({
+      id: 'claude-user-stop',
+      agentId: 'claude-code',
+      scope: 'user',
+      path: 'C:\\Users\\test\\.claude\\settings.json',
+      meta: {
+        scenarioHash: 'scenario-stop',
+        hookHash: 'hook-stop',
+        enabled: false,
+        managed: false
+      }
+    })
+    const projectHook = hookAsset({
+      id: 'claude-project-stop',
+      agentId: 'claude-code',
+      scope: 'project',
+      path: 'D:\\repo\\.claude\\settings.json',
+      meta: {
+        scenarioHash: 'scenario-stop',
+        hookHash: 'hook-stop',
+        enabled: true,
+        managed: true
+      }
+    })
+    mocks.claudeScanAll.mockResolvedValueOnce({
+      assets: [userHook, projectHook],
+      errors: []
+    })
+    const scanner = new AssetScanner()
+
+    const result = await scanner.scanAll()
+
+    expect(result.assets[0]?.meta).toMatchObject({
+      equivalentSourceCount: 2,
+      effectiveEnabled: true,
+      equivalentSources: [
+        {
+          id: 'claude-user-stop',
+          agentId: 'claude-code',
+          scope: 'user',
+          name: 'claude-user-stop',
+          path: 'C:\\Users\\test\\.claude\\settings.json',
+          enabled: false,
+          managed: false
+        },
+        {
+          id: 'claude-project-stop',
+          agentId: 'claude-code',
+          scope: 'project',
+          name: 'claude-project-stop',
+          path: 'D:\\repo\\.claude\\settings.json',
+          enabled: true,
+          managed: true
+        }
+      ]
+    })
+    expect(result.assets[1]?.meta.equivalentSourceCount).toBe(2)
+  })
+
   it('keeps other source groups visible when one adapter detection fails', async () => {
     mocks.claudeDetect.mockRejectedValueOnce(new Error('permission denied'))
     const scanner = new AssetScanner()
@@ -200,3 +261,19 @@ describe('AssetScanner', () => {
     expect(groups[1]?.installed).toBe(true)
   })
 })
+
+function hookAsset(overrides: Partial<Asset> & { id: string; agentId: string }): Asset {
+  return {
+    id: overrides.id,
+    agentId: overrides.agentId,
+    category: 'capability',
+    type: 'hook',
+    scope: overrides.scope ?? 'user',
+    name: overrides.name ?? overrides.id,
+    path: overrides.path ?? 'C:\\Users\\test\\.codex\\hooks.json',
+    meta: {
+      eventType: 'Stop',
+      ...(overrides.meta ?? {})
+    }
+  }
+}

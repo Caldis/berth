@@ -265,6 +265,46 @@ describe('HooksLifecycleView', () => {
     expect(screen.getByText('Runs for every matching tool')).toBeInTheDocument()
   })
 
+  it('shows equivalent source count and effective state when another source still enables a hook', async () => {
+    renderHooks('claude', [
+      hookAsset('claude-stop', 'claude-code', 'Stop', {
+        hookKey: 'claude-code:scenario:hook',
+        enabled: false,
+        effectiveEnabled: true,
+        equivalentSourceCount: 2,
+        equivalentSources: [
+          {
+            id: 'claude-stop',
+            agentId: 'claude-code',
+            scope: 'user',
+            name: 'User stop hook',
+            path: 'C:\\Users\\test\\.claude\\settings.json',
+            enabled: false,
+            managed: false
+          },
+          {
+            id: 'claude-project-stop',
+            agentId: 'claude-code',
+            scope: 'project',
+            name: 'Project stop hook',
+            path: 'D:\\repo\\.claude\\settings.json',
+            enabled: true,
+            managed: true
+          }
+        ]
+      })
+    ])
+    await waitForHookHealthIdle()
+
+    const sourceTag = screen.getByTitle(/user: Disabled/)
+
+    expect(screen.getByText('2 sources')).toBeInTheDocument()
+    expect(screen.getByText('Still effective')).toBeInTheDocument()
+    expect(sourceTag).toHaveAttribute('title', expect.stringContaining('project: Enabled'))
+    expect(screen.getByText('Equivalent sources')).toBeInTheDocument()
+    expect(screen.getByText('Still enabled elsewhere')).toBeInTheDocument()
+  })
+
   it('removes the hooks display mode switcher and obsolete toolbar controls', async () => {
     renderHooks('codex', [hookAsset('codex-stop', 'codex', 'Stop')])
 

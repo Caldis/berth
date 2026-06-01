@@ -494,10 +494,13 @@ function HookAssetRow({ hook, agentView }: { hook: Asset; agentView: AgentView }
   const riskHints = getHookRiskHints(hook)
   const toggleState = managementStates.find((state) => state.action === 'toggle-hook')
   const initialHookEnabled = hookEnabledValue(hook)
+  const equivalentSourceCount = hookEquivalentSourceCount(hook)
   const [hookEnabled, setHookEnabled] = useState(initialHookEnabled)
   const [toggleBusy, setToggleBusy] = useState(false)
   const [toggleError, setToggleError] = useState<string | null>(null)
   const [rawCopied, setRawCopied] = useState(false)
+  const effectiveEnabled = hookEffectiveEnabledValue(hook, hookEnabled)
+  const equivalentSourcesTitle = hookEquivalentSourcesTitle(t, hook, hookEnabled)
 
   useEffect(() => {
     setHookEnabled(initialHookEnabled)
@@ -555,6 +558,26 @@ function HookAssetRow({ hook, agentView }: { hook: Asset; agentView: AgentView }
                 hookEnabled ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'bg-muted text-muted-foreground'
               )}>
                 {hookEnabled ? t('capabilities.hooks.management.enabled') : t('capabilities.hooks.management.disabled')}
+              </span>
+            )}
+            {equivalentSourceCount > 1 && (
+              <span
+                title={equivalentSourcesTitle}
+                className="rounded-md border border-border bg-background px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground"
+              >
+                {t('capabilities.hooks.management.sourceCount', { count: equivalentSourceCount })}
+              </span>
+            )}
+            {equivalentSourceCount > 1 && (
+              <span className={cn(
+                'rounded-md px-1.5 py-0.5 text-[10px] font-medium',
+                effectiveEnabled
+                  ? hookEnabled
+                    ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                    : 'bg-amber-500/10 text-amber-700 dark:text-amber-300'
+                  : 'bg-muted text-muted-foreground'
+              )}>
+                {t(hookEffectiveLabelKey(hookEnabled, effectiveEnabled))}
               </span>
             )}
             {agentView === 'all' && (
@@ -719,6 +742,71 @@ function hookToggleAgentId(hook: Asset): HooksAgentId | null {
 
 function hookCanShowEnabledBadge(hook: Asset, toggleState: HookManagementState | undefined): boolean {
   return toggleState?.hookKey != null || typeof hook.meta.enabled === 'boolean' || hook.meta.disabledByBerth === true
+}
+
+function hookEquivalentSourceCount(hook: Asset): number {
+  const value = hook.meta.equivalentSourceCount
+  return typeof value === 'number' && Number.isFinite(value) && value > 1 ? value : 0
+}
+
+interface HookEquivalentSource {
+  id: string
+  agentId: string
+  scope: string
+  name: string
+  path: string
+  enabled: boolean
+  managed: boolean
+}
+
+function hookEquivalentSources(hook: Asset, hookEnabled: boolean): HookEquivalentSource[] {
+  if (!Array.isArray(hook.meta.equivalentSources)) return []
+  return hook.meta.equivalentSources.flatMap((source) => {
+    if (!source || typeof source !== 'object') return []
+    const record = source as Record<string, unknown>
+    const id = typeof record.id === 'string' ? record.id : ''
+    const path = typeof record.path === 'string' ? record.path : ''
+    if (!id || !path) return []
+    return [{
+      id,
+      agentId: typeof record.agentId === 'string' ? record.agentId : hook.agentId,
+      scope: typeof record.scope === 'string' ? record.scope : 'unknown',
+      name: typeof record.name === 'string' ? record.name : id,
+      path,
+      enabled: id === hook.id ? hookEnabled : record.enabled !== false,
+      managed: record.managed === true
+    }]
+  })
+}
+
+function hookEquivalentSourcesTitle(
+  t: ReturnType<typeof useTranslation>['t'],
+  hook: Asset,
+  hookEnabled: boolean
+): string | undefined {
+  const sources = hookEquivalentSources(hook, hookEnabled)
+  if (sources.length === 0) return undefined
+  return sources
+    .map((source) => {
+      const enabled = source.enabled
+        ? t('capabilities.hooks.management.sourceStatus.enabled')
+        : t('capabilities.hooks.management.sourceStatus.disabled')
+      const managed = source.managed ? `, ${t('capabilities.hooks.management.sourceStatus.managed')}` : ''
+      return `${source.scope}: ${enabled}${managed} - ${source.path}`
+    })
+    .join('\n')
+}
+
+function hookEffectiveEnabledValue(hook: Asset, hookEnabled: boolean): boolean {
+  if (hook.meta.effectiveEnabled === true) return true
+  if (hook.meta.effectiveEnabled === false) return hookEnabled
+  return hookEnabled
+}
+
+function hookEffectiveLabelKey(hookEnabled: boolean, effectiveEnabled: boolean): string {
+  if (effectiveEnabled && !hookEnabled) return 'capabilities.hooks.management.effectiveElsewhere'
+  if (effectiveEnabled) return 'capabilities.hooks.management.effectiveEnabled'
+  return 'capabilities.hooks.management.effectiveDisabled'
 }
 
 function getHookToggleConfirmMessage(

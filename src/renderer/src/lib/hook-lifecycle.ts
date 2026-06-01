@@ -415,6 +415,12 @@ export function getHookRiskHints(asset: Asset): HookRiskHint[] {
   if (asset.meta.managed === true) {
     hints.push({ key: 'capabilities.hooks.risk.managed', level: 'info' })
   }
+  if (readNumber(asset.meta, 'equivalentSourceCount') > 1) {
+    hints.push({ key: 'capabilities.hooks.risk.equivalentSources', level: 'info' })
+  }
+  if (asset.meta.enabled === false && asset.meta.effectiveEnabled === true) {
+    hints.push({ key: 'capabilities.hooks.risk.effectiveElsewhere', level: 'warning' })
+  }
 
   return hints
 }
@@ -514,4 +520,9 @@ function firstString(value: unknown): string | undefined {
 
 function stringArray(value: unknown): string[] {
   return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string' && item.length > 0) : []
+}
+
+function readNumber(record: Record<string, unknown>, key: string): number {
+  const value = record[key]
+  return typeof value === 'number' && Number.isFinite(value) ? value : 0
 }
