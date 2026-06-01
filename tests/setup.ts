@@ -42,6 +42,9 @@ const mockApi = {
     healthCheck: async () => [],
     onChanged: () => () => {}
   },
+  agentPlugins: {
+    list: async () => ({ plugins: [] })
+  },
   sessions: {
     list: async () => ({ sessions: [], totalCount: 0 }),
     get: async () => null

@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import type { AgentView, Asset, AssetStats, SessionSummary, UsageSummary } from '@shared/types/asset'
 import type { AgentScanSourceGroup, SessionDetailResult, HealthCheck } from '@shared/types/ipc'
+import type { AgentCapabilityPlugin } from '@shared/types/agent-plugin'
 import { useAppStore } from '@/stores/app'
 
 const emptyStats: AssetStats = {
@@ -190,4 +191,36 @@ export function useScanSources(): {
   }, [])
 
   return { groups, loading }
+}
+
+export function useAgentCapabilityPlugins(): {
+  plugins: AgentCapabilityPlugin[]
+  loading: boolean
+  error: string | null
+} {
+  const [plugins, setPlugins] = useState<AgentCapabilityPlugin[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!window.api?.agentPlugins?.list) {
+      setLoading(false)
+      setError('agentPlugins.list is unavailable')
+      return
+    }
+    setLoading(true)
+    setError(null)
+    window.api.agentPlugins
+      .list()
+      .then((result) => {
+        setPlugins(result?.plugins ?? [])
+      })
+      .catch((err) => {
+        setError(err instanceof Error ? err.message : String(err))
+        setPlugins([])
+      })
+      .finally(() => setLoading(false))
+  }, [])
+
+  return { plugins, loading, error }
 }

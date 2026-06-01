@@ -16,6 +16,7 @@ import type {
   SetHooksEnabledResult
 } from '../shared/types/ipc'
 import type { AgentView, Asset, CostMode, UsageSummary } from '../shared/types/asset'
+import type { AgentCapabilityPluginListResult } from '../shared/types/agent-plugin'
 import type { MemoryListResult, MemoryNote } from '../shared/types/memory'
 
 interface PlatformInfo {
@@ -48,6 +49,9 @@ interface BerthAPI {
     search: (query: string) => Promise<unknown[]>
     healthCheck: () => Promise<HealthCheck[]>
     onChanged: (callback: (event: unknown) => void) => () => void
+  }
+  agentPlugins: {
+    list: () => Promise<AgentCapabilityPluginListResult>
   }
   sessions: {
     list: (opts: { projectFilter?: string; limit?: number; agentView?: AgentView }) => Promise<SessionListResult>

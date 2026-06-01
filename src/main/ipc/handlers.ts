@@ -27,6 +27,7 @@ import type {
   SetHooksEnabledRequest,
   SetHooksEnabledResult
 } from '@shared/types/ipc'
+import type { AgentCapabilityPluginListResult } from '@shared/types/agent-plugin'
 import { getScanner } from '../engine/scanner'
 import { getSearch } from '../engine/search'
 import { buildUsageSummary } from '../engine/usage'
@@ -46,6 +47,7 @@ import { parseClaudeSessionDetail } from '../adapters/claude-code/session-detail
 import { parseCodexSessionDetail } from '../adapters/codex/parsers'
 import { listMemory, readMemory } from '../memory'
 import { resolveModelPricing } from '../engine/pricing/catalog'
+import { listAgentCapabilityPlugins } from '../agent-plugins/registry'
 
 export function registerAssetHandlers(): void {
   ipcMain.handle('window:minimize', (event: IpcMainInvokeEvent): void => {
@@ -88,6 +90,10 @@ export function registerAssetHandlers(): void {
 
   ipcMain.handle('assets:scan-sources', async (): Promise<AgentScanSourceGroup[]> => {
     return getScanner().getScanSourceGroups()
+  })
+
+  ipcMain.handle('agent-plugins:list', async (): Promise<AgentCapabilityPluginListResult> => {
+    return listAgentCapabilityPlugins(await getScanner().getScanSourceGroups())
   })
 
   ipcMain.handle(

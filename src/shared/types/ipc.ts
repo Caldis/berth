@@ -12,6 +12,7 @@ import type {
   Relation
 } from './asset'
 import type { MemoryListResult, MemoryNote } from './memory'
+import type { AgentCapabilityPluginListResult } from './agent-plugin'
 
 export interface PlatformInfo {
   platform: NodeJS.Platform
@@ -314,6 +315,7 @@ export interface IpcChannels {
   'platform:info': { args: []; result: PlatformInfo }
   'assets:scan-all': { args: []; result: ScanResult }
   'assets:scan-sources': { args: []; result: AgentScanSourceGroup[] }
+  'agent-plugins:list': { args: []; result: AgentCapabilityPluginListResult }
   'assets:scan-category': { args: [AssetCategory]; result: Asset[] }
   'assets:get': { args: [string]; result: Asset | null }
   'assets:relations': { args: [string]; result: Relation[] }

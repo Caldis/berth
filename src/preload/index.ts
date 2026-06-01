@@ -33,6 +33,9 @@ const api = {
       return () => ipcRenderer.removeListener('assets:changed', handler)
     }
   },
+  agentPlugins: {
+    list: () => ipcRenderer.invoke('agent-plugins:list')
+  },
   sessions: {
     list: (opts: { projectFilter?: string; limit?: number; agentView?: string }) =>
       ipcRenderer.invoke('sessions:list', opts),
