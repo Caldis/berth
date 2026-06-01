@@ -1065,15 +1065,17 @@ function healthCheckDescriptor(
     'id' | 'agentId' | 'severity' | 'category' | 'labelKey' | 'descriptionKey' | 'suggestionKey'
   > = {}
 ): AgentCapabilityPluginHealthCheckDescriptor {
+  const translationKeyId = id.replace(/:/g, '.')
+
   return {
     id,
     agentId,
     severity,
     category,
     ...options,
-    labelKey: `settings.agentPluginHealthChecks.${id}.label`,
-    descriptionKey: `settings.agentPluginHealthChecks.${id}.description`,
-    suggestionKey: `settings.agentPluginHealthChecks.${id}.suggestion`
+    labelKey: `settings.agentPluginHealthChecks.${translationKeyId}.label`,
+    descriptionKey: `settings.agentPluginHealthChecks.${translationKeyId}.description`,
+    suggestionKey: `settings.agentPluginHealthChecks.${translationKeyId}.suggestion`
   }
 }
 

@@ -354,13 +354,19 @@ describe('agent capability plugin registry', () => {
 
     expect(descriptors.length).toBeGreaterThan(0)
     for (const descriptor of descriptors) {
+      const translationKeyId = descriptor.id.replace(/:/g, '.')
+
       expect(healthCheckCategories).toContain(descriptor.category)
       expect(healthCheckSeverities).toContain(descriptor.severity)
       expect(descriptor.agentId).not.toBe('all')
-      expect(descriptor.labelKey).toBe(`settings.agentPluginHealthChecks.${descriptor.id}.label`)
+      expect(descriptor.labelKey).toBe(`settings.agentPluginHealthChecks.${translationKeyId}.label`)
       expect(descriptor.descriptionKey).toBe(
-        `settings.agentPluginHealthChecks.${descriptor.id}.description`
+        `settings.agentPluginHealthChecks.${translationKeyId}.description`
       )
+      expect(descriptor.suggestionKey).toBe(
+        `settings.agentPluginHealthChecks.${translationKeyId}.suggestion`
+      )
+      expect(descriptor.labelKey).not.toContain(':')
       expect(descriptor.assetTypes ?? []).not.toEqual(expect.arrayContaining(['backup', 'debug']))
     }
   })

@@ -43,6 +43,8 @@ healthCheckDescriptors: AgentCapabilityPluginHealthCheckDescriptor[]
 
 描述符 `id` 是规则族 id, 不是运行时 check id。运行时 id 中的 scope、event、object name、hash 仍由 `health.ts` 生成。
 
+i18n key 不能直接拼接带冒号的 descriptor id。生成 `labelKey`、`descriptionKey`、`suggestionKey` 时, 将 id 中的 `:` 替换为 `.`, 避免 i18next 默认 namespace 解析把 key 截断。
+
 ## 模块结构 / 组件拆分
 
 - `src/shared/types/agent-plugin.ts`: 新增 descriptor 类型和 plugin 字段。
