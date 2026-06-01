@@ -25,7 +25,7 @@ artifacts:
 
 # Token usage breakdown and pricing
 
-任务索引与交接锚。phase 字段为唯一状态源, `harness-continue` 据此续跑。
+任务索引与交接锚。phase 字段为唯一状态源, `harness-0.1-continue` 据此续跑。
 
 ## GitHub Project
 - project: https://github.com/users/Caldis/projects/6

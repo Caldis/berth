@@ -24,7 +24,7 @@
 - **node 经 nvm** `~/.nvm/versions/node/v24.3.0/bin` (非交互 shell 默认无 pnpm, 需 prepend PATH)。
 - **dev 端口**: 5173 常被同机另一项目占用, electron-vite 自动跳 5174+。
 - **单实例**: 应用已加 `requestSingleInstanceLock` (src/main/index.ts), 重复 `pnpm dev` 不会多开窗口; 第二个实例自杀并聚焦已有窗口。
-- **UI 视觉验收截图**: 必须用 electron 主进程**实测窗口坐标**裁剪 (osascript 取 `{position, size}` of front window → 按显示器缩放比换算物理像素裁剪); 不可猜坐标。进程检测见 `.agents/workflow/verify.md` (完整 .pnpm 路径模式 + 排除 helper)。
+- **UI 视觉验收截图**: 必须用 electron 主进程**实测窗口坐标**裁剪 (osascript 取 `{position, size}` of front window → 按显示器缩放比换算物理像素裁剪); 不可猜坐标。进程检测见 `.agents/workflow/4.0-verify.md` (完整 .pnpm 路径模式 + 排除 helper)。
 
 # EVOLUATION
 当用户对先前的任务或指令进行纠正或指示时, 你需要在验证其有效性后将其写入 `docs/issues/`
@@ -106,17 +106,17 @@ Agent 工作流体系, 单一真源在 `.agents/`, 同时服务 Claude Code 与 
 - 流程 playbook: `.agents/workflow/` (Explore → Design → Implementation → Verify)
 - 工具索引: `.agents/tools.md`; 项目地图: `docs/ARCHITECTURE.md`
 - 任务态 (操作目录, 非冷文档): `docs/works/{date}-gh-{number}-{summary}/`
-- 工程摩擦: `docs/friction/{yyyymmdd}-{phase}-{summary}.md`
+- 工程摩擦: `docs/friction/{yyyymmdd}-{action-id}-{summary}.md`
 - 产品问题: `docs/issues/{YYYY-MM-DD}-{BUG|FEATURE|IMPROVEMENT}-{summary}.md`
 - 自检/分发: `pnpm harness:check` / `pnpm harness:sync` (CI 强制)
 
 ## 何时进入 (强制)
-- feature / bug 开发任务: 落代码前必须先用 `harness-new` 建任务态, 再按 explore → design → implement → verify 推进; 禁止跳过 new 直接 Read/Edit 进实现或调试。
+- feature / bug 开发任务: 落代码前必须先用 `harness-0.0-new` 建任务态, 再按 1.0-explore → 2.0-design → 3.0-implement → 4.0-verify 推进; 禁止跳过 new 直接 Read/Edit 进实现或调试。
 - 小改动豁免: 单行/拼写/纯文案注释, 或满足"单一文件·单一关注点·标准门禁 (typecheck/lint/test) 即可验收·无需跨文件根因分析或人工意图澄清"的小改动 (如弃用 API 替换、局部重构), 可直接处理 + 跑门禁 (含可测试性), 不建任务态。小改动豁免前必须先声明豁免依据并征得用户确认。
-- 边界存疑按非平凡处理, 默认走 harness; 进行中的任务用 `harness-continue` 续跑, 不重新 new。
+- 边界存疑按非平凡处理, 默认走 harness; 进行中的任务用 `harness-0.1-continue` 续跑, 不重新 new。
 - 默认流程是 harness workflow。只有用户明确要求使用 Superpowers 流程时, 才允许 Superpowers 接管任务流程; 否则 feature / bug / harness 任务都按 harness 执行。
 - 走 harness 时, Superpowers 只能作为方法参考, 不得创建 active `docs/superpowers/plans` 或 `docs/superpowers/specs` 产物, 不得要求 worktree, 不得覆盖 INDEX.phase, 不得把 `writing-plans` / `executing-plans` 的流程问答注入当前任务。
 - `brainstorming` 可作为 design 的受控方法: 最多 3 个关键问题, 且问题必须影响范围、方案或验收标准。
 - Agent 自主判断并行或顺序执行: 按文件是否重叠、模块边界、任务依赖和测试耦合度决定; 不把 subagent 并行或主 session 执行作为用户选择题。
 
-入口: harness-new · harness-continue · harness-explore · harness-design · harness-implement · harness-verify · harness-polish · harness-archive · harness-optimization
+入口: harness-0.0-new · harness-0.1-continue · harness-1.0-explore · harness-2.0-design · harness-3.0-implement · harness-3.1-polish · harness-4.0-verify · harness-5.0-archive · harness-5.1-optimization · harness-5.2-issues

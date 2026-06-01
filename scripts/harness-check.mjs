@@ -3,17 +3,18 @@
 import { readdirSync, readFileSync, existsSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { VERBS, parseFrontmatter } from './harness-lib.mjs'
+import { ACTION_IDS, parseFrontmatter } from './harness-lib.mjs'
 import { check as checkDistribution } from './harness-sync.mjs'
 
 const WORK_NAME = /^\d{4}-\d{2}-\d{2}-gh-(\d+)-[a-z0-9-]+$/
 const TASK_ID = /^GH-(\d+)$/
-const FRICTION_NAME = new RegExp(`^\\d{8}-(${VERBS.join('|')})-[a-z0-9-]+\\.md$`)
+const FRICTION_NAME = new RegExp(`^\\d{8}-(${ACTION_IDS.map((id) => id.replace(/\./g, '\\.')).join('|')})-[a-z0-9-]+\\.md$`)
 const PHASES = ['explore', 'design', 'blocked', 'implement', 'verify', 'polish', 'archive']
 const PHASE_RANK = { explore: 0, design: 1, blocked: 1, implement: 2, verify: 3, polish: 4, archive: 5 }
 export const SMALL_CHANGE_EXEMPTION_CONSENT = '小改动豁免前必须先声明豁免依据并征得用户确认。'
 export const TEST_DISCIPLINE_RULE = '测试证据或明确例外理由'
 const SUPERPOWERS_FLOW_POLICY = ['默认流程是 harness workflow', 'Superpowers 只能作为方法参考', 'Agent 自主判断并行或顺序执行']
+const ARCHIVE_BACKLOG_REMINDER = ['5.1-optimization', '5.2-issues', '本次产生或关联的 friction / issues']
 const ALLOWED_SUPERPOWERS_DOCS = new Set([
   'docs/superpowers/specs/2026-05-29-ai-native-workflow-harness-design.md',
   'docs/superpowers/plans/2026-05-29-ai-native-workflow-harness.md'
@@ -103,7 +104,7 @@ export function checkFriction(root) {
     if (name.startsWith('_') || name === '_archive') continue
     if (!statSync(join(base, name)).isFile()) continue
     if (!FRICTION_NAME.test(name))
-      errors.push(`friction: bad naming "${name}" (expect {YYYYMMDD}-{phase}-{summary}.md)`)
+      errors.push(`friction: bad naming "${name}" (expect {YYYYMMDD}-{action-id}-{summary}.md)`)
   }
   return errors
 }
@@ -128,17 +129,17 @@ export function checkWorkflowSources(root) {
     errors.push('workflow: missing .agents/workflow/_shared.md')
   else if (!nonEmpty(join(dir, '_shared.md')))
     errors.push('workflow: empty .agents/workflow/_shared.md')
-  for (const v of VERBS) {
-    const f = join(dir, `${v}.md`)
-    if (!existsSync(f)) errors.push(`workflow: missing .agents/workflow/${v}.md`)
-    else if (!nonEmpty(f)) errors.push(`workflow: empty .agents/workflow/${v}.md`)
+  for (const actionId of ACTION_IDS) {
+    const f = join(dir, `${actionId}.md`)
+    if (!existsSync(f)) errors.push(`workflow: missing .agents/workflow/${actionId}.md`)
+    else if (!nonEmpty(f)) errors.push(`workflow: empty .agents/workflow/${actionId}.md`)
   }
   // 反向扫描: 检出非 _shared/非 VERB 的孤儿 playbook (防 verb 集与源静默分叉)
   if (existsSync(dir)) {
-    const allowed = new Set([...VERBS.map((v) => `${v}.md`), '_shared.md'])
+    const allowed = new Set([...ACTION_IDS.map((id) => `${id}.md`), '_shared.md'])
     for (const name of readdirSync(dir)) {
       if (name.endsWith('.md') && !allowed.has(name))
-        errors.push(`workflow: unexpected playbook "${name}" (not in VERBS)`)
+        errors.push(`workflow: unexpected playbook "${name}" (not in action ids)`)
     }
   }
   return errors
@@ -185,7 +186,7 @@ export function checkEntryRules(root) {
     if (!readFileSync(path, 'utf8').includes(SMALL_CHANGE_EXEMPTION_CONSENT))
       errors.push(`entry-rules: ${rel} missing small-change exemption consent rule`)
   }
-  for (const rel of ['.agents/workflow/_shared.md', '.agents/workflow/implement.md', '.agents/workflow/verify.md', 'docs/issues/AGENTS.md']) {
+  for (const rel of ['.agents/workflow/_shared.md', '.agents/workflow/3.0-implement.md', '.agents/workflow/4.0-verify.md', 'docs/issues/AGENTS.md']) {
     const path = join(root, rel)
     if (!existsSync(path)) {
       errors.push(`entry-rules: missing ${rel}`)
@@ -195,7 +196,7 @@ export function checkEntryRules(root) {
     if (!content.includes('docs/issues') || !content.includes('不属于当前主线'))
       errors.push(`entry-rules: ${rel} missing side product issue capture rule`)
   }
-  for (const rel of ['AGENTS.md', '.agents/workflow/_shared.md', '.agents/workflow/implement.md', '.agents/workflow/archive.md']) {
+  for (const rel of ['AGENTS.md', '.agents/workflow/_shared.md', '.agents/workflow/3.0-implement.md', '.agents/workflow/5.0-archive.md']) {
     const path = join(root, rel)
     if (!existsSync(path)) {
       errors.push(`entry-rules: missing ${rel}`)
@@ -207,9 +208,9 @@ export function checkEntryRules(root) {
   }
   for (const rel of [
     '.agents/workflow/_shared.md',
-    '.agents/workflow/design.md',
-    '.agents/workflow/implement.md',
-    '.agents/workflow/verify.md',
+    '.agents/workflow/2.0-design.md',
+    '.agents/workflow/3.0-implement.md',
+    '.agents/workflow/4.0-verify.md',
     'docs/works/_template/02-SPEC.md',
     'docs/works/_template/03-PLAN.md'
   ]) {
@@ -221,7 +222,7 @@ export function checkEntryRules(root) {
     if (!readFileSync(path, 'utf8').includes(TEST_DISCIPLINE_RULE))
       errors.push(`entry-rules: ${rel} missing test evidence rule`)
   }
-  for (const rel of ['AGENTS.md', '.agents/workflow/_shared.md', '.agents/workflow/design.md', '.agents/workflow/implement.md']) {
+  for (const rel of ['AGENTS.md', '.agents/workflow/_shared.md', '.agents/workflow/2.0-design.md', '.agents/workflow/3.0-implement.md']) {
     const path = join(root, rel)
     if (!existsSync(path)) {
       errors.push(`entry-rules: missing ${rel}`)
@@ -232,6 +233,21 @@ export function checkEntryRules(root) {
       if (!content.includes(rule)) {
         errors.push(`entry-rules: ${rel} missing Superpowers flow policy`)
         break
+      }
+    }
+  }
+  {
+    const rel = '.agents/workflow/5.0-archive.md'
+    const path = join(root, rel)
+    if (!existsSync(path)) {
+      errors.push(`entry-rules: missing ${rel}`)
+    } else {
+      const content = readFileSync(path, 'utf8')
+      for (const rule of ARCHIVE_BACKLOG_REMINDER) {
+        if (!content.includes(rule)) {
+          errors.push(`entry-rules: ${rel} missing archive backlog reminder`)
+          break
+        }
       }
     }
   }

@@ -14,17 +14,17 @@ import {
 } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { LEGACY_SKILL_PREFIXES, VERBS, skillMdContent, skillName } from './harness-lib.mjs'
+import { LEGACY_SKILL_PREFIXES, LEGACY_VERBS, WORKFLOW_ACTIONS, skillMdContent, skillName } from './harness-lib.mjs'
 
 // 期望产物描述符
 export function desiredArtifacts(root) {
   const items = []
-  for (const v of VERBS) {
-    const name = skillName(v)
+  for (const action of WORKFLOW_ACTIONS) {
+    const name = skillName(action.id)
     items.push({
       kind: 'file',
       path: join(root, '.agents/skills', name, 'SKILL.md'),
-      content: skillMdContent(v)
+      content: skillMdContent(action.id)
     })
     items.push({
       kind: 'link',
@@ -45,7 +45,7 @@ function fileInSync(path, content) {
 
 function legacyCommandPaths(root) {
   return LEGACY_SKILL_PREFIXES.flatMap((prefix) =>
-    VERBS.flatMap((v) => [
+    LEGACY_VERBS.flatMap((v) => [
       join(root, '.claude/commands', `${prefix}-${v}.md`),
       join(root, '.claude/commands', prefix, `${v}.md`)
     ])
@@ -53,13 +53,19 @@ function legacyCommandPaths(root) {
 }
 
 function legacySkillPaths(root) {
-  return LEGACY_SKILL_PREFIXES.flatMap((prefix) =>
-    VERBS.flatMap((v) => [
+  const prefixedLegacy = LEGACY_SKILL_PREFIXES.flatMap((prefix) =>
+    LEGACY_VERBS.flatMap((v) => [
       join(root, '.agents/skills', `${prefix}-${v}`),
       join(root, '.claude/skills', `${prefix}-${v}`),
       join(root, '.codex/skills', `${prefix}-${v}`)
     ])
   )
+  const unnumberedHarness = LEGACY_VERBS.flatMap((v) => [
+    join(root, '.agents/skills', `harness-${v}`),
+    join(root, '.claude/skills', `harness-${v}`),
+    join(root, '.codex/skills', `harness-${v}`)
+  ])
+  return [...prefixedLegacy, ...unnumberedHarness]
 }
 
 function legacyArtifactPaths(root) {

@@ -15,7 +15,7 @@
    - `tests/harness/sync.test.ts`
 3. `scripts/harness-check.mjs` 用 `VERBS` 检查 workflow playbook 是否齐全, 当前 verb 为 8 个: `new`, `continue`, `explore`, `design`, `implement`, `verify`, `archive`, `optimization`。
 4. 现有阶段枚举没有 `polish`; `checkWorks()` 不接受 `phase=polish`。
-5. GitHub Project 规则写在 `.agents/workflow/new.md` 与 `.agents/workflow/archive.md`, 但没有脚本强制执行。`archive.md` 要求把 item 置 Done, 实际靠 Agent 手动操作。
+5. GitHub Project 规则写在 `.agents/workflow/0.0-new.md` 与 `.agents/workflow/5.0-archive.md`, 但没有脚本强制执行。`5.0-archive.md` 要求把 item 置 Done, 实际靠 Agent 手动操作。
 6. 远端 Project #6 可访问, 已确认:
    - project id: `PVT_kwHOADXbEs4BZHvQ`
    - Status field id: `PVTSSF_lAHOADXbEs4BZHvQzhUIssM`
@@ -25,7 +25,7 @@
 
 ## 外部事实
 
-1. Claude Code skills 的 slash 入口由 skill 目录名决定, 因此 `.claude/skills/harness-new/SKILL.md` 对应 `/harness-new`。
+1. Claude Code skills 的 slash 入口由 skill 目录名决定, 因此 `.claude/skills/harness-0.0-new/SKILL.md` 对应 `/harness-0.0-new`。
 2. Codex repo skill 从 `.agents/skills/<name>/SKILL.md` 发现, 显式调用使用 `$<name>`。
 3. `gh project item-edit` 支持用 `--field-id` 和 `--single-select-option-id` 修改单选字段。
 4. `gh project` 至少需要 `project` scope; 缺 scope 时 Agent 不能代办浏览器授权, 只能提示用户运行授权命令。
@@ -47,7 +47,7 @@
 ## 验收标准
 
 1. 核心入口、脚本、测试、模板不再引用 `opsx-*` / `/opsx` / `$opsx`。
-2. `pnpm harness:sync` 生成 9 个 `harness-*` skill: 8 个原有 verb 加 `harness-polish`。
+2. `pnpm harness:sync` 生成 10 个 `harness-<action-id>` skill: 0.0-new 到 5.2-issues。
 3. 旧 `.agents/skills/opsx-*`, `.claude/skills/opsx-*`, `.codex/skills/opsx-*` 和历史 `.claude/commands/opsx*` 会被 `harness:sync` 清理, 并被 `harness:check` 视为 drift。
 4. `phase=polish` 被任务态校验接受, 且进入 polish 时要求 `04-POLISH.md`。
 5. `polish` 只能在用户主动要求, 或复杂任务 verify 后 Agent 询问并得到同意后执行; Agent 不得自行执行。
@@ -59,5 +59,4 @@
 
 ## 未决问题
 
-无。用户已确认命名为 `harness-<verb>` 且 Project 同步失败时 archive 应阻塞。
-
+无。用户已确认命名为 `harness-<action-id>` 且 Project 同步失败时 archive 应阻塞。

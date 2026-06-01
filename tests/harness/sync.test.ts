@@ -27,13 +27,15 @@ function expectSkillDistribution(path: string, target: string): void {
 }
 
 describe('harness-sync', () => {
-  it('apply 生成 9 个 verb 的 SKILL.md / Claude skill 分发', () => {
+  it('apply 生成 10 个有序 action 的 SKILL.md / Claude skill 分发', () => {
     apply(root)
-    expect(existsSync(join(root, '.agents/skills/harness-explore/SKILL.md'))).toBe(true)
-    expect(existsSync(join(root, '.agents/skills/harness-polish/SKILL.md'))).toBe(true)
+    expect(existsSync(join(root, '.agents/skills/harness-1.0-explore/SKILL.md'))).toBe(true)
+    expect(existsSync(join(root, '.agents/skills/harness-3.1-polish/SKILL.md'))).toBe(true)
+    expect(existsSync(join(root, '.agents/skills/harness-5.2-issues/SKILL.md'))).toBe(true)
+    expect(existsSync(join(root, '.agents/skills/harness-explore'))).toBe(false)
     expect(existsSync(join(root, '.claude/commands/opsx-explore.md'))).toBe(false)
-    expectSkillDistribution(join(root, '.claude/skills/harness-explore'), '../../.agents/skills/harness-explore')
-    expect(existsSync(join(root, '.codex/skills/harness-explore'))).toBe(false)
+    expectSkillDistribution(join(root, '.claude/skills/harness-1.0-explore'), '../../.agents/skills/harness-1.0-explore')
+    expect(existsSync(join(root, '.codex/skills/harness-1.0-explore'))).toBe(false)
   })
 
   it('apply 幂等: 二次运行零变更', () => {
@@ -45,7 +47,7 @@ describe('harness-sync', () => {
   it('check: 同步后 ok, 删除 Claude skill 分发后报 drift', () => {
     apply(root)
     expect(check(root).ok).toBe(true)
-    rmSync(join(root, '.claude/skills/harness-verify'), { recursive: true, force: true })
+    rmSync(join(root, '.claude/skills/harness-4.0-verify'), { recursive: true, force: true })
     const r = check(root)
     expect(r.ok).toBe(false)
     expect(r.drift.some((d: string) => d.includes('verify'))).toBe(true)
@@ -53,7 +55,7 @@ describe('harness-sync', () => {
 
   it('check: skill 内容漂移可被检出', () => {
     apply(root)
-    writeFileSync(join(root, '.agents/skills/harness-new/SKILL.md'), 'tampered')
+    writeFileSync(join(root, '.agents/skills/harness-0.0-new/SKILL.md'), 'tampered')
     expect(check(root).ok).toBe(false)
   })
 
@@ -70,27 +72,35 @@ describe('harness-sync', () => {
     expect(check(root).ok).toBe(true)
   })
 
-  it('check/apply: 旧 opsx skill 分发会被视为漂移并清理', () => {
+  it('check/apply: 旧 opsx 与未编号 harness skill 分发会被视为漂移并清理', () => {
     apply(root)
     const legacyAgentSkill = join(root, '.agents/skills/opsx-new')
     const legacyClaudeSkill = join(root, '.claude/skills/opsx-new')
     const legacyCodexSkill = join(root, '.codex/skills/opsx-new')
+    const legacyUnnumberedSkill = join(root, '.agents/skills/harness-new')
+    const legacyUnnumberedClaudeSkill = join(root, '.claude/skills/harness-new')
     mkdirSync(legacyAgentSkill, { recursive: true })
     mkdirSync(legacyClaudeSkill, { recursive: true })
     mkdirSync(legacyCodexSkill, { recursive: true })
+    mkdirSync(legacyUnnumberedSkill, { recursive: true })
+    mkdirSync(legacyUnnumberedClaudeSkill, { recursive: true })
 
     const drift = check(root)
     expect(drift.ok).toBe(false)
     expect(drift.drift).toEqual(expect.arrayContaining([
       legacyAgentSkill,
       legacyClaudeSkill,
-      legacyCodexSkill
+      legacyCodexSkill,
+      legacyUnnumberedSkill,
+      legacyUnnumberedClaudeSkill
     ]))
 
     apply(root)
     expect(existsSync(legacyAgentSkill)).toBe(false)
     expect(existsSync(legacyClaudeSkill)).toBe(false)
     expect(existsSync(legacyCodexSkill)).toBe(false)
+    expect(existsSync(legacyUnnumberedSkill)).toBe(false)
+    expect(existsSync(legacyUnnumberedClaudeSkill)).toBe(false)
     expect(check(root).ok).toBe(true)
   })
 })

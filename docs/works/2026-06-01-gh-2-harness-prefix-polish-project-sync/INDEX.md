@@ -2,7 +2,7 @@
 task: 2026-06-01-gh-2-harness-prefix-polish-project-sync
 task_id: GH-2
 type: feature
-phase: verify
+phase: implement
 created: 2026-06-01
 issue:
   number: 2
@@ -26,7 +26,7 @@ artifacts:
 
 # Harness Prefix Polish Project Sync
 
-任务索引与交接锚。phase 字段为唯一状态源, `harness-continue` 据此续跑。
+任务索引与交接锚。phase 字段为唯一状态源, `harness-0.1-continue` 据此续跑。
 
 ## 产物
 - [x] 00-PRD.md - 原始输入快照

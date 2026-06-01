@@ -36,8 +36,8 @@
    - 成本: 中偏高。Markdown 任务项解析要保守, 需要兼容旧任务。
    - 是否建议进入当前任务: 建议, 但可以分两步: 先检查新任务, 再处理旧任务。
 
-4. 给 `harness-polish` 的生成 skill 增加显式禁自动执行提示。
-   - 问题: 当前 `SKILL.md` 内容由通用模板生成, `harness-polish` 的 description 没有直接写 "不得自动执行"。真正规则在 `.agents/workflow/polish.md`, 但 skill 列表展示时不够醒目。
+4. 给 `harness-3.1-polish` 的生成 skill 增加显式禁自动执行提示。
+   - 问题: 当前 `SKILL.md` 内容由通用模板生成, `harness-3.1-polish` 的 description 没有直接写 "不得自动执行"。真正规则在 `.agents/workflow/3.1-polish.md`, 但 skill 列表展示时不够醒目。
    - 建议: `skillMdContent('polish')` 特判 description 和正文, 写明 "仅用户主动要求或明确同意后执行"。
    - 影响: 中。降低 Agent 误触发 polish 的风险。
    - 成本: 低。需要更新 sync 单测并跑 `pnpm harness:sync`。
@@ -52,7 +52,7 @@
 
 6. 提供单命令 archive 包装。
    - 问题: archive 仍由 playbook 串联多个手工动作: Project Done、phase=archive、移动目录、issue 交叉引用、提交。Project gate 已脚本化, 但整个 archive 仍有手动遗漏空间。
-   - 建议: 增加 `scripts/harness-archive.mjs` 或 `harness-projects archive <task-dir>` 包装核心步骤, playbook 只保留人工确认和 commit 边界。
+   - 建议: 增加 `scripts/harness-5.0-archive.mjs` 或 `harness-projects archive <task-dir>` 包装核心步骤, playbook 只保留人工确认和 commit 边界。
    - 影响: 中。减少 archive 操作错误。
    - 成本: 高。涉及文件移动、issue 状态、git staging 边界, 需要更谨慎设计。
    - 是否建议进入当前任务: 不建议立刻进入; 适合单独任务。

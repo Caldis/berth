@@ -16,6 +16,9 @@
 - [x] 任务 14: 迁移当前 active works 到 `{date}-gh-{number}-{desc}` 并回写 GitHub Issue/Project 元数据; tests: not needed - 元数据和目录迁移, 用 `pnpm harness:check` 与 `node scripts/harness-projects.mjs check --strict` 验证; verify: `pnpm harness:check`, `node scripts/harness-projects.mjs check --strict`。
 - [x] 任务 15: 扫描并清理非历史文档中的旧企业 ticket 遗留引用; tests: not needed - 文案/历史边界清理, 用旧字段关键字扫描和 `pnpm harness:check` 验证; verify: active paths keyword scan excluding `_archive` and `docs/superpowers` history。
 - [x] 任务 16: 处理 Superpowers 与 harness 的流程冲突, 写入默认 harness、受控借鉴、禁止新增 active Superpowers plan/spec 和并行自主决策规则; tests: `pnpm test tests/harness/check.test.ts`; verify: `pnpm harness:check`, `pnpm typecheck:node`。
+- [x] 任务 17: 引入有序 action id, 重命名 workflow 源文件与 skill 分发产物, 并迁移 active friction 命名; tests: `pnpm test tests/harness/sync.test.ts tests/harness/check.test.ts`; verify: `pnpm harness:sync -- --check`, `pnpm harness:check`。
+- [x] 任务 18: 新增 issues 收敛动作 `5.2-issues` 与 `pnpm harness:issues` 清单命令; tests: `pnpm test tests/harness/issues.test.ts`; verify: `pnpm typecheck:node`。
+- [x] 任务 19: 在 archive 流程加入 friction/issues 堆积提醒, 但不自动执行可选清理动作; tests: `pnpm test tests/harness/check.test.ts`; verify: `pnpm harness:check`。
 
 ## 验证记录
 
@@ -46,6 +49,18 @@
 - `pnpm typecheck:node` - passed after Superpowers guard commit。
 - `pnpm harness:check` - all checks passed after Superpowers guard commit。
 - `node scripts/harness-projects.mjs check --strict` - all project statuses match local task state after Superpowers guard commit。
+- `pnpm test tests/harness/sync.test.ts tests/harness/check.test.ts tests/harness/issues.test.ts` - RED: 13 expected action/issues failures before implementation; GREEN: 3 files / 38 tests passed。
+- `pnpm test tests/harness/sync.test.ts tests/harness/check.test.ts tests/harness/issues.test.ts tests/harness/stats.test.ts` - 4 files / 42 tests passed after action rename and issues command。
+- `pnpm harness:sync -- --check` - distribution in sync after action-id skill generation。
+- `pnpm harness:check` - all checks passed after workflow/action rename。
+- `pnpm typecheck:node` - passed after `harness-issues` implementation。
+- `pnpm harness:issues` - active=10 resolved=2; listed active docs/issues backlog for optional `harness-5.2-issues` cleanup。
+
+## 有序 action 与 issues 收敛补充记录
+
+- 用户要求 workflow 步骤和动作带顺序前缀, 可选步骤用关联步骤的子编号。
+- 用户要求 issues 也有与 `optimization` 对应的收敛动作。
+- 用户要求 archive 后提醒本次产生或关联的 friction / issues, 但不自动执行清理。
 
 ## GitHub Issue 迁移记录
 

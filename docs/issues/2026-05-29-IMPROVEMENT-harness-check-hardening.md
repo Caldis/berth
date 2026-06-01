@@ -15,6 +15,6 @@
 - 2. git 不跟踪空目录, 两个 _archive 未提交 (archive.md 运行时 mkdir -p, 功能无碍)
 
 # 解决方案
-- 待办 1: checkWorkflowSources 增加非空 (或含 `# harness-<verb>` 头) 断言
+- 待办 1: checkWorkflowSources 增加非空 (或含 `# harness-<action-id>` 头) 断言
 - 待办 2: 为两个 _archive 目录各加 .gitkeep
 - 已落地: 孤儿 playbook 检测 (`workflow: unexpected playbook`) 已在 harness-check.mjs 实现并测试

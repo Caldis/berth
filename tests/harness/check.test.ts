@@ -145,17 +145,19 @@ describe('checkWorks', () => {
 describe('checkFriction', () => {
   it('合规命名通过, 非法命名报错', () => {
     mkdirSync(join(root, 'docs/friction'), { recursive: true })
-    writeFileSync(join(root, 'docs/friction/20260529-implement-foo.md'), 'x')
+    writeFileSync(join(root, 'docs/friction/20260529-3.0-implement-foo.md'), 'x')
+    writeFileSync(join(root, 'docs/friction/20260529-implement-old.md'), 'x')
     writeFileSync(join(root, 'docs/friction/bad-name.md'), 'x')
     const errs = checkFriction(root)
     expect(errs.some((e: string) => e.includes('bad-name'))).toBe(true)
-    expect(errs.some((e: string) => e.includes('20260529-implement-foo'))).toBe(false)
+    expect(errs.some((e: string) => e.includes('20260529-implement-old'))).toBe(true)
+    expect(errs.some((e: string) => e.includes('20260529-3.0-implement-foo'))).toBe(false)
   })
 
-  it('接受全部 9 个 verb 阶段作为 phase 段', () => {
+  it('接受全部 10 个 action id 作为 action 段', () => {
     mkdirSync(join(root, 'docs/friction'), { recursive: true })
-    const phases = ['new', 'continue', 'explore', 'design', 'implement', 'verify', 'polish', 'archive', 'optimization']
-    for (const p of phases) writeFileSync(join(root, `docs/friction/20260530-${p}-sample.md`), 'x')
+    const actions = ['0.0-new', '0.1-continue', '1.0-explore', '2.0-design', '3.0-implement', '3.1-polish', '4.0-verify', '5.0-archive', '5.1-optimization', '5.2-issues']
+    for (const p of actions) writeFileSync(join(root, `docs/friction/20260530-${p}-sample.md`), 'x')
     expect(checkFriction(root)).toEqual([])
   })
 })
@@ -207,11 +209,11 @@ describe('checkTemplates', () => {
 })
 
 describe('checkWorkflowSources', () => {
-  const VERBS = ['new', 'continue', 'explore', 'design', 'implement', 'verify', 'polish', 'archive', 'optimization']
+  const ACTIONS = ['0.0-new', '0.1-continue', '1.0-explore', '2.0-design', '3.0-implement', '3.1-polish', '4.0-verify', '5.0-archive', '5.1-optimization', '5.2-issues']
   function writeWorkflow(empty: string[] = []): void {
     const dir = join(root, '.agents/workflow')
     mkdirSync(dir, { recursive: true })
-    for (const f of ['_shared', ...VERBS]) {
+    for (const f of ['_shared', ...ACTIONS]) {
       writeFileSync(join(dir, `${f}.md`), empty.includes(f) ? '   \n' : `# ${f}\nbody`)
     }
   }
@@ -222,9 +224,9 @@ describe('checkWorkflowSources', () => {
   })
 
   it('空 playbook 文件被检出', () => {
-    writeWorkflow(['design'])
+    writeWorkflow(['2.0-design'])
     const errs = checkWorkflowSources(root)
-    expect(errs.some((e: string) => e.includes('empty') && e.includes('design.md'))).toBe(true)
+    expect(errs.some((e: string) => e.includes('empty') && e.includes('2.0-design.md'))).toBe(true)
   })
 
   it('孤儿 playbook 被检出', () => {
@@ -252,21 +254,26 @@ describe('checkEntryRules', () => {
       mkdirSync(join(root, 'docs/issues'), { recursive: true })
       const text = '发现不属于当前主线验收范围的问题时写入 docs/issues。'
       writeFileSync(join(root, '.agents/workflow/_shared.md'), text)
-      writeFileSync(join(root, '.agents/workflow/implement.md'), text)
-      writeFileSync(join(root, '.agents/workflow/verify.md'), text)
+      writeFileSync(join(root, '.agents/workflow/3.0-implement.md'), text)
+      writeFileSync(join(root, '.agents/workflow/4.0-verify.md'), text)
       writeFileSync(join(root, 'docs/issues/AGENTS.md'), text)
     }
     if (options.scopedCommit !== false) {
       mkdirSync(join(root, '.agents/workflow'), { recursive: true })
-      for (const rel of ['.agents/workflow/_shared.md', '.agents/workflow/implement.md', '.agents/workflow/archive.md']) {
+      for (const rel of ['.agents/workflow/_shared.md', '.agents/workflow/3.0-implement.md', '.agents/workflow/5.0-archive.md']) {
         const path = join(root, rel)
         const current = existsSync(path) ? readFileSync(path, 'utf8') : ''
         writeFileSync(path, current + '\n自己相关 git diff --cached')
       }
+      const archivePath = join(root, '.agents/workflow/5.0-archive.md')
+      writeFileSync(
+        archivePath,
+        readFileSync(archivePath, 'utf8') + '\n5.1-optimization 5.2-issues 本次产生或关联的 friction / issues'
+      )
     }
     if (options.superpowersPolicy !== false) {
       mkdirSync(join(root, '.agents/workflow'), { recursive: true })
-      for (const rel of ['.agents/workflow/_shared.md', '.agents/workflow/design.md', '.agents/workflow/implement.md']) {
+      for (const rel of ['.agents/workflow/_shared.md', '.agents/workflow/2.0-design.md', '.agents/workflow/3.0-implement.md']) {
         const path = join(root, rel)
         const current = existsSync(path) ? readFileSync(path, 'utf8') : ''
         writeFileSync(path, current + superpowersPolicy)
@@ -275,9 +282,9 @@ describe('checkEntryRules', () => {
     mkdirSync(join(root, 'docs/works/_template'), { recursive: true })
     for (const rel of [
       '.agents/workflow/_shared.md',
-      '.agents/workflow/design.md',
-      '.agents/workflow/implement.md',
-      '.agents/workflow/verify.md',
+      '.agents/workflow/2.0-design.md',
+      '.agents/workflow/3.0-implement.md',
+      '.agents/workflow/4.0-verify.md',
       'docs/works/_template/02-SPEC.md',
       'docs/works/_template/03-PLAN.md'
     ]) {
@@ -304,24 +311,30 @@ describe('checkEntryRules', () => {
 
   it('缺少旁支产品问题记录规则时报错', () => {
     writeEntryRules({ agents: true, readme: true })
-    writeFileSync(join(root, '.agents/workflow/implement.md'), 'docs/issues')
+    writeFileSync(join(root, '.agents/workflow/3.0-implement.md'), 'docs/issues')
     expect(checkEntryRules(root).some((e: string) => e.includes('side product issue'))).toBe(true)
   })
 
   it('缺少频繁且限定范围提交规则时报错', () => {
     writeEntryRules({ agents: true, readme: true })
-    writeFileSync(join(root, '.agents/workflow/archive.md'), '自己相关')
+    writeFileSync(join(root, '.agents/workflow/5.0-archive.md'), '自己相关')
     expect(checkEntryRules(root).some((e: string) => e.includes('frequent scoped commit'))).toBe(true)
   })
 
   it('缺少测试证据规则时报错', () => {
     writeEntryRules({ agents: true, readme: true })
-    writeFileSync(join(root, '.agents/workflow/implement.md'), 'docs/issues 不属于当前主线\n自己相关 git diff --cached')
+    writeFileSync(join(root, '.agents/workflow/3.0-implement.md'), 'docs/issues 不属于当前主线\n自己相关 git diff --cached')
     expect(checkEntryRules(root).some((e: string) => e.includes('test evidence'))).toBe(true)
   })
 
   it('缺少 Superpowers 降级为方法参考规则时报错', () => {
     writeEntryRules({ agents: true, readme: true, superpowersPolicy: false })
     expect(checkEntryRules(root).some((e: string) => e.includes('Superpowers flow policy'))).toBe(true)
+  })
+
+  it('缺少 archive 后 friction/issues 清理提醒时报错', () => {
+    writeEntryRules({ agents: true, readme: true })
+    writeFileSync(join(root, '.agents/workflow/5.0-archive.md'), '自己相关 git diff --cached')
+    expect(checkEntryRules(root).some((e: string) => e.includes('archive backlog reminder'))).toBe(true)
   })
 })

@@ -1,6 +1,6 @@
 > 说明: 产品缺陷、功能请求与改进项统一存放在 `docs/issues/`。开发过程中的工程摩擦
 > (卡顿/手动补的上下文/被迫修正) 记入 AI Native Workflow 的
-> `docs/friction/{yyyymmdd}-{phase}-{summary}.md`, 由 `harness-optimization` 消费。
+> `docs/friction/{yyyymmdd}-{action-id}-{summary}.md`, 由 `harness-5.1-optimization` 消费。
 > 本目录与 works/friction 只做交叉引用, 不承载任务 phase 状态。
 
 # ISSUES
@@ -13,6 +13,11 @@
 - 用户直接提出产品 bug、功能请求或改进项。
 - Agent 在 Explore / Implement / Verify 过程中发现已验证的产品问题, 但它不属于当前主线任务验收范围。
 - 当前任务只交叉引用该 issue; 不顺手修旁支问题, 除非用户明确扩大任务范围。
+
+## 收敛
+- 用 `pnpm harness:issues` 查看 active / resolved 数量和 active issue 列表。
+- 用 `harness-5.2-issues` 收敛堆积: 已修复的移入 `resolved/`, 仍有效的转 GitHub Issue / work, 重复或过期的写明原因后移入 `resolved/`。
+- archive 后只提醒可选清理, 不自动执行 issue 收敛。
 
 # TEMPLATE
 ```

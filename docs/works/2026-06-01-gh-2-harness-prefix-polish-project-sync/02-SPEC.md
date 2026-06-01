@@ -82,7 +82,7 @@ gh_project:
 5. `package.json`
    - 新增 `harness:projects:check`。
 
-6. `.agents/workflow/polish.md`
+6. `.agents/workflow/3.1-polish.md`
    - 新增可选抛光 playbook。
    - 明确不得自动执行、不得越界、默认只产出建议。
 
@@ -96,7 +96,7 @@ gh_project:
 
 1. `tests/harness/sync.test.ts`
    - 断言生成 `harness-*`。
-   - 断言生成 9 个 verb。
+   - 断言生成 10 个 action。
    - 断言旧 `opsx-*` skill / command 会被清理。
 
 2. `tests/harness/check.test.ts`
@@ -136,3 +136,36 @@ gh_project:
    - 命令退出非 0。
    - 不移动任务到 `_archive`。
 
+## 追加设计: 有序 action 与堆积清理
+
+### Action ID
+
+`INDEX.phase` 继续保留简单状态值, 例如 `explore` / `implement` / `verify`; 它只表达任务状态, 不承担展示排序。
+
+新增 `action id` 作为 workflow 步骤和动作的可读编号:
+
+- `0.0-new`
+- `0.1-continue`
+- `1.0-explore`
+- `2.0-design`
+- `3.0-implement`
+- `3.1-polish` (可选, 关联 implement)
+- `4.0-verify`
+- `5.0-archive`
+- `5.1-optimization` (可选, 归档后收敛 friction)
+- `5.2-issues` (可选, 归档后收敛 docs/issues)
+
+后续分发产物使用 `harness-{action-id}` 作为 skill 名, 例如 `harness-3.0-implement`。workflow 源文件使用 `.agents/workflow/{action-id}.md`。
+
+### Friction 与 issues 堆积
+
+friction 文件名从 `{YYYYMMDD}-{phase}-{summary}.md` 改为 `{YYYYMMDD}-{action-id}-{summary}.md`, 例如 `20260601-3.0-implement-test-discipline-gap.md`。
+
+新增 `5.2-issues` 动作用于处理 `docs/issues/` 的活跃问题:
+
+- 已修复: 补解决记录并移入 `docs/issues/resolved/`。
+- 仍有效且值得做: 转为 GitHub Issue / work 任务。
+- 重复或过期: 写明原因后移入 resolved。
+- 与当前任务相关但不在当前验收范围: 保持交叉引用, 不顺手修。
+
+`archive` 完成时不自动执行 `5.1-optimization` 或 `5.2-issues`, 只在归档报告中提醒本次产生/关联的 friction 与 issues, 并列出可选下一步。
