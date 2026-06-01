@@ -2,7 +2,7 @@
 task: 2026-06-01-gh-10-hooks-lifecycle-sidebar
 task_id: GH-10
 type: feature
-phase: implement
+phase: verify
 created: 2026-06-01
 issue:
   number: 10
