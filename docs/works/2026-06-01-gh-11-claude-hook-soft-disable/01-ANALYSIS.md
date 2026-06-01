@@ -101,9 +101,9 @@ Codex 官方 Hooks reference:
 
 1. Claude Code user-scope hook 在 UI 上不再提示“没有保留注册但单独禁用机制”, 而是提供可确认的禁用操作。
 2. 禁用 Claude Code 单 hook 后, 对应 JSON 节点从 `~/.claude/settings.json` 的 active `hooks` 配置里移除。
-3. 禁用时 Berth 保存可恢复的 sidecar 记录, 包含来源文件、event、handlerIndex、hookIndex、matcher group 信息、hook JSON、definitionHash、disabledAt。
+3. 禁用时 Berth 保存可恢复的 sidecar 记录, 包含来源文件、event、scenarioHash、hookHash、matcher group 信息、hook JSON、removedCount、disabledAt。
 4. 禁用后页面仍能展示这条 hook 为 disabled, 并提供恢复操作。
-5. 恢复后 hook 回到 Claude settings 的合理位置; 若 active 配置里已经存在同一 definitionHash, 恢复应视为 no-op 并清理 sidecar 记录。
+5. 恢复后 hook 回到 Claude settings 的目标 scenario; 若 active 配置里已经存在同一 scenario + hookHash, 恢复应视为 no-op 并清理 sidecar 记录。
 6. 对 source 文件变化导致无法定位的禁用/恢复, 不静默改写; 返回可理解错误, 要求刷新后重试。
 7. 每次写 settings 前创建时间戳备份; 写入使用临时文件 + rename, 不留下半写 JSON。
 8. Codex 单 hook 切换行为保持不变。

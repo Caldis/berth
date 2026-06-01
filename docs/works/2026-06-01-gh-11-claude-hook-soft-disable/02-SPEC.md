@@ -19,26 +19,36 @@
 
 ## 数据模型
 
-### Hook key
+### Hook identity
 
-Claude active hook 解析时生成稳定 key:
+Claude active hook 的身份分两层:
 
 ```ts
-type ClaudeHookKey = `claude-code:${string}:${number}:${number}:${string}`
+type ClaudeHookKey = `claude-code:${string}:${string}:${string}`
 ```
 
 字段含义:
 
-- `event`: Claude hook event, 例如 `PreToolUse`、`PostToolUse`、`Stop`。
-- `handlerIndex`: `settings.hooks[event]` 数组里的 handler 位置。
-- `hookIndex`: nested `handler.hooks` 里的位置; direct handler 模式固定为 `0`。
-- `definitionHash`: 对 `{ event, mode, matcher, hook }` 做 canonical JSON 后的 hash。
+- `event`: Claude hook event, 例如 `SessionStart`、`PreToolUse`、`PostToolUse`、`Stop`。
+- `scenarioHash`: 对 `{ event, mode, matcher }` 做 canonical JSON 后的 hash。它表示这条 hook 所在场景, 不是具体 hook 身份。
+- `hookHash`: 只对 hook 子项本身做 canonical JSON 后的 hash。
 
-禁用时按下面顺序定位:
+示例 hook 子项:
 
-1. sourcePath、event、handlerIndex、hookIndex 精确命中, 且 hash 一致。
-2. 若位置已变化, 在同一 sourcePath + event 内按 definitionHash 查找唯一 active hook。
-3. 找不到或找到多条时返回 stale conflict, 要求刷新后重试。
+```json
+{
+  "type": "command",
+  "command": "D:/Code/esp-harness/tools/esp-harness/.venv/Scripts/python.exe D:/Code/esp32-agent-dashboard/tools/hook_dispatch.py session_start"
+}
+```
+
+这条 hook 的 `hookHash` 只来自上面这个对象, 不包含 `event`、`matcher`、`handlerIndex` 或 `hookIndex`。
+
+规则:
+
+- `handlerIndex` / `hookIndex` 只能作为当前扫描到的位置, 用于定位文本 patch 范围或 UI 调试, 不能作为身份或恢复依据。
+- 同一 scenario 下出现多个相同 `hookHash`, UI 合并成一条 hook 资产, `meta.occurrenceCount` 记录数量。
+- 同一 `hookHash` 出现在不同 event 或 matcher 下, 视为不同场景里的同类 hook, 不互相覆盖。
 
 ### Asset meta
 
@@ -52,10 +62,11 @@ interface ClaudeHookMeta {
   command?: string
   hookType?: string
   entryPaths: string[]
-  handlerIndex: number
-  hookIndex: number
+  occurrences: Array<{ handlerIndex: number; hookIndex: number }>
+  occurrenceCount: number
   hookKey: string
-  definitionHash: string
+  scenarioHash: string
+  hookHash: string
   enabled: boolean
   canToggleHook: boolean
   stateSourcePath: string
@@ -92,24 +103,24 @@ interface ClaudeDisabledHookEntry {
   scope: 'user'
   event: string
   mode: 'nested' | 'direct'
-  handlerIndex: number
-  hookIndex: number
   matcher?: string
-  handler: Record<string, unknown>
+  scenarioHash: string
+  containerTemplate?: Record<string, unknown>
   hook: Record<string, unknown>
-  definitionHash: string
+  hookHash: string
+  removedCount: number
   disabledAt: string
 }
 ```
 
-保存 `handler` 是为了恢复 matcher group 的非 hook 字段; 保存 `hook` 是为了精确恢复被移除的节点。
+保存 `containerTemplate` 是为了在目标场景不存在时重建 matcher group; 它不能参与 hook 身份判断。保存 `hook` 是为了精确恢复被移除的子项。`removedCount` 用于还原重复子项的数量, 但恢复时如果当前场景里已经存在同一 `hookHash`, 视为已启用, 不再插入重复项。
 
 ## 局部冲突模型
 
 这个功能不能把整份 `settings.json` 当作版本控制单位。Claude settings 是高频修改文件, 用户、Claude Code 和其他本地工具都可能修改无关段落。Berth 的冲突判断只围绕“目标 hook”和“目标 hook 所在容器”:
 
-- hook 身份: `definitionHash`, 由 `{ event, mode, matcher, hook }` 的 canonical JSON 计算。
-- 容器选择器: `event + mode + matcher`。它只用于恢复时寻找应插入的位置。
+- hook 身份: `hookHash`, 只由 hook 子项本身的 canonical JSON 计算。
+- 场景选择器: `event + mode + matcher`。它只用于限定扫描范围和恢复插入位置。
 - 文件快照 hash: 只用于写入前发现极短时间内的并行写入, 不用于拒绝旧 UI 发起的操作。
 
 换句话说, 页面扫描后 settings 被别的工具改了也不一定失败。只要当前文件里还能唯一识别目标 hook, Berth 就基于当前文件继续做最小修改。
@@ -123,8 +134,8 @@ interface ClaudeDisabledHookEntry {
    - 不使用 renderer 传来的旧 JSON。
    - 不因为整文件 hash 变化直接失败。
 3. transform 基于当前 JSON 执行。
-   - 禁用只删除目标 hook 节点。
-   - 恢复只插入 sidecar 里的 hook 节点。
+   - 禁用只删除目标 scenario 下 `hookHash` 相同的 hook 子项。
+   - 恢复只在目标 scenario 下插入 sidecar 里的 hook 子项。
    - 其他 event、matcher group、hook 保持当前文件里的内容。
 4. 写入前复读文件 hash。
    - 如果文件从本次 transform 开始后又变了, 重新读取最新文件并重算 transform。
@@ -139,66 +150,63 @@ interface ClaudeDisabledHookEntry {
 禁用操作输入包含:
 
 - `hookKey`
-- `definitionHash`
+- `scenarioHash`
+- `hookHash`
 - `sourcePath`
 
 处理规则:
 
-1. 优先按 `hookKey` 中的 event / handlerIndex / hookIndex 定位。
-   - 该位置仍是同一 `definitionHash`: 删除。
-   - 该位置已变成其他 hook: 不删除, 进入 hash 搜索。
-2. 在当前 settings 中搜索同一 `definitionHash`。
-   - 找到唯一一条: 删除这一条。
-   - 找到零条: 若 sidecar 已有该 hash 的 disabled entry, 返回 no-op; 否则返回 stale conflict。
-   - 找到多条: 返回 ambiguous conflict, 不猜测删除哪一条。
-3. 同一 event / matcher 下出现相似但 hash 不同的 hook:
-   - 视为用户或其他工具改过内容。
-   - 不作为同一条 hook。
-   - 不删除, 返回 stale conflict。
+1. 按 `hookKey` 找到 event 和 scenario。
+2. 扫描该 scenario 下所有 hook 子项, 对每个子项计算 `hookHash`。
+3. 删除所有 hash 等于目标 `hookHash` 的子项。
+4. 找到零条:
+   - 若 sidecar 已有该 scenario + hookHash 的 disabled entry, 返回 no-op。
+   - 否则返回 stale conflict, 提示刷新后重试。
+5. 找到一条或多条:
+   - 全部删除, sidecar 记录 `removedCount`。
+   - 这表示行级禁用的单位是“该场景下这类 hook 子项”, 不是数组中的某一个 index。
 
-这个规则允许用户或其他软件修改无关段落, 也允许同一 event 下新增其他 hook。只有目标 hook 本身被改掉、删掉或复制成多份时才冲突。
+这个规则允许用户或其他软件修改无关段落, 也允许同一 event 下新增其他 hook。只有目标 scenario 不存在、目标 hook 子项已经被改成另一个 hash, 或文件结构无法解析时才冲突。
 
 ### 恢复时的局部判断
 
 恢复操作以 sidecar entry 为准, 但必须合并到当前 settings:
 
-1. 当前 active settings 已有同一 `definitionHash`:
+1. 先定位 sidecar 里的 event 和 scenario。
+2. 扫描该 scenario 下所有 hook 子项, 对每个子项计算 `hookHash`。
+3. 当前 scenario 下已有一条或多条同一 `hookHash`:
    - 视为用户已经手动恢复。
    - 不再插入重复 hook。
    - 清理 sidecar entry。
-2. 当前没有同一 hash, 且存在唯一同一容器选择器:
+4. 当前 scenario 存在但没有同一 `hookHash`:
    - nested mode 插入到这个 matcher group 的 `hooks` 数组。
+   - 插入数量为 `removedCount`, 最少 1 条。
    - 保留当前 matcher group 的其他字段, 不用 sidecar 覆盖。
-3. 当前有多个同一容器选择器:
-   - 若原 handlerIndex 命中其中一个, 插入该位置。
-   - 否则返回 ambiguous conflict。
-4. 当前没有同一容器选择器:
-   - 插入 sidecar 保存的 handler。
+5. 当前 scenario 不存在:
+   - 用 `containerTemplate` 重建 matcher group。
    - 只插入要恢复的 hook, 不覆盖其他当前内容。
-5. 原位置已有不同 hook:
-   - 不覆盖原位置。
-   - 插入到原位置之后或当前数组尾部。
+   - 插入数量为 `removedCount`, 最少 1 条。
 
-这里的“同名段落”按 Claude Hook 结构解释为 `event + matcher group`。真正表示“同一条 hook”的依据只能是 `definitionHash`。
+这里的“同名段落”按 Claude Hook 结构解释为 `event + matcher group`。真正表示“同一条 hook”的依据只能是子项的 `hookHash`。如果目标 scenario 中已经有重复的同 hash 子项, 状态就是 enabled; enable 操作只清理恢复点, 不再额外追加。
 
 ### 风险与进一步优化
 
 1. 文本被整文件重写
    - 风险: 当前仓库对 Claude settings 使用 `JSON.parse` / `JSON.stringify`。如果实现沿用这个方式, 即使只删除一个 hook, 文件缩进、换行和 key 顺序也可能被重写。
    - 影响: 语义正确, 但用户手动维护的格式会丢失, 外部工具也更容易看到大面积 diff。
-   - 规避: 实现前引入文本级 JSON patch。优先用 AST 定位 `hooks[event][handlerIndex].hooks[hookIndex]` 或 direct handler 的文本范围, 只删除或插入目标数组元素。解析失败时不写。整文件 `JSON.stringify` 只作为测试夹具或明确的 fallback, 不作为默认写入路径。
+   - 规避: 实现前引入文本级 JSON patch。优先用 JSON AST/range parser 定位目标 scenario 下所有同 `hookHash` 子项的文本范围, 只删除或插入目标数组元素。删除多个子项时按文本位置倒序处理, 并正确处理前后逗号。解析失败时不写。整文件 `JSON.stringify` 只作为测试夹具或明确的 fallback, 不作为默认写入路径。
 2. 目标 hook 被用户改了
-   - 风险: 用户在页面扫描后改了 command、type 或 matcher。此时原 `definitionHash` 找不到。
+   - 风险: 用户在页面扫描后改了 command 或 type。此时原 `hookHash` 找不到。
    - 影响: Berth 不知道用户想禁用“旧 hook”还是“改过后的新 hook”。
    - 规避: 返回 stale conflict, 提示刷新后重试。不按相似 command 或同名 matcher 猜测。
 3. 同一 hook 被复制成多份
-   - 风险: 当前文件里出现多条相同 `definitionHash`。
-   - 影响: 如果原 index 仍命中, 可以安全删除该位置; 如果原位置已经移动或变成别的 hook, 无法知道用户要删哪一条。
-   - 规避: 原 index 命中时删除原 index; 否则返回 ambiguous conflict。后续可在 row 中显示重复来源和 index, 让用户手动选择。
+   - 风险: 当前 scenario 里出现多条相同 `hookHash`。
+   - 影响: 如果只删一条, 用户看到 disabled 但同一 hook 仍会运行。
+   - 规避: 行级禁用删除该 scenario 下全部同 hash 子项, sidecar 记录 `removedCount`。恢复时如果已有任意同 hash 子项, 视为 enabled。
 4. 同一 event + matcher group 出现多份
-   - 风险: 恢复时有多个可插入容器。
-   - 影响: 插错 group 可能改变执行顺序或触发条件。
-   - 规避: 原 handlerIndex 命中时使用原位置; 否则返回 ambiguous conflict。不要为了成功恢复而随便选第一组。
+   - 风险: 当前 settings 里有多个相同 scenario 容器。
+   - 影响: 恢复插入到哪一个容器会影响顺序。
+   - 规避: 恢复前先扫描所有相同 scenario 容器; 任意容器已有同 hash 子项就视为 enabled。若都没有, 插入第一个现有 scenario 容器; 没有 scenario 时用 `containerTemplate` 创建。
 5. 用户手动恢复了 hook
    - 风险: sidecar 还在, active settings 里已经有同一 hook。
    - 影响: 页面可能出现 active 与 disabled 两条重复记录。
@@ -218,7 +226,7 @@ interface ClaudeDisabledHookEntry {
 9. 其他 scope 中存在同一 hook
    - 风险: 禁用 user settings 中的一条 hook 后, project/local/managed 里仍有同一 hook。
    - 影响: 用户可能以为已禁用, 但 Claude 最终仍可能从其他来源执行同类 hook。
-   - 规避: 扫描时按 `definitionHash` 汇总跨来源 duplicate。行内提示“其他来源仍存在同一 hook”, 禁用操作只声明影响当前 user source。
+   - 规避: 扫描时按 `event + matcher + hookHash` 汇总跨来源 duplicate。行内提示“其他来源仍存在同一 hook”, 禁用操作只声明影响当前 user source。
 10. 写入期间外部进程持续修改文件
     - 风险: 写前复读和重算一直遇到变化。
     - 影响: 操作失败。
@@ -234,7 +242,7 @@ interface ClaudeDisabledHookEntry {
 
 实现优先级:
 
-1. 必做: 文本级最小 JSON patch、局部 hash 匹配、per-file mutex、写前复读重算、sidecar schema 校验、跨来源 duplicate 提示。
+1. 必做: 文本级最小 JSON patch、hook 子项 hash 匹配、scenario 扫描、per-file mutex、写前复读重算、sidecar schema 校验、跨来源 duplicate 提示。
 2. 可后续: 备份保留策略、重复 hook 手动选择 UI、从整文件备份恢复单条 hook。
 
 ### 写入顺序
@@ -244,13 +252,13 @@ interface ClaudeDisabledHookEntry {
 1. 从当前 settings 构造 sidecar entry。
 2. 先写 sidecar。
 3. 再写 settings 删除 active hook。
-4. 若 settings 写失败, sidecar 可能残留; parser 会因为 active 中仍有同 hash hook 而隐藏 disabled 副本。
+4. 若 settings 写失败, sidecar 可能残留; parser 会因为 active 中仍有同 scenario + hookHash hook 而隐藏 disabled 副本。
 
 恢复也优先保证恢复点不丢:
 
 1. 先写 settings 插回 hook。
 2. 再清理 sidecar。
-3. 若 sidecar 清理失败, parser 会因为 active 中已有同 hash hook 而隐藏 disabled 副本, 下次操作可继续清理。
+3. 若 sidecar 清理失败, parser 会因为 active 中已有同 scenario + hookHash hook 而隐藏 disabled 副本, 下次操作可继续清理。
 
 这两个顺序都避免出现“settings 已改, 但恢复点丢失”的不可恢复状态。
 
@@ -277,7 +285,7 @@ interface SetHookEnabledRequest {
 }
 ```
 
-初版不扩展 `scope` union, 避免误让 UI 发送 project/local 写入请求。Claude Code 的目标身份从 `hookKey` 内的 `definitionHash` 解析, 不要求 UI 传整文件 hash。
+初版不扩展 `scope` union, 避免误让 UI 发送 project/local 写入请求。Claude Code 的目标身份从 `hookKey` 内的 `scenarioHash` 和 `hookHash` 解析, 不要求 UI 传整文件 hash。
 
 ### 禁用流程
 
@@ -294,8 +302,8 @@ interface SetHookEnabledRequest {
 5. 创建 sidecar entry。
 6. 先写 sidecar, 保证恢复点早于 settings 删除。
 7. 从 active JSON 中移除 hook:
-   - nested mode: 删除 `handler.hooks[hookIndex]`; 若该数组清空, 删除整个 handler。
-   - direct mode: 删除 `settings.hooks[event][handlerIndex]`。
+   - nested mode: 删除目标 scenario 下所有同 `hookHash` 的 `handler.hooks[]` 子项; 若该数组清空, 删除整个 handler。
+   - direct mode: 删除目标 event 下所有同 `hookHash` 的 direct handler。
    - 若 event 数组清空, 删除 `settings.hooks[event]`。
 8. 先写时间戳备份:
    - `settings.json.berth-backup-YYYYMMDDTHHMMSSmmmZ`
@@ -305,7 +313,7 @@ interface SetHookEnabledRequest {
 10. 如果写前复读发现文件又变了, 重新读取并重算禁用 transform, 最多 3 次。
 11. 退出 mutex。
 
-如果 sidecar 已有同一 `definitionHash` 的 disabled entry, 禁用应返回 no-op 成功, 不重复写入。
+如果 sidecar 已有同一 scenario + `hookHash` 的 disabled entry, 禁用应返回 no-op 成功, 不重复写入。
 
 ### 恢复流程
 
@@ -314,18 +322,18 @@ interface SetHookEnabledRequest {
 1. 校验 user scope、sourcePath、hookKey。
 2. 进入 settings 文件 mutex。
 3. 读取 sidecar entry; 不存在则检查 active settings:
-   - 若 active 中已有同一 hash, 返回 no-op 成功。
+   - 若目标 scenario 中已有同一 `hookHash`, 返回 no-op 成功。
    - 否则返回 “找不到恢复点”。
 4. 读取 settings JSON。
-5. 若 active settings 已有同一 definitionHash:
+5. 若目标 scenario 中已有同一 `hookHash`:
    - 清理 sidecar entry。
    - 返回成功。
 6. 按局部冲突模型恢复:
    - nested mode:
-     - 若原 handlerIndex 位置存在同 matcher 的 nested handler, 插入到原 hookIndex 附近。
-     - 否则插入保存的 handler, 其中 `hooks` 只包含保存的 hook。
+     - 若目标 scenario 存在, 插入到该 scenario 的 `hooks` 数组末尾。
+     - 若目标 scenario 不存在, 用 `containerTemplate` 创建 handler, 其中 `hooks` 只包含要恢复的 hook 子项。
    - direct mode:
-     - 将保存的 hook 作为 handler 插入到原 handlerIndex 附近。
+     - 若目标 event 中没有同 `hookHash` direct handler, 将保存的 hook 作为 handler 追加到 event 数组末尾。
 7. 写 settings 备份 + temp rename。
 8. 如果写前复读发现文件又变了, 重新读取并重算恢复 transform, 最多 3 次。
 9. 清理 sidecar entry, temp rename 写 sidecar。
@@ -336,13 +344,14 @@ interface SetHookEnabledRequest {
 `src/main/adapters/claude-code/parsers.ts#parseHooks()`:
 
 - active hooks:
-  - 为每条 Claude hook 增加 `hookKey`、`definitionHash`、`enabled: true`。
+  - 为每条 Claude hook 增加 `hookKey`、`scenarioHash`、`hookHash`、`enabled: true`。
+  - 同一 scenario 下相同 `hookHash` 的子项合并成一条 asset, 并写入 `occurrenceCount`。
   - 只有 `scope === 'user'` 且 source 是 `~/.claude/settings.json` 时 `canToggleHook: true`。
 - disabled hooks:
   - user settings 解析时读取 `~/.claude/.berth/hooks-state.json`。
   - 将 sidecar entry 转成 `CapabilityAsset`。
   - `path` 使用原 `sourcePath`, `meta.enabled = false`, `meta.disabledByBerth = true`。
-  - 如果 active settings 中已经有同 hash hook, 不展示 disabled 副本, 避免同一 hook 出现两行。
+  - 如果 active settings 中已经有同 scenario + hookHash hook, 不展示 disabled 副本, 避免同一 hook 出现 active / disabled 两行。
 - 解析 sidecar 失败:
   - 不让整个 scanner 失败。
   - 追加 scanner error, 页面显示对应配置问题。
@@ -401,13 +410,13 @@ Claude Code 没有原生单 Hook 状态。Berth 会从用户级 settings 中暂�
   - 禁用 nested Claude hook 会从 `settings.hooks` 删除目标 hook, 写 sidecar。
   - nested handler 被清空时删除 handler; event 清空时删除 event。
   - 恢复 sidecar hook 会写回 settings 并清理 sidecar。
-  - active 已有同 hash 时恢复为 no-op 并清理 sidecar。
+  - active 已有同 scenario + hookHash 时恢复为 no-op 并清理 sidecar。
   - stale key、source mismatch、managed、非 user scope 返回错误。
   - Codex `hooks.state` 现有测试保持通过。
 - `tests/unit/claude-scanner.test.ts` 或 parser 相关测试
-  - active user hook 带 `hookKey`、`definitionHash`、`enabled`、`canToggleHook`。
+  - active user hook 带 `hookKey`、`scenarioHash`、`hookHash`、`enabled`、`canToggleHook`。
   - sidecar disabled hook 会被展示。
-  - active 中已有同 hash 时不展示 sidecar duplicate。
+  - active 中已有同 scenario + hookHash 时不展示 sidecar duplicate。
 - `tests/unit/hook-lifecycle.test.ts`
   - Claude user hook 可进入 confirmation 状态。
   - Claude project/managed hook 不可切换。
