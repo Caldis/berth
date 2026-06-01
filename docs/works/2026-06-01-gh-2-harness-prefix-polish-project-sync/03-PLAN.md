@@ -55,6 +55,7 @@
 - `pnpm harness:check` - all checks passed after workflow/action rename。
 - `pnpm typecheck:node` - passed after `harness-issues` implementation。
 - `pnpm harness:issues` - active=10 resolved=2; listed active docs/issues backlog for optional `harness-5.2-issues` cleanup。
+- `pnpm harness:check` - all checks passed after `feat(harness): add ordered workflow actions` commit。
 
 ## 有序 action 与 issues 收敛补充记录
 
