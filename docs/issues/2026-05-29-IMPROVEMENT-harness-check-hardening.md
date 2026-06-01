@@ -2,6 +2,10 @@
 - harness-check 校验器的两项加固 (最终评审 Minor, 非阻断), 留待后续。已落地的第三项
   (孤儿 playbook 检测) 不在此列。
 
+# GitHub
+- Issue: https://github.com/Caldis/berth/issues/17
+- Number: #17
+
 # 重现步骤
 - 1. 将某 `.agents/workflow/<verb>.md` 截断为 0 字节, 跑 `pnpm harness:check`
 - 2. 检查 `docs/works/_archive` 与 `docs/friction/_archive` 是否被 git 跟踪

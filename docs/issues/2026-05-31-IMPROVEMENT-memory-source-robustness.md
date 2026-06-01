@@ -2,6 +2,10 @@
 MemorySource 适配层 (`src/main/memory/`) 的若干健壮性/性能改进, 属
 `2026-05-30-memory-source-adapter-layer` 的后续, 均非阻断性:
 
+# GitHub
+- Issue: https://github.com/Caldis/berth/issues/20
+- Number: #20
+
 1. **重复读取**: `listMemory` 对每个源先 `detect()` (读+解析 index.json) 再 `list()` (再读+解析一次)。
    可合并为一次读取 (detect 复用 list 结果或缓存)。
 2. **native 源 N+1**: `ClaudeNativeSource.list()` 为构建列表元数据读取了每条笔记全文再 `delete body`。

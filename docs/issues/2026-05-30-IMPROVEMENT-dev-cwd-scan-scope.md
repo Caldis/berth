@@ -2,6 +2,10 @@
 - berth dev 模式下 main 进程以 `process.cwd()` (= 项目根) 作为 projectDir 传给 scanner 与 watcher
   (src/main/index.ts: initScanner(process.cwd()) / watcher.start(process.cwd()))。低优先, 非阻塞。
 
+# GitHub
+- Issue: https://github.com/Caldis/berth/issues/18
+- Number: #18
+
 # 重现步骤
 - `pnpm dev` 在 berth 仓库根启动
 

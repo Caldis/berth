@@ -1,5 +1,10 @@
 # 描述
 记忆视图 (MemoryView) 的动效/反馈打磨, 属 `2026-05-30-memory-source-adapter-layer` 的后续 (来自 critique #5):
+
+# GitHub
+- Issue: https://github.com/Caldis/berth/issues/21
+- Number: #21
+
 - **展开/折叠无过渡**: NoteCard 展开是裸条件渲染 (`{expanded && ...}`), 无高度过渡, 体感生硬。
   应按 frontend-design 规范用 `grid-template-rows` (0fr→1fr) 过渡, 而非直接动 height。
 - **跳转高亮环不消失**: 通过关联 (links) 跳转后, 目标卡片的 `focusId` ring (border-primary ring) **永久保留**,

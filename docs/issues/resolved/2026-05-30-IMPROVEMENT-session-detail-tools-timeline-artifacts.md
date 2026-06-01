@@ -8,6 +8,10 @@ IMPROVEMENT
 
 Done
 
+## 完成日期
+
+2026-06-02
+
 ## 背景
 
 用户验收会话基础字段修复后指出, Session Detail 仍缺少完整复盘能力:

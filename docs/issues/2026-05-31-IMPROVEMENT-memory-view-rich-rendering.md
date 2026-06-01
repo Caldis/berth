@@ -1,5 +1,10 @@
 # 描述
 记忆视图 (MemoryView) 的展示体验仍可增强, 属 `2026-05-30-memory-source-adapter-layer` 的后续增量:
+
+# GitHub
+- Issue: https://github.com/Caldis/berth/issues/22
+- Number: #22
+
 - **Markdown 富渲染**: 当前正文用 `<pre whitespace-pre-wrap>` 纯文本 + 复用 inspector drawer "查看原始"。
   真正的 markdown 渲染 (标题/列表/代码块/`[[wiki链接]]`) 需要引入渲染库 (如 react-markdown + remark),
   属新依赖决策, 未在本任务内擅自引入 (遵守 simplicity-first / 不加投机依赖)。
