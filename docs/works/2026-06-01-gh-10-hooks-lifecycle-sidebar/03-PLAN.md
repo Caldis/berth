@@ -98,3 +98,12 @@ verify 不通过项作为新任务追加于此, phase 退回 implement。
   - feedback: Electron 视觉验收发现正常状态说明卡片从侧栏右侧弹出时被侧栏滚动容器裁掉, 需要让卡片在侧栏内完整展示。
   - tests: `tests/renderer/hooks-lifecycle-view.test.tsx`
   - verify: `pnpm test -- tests/renderer/hooks-lifecycle-view.test.tsx` 14 项通过; `pnpm typecheck:web` 通过; `pnpm harness:check` 通过
+
+## verify 回写 2026-06-01 hook health sidebar
+- `pnpm lint` 通过
+- `pnpm typecheck` 通过
+- `pnpm test` 50 个文件 / 329 项通过; 仍有既有 Recharts 0 宽高 warning, 不影响结果
+- `pnpm harness:check` 通过
+- Electron 视觉验收: 先执行 `pnpm dev:agent guard before --id hooks-health-sidebar-verify --json`, 记录用户 dev PID 226164 和 Electron 主进程 PID 493864; 手动启动独立实例 `hooks-health-sidebar-remote`, 带 `--remote-debugging-port=9338`; CDP 进入能力 Hooks 页面, 断言 `Hook 检查` 位于生命周期侧栏、`#hook-health-checks` 不存在、正常 tag hover 后显示 `当前视角没有需要处理的 Hook 检查。`, 且侧栏滚动范围已下沉到 lifecycle stage list。
+- 截图证据: 用真实 Electron 主进程 PID 71228 的窗口句柄 + DWM bounds + `PrintWindow` 截图, `C:\Users\mail\AppData\Local\Temp\berth-hooks-health-sidebar-hover-fixed-printwindow.png` 展示正常状态 hover 卡片完整显示, 未被侧栏裁剪。
+- 清理: 按精确 owner PID 524648 停止 `hooks-health-sidebar-remote` 进程树; `pnpm dev:agent guard after --id hooks-health-sidebar-verify --json` 返回 `guard-ok`, 用户 dev 进程未丢失。

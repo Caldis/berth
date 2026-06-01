@@ -76,6 +76,8 @@
 
 ## 用户选择
 
+Verify 中第 1 项已复现为当前任务的验收缺口, 已转入 `03-PLAN.md` 任务 12 并完成。其余项仍待用户确认。
+
 等待用户确认:
 - 跳过全部: 将 INDEX.phase 回到 `verify`, 下一步进入 `harness-5.0-archive`。
 - 选择部分项: 将选中项追加到 `03-PLAN.md`, INDEX.phase 回到 `implement`。
