@@ -8,11 +8,11 @@
 
 ## 任务标识
 
-以 Jira ID 为可选主键。任务目录命名 `{YYYY-MM-DD}[-{JIRA}]-{SUMMARY}`:
-- `2026-05-29-SPFOODY-63829-order-notes` (有 Jira)
-- `2026-05-29-cold-start-crash` (无 Jira)
+以 GitHub Issue number 作为可读主键。任务 ID 固定为 `GH-{issue_number}`, 任务目录命名 `{YYYY-MM-DD}-gh-{issue_number}-{SUMMARY}`:
+- `2026-06-01-gh-123-order-notes`
+- `2026-06-01-gh-124-cold-start-crash`
 
-SUMMARY 为 kebab-case。任务目录位于 `docs/works/`。
+SUMMARY 为 kebab-case。任务目录位于 `docs/works/`。`issue.number` 是人工可读主键; `gh_project.item_id` 是脚本同步 Project 状态用的 GraphQL node id, 不能互换。
 
 ## INDEX.md 状态契约
 
@@ -20,11 +20,22 @@ SUMMARY 为 kebab-case。任务目录位于 `docs/works/`。
 
 ```yaml
 ---
-task: 2026-05-29-SPFOODY-63829-order-notes
+task: 2026-06-01-gh-123-order-notes
+task_id: GH-123
 type: feature          # feature | bug
-jira: SPFOODY-63829    # 可选
 phase: explore         # explore | design | implement | verify | polish | blocked | archive
-created: 2026-05-29
+created: 2026-06-01
+issue:
+  number: 123
+  repo: Caldis/berth
+  url: https://github.com/Caldis/berth/issues/123
+gh_project:
+  status: tracked
+  project_id: PVT_xxx
+  project_number: 6
+  project_url: https://github.com/users/Caldis/projects/6
+  item_id: PVTI_xxx
+  item_status: In Progress
 artifacts:
   source: 00-PRD.md    # feature: 00-PRD.md; bug: 00-BUG.md
   analysis: 01-ANALYSIS.md
@@ -62,8 +73,9 @@ artifacts:
 10. 执行当前任务时发现已验证的产品 bug、功能缺口或改进项, 且不属于当前主线验收范围, 必须主动写入 `docs/issues/{YYYY-MM-DD}-{BUG|FEATURE|IMPROVEMENT}-{summary}.md`; 当前任务产物只保留交叉引用, 不把旁支问题混入当前实现, 除非用户明确扩大任务范围。
 11. 已验证、边界清楚的增量必须小步频繁提交; 每次提交前只暂存自己相关文件, 用 `git diff --cached` 核对 staged 集合, 不提交无关工作区改动。
 12. Polish 是可选阶段, 只能由用户主动要求, 或 Agent 在复杂任务 verify 通过后询问并取得明确同意后进入。Polish 只检查当前任务相关的深挖、修复、交互、视觉、可用性、适用性与性能问题, 不扩大范围。
-13. Archive 前必须同步 GitHub Project: 对存在 `gh_project` 的任务, 运行 `node scripts/harness-projects.mjs done <task-dir>`, 将 item 状态置 Done 并回读确认; 失败或缺授权时停止 archive, 不移动目录。
-14. 测试不是 verify 阶段补跑。Design 必须写测试策略和测试矩阵; Implement 每个实现项必须先写或更新目标测试, 跑目标测试通过后才可勾选。确实不适合自动化测试时, 必须在 03-PLAN 写清 `tests: not needed - <reason>` 和替代验证。每个实现项必须有测试证据或明确例外理由。
+13. Active work 必须记录 `task_id`、`issue.number`、`issue.url` 和 `gh_project.item_id`。旧归档任务可保留历史字段, 但 active works 不再新增 `jira:`。
+14. Archive 前必须同步 GitHub Project: 运行 `node scripts/harness-projects.mjs done <task-dir>`, 将 item 状态置 Done 并回读确认; 失败、缺授权或缺 `gh_project.item_id` 时停止 archive, 不移动目录。GitHub Issue 是否关闭由 PR closing keyword 或用户明确要求决定, archive 不默认关闭 Issue。
+15. 测试不是 verify 阶段补跑。Design 必须写测试策略和测试矩阵; Implement 每个实现项必须先写或更新目标测试, 跑目标测试通过后才可勾选。确实不适合自动化测试时, 必须在 03-PLAN 写清 `tests: not needed - <reason>` 和替代验证。每个实现项必须有测试证据或明确例外理由。
 
 ## 工具
 

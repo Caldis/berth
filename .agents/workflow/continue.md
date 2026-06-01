@@ -1,9 +1,9 @@
 # harness-continue — 继续已有任务
 
-输入: 任务目录名或 Jira ID (参数 $ARGUMENTS); 为空时列出 `docs/works/` 下所有未归档任务供选择。
+输入: 任务目录名、`task_id` (`GH-123`)、`#123` 或 issue URL (参数 $ARGUMENTS); 为空时列出 `docs/works/` 下所有未归档任务供选择。
 
 步骤:
-1. 定位任务目录, 读取 INDEX.md frontmatter。
+1. 定位任务目录: 先按目录名精确匹配; 再按 `task_id` / `issue.number` / issue URL 匹配 `INDEX.md`; 最后按 `{date}-gh-{number}-*` 匹配。读取 INDEX.md frontmatter。
 2. 按 `phase` 路由:
    - explore → 执行 `.agents/workflow/explore.md`
    - design → 执行 `.agents/workflow/design.md`

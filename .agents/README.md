@@ -20,6 +20,10 @@ berth 的 Agent 工作流单一真源, 同时服务 Claude Code 与 Codex。
 
 `pnpm harness:check` 校验产物/模板/命名/分发。CI 强制。
 
+## 任务 ID
+
+active work 使用 GitHub Issue number 作为可读主键: `task_id: GH-{number}`。目录固定为 `docs/works/{date}-gh-{number}-{summary}/`; `gh_project.item_id` 只作为 Project 状态同步句柄。
+
 ## 调用
 
 - Claude Code: `/harness-<verb>` (由 `.claude/skills/harness-<verb>/SKILL.md` 提供, 也可自动触发)

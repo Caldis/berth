@@ -1,9 +1,19 @@
 ---
-task: {YYYY-MM-DD}-{SUMMARY}
+task: {YYYY-MM-DD}-gh-{ISSUE_NUMBER}-{SUMMARY}
+task_id: GH-{ISSUE_NUMBER}
 type: feature
-jira:
 phase: explore
 created: {YYYY-MM-DD}
+issue:
+  number: {ISSUE_NUMBER}
+  repo: Caldis/berth
+  url: https://github.com/Caldis/berth/issues/{ISSUE_NUMBER}
+gh_project:
+  status: tracked
+  project_number: 6
+  project_url: https://github.com/users/Caldis/projects/6
+  item_id: {PROJECT_ITEM_ID}
+  item_status: In Progress
 artifacts:
   source: 00-PRD.md
   analysis: 01-ANALYSIS.md
