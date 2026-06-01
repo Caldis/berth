@@ -60,6 +60,36 @@ export interface AgentCapabilityPluginAssetDescriptor {
   descriptionKey: string
 }
 
+export type AgentCapabilityPluginHealthCheckAgentId = AgentPluginAgentId
+
+export type AgentCapabilityPluginHealthCheckSeverity = 'info' | 'warning' | 'error'
+
+export type AgentCapabilityPluginHealthCheckConfidence = 'high' | 'medium' | 'low'
+
+export type AgentCapabilityPluginHealthCheckCategory =
+  | 'source'
+  | 'syntax'
+  | 'structure'
+  | 'reference'
+  | 'configuration'
+  | 'session'
+
+export interface AgentCapabilityPluginHealthCheckDescriptor {
+  id: string
+  agentId: AgentCapabilityPluginHealthCheckAgentId
+  severity: AgentCapabilityPluginHealthCheckSeverity
+  category: AgentCapabilityPluginHealthCheckCategory
+  assetTypes?: AssetType[]
+  scopes?: AssetScope[]
+  sourceCodes?: ScanSourceCode[]
+  confidence?: AgentCapabilityPluginHealthCheckConfidence
+  labelKey: string
+  descriptionKey: string
+  suggestionKey?: string
+  targetRoute?: string
+  evidenceUrls?: string[]
+}
+
 export interface AgentCapabilityPluginSource {
   path: string
   scope: AssetScope
@@ -101,6 +131,7 @@ export interface AgentCapabilityPlugin {
   permissions: AgentCapabilityPluginPermission[]
   sourceDescriptors: AgentCapabilityPluginSourceDescriptor[]
   assetDescriptors: AgentCapabilityPluginAssetDescriptor[]
+  healthCheckDescriptors: AgentCapabilityPluginHealthCheckDescriptor[]
   sourceCoverage: AgentCapabilityPluginSourceCoverage
   references: AgentCapabilityPluginReference[]
 }

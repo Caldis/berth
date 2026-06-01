@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { listAgentCapabilityPlugins } from '../../src/main/agent-plugins/registry'
 import type { AgentScanSourceGroup } from '../../src/shared/types/ipc'
+import type { HealthCheckCategory, HealthCheckSeverity } from '../../src/shared/types/ipc'
 import type { AssetType, ScanSourceCode } from '../../src/shared/types/asset'
 
 const claudeDescriptorCodes: ScanSourceCode[] = [
@@ -61,6 +62,70 @@ const codexAssetTypes: AssetType[] = [
   'statusline',
   'session'
 ]
+
+const claudeHealthCheckDescriptorIds = [
+  'claude-code:source:user-claude-md-missing',
+  'claude-code:syntax:json-config-invalid',
+  'claude-code:configuration:settings-schema-missing',
+  'claude-code:structure:hook-command-missing-command',
+  'claude-code:structure:hook-http-missing-url',
+  'claude-code:structure:hook-mcp-tool-missing-field',
+  'claude-code:structure:hook-prompt-missing-prompt',
+  'claude-code:structure:hook-agent-missing-prompt',
+  'claude-code:structure:hook-unknown-type',
+  'claude-code:configuration:hook-shell-ignored-with-args',
+  'claude-code:configuration:hook-windows-shell',
+  'claude-code:configuration:permission-bypass',
+  'claude-code:configuration:permission-broad-bash',
+  'claude-code:structure:mcp-invalid',
+  'claude-code:structure:mcp-missing-transport',
+  'claude-code:source:instruction-file-unreadable',
+  'claude-code:reference:instruction-import-missing',
+  'claude-code:reference:project-agents-md-not-imported',
+  'claude-code:structure:skill-missing-entrypoint',
+  'claude-code:syntax:skill-frontmatter-invalid',
+  'claude-code:syntax:subagent-frontmatter-invalid',
+  'claude-code:structure:subagent-metadata-incomplete',
+  'claude-code:session:empty-project-dirs',
+  'claude-code:session:metadata-missing'
+]
+
+const codexHealthCheckDescriptorIds = [
+  'codex:syntax:config-invalid',
+  'codex:configuration:config-schema-comment-missing',
+  'codex:syntax:hooks-json-invalid',
+  'codex:configuration:hooks-duplicated',
+  'codex:configuration:hook-async-skipped',
+  'codex:configuration:hook-skipped-type',
+  'codex:structure:hook-command-missing-command',
+  'codex:configuration:hook-windows-command',
+  'codex:configuration:hook-windows-command-override',
+  'codex:configuration:project-config-ignored-local-keys',
+  'codex:structure:mcp-invalid',
+  'codex:structure:mcp-missing-transport',
+  'codex:source:instruction-file-unreadable',
+  'codex:reference:instruction-import-missing',
+  'codex:structure:skill-missing-entrypoint',
+  'codex:syntax:skill-frontmatter-invalid',
+  'codex:structure:skill-frontmatter-missing-required',
+  'codex:syntax:custom-agent-toml-invalid',
+  'codex:structure:custom-agent-metadata-incomplete',
+  'codex:session:user-sessions-empty',
+  'codex:session:empty-transcript',
+  'codex:session:unreadable-transcript',
+  'codex:session:metadata-missing'
+]
+
+const healthCheckCategories: HealthCheckCategory[] = [
+  'source',
+  'syntax',
+  'structure',
+  'reference',
+  'configuration',
+  'session'
+]
+
+const healthCheckSeverities: HealthCheckSeverity[] = ['info', 'warning', 'error']
 
 const scanGroups: AgentScanSourceGroup[] = [
   {
@@ -240,6 +305,64 @@ describe('agent capability plugin registry', () => {
     expect(codex?.assetDescriptors.map((descriptor) => descriptor.type)).not.toEqual(
       expect.arrayContaining([...reservedTypes, 'permission', 'env', 'plugin'])
     )
+  })
+
+  it('exposes health check descriptors for built-in plugins', () => {
+    const result = listAgentCapabilityPlugins(scanGroups)
+    const claude = result.plugins.find((plugin) => plugin.id === 'claude-code')
+    const codex = result.plugins.find((plugin) => plugin.id === 'codex')
+
+    expect(claude?.healthCheckDescriptors.map((descriptor) => descriptor.id)).toEqual(
+      claudeHealthCheckDescriptorIds
+    )
+    expect(codex?.healthCheckDescriptors.map((descriptor) => descriptor.id)).toEqual(
+      codexHealthCheckDescriptorIds
+    )
+    expect(claude?.healthCheckDescriptors.find((descriptor) => descriptor.id === 'claude-code:configuration:permission-broad-bash'))
+      .toMatchObject({
+        agentId: 'claude-code',
+        severity: 'warning',
+        category: 'configuration',
+        assetTypes: ['permission'],
+        scopes: ['user', 'project'],
+        sourceCodes: [
+          'claude.user.data-directory',
+          'claude.project.directory'
+        ],
+        targetRoute: '/configuration/capabilities?tab=permissions'
+      })
+    expect(codex?.healthCheckDescriptors.find((descriptor) => descriptor.id === 'codex:configuration:hook-skipped-type'))
+      .toMatchObject({
+        agentId: 'codex',
+        severity: 'info',
+        category: 'configuration',
+        assetTypes: ['hook'],
+        scopes: ['user', 'project'],
+        sourceCodes: [
+          'codex.user.config',
+          'codex.user.hooks',
+          'codex.project.config',
+          'codex.project.hooks'
+        ],
+        targetRoute: '/configuration/capabilities?tab=hooks'
+      })
+  })
+
+  it('keeps health check descriptor metadata inside the runtime health contract', () => {
+    const result = listAgentCapabilityPlugins(scanGroups)
+    const descriptors = result.plugins.flatMap((plugin) => plugin.healthCheckDescriptors)
+
+    expect(descriptors.length).toBeGreaterThan(0)
+    for (const descriptor of descriptors) {
+      expect(healthCheckCategories).toContain(descriptor.category)
+      expect(healthCheckSeverities).toContain(descriptor.severity)
+      expect(descriptor.agentId).not.toBe('all')
+      expect(descriptor.labelKey).toBe(`settings.agentPluginHealthChecks.${descriptor.id}.label`)
+      expect(descriptor.descriptionKey).toBe(
+        `settings.agentPluginHealthChecks.${descriptor.id}.description`
+      )
+      expect(descriptor.assetTypes ?? []).not.toEqual(expect.arrayContaining(['backup', 'debug']))
+    }
   })
 
   it('keeps permissions accurate to Berth actions', () => {
