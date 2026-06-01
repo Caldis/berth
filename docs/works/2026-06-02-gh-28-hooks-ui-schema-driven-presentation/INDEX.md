@@ -2,7 +2,7 @@
 task: 2026-06-02-gh-28-hooks-ui-schema-driven-presentation
 task_id: GH-28
 type: feature
-phase: verify
+phase: polish
 created: 2026-06-02
 issue:
   number: 28
@@ -34,6 +34,6 @@ artifacts:
 - [x] 01-ANALYSIS.md — Explore 产物
 - [x] 02-SPEC.md — Design 产物
 - [x] 03-PLAN.md — 活任务清单
-- [ ] 04-POLISH.md — 可选抛光记录
+- [x] 04-POLISH.md — 可选抛光记录
 
 ## 待澄清 (blocked 时填)
