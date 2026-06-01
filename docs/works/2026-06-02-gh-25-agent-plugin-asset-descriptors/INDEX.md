@@ -2,7 +2,7 @@
 task: 2026-06-02-gh-25-agent-plugin-asset-descriptors
 task_id: GH-25
 type: feature
-phase: implement
+phase: verify
 created: 2026-06-02
 issue:
   number: 25
