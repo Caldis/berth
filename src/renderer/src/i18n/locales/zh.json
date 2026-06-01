@@ -910,8 +910,8 @@
         "agentToggleBody": "这里修改的是当前 Agent 官方的用户级设置。它会影响这个 Agent 的全部 Hooks, 不只影响下面显示的几行。",
         "enabled": "已启用",
         "disabled": "已禁用",
-        "enableHook": "启用这个 Hook",
-        "disableHook": "禁用这个 Hook",
+        "enableHook": "启用",
+        "disableHook": "禁用",
         "enableAll": "全部启用",
         "disableAll": "全部禁用",
         "confirmEnable": "要启用 {{agent}} 的 Hooks 吗? Berth 会更新 {{path}} 并重新扫描本地资产。",
@@ -919,7 +919,19 @@
         "confirmEnableHook": "要启用这个 Codex Hook 吗? Berth 会更新用户配置里的 hooks.state。来源: {{path}}",
         "confirmDisableHook": "要禁用这个 Codex Hook 吗? Berth 会更新用户配置里的 hooks.state。来源: {{path}}",
         "confirmRestoreClaudeHook": "要恢复这个 Claude Code Hook 吗? Berth 会从恢复点写回用户级 settings。事件: {{event}}。命令: {{command}}。禁用时间: {{disabledAt}}。来源: {{path}}",
-        "confirmSoftDisableClaudeHook": "要禁用这个 Claude Code Hook 吗? Berth 会从用户级 settings 移除这段 Hook, 并保存恢复点和备份。事件: {{event}}。命令: {{command}}。来源: {{path}}"
+        "confirmSoftDisableClaudeHook": "要禁用这个 Claude Code Hook 吗? Berth 会从用户级 settings 移除这段 Hook, 并保存恢复点和备份。事件: {{event}}。命令: {{command}}。来源: {{path}}",
+        "rawJson": "JSON 原文"
+      },
+      "config": {
+        "condition": "条件",
+        "timeout": "超时",
+        "statusMessage": "状态文案",
+        "commandWindows": "Windows 命令",
+        "args": "参数",
+        "shell": "Shell",
+        "async": "异步",
+        "asyncRewake": "异步唤醒",
+        "model": "模型"
       }
     },
     "plugins": {

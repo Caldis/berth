@@ -125,7 +125,7 @@ describe('HooksLifecycleView', () => {
     ])
     await waitForHookHealthIdle()
 
-    fireEvent.click(screen.getByText('Disable hook'))
+    fireEvent.click(screen.getByText('Disable'))
 
     await waitFor(() => {
       expect(window.confirm).toHaveBeenCalledWith(expect.stringContaining('Event: Stop'))
@@ -152,7 +152,7 @@ describe('HooksLifecycleView', () => {
     ])
     await waitForHookHealthIdle()
 
-    fireEvent.click(screen.getByText('Disable hook'))
+    fireEvent.click(screen.getByText('Disable'))
 
     await waitFor(() => {
       expect(window.api.hooks.setHookEnabled).toHaveBeenCalledWith({
@@ -177,6 +177,45 @@ describe('HooksLifecycleView', () => {
     await waitFor(() => {
       expect(window.api.shell.openPath).toHaveBeenCalledWith('C:\\Users\\test\\.codex\\hooks.json')
     })
+  })
+
+  it('shows type specific hook metadata and raw JSON', async () => {
+    renderHooks('claude', [
+      hookAsset('claude-http', 'claude-code', 'PreToolUse', {
+        hookType: 'http',
+        url: 'http://localhost:8080/hooks/pre-tool-use',
+        timeout: 30,
+        statusMessage: 'Checking command',
+        rawHook: {
+          type: 'http',
+          url: 'http://localhost:8080/hooks/pre-tool-use',
+          timeout: 30,
+          statusMessage: 'Checking command'
+        }
+      }),
+      hookAsset('claude-prompt', 'claude-code', 'Stop', {
+        hookType: 'prompt',
+        prompt: 'Review the turn and decide whether Claude can stop.',
+        model: 'claude-sonnet-4-5',
+        rawHook: {
+          type: 'prompt',
+          prompt: 'Review the turn and decide whether Claude can stop.',
+          model: 'claude-sonnet-4-5'
+        }
+      })
+    ])
+    await waitForHookHealthIdle()
+
+    expect(screen.getByText('http')).toBeInTheDocument()
+    expect(screen.getByText('http://localhost:8080/hooks/pre-tool-use')).toBeInTheDocument()
+    expect(screen.getByText('30s')).toBeInTheDocument()
+    expect(screen.getByText('Checking command')).toBeInTheDocument()
+    expect(screen.getByText('prompt')).toBeInTheDocument()
+    expect(screen.getByText('Review the turn and decide whether Claude can stop.')).toBeInTheDocument()
+    expect(screen.getByText('claude-sonnet-4-5')).toBeInTheDocument()
+
+    fireEvent.click(screen.getAllByText('JSON')[0])
+    expect(screen.getByText(/"type": "http"/)).toBeInTheDocument()
   })
 
   it('shows row-level risk hints for broad hooks without entry files', async () => {

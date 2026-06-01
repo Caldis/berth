@@ -65,6 +65,7 @@ describe('Claude Code scanner', () => {
       matcher: 'Bash',
       command: 'echo pre-tool',
       hookType: 'command',
+      rawHook: { type: 'command', command: 'echo pre-tool' },
       enabled: true,
       effectiveEnabled: true,
       canToggleHook: true,
@@ -77,6 +78,51 @@ describe('Claude Code scanner', () => {
     expect(hooks[0].meta.hookKey).toEqual(expect.stringMatching(/^claude-code:/))
     expect(hooks[0].meta.scenarioHash).toEqual(expect.any(String))
     expect(hooks[0].meta.hookHash).toEqual(expect.any(String))
+  })
+
+  it('keeps Claude non-command hook configuration metadata', () => {
+    root = mkdtempSync(join(tmpdir(), 'berth-claude-hook-http-'))
+    const settingsPath = join(root, 'settings.json')
+    writeFileSync(
+      settingsPath,
+      JSON.stringify({
+        hooks: {
+          PreToolUse: [
+            {
+              matcher: 'Bash',
+              hooks: [
+                {
+                  type: 'http',
+                  if: 'Bash(git *)',
+                  url: 'http://localhost:8080/hooks/pre-tool-use',
+                  timeout: 30,
+                  statusMessage: 'Checking command',
+                  headers: { Authorization: 'Bearer $TOKEN' },
+                  allowedEnvVars: ['TOKEN']
+                }
+              ]
+            }
+          ]
+        }
+      })
+    )
+
+    const hooks = parseHooks(settingsPath, 'user')
+
+    expect(hooks).toHaveLength(1)
+    expect(hooks[0].meta).toMatchObject({
+      hookType: 'http',
+      ifCondition: 'Bash(git *)',
+      url: 'http://localhost:8080/hooks/pre-tool-use',
+      timeout: 30,
+      statusMessage: 'Checking command',
+      headers: { Authorization: 'Bearer $TOKEN' },
+      allowedEnvVars: ['TOKEN'],
+      rawHook: {
+        type: 'http',
+        url: 'http://localhost:8080/hooks/pre-tool-use'
+      }
+    })
   })
 
   it('merges duplicate Claude hook child entries in the same scenario', () => {

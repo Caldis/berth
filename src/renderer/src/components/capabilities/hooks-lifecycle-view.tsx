@@ -484,9 +484,10 @@ function HookEventList({ group, agentView }: { group: HookStageGroup; agentView:
 
 function HookAssetRow({ hook, agentView }: { hook: Asset; agentView: AgentView }): React.ReactElement {
   const { t } = useTranslation()
-  const command = typeof hook.meta.command === 'string' ? hook.meta.command : ''
   const matcher = typeof hook.meta.matcher === 'string' ? hook.meta.matcher : ''
   const supportNote = typeof hook.meta.supportNote === 'string' ? hook.meta.supportNote : ''
+  const display = hookDisplayDetails(hook)
+  const rawHookJson = formatRawHookJson(hook.meta.rawHook)
   const managementStates = getHookManagementState(hook, agentView)
   const riskHints = getHookRiskHints(hook)
   const toggleState = managementStates.find((state) => state.action === 'toggle-hook')
@@ -533,7 +534,10 @@ function HookAssetRow({ hook, agentView }: { hook: Asset; agentView: AgentView }
       <div className="flex flex-wrap items-start gap-3">
         <div className="min-w-0 flex-1">
           <div className="flex min-w-0 flex-wrap items-center gap-2">
-            <span className="min-w-0 max-w-full break-all font-mono text-xs text-foreground">{command || hook.name}</span>
+            <span className="rounded-md bg-muted px-1.5 py-0.5 font-mono text-[10px] font-medium text-muted-foreground">
+              {display.type}
+            </span>
+            <span className="min-w-0 max-w-full break-all font-mono text-xs text-foreground">{display.primary}</span>
             <ScopeBadge scope={hook.scope} />
             {hookCanShowEnabledBadge(hook, toggleState) && (
               <span className={cn(
@@ -555,8 +559,23 @@ function HookAssetRow({ hook, agentView }: { hook: Asset; agentView: AgentView }
                 {t('capabilities.hooks.matcher')}: <span className="font-mono text-foreground">{matcher}</span>
               </span>
             )}
+            {display.configItems.map((item) => (
+              <span key={`${item.labelKey}:${item.value}`}>
+                {t(item.labelKey)}: <span className="font-mono text-foreground">{item.value}</span>
+              </span>
+            ))}
             <span className="min-w-0 truncate font-mono">{hook.path}</span>
           </div>
+          {rawHookJson && (
+            <details className="mt-2">
+              <summary className="inline-flex cursor-pointer select-none items-center rounded-md border border-border px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground">
+                {t('capabilities.hooks.management.rawJson')}
+              </summary>
+              <pre className="mt-2 max-h-64 overflow-auto rounded-md border border-border/70 bg-muted/40 p-3 text-[11px] leading-5 text-foreground">
+                {rawHookJson}
+              </pre>
+            </details>
+          )}
           {supportNote && (
             <p className="mt-2 flex gap-1.5 text-xs leading-5 text-amber-600 dark:text-amber-400">
               <Info className="mt-0.5 h-3 w-3 shrink-0" />
@@ -584,6 +603,91 @@ function HookAssetRow({ hook, agentView }: { hook: Asset; agentView: AgentView }
       </div>
     </div>
   )
+}
+
+interface HookConfigItem {
+  labelKey: string
+  value: string
+}
+
+interface HookDisplayDetails {
+  type: string
+  primary: string
+  configItems: HookConfigItem[]
+}
+
+function hookDisplayDetails(hook: Asset): HookDisplayDetails {
+  const hookType = firstMetaString(hook, 'hookType') ?? 'unknown'
+  const command = firstMetaString(hook, 'command')
+  const commandWindows = firstMetaString(hook, 'commandWindows')
+  const url = firstMetaString(hook, 'url')
+  const server = firstMetaString(hook, 'server')
+  const tool = firstMetaString(hook, 'tool')
+  const prompt = firstMetaString(hook, 'prompt')
+  const model = firstMetaString(hook, 'model')
+
+  const configItems: HookConfigItem[] = []
+  addConfigItem(configItems, 'capabilities.hooks.config.condition', firstMetaString(hook, 'ifCondition'))
+  addConfigItem(configItems, 'capabilities.hooks.config.timeout', formatSeconds(hook.meta.timeout))
+  addConfigItem(configItems, 'capabilities.hooks.config.statusMessage', firstMetaString(hook, 'statusMessage'))
+  addConfigItem(configItems, 'capabilities.hooks.config.commandWindows', commandWindows)
+  addConfigItem(configItems, 'capabilities.hooks.config.args', formatStringArray(hook.meta.args))
+  addConfigItem(configItems, 'capabilities.hooks.config.shell', firstMetaString(hook, 'shell'))
+  addConfigItem(configItems, 'capabilities.hooks.config.async', hook.meta.async === true ? 'true' : undefined)
+  addConfigItem(configItems, 'capabilities.hooks.config.asyncRewake', hook.meta.asyncRewake === true ? 'true' : undefined)
+  addConfigItem(configItems, 'capabilities.hooks.config.model', model)
+
+  if (hookType === 'http') {
+    return { type: hookType, primary: url ?? hook.name, configItems }
+  }
+  if (hookType === 'mcp_tool') {
+    return {
+      type: hookType,
+      primary: server && tool ? `${server}.${tool}` : server ?? tool ?? hook.name,
+      configItems
+    }
+  }
+  if (hookType === 'prompt' || hookType === 'agent') {
+    return { type: hookType, primary: truncateInline(prompt ?? hook.name, 120), configItems }
+  }
+  return {
+    type: hookType,
+    primary: command ?? commandWindows ?? hook.name,
+    configItems
+  }
+}
+
+function addConfigItem(items: HookConfigItem[], labelKey: string, value: string | undefined): void {
+  if (value) items.push({ labelKey, value })
+}
+
+function firstMetaString(hook: Asset, key: string): string | undefined {
+  const value = hook.meta[key]
+  return typeof value === 'string' && value.length > 0 ? value : undefined
+}
+
+function formatSeconds(value: unknown): string | undefined {
+  return typeof value === 'number' && Number.isFinite(value) ? `${value}s` : undefined
+}
+
+function formatStringArray(value: unknown): string | undefined {
+  if (!Array.isArray(value)) return undefined
+  const values = value.filter((item): item is string => typeof item === 'string' && item.length > 0)
+  if (values.length === 0) return undefined
+  return values.join(' ')
+}
+
+function truncateInline(value: string, maxLength: number): string {
+  return value.length > maxLength ? `${value.slice(0, maxLength - 1)}...` : value
+}
+
+function formatRawHookJson(value: unknown): string | null {
+  if (!value || typeof value !== 'object') return null
+  try {
+    return JSON.stringify(value, null, 2)
+  } catch {
+    return null
+  }
 }
 
 function hookToggleAgentId(hook: Asset): HooksAgentId | null {

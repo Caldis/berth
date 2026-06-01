@@ -166,8 +166,10 @@ function parseCodexHooks(
         const command = readString(hookRecord, 'command')
         const commandWindows =
           readString(hookRecord, 'commandWindows') ?? readString(hookRecord, 'command_windows')
-        const hookType = readString(hookRecord, 'type')
+        const hookType = readString(hookRecord, 'type') ?? (command ? 'command' : 'unknown')
         const asyncHook = readBoolean(hookRecord, 'async')
+        const timeout = readNumber(hookRecord, 'timeout')
+        const statusMessage = readString(hookRecord, 'statusMessage') ?? readString(hookRecord, 'status_message')
         const managed = readBoolean(hookRecord, 'managed') ?? readBoolean(handlerRecord, 'managed')
         const hookHash = buildHookHash(hookRecord)
         const scenarioHookKey = buildHookKey('codex', event, matcher, hookRecord)
@@ -211,6 +213,11 @@ function parseCodexHooks(
             command,
             commandWindows,
             hookType,
+            timeout,
+            statusMessage,
+            prompt: readString(hookRecord, 'prompt'),
+            model: readString(hookRecord, 'model'),
+            rawHook: cloneJson(hookRecord),
             async: asyncHook,
             managed,
             enabled,
@@ -879,6 +886,12 @@ function readString(record: unknown, key: string): string | undefined {
   return typeof value === 'string' && value.trim() ? value : undefined
 }
 
+function readNumber(record: unknown, key: string): number | undefined {
+  if (!isRecord(record)) return undefined
+  const value = record[key]
+  return typeof value === 'number' && Number.isFinite(value) ? value : undefined
+}
+
 function readBoolean(record: unknown, key: string): boolean | undefined {
   if (!isRecord(record)) return undefined
   const value = record[key]
@@ -935,6 +948,10 @@ function hashString(value: string): string {
     hash = (hash * 31 + value.charCodeAt(i)) >>> 0
   }
   return hash.toString(36)
+}
+
+function cloneJson<T>(value: T): T {
+  return JSON.parse(JSON.stringify(value)) as T
 }
 
 function asRecord(value: unknown): Record<string, unknown> | undefined {

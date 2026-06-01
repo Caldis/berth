@@ -67,6 +67,14 @@
   - [ ] 增加 stale conflict 文案。
   - verify: renderer 目标测试。
 
+- [x] Hook 行配置展示
+  - [x] 复核官方 hooks 文档: Claude Code handler 类型为 `command`、`http`、`mcp_tool`、`prompt`、`agent`; Codex 当前运行 `command`, `prompt`/`agent` 解析但跳过, `async` 解析但跳过。
+  - [x] parser 保留 `rawHook`, 并提取常见字段: `type`、`timeout`、`statusMessage`、`if`、`args`、`url`、`server/tool`、`prompt/model`。
+  - [x] UI 按 handler type 展示主信息, 不再只展示 `command`。
+  - [x] Hook 行支持展开查看关联 JSON 原文。
+  - [x] 单 Hook 操作按钮文案收短为 `启用` / `禁用`。
+  - verify: parser + renderer 目标测试。
+
 - [ ] 总体验证
   - [x] `pnpm test -- tests/unit/hooks-manager.test.ts tests/unit/claude-scanner.test.ts tests/unit/hook-lifecycle.test.ts tests/renderer/hooks-lifecycle-view.test.tsx`
   - [x] `pnpm typecheck:node`

@@ -910,8 +910,8 @@
         "agentToggleBody": "This changes the official user-level setting for the selected agent. It affects all hooks for that agent, not only the rows shown below.",
         "enabled": "Enabled",
         "disabled": "Disabled",
-        "enableHook": "Enable hook",
-        "disableHook": "Disable hook",
+        "enableHook": "Enable",
+        "disableHook": "Disable",
         "enableAll": "Enable all",
         "disableAll": "Disable all",
         "confirmEnable": "Enable hooks for {{agent}}? Berth will update {{path}} and rescan local assets.",
@@ -919,7 +919,19 @@
         "confirmEnableHook": "Enable this Codex hook? Berth will update hooks.state in your user config. Source: {{path}}",
         "confirmDisableHook": "Disable this Codex hook? Berth will update hooks.state in your user config. Source: {{path}}",
         "confirmRestoreClaudeHook": "Restore this Claude Code hook? Berth will write it back from the restore point into user settings. Event: {{event}}. Command: {{command}}. Disabled at: {{disabledAt}}. Source: {{path}}",
-        "confirmSoftDisableClaudeHook": "Disable this Claude Code hook? Berth will remove the hook from user settings, then keep a restore point and backup. Event: {{event}}. Command: {{command}}. Source: {{path}}"
+        "confirmSoftDisableClaudeHook": "Disable this Claude Code hook? Berth will remove the hook from user settings, then keep a restore point and backup. Event: {{event}}. Command: {{command}}. Source: {{path}}",
+        "rawJson": "JSON"
+      },
+      "config": {
+        "condition": "Condition",
+        "timeout": "Timeout",
+        "statusMessage": "Status",
+        "commandWindows": "Windows",
+        "args": "Args",
+        "shell": "Shell",
+        "async": "Async",
+        "asyncRewake": "Async wake",
+        "model": "Model"
       }
     },
     "plugins": {

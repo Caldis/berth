@@ -39,6 +39,8 @@ describe('Codex config parser', () => {
         'type = "command"',
         'command = "python hook.py"',
         'command_windows = "py hook.py"',
+        'timeout = 30',
+        'statusMessage = "Checking hook"',
         'enabled = true'
       ].join('\n')
     )
@@ -69,6 +71,16 @@ describe('Codex config parser', () => {
         command: 'python hook.py',
         commandWindows: 'py hook.py',
         hookType: 'command',
+        timeout: 30,
+        statusMessage: 'Checking hook',
+        rawHook: {
+          type: 'command',
+          command: 'python hook.py',
+          command_windows: 'py hook.py',
+          timeout: 30,
+          statusMessage: 'Checking hook',
+          enabled: true
+        },
         enabled: true,
         effectiveEnabled: true,
         canToggleHook: true,
@@ -138,6 +150,10 @@ describe('Codex config parser', () => {
       }
     })
     expect(assets[1].meta.supportNote).toBe('capabilities.hooks.management.codexUnsupportedHookType')
+    expect(assets[1].meta).toMatchObject({
+      hookType: 'prompt',
+      rawHook: { type: 'prompt', command: 'prompt text' }
+    })
     expect(assets[2].meta.supportNote).toBe('capabilities.hooks.management.codexAsyncHookSkipped')
   })
 

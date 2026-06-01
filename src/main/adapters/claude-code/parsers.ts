@@ -279,7 +279,7 @@ export function parseHooks(filePath: string, scope: AssetScope, options: ParseHo
         nestedHooks.forEach((hook, hookIndex) => {
           const hookRecord = isRecord(hook) ? hook : {}
           const command = typeof hookRecord.command === 'string' ? hookRecord.command : undefined
-          const hookType = typeof hookRecord.type === 'string' ? hookRecord.type : undefined
+          const hookType = readString(hookRecord, 'type') ?? (command ? 'command' : 'unknown')
           const entryPaths = command ? extractCommandEntryPaths(filePath, command, { scope }) : []
           const hookHash = buildHookHash(hookRecord)
           const hookKey = buildHookKey('claude-code', event, matcher, hookRecord)
@@ -313,6 +313,9 @@ export function parseHooks(filePath: string, scope: AssetScope, options: ParseHo
               matcher,
               command,
               hookType,
+              ...readCommonHookConfig(hookRecord),
+              ...readTypedHookConfig(hookRecord),
+              rawHook: cloneJson(hookRecord),
               entryPaths,
               occurrences: [occurrence],
               occurrenceCount: 1,
@@ -365,7 +368,7 @@ function appendDisabledClaudeHooks(
     if (assets.has(assetKey)) continue
 
     const command = typeof entry.hook.command === 'string' ? entry.hook.command : undefined
-    const hookType = typeof entry.hook.type === 'string' ? entry.hook.type : undefined
+    const hookType = readString(entry.hook, 'type') ?? (command ? 'command' : 'unknown')
     const entryPaths = command ? extractCommandEntryPaths(entry.sourcePath, command, { scope }) : []
     assets.set(assetKey, {
       id: makeId('hook'),
@@ -382,6 +385,9 @@ function appendDisabledClaudeHooks(
         matcher: entry.matcher,
         command,
         hookType,
+        ...readCommonHookConfig(entry.hook),
+        ...readTypedHookConfig(entry.hook),
+        rawHook: cloneJson(entry.hook),
         entryPaths,
         occurrences: [],
         occurrenceCount: Math.max(1, entry.removedCount),
@@ -452,6 +458,32 @@ function parseClaudeDisabledHookEntry(value: unknown): ClaudeDisabledHookEntry |
 
 function samePath(left: string, right: string): boolean {
   return path.resolve(left).toLocaleLowerCase() === path.resolve(right).toLocaleLowerCase()
+}
+
+function readCommonHookConfig(hookRecord: Record<string, unknown>): Record<string, unknown> {
+  return pruneUndefined({
+    ifCondition: readString(hookRecord, 'if'),
+    timeout: readNumber(hookRecord, 'timeout'),
+    statusMessage: readString(hookRecord, 'statusMessage'),
+    once: readBoolean(hookRecord, 'once')
+  })
+}
+
+function readTypedHookConfig(hookRecord: Record<string, unknown>): Record<string, unknown> {
+  return pruneUndefined({
+    args: readStringArray(hookRecord.args),
+    async: readBoolean(hookRecord, 'async'),
+    asyncRewake: readBoolean(hookRecord, 'asyncRewake'),
+    shell: readString(hookRecord, 'shell'),
+    url: readString(hookRecord, 'url'),
+    headers: isRecord(hookRecord.headers) ? cloneJson(hookRecord.headers) : undefined,
+    allowedEnvVars: readStringArray(hookRecord.allowedEnvVars),
+    server: readString(hookRecord, 'server'),
+    tool: readString(hookRecord, 'tool'),
+    input: isRecord(hookRecord.input) ? cloneJson(hookRecord.input) : undefined,
+    prompt: readString(hookRecord, 'prompt'),
+    model: readString(hookRecord, 'model')
+  })
 }
 
 // ---------------------------------------------------------------------------
@@ -1057,4 +1089,22 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function uniqueStrings(values: string[]): string[] {
   return Array.from(new Set(values.filter((value) => value.trim().length > 0)))
+}
+
+function readStringArray(value: unknown): string[] | undefined {
+  if (!Array.isArray(value)) return undefined
+  const strings = value.filter((item): item is string => typeof item === 'string' && item.length > 0)
+  return strings.length > 0 ? strings : undefined
+}
+
+function pruneUndefined(record: Record<string, unknown>): Record<string, unknown> {
+  const next: Record<string, unknown> = {}
+  for (const [key, value] of Object.entries(record)) {
+    if (value !== undefined) next[key] = value
+  }
+  return next
+}
+
+function cloneJson<T>(value: T): T {
+  return JSON.parse(JSON.stringify(value)) as T
 }
