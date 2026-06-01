@@ -2,6 +2,14 @@
 - berth dev 模式下 main 进程以 `process.cwd()` (= 项目根) 作为 projectDir 传给 scanner 与 watcher
   (src/main/index.ts: initScanner(process.cwd()) / watcher.start(process.cwd()))。低优先, 非阻塞。
 
+# 状态
+
+Resolved
+
+# 完成日期
+
+2026-06-02
+
 # GitHub
 - Issue: https://github.com/Caldis/berth/issues/18
 - Number: #18
@@ -19,6 +27,9 @@
   scanner 只读)。属 cosmetic: 生产模式 cwd 为 app 资源目录, dev 模式 cwd 恰为仓库根, 语义不纯。
 
 # 解决方案
-- 待办 (低优): dev 模式下让 projectDir 取一个显式的"被检视目录"配置, 而非裸用 process.cwd();
-  或在 dev 下省略 projectDir (仅扫全局 ~/.claude)。
-- 不阻塞交接: 当前行为只读且无副作用, 已确认不会触碰/修改仓库文件。
+- 当前代码已通过 `src/main/project-dir.ts#resolveDefaultProjectDir()` 在 dev 模式下返回 `undefined`, main 进程把该值传给 scanner 和 watcher, 因此不再把 berth 仓库根当作项目扫描范围。
+- 验证:
+  - `pnpm test -- tests/unit/project-dir.test.ts tests/unit/watcher.test.ts`
+  - `pnpm typecheck:node`
+  - `pnpm harness:check --work docs/works/2026-06-02-gh-18-dev-cwd-scan-scope`
+- 任务归档: `docs/works/_archive/2026-06-02-gh-18-dev-cwd-scan-scope/`
