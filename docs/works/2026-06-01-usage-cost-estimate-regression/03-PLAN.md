@@ -16,4 +16,16 @@
 
 ## verify 回写
 
+全部通过:
+
+- `pnpm lint`
+- `pnpm typecheck`
+- `pnpm test` (48 files, 297 tests passed; 存在既有 jsdom/Recharts 0 宽高 stderr 警告, exit code 0)
+- `pnpm build`
+- Playwright Electron renderer 验收: 启动构建后的 `out/main/index.js`, 使用独立 `--berth-agent-instance`, 验证 Usage 默认选中 `All time` / `全部`, 点击 `近 30 天` 后可切回 `全部`。截图: `C:\Users\mail\AppData\Local\Temp\berth-usage-cost-playwright.png`
+
+补充记录:
+
+- Windows 系统截图脚本在 verify 阶段暴露两个流程摩擦: PowerShell `$PID` 为只读自动变量, 以及 `CopyFromScreen` 受前台遮挡影响。已记录到 `docs/friction/20260601-verify-windows-screenshot-verification.md`。
+
 verify 不通过项作为新任务追加于此, phase 退回 implement。
