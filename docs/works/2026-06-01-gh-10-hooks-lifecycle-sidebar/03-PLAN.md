@@ -93,3 +93,8 @@ verify 不通过项作为新任务追加于此, phase 退回 implement。
   - feedback: `[Hook 检查 : 正常]` 不再占用主内容顶部, 移入生命周期侧边菜单; 正常、警告、错误、信息这些状态 tag 都需要 hover/focus 展示对应说明卡片, 正常状态也要有说明。
   - tests: `tests/renderer/hooks-lifecycle-view.test.tsx`
   - verify: 旧实现下新增断言失败 2 项; 实现后 `pnpm test -- tests/renderer/hooks-lifecycle-view.test.tsx` 14 项通过; `pnpm typecheck:web` 通过; `pnpm harness:check` 通过
+
+- [ ] 任务 12: 修正侧栏 Hook 检查 hover 卡片裁剪
+  - feedback: Electron 视觉验收发现正常状态说明卡片从侧栏右侧弹出时被侧栏滚动容器裁掉, 需要让卡片在侧栏内完整展示。
+  - tests: `tests/renderer/hooks-lifecycle-view.test.tsx`
+  - verify: pending
