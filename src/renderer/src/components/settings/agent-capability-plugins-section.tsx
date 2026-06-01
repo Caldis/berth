@@ -134,7 +134,7 @@ function PluginDetails({ plugin }: { plugin: AgentCapabilityPlugin }): ReactElem
           icon={ShieldCheck}
           title={t('settings.agentPluginPermissionsTitle')}
         >
-          <div className="space-y-2">
+          <div className="divide-y divide-border/70 border-y border-border/70">
             {plugin.permissions.map((permission) => (
               <PermissionRow key={`${plugin.id}-${permission.kind}`} permission={permission} />
             ))}
@@ -152,7 +152,7 @@ function PluginDetails({ plugin }: { plugin: AgentCapabilityPlugin }): ReactElem
           icon={Puzzle}
           title={t('settings.agentPluginCapabilitiesTitle')}
         >
-          <div className="space-y-2">
+          <div className="divide-y divide-border/70 border-y border-border/70">
             {plugin.capabilities.map((capability) => (
               <CapabilityRow key={`${plugin.id}-${capability.id}`} capability={capability} />
             ))}
@@ -191,7 +191,7 @@ function PermissionRow({
   const { t } = useTranslation()
 
   return (
-    <div className="rounded-md border border-border/70 p-2.5">
+    <div className="py-2.5">
       <div className="flex flex-wrap items-center gap-1.5">
         <Badge tone={permission.kind === 'write' ? 'strong' : 'muted'}>
           {t(`settings.agentPluginPermissionKinds.${permission.kind}`)}
@@ -228,7 +228,7 @@ function CapabilityRow({
   const { t } = useTranslation()
 
   return (
-    <div className="rounded-md border border-border/70 p-2.5">
+    <div className="py-2.5">
       <div className="flex flex-wrap items-center gap-1.5">
         <p className="text-xs font-medium text-foreground">{t(capability.labelKey)}</p>
         <Badge tone={capability.status === 'available' ? 'strong' : 'muted'}>
