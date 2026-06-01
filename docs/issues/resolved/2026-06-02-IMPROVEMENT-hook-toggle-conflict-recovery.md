@@ -6,12 +6,19 @@ IMPROVEMENT
 
 ## 状态
 
-Open
+Resolved
 
 ## GitHub
 
 - Issue: https://github.com/Caldis/berth/issues/15
 - Number: #15
+- State: CLOSED
+
+## 完成记录
+
+- Work: `docs/works/_archive/2026-06-02-gh-15-hook-toggle-conflict-recovery`
+- Code: `src/main/engine/hooks-manager.ts`, `src/renderer/src/components/capabilities/hooks-lifecycle-view.tsx`
+- Tests: `tests/unit/hooks-manager.test.ts`, `tests/renderer/hooks-lifecycle-view.test.tsx`
 
 ## 关联任务
 
@@ -50,3 +57,11 @@ GH-11 已经让 Claude Code 用户级 Hook 可以通过 Berth 软禁用: 保存�
 - 外部同时修改无关字段时, Berth 尽量继续完成目标 Hook 操作。
 - 外部修改目标 Hook 时, Berth 不写入, 并显示冲突原因。
 - 失败时保留原文件和恢复点, 不产生半写入状态。
+
+## 验证
+
+- `pnpm test -- tests/unit/hooks-manager.test.ts tests/renderer/hooks-lifecycle-view.test.tsx`
+- `pnpm lint`
+- `pnpm typecheck`
+- `pnpm test`
+- `pnpm harness:check`
