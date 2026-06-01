@@ -68,7 +68,7 @@ export function HooksLifecycleView({ assets, agentView, search, scope }: HooksLi
       <div className="grid gap-4 lg:grid-cols-[280px_minmax(0,1fr)]">
         <aside
           aria-label={t('capabilities.hooks.lifecycleIndex')}
-          className="lg:sticky lg:top-4 lg:max-h-[calc(100vh-2rem)] lg:self-start lg:overflow-y-auto"
+          className="lg:sticky lg:top-4 lg:self-start"
         >
           <div className="rounded-lg border border-border bg-card p-2">
             <div className="px-2 pb-2 pt-1">
@@ -85,7 +85,10 @@ export function HooksLifecycleView({ assets, agentView, search, scope }: HooksLi
               </p>
             </div>
             <HookHealthSignal checks={hookHealthChecks} loading={healthLoading} />
-            <div className="flex gap-2 overflow-x-auto pb-1 lg:block lg:space-y-1 lg:overflow-visible lg:pb-0">
+            <div
+              data-testid="hook-lifecycle-stage-list"
+              className="flex gap-2 overflow-x-auto pb-1 lg:block lg:max-h-[calc(100vh-10rem)] lg:space-y-1 lg:overflow-y-auto lg:pb-0 lg:pr-1"
+            >
               {groups.map((group, index) => (
                 <button
                   key={group.id}

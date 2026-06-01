@@ -211,11 +211,13 @@ describe('HooksLifecycleView', () => {
     await waitForHookHealthIdle()
 
     const sidebar = screen.getByLabelText('Lifecycle')
+    const stageList = screen.getByTestId('hook-lifecycle-stage-list')
 
     expect(sidebar.className).toContain('lg:sticky')
     expect(sidebar.className).toContain('lg:top-4')
-    expect(sidebar.className).toContain('lg:max-h-[calc(100vh-2rem)]')
-    expect(sidebar.className).toContain('lg:overflow-y-auto')
+    expect(sidebar.className).not.toContain('lg:overflow-y-auto')
+    expect(stageList.className).toContain('lg:max-h-[calc(100vh-10rem)]')
+    expect(stageList.className).toContain('lg:overflow-y-auto')
   })
 
   it('shows sidebar stage summaries, numeric count tags, and structured recommendations', async () => {
