@@ -2,7 +2,7 @@
 
 从 02-SPEC 拆解。implement 阶段维护此清单。
 
-- [ ] 任务 1: 扩展 `hook-lifecycle.ts` 纯函数, 支持可选 plugin hook schema 驱动 event/stage/support, 并保留 fallback。
+- [x] 任务 1: 扩展 `hook-lifecycle.ts` 纯函数, 支持可选 plugin hook schema 驱动 event/stage/support, 并保留 fallback。
   - tests: `pnpm vitest run tests/unit/hook-lifecycle.test.ts`
   - verify: stage title/summary/recommendation 仍来自 Berth 静态壳; schema event 能进入指定 stage; 未声明 event 仍进入 unknown; Codex environment 在 schema 缺失时仍隐藏。
 - [ ] 任务 2: Hooks 行级展示读取 handler schema 的 primary fields、runMode 和 support note。

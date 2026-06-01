@@ -9,6 +9,7 @@ import {
   groupHookAssetsByStage,
   hookLifecycleStages
 } from '../../src/renderer/src/lib/hook-lifecycle'
+import type { AgentCapabilityPluginHookSchemaDescriptor } from '../../src/shared/types/agent-plugin'
 
 function hookAsset(overrides: Partial<Asset> & { id: string; agentId: string; eventType?: string }): Asset {
   return {
@@ -27,6 +28,22 @@ function hookAsset(overrides: Partial<Asset> & { id: string; agentId: string; ev
 }
 
 describe('hook lifecycle model', () => {
+  const schemaDrivenCodexHooks: AgentCapabilityPluginHookSchemaDescriptor = {
+    agentId: 'codex',
+    events: [
+      {
+        eventType: 'CustomPreRun',
+        stageId: 'tool-before',
+        support: 'partial',
+        matcherSupported: true,
+        matcherField: 'tool_name',
+        labelKey: 'settings.agentPluginHookEvents.codex.CustomPreRun.label',
+        descriptionKey: 'settings.agentPluginHookEvents.codex.CustomPreRun.description'
+      }
+    ],
+    handlers: []
+  }
+
   it('keeps Claude Code and Codex official hook events classified by lifecycle stage', () => {
     const officialClaudeEvents = [
       'ConfigChange',
@@ -111,6 +128,43 @@ describe('hook lifecycle model', () => {
     expect(getStageForEvent('PostToolUseFailure')?.id).toBe('tool-after')
     expect(getStageForEvent('Notification')?.id).toBe('environment')
     expect(getStageForEvent('NotARealEvent')).toBeNull()
+  })
+
+  it('uses plugin hook schema events for stage mapping when available', () => {
+    const stage = getStageForEvent('CustomPreRun', {
+      hookSchemas: { codex: schemaDrivenCodexHooks }
+    })
+    const support = getVisibleStageSupport(stage!, 'codex', {
+      hookSchemas: { codex: schemaDrivenCodexHooks }
+    })
+
+    expect(stage?.id).toBe('tool-before')
+    expect(support).toEqual([
+      expect.objectContaining({
+        agent: 'codex',
+        support: 'partial',
+        events: [
+          expect.objectContaining({
+            eventType: 'CustomPreRun',
+            descriptionKey: 'settings.agentPluginHookEvents.codex.CustomPreRun.description'
+          })
+        ]
+      })
+    ])
+  })
+
+  it('groups schema-declared events and keeps undeclared events in unknown', () => {
+    const groups = groupHookAssetsByStage([
+      hookAsset({ id: 'schema-hook', agentId: 'codex', eventType: 'CustomPreRun' }),
+      hookAsset({ id: 'unknown-hook', agentId: 'codex', eventType: 'MissingFromSchema' })
+    ], 'codex', {
+      hookSchemas: { codex: schemaDrivenCodexHooks }
+    })
+
+    expect(groups.find((group) => group.id === 'tool-before')?.hooks.map((hook) => hook.id))
+      .toEqual(['schema-hook'])
+    expect(groups.find((group) => group.id === 'unknown')?.hooks.map((hook) => hook.id))
+      .toEqual(['unknown-hook'])
   })
 
   it('returns only current agent support outside all view', () => {

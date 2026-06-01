@@ -1,4 +1,9 @@
 import type { AgentView, Asset } from '@shared/types/asset'
+import type {
+  AgentCapabilityPluginHookEventDescriptor,
+  AgentCapabilityPluginHookSchemaDescriptor,
+  AgentPluginAgentId
+} from '@shared/types/agent-plugin'
 
 export type HookLifecycleStageId =
   | 'session-start'
@@ -18,6 +23,8 @@ export interface HookNativeEvent {
   eventType: string
   labelKey: string
   descriptionKey: string
+  fallbackLabelKey?: string
+  fallbackDescriptionKey?: string
 }
 
 export interface HookAgentStageSupport {
@@ -79,6 +86,12 @@ export interface HookStageGroup {
   id: HookLifecycleStageId | 'unknown'
   hooks: Asset[]
   events: HookEventGroup[]
+}
+
+export type HookSchemaMap = Partial<Record<AgentPluginAgentId, AgentCapabilityPluginHookSchemaDescriptor>>
+
+export interface HookLifecycleOptions {
+  hookSchemas?: HookSchemaMap
 }
 
 const hookEvent = (eventType: string): HookNativeEvent => ({
@@ -327,26 +340,39 @@ const stageByEvent = new Map<string, HookLifecycleStage>(
   })
 )
 
-export function getVisibleHookStages(view: AgentView): HookLifecycleStage[] {
-  return hookLifecycleStages.filter((stage) => {
+export function getVisibleHookStages(view: AgentView, options: HookLifecycleOptions = {}): HookLifecycleStage[] {
+  return hookLifecycleStages.map((stage) => applyHookSchemaToStage(stage, options)).filter((stage) => {
     if (view === 'all') return true
     const agent = viewToLifecycleAgent(view)
     return agent ? stage.supports[agent].support !== 'unsupported' : true
   })
 }
 
-export function getStageForEvent(eventType: string): HookLifecycleStage | null {
-  return stageByEvent.get(eventType) ?? null
+export function getStageForEvent(eventType: string, options: HookLifecycleOptions = {}): HookLifecycleStage | null {
+  const schemaEvent = findSchemaEvent(eventType, options)
+  const schemaStage = schemaEvent ? hookLifecycleStages.find((stage) => stage.id === schemaEvent.stageId) : undefined
+  const staticStage = stageByEvent.get(eventType)
+  const stage = schemaStage ?? staticStage
+  return stage ? applyHookSchemaToStage(stage, options) : null
 }
 
-export function getVisibleStageSupport(stage: HookLifecycleStage, view: AgentView): HookAgentStageSupport[] {
-  if (view === 'all') return [stage.supports.claude, stage.supports.codex]
+export function getVisibleStageSupport(
+  stage: HookLifecycleStage,
+  view: AgentView,
+  options: HookLifecycleOptions = {}
+): HookAgentStageSupport[] {
+  const effectiveStage = applyHookSchemaToStage(stage, options)
+  if (view === 'all') return [effectiveStage.supports.claude, effectiveStage.supports.codex]
   const agent = viewToLifecycleAgent(view)
-  return agent ? [stage.supports[agent]].filter((support) => support.support !== 'unsupported') : []
+  return agent ? [effectiveStage.supports[agent]].filter((support) => support.support !== 'unsupported') : []
 }
 
-export function groupHookAssetsByStage(assets: Asset[], view: AgentView): HookStageGroup[] {
-  const visibleStages = getVisibleHookStages(view)
+export function groupHookAssetsByStage(
+  assets: Asset[],
+  view: AgentView,
+  options: HookLifecycleOptions = {}
+): HookStageGroup[] {
+  const visibleStages = getVisibleHookStages(view, options)
   const groups = new Map<HookLifecycleStageId | 'unknown', HookStageGroup>()
 
   for (const stage of visibleStages) {
@@ -361,7 +387,7 @@ export function groupHookAssetsByStage(assets: Asset[], view: AgentView): HookSt
   for (const asset of assets) {
     if (asset.type !== 'hook') continue
     const eventType = getHookEventType(asset)
-    const stage = eventType ? getStageForEvent(eventType) : null
+    const stage = eventType ? getStageForEvent(eventType, options) : null
     const id = stage?.id ?? 'unknown'
 
     if (stage && !groups.has(id)) continue
@@ -384,6 +410,82 @@ export function groupHookAssetsByStage(assets: Asset[], view: AgentView): HookSt
     const orderB = b.stage?.order ?? Number.MAX_SAFE_INTEGER
     return orderA - orderB
   })
+}
+
+function applyHookSchemaToStage(
+  stage: HookLifecycleStage,
+  options: HookLifecycleOptions
+): HookLifecycleStage {
+  if (!options.hookSchemas || Object.keys(options.hookSchemas).length === 0) return stage
+
+  return {
+    ...stage,
+    supports: {
+      claude: getSchemaStageSupport(stage, 'claude', options) ?? stage.supports.claude,
+      codex: getSchemaStageSupport(stage, 'codex', options) ?? stage.supports.codex
+    }
+  }
+}
+
+function getSchemaStageSupport(
+  stage: HookLifecycleStage,
+  agent: HookLifecycleAgent,
+  options: HookLifecycleOptions
+): HookAgentStageSupport | undefined {
+  const schema = schemaForLifecycleAgent(agent, options)
+  if (!schema) return undefined
+
+  const events = schema.events
+    .filter((event) => event.stageId === stage.id)
+    .map(schemaEventToHookEvent)
+  if (events.length === 0) return noSupport(agent, stage.id)
+
+  const staticSupport = stage.supports[agent]
+  return {
+    agent,
+    support: combineSchemaEventSupport(schema.events.filter((event) => event.stageId === stage.id)),
+    events,
+    summaryKey: staticSupport.summaryKey,
+    limitationKeys: staticSupport.support === 'unsupported' ? [] : staticSupport.limitationKeys
+  }
+}
+
+function combineSchemaEventSupport(events: AgentCapabilityPluginHookEventDescriptor[]): HookLifecycleSupport {
+  if (events.every((event) => event.support === 'unsupported')) return 'unsupported'
+  if (events.every((event) => event.support === 'supported')) return 'supported'
+  return 'partial'
+}
+
+function schemaEventToHookEvent(event: AgentCapabilityPluginHookEventDescriptor): HookNativeEvent {
+  return {
+    eventType: event.eventType,
+    labelKey: event.labelKey,
+    descriptionKey: event.descriptionKey,
+    fallbackLabelKey: `capabilities.hooks.nativeEvents.${event.eventType}.label`,
+    fallbackDescriptionKey: `capabilities.hooks.nativeEvents.${event.eventType}.description`
+  }
+}
+
+function findSchemaEvent(
+  eventType: string,
+  options: HookLifecycleOptions
+): AgentCapabilityPluginHookEventDescriptor | undefined {
+  if (!options.hookSchemas) return undefined
+  return Object.values(options.hookSchemas)
+    .flatMap((schema) => schema?.events ?? [])
+    .find((event) => event.eventType === eventType)
+}
+
+function schemaForLifecycleAgent(
+  agent: HookLifecycleAgent,
+  options: HookLifecycleOptions
+): AgentCapabilityPluginHookSchemaDescriptor | undefined {
+  const agentId = lifecycleAgentToPluginId(agent)
+  return options.hookSchemas?.[agentId]
+}
+
+function lifecycleAgentToPluginId(agent: HookLifecycleAgent): AgentPluginAgentId {
+  return agent === 'claude' ? 'claude-code' : 'codex'
 }
 
 export function getHookManagementState(asset: Asset, _view: AgentView): HookManagementState[] {
