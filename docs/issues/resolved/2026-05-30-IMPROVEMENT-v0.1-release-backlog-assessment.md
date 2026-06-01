@@ -2,6 +2,14 @@
 - 对 `docs/works/_archive/2026-05-28-v0-1-development-plan/v0.1-development.md` 的 6 项 post-release 发布遗留做可行性评估, 标注归属与阻塞,
   并落地其中可自主、低风险的一项 (CI 加 production build 冒烟)。
 
+# 状态
+
+Resolved
+
+# 完成日期
+
+2026-06-02
+
 # GitHub
 - Issue: https://github.com/Caldis/berth/issues/19
 - Number: #19
@@ -31,3 +39,4 @@
 - 本次落地: ci.yml 增 `pnpm build` 冒烟 (#1 部分)。
 - 待用户/专门环境: #2 (public repo 设置), #3 (Windows 签名), #4 (macOS 证书签名),
   #5 (CI headless e2e), #6 (启动 profiling)。均非代码缺陷, 属发布工程的环境/凭证依赖。
+- 收敛结论: 本 issue 的目标是评估 backlog 并落地可自主低风险项, 当前已完成; 剩余项目不再作为 active 产品问题跟踪。
