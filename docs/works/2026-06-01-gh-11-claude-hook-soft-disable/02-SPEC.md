@@ -12,12 +12,25 @@
 
 同时把 Hooks 页面从“写死 Claude/Codex 判断”收窄到统一的 hook capability 模型。短期只覆盖 Claude Code 和 Codex, 但接口设计要沿着 `Agent Capability Plugin` 方向走, 以后可以接 Hermes、PI 或其他 Agent。
 
+## 本轮实现范围
+
+GH-11 只实现 `Hooks enable / disable` 这一个切片:
+
+1. Claude Code user-scope 单 Hook 软禁用和恢复。
+2. Codex 继续使用官方/native hook state, 但 hook identity 与 UI 状态进入统一模型。
+3. Hooks 页面只依赖统一的 hook meta 和 action descriptor, 不再写死 `hook.agentId === 'codex'`。
+4. `Agent Capability Plugin` 只保留内部命名和 hooks 所需的最小契约, 不实现设置页插件中心、插件下载、版本管理和第三方插件加载。
+
+完整插件系统已记录到 `docs/issues/2026-06-01-FEATURE-agent-capability-plugin-system.md`, 不阻塞本任务。
+
 ## 不做
 
 - 不给 Claude hook object 增加 `enabled: false`。官方没有该字段, 可能造成 UI 和实际执行不一致。
 - 不把 event key、matcher group 或 command 改名为 `_disabled_*`。这会把非官方结构留在 Claude settings 中。
 - 不把 command 改成 no-op。恢复成本高, 也会破坏用户原始命令。
 - 不写 project `.claude/settings.json` 或 `.claude/settings.local.json`。这类文件可能属于仓库或本地项目状态, 需要单独确认和 diff 视图。
+- 不在本任务实现外部 `Agent Capability Plugin` 安装、更新、下载、禁用中心。
+- 不迁移 health checks、sessions、usage、source coverage 到 Plugin registry; 这些属于后续 `Agent Capability Plugin System`。
 
 ## 数据模型
 
@@ -454,7 +467,10 @@ Codex 不需要 Claude 的 sidecar soft remove, 但需要进入同一套 UI 与�
 - parser 为 Codex hook 生成 `scenarioHash`、`hookHash`、`occurrenceCount`。
 - `toggleStrategy: 'native-state'`。
 - `stateSourcePath` 指向用户 `config.toml`。
-- `hookKey` 仍用于写 `[hooks.state]`, 但应从稳定 identity 生成, 避免 index 变化后状态丢失。
+- `hookKey` 从稳定 identity 生成, 格式使用 `codex:${scenarioHash}:${hookHash}`。
+- parser 读取 state 时同时兼容旧 index key 和新 stable key:
+  - 新 stable key 优先。
+  - 旧 key 只读兼容, 不再作为新写入 key。
 - managed hook 继续 `read-only`, 与官方 “managed hooks can’t be disabled from the user hook browser” 行为保持一致。
 - 若 Codex hook 同时来自 `hooks.json` 和 inline `[hooks]`, UI 按 source 分行, 但用 `equivalentSources` 提醒同类 hook 仍存在于其他 source。
 
@@ -465,7 +481,7 @@ Codex 不需要 Claude 的 sidecar soft remove, 但需要进入同一套 UI 与�
 - Codex: `toggleHook(enabled)` -> 写 `[hooks.state]`。
 - UI: 只看 `toggleStrategy`、`enabled`、`effectiveEnabled`、`equivalentSources`。
 
-## Agent Capability Plugin
+## Agent Capability Plugin hooks 切片
 
 仓库现在已经有 `AgentAdapter`, 但它主要负责 detect / scan / relation。hook 管理仍散在 parser、`hooks-manager.ts` 和 renderer 的 `agentId` 判断里。产品概念应改为 `Agent Capability Plugin`:
 
@@ -475,16 +491,15 @@ Codex 不需要 Claude 的 sidecar soft remove, 但需要进入同一套 UI 与�
 
 GH-11 只实现 hooks 这一个切片, 不实现完整插件市场、插件下载和版本管理。完整插件系统记录到 `docs/issues/2026-06-01-FEATURE-agent-capability-plugin-system.md`。
 
-内部接口先命名为 `AgentCapabilityPlugin`:
+本轮不新增完整 runtime plugin loader。只新增一个 hooks action registry, 命名沿用 Plugin 概念:
 
 ```ts
-interface AgentCapabilityPlugin {
+interface AgentHookCapabilityPlugin {
   id: string
   displayName: string
   version: string
   builtin: boolean
   supportedAgentVersions?: string
-  scan(): Promise<{ assets: Asset[]; errors: ScanError[] }>
   getHookStatus?(scope: AssetScope): HooksEnablementStatus
   setHooksEnabled?(request: SetHooksEnabledRequest): SetHooksEnabledResult
   getHookAction?(asset: Asset): HookActionDescriptor
@@ -510,10 +525,10 @@ interface HookIdentity {
 
 迁移顺序:
 
-1. 把现有 `ClaudeCodeAdapter` 和 `CodexAdapter` 包装成内置 `AgentCapabilityPlugin`。
-2. `hooks-manager.ts` 不再按 `agentId` 写死分支, 改为查 plugin registry。
-3. renderer 不再判断 `hook.agentId === 'codex'`, 改为消费 `HookActionDescriptor`。
-4. health check、source coverage 仍可暂时保留原实现, 不在本任务中迁移。
+1. 新增内置 hook plugin registry: Claude Code、Codex。
+2. `hooks-manager.ts` 不再按 `agentId` 写死单 hook 分支, 改为查 hook plugin registry。
+3. renderer 不再判断 `hook.agentId === 'codex'`, 改为消费 hook meta / action descriptor。
+4. health check、source coverage、session、usage 仍保留原实现, 不在本任务中迁移。
 
 ### 全应用范围
 

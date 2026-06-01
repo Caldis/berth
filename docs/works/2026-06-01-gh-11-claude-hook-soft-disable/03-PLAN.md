@@ -2,6 +2,18 @@
 
 ## Implementation
 
+- [x] 收窄并确认本轮实现范围
+  - [x] GH-11 只做 hooks enable / disable 切片。
+  - [x] 完整 `Agent Capability Plugin System` 保留在 `docs/issues/2026-06-01-FEATURE-agent-capability-plugin-system.md`。
+  - [x] 不实现插件下载、设置页插件中心、版本管理、health/session/usage/source coverage 迁移。
+  - verify: `pnpm harness:check`。
+
+- [ ] 建立统一 hook identity 和 meta
+  - [ ] 增加 canonical JSON hash、`scenarioHash`、`hookHash` 生成工具。
+  - [ ] 定义 `toggleStrategy`、`effectiveEnabled`、`equivalentSources` 的读取约定。
+  - [ ] Claude / Codex parser 都写入统一 hook meta。
+  - verify: parser 目标单测。
+
 - [ ] 扩展 Claude hook parser
   - [ ] 增加 canonical JSON hash 和 `hookKey` 生成工具。
   - [ ] 给 active user hook 写入 `enabled`、`canToggleHook`、`scenarioHash`、`hookHash`、`stateSourcePath`。
@@ -12,7 +24,8 @@
 
 - [ ] 对齐 Codex hook identity
   - [ ] Codex hook asset 增加 `scenarioHash`、`hookHash`、`occurrenceCount`、`toggleStrategy`。
-  - [ ] 保留现有 `[hooks.state]` 写入策略, 但状态 key 迁移到稳定 identity 或兼容旧 key。
+  - [ ] `[hooks.state]` 新写入 stable key: `codex:${scenarioHash}:${hookHash}`。
+  - [ ] parser 兼容读取旧 index key 和新 stable key, 新 stable key 优先。
   - [ ] managed hook 继续 read-only。
   - [ ] hooks.json 与 inline hooks 出现同类 hook 时写入 `equivalentSources`。
   - verify: `tests/unit/codex-config-parser.test.ts` + `tests/unit/hook-lifecycle.test.ts`。
@@ -40,10 +53,10 @@
   - verify: `tests/unit/hook-lifecycle.test.ts` + `tests/renderer/hooks-lifecycle-view.test.tsx`。
 
 - [ ] 引入 Agent Capability Plugin 的 hooks 切片
-  - [ ] 新增内部 `AgentCapabilityPlugin` / hook action descriptor 类型。
-  - [ ] Claude/Codex 作为内置 Plugin 先实现 hook action descriptor, renderer 不再写死 agentId。
-  - [ ] `hooks-manager.ts` 通过 plugin registry 分发 hook 操作。
-  - [ ] 记录完整 Agent Capability Plugin 系统到产品问题, 本任务不实现外部 plugin 加载。
+  - [ ] 新增内部 `AgentHookCapabilityPlugin` / hook action descriptor 类型。
+  - [ ] Claude/Codex 作为内置 hook Plugin, renderer 不再写死 agentId。
+  - [ ] `hooks-manager.ts` 通过 hook plugin registry 分发 hook 操作。
+  - [ ] 不实现外部 plugin loader; 只保留后续 manifest 方向。
   - verify: `tests/unit/hooks-manager.test.ts` + `tests/unit/engine-scanner.test.ts`。
 
 - [ ] 文案与 i18n
