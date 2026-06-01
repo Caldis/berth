@@ -15,9 +15,10 @@
   - tests: `pnpm vitest run tests/renderer/settings-agent-plugins.test.tsx`
   - verify: Settings 默认摘要不增加详情噪音, 展开详情与外链行为不变。
   - evidence: passed 2026-06-02, 3 tests.
-- [ ] 任务 4: 进入 verify 阶段前跑类型与 harness 目标检查。
+- [x] 任务 4: 进入 verify 阶段前跑类型与 harness 目标检查。
   - tests: `pnpm typecheck`; `pnpm harness:check --work docs/works/2026-06-02-gh-26-agent-plugin-health-check-descriptors`
   - verify: 当前 work 产物合规, shared 类型全仓可用。
+  - evidence: passed 2026-06-02.
 
 ## verify 回写
 
