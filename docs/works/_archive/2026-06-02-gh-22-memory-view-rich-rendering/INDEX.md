@@ -2,20 +2,20 @@
 task: 2026-06-02-gh-22-memory-view-rich-rendering
 task_id: GH-22
 type: feature
-phase: verify
+phase: archive
 created: 2026-06-02
 issue:
   number: 22
   repo: Caldis/berth
   url: https://github.com/Caldis/berth/issues/22
   id: I_kwDOSpnDwc8AAAABEBRoSg
-  state: OPEN
+  state: CLOSED
 gh_project:
   status: tracked
   project_number: 6
   project_url: https://github.com/users/Caldis/projects/6
   item_id: PVTI_lAHOADXbEs4BZHvQzguZ51I
-  item_status: In Progress
+  item_status: Done
   project_id: PVT_kwHOADXbEs4BZHvQ
 artifacts:
   source: 00-PRD.md
