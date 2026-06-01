@@ -1,6 +1,6 @@
 > 说明: 产品缺陷、功能请求与改进项统一存放在 `docs/issues/`。开发过程中的工程摩擦
 > (卡顿/手动补的上下文/被迫修正) 记入 AI Native Workflow 的
-> `docs/friction/{yyyymmdd}-{phase}-{summary}.md`, 由 `/opsx:optimization` 消费。
+> `docs/friction/{yyyymmdd}-{phase}-{summary}.md`, 由 `harness-optimization` 消费。
 > 本目录与 works/friction 只做交叉引用, 不承载任务 phase 状态。
 
 # ISSUES

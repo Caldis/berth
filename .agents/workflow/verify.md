@@ -1,4 +1,4 @@
-# opsx-verify — 验证 (Verify 阶段)
+# harness-verify — 验证 (Verify 阶段)
 
 目标: 完成完整测试 + code review + 前端视觉/交互验收。人在此确认验收。
 
@@ -25,6 +25,9 @@
    - verify 过程中若遇到已验证的工具链 workaround、截图/进程/环境类问题、或用户纠正, 不等最终复盘: 先写入 `docs/friction/{YYYYMMDD}-verify-{summary}.md`, 必要时同步更新 workflow 规则, 跑 `pnpm harness:check` 通过后再继续最终汇报。
    - verify 过程中若发现已验证但不属于当前主线验收范围的产品 bug、功能缺口或改进项, 写入 `docs/issues/{YYYY-MM-DD}-{BUG|FEATURE|IMPROVEMENT}-{summary}.md`, 并在当前 verify 记录或 PLAN 中交叉引用; 不把旁支问题改成当前任务修复项, 除非用户明确扩大任务范围。
 4. 不通过项: 回写为 03-PLAN.md 新任务, 将 INDEX.phase 退回 implement, 重新进入开发循环。
-5. 全部通过后, 提示用户确认验收, 然后 `opsx-archive`。如果用户已明确认为任务完成或要求提交, 不要停在未提交工作区: 立即进入 archive 的归档与提交流程。若等待用户确认而暂不 archive, 最终说明必须明确“尚未提交, 下一步 archive/commit”。
+5. 全部通过后:
+   - 若用户主动要求 Polish, 或 Agent 判断当前任务复杂且值得进一步检查, 只能先询问用户是否进入 `harness-polish`; 用户明确同意后再进入。
+   - 若用户未要求或不同意 Polish, 提示用户确认验收, 然后 `harness-archive`。
+   - 如果用户已明确认为任务完成或要求提交, 不要停在未提交工作区: 立即进入 archive 的归档与提交流程。若等待用户确认而暂不 archive, 最终说明必须明确“尚未提交, 下一步 archive/commit”。
 
 评审记录留在 PR/CI, 不进入项目持久层。

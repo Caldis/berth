@@ -1,4 +1,4 @@
-# opsx-optimization — 流程优化
+# harness-optimization — 流程优化
 
 目标: 消费 docs/friction 的经验, 优化工作流本身。
 
@@ -10,4 +10,4 @@
 4. 改进对应的摩擦记录移入 `docs/friction/_archive/`。
 5. 若改动了分发产物的生成逻辑, 运行 `pnpm harness:sync`。
 
-产出: 工作流增量优化。这是反馈闭环, 使每完成一个任务工作流更可靠。
+产出: 工作流增量优化。每完成一个任务后, 把可复用经验写回规则。

@@ -1,4 +1,4 @@
-# opsx-explore — 探索 (Explore 阶段)
+# harness-explore — 探索 (Explore 阶段)
 
 目标: 把外部需求与内部现实对齐, 建立对现状的真实理解。
 
@@ -15,4 +15,4 @@
    - 未决问题 (留给 design 向人澄清)
 5. 更新 INDEX.phase = design。
 
-不编码。摩擦记入 docs/friction。若探索中发现已验证但不属于当前主线验收范围的产品问题, 记入 docs/issues 并在 01-ANALYSIS.md 交叉引用。完成提示用户: `opsx-design`。
+不编码。摩擦记入 docs/friction。若探索中发现已验证但不属于当前主线验收范围的产品问题, 记入 docs/issues 并在 01-ANALYSIS.md 交叉引用。完成提示用户: `harness-design`。

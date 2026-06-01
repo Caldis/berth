@@ -6,8 +6,8 @@ harness 的分发架构 (见 .agents/README.md) 依据本文档, 改动分发逻
 - **Claude Code skills 原生提供 slash 入口**: `.claude/skills/<skill-name>/SKILL.md` 暴露为
   `/<skill-name>`; 目录名决定 slash 名称, `description` 参与自动触发判断。
 - **Claude custom commands 已合并进 skills**: `.claude/commands/*.md` 仍可用作兼容入口, 但官方建议使用
-  skills; 同名 skill 与 command 同时存在时, skill 优先。harness 不再生成 `.claude/commands/opsx-*.md`,
-  `pnpm harness:sync` 会清理历史生成的 opsx command 桩。
+  skills; 同名 skill 与 command 同时存在时, skill 优先。harness 只生成 `harness-*` skills,
+  `pnpm harness:sync` 会清理历史生成的旧前缀 skill 与 command 桩。
 - **Claude Code `.claude/skills/` 可分发软链或目录副本**: Windows checkout 可能把 Git symlink 落成普通文本文件。
   故 `.claude/skills` 允许软链或目录副本。
 - **Codex custom prompts 已废弃并在 HEAD 删除** (openai/codex commit 48144a7), 仅曾支持全局

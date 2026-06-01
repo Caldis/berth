@@ -28,7 +28,7 @@
 
 # EVOLUATION
 当用户对先前的任务或指令进行纠正或指示时, 你需要在验证其有效性后将其写入 `docs/issues/`
-- 在 harness 工作流 (opsx-*) 任务过程中, 用户给出的纠正/意见/偏好, 一经验证有效, 必须主动沉淀为 friction (docs/friction/), 并在当轮落地优化, 无需用户提示 "记下来"。详见 `.agents/workflow/_shared.md` 不变量 6。
+- 在 harness 工作流 (harness-*) 任务过程中, 用户给出的纠正/意见/偏好, 一经验证有效, 必须主动沉淀为 friction (docs/friction/), 并在当轮改进规则, 无需用户提示 "记下来"。详见 `.agents/workflow/_shared.md` 不变量 6。
 - **friction 沉淀是 Agent 自主职责, 不是需审批的动作**: 识别到可复用工程摩擦后, 直接检查 `docs/friction/` 是否已有相关记录 — 有则合并、无则新建, 记录后过 `pnpm harness:check` 并在当轮事后向用户汇报即可。**严禁回头征求"是否要记录 friction"的同意** — 征求同意本身即一种元摩擦, 违背 "无需用户提示" 的既定规则。
 - 判定归属: 针对当前任务执行过程的反馈 → friction; 针对产品功能/缺陷的反馈 → `docs/issues/`。
 - 执行当前任务时发现已验证但不属于当前主线验收范围的产品 bug、功能缺口或改进项, 主动记录到 `docs/issues/`, 当前任务只做交叉引用; 不顺手修旁支问题, 除非用户明确扩大任务范围。
@@ -111,8 +111,8 @@ Agent 工作流体系, 单一真源在 `.agents/`, 同时服务 Claude Code 与 
 - 自检/分发: `pnpm harness:check` / `pnpm harness:sync` (CI 强制)
 
 ## 何时进入 (强制)
-- feature / bug 开发任务: 落代码前必须先用 `opsx-new` 建任务态, 再按 explore → design → implement → verify 推进; 禁止跳过 new 直接 Read/Edit 进实现或调试。
+- feature / bug 开发任务: 落代码前必须先用 `harness-new` 建任务态, 再按 explore → design → implement → verify 推进; 禁止跳过 new 直接 Read/Edit 进实现或调试。
 - 小改动豁免: 单行/拼写/纯文案注释, 或满足"单一文件·单一关注点·标准门禁 (typecheck/lint/test) 即可验收·无需跨文件根因分析或人工意图澄清"的小改动 (如弃用 API 替换、局部重构), 可直接处理 + 跑门禁 (含可测试性), 不建任务态。小改动豁免前必须先声明豁免依据并征得用户确认。
-- 边界存疑按非平凡处理, 默认走 harness; 进行中的任务用 `opsx-continue` 续跑, 不重新 new。
+- 边界存疑按非平凡处理, 默认走 harness; 进行中的任务用 `harness-continue` 续跑, 不重新 new。
 
-入口: opsx-new · opsx-continue · opsx-explore · opsx-design · opsx-implement · opsx-verify · opsx-archive · opsx-optimization
+入口: harness-new · harness-continue · harness-explore · harness-design · harness-implement · harness-verify · harness-polish · harness-archive · harness-optimization

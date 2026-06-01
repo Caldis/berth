@@ -1,4 +1,4 @@
-# opsx-continue — 继续已有任务
+# harness-continue — 继续已有任务
 
 输入: 任务目录名或 Jira ID (参数 $ARGUMENTS); 为空时列出 `docs/works/` 下所有未归档任务供选择。
 
@@ -9,6 +9,7 @@
    - design → 执行 `.agents/workflow/design.md`
    - implement → 执行 `.agents/workflow/implement.md`
    - verify → 执行 `.agents/workflow/verify.md`
+   - polish → 执行 `.agents/workflow/polish.md`
    - blocked → 向用户展示 INDEX 中标注的待澄清项, 澄清后回 design
    - archive → 提示该任务已可归档, 执行 `.agents/workflow/archive.md`
 3. 不重置已完成阶段的产物。

@@ -1,4 +1,4 @@
-# opsx-design — 设计 (Design 阶段)
+# harness-design — 设计 (Design 阶段)
 
 目标: 基于 01-ANALYSIS 产出技术方案与任务清单。人在此澄清意图。
 
@@ -14,4 +14,4 @@
 5. 方案须遵守 ARCHITECTURE 的模块边界与 MVVM/进程隔离约定。
 6. 更新 INDEX.phase = implement。
 
-完成提示用户: `opsx-implement`。
+完成提示用户: `harness-implement`。

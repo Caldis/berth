@@ -1,6 +1,6 @@
-# opsx-implement — 实现 (Implementation 阶段)
+# harness-implement — 实现 (Implementation 阶段)
 
-目标: 按 03-PLAN.md 落地实现。
+目标: 按 03-PLAN.md 实现。
 
 前置: INDEX.phase == implement 且存在 02-SPEC.md 与 03-PLAN.md。
 
@@ -14,4 +14,4 @@
    `docs/issues/{YYYY-MM-DD}-{BUG|FEATURE|IMPROVEMENT}-{summary}.md`, 并在当前 PLAN 中交叉引用; 不顺手修, 除非用户明确扩大任务范围。
 6. 全部任务完成后, 更新 INDEX.phase = verify。
 
-产出: 代码 + 单测 + 更新后的 03-PLAN.md。完成提示用户: `opsx-verify`。
+产出: 代码 + 单测 + 更新后的 03-PLAN.md。完成提示用户: `harness-verify`。
