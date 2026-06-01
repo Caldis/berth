@@ -82,11 +82,11 @@ artifacts:
 4. verify 不通过项回写 03-PLAN.md 新任务, phase 退回 implement。
 5. 工程摩擦不就地处理, 沉到 docs/friction/{YYYYMMDD}-{action-id}-{summary}.md。
 6. 用户在任务过程中给出的纠正/意见/偏好, 一经验证有效, 必须主动沉淀为 friction 并当轮改进规则, 无需用户提示。遇到已验证的工具链 workaround、环境/截图/进程类问题也一样处理; 不等最终复盘或用户追问。沉淀产物本身须先过 `pnpm harness:check` 才能提交 (action 段限 10 个值: 0.0-new|0.1-continue|1.0-explore|2.0-design|3.0-implement|3.1-polish|4.0-verify|5.0-archive|5.1-friction|5.2-issues)。
-7. 用户提出流程改善意见时, 先判断是否为代价非常小的修正; 若是, 先询问用户是落到 friction 并改规则, 还是只作为当前会话行为校准直接调整。
+7. 用户提出流程改善意见时, 先判断归属: 当前任务执行过程的可复用摩擦直接写入 `docs/friction/` 并改规则; 产品缺陷、功能缺口或改进项写入 `docs/issues/`; 只有改产品代码、外部副作用、不可逆操作或范围不清时才询问。不得为“是否记录 friction”征求同意。
 8. 小改动豁免前必须先声明豁免依据并征得用户确认。确认前不得直接跳过 `harness-0.0-new`; 若实施中发现影响面超出声明范围, 停下重新申请或切入 harness。
-9. 涉及外部产品/平台/SDK/CLI 的功能行为、字段契约、费用口径、配置选项、文件格式、指标含义等可能随版本变化的内容时, Explore / Design 阶段必须先用英文检索官方文档或 primary source, 再写判断和方案; 官方无公开契约时, 才可使用本机样本作为 fallback, 并在产物中明确标注其经验性。
+9. 涉及外部产品/平台/SDK/CLI 的功能行为、字段契约、费用口径、配置选项、文件格式、指标含义等可能随版本变化的内容时, Explore / Design 阶段必须先用英文检索官方文档或 primary source, 再写判断和方案; 官方无公开契约时, 才可使用本机样本作为 fallback, 并在产物中明确标注其经验性。常规网页检索只用 WebSearch/WebFetch; 除非用户明确要求浏览器实测、截图或交互验证, 不打开 GUI 浏览器。遇到 403 / Cloudflare 等拦截时, 先找官方 `.md` 版本、官方镜像或公告页, 再用搜索摘要并标注限制; 仍拿不到就跳过。
 10. 执行当前任务时发现已验证的产品 bug、功能缺口或改进项, 且不属于当前主线验收范围, 必须主动写入 `docs/issues/{YYYY-MM-DD}-{BUG|FEATURE|IMPROVEMENT}-{summary}.md`; 当前任务产物只保留交叉引用, 不把旁支问题混入当前实现, 除非用户明确扩大任务范围。
-11. 已验证、边界清楚的增量必须小步频繁提交; 每次提交前只暂存自己相关文件, 用 `git diff --cached` 核对 staged 集合, 不提交无关工作区改动。
+11. 已验证、边界清楚的增量必须小步频繁提交; 每次提交前只暂存自己相关文件, 用 `git diff --cached` 核对 staged 集合, 不提交无关工作区改动。共享工作区禁止 `git add -A`、`git add .` 和目录级批量 add; 显式列出本轮处理过的文件。若误提交了他人文件, 用 `git reset --soft HEAD~1` 拆回索引, 再 `git restore --staged <path>` 逐个踢出, 不用 destructive reset。
    - 多 Agent 并行导致别的 active work 破坏全局 `pnpm harness:check` 时, 当前任务阶段提交可先跑 `pnpm harness:check --work docs/works/{task}` 验证自己的任务目录。verify/archive 总收口仍必须跑全局 `pnpm harness:check`, 不能用局部检查替代。
 12. Polish 是可选阶段, 只能由用户主动要求, 或 Agent 在复杂任务 verify 通过后询问并取得明确同意后进入。Polish 只检查当前任务相关的深挖、修复、交互、视觉、可用性、适用性与性能问题, 不扩大范围。
 13. Active work 必须记录 `task_id`、`issue.number`、`issue.url` 和 `gh_project.item_id`。旧归档任务可保留历史企业 ticket 字段, 但 active works 不再新增这类字段。
@@ -96,6 +96,7 @@ artifacts:
 17. 进入 harness 后, Superpowers 只能作为方法参考: 不创建 active `docs/superpowers/plans` 或 `docs/superpowers/specs`, 不要求 worktree, 不覆盖 INDEX.phase, 不把 `writing-plans` / `executing-plans` 的流程问答注入当前任务。所有 spec / plan 输出都写入当前 work 的 `02-SPEC.md` / `03-PLAN.md`。
 18. Agent 自主判断并行或顺序执行。文件不重叠、模块边界清楚、测试可独立运行时可并行; 同一批文件反复修改、测试强耦合、任务依赖前一步结果、或涉及全局迁移/状态机/脚本入口时顺序执行。不得把 subagent 并行或主 session 执行作为用户选择题。
 19. Archive 后必须提醒本次产生或关联的 friction / issues, 并给出可选下一步: `harness-5.1-friction` 处理 friction, `harness-5.2-issues` 处理 docs/issues。提醒不等于自动执行, 未经用户要求不得进入这两个可选动作。
+20. 临时文件写系统临时目录 (`$env:TEMP` / `os.tmpdir()`) 或已约定的忽略目录, 不写项目目录, 也不在 Windows 上使用 `/tmp`。不把不可靠命令塞进大批量并行调用; 一个可能失败的命令应单独跑, 便于看清真实错误。
 
 ## 工具
 
