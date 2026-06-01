@@ -10,6 +10,7 @@ import {
   checkWorks,
   checkFriction,
   checkIssues,
+  checkSuperpowers,
   checkTemplates,
   checkWorkflowSources,
   checkEntryRules
@@ -179,6 +180,26 @@ describe('checkIssues', () => {
   })
 })
 
+describe('checkSuperpowers', () => {
+  it('允许既有历史 Superpowers spec/plan', () => {
+    mkdirSync(join(root, 'docs/superpowers/specs'), { recursive: true })
+    mkdirSync(join(root, 'docs/superpowers/plans'), { recursive: true })
+    writeFileSync(join(root, 'docs/superpowers/specs/2026-05-29-ai-native-workflow-harness-design.md'), 'historical')
+    writeFileSync(join(root, 'docs/superpowers/plans/2026-05-29-ai-native-workflow-harness.md'), 'historical')
+    expect(checkSuperpowers(root)).toEqual([])
+  })
+
+  it('禁止新增 active Superpowers spec/plan', () => {
+    mkdirSync(join(root, 'docs/superpowers/specs'), { recursive: true })
+    mkdirSync(join(root, 'docs/superpowers/plans'), { recursive: true })
+    writeFileSync(join(root, 'docs/superpowers/specs/2026-06-01-new-design.md'), 'new spec')
+    writeFileSync(join(root, 'docs/superpowers/plans/2026-06-01-new-plan.md'), 'new plan')
+    const errs = checkSuperpowers(root)
+    expect(errs.some((e: string) => e.includes('docs/superpowers/specs'))).toBe(true)
+    expect(errs.some((e: string) => e.includes('docs/superpowers/plans'))).toBe(true)
+  })
+})
+
 describe('checkTemplates', () => {
   it('模板缺失报错', () => {
     expect(checkTemplates(root).length).toBeGreaterThan(0)
@@ -214,10 +235,13 @@ describe('checkWorkflowSources', () => {
 })
 
 describe('checkEntryRules', () => {
-  function writeEntryRules(options: { agents?: boolean; readme?: boolean; sideIssue?: boolean; scopedCommit?: boolean }): void {
+  function writeEntryRules(options: { agents?: boolean; readme?: boolean; sideIssue?: boolean; scopedCommit?: boolean; superpowersPolicy?: boolean }): void {
+    const superpowersPolicy = options.superpowersPolicy === false
+      ? ''
+      : '\n默认流程是 harness workflow\nSuperpowers 只能作为方法参考\nAgent 自主判断并行或顺序执行'
     if (options.agents) {
       const scopedCommit = options.scopedCommit === false ? '' : '\n自己相关 git diff --cached'
-      writeFileSync(join(root, 'AGENTS.md'), SMALL_CHANGE_EXEMPTION_CONSENT + scopedCommit)
+      writeFileSync(join(root, 'AGENTS.md'), SMALL_CHANGE_EXEMPTION_CONSENT + scopedCommit + superpowersPolicy)
     }
     if (options.readme) {
       mkdirSync(join(root, '.agents'), { recursive: true })
@@ -238,6 +262,14 @@ describe('checkEntryRules', () => {
         const path = join(root, rel)
         const current = existsSync(path) ? readFileSync(path, 'utf8') : ''
         writeFileSync(path, current + '\n自己相关 git diff --cached')
+      }
+    }
+    if (options.superpowersPolicy !== false) {
+      mkdirSync(join(root, '.agents/workflow'), { recursive: true })
+      for (const rel of ['.agents/workflow/_shared.md', '.agents/workflow/design.md', '.agents/workflow/implement.md']) {
+        const path = join(root, rel)
+        const current = existsSync(path) ? readFileSync(path, 'utf8') : ''
+        writeFileSync(path, current + superpowersPolicy)
       }
     }
     mkdirSync(join(root, 'docs/works/_template'), { recursive: true })
@@ -286,5 +318,10 @@ describe('checkEntryRules', () => {
     writeEntryRules({ agents: true, readme: true })
     writeFileSync(join(root, '.agents/workflow/implement.md'), 'docs/issues 不属于当前主线\n自己相关 git diff --cached')
     expect(checkEntryRules(root).some((e: string) => e.includes('test evidence'))).toBe(true)
+  })
+
+  it('缺少 Superpowers 降级为方法参考规则时报错', () => {
+    writeEntryRules({ agents: true, readme: true, superpowersPolicy: false })
+    expect(checkEntryRules(root).some((e: string) => e.includes('Superpowers flow policy'))).toBe(true)
   })
 })

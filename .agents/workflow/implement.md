@@ -6,6 +6,8 @@
 
 步骤:
 1. 按 03-PLAN.md 任务顺序逐项实现。
+   - 默认流程是 harness workflow; Superpowers 只能作为方法参考, 不执行 `executing-plans` 的用户选择流程, 不创建 active `docs/superpowers/plans` 或 `docs/superpowers/specs`。
+   - Agent 自主判断并行或顺序执行: 文件不重叠、模块边界清楚、测试可独立运行时可并行; 同一批文件反复修改、测试强耦合、任务依赖前一步结果、或涉及全局迁移/状态机/脚本入口时顺序执行。不得把 subagent 并行或主 session 执行作为用户选择题。
 2. 每项先处理测试, 再写实现:
    - 先定位或新增目标测试文件; feature / bug / 行为变更优先写一个会失败的测试。
    - 后写最小实现, 跑目标测试通过。

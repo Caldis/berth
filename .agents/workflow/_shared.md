@@ -76,6 +76,9 @@ artifacts:
 13. Active work 必须记录 `task_id`、`issue.number`、`issue.url` 和 `gh_project.item_id`。旧归档任务可保留历史企业 ticket 字段, 但 active works 不再新增这类字段。
 14. Archive 前必须同步 GitHub Project: 运行 `node scripts/harness-projects.mjs done <task-dir>`, 将 item 状态置 Done 并回读确认; 失败、缺授权或缺 `gh_project.item_id` 时停止 archive, 不移动目录。GitHub Issue 是否关闭由 PR closing keyword 或用户明确要求决定, archive 不默认关闭 Issue。
 15. 测试不是 verify 阶段补跑。Design 必须写测试策略和测试矩阵; Implement 每个实现项必须先写或更新目标测试, 跑目标测试通过后才可勾选。确实不适合自动化测试时, 必须在 03-PLAN 写清 `tests: not needed - <reason>` 和替代验证。每个实现项必须有测试证据或明确例外理由。
+16. 默认流程是 harness workflow。只有用户明确要求使用 Superpowers 流程时, Superpowers 才能接管流程; 否则只把 Superpowers 当作方法库。
+17. 进入 harness 后, Superpowers 只能作为方法参考: 不创建 active `docs/superpowers/plans` 或 `docs/superpowers/specs`, 不要求 worktree, 不覆盖 INDEX.phase, 不把 `writing-plans` / `executing-plans` 的流程问答注入当前任务。所有 spec / plan 输出都写入当前 work 的 `02-SPEC.md` / `03-PLAN.md`。
+18. Agent 自主判断并行或顺序执行。文件不重叠、模块边界清楚、测试可独立运行时可并行; 同一批文件反复修改、测试强耦合、任务依赖前一步结果、或涉及全局迁移/状态机/脚本入口时顺序执行。不得把 subagent 并行或主 session 执行作为用户选择题。
 
 ## 工具
 

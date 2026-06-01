@@ -13,6 +13,11 @@ const PHASES = ['explore', 'design', 'blocked', 'implement', 'verify', 'polish',
 const PHASE_RANK = { explore: 0, design: 1, blocked: 1, implement: 2, verify: 3, polish: 4, archive: 5 }
 export const SMALL_CHANGE_EXEMPTION_CONSENT = '小改动豁免前必须先声明豁免依据并征得用户确认。'
 export const TEST_DISCIPLINE_RULE = '测试证据或明确例外理由'
+const SUPERPOWERS_FLOW_POLICY = ['默认流程是 harness workflow', 'Superpowers 只能作为方法参考', 'Agent 自主判断并行或顺序执行']
+const ALLOWED_SUPERPOWERS_DOCS = new Set([
+  'docs/superpowers/specs/2026-05-29-ai-native-workflow-harness-design.md',
+  'docs/superpowers/plans/2026-05-29-ai-native-workflow-harness.md'
+])
 
 function listDirs(p) {
   if (!existsSync(p)) return []
@@ -153,6 +158,22 @@ export function checkIssues(root) {
   return errors
 }
 
+export function checkSuperpowers(root) {
+  const errors = []
+  for (const subdir of ['specs', 'plans']) {
+    const base = join(root, 'docs/superpowers', subdir)
+    if (!existsSync(base)) continue
+    for (const name of readdirSync(base)) {
+      const full = join(base, name)
+      if (!statSync(full).isFile()) continue
+      const rel = `docs/superpowers/${subdir}/${name}`
+      if (!ALLOWED_SUPERPOWERS_DOCS.has(rel))
+        errors.push(`superpowers: active ${rel} is not allowed; write harness output to docs/works/{task}/02-SPEC.md or 03-PLAN.md`)
+    }
+  }
+  return errors
+}
+
 export function checkEntryRules(root) {
   const errors = []
   for (const rel of ['AGENTS.md', '.agents/README.md']) {
@@ -200,6 +221,20 @@ export function checkEntryRules(root) {
     if (!readFileSync(path, 'utf8').includes(TEST_DISCIPLINE_RULE))
       errors.push(`entry-rules: ${rel} missing test evidence rule`)
   }
+  for (const rel of ['AGENTS.md', '.agents/workflow/_shared.md', '.agents/workflow/design.md', '.agents/workflow/implement.md']) {
+    const path = join(root, rel)
+    if (!existsSync(path)) {
+      errors.push(`entry-rules: missing ${rel}`)
+      continue
+    }
+    const content = readFileSync(path, 'utf8')
+    for (const rule of SUPERPOWERS_FLOW_POLICY) {
+      if (!content.includes(rule)) {
+        errors.push(`entry-rules: ${rel} missing Superpowers flow policy`)
+        break
+      }
+    }
+  }
   return errors
 }
 
@@ -210,7 +245,8 @@ export function checkAll(root) {
     ...checkTemplates(root),
     ...checkWorks(root),
     ...checkFriction(root),
-    ...checkIssues(root)
+    ...checkIssues(root),
+    ...checkSuperpowers(root)
   ]
   const dist = checkDistribution(root)
   if (!dist.ok) for (const d of dist.drift) errors.push(`distribution drift: ${d}`)

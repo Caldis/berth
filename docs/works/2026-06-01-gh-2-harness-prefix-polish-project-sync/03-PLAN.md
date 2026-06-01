@@ -15,7 +15,7 @@
 - [x] 任务 13: 扩展 `harness-check` 校验 active works 的 `task_id` / `issue` / `gh_project.item_id` 与 `gh-{number}` 目录名; tests: `pnpm test tests/harness/check.test.ts`; verify: `pnpm harness:check`。
 - [x] 任务 14: 迁移当前 active works 到 `{date}-gh-{number}-{desc}` 并回写 GitHub Issue/Project 元数据; tests: not needed - 元数据和目录迁移, 用 `pnpm harness:check` 与 `node scripts/harness-projects.mjs check --strict` 验证; verify: `pnpm harness:check`, `node scripts/harness-projects.mjs check --strict`。
 - [x] 任务 15: 扫描并清理非历史文档中的旧企业 ticket 遗留引用; tests: not needed - 文案/历史边界清理, 用旧字段关键字扫描和 `pnpm harness:check` 验证; verify: active paths keyword scan excluding `_archive` and `docs/superpowers` history。
-- [ ] 任务 16: 处理 Superpowers 与 harness 的流程冲突, 写入默认 harness、受控借鉴、禁止新增 active Superpowers plan/spec 和并行自主决策规则; tests: 先补 `tests/harness/check.test.ts` 失败用例, 再实现; verify: `pnpm test tests/harness/check.test.ts`, `pnpm harness:check`。
+- [x] 任务 16: 处理 Superpowers 与 harness 的流程冲突, 写入默认 harness、受控借鉴、禁止新增 active Superpowers plan/spec 和并行自主决策规则; tests: `pnpm test tests/harness/check.test.ts`; verify: `pnpm harness:check`, `pnpm typecheck:node`。
 
 ## 验证记录
 
@@ -39,6 +39,9 @@
 - `pnpm harness:check` - all checks passed。
 - `node scripts/harness-projects.mjs check --strict` - all project statuses match local task state。
 - 旧前缀扫描 - only intentional legacy cleanup code/tests and historical work docs remain; no `opsw` hits。
+- `pnpm test tests/harness/check.test.ts` - RED: 3 expected Superpowers policy failures before implementation; GREEN: 1 file / 29 tests passed。
+- `pnpm harness:check` - passed after Superpowers flow guard docs and checker update。
+- `pnpm typecheck:node` - passed after `checkSuperpowers` implementation。
 
 ## GitHub Issue 迁移记录
 
