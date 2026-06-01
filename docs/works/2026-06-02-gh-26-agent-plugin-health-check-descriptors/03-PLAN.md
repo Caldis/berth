@@ -19,7 +19,12 @@
   - tests: `pnpm typecheck`; `pnpm harness:check --work docs/works/2026-06-02-gh-26-agent-plugin-health-check-descriptors`
   - verify: 当前 work 产物合规, shared 类型全仓可用。
   - evidence: passed 2026-06-02.
+- [ ] 任务 5: 修正 health descriptor i18n key, 避免冒号被 i18next 解析为 namespace。
+  - tests: `pnpm vitest run tests/unit/agent-capability-plugins.test.ts`; `pnpm typecheck`
+  - verify: descriptor `id` 保留冒号; `labelKey` / `descriptionKey` / `suggestionKey` 使用点分隔的安全 key; 界面质量与交互验收不适用。
 
 ## verify 回写
 
 verify 不通过项作为新任务追加于此, phase 退回 implement。
+
+- 2026-06-02: code review 发现 descriptor i18n key 直接拼接冒号 id, i18next 默认会把冒号解析为 namespace 分隔符。已追加任务 5, phase 退回 implement。

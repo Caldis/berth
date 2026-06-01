@@ -2,7 +2,7 @@
 task: 2026-06-02-gh-26-agent-plugin-health-check-descriptors
 task_id: GH-26
 type: feature
-phase: verify
+phase: implement
 created: 2026-06-02
 issue:
   number: 26
