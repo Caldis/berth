@@ -51,3 +51,12 @@ verify 不通过项作为新任务追加于此, phase 退回 implement。
   - feedback: 现有健康检查所在区域和卡片已经过时; 需要改为更贴近当前生命周期页结构的轻量展示, 健康检查逻辑保留。
   - tests: `tests/renderer/hooks-lifecycle-view.test.tsx`
   - verify: 旧实现下新增测试失败 2 项; 实现后 `pnpm test -- tests/renderer/hooks-lifecycle-view.test.tsx` 14 项通过
+
+## verify 回写 2026-06-01 health display
+- `pnpm lint` 通过
+- `pnpm typecheck` 通过
+- `pnpm test` 50 个文件 / 328 项通过; 仍有既有 Recharts 0 宽高 warning, 不影响结果
+- `pnpm harness:check` 通过
+- 补测 `tests/renderer/capabilities-guidance.test.tsx` 2 项通过, 防止旧健康检查文案断言残留
+- Electron 视觉验收: 先执行 `pnpm dev:agent guard before --id hooks-health-display-verify --json`, 记录用户 dev PID 226164 和 Electron 主进程 PID 493864; `pnpm dev:agent start --id hooks-health-display-verify --json` 可启动但无调试端口, Windows 150% DPI 下系统点击未命中侧栏, 已记录 friction `docs/friction/20260601-4.0-verify-dev-agent-debug-port.md`; 停止该实例并执行 `pnpm dev:agent guard after --id hooks-health-display-verify --json`, 用户 dev 保护通过。
+- Electron 视觉验收续测: 手动启动独立实例 `hooks-health-display-remote`, 带 `--remote-debugging-port=9335`; CDP 进入 Hooks 页面, 断言 `Hook 检查 / 正常` 出现, 旧的“当前视角没有需要处理的 Hook 健康检查”文案和 `Hook 检查详情` 卡片不再出现, `#hook-health-checks` 在无问题时不渲染; `PrintWindow` 截图 `C:\Users\mail\AppData\Local\Temp\berth-hooks-health-display-clean.png`; 最后按精确 PID 停止该实例。
