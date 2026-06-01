@@ -98,60 +98,67 @@ interface ClaudeDisabledHookEntry {
   handler: Record<string, unknown>
   hook: Record<string, unknown>
   definitionHash: string
-  removedFromSourceHash: string
   disabledAt: string
 }
 ```
 
 保存 `handler` 是为了恢复 matcher group 的非 hook 字段; 保存 `hook` 是为了精确恢复被移除的节点。
 
-## 并行修改与冲突模型
+## 局部冲突模型
 
-这个功能不能依赖“最后写入覆盖”。Claude settings 可能被用户手动编辑、Claude Code 自己写入、其他本地工具写入, Berth 必须采用乐观并发控制:
+这个功能不能把整份 `settings.json` 当作版本控制单位。Claude settings 是高频修改文件, 用户、Claude Code 和其他本地工具都可能修改无关段落。Berth 的冲突判断只围绕“目标 hook”和“目标 hook 所在容器”:
 
-1. 扫描时计算 `sourceContentHash`。
-   - 对 settings JSON 原文做 SHA-256。
-   - 每个 user-scope Claude hook asset 的 `meta.sourceContentHash` 带上这个值。
-   - UI 发起禁用/启用时把该 hash 一起传给 main process。
-2. main process 每次操作都重新读取当前文件。
-   - 不使用 renderer 传来的旧 JSON。
-   - 所有改动都基于当前磁盘内容做最小 JSON patch。
-3. 写入前再次读取文件 hash。
-   - 如果 hash 已经不同于本次 patch 基于的 hash, 放弃写入并返回冲突。
-   - 临时文件删除, 不 rename。
-4. Berth 进程内用 per-file mutex 串行化同一 settings 文件的操作。
+- hook 身份: `definitionHash`, 由 `{ event, mode, matcher, hook }` 的 canonical JSON 计算。
+- 容器选择器: `event + mode + matcher`。它只用于恢复时寻找应插入的位置。
+- 文件快照 hash: 只用于写入前发现极短时间内的并行写入, 不用于拒绝旧 UI 发起的操作。
+
+换句话说, 页面扫描后 settings 被别的工具改了也不一定失败。只要当前文件里还能唯一识别目标 hook, Berth 就基于当前文件继续做最小修改。
+
+### 并行控制
+
+1. Berth 进程内用 per-file mutex 串行化同一 settings 文件操作。
    - 同一 app 内的双击、两个窗口、连续 enable/disable 不并行写同一文件。
    - 这个锁只解决 Berth 内部并发; 外部编辑器不会遵守它。
+2. main process 每次操作都重新读取当前文件。
+   - 不使用 renderer 传来的旧 JSON。
+   - 不因为整文件 hash 变化直接失败。
+3. transform 基于当前 JSON 执行。
+   - 禁用只删除目标 hook 节点。
+   - 恢复只插入 sidecar 里的 hook 节点。
+   - 其他 event、matcher group、hook 保持当前文件里的内容。
+4. 写入前复读文件 hash。
+   - 如果文件从本次 transform 开始后又变了, 重新读取最新文件并重算 transform。
+   - 最多重试 3 次。
+   - 仍持续变化或变成无法判断时, 返回冲突。
 5. 外部并行写入无法被 100% 阻止。
    - 在没有跨平台强制文件锁且外部工具不配合的情况下, 任何工具都无法完全消除“最终 hash 检查之后、rename 之前”的极短竞态。
-   - Berth 的保证是: 不覆盖已经能观察到的外部改动; 出现无法判断的情况就拒绝写入; 每次 settings 写入前都有整文件备份。
+   - Berth 的保证是: 尽量基于最新文件合并; 无法唯一判断时拒绝写入; 每次 settings 写入前都有整文件备份。
 
-### 禁用时的冲突判断
+### 禁用时的局部判断
 
 禁用操作输入包含:
 
 - `hookKey`
 - `definitionHash`
-- `sourceContentHash`
 - `sourcePath`
 
 处理规则:
 
-1. 若当前 `sourceContentHash` 与请求中的 hash 一致:
-   - 按 `hookKey` 中的 event / handlerIndex / hookIndex 定位。
-   - hash 一致则删除。
-   - hash 不一致则返回 stale conflict。
-2. 若当前文件 hash 已变化:
-   - 先在当前文件中查找同一 `definitionHash`。
-   - 找到唯一一条: 视为外部只改了无关位置, 删除这一条。
+1. 优先按 `hookKey` 中的 event / handlerIndex / hookIndex 定位。
+   - 该位置仍是同一 `definitionHash`: 删除。
+   - 该位置已变成其他 hook: 不删除, 进入 hash 搜索。
+2. 在当前 settings 中搜索同一 `definitionHash`。
+   - 找到唯一一条: 删除这一条。
    - 找到零条: 若 sidecar 已有该 hash 的 disabled entry, 返回 no-op; 否则返回 stale conflict。
    - 找到多条: 返回 ambiguous conflict, 不猜测删除哪一条。
-3. 同一 event / matcher 下出现“相关但不完全相同”的 hook:
+3. 同一 event / matcher 下出现相似但 hash 不同的 hook:
+   - 视为用户或其他工具改过内容。
    - 不作为同一条 hook。
-   - 不删除。
-   - 保留用户手动新增内容。
+   - 不删除, 返回 stale conflict。
 
-### 恢复时的冲突判断
+这个规则允许用户或其他软件修改无关段落, 也允许同一 event 下新增其他 hook。只有目标 hook 本身被改掉、删掉或复制成多份时才冲突。
+
+### 恢复时的局部判断
 
 恢复操作以 sidecar entry 为准, 但必须合并到当前 settings:
 
@@ -159,20 +166,20 @@ interface ClaudeDisabledHookEntry {
    - 视为用户已经手动恢复。
    - 不再插入重复 hook。
    - 清理 sidecar entry。
-2. 当前没有同一 hash, 但有同一 event + matcher group:
+2. 当前没有同一 hash, 且存在唯一同一容器选择器:
    - nested mode 插入到这个 matcher group 的 `hooks` 数组。
    - 保留当前 matcher group 的其他字段, 不用 sidecar 覆盖。
-3. 当前有多个同一 event + matcher group:
+3. 当前有多个同一容器选择器:
    - 若原 handlerIndex 命中其中一个, 插入该位置。
    - 否则返回 ambiguous conflict。
-4. 原位置已有不同 hook:
+4. 当前没有同一容器选择器:
+   - 插入 sidecar 保存的 handler。
+   - 只插入要恢复的 hook, 不覆盖其他当前内容。
+5. 原位置已有不同 hook:
    - 不覆盖原位置。
    - 插入到原位置之后或当前数组尾部。
-5. direct mode 下, 当前 event 已有相关 direct handler 但 hash 不同:
-   - 不覆盖。
-   - 插入到原 handlerIndex 附近。
 
-这里的“同名段落”按 Claude Hook 结构解释为 event + matcher group。真正表示“同一条 hook”的依据只能是 canonical JSON 后的 `definitionHash`。
+这里的“同名段落”按 Claude Hook 结构解释为 `event + matcher group`。真正表示“同一条 hook”的依据只能是 `definitionHash`。
 
 ### 写入顺序
 
@@ -209,13 +216,12 @@ interface SetHookEnabledRequest {
   scope: 'user'
   hookKey: string
   sourcePath: string
-  sourceContentHash?: string
   enabled: boolean
   managed?: boolean
 }
 ```
 
-初版不扩展 `scope` union, 避免误让 UI 发送 project/local 写入请求。`sourceContentHash` 对 Codex 可选, 对 Claude Code user hook 必填。
+初版不扩展 `scope` union, 避免误让 UI 发送 project/local 写入请求。Claude Code 的目标身份从 `hookKey` 内的 `definitionHash` 解析, 不要求 UI 传整文件 hash。
 
 ### 禁用流程
 
@@ -226,10 +232,9 @@ interface SetHookEnabledRequest {
    - `managed !== true`
    - `sourcePath` resolve 后等于当前 Claude user settings 路径。
    - `hookKey` 为 Claude key。
-   - `sourceContentHash` 存在。
 2. 进入 settings 文件 mutex。
 3. 读取并解析 `sourcePath` JSON。非法 JSON 返回错误, 不写文件。
-4. 按并行修改与冲突模型定位 hook。
+4. 按局部冲突模型定位 hook。
 5. 创建 sidecar entry。
 6. 先写 sidecar, 保证恢复点早于 settings 删除。
 7. 从 active JSON 中移除 hook:
@@ -241,7 +246,8 @@ interface SetHookEnabledRequest {
 9. 写 settings:
    - `settings.json.berth-tmp-${pid}-${nonce}`
    - `rename(tmp, settings.json)`
-10. 退出 mutex。
+10. 如果写前复读发现文件又变了, 重新读取并重算禁用 transform, 最多 3 次。
+11. 退出 mutex。
 
 如果 sidecar 已有同一 `definitionHash` 的 disabled entry, 禁用应返回 no-op 成功, 不重复写入。
 
@@ -258,15 +264,16 @@ interface SetHookEnabledRequest {
 5. 若 active settings 已有同一 definitionHash:
    - 清理 sidecar entry。
    - 返回成功。
-6. 按并行修改与冲突模型恢复:
+6. 按局部冲突模型恢复:
    - nested mode:
      - 若原 handlerIndex 位置存在同 matcher 的 nested handler, 插入到原 hookIndex 附近。
      - 否则插入保存的 handler, 其中 `hooks` 只包含保存的 hook。
    - direct mode:
      - 将保存的 hook 作为 handler 插入到原 handlerIndex 附近。
 7. 写 settings 备份 + temp rename。
-8. 清理 sidecar entry, temp rename 写 sidecar。
-9. 退出 mutex。
+8. 如果写前复读发现文件又变了, 重新读取并重算恢复 transform, 最多 3 次。
+9. 清理 sidecar entry, temp rename 写 sidecar。
+10. 退出 mutex。
 
 ## Parser / Scanner 设计
 
@@ -274,7 +281,6 @@ interface SetHookEnabledRequest {
 
 - active hooks:
   - 为每条 Claude hook 增加 `hookKey`、`definitionHash`、`enabled: true`。
-  - 为 user settings 增加 `sourceContentHash`。
   - 只有 `scope === 'user'` 且 source 是 `~/.claude/settings.json` 时 `canToggleHook: true`。
 - disabled hooks:
   - user settings 解析时读取 `~/.claude/.berth/hooks-state.json`。

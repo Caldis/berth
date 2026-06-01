@@ -4,7 +4,7 @@
 
 - [ ] 扩展 Claude hook parser
   - [ ] 增加 canonical JSON hash 和 `hookKey` 生成工具。
-  - [ ] 给 active user hook 写入 `enabled`、`canToggleHook`、`definitionHash`、`stateSourcePath`、`sourceContentHash`。
+  - [ ] 给 active user hook 写入 `enabled`、`canToggleHook`、`definitionHash`、`stateSourcePath`。
   - [ ] 读取 `~/.claude/.berth/hooks-state.json`, 输出 disabled hook asset。
   - [ ] sidecar 解析失败时转为 scanner error, 不中断其他资产扫描。
   - verify: parser / scanner 目标单测。
@@ -12,11 +12,11 @@
 - [ ] 实现 Claude Code 单 Hook 软禁用
   - [ ] 在 `hooks-manager.ts#setHookEnabled()` 中分发 Codex 与 Claude Code。
   - [ ] 实现 Claude user settings 路径校验、hookKey 校验、managed 拒绝。
-  - [ ] 实现 per-file mutex、sourceContentHash 写前检查、写前复读 hash。
+  - [ ] 实现 per-file mutex、局部 hook hash 匹配、写前复读 hash 和最多 3 次重算。
   - [ ] 实现禁用: 定位 hook、写 sidecar、移除 JSON 节点。
   - [ ] 实现恢复: 读取 sidecar、去重、插回 settings、清理恢复点。
   - [ ] 写 settings 前创建时间戳备份; settings 和 sidecar 都用 temp + rename。
-  - [ ] 覆盖同 hash 多条、同 matcher group 多组、active 已手动恢复、外部文件变更等冲突分支。
+  - [ ] 覆盖同 hash 多条、同 matcher group 多组、目标 hook 已手动修改、active 已手动恢复、外部文件变更等冲突分支。
   - verify: `tests/unit/hooks-manager.test.ts`。
 
 - [ ] 调整 lifecycle 与 Hooks 页面
