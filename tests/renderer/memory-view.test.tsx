@@ -143,4 +143,119 @@ describe('MemoryView', () => {
 
     expect(targetCard).not.toHaveClass('ring-primary')
   })
+
+  it('renders markdown body and makes wiki links navigable', () => {
+    memoryState.result = {
+      sources: [
+        {
+          id: 'united-memory',
+          label: 'United Memory',
+          available: true,
+          rootPath: 'C:\\Users\\test\\.united-memory',
+          noteCount: 2
+        }
+      ],
+      notes: [
+        {
+          id: 'united-memory:markdown-note',
+          sourceId: 'united-memory',
+          sourceLabel: 'United Memory',
+          title: 'Markdown note',
+          summary: 'Rich body',
+          tags: ['docs'],
+          importance: 'core',
+          path: 'C:\\Users\\test\\.united-memory\\mem\\markdown-note.md',
+          links: [],
+          createdAt: null,
+          updatedAt: null,
+          body: '# Body heading\n\n- first item\n\nUse `inline_code` and [[target-note]].'
+        },
+        {
+          id: 'united-memory:target-note',
+          sourceId: 'united-memory',
+          sourceLabel: 'United Memory',
+          title: 'Target note',
+          summary: 'Jump destination',
+          tags: ['docs'],
+          importance: 'active',
+          path: 'C:\\Users\\test\\.united-memory\\mem\\target-note.md',
+          links: [],
+          createdAt: null,
+          updatedAt: null,
+          body: 'Destination'
+        }
+      ]
+    }
+
+    render(<MemoryView />)
+
+    fireEvent.click(screen.getByRole('button', { name: /Markdown note/ }))
+
+    expect(screen.getByRole('heading', { name: 'Body heading' })).toBeInTheDocument()
+    expect(screen.getByText('first item')).toBeInTheDocument()
+    expect(screen.getByText('inline_code')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'target-note' }))
+
+    const targetCard = screen.getByRole('button', { name: /Target note/ }).parentElement
+    expect(targetCard).toHaveClass('ring-primary')
+  })
+
+  it('filters memories by importance and tag, then clears filters', () => {
+    memoryState.result = {
+      sources: [
+        {
+          id: 'united-memory',
+          label: 'United Memory',
+          available: true,
+          rootPath: 'C:\\Users\\test\\.united-memory',
+          noteCount: 2
+        }
+      ],
+      notes: [
+        {
+          id: 'united-memory:core-note',
+          sourceId: 'united-memory',
+          sourceLabel: 'United Memory',
+          title: 'Core note',
+          summary: 'Important',
+          tags: ['ops'],
+          importance: 'core',
+          path: 'C:\\Users\\test\\.united-memory\\mem\\core-note.md',
+          links: [],
+          createdAt: null,
+          updatedAt: null,
+          body: 'Core'
+        },
+        {
+          id: 'united-memory:archive-note',
+          sourceId: 'united-memory',
+          sourceLabel: 'United Memory',
+          title: 'Archive note',
+          summary: 'Old',
+          tags: ['docs'],
+          importance: 'archive',
+          path: 'C:\\Users\\test\\.united-memory\\mem\\archive-note.md',
+          links: [],
+          createdAt: null,
+          updatedAt: null,
+          body: 'Archive'
+        }
+      ]
+    }
+
+    render(<MemoryView />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'core 1' }))
+    expect(screen.getByText('Core note')).toBeInTheDocument()
+    expect(screen.queryByText('Archive note')).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'ops 1' }))
+    expect(screen.getByText('Core note')).toBeInTheDocument()
+    expect(screen.queryByText('Archive note')).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Clear filters' }))
+    expect(screen.getByText('Core note')).toBeInTheDocument()
+    expect(screen.getByText('Archive note')).toBeInTheDocument()
+  })
 })

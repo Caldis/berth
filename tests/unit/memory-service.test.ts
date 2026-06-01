@@ -44,7 +44,7 @@ beforeAll(async () => {
   )
   await fs.promises.writeFile(
     path.join(umRoot, 'mem', 'note-a.md'),
-    `---\nid: note-a\ntitle: Note A\ntags: [t1]\nlinks: [note-b]\nimportance: core\n---\n\n# Note A\n\n## TL;DR\n\nsummary a\n\n## Body\n\nfull body text\n`,
+    `---\nid: note-a\ntitle: Note A\ntags: [t1]\nlinks: [note-b]\nimportance: core\n---\n\n# Note A\n\n## TL;DR\n\nsummary a\n\n## Body\n\nfull body text with [[note-b]] and [[note-c]]\n`,
     'utf-8'
   )
   await fs.promises.writeFile(
@@ -93,6 +93,11 @@ describe('UnitedMemorySource (temp dir)', () => {
     expect(note).not.toBeNull()
     expect(note!.body).toContain('full body text')
     expect(path.isAbsolute(note!.path)).toBe(true)
+  })
+
+  it('read() merges frontmatter links with body wiki links', async () => {
+    const note = await new UnitedMemorySource(umRoot).read('note-a')
+    expect(note?.links).toEqual(['note-b', 'note-c'])
   })
 
   it('read() rejects local ids that would escape the mem directory', async () => {

@@ -36,6 +36,31 @@ function toImportance(v: unknown): MemoryImportance {
   return v === 'core' || v === 'active' || v === 'archive' ? v : 'unknown'
 }
 
+function extractWikiLinks(content: string): string[] {
+  const links: string[] = []
+  const seen = new Set<string>()
+  for (const match of content.matchAll(/\[\[([^\]\r\n]+?)\]\]/g)) {
+    const target = match[1]?.trim()
+    if (!target || seen.has(target)) continue
+    seen.add(target)
+    links.push(target)
+  }
+  return links
+}
+
+function mergeLinks(...groups: string[][]): string[] {
+  const merged: string[] = []
+  const seen = new Set<string>()
+  for (const group of groups) {
+    for (const link of group) {
+      if (!link || seen.has(link)) continue
+      seen.add(link)
+      merged.push(link)
+    }
+  }
+  return merged
+}
+
 /**
  * Coerce a date-ish frontmatter value to a string. YAML parses unquoted ISO
  * dates (e.g. `created: 2026-03-17`) into JS `Date` objects, so a plain
@@ -167,7 +192,7 @@ export function parseUnitedNote(mdString: string, localId: string): MemoryNote {
     tags: asStringArray(frontmatter.tags),
     importance: toImportance(frontmatter.importance),
     path: `mem/${localId}.md`,
-    links: asStringArray(frontmatter.links),
+    links: mergeLinks(asStringArray(frontmatter.links), extractWikiLinks(body)),
     createdAt: asDateString(frontmatter.created),
     updatedAt: asDateString(frontmatter.updated),
     body

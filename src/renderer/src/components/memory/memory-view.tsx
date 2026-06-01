@@ -1,5 +1,7 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
+import ReactMarkdown, { type Components } from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import {
   Brain,
   Database,
@@ -57,6 +59,8 @@ const emptyFallback: Record<string, { title: string; hint: string }> = {
 
 const FOCUS_PULSE_MS = 2000
 const DETAILS_COLLAPSE_MS = 220
+const WIKI_LINK_PREFIX = '#berth-memory='
+const importanceOrder: MemoryImportance[] = ['core', 'active', 'archive', 'unknown']
 
 function sourceIcon(id: string): React.ComponentType<{ className?: string }> {
   return id === 'united-memory' ? Database : Brain
@@ -101,6 +105,88 @@ function MissingBadge(): React.ReactElement {
       <AlertTriangle className="h-2.5 w-2.5" />
       {t('memory.fileMissing', 'File missing')}
     </span>
+  )
+}
+
+function wikiHref(target: string): string {
+  return `${WIKI_LINK_PREFIX}${encodeURIComponent(target)}`
+}
+
+function targetFromWikiHref(href?: string): string | null {
+  if (!href?.startsWith(WIKI_LINK_PREFIX)) return null
+  try {
+    return decodeURIComponent(href.slice(WIKI_LINK_PREFIX.length))
+  } catch {
+    return null
+  }
+}
+
+function linkifyWikiLinks(markdown: string): string {
+  return markdown.replace(/\[\[([^\]\r\n]+?)\]\]/g, (match, raw: string) => {
+    const target = raw.trim()
+    return target ? `[${target}](${wikiHref(target)})` : match
+  })
+}
+
+function MarkdownBody({
+  body,
+  sourceId,
+  onNavigate
+}: {
+  body: string
+  sourceId: string
+  onNavigate: (globalId: string) => void
+}): React.ReactElement {
+  const markdown = useMemo(() => linkifyWikiLinks(body), [body])
+  const components = useMemo<Components>(() => ({
+    h1: ({ children }) => <h3 className="mt-1 text-sm font-semibold text-foreground">{children}</h3>,
+    h2: ({ children }) => <h4 className="mt-3 text-sm font-semibold text-foreground">{children}</h4>,
+    h3: ({ children }) => <h5 className="mt-3 text-xs font-semibold uppercase tracking-normal text-muted-foreground">{children}</h5>,
+    p: ({ children }) => <p className="text-xs leading-5 text-foreground">{children}</p>,
+    ul: ({ children }) => <ul className="ml-4 list-disc space-y-1 text-xs leading-5 text-foreground">{children}</ul>,
+    ol: ({ children }) => <ol className="ml-4 list-decimal space-y-1 text-xs leading-5 text-foreground">{children}</ol>,
+    li: ({ children }) => <li className="pl-1">{children}</li>,
+    blockquote: ({ children }) => <blockquote className="border-l border-border pl-3 text-xs text-muted-foreground">{children}</blockquote>,
+    code: ({ children, className }) => (
+      <code className={cn('rounded bg-muted px-1 py-0.5 font-mono text-[11px] text-foreground', className)}>
+        {children}
+      </code>
+    ),
+    pre: ({ children }) => <pre className="overflow-x-auto rounded-md bg-muted/50 p-3 text-xs leading-5">{children}</pre>,
+    table: ({ children }) => (
+      <div className="overflow-x-auto rounded-md border border-border">
+        <table className="min-w-full border-collapse text-xs">{children}</table>
+      </div>
+    ),
+    th: ({ children }) => <th className="border-b border-border bg-muted/40 px-2 py-1 text-left font-semibold">{children}</th>,
+    td: ({ children }) => <td className="border-t border-border px-2 py-1 align-top">{children}</td>,
+    a: ({ href, children }) => {
+      const target = targetFromWikiHref(href)
+      if (target) {
+        return (
+          <button
+            type="button"
+            onClick={() => onNavigate(`${sourceId}:${target}`)}
+            className="rounded border border-border bg-background px-1.5 py-0.5 font-mono text-[11px] text-primary transition-colors hover:bg-accent"
+          >
+            {children}
+          </button>
+        )
+      }
+      return (
+        <a href={href} target="_blank" rel="noreferrer" className="text-primary underline-offset-2 hover:underline">
+          {children}
+        </a>
+      )
+    }
+  }), [onNavigate, sourceId])
+
+  return (
+    <div className="space-y-2 rounded-md bg-muted/30 p-3">
+      <ReactMarkdown remarkPlugins={[remarkGfm]} components={components}>
+        {markdown}
+      </ReactMarkdown>
+    </div>
   )
 }
 
@@ -259,7 +345,9 @@ function NoteCard({
               ) : loadingBody ? (
                 <div className="flex items-center gap-2 text-xs text-muted-foreground"><Loader2 className="h-3 w-3 animate-spin" />{t('common.loading')}</div>
               ) : body ? (
-                <pre className="max-h-80 overflow-auto whitespace-pre-wrap rounded-md bg-muted/40 p-3 text-xs leading-5 text-foreground">{body}</pre>
+                <div className="max-h-80 overflow-auto">
+                  <MarkdownBody body={body} sourceId={note.sourceId} onNavigate={onNavigate} />
+                </div>
               ) : null}
 
               <div className="flex items-center justify-between gap-2 pt-1">
@@ -340,18 +428,81 @@ function SourceFilter({
   )
 }
 
+function FilterGroup({
+  label,
+  allLabel,
+  active,
+  options,
+  onChange
+}: {
+  label: string
+  allLabel: string
+  active: string
+  options: Array<{ id: string; label: string; count: number }>
+  onChange: (id: string) => void
+}): React.ReactElement | null {
+  if (options.length === 0) return null
+  const chip = (id: string, chipLabel: string, count?: number): React.ReactElement => (
+    <button
+      key={id}
+      type="button"
+      aria-pressed={active === id}
+      onClick={() => onChange(id)}
+      className={cn(
+        'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium transition-colors',
+        active === id ? 'border-foreground bg-foreground text-background' : 'border-border text-muted-foreground hover:bg-accent'
+      )}
+    >
+      {chipLabel}
+      {count != null && <span className={cn('rounded-full px-1.5 text-[10px]', active === id ? 'bg-background/15' : 'bg-muted')}>{count}</span>}
+    </button>
+  )
+
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <span className="w-16 text-[11px] font-medium uppercase tracking-normal text-muted-foreground">{label}</span>
+      {chip('all', allLabel)}
+      {options.map((option) => chip(option.id, option.label, option.count))}
+    </div>
+  )
+}
+
+function countBy<T extends string>(values: T[]): Map<T, number> {
+  const counts = new Map<T, number>()
+  for (const value of values) counts.set(value, (counts.get(value) ?? 0) + 1)
+  return counts
+}
+
 export function MemoryView(): React.ReactElement {
   const { t } = useTranslation()
   const { result, loading, refreshing, refresh } = useMemory()
   const [activeSource, setActiveSource] = useState('all')
   const [search, setSearch] = useState('')
+  const [importanceFilter, setImportanceFilter] = useState<string>('all')
+  const [tagFilter, setTagFilter] = useState('all')
   const [focusId, setFocusId] = useState<string | null>(null)
   const focusTimerRef = useRef<number | null>(null)
+
+  const importanceOptions = useMemo(() => {
+    const counts = countBy(result.notes.map((note) => note.importance))
+    return importanceOrder
+      .filter((importance) => counts.has(importance))
+      .map((importance) => ({ id: importance, label: importance, count: counts.get(importance) ?? 0 }))
+  }, [result.notes])
+
+  const tagOptions = useMemo(() => {
+    const counts = countBy(result.notes.flatMap((note) => note.tags))
+    return [...counts.entries()]
+      .map(([tag, count]) => ({ id: tag, label: tag, count }))
+      .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label))
+  }, [result.notes])
 
   const notes = useMemo(() => {
     const q = search.trim().toLowerCase()
     return result.notes
       .filter((n) => activeSource === 'all' || n.sourceId === activeSource)
+      .filter((n) => importanceFilter === 'all' || n.importance === importanceFilter)
+      .filter((n) => tagFilter === 'all' || n.tags.includes(tagFilter))
       .filter((n) => {
         if (!q) return true
         return (
@@ -362,11 +513,11 @@ export function MemoryView(): React.ReactElement {
       })
       .slice()
       .sort(byRecency)
-  }, [result.notes, activeSource, search])
+  }, [result.notes, activeSource, importanceFilter, tagFilter, search])
 
   // Distinguish the three "nothing to show" states so the empty copy is honest:
   // no sources at all / sources exist but hold no notes / this query filtered all out.
-  const hasFilters = search.trim().length > 0 || activeSource !== 'all'
+  const hasFilters = search.trim().length > 0 || activeSource !== 'all' || importanceFilter !== 'all' || tagFilter !== 'all'
   const emptyKind =
     result.sources.length === 0
       ? 'noSources'
@@ -374,20 +525,26 @@ export function MemoryView(): React.ReactElement {
         ? 'empty'
         : 'noResults'
 
+  const clearFilters = useCallback(() => {
+    setSearch('')
+    setActiveSource('all')
+    setImportanceFilter('all')
+    setTagFilter('all')
+  }, [])
+
   const navigate = useCallback((globalId: string) => {
     // Clear filters so the target is guaranteed visible, then focus it.
     if (focusTimerRef.current !== null) {
       window.clearTimeout(focusTimerRef.current)
       focusTimerRef.current = null
     }
-    setSearch('')
-    setActiveSource('all')
+    clearFilters()
     setFocusId(globalId)
     focusTimerRef.current = window.setTimeout(() => {
       setFocusId((current) => (current === globalId ? null : current))
       focusTimerRef.current = null
     }, FOCUS_PULSE_MS)
-  }, [])
+  }, [clearFilters])
 
   useEffect(() => {
     return () => {
@@ -430,23 +587,38 @@ export function MemoryView(): React.ReactElement {
       </div>
 
       <SourceFilter sources={result.sources} active={activeSource} total={result.notes.length} onChange={setActiveSource} />
+      <div className="space-y-2">
+        <FilterGroup
+          label={t('memory.importance', 'Importance')}
+          allLabel={t('memory.allImportance', 'All importance')}
+          active={importanceFilter}
+          options={importanceOptions}
+          onChange={setImportanceFilter}
+        />
+        <FilterGroup
+          label={t('memory.tags', 'Tags')}
+          allLabel={t('memory.allTags', 'All tags')}
+          active={tagFilter}
+          options={tagOptions}
+          onChange={setTagFilter}
+        />
+        {hasFilters && (
+          <button
+            type="button"
+            onClick={clearFilters}
+            className="rounded-md border border-border px-3 py-1 text-xs font-medium text-foreground transition-colors hover:bg-accent"
+          >
+            {t('memory.clearFilters', 'Clear filters')}
+          </button>
+        )}
+      </div>
 
       {notes.length === 0 ? (
         <EmptyState
           icon={Brain}
           title={t(`memory.${emptyKind}.title`, emptyFallback[emptyKind].title)}
           description={t(`memory.${emptyKind}.hint`, emptyFallback[emptyKind].hint)}
-          action={emptyKind === 'noResults' && hasFilters ? (
-            <button
-              onClick={() => {
-                setSearch('')
-                setActiveSource('all')
-              }}
-              className="rounded-md border border-border px-3 py-1 text-xs font-medium text-foreground transition-colors hover:bg-accent"
-            >
-              {t('memory.clearFilters', 'Clear filters')}
-            </button>
-          ) : null}
+          action={null}
         />
       ) : (
         <div className="space-y-2">
