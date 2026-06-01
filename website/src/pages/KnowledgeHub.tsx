@@ -2,9 +2,12 @@ import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { ArrowRight } from 'lucide-react'
 import { Seo } from '@/components/Seo'
+import { JsonLd } from '@/components/JsonLd'
 import { getArticles, PILLAR_ORDER } from '@/content'
 import { useLang } from '@/lib/useLang'
 import type { Lang } from '@/lib/langs'
+import { SITE_URL } from '@/lib/site'
+import { collectionLd } from '@/lib/schema'
 
 interface Pillar {
   tag: string
@@ -25,10 +28,23 @@ export function KnowledgeHub() {
   const lang = useLang()
   const base = `/${lang}`
   const pillars = t('kb.pillars', { returnObjects: true }) as Pillar[]
+  const collectionItems = getArticles(lang).map((a) => ({
+    name: a.title,
+    url: `${SITE_URL}/${lang}/knowledge/${a.pillar}/${a.slug}`,
+  }))
 
   return (
     <>
       <Seo lang={lang} path="/knowledge" title={t('meta.knowledge.title')} description={t('meta.knowledge.description')} />
+      <JsonLd
+        data={collectionLd({
+          lang,
+          name: t('meta.knowledge.title'),
+          description: t('meta.knowledge.description'),
+          url: `${SITE_URL}/${lang}/knowledge`,
+          items: collectionItems,
+        })}
+      />
       <section className="container-page py-16 sm:py-20">
         <div className="mx-auto max-w-2xl text-center">
           <span className="eyebrow">{t('kb.eyebrow')}</span>
