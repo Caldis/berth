@@ -128,6 +128,7 @@ describe('HooksLifecycleView', () => {
     fireEvent.click(screen.getByText('Disable hook'))
 
     await waitFor(() => {
+      expect(window.confirm).toHaveBeenCalledWith(expect.stringContaining('Event: Stop'))
       expect(window.api.hooks.setHookEnabled).toHaveBeenCalledWith({
         agentId: 'claude-code',
         scope: 'user',
@@ -143,7 +144,7 @@ describe('HooksLifecycleView', () => {
   it('toggles a Codex non-managed hook through hooks.state', async () => {
     renderHooks('codex', [
       hookAsset('codex-stop', 'codex', 'Stop', {
-        hookKey: 'C:\\Users\\test\\.codex\\hooks.json:stop:0:0',
+        hookKey: 'codex:scenario:hook',
         enabled: true,
         canToggleHook: true,
         toggleStrategy: 'native-state'
@@ -157,7 +158,7 @@ describe('HooksLifecycleView', () => {
       expect(window.api.hooks.setHookEnabled).toHaveBeenCalledWith({
         agentId: 'codex',
         scope: 'user',
-        hookKey: 'C:\\Users\\test\\.codex\\hooks.json:stop:0:0',
+        hookKey: 'codex:scenario:hook',
         sourcePath: 'C:\\Users\\test\\.codex\\hooks.json',
         enabled: false,
         managed: false

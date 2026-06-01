@@ -94,7 +94,7 @@ describe('hooks manager', () => {
   it('writes Codex single hook state under hooks.state', () => {
     const configPath = path.join(tempDir!, '.codex', 'config.toml')
     const hookSourcePath = path.join(tempDir!, '.codex', 'hooks.json')
-    const hookKey = `${hookSourcePath}:stop:0:0`
+    const hookKey = buildHookKey('codex', 'Stop', undefined, { type: 'command', command: 'echo stop' })
     fs.mkdirSync(path.dirname(configPath), { recursive: true })
     fs.writeFileSync(configPath, ['model = "gpt-5.3-codex"', '[features]', 'hooks = true'].join('\n'))
 

@@ -918,8 +918,8 @@
         "confirmDisable": "要禁用 {{agent}} 的 Hooks 吗? Berth 会更新 {{path}} 并重新扫描本地资产。",
         "confirmEnableHook": "要启用这个 Codex Hook 吗? Berth 会更新用户配置里的 hooks.state。来源: {{path}}",
         "confirmDisableHook": "要禁用这个 Codex Hook 吗? Berth 会更新用户配置里的 hooks.state。来源: {{path}}",
-        "confirmRestoreClaudeHook": "要恢复这个 Claude Code Hook 吗? Berth 会从恢复点写回用户级 settings。来源: {{path}}",
-        "confirmSoftDisableClaudeHook": "要禁用这个 Claude Code Hook 吗? Berth 会从用户级 settings 移除这段 Hook, 并保存恢复点和备份。来源: {{path}}"
+        "confirmRestoreClaudeHook": "要恢复这个 Claude Code Hook 吗? Berth 会从恢复点写回用户级 settings。事件: {{event}}。命令: {{command}}。禁用时间: {{disabledAt}}。来源: {{path}}",
+        "confirmSoftDisableClaudeHook": "要禁用这个 Claude Code Hook 吗? Berth 会从用户级 settings 移除这段 Hook, 并保存恢复点和备份。事件: {{event}}。命令: {{command}}。来源: {{path}}"
       }
     },
     "plugins": {

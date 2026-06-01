@@ -918,8 +918,8 @@
         "confirmDisable": "Disable hooks for {{agent}}? Berth will update {{path}} and rescan local assets.",
         "confirmEnableHook": "Enable this Codex hook? Berth will update hooks.state in your user config. Source: {{path}}",
         "confirmDisableHook": "Disable this Codex hook? Berth will update hooks.state in your user config. Source: {{path}}",
-        "confirmRestoreClaudeHook": "Restore this Claude Code hook? Berth will write it back from the restore point into user settings. Source: {{path}}",
-        "confirmSoftDisableClaudeHook": "Disable this Claude Code hook? Berth will remove the hook from user settings, then keep a restore point and backup. Source: {{path}}"
+        "confirmRestoreClaudeHook": "Restore this Claude Code hook? Berth will write it back from the restore point into user settings. Event: {{event}}. Command: {{command}}. Disabled at: {{disabledAt}}. Source: {{path}}",
+        "confirmSoftDisableClaudeHook": "Disable this Claude Code hook? Berth will remove the hook from user settings, then keep a restore point and backup. Event: {{event}}. Command: {{command}}. Source: {{path}}"
       }
     },
     "plugins": {

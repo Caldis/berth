@@ -505,7 +505,7 @@ function HookAssetRow({ hook, agentView }: { hook: Asset; agentView: AgentView }
     const agentId = hookToggleAgentId(hook)
     if (!agentId) return
     const enabled = !hookEnabled
-    const confirmMessage = getHookToggleConfirmMessage(t, agentId, enabled, hook.path)
+    const confirmMessage = getHookToggleConfirmMessage(t, agentId, enabled, hook)
 
     if (!window.confirm(confirmMessage)) return
 
@@ -600,16 +600,19 @@ function getHookToggleConfirmMessage(
   t: ReturnType<typeof useTranslation>['t'],
   agentId: HooksAgentId,
   enabled: boolean,
-  path: string
+  hook: Asset
 ): string {
+  const event = typeof hook.meta.eventType === 'string' ? hook.meta.eventType : ''
+  const command = typeof hook.meta.command === 'string' ? hook.meta.command : hook.name
+  const disabledAt = typeof hook.meta.disabledAt === 'string' ? hook.meta.disabledAt : ''
   if (agentId === 'claude-code') {
     return enabled
-      ? t('capabilities.hooks.management.confirmRestoreClaudeHook', { path })
-      : t('capabilities.hooks.management.confirmSoftDisableClaudeHook', { path })
+      ? t('capabilities.hooks.management.confirmRestoreClaudeHook', { command, disabledAt, event, path: hook.path })
+      : t('capabilities.hooks.management.confirmSoftDisableClaudeHook', { command, event, path: hook.path })
   }
   return enabled
-    ? t('capabilities.hooks.management.confirmEnableHook', { path })
-    : t('capabilities.hooks.management.confirmDisableHook', { path })
+    ? t('capabilities.hooks.management.confirmEnableHook', { path: hook.path })
+    : t('capabilities.hooks.management.confirmDisableHook', { path: hook.path })
 }
 
 function HookRiskHints({ hints }: { hints: HookRiskHint[] }): React.ReactElement | null {

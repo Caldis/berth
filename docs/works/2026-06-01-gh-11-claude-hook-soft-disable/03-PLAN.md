@@ -14,7 +14,7 @@
   - [x] Claude / Codex parser 都写入统一 hook meta。
   - verify: parser 目标单测。
 
-- [ ] 扩展 Claude hook parser
+- [x] 扩展 Claude hook parser
   - [x] 增加 canonical JSON hash 和 `hookKey` 生成工具。
   - [x] 给 active user hook 写入 `enabled`、`canToggleHook`、`scenarioHash`、`hookHash`、`stateSourcePath`。
   - [x] 同一 scenario 下相同 `hookHash` 的子项合并为一条 asset, 并记录 `occurrenceCount`。
@@ -24,7 +24,7 @@
 
 - [ ] 对齐 Codex hook identity
   - [x] Codex hook asset 增加 `scenarioHash`、`hookHash`、`occurrenceCount`、`toggleStrategy`。
-  - [ ] `[hooks.state]` 新写入 stable key: `codex:${scenarioHash}:${hookHash}`。
+  - [x] `[hooks.state]` 新写入 stable key: `codex:${scenarioHash}:${hookHash}`。
   - [x] parser 兼容读取旧 index key 和新 stable key, 新 stable key 优先。
   - [x] managed hook 继续 read-only。
   - [ ] hooks.json 与 inline hooks 出现同类 hook 时写入 `equivalentSources`。
@@ -48,7 +48,7 @@
   - [x] Claude user hook 从 unavailable 改为 confirmation action。
   - [x] 删除 renderer 的 codex-only toggle guard, 改按 `toggleStrategy` 判断。
   - [x] 增加 Claude soft disable / restore 确认文案。
-  - [ ] 恢复确认展示 command、event、sourcePath、disabledAt。
+  - [x] 恢复确认展示 command、event、sourcePath、disabledAt。
   - [ ] 同一 hook 在其他来源存在时显示提示, 明确当前操作只影响 user source。
   - [x] 区分注册状态 `enabled` 和实际影响 `effectiveEnabled`。
   - [x] disabled 行显示为 Berth 恢复点状态, 不新增大块提示。
