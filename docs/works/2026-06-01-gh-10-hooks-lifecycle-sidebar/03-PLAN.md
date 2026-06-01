@@ -12,9 +12,9 @@
 - [x] 任务 3: 调整生命周期索引为桌面 sticky 侧栏, 小屏保留横向索引
   - tests: `tests/renderer/hooks-lifecycle-view.test.tsx`
   - verify: `pnpm test -- tests/renderer/hooks-lifecycle-view.test.tsx` 14 项通过
-- [ ] 任务 4: 收口验证
+- [x] 任务 4: 收口验证
   - tests: target renderer test, `pnpm typecheck:web`, `pnpm harness:check`
-  - verify: 上述命令全部通过; 如启动 dev 做 UI 目视检查, 记录地址和结果
+  - verify: `pnpm test -- tests/renderer/hooks-lifecycle-view.test.tsx` 14 项通过; `pnpm lint` 通过; `pnpm typecheck` 通过; `pnpm test` 50 个文件 / 324 项通过; `pnpm harness:check` 通过; `pnpm dev:agent start --id hooks-sidebar-verify --json` 启动 agent-owned Electron, PID 242052, 截图确认 Hooks 顶部无密度切换和全部禁用入口, 下滚后左侧生命周期索引保持 sticky, 最后 `pnpm dev:agent stop hooks-sidebar-verify --json` 已停止。
 
 ## verify 回写
 verify 不通过项作为新任务追加于此, phase 退回 implement。
