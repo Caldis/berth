@@ -14,6 +14,11 @@ import type {
 
 const hookFileLocks = new Set<string>()
 
+interface AgentHookCapabilityPlugin {
+  agentId: HooksAgentId
+  setHookEnabled: (request: SetHookEnabledRequest, homeDir: string) => SetHookEnabledResult
+}
+
 export function getAgentHooksStatus(agentId: HooksAgentId, homeDir = os.homedir()): HooksEnablementStatus {
   if (agentId === 'claude-code') return getClaudeHooksStatus(homeDir)
   return getCodexHooksStatus(homeDir)
@@ -71,10 +76,21 @@ export function setHookEnabled(
   if (request.managed === true) {
     throw new Error('managed hooks cannot be changed from user hook state')
   }
-  if (request.agentId === 'claude-code') return setClaudeHookEnabled(request, homeDir)
-  if (request.agentId === 'codex') return setCodexHookEnabled(request, homeDir)
+  const plugin = hookCapabilityPlugins.find((item) => item.agentId === request.agentId)
+  if (plugin) return plugin.setHookEnabled(request, homeDir)
   throw new Error(`Single hook enablement is not supported for ${request.agentId}`)
 }
+
+const hookCapabilityPlugins: AgentHookCapabilityPlugin[] = [
+  {
+    agentId: 'claude-code',
+    setHookEnabled: setClaudeHookEnabled
+  },
+  {
+    agentId: 'codex',
+    setHookEnabled: setCodexHookEnabled
+  }
+]
 
 function setCodexHookEnabled(
   request: SetHookEnabledRequest,

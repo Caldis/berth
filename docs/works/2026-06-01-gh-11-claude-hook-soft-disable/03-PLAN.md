@@ -55,10 +55,10 @@
   - verify: `tests/unit/hook-lifecycle.test.ts` + `tests/renderer/hooks-lifecycle-view.test.tsx`。
 
 - [ ] 引入 Agent Capability Plugin 的 hooks 切片
-  - [ ] 新增内部 `AgentHookCapabilityPlugin` / hook action descriptor 类型。
-  - [ ] Claude/Codex 作为内置 hook Plugin, renderer 不再写死 agentId。
-  - [ ] `hooks-manager.ts` 通过 hook plugin registry 分发 hook 操作。
-  - [ ] 不实现外部 plugin loader; 只保留后续 manifest 方向。
+  - [x] 新增内部 `AgentHookCapabilityPlugin` / hook action descriptor 类型。
+  - [x] Claude/Codex 作为内置 hook Plugin, renderer 不再写死 agentId。
+  - [x] `hooks-manager.ts` 通过 hook plugin registry 分发 hook 操作。
+  - [x] 不实现外部 plugin loader; 只保留后续 manifest 方向。
   - verify: `tests/unit/hooks-manager.test.ts` + `tests/unit/engine-scanner.test.ts`。
 
 - [ ] 文案与 i18n
