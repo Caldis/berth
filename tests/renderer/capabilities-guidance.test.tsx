@@ -54,7 +54,7 @@ describe('Capabilities guidance surfaces', () => {
     expect(screen.getByText('Trigger point')).toBeInTheDocument()
     expect(screen.getByText('Agent differences')).toBeInTheDocument()
     expect(screen.queryByText('What are hooks?')).not.toBeInTheDocument()
-    expect(screen.getByText('Hook health checks')).toBeInTheDocument()
+    expect(screen.getByText('Hook checks')).toBeInTheDocument()
   })
 
   it('keeps status line model guidance in the page guide instead of the status tool', async () => {
