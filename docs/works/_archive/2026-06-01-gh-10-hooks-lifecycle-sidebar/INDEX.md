@@ -2,7 +2,7 @@
 task: 2026-06-01-gh-10-hooks-lifecycle-sidebar
 task_id: GH-10
 type: feature
-phase: verify
+phase: archive
 created: 2026-06-01
 issue:
   number: 10
@@ -16,7 +16,7 @@ gh_project:
   project_number: 6
   project_url: https://github.com/users/Caldis/projects/6
   item_id: PVTI_lAHOADXbEs4BZHvQzguW3HM
-  item_status: In Progress
+  item_status: Done
 artifacts:
   source: 00-PRD.md
   analysis: 01-ANALYSIS.md
