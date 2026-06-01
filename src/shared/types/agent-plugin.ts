@@ -90,6 +90,68 @@ export interface AgentCapabilityPluginHealthCheckDescriptor {
   evidenceUrls?: string[]
 }
 
+export type AgentCapabilityPluginHookLifecycleStageId =
+  | 'session-start'
+  | 'user-input'
+  | 'tool-before'
+  | 'permission'
+  | 'tool-after'
+  | 'subagent'
+  | 'context-maintenance'
+  | 'session-stop'
+  | 'environment'
+
+export type AgentCapabilityPluginHookSupport = 'supported' | 'partial' | 'unsupported'
+
+export type AgentCapabilityPluginHookHandlerRunMode =
+  | 'runnable'
+  | 'parsed-only'
+  | 'unsupported'
+
+export type AgentCapabilityPluginHookFieldKind =
+  | 'string'
+  | 'string-array'
+  | 'boolean'
+  | 'number'
+  | 'object'
+
+export interface AgentCapabilityPluginHookEventDescriptor {
+  eventType: string
+  stageId: AgentCapabilityPluginHookLifecycleStageId
+  support: AgentCapabilityPluginHookSupport
+  matcherSupported: boolean
+  matcherField?: string
+  labelKey: string
+  descriptionKey: string
+  evidenceUrls?: string[]
+}
+
+export interface AgentCapabilityPluginHookHandlerFieldDescriptor {
+  name: string
+  kind: AgentCapabilityPluginHookFieldKind
+  required?: boolean
+  primary?: boolean
+  labelKey: string
+  descriptionKey: string
+}
+
+export interface AgentCapabilityPluginHookHandlerDescriptor {
+  type: string
+  runMode: AgentCapabilityPluginHookHandlerRunMode
+  fields: AgentCapabilityPluginHookHandlerFieldDescriptor[]
+  primaryFieldNames: string[]
+  labelKey: string
+  descriptionKey: string
+  supportNoteKey?: string
+  evidenceUrls?: string[]
+}
+
+export interface AgentCapabilityPluginHookSchemaDescriptor {
+  agentId: AgentPluginAgentId
+  events: AgentCapabilityPluginHookEventDescriptor[]
+  handlers: AgentCapabilityPluginHookHandlerDescriptor[]
+}
+
 export interface AgentCapabilityPluginSource {
   path: string
   scope: AssetScope
@@ -131,6 +193,7 @@ export interface AgentCapabilityPlugin {
   permissions: AgentCapabilityPluginPermission[]
   sourceDescriptors: AgentCapabilityPluginSourceDescriptor[]
   assetDescriptors: AgentCapabilityPluginAssetDescriptor[]
+  hookSchema: AgentCapabilityPluginHookSchemaDescriptor
   healthCheckDescriptors: AgentCapabilityPluginHealthCheckDescriptor[]
   sourceCoverage: AgentCapabilityPluginSourceCoverage
   references: AgentCapabilityPluginReference[]

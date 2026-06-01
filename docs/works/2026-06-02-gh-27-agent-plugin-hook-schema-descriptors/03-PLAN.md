@@ -2,10 +2,10 @@
 
 从 02-SPEC 拆解。implement 阶段维护此清单。
 
-- [ ] 任务 1: 扩展 shared plugin contract, 声明 hook schema descriptor 类型。
+- [x] 任务 1: 扩展 shared plugin contract, 声明 hook schema descriptor 类型。
   - tests: `pnpm vitest run tests/unit/agent-capability-plugins.test.ts`
   - verify: 不新增 IPC; 不引入 `agent-plugin.ts` 到 renderer-only 文件的运行时依赖问题; 界面质量与交互验收不适用。
-- [ ] 任务 2: 在内置 Claude Code / Codex plugin 中声明 hook event 和 handler schema。
+- [x] 任务 2: 在内置 Claude Code / Codex plugin 中声明 hook event 和 handler schema。
   - tests: `pnpm vitest run tests/unit/agent-capability-plugins.test.ts`
   - verify: Claude 覆盖 29 个当前官方事件和 5 种 handler; Codex 覆盖当前 10 个事件, `command` runnable, `prompt` / `agent` parsed-only; 不改 parser / hooks-manager / health engine。
 - [ ] 任务 3: 补齐 Settings 和 Hooks renderer 兼容测试。

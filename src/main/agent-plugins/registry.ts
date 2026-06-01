@@ -4,6 +4,10 @@ import type {
   AgentCapabilityPluginAssetDescriptor,
   AgentCapabilityPluginCapability,
   AgentCapabilityPluginHealthCheckDescriptor,
+  AgentCapabilityPluginHookEventDescriptor,
+  AgentCapabilityPluginHookHandlerDescriptor,
+  AgentCapabilityPluginHookHandlerFieldDescriptor,
+  AgentCapabilityPluginHookSchemaDescriptor,
   AgentCapabilityPluginListResult,
   AgentCapabilityPluginPermission,
   AgentCapabilityPluginSource,
@@ -409,6 +413,155 @@ const CODEX_ASSET_DESCRIPTORS: AgentCapabilityPluginAssetDescriptor[] = [
     ['codex.user.sessions', 'codex.session.archived-sessions']
   )
 ]
+
+const CLAUDE_HOOK_SCHEMA: AgentCapabilityPluginHookSchemaDescriptor = hookSchema(
+  'claude-code',
+  [
+    hookEvent('claude-code', 'Setup', 'session-start', 'supported'),
+    hookEvent('claude-code', 'SessionStart', 'session-start', 'supported'),
+    hookEvent('claude-code', 'UserPromptSubmit', 'user-input', 'supported'),
+    hookEvent('claude-code', 'UserPromptExpansion', 'user-input', 'supported'),
+    hookEvent('claude-code', 'PreToolUse', 'tool-before', 'supported', {
+      matcherSupported: true,
+      matcherField: 'tool_name'
+    }),
+    hookEvent('claude-code', 'PermissionRequest', 'permission', 'supported'),
+    hookEvent('claude-code', 'PermissionDenied', 'permission', 'supported'),
+    hookEvent('claude-code', 'Elicitation', 'permission', 'supported'),
+    hookEvent('claude-code', 'ElicitationResult', 'permission', 'supported'),
+    hookEvent('claude-code', 'PostToolUse', 'tool-after', 'supported', {
+      matcherSupported: true,
+      matcherField: 'tool_name'
+    }),
+    hookEvent('claude-code', 'PostToolUseFailure', 'tool-after', 'supported', {
+      matcherSupported: true,
+      matcherField: 'tool_name'
+    }),
+    hookEvent('claude-code', 'PostToolBatch', 'tool-after', 'supported'),
+    hookEvent('claude-code', 'SubagentStart', 'subagent', 'supported'),
+    hookEvent('claude-code', 'SubagentStop', 'subagent', 'supported'),
+    hookEvent('claude-code', 'TaskCreated', 'subagent', 'supported'),
+    hookEvent('claude-code', 'TaskCompleted', 'subagent', 'supported'),
+    hookEvent('claude-code', 'TeammateIdle', 'subagent', 'supported'),
+    hookEvent('claude-code', 'PreCompact', 'context-maintenance', 'supported'),
+    hookEvent('claude-code', 'PostCompact', 'context-maintenance', 'supported'),
+    hookEvent('claude-code', 'InstructionsLoaded', 'context-maintenance', 'supported'),
+    hookEvent('claude-code', 'ConfigChange', 'context-maintenance', 'supported'),
+    hookEvent('claude-code', 'CwdChanged', 'context-maintenance', 'supported'),
+    hookEvent('claude-code', 'FileChanged', 'context-maintenance', 'supported'),
+    hookEvent('claude-code', 'Stop', 'session-stop', 'supported'),
+    hookEvent('claude-code', 'StopFailure', 'session-stop', 'supported'),
+    hookEvent('claude-code', 'SessionEnd', 'session-stop', 'supported'),
+    hookEvent('claude-code', 'WorktreeCreate', 'environment', 'supported'),
+    hookEvent('claude-code', 'WorktreeRemove', 'environment', 'supported'),
+    hookEvent('claude-code', 'Notification', 'environment', 'supported')
+  ],
+  [
+    hookHandler('claude-code', 'command', 'runnable', [
+      hookField('type', 'string', { required: true }),
+      hookField('command', 'string', { required: true, primary: true }),
+      hookField('args', 'string-array'),
+      hookField('shell', 'string'),
+      hookField('async', 'boolean'),
+      hookField('asyncRewake', 'boolean'),
+      hookField('allowedEnvVars', 'string-array'),
+      hookCommonField('if'),
+      hookCommonField('timeout'),
+      hookCommonField('statusMessage'),
+      hookCommonField('once')
+    ]),
+    hookHandler('claude-code', 'http', 'runnable', [
+      hookField('type', 'string', { required: true }),
+      hookField('url', 'string', { required: true, primary: true }),
+      hookField('headers', 'object'),
+      hookCommonField('if'),
+      hookCommonField('timeout'),
+      hookCommonField('statusMessage'),
+      hookCommonField('once')
+    ]),
+    hookHandler('claude-code', 'mcp_tool', 'runnable', [
+      hookField('type', 'string', { required: true }),
+      hookField('server', 'string', { required: true, primary: true }),
+      hookField('tool', 'string', { required: true, primary: true }),
+      hookField('input', 'object'),
+      hookCommonField('if'),
+      hookCommonField('timeout'),
+      hookCommonField('statusMessage'),
+      hookCommonField('once')
+    ]),
+    hookHandler('claude-code', 'prompt', 'runnable', [
+      hookField('type', 'string', { required: true }),
+      hookField('prompt', 'string', { required: true, primary: true }),
+      hookField('model', 'string'),
+      hookCommonField('if'),
+      hookCommonField('timeout'),
+      hookCommonField('statusMessage'),
+      hookCommonField('once')
+    ]),
+    hookHandler('claude-code', 'agent', 'runnable', [
+      hookField('type', 'string', { required: true }),
+      hookField('prompt', 'string', { required: true, primary: true }),
+      hookField('model', 'string'),
+      hookCommonField('if'),
+      hookCommonField('timeout'),
+      hookCommonField('statusMessage'),
+      hookCommonField('once')
+    ])
+  ]
+)
+
+const CODEX_HOOK_SCHEMA: AgentCapabilityPluginHookSchemaDescriptor = hookSchema(
+  'codex',
+  [
+    hookEvent('codex', 'SessionStart', 'session-start', 'supported'),
+    hookEvent('codex', 'UserPromptSubmit', 'user-input', 'supported'),
+    hookEvent('codex', 'PreToolUse', 'tool-before', 'partial', {
+      matcherSupported: true,
+      matcherField: 'tool_name'
+    }),
+    hookEvent('codex', 'PermissionRequest', 'permission', 'supported'),
+    hookEvent('codex', 'PostToolUse', 'tool-after', 'partial', {
+      matcherSupported: true,
+      matcherField: 'tool_name'
+    }),
+    hookEvent('codex', 'SubagentStart', 'subagent', 'supported'),
+    hookEvent('codex', 'SubagentStop', 'subagent', 'supported'),
+    hookEvent('codex', 'PreCompact', 'context-maintenance', 'supported'),
+    hookEvent('codex', 'PostCompact', 'context-maintenance', 'supported'),
+    hookEvent('codex', 'Stop', 'session-stop', 'supported')
+  ],
+  [
+    hookHandler('codex', 'command', 'runnable', [
+      hookField('type', 'string', { required: true }),
+      hookField('command', 'string', { required: true, primary: true }),
+      hookField('commandWindows', 'string', { primary: true }),
+      hookField('command_windows', 'string'),
+      hookField('async', 'boolean'),
+      hookField('timeout', 'number'),
+      hookField('statusMessage', 'string'),
+      hookField('status_message', 'string'),
+      hookField('managed', 'boolean')
+    ]),
+    hookHandler('codex', 'prompt', 'parsed-only', [
+      hookField('type', 'string', { required: true }),
+      hookField('prompt', 'string', { primary: true }),
+      hookField('model', 'string'),
+      hookField('async', 'boolean'),
+      hookField('timeout', 'number'),
+      hookField('statusMessage', 'string'),
+      hookField('managed', 'boolean')
+    ], { supportNoteId: 'parsedOnly' }),
+    hookHandler('codex', 'agent', 'parsed-only', [
+      hookField('type', 'string', { required: true }),
+      hookField('prompt', 'string', { primary: true }),
+      hookField('model', 'string'),
+      hookField('async', 'boolean'),
+      hookField('timeout', 'number'),
+      hookField('statusMessage', 'string'),
+      hookField('managed', 'boolean')
+    ], { supportNoteId: 'parsedOnly' })
+  ]
+)
 
 const CLAUDE_HEALTH_CHECK_DESCRIPTORS: AgentCapabilityPluginHealthCheckDescriptor[] = [
   healthCheckDescriptor('claude-code:source:user-claude-md-missing', 'claude-code', 'info', 'source', {
@@ -914,6 +1067,7 @@ function buildClaudeCodePlugin(group: AgentScanSourceGroup | undefined): AgentCa
     ],
     sourceDescriptors: CLAUDE_SOURCE_DESCRIPTORS,
     assetDescriptors: CLAUDE_ASSET_DESCRIPTORS,
+    hookSchema: CLAUDE_HOOK_SCHEMA,
     healthCheckDescriptors: CLAUDE_HEALTH_CHECK_DESCRIPTORS,
     sourceCoverage: buildSourceCoverage(group, CLAUDE_SOURCE_DESCRIPTORS),
     references: [
@@ -971,6 +1125,7 @@ function buildCodexPlugin(group: AgentScanSourceGroup | undefined): AgentCapabil
     ],
     sourceDescriptors: CODEX_SOURCE_DESCRIPTORS,
     assetDescriptors: CODEX_ASSET_DESCRIPTORS,
+    hookSchema: CODEX_HOOK_SCHEMA,
     healthCheckDescriptors: CODEX_HEALTH_CHECK_DESCRIPTORS,
     sourceCoverage: buildSourceCoverage(group, CODEX_SOURCE_DESCRIPTORS),
     references: [
@@ -1053,6 +1208,106 @@ function assetDescriptor(
     labelKey: `settings.agentPluginAssets.${type}.label`,
     descriptionKey: `settings.agentPluginAssets.${type}.description`
   }
+}
+
+function hookSchema(
+  agentId: AgentCapabilityPluginHookSchemaDescriptor['agentId'],
+  events: AgentCapabilityPluginHookEventDescriptor[],
+  handlers: AgentCapabilityPluginHookHandlerDescriptor[]
+): AgentCapabilityPluginHookSchemaDescriptor {
+  return {
+    agentId,
+    events,
+    handlers
+  }
+}
+
+function hookEvent(
+  agentId: AgentCapabilityPluginHookSchemaDescriptor['agentId'],
+  eventType: string,
+  stageId: AgentCapabilityPluginHookEventDescriptor['stageId'],
+  support: AgentCapabilityPluginHookEventDescriptor['support'],
+  options: Partial<
+    Pick<
+      AgentCapabilityPluginHookEventDescriptor,
+      'matcherSupported' | 'matcherField' | 'evidenceUrls'
+    >
+  > = {}
+): AgentCapabilityPluginHookEventDescriptor {
+  const agentKey = toTranslationKeyId(agentId)
+  const eventKey = toTranslationKeyId(eventType)
+
+  return {
+    eventType,
+    stageId,
+    support,
+    matcherSupported: options.matcherSupported ?? false,
+    matcherField: options.matcherField,
+    labelKey: `settings.agentPluginHookEvents.${agentKey}.${eventKey}.label`,
+    descriptionKey: `settings.agentPluginHookEvents.${agentKey}.${eventKey}.description`,
+    evidenceUrls: options.evidenceUrls ?? [hookEvidenceUrl(agentId)]
+  }
+}
+
+function hookHandler(
+  agentId: AgentCapabilityPluginHookSchemaDescriptor['agentId'],
+  type: string,
+  runMode: AgentCapabilityPluginHookHandlerDescriptor['runMode'],
+  fields: AgentCapabilityPluginHookHandlerFieldDescriptor[],
+  options: { supportNoteId?: string; evidenceUrls?: string[] } = {}
+): AgentCapabilityPluginHookHandlerDescriptor {
+  const agentKey = toTranslationKeyId(agentId)
+  const typeKey = toTranslationKeyId(type)
+
+  return {
+    type,
+    runMode,
+    fields: fields.map((field) => ({
+      ...field,
+      labelKey: `settings.agentPluginHookHandlers.${agentKey}.${typeKey}.fields.${toTranslationKeyId(field.name)}.label`,
+      descriptionKey: `settings.agentPluginHookHandlers.${agentKey}.${typeKey}.fields.${toTranslationKeyId(field.name)}.description`
+    })),
+    primaryFieldNames: fields.filter((field) => field.primary).map((field) => field.name),
+    labelKey: `settings.agentPluginHookHandlers.${agentKey}.${typeKey}.label`,
+    descriptionKey: `settings.agentPluginHookHandlers.${agentKey}.${typeKey}.description`,
+    supportNoteKey: options.supportNoteId
+      ? `settings.agentPluginHookHandlers.${agentKey}.${typeKey}.supportNotes.${toTranslationKeyId(options.supportNoteId)}`
+      : undefined,
+    evidenceUrls: options.evidenceUrls ?? [hookEvidenceUrl(agentId)]
+  }
+}
+
+function hookField(
+  name: string,
+  kind: AgentCapabilityPluginHookHandlerFieldDescriptor['kind'],
+  options: Pick<AgentCapabilityPluginHookHandlerFieldDescriptor, 'required' | 'primary'> = {}
+): AgentCapabilityPluginHookHandlerFieldDescriptor {
+  return {
+    name,
+    kind,
+    required: options.required,
+    primary: options.primary,
+    labelKey: '',
+    descriptionKey: ''
+  }
+}
+
+function hookCommonField(
+  name: 'if' | 'timeout' | 'statusMessage' | 'once'
+): AgentCapabilityPluginHookHandlerFieldDescriptor {
+  const kind = name === 'timeout' ? 'number' : name === 'once' ? 'boolean' : 'string'
+
+  return hookField(name, kind)
+}
+
+function hookEvidenceUrl(agentId: AgentCapabilityPluginHookSchemaDescriptor['agentId']): string {
+  return agentId === 'claude-code'
+    ? HEALTH_EVIDENCE_URLS.claudeHooks
+    : HEALTH_EVIDENCE_URLS.codexHooks
+}
+
+function toTranslationKeyId(value: string): string {
+  return value.replace(/[^A-Za-z0-9_.-]/g, '.')
 }
 
 function healthCheckDescriptor(

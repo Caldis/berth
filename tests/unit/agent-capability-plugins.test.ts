@@ -116,6 +116,51 @@ const codexHealthCheckDescriptorIds = [
   'codex:session:metadata-missing'
 ]
 
+const claudeHookEventTypes = [
+  'ConfigChange',
+  'CwdChanged',
+  'Elicitation',
+  'ElicitationResult',
+  'FileChanged',
+  'InstructionsLoaded',
+  'Notification',
+  'PermissionDenied',
+  'PermissionRequest',
+  'PostCompact',
+  'PostToolBatch',
+  'PostToolUse',
+  'PostToolUseFailure',
+  'PreCompact',
+  'PreToolUse',
+  'SessionEnd',
+  'SessionStart',
+  'Setup',
+  'Stop',
+  'StopFailure',
+  'SubagentStart',
+  'SubagentStop',
+  'TaskCompleted',
+  'TaskCreated',
+  'TeammateIdle',
+  'UserPromptExpansion',
+  'UserPromptSubmit',
+  'WorktreeCreate',
+  'WorktreeRemove'
+]
+
+const codexHookEventTypes = [
+  'PermissionRequest',
+  'PostCompact',
+  'PostToolUse',
+  'PreCompact',
+  'PreToolUse',
+  'SessionStart',
+  'Stop',
+  'SubagentStart',
+  'SubagentStop',
+  'UserPromptSubmit'
+]
+
 const healthCheckCategories: HealthCheckCategory[] = [
   'source',
   'syntax',
@@ -346,6 +391,104 @@ describe('agent capability plugin registry', () => {
         ],
         targetRoute: '/configuration/capabilities?tab=hooks'
       })
+  })
+
+  it('exposes hook schema descriptors for built-in plugins', () => {
+    const result = listAgentCapabilityPlugins(scanGroups)
+    const claude = result.plugins.find((plugin) => plugin.id === 'claude-code')
+    const codex = result.plugins.find((plugin) => plugin.id === 'codex')
+
+    expect(claude?.hookSchema.agentId).toBe('claude-code')
+    expect(codex?.hookSchema.agentId).toBe('codex')
+    expect(claude?.hookSchema.events.map((event) => event.eventType).sort()).toEqual(
+      claudeHookEventTypes
+    )
+    expect(codex?.hookSchema.events.map((event) => event.eventType).sort()).toEqual(
+      codexHookEventTypes
+    )
+    expect(claude?.hookSchema.events.find((event) => event.eventType === 'PreToolUse'))
+      .toMatchObject({
+        stageId: 'tool-before',
+        support: 'supported',
+        matcherSupported: true,
+        matcherField: 'tool_name'
+      })
+    expect(claude?.hookSchema.events.find((event) => event.eventType === 'CwdChanged'))
+      .toMatchObject({
+        stageId: 'context-maintenance',
+        support: 'supported',
+        matcherSupported: false
+      })
+    expect(codex?.hookSchema.events.find((event) => event.eventType === 'PostToolUse'))
+      .toMatchObject({
+        stageId: 'tool-after',
+        support: 'partial',
+        matcherSupported: true,
+        matcherField: 'tool_name'
+      })
+  })
+
+  it('describes hook handler fields and runnable support', () => {
+    const result = listAgentCapabilityPlugins(scanGroups)
+    const claude = result.plugins.find((plugin) => plugin.id === 'claude-code')
+    const codex = result.plugins.find((plugin) => plugin.id === 'codex')
+    const claudeHandlers = new Map(claude?.hookSchema.handlers.map((handler) => [handler.type, handler]))
+    const codexHandlers = new Map(codex?.hookSchema.handlers.map((handler) => [handler.type, handler]))
+
+    expect(Array.from(claudeHandlers.keys())).toEqual([
+      'command',
+      'http',
+      'mcp_tool',
+      'prompt',
+      'agent'
+    ])
+    expect(claudeHandlers.get('http')).toMatchObject({
+      runMode: 'runnable',
+      primaryFieldNames: ['url']
+    })
+    expect(claudeHandlers.get('http')?.fields.find((field) => field.name === 'url'))
+      .toMatchObject({
+        required: true,
+        primary: true,
+        kind: 'string'
+      })
+    expect(claudeHandlers.get('mcp_tool')?.fields.filter((field) => field.required).map((field) => field.name))
+      .toEqual(['type', 'server', 'tool'])
+    expect(codexHandlers.get('command')).toMatchObject({
+      runMode: 'runnable',
+      primaryFieldNames: ['command', 'commandWindows']
+    })
+    expect(codexHandlers.get('prompt')).toMatchObject({
+      runMode: 'parsed-only',
+      primaryFieldNames: ['prompt']
+    })
+    expect(codexHandlers.get('agent')).toMatchObject({
+      runMode: 'parsed-only',
+      primaryFieldNames: ['prompt']
+    })
+  })
+
+  it('keeps hook schema translation keys safe for i18next', () => {
+    const result = listAgentCapabilityPlugins(scanGroups)
+    const schemas = result.plugins.map((plugin) => plugin.hookSchema)
+    const safeKey = /^[A-Za-z0-9_.-]+$/
+
+    for (const schema of schemas) {
+      for (const event of schema.events) {
+        expect(event.labelKey).toMatch(safeKey)
+        expect(event.descriptionKey).toMatch(safeKey)
+        expect(event.labelKey).not.toContain(':')
+      }
+      for (const handler of schema.handlers) {
+        expect(handler.labelKey).toMatch(safeKey)
+        expect(handler.descriptionKey).toMatch(safeKey)
+        expect(handler.labelKey).not.toContain(':')
+        for (const field of handler.fields) {
+          expect(field.labelKey).toMatch(safeKey)
+          expect(field.descriptionKey).toMatch(safeKey)
+        }
+      }
+    }
   })
 
   it('keeps health check descriptor metadata inside the runtime health contract', () => {
