@@ -7,9 +7,9 @@ import { VERBS, parseFrontmatter } from './harness-lib.mjs'
 import { check as checkDistribution } from './harness-sync.mjs'
 
 const WORK_NAME = /^\d{4}-\d{2}-\d{2}(-[A-Z][A-Z0-9]+-\d+)?-[a-z0-9-]+$/
-const FRICTION_NAME = /^\d{8}-(new|continue|explore|design|implement|verify|archive|optimization)-[a-z0-9-]+\.md$/
-const PHASES = ['explore', 'design', 'blocked', 'implement', 'verify', 'archive']
-const PHASE_RANK = { explore: 0, design: 1, blocked: 1, implement: 2, verify: 3, archive: 4 }
+const FRICTION_NAME = new RegExp(`^\\d{8}-(${VERBS.join('|')})-[a-z0-9-]+\\.md$`)
+const PHASES = ['explore', 'design', 'blocked', 'implement', 'verify', 'polish', 'archive']
+const PHASE_RANK = { explore: 0, design: 1, blocked: 1, implement: 2, verify: 3, polish: 4, archive: 5 }
 export const SMALL_CHANGE_EXEMPTION_CONSENT = '小改动豁免前必须先声明豁免依据并征得用户确认。'
 
 function listDirs(p) {
@@ -22,6 +22,7 @@ function requiredArtifacts(type, phase) {
   const rank = PHASE_RANK[phase]
   if (rank >= 1) req.push('01-ANALYSIS.md')
   if (rank >= 2) req.push('02-SPEC.md', '03-PLAN.md')
+  if (phase === 'polish') req.push('04-POLISH.md')
   return req
 }
 
@@ -79,7 +80,7 @@ export function checkFriction(root) {
 export function checkTemplates(root) {
   const errors = []
   const wt = join(root, 'docs/works/_template')
-  for (const f of ['INDEX.md', '00-PRD.md', '00-BUG.md', '01-ANALYSIS.md', '02-SPEC.md', '03-PLAN.md']) {
+  for (const f of ['INDEX.md', '00-PRD.md', '00-BUG.md', '01-ANALYSIS.md', '02-SPEC.md', '03-PLAN.md', '04-POLISH.md']) {
     if (!existsSync(join(wt, f))) errors.push(`templates: missing docs/works/_template/${f}`)
   }
   if (!existsSync(join(root, 'docs/friction/_template.md')))

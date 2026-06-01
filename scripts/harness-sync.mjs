@@ -14,21 +14,22 @@ import {
 } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { VERBS, skillMdContent } from './harness-lib.mjs'
+import { LEGACY_SKILL_PREFIXES, VERBS, skillMdContent, skillName } from './harness-lib.mjs'
 
 // 期望产物描述符
 export function desiredArtifacts(root) {
   const items = []
   for (const v of VERBS) {
+    const name = skillName(v)
     items.push({
       kind: 'file',
-      path: join(root, '.agents/skills', `opsx-${v}`, 'SKILL.md'),
+      path: join(root, '.agents/skills', name, 'SKILL.md'),
       content: skillMdContent(v)
     })
     items.push({
       kind: 'link',
-      path: join(root, '.claude/skills', `opsx-${v}`),
-      target: `../../.agents/skills/opsx-${v}`
+      path: join(root, '.claude/skills', name),
+      target: `../../.agents/skills/${name}`
     })
   }
   return items
@@ -43,7 +44,26 @@ function fileInSync(path, content) {
 }
 
 function legacyCommandPaths(root) {
-  return VERBS.map((v) => join(root, '.claude/commands', `opsx-${v}.md`))
+  return LEGACY_SKILL_PREFIXES.flatMap((prefix) =>
+    VERBS.flatMap((v) => [
+      join(root, '.claude/commands', `${prefix}-${v}.md`),
+      join(root, '.claude/commands', prefix, `${v}.md`)
+    ])
+  )
+}
+
+function legacySkillPaths(root) {
+  return LEGACY_SKILL_PREFIXES.flatMap((prefix) =>
+    VERBS.flatMap((v) => [
+      join(root, '.agents/skills', `${prefix}-${v}`),
+      join(root, '.claude/skills', `${prefix}-${v}`),
+      join(root, '.codex/skills', `${prefix}-${v}`)
+    ])
+  )
+}
+
+function legacyArtifactPaths(root) {
+  return [...legacyCommandPaths(root), ...legacySkillPaths(root)]
 }
 
 function linkInSync(root, path, target) {
@@ -62,7 +82,7 @@ function linkInSync(root, path, target) {
 
 export function apply(root) {
   const changed = []
-  for (const path of legacyCommandPaths(root)) {
+  for (const path of legacyArtifactPaths(root)) {
     if (!existsSync(path) && !isBrokenLink(path)) continue
     rmSync(path, { recursive: true, force: true })
     changed.push(path)
@@ -103,7 +123,7 @@ function isBrokenLink(path) {
 
 export function check(root) {
   const drift = []
-  for (const path of legacyCommandPaths(root)) {
+  for (const path of legacyArtifactPaths(root)) {
     if (existsSync(path) || isBrokenLink(path)) drift.push(path)
   }
   for (const it of desiredArtifacts(root)) {

@@ -72,6 +72,27 @@ describe('checkWorks', () => {
     ])
     expect(checkWorks(root).some((e: string) => e.includes('_archive'))).toBe(true)
   })
+
+  it('polish 阶段须有 04-POLISH', () => {
+    task('2026-05-29-x', 'task: t\ntype: feature\nphase: polish\ncreated: 2026-05-29', [
+      '00-PRD.md',
+      '01-ANALYSIS.md',
+      '02-SPEC.md',
+      '03-PLAN.md'
+    ])
+    expect(checkWorks(root).some((e: string) => e.includes('04-POLISH.md'))).toBe(true)
+  })
+
+  it('polish 阶段产物完整时通过', () => {
+    task('2026-05-29-x', 'task: t\ntype: feature\nphase: polish\ncreated: 2026-05-29', [
+      '00-PRD.md',
+      '01-ANALYSIS.md',
+      '02-SPEC.md',
+      '03-PLAN.md',
+      '04-POLISH.md'
+    ])
+    expect(checkWorks(root)).toEqual([])
+  })
 })
 
 describe('checkFriction', () => {
@@ -84,9 +105,9 @@ describe('checkFriction', () => {
     expect(errs.some((e: string) => e.includes('20260529-implement-foo'))).toBe(false)
   })
 
-  it('接受全部 8 个 verb 阶段作为 phase 段', () => {
+  it('接受全部 9 个 verb 阶段作为 phase 段', () => {
     mkdirSync(join(root, 'docs/friction'), { recursive: true })
-    const phases = ['new', 'continue', 'explore', 'design', 'implement', 'verify', 'archive', 'optimization']
+    const phases = ['new', 'continue', 'explore', 'design', 'implement', 'verify', 'polish', 'archive', 'optimization']
     for (const p of phases) writeFileSync(join(root, `docs/friction/20260530-${p}-sample.md`), 'x')
     expect(checkFriction(root)).toEqual([])
   })
@@ -119,7 +140,7 @@ describe('checkTemplates', () => {
 })
 
 describe('checkWorkflowSources', () => {
-  const VERBS = ['new', 'continue', 'explore', 'design', 'implement', 'verify', 'archive', 'optimization']
+  const VERBS = ['new', 'continue', 'explore', 'design', 'implement', 'verify', 'polish', 'archive', 'optimization']
   function writeWorkflow(empty: string[] = []): void {
     const dir = join(root, '.agents/workflow')
     mkdirSync(dir, { recursive: true })

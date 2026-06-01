@@ -3,6 +3,9 @@
 // sync 与 check 都从这里取生成器, 保证两侧一致 (DRY)。
 import yaml from 'js-yaml'
 
+export const SKILL_PREFIX = 'harness'
+export const LEGACY_SKILL_PREFIXES = ['opsx']
+
 export const VERBS = [
   'new',
   'continue',
@@ -10,15 +13,20 @@ export const VERBS = [
   'design',
   'implement',
   'verify',
+  'polish',
   'archive',
   'optimization'
 ]
 
-// .agents/skills/opsx-<verb>/SKILL.md 的内容 (软链目标, 由 sync 生成)
+export function skillName(verb) {
+  return `${SKILL_PREFIX}-${verb}`
+}
+
+// .agents/skills/<prefix>-<verb>/SKILL.md 的内容 (软链目标, 由 sync 生成)
 export function skillMdContent(verb) {
   return `---
-name: opsx-${verb}
-description: AI Native Workflow ${verb} 阶段. 读取并执行 .agents/workflow/${verb}.md, 任务=$ARGUMENTS
+name: ${skillName(verb)}
+description: Berth Harness Workflow ${verb} 阶段. 读取并执行 .agents/workflow/${verb}.md, 任务=$ARGUMENTS
 ---
 
 读取仓库根的 \`.agents/workflow/${verb}.md\` 并严格按其执行。任务标识由参数提供 ($ARGUMENTS)。
