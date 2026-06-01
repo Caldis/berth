@@ -26,7 +26,7 @@ import {
   type HookStageGroup
 } from '@/lib/hook-lifecycle'
 import type { AgentView, Asset, AssetScope } from '@shared/types/asset'
-import type { HealthCheck, HooksAgentId, HooksEnablementStatus } from '@shared/types/ipc'
+import type { HealthCheck } from '@shared/types/ipc'
 
 interface HooksLifecycleViewProps {
   assets: Asset[]
@@ -36,7 +36,6 @@ interface HooksLifecycleViewProps {
 }
 
 type HookDisplayMode = 'lifecycle' | 'comparison'
-type HookDensity = 'comfortable' | 'compact'
 
 const supportIconMap = {
   supported: CheckCircle2,
@@ -59,7 +58,6 @@ export function HooksLifecycleView({ assets, agentView, search, scope }: HooksLi
     [healthChecks, agentView]
   )
   const [displayMode, setDisplayMode] = useState<HookDisplayMode>('lifecycle')
-  const [density, setDensity] = useState<HookDensity>('comfortable')
   const hookCount = assets.length
   const hasSearch = search.trim().length > 0
   const hasScopeFilter = scope !== 'all'
@@ -72,53 +70,36 @@ export function HooksLifecycleView({ assets, agentView, search, scope }: HooksLi
     <div className="space-y-4">
       <section className="rounded-lg border border-border bg-card px-4 py-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex flex-wrap gap-2">
-            <div className="inline-flex rounded-md border border-border bg-background p-1">
-              {(['lifecycle', 'comparison'] as HookDisplayMode[]).map((mode) => (
-                <button
-                  key={mode}
-                  type="button"
-                  onClick={() => setDisplayMode(mode)}
-                  className={cn(
-                    'rounded px-2.5 py-1 text-xs font-medium transition-colors',
-                    displayMode === mode
-                      ? 'bg-foreground text-background'
-                      : 'text-muted-foreground hover:bg-accent hover:text-foreground'
-                  )}
-                >
-                  {t(`capabilities.hooks.viewMode.${mode}`)}
-                </button>
-              ))}
-            </div>
-            <div className="inline-flex rounded-md border border-border bg-background p-1">
-              {(['comfortable', 'compact'] as HookDensity[]).map((item) => (
-                <button
-                  key={item}
-                  type="button"
-                  onClick={() => setDensity(item)}
-                  className={cn(
-                    'rounded px-2.5 py-1 text-xs font-medium transition-colors',
-                    density === item
-                      ? 'bg-foreground text-background'
-                      : 'text-muted-foreground hover:bg-accent hover:text-foreground'
-                  )}
-                >
-                  {t(`capabilities.hooks.density.${item}`)}
-                </button>
-              ))}
-            </div>
+          <div className="inline-flex rounded-md border border-border bg-background p-1">
+            {(['lifecycle', 'comparison'] as HookDisplayMode[]).map((mode) => (
+              <button
+                key={mode}
+                type="button"
+                onClick={() => setDisplayMode(mode)}
+                className={cn(
+                  'rounded px-2.5 py-1 text-xs font-medium transition-colors',
+                  displayMode === mode
+                    ? 'bg-foreground text-background'
+                    : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+                )}
+              >
+                {t(`capabilities.hooks.viewMode.${mode}`)}
+              </button>
+            ))}
           </div>
           <span className="rounded-md bg-muted px-2 py-0.5 text-xs text-muted-foreground">
             {t(`agentView.${agentView}`)}
           </span>
         </div>
-        <HookAgentEnablementPanel agentView={agentView} />
         <HookHealthSummary checks={hookHealthChecks} loading={healthLoading} />
       </section>
 
       {displayMode === 'lifecycle' ? (
-        <div className="grid gap-4 xl:grid-cols-[280px_minmax(0,1fr)]">
-          <aside className="xl:sticky xl:top-4 xl:self-start">
+        <div className="grid gap-4 lg:grid-cols-[280px_minmax(0,1fr)]">
+          <aside
+            aria-label={t('capabilities.hooks.lifecycleIndex')}
+            className="lg:sticky lg:top-4 lg:max-h-[calc(100vh-2rem)] lg:self-start lg:overflow-y-auto"
+          >
             <div className="rounded-lg border border-border bg-card p-2">
               <div className="px-2 pb-2 pt-1">
                 <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -128,13 +109,13 @@ export function HooksLifecycleView({ assets, agentView, search, scope }: HooksLi
                   {t('capabilities.hooks.lifecycleCount', { count: hookCount })}
                 </p>
               </div>
-              <div className="flex gap-2 overflow-x-auto pb-1 xl:block xl:space-y-1 xl:overflow-visible">
+              <div className="flex gap-2 overflow-x-auto pb-1 lg:block lg:space-y-1 lg:overflow-visible lg:pb-0">
                 {groups.map((group, index) => (
                   <button
                     key={group.id}
                     type="button"
                     onClick={() => scrollToStage(group.id)}
-                    className="flex min-w-[210px] items-center gap-2 rounded-md px-2 py-2 text-left transition-colors hover:bg-accent xl:w-full xl:min-w-0"
+                    className="flex min-w-[210px] items-center gap-2 rounded-md px-2 py-2 text-left transition-colors hover:bg-accent lg:w-full lg:min-w-0"
                   >
                     <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded bg-muted text-[10px] font-semibold text-muted-foreground">
                       {String(index + 1).padStart(2, '0')}
@@ -160,7 +141,7 @@ export function HooksLifecycleView({ assets, agentView, search, scope }: HooksLi
               </div>
             )}
             {groups.map((group) => (
-              <HookStageSection key={group.id} group={group} agentView={agentView} density={density} />
+              <HookStageSection key={group.id} group={group} agentView={agentView} />
             ))}
           </div>
         </div>
@@ -304,104 +285,6 @@ function HealthSeverityBadge({ severity }: { severity: HealthCheck['severity'] }
   )
 }
 
-function HookAgentEnablementPanel({ agentView }: { agentView: AgentView }): React.ReactElement {
-  const { t } = useTranslation()
-  const [statuses, setStatuses] = useState<HooksEnablementStatus[]>([])
-  const [busyAgent, setBusyAgent] = useState<HooksAgentId | null>(null)
-  const [error, setError] = useState<string | null>(null)
-  const agents = useMemo(() => visibleHooksAgents(agentView), [agentView])
-
-  useEffect(() => {
-    let disposed = false
-    setError(null)
-    void Promise.all(agents.map((agentId) => window.api.hooks.statuses(agentId)))
-      .then((nextStatusGroups) => {
-        if (!disposed) setStatuses(nextStatusGroups.flat())
-      })
-      .catch((err) => {
-        if (!disposed) setError(err instanceof Error ? err.message : String(err))
-      })
-    return () => {
-      disposed = true
-    }
-  }, [agents])
-
-  const toggle = async (status: HooksEnablementStatus): Promise<void> => {
-    if (status.scope !== 'user' || status.writable === false) return
-    const enabled = !status.enabled
-    const confirmMessage = enabled
-      ? t('capabilities.hooks.management.confirmEnable', { agent: status.agentName, path: status.sourcePath })
-      : t('capabilities.hooks.management.confirmDisable', { agent: status.agentName, path: status.sourcePath })
-
-    if (!window.confirm(confirmMessage)) return
-
-    setBusyAgent(status.agentId)
-    setError(null)
-    try {
-      const result = await window.api.hooks.setEnabled({
-        agentId: status.agentId,
-        scope: status.scope,
-        enabled
-      })
-      setStatuses((current) =>
-        current.map((item) => item.agentId === result.status.agentId ? result.status : item)
-      )
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err))
-    } finally {
-      setBusyAgent(null)
-    }
-  }
-
-  return (
-    <div className="mt-4 rounded-md border border-border/70 bg-background/60 px-3 py-3">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <p className="text-xs font-medium text-foreground">{t('capabilities.hooks.management.agentToggleTitle')}</p>
-          <p className="mt-0.5 max-w-[70ch] text-xs leading-5 text-muted-foreground">
-            {t('capabilities.hooks.management.agentToggleBody')}
-          </p>
-        </div>
-      </div>
-      {error && <p className="mt-2 text-xs text-destructive">{error}</p>}
-      <div className="mt-3 grid gap-2 md:grid-cols-2">
-        {statuses.map((status) => (
-          <div key={`${status.agentId}-${status.scope}`} className="flex items-center justify-between gap-3 rounded-md border border-border bg-card px-3 py-2">
-            <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="text-xs font-medium text-foreground">{status.agentName}</span>
-                <span className="rounded-md border border-border px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
-                  {t(`capabilities.hooks.management.scope.${status.scope}`)}
-                </span>
-                <span className={cn(
-                  'rounded-md px-1.5 py-0.5 text-[10px] font-medium',
-                  status.enabled ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'bg-muted text-muted-foreground'
-                )}>
-                  {status.enabled ? t('capabilities.hooks.management.enabled') : t('capabilities.hooks.management.disabled')}
-                </span>
-              </div>
-              <p className="mt-0.5 truncate font-mono text-[11px] text-muted-foreground">{status.sourcePath}</p>
-              {status.writable === false && (
-                <p className="mt-1 text-[11px] leading-4 text-muted-foreground">
-                  {status.reasonKey ? t(status.reasonKey) : status.reason}
-                </p>
-              )}
-            </div>
-            <button
-              type="button"
-              disabled={!status.supported || status.writable === false || busyAgent === status.agentId}
-              onClick={() => void toggle(status)}
-              className="shrink-0 rounded-md border border-border px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:text-muted-foreground/60 disabled:hover:bg-transparent"
-            >
-              {status.enabled ? t('capabilities.hooks.management.disableAll') : t('capabilities.hooks.management.enableAll')}
-            </button>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
-
 function HookComparisonTable({ groups, agentView }: { groups: HookStageGroup[]; agentView: AgentView }): React.ReactElement {
   const { t } = useTranslation()
   const visibleGroups = groups.filter((group) => group.stage || group.hooks.length > 0)
@@ -473,11 +356,11 @@ function ComparisonSupportCell({ support }: { support: HookAgentStageSupport }):
   )
 }
 
-function HookStageSection({ group, agentView, density }: { group: HookStageGroup; agentView: AgentView; density: HookDensity }): React.ReactElement {
+function HookStageSection({ group, agentView }: { group: HookStageGroup; agentView: AgentView }): React.ReactElement {
   const { t } = useTranslation()
 
   if (!group.stage) {
-    return <UnknownHookSection group={group} agentView={agentView} density={density} />
+    return <UnknownHookSection group={group} agentView={agentView} />
   }
 
   const supports = getVisibleStageSupport(group.stage, agentView)
@@ -504,13 +387,13 @@ function HookStageSection({ group, agentView, density }: { group: HookStageGroup
           ))}
         </div>
 
-        <HookEventList group={group} agentView={agentView} density={density} />
+        <HookEventList group={group} agentView={agentView} />
       </div>
     </section>
   )
 }
 
-function UnknownHookSection({ group, agentView, density }: { group: HookStageGroup; agentView: AgentView; density: HookDensity }): React.ReactElement {
+function UnknownHookSection({ group, agentView }: { group: HookStageGroup; agentView: AgentView }): React.ReactElement {
   const { t } = useTranslation()
 
   return (
@@ -520,7 +403,7 @@ function UnknownHookSection({ group, agentView, density }: { group: HookStageGro
         <p className="mt-1 max-w-[72ch] text-sm leading-6 text-muted-foreground">{t('capabilities.hooks.unknown.body')}</p>
       </div>
       <div className="px-4 py-4">
-        <HookEventList group={group} agentView={agentView} density={density} />
+        <HookEventList group={group} agentView={agentView} />
       </div>
     </section>
   )
@@ -561,7 +444,7 @@ function AgentSupportRow({ support }: { support: HookAgentStageSupport }): React
   )
 }
 
-function HookEventList({ group, agentView, density }: { group: HookStageGroup; agentView: AgentView; density: HookDensity }): React.ReactElement {
+function HookEventList({ group, agentView }: { group: HookStageGroup; agentView: AgentView }): React.ReactElement {
   const { t } = useTranslation()
 
   if (group.hooks.length === 0) {
@@ -585,7 +468,7 @@ function HookEventList({ group, agentView, density }: { group: HookStageGroup; a
           </div>
           <div className="divide-y divide-border/60">
             {eventGroup.hooks.map((hook) => (
-              <HookAssetRow key={hook.id} hook={hook} agentView={agentView} density={density} />
+              <HookAssetRow key={hook.id} hook={hook} agentView={agentView} />
             ))}
           </div>
         </div>
@@ -594,7 +477,7 @@ function HookEventList({ group, agentView, density }: { group: HookStageGroup; a
   )
 }
 
-function HookAssetRow({ hook, agentView, density }: { hook: Asset; agentView: AgentView; density: HookDensity }): React.ReactElement {
+function HookAssetRow({ hook, agentView }: { hook: Asset; agentView: AgentView }): React.ReactElement {
   const { t } = useTranslation()
   const command = typeof hook.meta.command === 'string' ? hook.meta.command : ''
   const matcher = typeof hook.meta.matcher === 'string' ? hook.meta.matcher : ''
@@ -641,7 +524,7 @@ function HookAssetRow({ hook, agentView, density }: { hook: Asset; agentView: Ag
   }
 
   return (
-    <div className={cn('px-3', density === 'compact' ? 'py-2' : 'py-3')}>
+    <div className="px-3 py-3">
       <div className="flex flex-wrap items-start gap-3">
         <div className="min-w-0 flex-1">
           <div className="flex min-w-0 flex-wrap items-center gap-2">
@@ -783,12 +666,6 @@ function dirname(filePath: string): string {
   const normalized = filePath.replace(/[/\\]+$/, '')
   const index = Math.max(normalized.lastIndexOf('\\'), normalized.lastIndexOf('/'))
   return index > 0 ? normalized.slice(0, index) : normalized
-}
-
-function visibleHooksAgents(agentView: AgentView): HooksAgentId[] {
-  if (agentView === 'claude') return ['claude-code']
-  if (agentView === 'codex') return ['codex']
-  return ['claude-code', 'codex']
 }
 
 function visibleHookHealthChecks(checks: HealthCheck[], agentView: AgentView): HealthCheck[] {

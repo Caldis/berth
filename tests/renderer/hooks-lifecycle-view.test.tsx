@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import '../../src/renderer/src/i18n'
 import { HooksLifecycleView } from '../../src/renderer/src/components/capabilities/hooks-lifecycle-view'
 import type { AgentView, Asset } from '../../src/shared/types/asset'
-import type { HealthCheck } from '../../src/shared/types/ipc'
+import type { HealthCheck, HooksAgentId } from '../../src/shared/types/ipc'
 
 function hookAsset(
   id: string,
@@ -29,18 +29,34 @@ function hookAsset(
   }
 }
 
-function renderHooks(agentView: AgentView, assets: Asset[]): void {
-  render(<HooksLifecycleView assets={assets} agentView={agentView} search="" scope="all" />)
+function renderHooks(agentView: AgentView, assets: Asset[]): ReturnType<typeof render> {
+  return render(<HooksLifecycleView assets={assets} agentView={agentView} search="" scope="all" />)
 }
 
-async function waitForEnablementStatus(): Promise<void> {
-  await screen.findAllByText('Enabled')
+async function waitForHookHealthIdle(): Promise<void> {
+  await waitFor(() => {
+    expect(screen.queryByText('Checking')).not.toBeInTheDocument()
+  })
 }
 
 describe('HooksLifecycleView', () => {
   beforeEach(() => {
     window.api.assets.healthCheck = vi.fn(async () => [])
     window.api.shell.openPath = vi.fn(async () => {})
+    window.api.hooks.statuses = vi.fn(async (agentId: HooksAgentId) => [
+      {
+        agentId,
+        agentName: agentId === 'codex' ? 'Codex' : 'Claude Code',
+        scope: 'user',
+        enabled: true,
+        sourcePath: agentId === 'codex'
+          ? 'C:\\Users\\test\\.codex\\config.toml'
+          : 'C:\\Users\\test\\.claude\\settings.json',
+        sourceExists: true,
+        supported: true,
+        writable: true
+      }
+    ])
     window.api.hooks.setHookEnabled = vi.fn(async (request) => ({
       hookKey: request.hookKey,
       enabled: request.enabled,
@@ -52,7 +68,7 @@ describe('HooksLifecycleView', () => {
 
   it('shows Codex-only copy without Claude Code support rows in Codex view', async () => {
     renderHooks('codex', [hookAsset('codex-stop', 'codex', 'Stop')])
-    await waitForEnablementStatus()
+    await waitForHookHealthIdle()
 
     expect(screen.queryByText('What are hooks?')).not.toBeInTheDocument()
     expect(screen.queryByText('Trigger point')).not.toBeInTheDocument()
@@ -63,7 +79,7 @@ describe('HooksLifecycleView', () => {
 
   it('shows Claude-only copy without Codex hints in Claude view', async () => {
     renderHooks('claude', [hookAsset('claude-stop', 'claude-code', 'Stop')])
-    await waitForEnablementStatus()
+    await waitForHookHealthIdle()
 
     expect(screen.queryByText('What are hooks?')).not.toBeInTheDocument()
     expect(screen.queryByText('Trigger point')).not.toBeInTheDocument()
@@ -75,7 +91,7 @@ describe('HooksLifecycleView', () => {
       hookAsset('claude-pre', 'claude-code', 'PreToolUse'),
       hookAsset('codex-stop', 'codex', 'Stop')
     ])
-    await waitForEnablementStatus()
+    await waitForHookHealthIdle()
 
     expect(screen.getAllByText('Claude Code').length).toBeGreaterThan(0)
     expect(screen.getAllByText('Codex').length).toBeGreaterThan(0)
@@ -87,7 +103,7 @@ describe('HooksLifecycleView', () => {
       hookAsset('claude-pre', 'claude-code', 'PreToolUse'),
       hookAsset('codex-stop', 'codex', 'Stop')
     ])
-    await waitForEnablementStatus()
+    await waitForHookHealthIdle()
 
     fireEvent.click(screen.getByRole('button', { name: 'Compare agents' }))
 
@@ -98,7 +114,7 @@ describe('HooksLifecycleView', () => {
 
   it('hides unrelated comparison columns in Codex view', async () => {
     renderHooks('codex', [hookAsset('codex-stop', 'codex', 'Stop')])
-    await waitForEnablementStatus()
+    await waitForHookHealthIdle()
 
     fireEvent.click(screen.getByRole('button', { name: 'Compare agents' }))
 
@@ -109,7 +125,7 @@ describe('HooksLifecycleView', () => {
 
   it('keeps lifecycle explanations visible when there are no hooks', async () => {
     renderHooks('claude', [])
-    await waitForEnablementStatus()
+    await waitForHookHealthIdle()
 
     expect(screen.getAllByText('Session starts').length).toBeGreaterThan(0)
     expect(screen.getAllByText('No hook is configured for this stage.').length).toBeGreaterThan(0)
@@ -117,7 +133,7 @@ describe('HooksLifecycleView', () => {
 
   it('explains why Claude single hook toggles are not available', async () => {
     renderHooks('claude', [hookAsset('claude-stop', 'claude-code', 'Stop')])
-    await waitForEnablementStatus()
+    await waitForHookHealthIdle()
 
     expect(screen.getByText(/Claude Code does not provide a supported way/)).toBeInTheDocument()
   })
@@ -130,7 +146,7 @@ describe('HooksLifecycleView', () => {
         canToggleHook: true
       })
     ])
-    await waitForEnablementStatus()
+    await waitForHookHealthIdle()
 
     fireEvent.click(screen.getByText('Disable hook'))
 
@@ -149,7 +165,7 @@ describe('HooksLifecycleView', () => {
 
   it('opens hook source files from the row action menu', async () => {
     renderHooks('codex', [hookAsset('codex-stop', 'codex', 'Stop')])
-    await waitForEnablementStatus()
+    await waitForHookHealthIdle()
 
     fireEvent.click(screen.getAllByText('Actions')[0])
     fireEvent.click(screen.getByText('Open source file'))
@@ -167,59 +183,55 @@ describe('HooksLifecycleView', () => {
         matcher: undefined
       })
     ])
-    await waitForEnablementStatus()
+    await waitForHookHealthIdle()
 
     expect(screen.getByText('Entry file not detected')).toBeInTheDocument()
     expect(screen.getByText('Runs for every matching tool')).toBeInTheDocument()
   })
 
-  it('shows user and project hook switches separately', async () => {
-    window.api.hooks.statuses = vi.fn(async (agentId) => [
-      {
-        agentId,
-        agentName: 'Codex',
-        scope: 'user',
-        enabled: true,
-        sourcePath: 'C:\\Users\\test\\.codex\\config.toml',
-        sourceExists: true,
-        supported: true,
-        writable: true
-      },
-      {
-        agentId,
-        agentName: 'Codex',
-        scope: 'project',
-        enabled: false,
-        sourcePath: 'D:\\Code\\berth\\.codex\\config.toml',
-        sourceExists: true,
-        supported: true,
-        writable: false,
-        reasonKey: 'capabilities.hooks.management.projectReadOnly'
-      }
-    ])
-
+  it('keeps only view switching controls in the hooks toolbar', async () => {
     renderHooks('codex', [hookAsset('codex-stop', 'codex', 'Stop')])
-    await waitForEnablementStatus()
 
-    expect(screen.getByText('User scope')).toBeInTheDocument()
-    expect(screen.getByText('Project scope')).toBeInTheDocument()
-    expect(screen.getByText('Project-level hook switches are shown for review only. Edit the source file directly.')).toBeInTheDocument()
+    await waitFor(() => {
+      expect(window.api.assets.healthCheck).toHaveBeenCalled()
+    })
+
+    expect(screen.getByRole('button', { name: 'Lifecycle' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Compare agents' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Comfortable' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Compact' })).not.toBeInTheDocument()
+    expect(screen.queryByText('Agent-level hooks switch')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Disable all' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Enable all' })).not.toBeInTheDocument()
+    expect(window.api.hooks.statuses).not.toHaveBeenCalled()
   })
 
-  it('switches to compact density and keeps long commands visible', async () => {
+  it('keeps long hook commands visible without a density switch', async () => {
     const longCommand = 'python scripts/hooks/pre_tool_use_with_a_very_long_name.py --check safety --format json'
     renderHooks('codex', [
       hookAsset('codex-pre', 'codex', 'PreToolUse', {
         command: longCommand
       })
     ])
-    await waitForEnablementStatus()
+    await waitForHookHealthIdle()
 
-    const compactButton = screen.getByRole('button', { name: 'Compact' })
-    fireEvent.click(compactButton)
-
-    expect(compactButton.className).toContain('bg-foreground')
+    expect(screen.queryByRole('button', { name: 'Compact' })).not.toBeInTheDocument()
     expect(screen.getByText(longCommand)).toBeInTheDocument()
+  })
+
+  it('keeps the lifecycle index as a sticky in-page sidebar on desktop', async () => {
+    renderHooks('all', [
+      hookAsset('claude-pre', 'claude-code', 'PreToolUse'),
+      hookAsset('codex-stop', 'codex', 'Stop')
+    ])
+    await waitForHookHealthIdle()
+
+    const sidebar = screen.getByLabelText('Lifecycle')
+
+    expect(sidebar.className).toContain('lg:sticky')
+    expect(sidebar.className).toContain('lg:top-4')
+    expect(sidebar.className).toContain('lg:max-h-[calc(100vh-2rem)]')
+    expect(sidebar.className).toContain('lg:overflow-y-auto')
   })
 
   it('summarizes visible hook health checks and jumps to the details', async () => {
@@ -267,7 +279,6 @@ describe('HooksLifecycleView', () => {
     window.api.assets.healthCheck = vi.fn(async () => checks)
 
     renderHooks('codex', [hookAsset('codex-stop', 'codex', 'Stop')])
-    await waitForEnablementStatus()
 
     expect(await screen.findByText('1 hook check needs attention')).toBeInTheDocument()
     expect(screen.getByText('Codex hook has no Windows command override')).toBeInTheDocument()
