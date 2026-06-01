@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   CheckCircle2,
@@ -146,7 +146,7 @@ function HookRecoveryCenter(): React.ReactElement {
   const [error, setError] = useState<string | null>(null)
   const [busyKey, setBusyKey] = useState<string | null>(null)
 
-  const loadRecoveries = async (): Promise<void> => {
+  const loadRecoveries = useCallback(async (): Promise<void> => {
     setLoading(true)
     setError(null)
     try {
@@ -157,11 +157,11 @@ function HookRecoveryCenter(): React.ReactElement {
     } finally {
       setLoading(false)
     }
-  }
+  }, [t])
 
   useEffect(() => {
     void loadRecoveries()
-  }, [])
+  }, [loadRecoveries])
 
   const points = data?.points ?? []
   const issues = data?.issues ?? []
