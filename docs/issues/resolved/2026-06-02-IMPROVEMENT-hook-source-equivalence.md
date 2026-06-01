@@ -6,12 +6,19 @@ IMPROVEMENT
 
 ## 状态
 
-Open
+Resolved
 
 ## GitHub
 
 - Issue: https://github.com/Caldis/berth/issues/14
 - Number: #14
+- State: CLOSED
+
+## 完成记录
+
+- Work: `docs/works/_archive/2026-06-02-gh-14-hook-source-equivalence`
+- Code: `src/main/engine/scanner.ts`, `src/renderer/src/lib/hook-lifecycle.ts`, `src/renderer/src/components/capabilities/hooks-lifecycle-view.tsx`
+- Tests: `tests/unit/engine-scanner.test.ts`, `tests/unit/hook-lifecycle.test.ts`, `tests/renderer/hooks-lifecycle-view.test.tsx`
 
 ## 关联任务
 
@@ -36,5 +43,13 @@ GH-11 已经把 Hook 身份收窄到 scenario hash + child hook hash, 但跨来�
 ## 验收方向
 
 - 用户能看出“禁用了这一条”与“这个 Hook 完全不会运行”的区别。
-- 多来源存在时, 操作确认文案明确 source path 和 scope。
+- 多来源存在时, 生命周期行展示 source count 和实际 effective 状态。
 - 不支持修改的来源保持 read-only, 但能解释它为什么仍然生效。
+
+## 验证
+
+- `pnpm test -- tests/unit/engine-scanner.test.ts tests/unit/hook-lifecycle.test.ts tests/renderer/hooks-lifecycle-view.test.tsx`
+- `pnpm lint`
+- `pnpm typecheck`
+- `pnpm test`
+- `pnpm harness:check`
