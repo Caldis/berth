@@ -89,7 +89,7 @@ type ClaudeHookKey = `claude-code:${string}:${string}:${string}`
 字段含义:
 
 - `event`: Claude hook event, 例如 `SessionStart`、`PreToolUse`、`PostToolUse`、`Stop`。
-- `scenarioHash`: 对 `{ event, mode, matcher }` 做 canonical JSON 后的 hash。它表示这条 hook 所在场景, 不是具体 hook 身份。
+- `scenarioHash`: 对 `{ event, matcher }` 做 canonical JSON 后的 hash。它表示这条 hook 所在场景, 不是具体 hook 身份。
 - `hookHash`: 只对 hook 子项本身做 canonical JSON 后的 hash。
 
 示例 hook 子项:
@@ -186,7 +186,7 @@ interface ClaudeDisabledHookEntry {
 这个功能不能把整份 `settings.json` 当作版本控制单位。Claude settings 是高频修改文件, 用户、Claude Code 和其他本地工具都可能修改无关段落。Berth 的冲突判断只围绕“目标 hook”和“目标 hook 所在容器”:
 
 - hook 身份: `hookHash`, 只由 hook 子项本身的 canonical JSON 计算。
-- 场景选择器: `event + mode + matcher`。它只用于限定扫描范围和恢复插入位置。
+- 场景选择器: `event + matcher`。它只用于限定扫描范围和恢复插入位置。`mode` 只表示 settings 中的存储形态, 不参与身份判断。
 - 文件快照 hash: 只用于写入前发现极短时间内的并行写入, 不用于拒绝旧 UI 发起的操作。
 
 换句话说, 页面扫描后 settings 被别的工具改了也不一定失败。只要当前文件里还能唯一识别目标 hook, Berth 就基于当前文件继续做最小修改。
