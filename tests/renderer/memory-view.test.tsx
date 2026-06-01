@@ -1,6 +1,6 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen } from '@testing-library/react'
 import React from 'react'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import '../../src/renderer/src/i18n'
 import { MemoryView } from '../../src/renderer/src/components/memory/memory-view'
 import type { MemoryListResult } from '../../src/shared/types/memory'
@@ -21,6 +21,7 @@ vi.mock('../../src/renderer/src/hooks/use-memory', () => ({
 
 describe('MemoryView', () => {
   beforeEach(() => {
+    Element.prototype.scrollIntoView = vi.fn()
     memoryState.result = {
       sources: [
         {
@@ -53,6 +54,10 @@ describe('MemoryView', () => {
     memoryState.refresh.mockClear()
   })
 
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
   it('shows a missing-file state and hides file actions for missing notes', () => {
     render(<MemoryView />)
 
@@ -65,5 +70,77 @@ describe('MemoryView', () => {
     expect(screen.queryByRole('button', { name: /View Raw/ })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /Show in Explorer/ })).not.toBeInTheDocument()
   })
-})
 
+  it('keeps a collapsible details shell with grid-row motion state', () => {
+    render(<MemoryView />)
+
+    const details = screen.getByTestId('memory-note-details-united-memory:missing-note')
+    expect(details).toHaveAttribute('aria-hidden', 'true')
+    expect(details).toHaveClass('grid-rows-[0fr]')
+
+    fireEvent.click(screen.getByRole('button', { name: /Missing note/ }))
+
+    expect(details).toHaveAttribute('aria-hidden', 'false')
+    expect(details).toHaveClass('grid-rows-[1fr]')
+    expect(screen.getByText('The indexed note file is missing on disk.')).toBeInTheDocument()
+  })
+
+  it('clears navigation focus after a short pulse', () => {
+    vi.useFakeTimers()
+    memoryState.result = {
+      sources: [
+        {
+          id: 'united-memory',
+          label: 'United Memory',
+          available: true,
+          rootPath: 'C:\\Users\\test\\.united-memory',
+          noteCount: 2
+        }
+      ],
+      notes: [
+        {
+          id: 'united-memory:source-note',
+          sourceId: 'united-memory',
+          sourceLabel: 'United Memory',
+          title: 'Source note',
+          summary: 'Links to another note',
+          tags: [],
+          importance: 'active',
+          path: 'C:\\Users\\test\\.united-memory\\mem\\source-note.md',
+          links: ['target-note'],
+          createdAt: null,
+          updatedAt: null,
+          body: 'Related work'
+        },
+        {
+          id: 'united-memory:target-note',
+          sourceId: 'united-memory',
+          sourceLabel: 'United Memory',
+          title: 'Target note',
+          summary: 'Jump destination',
+          tags: [],
+          importance: 'active',
+          path: 'C:\\Users\\test\\.united-memory\\mem\\target-note.md',
+          links: [],
+          createdAt: null,
+          updatedAt: null,
+          body: 'Destination'
+        }
+      ]
+    }
+
+    render(<MemoryView />)
+
+    fireEvent.click(screen.getByRole('button', { name: /Source note/ }))
+    fireEvent.click(screen.getByRole('button', { name: 'target-note' }))
+
+    const targetCard = screen.getByRole('button', { name: /Target note/ }).parentElement
+    expect(targetCard).toHaveClass('ring-primary')
+
+    act(() => {
+      vi.advanceTimersByTime(2100)
+    })
+
+    expect(targetCard).not.toHaveClass('ring-primary')
+  })
+})

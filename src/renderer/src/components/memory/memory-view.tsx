@@ -55,6 +55,9 @@ const emptyFallback: Record<string, { title: string; hint: string }> = {
   }
 }
 
+const FOCUS_PULSE_MS = 2000
+const DETAILS_COLLAPSE_MS = 220
+
 function sourceIcon(id: string): React.ComponentType<{ className?: string }> {
   return id === 'united-memory' ? Database : Brain
 }
@@ -112,9 +115,11 @@ function NoteCard({
 }): React.ReactElement {
   const { t } = useTranslation()
   const [expanded, setExpanded] = useState(false)
+  const [detailsMounted, setDetailsMounted] = useState(false)
   const [body, setBody] = useState<string | null>(note.body ?? null)
   const [loadingBody, setLoadingBody] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
+  const collapseTimerRef = useRef<number | null>(null)
   const openInspector = useAppStore((s) => s.openInspector)
 
   const ensureBody = useCallback(async (): Promise<string> => {
@@ -137,13 +142,37 @@ function NoteCard({
 
   const toggle = useCallback(async () => {
     const next = !expanded
+    if (collapseTimerRef.current !== null) {
+      window.clearTimeout(collapseTimerRef.current)
+      collapseTimerRef.current = null
+    }
+    if (next) setDetailsMounted(true)
     setExpanded(next)
     if (next && !note.missing) void ensureBody()
   }, [expanded, ensureBody, note.missing])
 
+  useEffect(() => {
+    if (expanded || !detailsMounted) return
+    collapseTimerRef.current = window.setTimeout(() => {
+      setDetailsMounted(false)
+      collapseTimerRef.current = null
+    }, DETAILS_COLLAPSE_MS)
+    return () => {
+      if (collapseTimerRef.current !== null) {
+        window.clearTimeout(collapseTimerRef.current)
+        collapseTimerRef.current = null
+      }
+    }
+  }, [detailsMounted, expanded])
+
   // When this card becomes the navigation target, expand + scroll into view.
   useEffect(() => {
     if (focused) {
+      if (collapseTimerRef.current !== null) {
+        window.clearTimeout(collapseTimerRef.current)
+        collapseTimerRef.current = null
+      }
+      setDetailsMounted(true)
       setExpanded(true)
       if (!note.missing) void ensureBody()
       ref.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
@@ -166,7 +195,7 @@ function NoteCard({
       ref={ref}
       className={cn(
         'rounded-lg border bg-card transition-colors hover:bg-accent/5',
-        focused ? 'border-primary ring-1 ring-primary' : 'border-border'
+        focused ? 'border-primary ring-1 ring-primary motion-safe:animate-pulse' : 'border-border'
       )}
     >
       <button onClick={toggle} className="flex w-full items-center gap-3 px-4 py-3 text-left">
@@ -185,63 +214,75 @@ function NoteCard({
         )}
       </button>
 
-      {expanded && (
-        <div className="space-y-2 border-t border-border px-4 py-3">
-          {note.tags.length > 0 && (
-            <div className="flex flex-wrap items-center gap-1">
-              <Tag className="h-3 w-3 text-muted-foreground" />
-              {note.tags.map((tag) => (
-                <span key={tag} className="rounded-md bg-muted px-2 py-0.5 text-xs font-mono text-muted-foreground">{tag}</span>
-              ))}
+      <div
+        data-testid={`memory-note-details-${note.id}`}
+        aria-hidden={!expanded}
+        inert={!expanded}
+        className={cn(
+          'grid overflow-hidden transition-[grid-template-rows,opacity] duration-200 ease-out motion-reduce:transition-none',
+          expanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+        )}
+      >
+        <div className="min-h-0 overflow-hidden">
+          {detailsMounted && (
+            <div className="space-y-2 border-t border-border px-4 py-3">
+              {note.tags.length > 0 && (
+                <div className="flex flex-wrap items-center gap-1">
+                  <Tag className="h-3 w-3 text-muted-foreground" />
+                  {note.tags.map((tag) => (
+                    <span key={tag} className="rounded-md bg-muted px-2 py-0.5 text-xs font-mono text-muted-foreground">{tag}</span>
+                  ))}
+                </div>
+              )}
+
+              {note.links.length > 0 && (
+                <div className="flex flex-wrap items-center gap-1">
+                  <Link2 className="h-3 w-3 text-muted-foreground" />
+                  <span className="mr-1 text-xs text-muted-foreground">{t('memory.relations', 'Related')}</span>
+                  {note.links.map((link) => (
+                    <button
+                      key={link}
+                      onClick={() => onNavigate(`${note.sourceId}:${link}`)}
+                      className="rounded-md border border-border px-2 py-0.5 text-xs font-mono text-primary transition-colors hover:bg-accent"
+                    >
+                      {link}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {note.missing ? (
+                <div className="flex items-start gap-2 rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs leading-5 text-amber-700 dark:text-amber-300">
+                  <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                  <span>{t('memory.fileMissingBody', 'The indexed note file is missing on disk.')}</span>
+                </div>
+              ) : loadingBody ? (
+                <div className="flex items-center gap-2 text-xs text-muted-foreground"><Loader2 className="h-3 w-3 animate-spin" />{t('common.loading')}</div>
+              ) : body ? (
+                <pre className="max-h-80 overflow-auto whitespace-pre-wrap rounded-md bg-muted/40 p-3 text-xs leading-5 text-foreground">{body}</pre>
+              ) : null}
+
+              <div className="flex items-center justify-between gap-2 pt-1">
+                <span title={note.path} className="truncate text-xs text-muted-foreground font-mono">{truncatePath(note.path)}</span>
+                <div className="flex shrink-0 gap-2">
+                  {!note.missing && body !== '' && (
+                    <button onClick={viewRaw} className="flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-accent">
+                      <Eye className="h-3 w-3" />
+                      {t('common.viewRaw')}
+                    </button>
+                  )}
+                  {!note.missing && (
+                    <button onClick={showInExplorer} className="flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-accent">
+                      <FolderOpen className="h-3 w-3" />
+                      {t('instructions.showInExplorer')}
+                    </button>
+                  )}
+                </div>
+              </div>
             </div>
           )}
-
-          {note.links.length > 0 && (
-            <div className="flex flex-wrap items-center gap-1">
-              <Link2 className="h-3 w-3 text-muted-foreground" />
-              <span className="mr-1 text-xs text-muted-foreground">{t('memory.relations', 'Related')}</span>
-              {note.links.map((link) => (
-                <button
-                  key={link}
-                  onClick={() => onNavigate(`${note.sourceId}:${link}`)}
-                  className="rounded-md border border-border px-2 py-0.5 text-xs font-mono text-primary transition-colors hover:bg-accent"
-                >
-                  {link}
-                </button>
-              ))}
-            </div>
-          )}
-
-          {note.missing ? (
-            <div className="flex items-start gap-2 rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs leading-5 text-amber-700 dark:text-amber-300">
-              <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-              <span>{t('memory.fileMissingBody', 'The indexed note file is missing on disk.')}</span>
-            </div>
-          ) : loadingBody ? (
-            <div className="flex items-center gap-2 text-xs text-muted-foreground"><Loader2 className="h-3 w-3 animate-spin" />{t('common.loading')}</div>
-          ) : body ? (
-            <pre className="max-h-80 overflow-auto whitespace-pre-wrap rounded-md bg-muted/40 p-3 text-xs leading-5 text-foreground">{body}</pre>
-          ) : null}
-
-          <div className="flex items-center justify-between gap-2 pt-1">
-            <span title={note.path} className="truncate text-xs text-muted-foreground font-mono">{truncatePath(note.path)}</span>
-            <div className="flex shrink-0 gap-2">
-              {!note.missing && body !== '' && (
-                <button onClick={viewRaw} className="flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-accent">
-                  <Eye className="h-3 w-3" />
-                  {t('common.viewRaw')}
-                </button>
-              )}
-              {!note.missing && (
-                <button onClick={showInExplorer} className="flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-accent">
-                  <FolderOpen className="h-3 w-3" />
-                  {t('instructions.showInExplorer')}
-                </button>
-              )}
-            </div>
-          </div>
         </div>
-      )}
+      </div>
     </div>
   )
 }
@@ -305,6 +346,7 @@ export function MemoryView(): React.ReactElement {
   const [activeSource, setActiveSource] = useState('all')
   const [search, setSearch] = useState('')
   const [focusId, setFocusId] = useState<string | null>(null)
+  const focusTimerRef = useRef<number | null>(null)
 
   const notes = useMemo(() => {
     const q = search.trim().toLowerCase()
@@ -334,9 +376,25 @@ export function MemoryView(): React.ReactElement {
 
   const navigate = useCallback((globalId: string) => {
     // Clear filters so the target is guaranteed visible, then focus it.
+    if (focusTimerRef.current !== null) {
+      window.clearTimeout(focusTimerRef.current)
+      focusTimerRef.current = null
+    }
     setSearch('')
     setActiveSource('all')
     setFocusId(globalId)
+    focusTimerRef.current = window.setTimeout(() => {
+      setFocusId((current) => (current === globalId ? null : current))
+      focusTimerRef.current = null
+    }, FOCUS_PULSE_MS)
+  }, [])
+
+  useEffect(() => {
+    return () => {
+      if (focusTimerRef.current !== null) {
+        window.clearTimeout(focusTimerRef.current)
+      }
+    }
   }, [])
 
   if (loading) {
