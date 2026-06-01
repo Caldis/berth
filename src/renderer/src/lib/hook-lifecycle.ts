@@ -32,8 +32,10 @@ export interface HookLifecycleStage {
   id: HookLifecycleStageId
   order: number
   titleKey: string
+  summaryKey: string
   behaviorKey: string
   guideKey: string
+  recommendationKeys: string[]
   supports: Record<HookLifecycleAgent, HookAgentStageSupport>
 }
 
@@ -92,11 +94,21 @@ const noSupport = (agent: HookLifecycleAgent, stageId: HookLifecycleStageId): Ho
   limitationKeys: [`capabilities.hooks.limitations.${stageId}.${agent}.unsupported`]
 })
 
+const stageCopy = (stageId: HookLifecycleStageId): Pick<HookLifecycleStage, 'summaryKey' | 'recommendationKeys'> => ({
+  summaryKey: `capabilities.hooks.stage.${stageId}.summary`,
+  recommendationKeys: [
+    `capabilities.hooks.recommendations.${stageId}.primary`,
+    `capabilities.hooks.recommendations.${stageId}.secondary`,
+    `capabilities.hooks.recommendations.${stageId}.tertiary`
+  ]
+})
+
 export const hookLifecycleStages: HookLifecycleStage[] = [
   {
     id: 'session-start',
     order: 1,
     titleKey: 'capabilities.hooks.stage.session-start.title',
+    ...stageCopy('session-start'),
     behaviorKey: 'capabilities.hooks.stage.session-start.behavior',
     guideKey: 'capabilities.hooks.stage.session-start.guide',
     supports: {
@@ -120,6 +132,7 @@ export const hookLifecycleStages: HookLifecycleStage[] = [
     id: 'user-input',
     order: 2,
     titleKey: 'capabilities.hooks.stage.user-input.title',
+    ...stageCopy('user-input'),
     behaviorKey: 'capabilities.hooks.stage.user-input.behavior',
     guideKey: 'capabilities.hooks.stage.user-input.guide',
     supports: {
@@ -143,6 +156,7 @@ export const hookLifecycleStages: HookLifecycleStage[] = [
     id: 'tool-before',
     order: 3,
     titleKey: 'capabilities.hooks.stage.tool-before.title',
+    ...stageCopy('tool-before'),
     behaviorKey: 'capabilities.hooks.stage.tool-before.behavior',
     guideKey: 'capabilities.hooks.stage.tool-before.guide',
     supports: {
@@ -166,6 +180,7 @@ export const hookLifecycleStages: HookLifecycleStage[] = [
     id: 'permission',
     order: 4,
     titleKey: 'capabilities.hooks.stage.permission.title',
+    ...stageCopy('permission'),
     behaviorKey: 'capabilities.hooks.stage.permission.behavior',
     guideKey: 'capabilities.hooks.stage.permission.guide',
     supports: {
@@ -189,6 +204,7 @@ export const hookLifecycleStages: HookLifecycleStage[] = [
     id: 'tool-after',
     order: 5,
     titleKey: 'capabilities.hooks.stage.tool-after.title',
+    ...stageCopy('tool-after'),
     behaviorKey: 'capabilities.hooks.stage.tool-after.behavior',
     guideKey: 'capabilities.hooks.stage.tool-after.guide',
     supports: {
@@ -212,6 +228,7 @@ export const hookLifecycleStages: HookLifecycleStage[] = [
     id: 'subagent',
     order: 6,
     titleKey: 'capabilities.hooks.stage.subagent.title',
+    ...stageCopy('subagent'),
     behaviorKey: 'capabilities.hooks.stage.subagent.behavior',
     guideKey: 'capabilities.hooks.stage.subagent.guide',
     supports: {
@@ -235,6 +252,7 @@ export const hookLifecycleStages: HookLifecycleStage[] = [
     id: 'context-maintenance',
     order: 7,
     titleKey: 'capabilities.hooks.stage.context-maintenance.title',
+    ...stageCopy('context-maintenance'),
     behaviorKey: 'capabilities.hooks.stage.context-maintenance.behavior',
     guideKey: 'capabilities.hooks.stage.context-maintenance.guide',
     supports: {
@@ -258,6 +276,7 @@ export const hookLifecycleStages: HookLifecycleStage[] = [
     id: 'session-stop',
     order: 8,
     titleKey: 'capabilities.hooks.stage.session-stop.title',
+    ...stageCopy('session-stop'),
     behaviorKey: 'capabilities.hooks.stage.session-stop.behavior',
     guideKey: 'capabilities.hooks.stage.session-stop.guide',
     supports: {
@@ -281,6 +300,7 @@ export const hookLifecycleStages: HookLifecycleStage[] = [
     id: 'environment',
     order: 9,
     titleKey: 'capabilities.hooks.stage.environment.title',
+    ...stageCopy('environment'),
     behaviorKey: 'capabilities.hooks.stage.environment.behavior',
     guideKey: 'capabilities.hooks.stage.environment.guide',
     supports: {

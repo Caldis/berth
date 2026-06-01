@@ -115,7 +115,7 @@ export function HooksLifecycleView({ assets, agentView, search, scope }: HooksLi
                     key={group.id}
                     type="button"
                     onClick={() => scrollToStage(group.id)}
-                    className="flex min-w-[210px] items-center gap-2 rounded-md px-2 py-2 text-left transition-colors hover:bg-accent lg:w-full lg:min-w-0"
+                    className="flex min-w-[230px] items-center gap-2 rounded-md px-2 py-2 text-left transition-colors hover:bg-accent lg:w-full lg:min-w-0"
                   >
                     <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded bg-muted text-[10px] font-semibold text-muted-foreground">
                       {String(index + 1).padStart(2, '0')}
@@ -124,9 +124,15 @@ export function HooksLifecycleView({ assets, agentView, search, scope }: HooksLi
                       <span className="block truncate text-xs font-medium text-foreground">
                         {group.stage ? t(group.stage.titleKey) : t('capabilities.hooks.unknown.title')}
                       </span>
-                      <span className="block text-[11px] text-muted-foreground">
-                        {t('capabilities.hooks.hookCount', { count: group.hooks.length })}
+                      <span className="block truncate text-[11px] text-muted-foreground">
+                        {group.stage ? t(group.stage.summaryKey) : t('capabilities.hooks.unknown.body')}
                       </span>
+                    </span>
+                    <span
+                      title={t('capabilities.hooks.hookCount', { count: group.hooks.length })}
+                      className="ml-auto flex h-5 min-w-5 shrink-0 items-center justify-center rounded-md border border-border bg-background px-1.5 text-[11px] font-semibold text-muted-foreground"
+                    >
+                      {group.hooks.length}
                     </span>
                   </button>
                 ))}
@@ -377,7 +383,7 @@ function HookStageSection({ group, agentView }: { group: HookStageGroup; agentVi
             {t('capabilities.hooks.hookCount', { count: group.hooks.length })}
           </span>
         </div>
-        <p className="mt-3 max-w-[72ch] text-sm leading-6 text-foreground">{t(group.stage.guideKey)}</p>
+        <HookStageRecommendations recommendationKeys={group.stage.recommendationKeys} />
       </div>
 
       <div className="space-y-4 px-4 py-4">
@@ -390,6 +396,21 @@ function HookStageSection({ group, agentView }: { group: HookStageGroup; agentVi
         <HookEventList group={group} agentView={agentView} />
       </div>
     </section>
+  )
+}
+
+function HookStageRecommendations({ recommendationKeys }: { recommendationKeys: string[] }): React.ReactElement {
+  const { t } = useTranslation()
+
+  return (
+    <div className="mt-3 flex flex-wrap items-center gap-1.5">
+      <span className="text-xs font-medium text-foreground">{t('capabilities.hooks.recommendations.title')}</span>
+      {recommendationKeys.map((key) => (
+        <span key={key} className="rounded-md border border-border bg-muted/40 px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+          {t(key)}
+        </span>
+      ))}
+    </div>
   )
 }
 

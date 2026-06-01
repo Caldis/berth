@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import React from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import '../../src/renderer/src/i18n'
@@ -232,6 +232,27 @@ describe('HooksLifecycleView', () => {
     expect(sidebar.className).toContain('lg:top-4')
     expect(sidebar.className).toContain('lg:max-h-[calc(100vh-2rem)]')
     expect(sidebar.className).toContain('lg:overflow-y-auto')
+  })
+
+  it('shows sidebar stage summaries, numeric count tags, and structured recommendations', async () => {
+    renderHooks('all', [
+      hookAsset('claude-pre', 'claude-code', 'PreToolUse'),
+      hookAsset('codex-stop', 'codex', 'Stop')
+    ])
+    await waitForHookHealthIdle()
+
+    const sidebar = screen.getByLabelText('Lifecycle')
+    const toolBeforeButton = within(sidebar).getByRole('button', { name: /Before a tool runs/ })
+
+    expect(within(toolBeforeButton).getByText('Guardrails before tool side effects')).toBeInTheDocument()
+    expect(within(toolBeforeButton).getByText('1')).toBeInTheDocument()
+    expect(within(toolBeforeButton).queryByText('1 hooks')).not.toBeInTheDocument()
+
+    expect(screen.getAllByText('Suggested actions:').length).toBeGreaterThan(0)
+    expect(screen.getByText('Check command')).toBeInTheDocument()
+    expect(screen.getByText('Limit side effects')).toBeInTheDocument()
+    expect(screen.getByText('Log tool intent')).toBeInTheDocument()
+    expect(screen.queryByText(/Use this stage for guardrails/)).not.toBeInTheDocument()
   })
 
   it('summarizes visible hook health checks and jumps to the details', async () => {

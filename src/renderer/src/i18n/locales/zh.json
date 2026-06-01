@@ -670,48 +670,105 @@
       "stage": {
         "session-start": {
           "title": "会话开始",
+          "summary": "初始化上下文和启动状态",
           "behavior": "Agent 打开或恢复一段对话, 并准备第一次要使用的上下文。",
           "guide": "这个阶段适合做初始化: 注入上下文、检查本地状态, 或在 Agent 开始行动前准备规则。"
         },
         "user-input": {
           "title": "用户输入进入",
+          "summary": "提示进入模型前的校验点",
           "behavior": "你的提示已经提交, 但 Agent 还没有开始基于它进行推理。",
           "guide": "这个阶段适合在提示进入模型之前做校验、补充上下文或拦截。"
         },
         "tool-before": {
           "title": "工具运行前",
+          "summary": "工具产生副作用前的检查点",
           "behavior": "Agent 准备运行 shell、修改文件, 或调用受支持的外部工具。",
           "guide": "这个阶段适合做安全检查、记录日志, 或在工具产生副作用前加一道确认。"
         },
         "permission": {
           "title": "请求权限",
+          "summary": "审批、拒绝和结构化询问",
           "behavior": "Agent 需要批准或明确回答, 才能继续执行。",
           "guide": "这个阶段适合检查审批请求, 让敏感动作保持可见。"
         },
         "tool-after": {
           "title": "工具运行后",
+          "summary": "工具结果和批量完成",
           "behavior": "工具已经返回输出、成功、失败, 或作为一批工具调用完成。",
           "guide": "这个阶段适合检查结果、收集日志, 或要求 Agent 根据工具输出继续处理。"
         },
         "subagent": {
           "title": "子 Agent 工作",
+          "summary": "委派工作的开始与停止",
           "behavior": "主 Agent 启动、观察或停止委派出去的工作。",
           "guide": "这个阶段适合给子 Agent 传上下文、审计委派结果, 或在还需要继续时让它不要停止。"
         },
         "context-maintenance": {
           "title": "上下文维护",
+          "summary": "压缩、指令和本地变化",
           "behavior": "Agent 压缩对话上下文, 或观察配置、指令、目录、文件变化。",
           "guide": "这个阶段适合保留重要上下文, 或在工作环境变化时做响应。"
         },
         "session-stop": {
           "title": "Agent 停止",
+          "summary": "回合、运行和会话结束",
           "behavior": "Agent 即将结束当前回合、停止运行、未能正常停止, 或结束会话。",
           "guide": "这个阶段适合做最后检查、生成摘要, 或在 Agent 空闲前追加后续指令。"
         },
         "environment": {
           "title": "环境事件",
+          "summary": "通知和工作区外围事件",
           "behavior": "外围工作区发生变化, worktree 被创建或移除, 或 Agent 发出通知。",
           "guide": "这个阶段适合处理普通提示和工具循环之外的工作区事件。"
+        }
+      },
+      "recommendations": {
+        "title": "建议操作:",
+        "session-start": {
+          "primary": "注入上下文",
+          "secondary": "检查文件状态",
+          "tertiary": "准备行动规则"
+        },
+        "user-input": {
+          "primary": "校验提示",
+          "secondary": "补充上下文",
+          "tertiary": "拦截风险请求"
+        },
+        "tool-before": {
+          "primary": "检查命令",
+          "secondary": "限制副作用",
+          "tertiary": "记录工具意图"
+        },
+        "permission": {
+          "primary": "审查权限",
+          "secondary": "标记敏感动作",
+          "tertiary": "要求人工确认"
+        },
+        "tool-after": {
+          "primary": "检查输出",
+          "secondary": "收集日志",
+          "tertiary": "触发后续处理"
+        },
+        "subagent": {
+          "primary": "分发上下文",
+          "secondary": "审查结果",
+          "tertiary": "继续未完成工作"
+        },
+        "context-maintenance": {
+          "primary": "保留摘要",
+          "secondary": "同步规则",
+          "tertiary": "响应文件变化"
+        },
+        "session-stop": {
+          "primary": "运行收尾检查",
+          "secondary": "生成摘要",
+          "tertiary": "安排后续指令"
+        },
+        "environment": {
+          "primary": "处理通知",
+          "secondary": "管理 worktree",
+          "tertiary": "观察外部变化"
         }
       },
       "agentSupport": {

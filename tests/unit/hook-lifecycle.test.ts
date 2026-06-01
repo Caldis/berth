@@ -6,7 +6,8 @@ import {
   getStageForEvent,
   getVisibleHookStages,
   getVisibleStageSupport,
-  groupHookAssetsByStage
+  groupHookAssetsByStage,
+  hookLifecycleStages
 } from '../../src/renderer/src/lib/hook-lifecycle'
 
 function hookAsset(overrides: Partial<Asset> & { id: string; agentId: string; eventType?: string }): Asset {
@@ -26,6 +27,66 @@ function hookAsset(overrides: Partial<Asset> & { id: string; agentId: string; ev
 }
 
 describe('hook lifecycle model', () => {
+  it('keeps Claude Code and Codex official hook events classified by lifecycle stage', () => {
+    const officialClaudeEvents = [
+      'ConfigChange',
+      'CwdChanged',
+      'Elicitation',
+      'ElicitationResult',
+      'FileChanged',
+      'InstructionsLoaded',
+      'Notification',
+      'PermissionDenied',
+      'PermissionRequest',
+      'PostCompact',
+      'PostToolBatch',
+      'PostToolUse',
+      'PostToolUseFailure',
+      'PreCompact',
+      'PreToolUse',
+      'SessionEnd',
+      'SessionStart',
+      'Setup',
+      'Stop',
+      'StopFailure',
+      'SubagentStart',
+      'SubagentStop',
+      'TaskCompleted',
+      'TaskCreated',
+      'TeammateIdle',
+      'UserPromptExpansion',
+      'UserPromptSubmit',
+      'WorktreeCreate',
+      'WorktreeRemove'
+    ]
+    const officialCodexEvents = [
+      'PermissionRequest',
+      'PostCompact',
+      'PostToolUse',
+      'PreCompact',
+      'PreToolUse',
+      'SessionStart',
+      'Stop',
+      'SubagentStart',
+      'SubagentStop',
+      'UserPromptSubmit'
+    ]
+
+    expect(eventsForAgent('claude')).toEqual(officialClaudeEvents)
+    expect(eventsForAgent('codex')).toEqual(officialCodexEvents)
+    expect(getStageForEvent('InstructionsLoaded')?.id).toBe('context-maintenance')
+    expect(getStageForEvent('ElicitationResult')?.id).toBe('permission')
+    expect(getStageForEvent('WorktreeRemove')?.id).toBe('environment')
+  })
+
+  it('keeps each lifecycle stage ready for sidebar summaries and recommended actions', () => {
+    for (const stage of hookLifecycleStages) {
+      expect(stage.summaryKey).toBe(`capabilities.hooks.stage.${stage.id}.summary`)
+      expect(stage.recommendationKeys).toHaveLength(3)
+      expect(stage.recommendationKeys.every((key) => key.startsWith(`capabilities.hooks.recommendations.${stage.id}.`))).toBe(true)
+    }
+  })
+
   it('keeps all stages visible in all view', () => {
     expect(getVisibleHookStages('all').map((stage) => stage.id)).toEqual([
       'session-start',
@@ -190,3 +251,7 @@ describe('hook lifecycle model', () => {
     ])
   })
 })
+
+function eventsForAgent(agent: 'claude' | 'codex'): string[] {
+  return Array.from(new Set(hookLifecycleStages.flatMap((stage) => stage.supports[agent].events.map((event) => event.eventType)))).sort()
+}

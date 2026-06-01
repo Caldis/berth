@@ -670,48 +670,105 @@
       "stage": {
         "session-start": {
           "title": "Session starts",
+          "summary": "Initial context and startup state",
           "behavior": "The agent opens or resumes a conversation and prepares the first context it will use.",
           "guide": "Use this stage for setup work: inject context, check local state, or prepare rules before the agent starts acting."
         },
         "user-input": {
           "title": "User input arrives",
+          "summary": "Prompt checks before model input",
           "behavior": "Your prompt has been submitted, but the agent has not started reasoning over it yet.",
           "guide": "Use this stage to validate or enrich user input before it reaches the model."
         },
         "tool-before": {
           "title": "Before a tool runs",
+          "summary": "Guardrails before tool side effects",
           "behavior": "The agent is about to run a shell command, edit files, or call a supported external tool.",
           "guide": "Use this stage for guardrails, logging, or checks that need to happen before a tool can make changes."
         },
         "permission": {
           "title": "Permission is requested",
+          "summary": "Approval, denial, and elicitation",
           "behavior": "The agent needs approval or an explicit answer before it can continue.",
           "guide": "Use this stage to inspect approval requests and keep sensitive actions visible."
         },
         "tool-after": {
           "title": "After a tool runs",
+          "summary": "Tool results and batch completion",
           "behavior": "A tool has returned output, succeeded, failed, or finished as part of a batch.",
           "guide": "Use this stage to review results, capture logs, or ask the agent to react to tool output."
         },
         "subagent": {
           "title": "Subagent work",
+          "summary": "Delegated work start and stop",
           "behavior": "The main agent starts, monitors, or stops delegated work.",
           "guide": "Use this stage to pass context to subagents, audit delegated work, or keep them running when more work is needed."
         },
         "context-maintenance": {
           "title": "Context maintenance",
+          "summary": "Compaction, instructions, and local changes",
           "behavior": "The agent compacts conversation context or observes configuration, instruction, directory, or file changes.",
           "guide": "Use this stage to preserve important context and respond when the working environment changes."
         },
         "session-stop": {
           "title": "Agent stops",
+          "summary": "Turn, run, and session ending",
           "behavior": "The agent is about to finish a turn, stop a run, fail to stop cleanly, or end the session.",
           "guide": "Use this stage for final checks, summaries, or follow-up instructions before the agent becomes idle."
         },
         "environment": {
           "title": "Environment events",
+          "summary": "Notifications and workspace events",
           "behavior": "The surrounding workspace changes, a worktree is created or removed, or the agent sends a notification.",
           "guide": "Use this stage for workspace-level events that are outside the normal prompt and tool loop."
+        }
+      },
+      "recommendations": {
+        "title": "Suggested actions:",
+        "session-start": {
+          "primary": "Inject context",
+          "secondary": "Check file state",
+          "tertiary": "Prepare action rules"
+        },
+        "user-input": {
+          "primary": "Validate prompt",
+          "secondary": "Add context",
+          "tertiary": "Block risky request"
+        },
+        "tool-before": {
+          "primary": "Check command",
+          "secondary": "Limit side effects",
+          "tertiary": "Log tool intent"
+        },
+        "permission": {
+          "primary": "Review approval",
+          "secondary": "Mark sensitive action",
+          "tertiary": "Require confirmation"
+        },
+        "tool-after": {
+          "primary": "Inspect output",
+          "secondary": "Collect logs",
+          "tertiary": "Trigger follow-up"
+        },
+        "subagent": {
+          "primary": "Pass context",
+          "secondary": "Review result",
+          "tertiary": "Continue unfinished work"
+        },
+        "context-maintenance": {
+          "primary": "Preserve summary",
+          "secondary": "Sync rules",
+          "tertiary": "React to file changes"
+        },
+        "session-stop": {
+          "primary": "Run final check",
+          "secondary": "Write summary",
+          "tertiary": "Queue follow-up"
+        },
+        "environment": {
+          "primary": "Handle notification",
+          "secondary": "Manage worktree",
+          "tertiary": "Watch external changes"
         }
       },
       "agentSupport": {
