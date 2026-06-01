@@ -79,3 +79,12 @@ verify 不通过项作为新任务追加于此, phase 退回 implement。
   - feedback: hover tips 和统计 tag 说明不再做悬浮提示, 统一放入 `[详情]` 展开内容里平铺展示。
   - tests: `tests/renderer/feature-guide-panel.test.tsx`, `tests/renderer/capabilities-guidance.test.tsx`, `tests/renderer/instructions-guidance.test.tsx`, `tests/renderer/sessions-pages.test.tsx`
   - verify: 旧实现下 feature guide 和 capabilities guidance 新断言失败; 实现后 feature guide 3 项通过, capabilities guidance 2 项通过, instructions guidance 2 项通过, sessions pages 16 项通过; `pnpm typecheck:web` 通过; `pnpm harness:check` 通过
+
+## verify 回写 2026-06-01 details flat guide
+- `pnpm lint` 通过
+- `pnpm typecheck` 通过
+- `pnpm test` 50 个文件 / 329 项通过; 仍有既有 Recharts 0 宽高 warning, 不影响结果
+- `pnpm harness:check` 通过
+- Electron 视觉验收: 先执行 `pnpm dev:agent guard before --id shared-guide-details-verify --json`, 记录用户 dev PID 226164 和 Electron 主进程 PID 493864; 手动启动独立实例 `shared-guide-details-remote`, 带 `--remote-debugging-port=9337`; CDP 进入能力 Hooks 页面, 断言默认状态下 `触发点` 标题、说明正文和统计解释均不可见, 点击 `详情` 后 `触发点`、说明正文、`统计口径` 和资产统计解释均可见。
+- 截图证据: 用真实 Electron 主进程 PID 62580 的窗口句柄 + DWM bounds + `PrintWindow` 截图, `C:\Users\mail\AppData\Local\Temp\berth-shared-guide-details-expanded-printwindow.png` 展示详情区平铺后的提示说明和统计口径。
+- 清理: 按精确 owner PID 停止 `shared-guide-details-remote` 进程树; `pnpm dev:agent guard after --id shared-guide-details-verify --json` 返回 `guard-ok`, 用户 dev 进程未丢失。
