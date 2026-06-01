@@ -2,7 +2,7 @@
 task: 2026-06-01-gh-11-claude-hook-soft-disable
 task_id: GH-11
 type: feature
-phase: implement
+phase: verify
 created: 2026-06-01
 issue:
   number: 11

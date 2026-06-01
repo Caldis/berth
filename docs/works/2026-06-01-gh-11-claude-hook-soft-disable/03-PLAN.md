@@ -22,7 +22,7 @@
   - [x] sidecar 解析失败时转为 scanner error, 不中断其他资产扫描。
   - verify: parser / scanner 目标单测。
 
-- [ ] 对齐 Codex hook identity
+- [x] 对齐 Codex hook identity
   - [x] Codex hook asset 增加 `scenarioHash`、`hookHash`、`occurrenceCount`、`toggleStrategy`。
   - [x] `[hooks.state]` 新写入 stable key: `codex:${scenarioHash}:${hookHash}`。
   - [x] parser 兼容读取旧 index key 和新 stable key, 新 stable key 优先。
@@ -30,7 +30,7 @@
   - [x] hooks.json 与 inline hooks 出现同类 hook 时写入 `equivalentSources`: not implemented in GH-11, 拆到 `docs/issues/2026-06-02-IMPROVEMENT-hook-source-equivalence.md`。
   - verify: `tests/unit/codex-config-parser.test.ts` + `tests/unit/hook-lifecycle.test.ts`。
 
-- [ ] 实现 Claude Code 单 Hook 软禁用
+- [x] 实现 Claude Code 单 Hook 软禁用
   - [x] 在 `hooks-manager.ts#setHookEnabled()` 中分发 Codex 与 Claude Code。
   - [x] 实现 Claude user settings 路径校验、hookKey 校验、managed 拒绝。
   - [x] 实现 per-file mutex 和 scenario 内 hook 子项 hash 匹配。
@@ -44,7 +44,7 @@
   - [x] 覆盖同 scenario 下重复 hookHash、同 matcher group 多组、目标 hook 已手动修改、active 已手动恢复、外部文件变更、sidecar 损坏等分支: not implemented in GH-11, 拆到 `docs/issues/2026-06-02-IMPROVEMENT-hook-toggle-conflict-recovery.md`。
   - verify: `tests/unit/hooks-manager.test.ts`。
 
-- [ ] 调整 lifecycle 与 Hooks 页面
+- [x] 调整 lifecycle 与 Hooks 页面
   - [x] Claude user hook 从 unavailable 改为 confirmation action。
   - [x] 删除 renderer 的 codex-only toggle guard, 改按 `toggleStrategy` 判断。
   - [x] 增加 Claude soft disable / restore 确认文案。
@@ -54,14 +54,14 @@
   - [x] disabled 行显示为 Berth 恢复点状态, 不新增大块提示。
   - verify: `tests/unit/hook-lifecycle.test.ts` + `tests/renderer/hooks-lifecycle-view.test.tsx`。
 
-- [ ] 引入 Agent Capability Plugin 的 hooks 切片
+- [x] 引入 Agent Capability Plugin 的 hooks 切片
   - [x] 新增内部 `AgentHookCapabilityPlugin` / hook action descriptor 类型。
   - [x] Claude/Codex 作为内置 hook Plugin, renderer 不再写死 agentId。
   - [x] `hooks-manager.ts` 通过 hook plugin registry 分发 hook 操作。
   - [x] 不实现外部 plugin loader; 只保留后续 manifest 方向。
   - verify: `tests/unit/hooks-manager.test.ts` + `tests/unit/engine-scanner.test.ts`。
 
-- [ ] 文案与 i18n
+- [x] 文案与 i18n
   - [x] 替换旧 `claudeNoSingleHookToggle` 展示语义。
   - [x] 增加 user-only、soft-disable、restore 文案。
   - [x] 增加 stale conflict / 恢复点异常文案。
@@ -85,12 +85,12 @@
   - [x] Hook 操作恢复中心记录为新功能 PRD: `docs/issues/2026-06-02-FEATURE-hook-operation-recovery-center.md`。
   - verify: `pnpm harness:check`。
 
-- [ ] 总体验证
-  - [x] `pnpm test -- tests/unit/hooks-manager.test.ts tests/unit/claude-scanner.test.ts tests/unit/hook-lifecycle.test.ts tests/renderer/hooks-lifecycle-view.test.tsx`
-  - [x] `pnpm typecheck:node`
-  - [x] `pnpm typecheck:web`
-  - [x] `pnpm harness:check`
-  - [x] 若 Hooks 页面视觉有明显变化, 运行 Electron 实测截图。tests: not needed - 本次只调整行内启停逻辑和确认文案, 没有改页面布局。
+- [x] 总体验证
+  - [x] `pnpm test -- tests/unit/hooks-manager.test.ts tests/unit/claude-scanner.test.ts tests/unit/hook-lifecycle.test.ts tests/renderer/hooks-lifecycle-view.test.tsx` 4 files / 50 tests passed。
+  - [x] `pnpm typecheck:node` 通过。
+  - [x] `pnpm typecheck:web` 通过。
+  - [x] `pnpm harness:check` 通过。
+  - [x] Electron 视觉验收: `pnpm dev:agent guard before --id hooks-row-polish-verify --json` 记录用户 dev PID 226164 和 Electron 主进程 PID 267360; 启动独立实例 `hooks-row-polish-remote`, 带 `--remote-debugging-port=9339`; CDP 进入 Hooks 页面, 断言页面有 3 个 `JSON 原文` 入口、3 个 JSON copy 按钮、3 个 hook type tag; renderer 截图 `C:\Users\mail\AppData\Local\Temp\berth-hooks-row-polish-visual.png` 确认 copy icon 没有挤压行内布局; 按 owner PID 512836 停止实例树; `pnpm dev:agent guard after --id hooks-row-polish-verify --json` 返回 `guard-ok`, 用户 dev 未丢失。
 
 ## verify 回写
 verify 不通过项作为新任务追加于此, phase 退回 implement。
