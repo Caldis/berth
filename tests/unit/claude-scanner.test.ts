@@ -58,11 +58,56 @@ describe('Claude Code scanner', () => {
     expect(hooks).toHaveLength(1)
     expect(hooks[0].name).toBe('echo pre-tool')
     expect(hooks[0].meta).toMatchObject({
+      provider: 'claude-code',
       event: 'PreToolUse',
       eventType: 'PreToolUse',
       matcher: 'Bash',
       command: 'echo pre-tool',
-      hookType: 'command'
+      hookType: 'command',
+      enabled: true,
+      effectiveEnabled: true,
+      canToggleHook: true,
+      toggleStrategy: 'soft-remove',
+      stateSourcePath: settingsPath,
+      source: settingsPath,
+      occurrenceCount: 1,
+      occurrences: [{ handlerIndex: 0, hookIndex: 0, mode: 'nested' }]
+    })
+    expect(hooks[0].meta.hookKey).toEqual(expect.stringMatching(/^claude-code:/))
+    expect(hooks[0].meta.scenarioHash).toEqual(expect.any(String))
+    expect(hooks[0].meta.hookHash).toEqual(expect.any(String))
+  })
+
+  it('merges duplicate Claude hook child entries in the same scenario', () => {
+    root = mkdtempSync(join(tmpdir(), 'berth-claude-hook-duplicates-'))
+    const settingsPath = join(root, 'settings.json')
+    writeFileSync(
+      settingsPath,
+      JSON.stringify({
+        hooks: {
+          SessionStart: [
+            {
+              matcher: 'startup',
+              hooks: [
+                { type: 'command', command: 'python hook.py' },
+                { command: 'python hook.py', type: 'command' }
+              ]
+            }
+          ]
+        }
+      })
+    )
+
+    const hooks = parseHooks(settingsPath, 'user')
+
+    expect(hooks).toHaveLength(1)
+    expect(hooks[0].meta).toMatchObject({
+      command: 'python hook.py',
+      occurrenceCount: 2,
+      occurrences: [
+        { handlerIndex: 0, hookIndex: 0, mode: 'nested' },
+        { handlerIndex: 0, hookIndex: 1, mode: 'nested' }
+      ]
     })
   })
 

@@ -62,15 +62,34 @@ describe('Codex config parser', () => {
       name: 'python hook.py',
       path: configPath,
       meta: {
+        provider: 'codex',
         event: 'PreToolUse',
+        eventType: 'PreToolUse',
         matcher: 'Bash',
         command: 'python hook.py',
         commandWindows: 'py hook.py',
         hookType: 'command',
         enabled: true,
-        entryPaths: [hookPath]
+        effectiveEnabled: true,
+        canToggleHook: true,
+        toggleStrategy: 'native-state',
+        stateSourcePath: configPath,
+        entryPaths: [hookPath],
+        occurrenceCount: 1,
+        occurrences: [
+          expect.objectContaining({
+            handlerIndex: 0,
+            hookIndex: 0,
+            mode: 'nested'
+          })
+        ],
+        source: configPath
       }
     })
+    expect(assets[1].meta.hookKey).toEqual(expect.stringMatching(/^codex:/))
+    expect(assets[1].meta.legacyHookKey).toBe(`${configPath}:pre_tool_use:0:0`)
+    expect(assets[1].meta.scenarioHash).toEqual(expect.any(String))
+    expect(assets[1].meta.hookHash).toEqual(expect.any(String))
   })
 
   it('parses hooks.json and records skipped Codex hook handlers', () => {
@@ -113,6 +132,8 @@ describe('Codex config parser', () => {
         hookType: 'command',
         managed: true,
         enabled: false,
+        effectiveEnabled: false,
+        toggleStrategy: 'read-only',
         entryPaths: [stopHookPath]
       }
     })
@@ -177,8 +198,10 @@ describe('Codex config parser', () => {
     expect(hooks[0]).toMatchObject({
       meta: {
         eventType: 'PreToolUse',
-        hookKey,
+        hookKey: expect.stringMatching(/^codex:/),
+        legacyHookKey: hookKey,
         enabled: false,
+        effectiveEnabled: false,
         canToggleHook: true,
         stateSourcePath: configPath
       }
@@ -209,10 +232,48 @@ describe('Codex config parser', () => {
 
     expect(hooks).toHaveLength(1)
     expect(hooks[0].meta).toMatchObject({
-      hookKey,
+      hookKey: expect.stringMatching(/^codex:/),
+      legacyHookKey: hookKey,
       enabled: false,
+      effectiveEnabled: false,
       canToggleHook: true,
       stateSourcePath: configPath
+    })
+  })
+
+  it('merges duplicate Codex hook child entries in the same scenario', () => {
+    const hooksPath = path.join(tempDir!, 'hooks.json')
+    fs.writeFileSync(
+      hooksPath,
+      JSON.stringify({
+        hooks: {
+          Stop: [
+            {
+              matcher: 'main',
+              hooks: [
+                { type: 'command', command: 'echo stop', disabled: true },
+                { command: 'echo stop', type: 'command' }
+              ]
+            }
+          ]
+        }
+      })
+    )
+
+    const hooks = parseCodexHooksJson(hooksPath, 'user')
+
+    expect(hooks).toHaveLength(1)
+    expect(hooks[0].meta).toMatchObject({
+      eventType: 'Stop',
+      matcher: 'main',
+      command: 'echo stop',
+      enabled: true,
+      effectiveEnabled: true,
+      occurrenceCount: 2,
+      occurrences: [
+        expect.objectContaining({ handlerIndex: 0, hookIndex: 0, mode: 'nested' }),
+        expect.objectContaining({ handlerIndex: 0, hookIndex: 1, mode: 'nested' })
+      ]
     })
   })
 

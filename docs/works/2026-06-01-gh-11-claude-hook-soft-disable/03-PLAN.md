@@ -8,25 +8,25 @@
   - [x] 不实现插件下载、设置页插件中心、版本管理、health/session/usage/source coverage 迁移。
   - verify: `pnpm harness:check`。
 
-- [ ] 建立统一 hook identity 和 meta
-  - [ ] 增加 canonical JSON hash、`scenarioHash`、`hookHash` 生成工具。
-  - [ ] 定义 `toggleStrategy`、`effectiveEnabled`、`equivalentSources` 的读取约定。
-  - [ ] Claude / Codex parser 都写入统一 hook meta。
+- [x] 建立统一 hook identity 和 meta
+  - [x] 增加 canonical JSON hash、`scenarioHash`、`hookHash` 生成工具。
+  - [x] 定义 `toggleStrategy`、`effectiveEnabled` 的读取约定; `equivalentSources` 延后到跨来源对齐项。
+  - [x] Claude / Codex parser 都写入统一 hook meta。
   - verify: parser 目标单测。
 
 - [ ] 扩展 Claude hook parser
-  - [ ] 增加 canonical JSON hash 和 `hookKey` 生成工具。
-  - [ ] 给 active user hook 写入 `enabled`、`canToggleHook`、`scenarioHash`、`hookHash`、`stateSourcePath`。
-  - [ ] 同一 scenario 下相同 `hookHash` 的子项合并为一条 asset, 并记录 `occurrenceCount`。
+  - [x] 增加 canonical JSON hash 和 `hookKey` 生成工具。
+  - [x] 给 active user hook 写入 `enabled`、`canToggleHook`、`scenarioHash`、`hookHash`、`stateSourcePath`。
+  - [x] 同一 scenario 下相同 `hookHash` 的子项合并为一条 asset, 并记录 `occurrenceCount`。
   - [ ] 读取 `~/.claude/.berth/hooks-state.json`, 输出 disabled hook asset。
   - [ ] sidecar 解析失败时转为 scanner error, 不中断其他资产扫描。
   - verify: parser / scanner 目标单测。
 
 - [ ] 对齐 Codex hook identity
-  - [ ] Codex hook asset 增加 `scenarioHash`、`hookHash`、`occurrenceCount`、`toggleStrategy`。
+  - [x] Codex hook asset 增加 `scenarioHash`、`hookHash`、`occurrenceCount`、`toggleStrategy`。
   - [ ] `[hooks.state]` 新写入 stable key: `codex:${scenarioHash}:${hookHash}`。
-  - [ ] parser 兼容读取旧 index key 和新 stable key, 新 stable key 优先。
-  - [ ] managed hook 继续 read-only。
+  - [x] parser 兼容读取旧 index key 和新 stable key, 新 stable key 优先。
+  - [x] managed hook 继续 read-only。
   - [ ] hooks.json 与 inline hooks 出现同类 hook 时写入 `equivalentSources`。
   - verify: `tests/unit/codex-config-parser.test.ts` + `tests/unit/hook-lifecycle.test.ts`。
 

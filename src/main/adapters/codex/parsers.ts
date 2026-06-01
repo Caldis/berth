@@ -3,6 +3,7 @@ import * as path from 'path'
 import * as yaml from 'js-yaml'
 import { parse as parseToml } from 'smol-toml'
 import { emptyTokenUsage, normalizeTokenUsage } from '@shared/token-usage'
+import { buildHookHash, buildHookKey, buildHookScenarioHash } from '@shared/hook-identity'
 import { extractCommandEntryPaths } from '../command-entry-paths'
 import type { Asset, AssetScope } from '../types'
 import type { TokenUsageBreakdown } from '@shared/types/asset'
@@ -146,7 +147,7 @@ function parseCodexHooks(
   stateSourcePath?: string
 ): Asset[] {
   if (!hooks) return []
-  const assets: Asset[] = []
+  const assets = new Map<string, Asset>()
 
   for (const [event, handlers] of Object.entries(hooks)) {
     if (isCodexHookMetadataKey(event)) continue
@@ -157,6 +158,8 @@ function parseCodexHooks(
       const nestedHooks = Array.isArray(handlerRecord.hooks)
         ? handlerRecord.hooks
         : [handlerRecord]
+      const mode = Array.isArray(handlerRecord.hooks) ? 'nested' : 'direct'
+      const scenarioHash = buildHookScenarioHash(event, matcher)
 
       nestedHooks.forEach((hook, hookIndex) => {
         const hookRecord = asRecord(hook) ?? {}
@@ -166,13 +169,34 @@ function parseCodexHooks(
         const hookType = readString(hookRecord, 'type')
         const asyncHook = readBoolean(hookRecord, 'async')
         const managed = readBoolean(hookRecord, 'managed') ?? readBoolean(handlerRecord, 'managed')
-        const hookKey = buildCodexHookKey(filePath, event, handlerIndex, hookIndex)
-        const stateEnabled = readBoolean(hookState[hookKey], 'enabled')
-        const enabled = stateEnabled ?? readHookEnabled(hookRecord)
+        const hookHash = buildHookHash(hookRecord)
+        const scenarioHookKey = buildHookKey('codex', event, matcher, hookRecord)
+        const legacyHookKey = buildCodexHookKey(filePath, event, handlerIndex, hookIndex)
+        const stateEnabled =
+          readBoolean(hookState[scenarioHookKey], 'enabled') ??
+          readBoolean(hookState[legacyHookKey], 'enabled')
+        const enabled = stateEnabled ?? readHookEnabled(hookRecord) ?? true
         const entryPaths = extractCommandEntryPaths(filePath, [command, commandWindows], { scope })
         const supportNote = readCodexHookSupportNote(hookType, asyncHook)
-        assets.push({
-          id: `codex-hook-${safeId(event)}-${handlerIndex}-${hookIndex}-${hashString(filePath)}`,
+        const assetKey = `${scenarioHash}:${hookHash}`
+        const occurrence = { handlerIndex, hookIndex, mode, legacyHookKey }
+        const existing = assets.get(assetKey)
+        if (existing) {
+          const occurrences = Array.isArray(existing.meta.occurrences)
+            ? existing.meta.occurrences
+            : []
+          const existingEntryPaths = Array.isArray(existing.meta.entryPaths)
+            ? existing.meta.entryPaths.filter((value): value is string => typeof value === 'string')
+            : []
+          existing.meta.occurrences = [...occurrences, occurrence]
+          existing.meta.occurrenceCount = occurrences.length + 1
+          existing.meta.entryPaths = uniqueStrings([...existingEntryPaths, ...entryPaths])
+          existing.meta.enabled = existing.meta.enabled !== false || enabled
+          existing.meta.effectiveEnabled = existing.meta.effectiveEnabled !== false || enabled
+          return
+        }
+        assets.set(assetKey, {
+          id: `codex-hook-${safeId(event)}-${safeId(scenarioHash)}-${safeId(hookHash)}-${hashString(filePath)}`,
           agentId: 'codex',
           category: 'capability',
           type: 'hook',
@@ -180,6 +204,7 @@ function parseCodexHooks(
           name: command ?? `${event} hook ${handlerIndex + 1}`,
           path: filePath,
           meta: {
+            provider: 'codex',
             event,
             eventType: event,
             matcher,
@@ -189,13 +214,18 @@ function parseCodexHooks(
             async: asyncHook,
             managed,
             enabled,
+            effectiveEnabled: enabled,
             canToggleHook: scope === 'user' && managed !== true,
-            hookKey,
+            toggleStrategy: scope === 'user' && managed !== true ? 'native-state' : 'read-only',
+            hookKey: scenarioHookKey,
+            legacyHookKey,
+            scenarioHash,
+            hookHash,
             stateSourcePath,
             entryPaths,
             supportNote,
-            handlerIndex,
-            hookIndex,
+            occurrences: [occurrence],
+            occurrenceCount: 1,
             source: filePath
           }
         })
@@ -203,7 +233,7 @@ function parseCodexHooks(
     })
   }
 
-  return assets
+  return Array.from(assets.values())
 }
 
 export function readCodexHookStateFromConfig(filePath: string): CodexHookState {

@@ -6,6 +6,7 @@ import {
   emptyTokenUsage,
   normalizeTokenUsage
 } from '@shared/token-usage'
+import { buildHookHash, buildHookKey, buildHookScenarioHash } from '@shared/hook-identity'
 import { extractCommandEntryPaths } from '../command-entry-paths'
 import type { Asset, AssetScope } from '../types'
 
@@ -244,7 +245,7 @@ export interface SettingsJson {
 export function parseHooks(filePath: string, scope: AssetScope): Asset[] {
   const settings = readSettingsJson(filePath)
   if (!settings?.hooks) return []
-  const assets: Asset[] = []
+  const assets = new Map<string, Asset>()
   for (const [event, handlers] of Object.entries(settings.hooks)) {
     if (!Array.isArray(handlers)) continue
 
@@ -252,13 +253,32 @@ export function parseHooks(filePath: string, scope: AssetScope): Asset[] {
       const handlerRecord = isRecord(handler) ? handler : {}
       const matcher = typeof handlerRecord.matcher === 'string' ? handlerRecord.matcher : undefined
       const nestedHooks = Array.isArray(handlerRecord.hooks) ? handlerRecord.hooks : [handlerRecord]
+      const mode = Array.isArray(handlerRecord.hooks) ? 'nested' : 'direct'
+      const scenarioHash = buildHookScenarioHash(event, matcher)
 
       nestedHooks.forEach((hook, hookIndex) => {
         const hookRecord = isRecord(hook) ? hook : {}
         const command = typeof hookRecord.command === 'string' ? hookRecord.command : undefined
         const hookType = typeof hookRecord.type === 'string' ? hookRecord.type : undefined
         const entryPaths = command ? extractCommandEntryPaths(filePath, command, { scope }) : []
-        assets.push({
+        const hookHash = buildHookHash(hookRecord)
+        const hookKey = buildHookKey('claude-code', event, matcher, hookRecord)
+        const assetKey = `${scenarioHash}:${hookHash}`
+        const occurrence = { handlerIndex, hookIndex, mode }
+        const existing = assets.get(assetKey)
+        if (existing) {
+          const occurrences = Array.isArray(existing.meta.occurrences)
+            ? existing.meta.occurrences
+            : []
+          const existingEntryPaths = Array.isArray(existing.meta.entryPaths)
+            ? existing.meta.entryPaths.filter((value): value is string => typeof value === 'string')
+            : []
+          existing.meta.occurrences = [...occurrences, occurrence]
+          existing.meta.occurrenceCount = occurrences.length + 1
+          existing.meta.entryPaths = uniqueStrings([...existingEntryPaths, ...entryPaths])
+          return
+        }
+        assets.set(assetKey, {
           id: makeId('hook'),
           agentId: 'claude-code',
           category: 'capability',
@@ -267,20 +287,30 @@ export function parseHooks(filePath: string, scope: AssetScope): Asset[] {
           name: command ?? `${event} hook ${handlerIndex + 1}`,
           path: filePath,
           meta: {
+            provider: 'claude-code',
             event,
             eventType: event,
             matcher,
             command,
             hookType,
             entryPaths,
-            handlerIndex,
-            hookIndex
+            occurrences: [occurrence],
+            occurrenceCount: 1,
+            hookKey,
+            scenarioHash,
+            hookHash,
+            enabled: true,
+            effectiveEnabled: true,
+            canToggleHook: scope === 'user',
+            toggleStrategy: scope === 'user' ? 'soft-remove' : 'read-only',
+            stateSourcePath: filePath,
+            source: filePath
           }
         })
       })
     })
   }
-  return assets
+  return Array.from(assets.values())
 }
 
 // ---------------------------------------------------------------------------
@@ -882,4 +912,8 @@ function readRawFile(filePath: string): string | undefined {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value != null && typeof value === 'object' && !Array.isArray(value)
+}
+
+function uniqueStrings(values: string[]): string[] {
+  return Array.from(new Set(values.filter((value) => value.trim().length > 0)))
 }
