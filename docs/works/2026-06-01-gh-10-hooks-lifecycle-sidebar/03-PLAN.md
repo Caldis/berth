@@ -60,3 +60,8 @@ verify 不通过项作为新任务追加于此, phase 退回 implement。
 - 补测 `tests/renderer/capabilities-guidance.test.tsx` 2 项通过, 防止旧健康检查文案断言残留
 - Electron 视觉验收: 先执行 `pnpm dev:agent guard before --id hooks-health-display-verify --json`, 记录用户 dev PID 226164 和 Electron 主进程 PID 493864; `pnpm dev:agent start --id hooks-health-display-verify --json` 可启动但无调试端口, Windows 150% DPI 下系统点击未命中侧栏, 已记录 friction `docs/friction/20260601-4.0-verify-dev-agent-debug-port.md`; 停止该实例并执行 `pnpm dev:agent guard after --id hooks-health-display-verify --json`, 用户 dev 保护通过。
 - Electron 视觉验收续测: 手动启动独立实例 `hooks-health-display-remote`, 带 `--remote-debugging-port=9335`; CDP 进入 Hooks 页面, 断言 `Hook 检查 / 正常` 出现, 旧的“当前视角没有需要处理的 Hook 健康检查”文案和 `Hook 检查详情` 卡片不再出现, `#hook-health-checks` 在无问题时不渲染; `PrintWindow` 截图 `C:\Users\mail\AppData\Local\Temp\berth-hooks-health-display-clean.png`; 最后按精确 PID 停止该实例。
+
+- [ ] 任务 9: 将共享引导 tips 与统计 tag 改为 hover 说明
+  - feedback: 每个模块的三块小介绍不再平铺占空间, 改为 hover/focus 才展示; 资产、来源、provider、风险等统计 tag 需要 hover 解释含义; 适用于所有使用共享引导面板的页面。
+  - tests: `tests/renderer/feature-guide-panel.test.tsx`
+  - verify: pending
