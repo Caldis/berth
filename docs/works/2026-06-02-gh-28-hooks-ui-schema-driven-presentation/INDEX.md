@@ -2,7 +2,7 @@
 task: 2026-06-02-gh-28-hooks-ui-schema-driven-presentation
 task_id: GH-28
 type: feature
-phase: implement
+phase: verify
 created: 2026-06-02
 issue:
   number: 28

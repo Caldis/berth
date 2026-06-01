@@ -11,7 +11,7 @@
 - [x] 任务 3: Capabilities Hooks tab 接入 `useAgentCapabilityPlugins()` 并传入 Hooks 视图。
   - tests: `pnpm vitest run tests/renderer/capabilities-guidance.test.tsx tests/renderer/hooks-lifecycle-view.test.tsx`
   - verify: plugin list 加载失败或为空时 Hooks 仍使用 fallback; schema 存在时页面级渲染能展示 schema-driven 主字段; Settings 插件页不受影响。
-- [ ] 任务 4: 补齐 i18n 短文案并进入 verify 前检查。
+- [x] 任务 4: 补齐 i18n 短文案并进入 verify 前检查。
   - tests: `pnpm typecheck`; `pnpm harness:check --work docs/works/2026-06-02-gh-28-hooks-ui-schema-driven-presentation`
   - verify: 新增文案不裸露 key; 当前 work 产物合规。
 
