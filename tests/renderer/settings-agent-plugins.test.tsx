@@ -48,6 +48,7 @@ const plugins: AgentCapabilityPlugin[] = [
       }
     ],
     sourceDescriptors: [],
+    assetDescriptors: [],
     sourceCoverage: {
       total: 2,
       counts: {
@@ -100,6 +101,7 @@ const plugins: AgentCapabilityPlugin[] = [
       }
     ],
     sourceDescriptors: [],
+    assetDescriptors: [],
     sourceCoverage: {
       total: 1,
       counts: {

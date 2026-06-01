@@ -8,9 +8,9 @@
 - [x] 扩展 Agent Capability Plugin asset descriptor 类型与内置 registry 元数据。
   - tests: `tests/unit/agent-capability-plugins.test.ts`
   - verify: `pnpm exec vitest run tests/unit/agent-capability-plugins.test.ts` (passed, 8 tests)
-- [ ] 更新 Settings renderer fixture, 确认插件列表和展开详情不退化。
+- [x] 更新 Settings renderer fixture, 确认插件列表和展开详情不退化。
   - tests: `tests/renderer/settings-agent-plugins.test.tsx`
-  - verify: `pnpm exec vitest run tests/renderer/settings-agent-plugins.test.tsx`
+  - verify: `pnpm exec vitest run tests/renderer/settings-agent-plugins.test.tsx` (passed, 3 tests); `pnpm typecheck` passed
   - UI/UX: 默认视图不新增资产清单; 展开详情保持当前信息密度。
 
 ## verify 回写
