@@ -422,6 +422,57 @@ describe('buildUsageSummary', () => {
     })
   })
 
+  it('treats zero days as all-time usage instead of a rolling window', () => {
+    const boundaryUsage: Asset = {
+      id: 'usage-data-boundary',
+      agentId: 'claude-code',
+      category: 'observability',
+      type: 'usage-data',
+      scope: 'user',
+      name: '2025-06-01',
+      path: 'C:\\Users\\test\\.claude\\usage-data\\2025-06-01.json',
+      meta: {
+        date: '2025-06-01',
+        model: 'claude-opus',
+        project: 'D--Code-berth',
+        costUSD: 1000,
+        inputTokens: 100,
+        outputTokens: 50
+      }
+    }
+    const recentUsage: Asset = {
+      ...boundaryUsage,
+      id: 'usage-data-recent',
+      name: '2026-05-31',
+      path: 'C:\\Users\\test\\.claude\\usage-data\\2026-05-31.json',
+      meta: {
+        ...boundaryUsage.meta,
+        date: '2026-05-31',
+        costUSD: 5000,
+        inputTokens: 500,
+        outputTokens: 50
+      }
+    }
+    const assets = [boundaryUsage, recentUsage]
+
+    const may31All = buildUsageSummary(assets, {
+      days: 0,
+      now: '2026-05-31T12:00:00.000Z'
+    })
+    const jun01All = buildUsageSummary(assets, {
+      days: 0,
+      now: '2026-06-01T12:00:00.000Z'
+    })
+    const jun01Rolling365 = buildUsageSummary(assets, {
+      days: 365,
+      now: '2026-06-01T12:00:00.000Z'
+    })
+
+    expect(may31All.totalCost).toBe(6000)
+    expect(jun01All.totalCost).toBe(6000)
+    expect(jun01Rolling365.totalCost).toBe(5000)
+  })
+
   it('falls back to session assets when usage-data and stats-cache are absent', () => {
     const session: Asset = {
       id: 'codex-session-abc',
