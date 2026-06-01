@@ -964,6 +964,11 @@
         "errorRestorePointInvalid": "Hook 恢复点文件损坏。Berth 已停止写入, 请先检查 .claude/.berth/hooks-state.json。",
         "errorConcurrentWrite": "这个 Hook 来源文件正在被另一个操作修改。请稍后重试。"
       },
+      "runMode": {
+        "runnable": "可运行",
+        "parsed-only": "仅解析",
+        "unsupported": "不支持"
+      },
       "config": {
         "condition": "条件",
         "timeout": "超时",

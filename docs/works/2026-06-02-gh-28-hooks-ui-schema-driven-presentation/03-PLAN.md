@@ -5,7 +5,7 @@
 - [x] 任务 1: 扩展 `hook-lifecycle.ts` 纯函数, 支持可选 plugin hook schema 驱动 event/stage/support, 并保留 fallback。
   - tests: `pnpm vitest run tests/unit/hook-lifecycle.test.ts`
   - verify: stage title/summary/recommendation 仍来自 Berth 静态壳; schema event 能进入指定 stage; 未声明 event 仍进入 unknown; Codex environment 在 schema 缺失时仍隐藏。
-- [ ] 任务 2: Hooks 行级展示读取 handler schema 的 primary fields、runMode 和 support note。
+- [x] 任务 2: Hooks 行级展示读取 handler schema 的 primary fields、runMode 和 support note。
   - tests: `pnpm vitest run tests/renderer/hooks-lifecycle-view.test.tsx`
   - verify: `command`、`http`、`mcp_tool`、`prompt`、`commandWindows` 常见字段展示正确; Codex `prompt` / `agent` 显示 parsed-only; raw JSON、copy、toggle、recovery、health hover 行为不变; 长文本不横向撑开。
 - [ ] 任务 3: Capabilities Hooks tab 接入 `useAgentCapabilityPlugins()` 并传入 Hooks 视图。

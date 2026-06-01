@@ -964,6 +964,11 @@
         "errorRestorePointInvalid": "The hook restore point file is invalid. Berth stopped before writing; inspect .claude/.berth/hooks-state.json first.",
         "errorConcurrentWrite": "This hook source file is already being modified by another operation. Try again shortly."
       },
+      "runMode": {
+        "runnable": "Runnable",
+        "parsed-only": "Parsed only",
+        "unsupported": "Unsupported"
+      },
       "config": {
         "condition": "Condition",
         "timeout": "Timeout",

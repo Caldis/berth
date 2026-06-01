@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import '../../src/renderer/src/i18n'
 import { HooksLifecycleView } from '../../src/renderer/src/components/capabilities/hooks-lifecycle-view'
 import type { AgentView, Asset } from '../../src/shared/types/asset'
+import type { AgentCapabilityPlugin, AgentCapabilityPluginHookHandlerDescriptor } from '../../src/shared/types/agent-plugin'
 import type { HealthCheck, HooksAgentId } from '../../src/shared/types/ipc'
 
 function hookAsset(
@@ -29,8 +30,55 @@ function hookAsset(
   }
 }
 
-function renderHooks(agentView: AgentView, assets: Asset[]): ReturnType<typeof render> {
-  return render(<HooksLifecycleView assets={assets} agentView={agentView} search="" scope="all" />)
+function renderHooks(
+  agentView: AgentView,
+  assets: Asset[],
+  plugins: AgentCapabilityPlugin[] = []
+): ReturnType<typeof render> {
+  return render(
+    <HooksLifecycleView
+      assets={assets}
+      agentView={agentView}
+      search=""
+      scope="all"
+      plugins={plugins}
+    />
+  )
+}
+
+function hookSchemaPlugin(
+  agentId: 'claude-code' | 'codex',
+  handlers: AgentCapabilityPluginHookHandlerDescriptor[]
+): AgentCapabilityPlugin {
+  return {
+    id: agentId,
+    displayName: agentId === 'codex' ? 'Codex' : 'Claude Code',
+    version: '0.1.0',
+    schemaVersion: 1,
+    builtin: true,
+    enabled: true,
+    detected: true,
+    agentCompatibility: {
+      agentId,
+      name: agentId === 'codex' ? 'Codex' : 'Claude Code'
+    },
+    capabilities: [],
+    permissions: [],
+    sourceDescriptors: [],
+    assetDescriptors: [],
+    hookSchema: {
+      agentId,
+      events: [],
+      handlers
+    },
+    healthCheckDescriptors: [],
+    sourceCoverage: {
+      total: 0,
+      counts: { scanned: 0, missing: 0, 'not-scanned': 0 },
+      sources: []
+    },
+    references: []
+  }
 }
 
 async function waitForHookHealthIdle(): Promise<void> {
@@ -232,6 +280,89 @@ describe('HooksLifecycleView', () => {
       expect(navigator.clipboard.writeText).toHaveBeenCalledWith(expect.stringContaining('"type": "http"'))
     })
     expect(screen.getByRole('button', { name: 'Copied JSON' })).toBeInTheDocument()
+  })
+
+  it('uses plugin handler schema for primary fields and parsed-only run mode', async () => {
+    renderHooks('all', [
+      hookAsset('claude-custom', 'claude-code', 'PostToolUse', {
+        hookType: 'webhook',
+        endpoint: 'https://hooks.example.test/post-tool',
+        rawHook: {
+          type: 'webhook',
+          endpoint: 'https://hooks.example.test/post-tool'
+        }
+      }),
+      hookAsset('codex-prompt', 'codex', 'Stop', {
+        hookType: 'prompt',
+        prompt: 'Summarize this turn before stopping.',
+        rawHook: {
+          type: 'prompt',
+          prompt: 'Summarize this turn before stopping.'
+        }
+      })
+    ], [
+      hookSchemaPlugin('claude-code', [
+        {
+          type: 'webhook',
+          runMode: 'runnable',
+          primaryFieldNames: ['endpoint'],
+          labelKey: 'settings.agentPluginHookHandlers.claude-code.webhook.label',
+          descriptionKey: 'settings.agentPluginHookHandlers.claude-code.webhook.description',
+          fields: [
+            {
+              name: 'type',
+              kind: 'string',
+              required: true,
+              labelKey: 'settings.agentPluginHookHandlers.claude-code.webhook.fields.type.label',
+              descriptionKey: 'settings.agentPluginHookHandlers.claude-code.webhook.fields.type.description'
+            },
+            {
+              name: 'endpoint',
+              kind: 'string',
+              required: true,
+              primary: true,
+              labelKey: 'settings.agentPluginHookHandlers.claude-code.webhook.fields.endpoint.label',
+              descriptionKey: 'settings.agentPluginHookHandlers.claude-code.webhook.fields.endpoint.description'
+            }
+          ]
+        }
+      ]),
+      hookSchemaPlugin('codex', [
+        {
+          type: 'prompt',
+          runMode: 'parsed-only',
+          primaryFieldNames: ['prompt'],
+          labelKey: 'settings.agentPluginHookHandlers.codex.prompt.label',
+          descriptionKey: 'settings.agentPluginHookHandlers.codex.prompt.description',
+          fields: [
+            {
+              name: 'type',
+              kind: 'string',
+              required: true,
+              labelKey: 'settings.agentPluginHookHandlers.codex.prompt.fields.type.label',
+              descriptionKey: 'settings.agentPluginHookHandlers.codex.prompt.fields.type.description'
+            },
+            {
+              name: 'prompt',
+              kind: 'string',
+              primary: true,
+              labelKey: 'settings.agentPluginHookHandlers.codex.prompt.fields.prompt.label',
+              descriptionKey: 'settings.agentPluginHookHandlers.codex.prompt.fields.prompt.description'
+            }
+          ]
+        }
+      ])
+    ])
+    await waitForHookHealthIdle()
+
+    expect(screen.getByText('webhook')).toBeInTheDocument()
+    expect(screen.getByText('https://hooks.example.test/post-tool')).toBeInTheDocument()
+    expect(screen.getByText('prompt')).toBeInTheDocument()
+    expect(screen.getByText('Summarize this turn before stopping.')).toBeInTheDocument()
+    expect(screen.getByText('Parsed only')).toBeInTheDocument()
+
+    fireEvent.click(screen.getAllByText('JSON')[0])
+    expect(screen.getByText(/"endpoint": "https:\/\/hooks.example.test\/post-tool"/)).toBeInTheDocument()
   })
 
   it('shows readable hook toggle errors for stale restore points', async () => {

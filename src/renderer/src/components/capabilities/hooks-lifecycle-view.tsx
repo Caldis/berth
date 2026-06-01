@@ -22,6 +22,7 @@ import {
   getHookRiskHints,
   getVisibleStageSupport,
   groupHookAssetsByStage,
+  type HookSchemaMap,
   type HookAgentStageSupport,
   type HookLifecycleSupport,
   type HookManagementAction,
@@ -30,6 +31,12 @@ import {
   type HookStageGroup
 } from '@/lib/hook-lifecycle'
 import type { AgentView, Asset, AssetScope } from '@shared/types/asset'
+import type {
+  AgentCapabilityPlugin,
+  AgentCapabilityPluginHookHandlerDescriptor,
+  AgentCapabilityPluginHookHandlerFieldDescriptor,
+  AgentPluginAgentId
+} from '@shared/types/agent-plugin'
 import type { HealthCheck, HookRecoveryIssue, HookRecoveryListResult, HookRecoveryPoint, HooksAgentId } from '@shared/types/ipc'
 
 interface HooksLifecycleViewProps {
@@ -37,6 +44,7 @@ interface HooksLifecycleViewProps {
   agentView: AgentView
   search: string
   scope: 'all' | AssetScope
+  plugins?: AgentCapabilityPlugin[]
 }
 
 const supportIconMap = {
@@ -51,9 +59,19 @@ const supportClassMap = {
   unsupported: 'bg-muted text-muted-foreground'
 } satisfies Record<HookLifecycleSupport, string>
 
-export function HooksLifecycleView({ assets, agentView, search, scope }: HooksLifecycleViewProps): React.ReactElement {
+export function HooksLifecycleView({
+  assets,
+  agentView,
+  search,
+  scope,
+  plugins = []
+}: HooksLifecycleViewProps): React.ReactElement {
   const { t } = useTranslation()
-  const groups = useMemo(() => groupHookAssetsByStage(assets, agentView), [assets, agentView])
+  const hookSchemas = useMemo(() => buildHookSchemaMap(plugins), [plugins])
+  const groups = useMemo(
+    () => groupHookAssetsByStage(assets, agentView, { hookSchemas }),
+    [assets, agentView, hookSchemas]
+  )
   const { checks: healthChecks, loading: healthLoading } = useHealthChecks()
   const hookHealthChecks = useMemo(
     () => visibleHookHealthChecks(healthChecks, agentView),
@@ -131,7 +149,7 @@ export function HooksLifecycleView({ assets, agentView, search, scope }: HooksLi
 
         <div className="min-w-0 space-y-3">
           {groups.map((group) => (
-            <HookStageSection key={group.id} group={group} agentView={agentView} />
+            <HookStageSection key={group.id} group={group} agentView={agentView} hookSchemas={hookSchemas} />
           ))}
         </div>
       </div>
@@ -575,14 +593,22 @@ function HookHealthCheckTipRow({ check }: { check: HealthCheck }): React.ReactEl
   )
 }
 
-function HookStageSection({ group, agentView }: { group: HookStageGroup; agentView: AgentView }): React.ReactElement {
+function HookStageSection({
+  group,
+  agentView,
+  hookSchemas
+}: {
+  group: HookStageGroup
+  agentView: AgentView
+  hookSchemas: HookSchemaMap
+}): React.ReactElement {
   const { t } = useTranslation()
 
   if (!group.stage) {
-    return <UnknownHookSection group={group} agentView={agentView} />
+    return <UnknownHookSection group={group} agentView={agentView} hookSchemas={hookSchemas} />
   }
 
-  const supports = getVisibleStageSupport(group.stage, agentView)
+  const supports = getVisibleStageSupport(group.stage, agentView, { hookSchemas })
 
   return (
     <section id={`hook-stage-${group.id}`} className="scroll-mt-4 rounded-lg border border-border bg-card">
@@ -601,7 +627,7 @@ function HookStageSection({ group, agentView }: { group: HookStageGroup; agentVi
       </div>
 
       <div className="px-4 py-4">
-        <HookEventList group={group} agentView={agentView} />
+        <HookEventList group={group} agentView={agentView} hookSchemas={hookSchemas} />
       </div>
     </section>
   )
@@ -695,7 +721,15 @@ function AgentSupportTip({ stageId, support }: { stageId: string; support: HookA
   )
 }
 
-function UnknownHookSection({ group, agentView }: { group: HookStageGroup; agentView: AgentView }): React.ReactElement {
+function UnknownHookSection({
+  group,
+  agentView,
+  hookSchemas
+}: {
+  group: HookStageGroup
+  agentView: AgentView
+  hookSchemas: HookSchemaMap
+}): React.ReactElement {
   const { t } = useTranslation()
 
   return (
@@ -705,13 +739,21 @@ function UnknownHookSection({ group, agentView }: { group: HookStageGroup; agent
         <p className="mt-1 max-w-[72ch] text-sm leading-6 text-muted-foreground">{t('capabilities.hooks.unknown.body')}</p>
       </div>
       <div className="px-4 py-4">
-        <HookEventList group={group} agentView={agentView} />
+        <HookEventList group={group} agentView={agentView} hookSchemas={hookSchemas} />
       </div>
     </section>
   )
 }
 
-function HookEventList({ group, agentView }: { group: HookStageGroup; agentView: AgentView }): React.ReactElement {
+function HookEventList({
+  group,
+  agentView,
+  hookSchemas
+}: {
+  group: HookStageGroup
+  agentView: AgentView
+  hookSchemas: HookSchemaMap
+}): React.ReactElement {
   const { t } = useTranslation()
 
   if (group.hooks.length === 0) {
@@ -735,7 +777,7 @@ function HookEventList({ group, agentView }: { group: HookStageGroup; agentView:
           </div>
           <div className="divide-y divide-border/60">
             {eventGroup.hooks.map((hook) => (
-              <HookAssetRow key={hook.id} hook={hook} agentView={agentView} />
+              <HookAssetRow key={hook.id} hook={hook} agentView={agentView} hookSchemas={hookSchemas} />
             ))}
           </div>
         </div>
@@ -744,11 +786,22 @@ function HookEventList({ group, agentView }: { group: HookStageGroup; agentView:
   )
 }
 
-function HookAssetRow({ hook, agentView }: { hook: Asset; agentView: AgentView }): React.ReactElement {
+function HookAssetRow({
+  hook,
+  agentView,
+  hookSchemas
+}: {
+  hook: Asset
+  agentView: AgentView
+  hookSchemas: HookSchemaMap
+}): React.ReactElement {
   const { t } = useTranslation()
   const matcher = typeof hook.meta.matcher === 'string' ? hook.meta.matcher : ''
-  const supportNote = typeof hook.meta.supportNote === 'string' ? hook.meta.supportNote : ''
-  const display = hookDisplayDetails(hook)
+  const handlerDescriptor = findHookHandlerDescriptor(hook, hookSchemas)
+  const supportNote = typeof hook.meta.supportNote === 'string'
+    ? hook.meta.supportNote
+    : handlerDescriptor?.supportNoteKey ?? ''
+  const display = hookDisplayDetails(hook, handlerDescriptor)
   const rawHookJson = formatRawHookJson(hook.meta.rawHook)
   const managementStates = getHookManagementState(hook, agentView)
   const riskHints = getHookRiskHints(hook)
@@ -810,6 +863,11 @@ function HookAssetRow({ hook, agentView }: { hook: Asset; agentView: AgentView }
             <span className="rounded-md bg-muted px-1.5 py-0.5 font-mono text-[10px] font-medium text-muted-foreground">
               {display.type}
             </span>
+            {display.runMode && display.runMode !== 'runnable' && (
+              <span className="rounded-md border border-amber-500/30 bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-medium text-amber-700 dark:text-amber-300">
+                {t(`capabilities.hooks.runMode.${display.runMode}`)}
+              </span>
+            )}
             <span className="min-w-0 max-w-full break-all font-mono text-xs text-foreground">{display.primary}</span>
             <ScopeBadge scope={hook.scope} />
             {hookCanShowEnabledBadge(hook, toggleState) && (
@@ -853,8 +911,8 @@ function HookAssetRow({ hook, agentView }: { hook: Asset; agentView: AgentView }
               </span>
             )}
             {display.configItems.map((item) => (
-              <span key={`${item.labelKey}:${item.value}`}>
-                {t(item.labelKey)}: <span className="font-mono text-foreground">{item.value}</span>
+              <span key={`${item.labelKey ?? item.label}:${item.value}`}>
+                {item.labelKey ? t(item.labelKey) : item.label}: <span className="font-mono text-foreground">{item.value}</span>
               </span>
             ))}
             <span className="min-w-0 truncate font-mono">{hook.path}</span>
@@ -910,7 +968,8 @@ function HookAssetRow({ hook, agentView }: { hook: Asset; agentView: AgentView }
 }
 
 interface HookConfigItem {
-  labelKey: string
+  labelKey?: string
+  label?: string
   value: string
 }
 
@@ -918,9 +977,13 @@ interface HookDisplayDetails {
   type: string
   primary: string
   configItems: HookConfigItem[]
+  runMode?: AgentCapabilityPluginHookHandlerDescriptor['runMode']
 }
 
-function hookDisplayDetails(hook: Asset): HookDisplayDetails {
+function hookDisplayDetails(
+  hook: Asset,
+  handlerDescriptor?: AgentCapabilityPluginHookHandlerDescriptor
+): HookDisplayDetails {
   const hookType = firstMetaString(hook, 'hookType') ?? 'unknown'
   const command = firstMetaString(hook, 'command')
   const commandWindows = firstMetaString(hook, 'commandWindows')
@@ -942,23 +1005,117 @@ function hookDisplayDetails(hook: Asset): HookDisplayDetails {
   addConfigItem(configItems, 'capabilities.hooks.config.model', model)
 
   if (hookType === 'http') {
-    return { type: hookType, primary: url ?? hook.name, configItems }
+    return applyHandlerDescriptor(hook, handlerDescriptor, {
+      type: hookType,
+      primary: url ?? hook.name,
+      configItems
+    })
   }
   if (hookType === 'mcp_tool') {
-    return {
+    return applyHandlerDescriptor(hook, handlerDescriptor, {
       type: hookType,
       primary: server && tool ? `${server}.${tool}` : server ?? tool ?? hook.name,
       configItems
-    }
+    })
   }
   if (hookType === 'prompt' || hookType === 'agent') {
-    return { type: hookType, primary: truncateInline(prompt ?? hook.name, 120), configItems }
+    return applyHandlerDescriptor(hook, handlerDescriptor, {
+      type: hookType,
+      primary: truncateInline(prompt ?? hook.name, 120),
+      configItems
+    })
   }
-  return {
+  return applyHandlerDescriptor(hook, handlerDescriptor, {
     type: hookType,
     primary: command ?? commandWindows ?? hook.name,
     configItems
+  })
+}
+
+function applyHandlerDescriptor(
+  hook: Asset,
+  handlerDescriptor: AgentCapabilityPluginHookHandlerDescriptor | undefined,
+  fallback: HookDisplayDetails
+): HookDisplayDetails {
+  if (!handlerDescriptor) return fallback
+  const primary = formatPrimaryFromHandlerSchema(hook, handlerDescriptor) ?? fallback.primary
+  const configItems = configItemsFromHandlerSchema(hook, handlerDescriptor)
+
+  return {
+    type: fallback.type,
+    primary: truncateInline(primary, 160),
+    configItems: configItems.length > 0 ? configItems : fallback.configItems,
+    runMode: handlerDescriptor.runMode
   }
+}
+
+function formatPrimaryFromHandlerSchema(
+  hook: Asset,
+  handlerDescriptor: AgentCapabilityPluginHookHandlerDescriptor
+): string | undefined {
+  const names = handlerDescriptor.primaryFieldNames.length > 0
+    ? handlerDescriptor.primaryFieldNames
+    : handlerDescriptor.fields.filter((field) => field.primary).map((field) => field.name)
+  const values = names.flatMap((name) => {
+    const value = formatHookFieldValue(hook, name)
+    return value ? [value] : []
+  })
+
+  if (names.includes('server') && names.includes('tool')) {
+    const server = firstMetaString(hook, 'server')
+    const tool = firstMetaString(hook, 'tool')
+    if (server && tool) return `${server}.${tool}`
+  }
+  if (values.length === 0) return undefined
+  return values.join(' ')
+}
+
+function configItemsFromHandlerSchema(
+  hook: Asset,
+  handlerDescriptor: AgentCapabilityPluginHookHandlerDescriptor
+): HookConfigItem[] {
+  const primaryNames = new Set(handlerDescriptor.primaryFieldNames)
+  const items: HookConfigItem[] = []
+
+  for (const field of handlerDescriptor.fields) {
+    if (field.name === 'type' || primaryNames.has(field.name) || field.primary) continue
+    const value = formatHookFieldValue(hook, field.name)
+    if (!value) continue
+    items.push({
+      labelKey: hookFieldConfigLabelKey(field),
+      label: hookFieldConfigLabelKey(field) ? undefined : field.name,
+      value
+    })
+  }
+
+  return items
+}
+
+function hookFieldConfigLabelKey(field: AgentCapabilityPluginHookHandlerFieldDescriptor): string | undefined {
+  const labels: Record<string, string> = {
+    if: 'capabilities.hooks.config.condition',
+    ifCondition: 'capabilities.hooks.config.condition',
+    timeout: 'capabilities.hooks.config.timeout',
+    statusMessage: 'capabilities.hooks.config.statusMessage',
+    status_message: 'capabilities.hooks.config.statusMessage',
+    commandWindows: 'capabilities.hooks.config.commandWindows',
+    command_windows: 'capabilities.hooks.config.commandWindows',
+    args: 'capabilities.hooks.config.args',
+    shell: 'capabilities.hooks.config.shell',
+    async: 'capabilities.hooks.config.async',
+    asyncRewake: 'capabilities.hooks.config.asyncRewake',
+    model: 'capabilities.hooks.config.model'
+  }
+  return labels[field.name]
+}
+
+function formatHookFieldValue(hook: Asset, name: string): string | undefined {
+  if (name === 'timeout') return formatSeconds(hook.meta.timeout)
+  const value = hook.meta[name]
+  if (typeof value === 'string' && value.length > 0) return value
+  if (typeof value === 'number' && Number.isFinite(value)) return String(value)
+  if (typeof value === 'boolean') return value ? 'true' : undefined
+  return formatStringArray(value)
 }
 
 function addConfigItem(items: HookConfigItem[], labelKey: string, value: string | undefined): void {
@@ -979,6 +1136,31 @@ function formatStringArray(value: unknown): string | undefined {
   const values = value.filter((item): item is string => typeof item === 'string' && item.length > 0)
   if (values.length === 0) return undefined
   return values.join(' ')
+}
+
+function buildHookSchemaMap(plugins: AgentCapabilityPlugin[]): HookSchemaMap {
+  const hookSchemas: HookSchemaMap = {}
+  for (const plugin of plugins) {
+    hookSchemas[plugin.hookSchema.agentId] = plugin.hookSchema
+  }
+  return hookSchemas
+}
+
+function findHookHandlerDescriptor(
+  hook: Asset,
+  hookSchemas: HookSchemaMap
+): AgentCapabilityPluginHookHandlerDescriptor | undefined {
+  const hookType = firstMetaString(hook, 'hookType')
+  if (!hookType) return undefined
+  const agentId = hookSchemaAgentId(hook)
+  const schema = agentId ? hookSchemas[agentId] : undefined
+  return schema?.handlers.find((handler) => handler.type === hookType)
+}
+
+function hookSchemaAgentId(hook: Asset): AgentPluginAgentId | null {
+  if (hook.agentId === 'claude-code' || hook.agentId === 'claude') return 'claude-code'
+  if (hook.agentId === 'codex') return 'codex'
+  return null
 }
 
 function truncateInline(value: string, maxLength: number): string {
