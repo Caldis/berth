@@ -9,9 +9,9 @@
 - [x] 任务 2: 实现 Capabilities 读取和同步 `tab` query 参数。
   - tests: `pnpm test -- tests/renderer/capabilities-guidance.test.tsx`
   - verify: 通过, 5 tests passed; UI 结构、信息密度、组件样式、文案不变, 交互只表现为页签选中态和 URL query 同步。
-- [ ] 任务 3: 跑类型和 harness 验证, 更新 issue resolved 与归档。
+- [x] 任务 3: 跑类型和 harness 验证, 更新 issue resolved 与归档。
   - tests: `pnpm typecheck:web`; `pnpm harness:check`
-  - verify: 不需要额外截图 - 此任务不改视觉样式; renderer 测试已覆盖用户可见页签状态。
+  - verify: `pnpm test -- tests/renderer/capabilities-guidance.test.tsx` 通过, 5 tests passed; `pnpm typecheck:web` 通过; `pnpm harness:check` 通过; 不需要额外截图 - 此任务不改视觉样式, renderer 测试已覆盖用户可见页签状态。
 
 ## verify 回写
 
