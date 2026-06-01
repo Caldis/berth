@@ -42,6 +42,10 @@
 - `pnpm test tests/harness/check.test.ts` - RED: 3 expected Superpowers policy failures before implementation; GREEN: 1 file / 29 tests passed。
 - `pnpm harness:check` - passed after Superpowers flow guard docs and checker update。
 - `pnpm typecheck:node` - passed after `checkSuperpowers` implementation。
+- `pnpm test tests/harness/sync.test.ts tests/harness/check.test.ts tests/harness/projects.test.ts` - 3 files / 48 tests passed after Superpowers guard commit。
+- `pnpm typecheck:node` - passed after Superpowers guard commit。
+- `pnpm harness:check` - all checks passed after Superpowers guard commit。
+- `node scripts/harness-projects.mjs check --strict` - all project statuses match local task state after Superpowers guard commit。
 
 ## GitHub Issue 迁移记录
 
