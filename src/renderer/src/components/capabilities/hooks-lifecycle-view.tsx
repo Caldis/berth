@@ -65,14 +65,6 @@ export function HooksLifecycleView({ assets, agentView, search, scope }: HooksLi
 
   return (
     <div className="space-y-4">
-      <header className="flex flex-wrap items-center justify-between gap-2">
-        <HookHealthSignal checks={hookHealthChecks} loading={healthLoading} />
-        <span className="rounded-md bg-muted px-2 py-0.5 text-xs text-muted-foreground">
-          {t(`agentView.${agentView}`)}
-        </span>
-      </header>
-      {hookHealthChecks.length > 0 && <HookHealthIssues checks={hookHealthChecks} />}
-
       <div className="grid gap-4 lg:grid-cols-[280px_minmax(0,1fr)]">
         <aside
           aria-label={t('capabilities.hooks.lifecycleIndex')}
@@ -80,13 +72,19 @@ export function HooksLifecycleView({ assets, agentView, search, scope }: HooksLi
         >
           <div className="rounded-lg border border-border bg-card p-2">
             <div className="px-2 pb-2 pt-1">
-              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                {t('capabilities.hooks.lifecycleIndex')}
-              </p>
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  {t('capabilities.hooks.lifecycleIndex')}
+                </p>
+                <span className="rounded-md bg-muted px-2 py-0.5 text-[11px] text-muted-foreground">
+                  {t(`agentView.${agentView}`)}
+                </span>
+              </div>
               <p className="mt-1 text-xs text-muted-foreground">
                 {t('capabilities.hooks.lifecycleCount', { count: hookCount })}
               </p>
             </div>
+            <HookHealthSignal checks={hookHealthChecks} loading={healthLoading} />
             <div className="flex gap-2 overflow-x-auto pb-1 lg:block lg:space-y-1 lg:overflow-visible lg:pb-0">
               {groups.map((group, index) => (
                 <button
@@ -137,116 +135,177 @@ function HookHealthSignal({ checks, loading }: { checks: HealthCheck[]; loading:
   const { t } = useTranslation()
   const counts = countHealthSeverities(checks)
   const hasChecks = checks.length > 0
-  const Icon = hasChecks ? CircleAlert : loading ? Info : CheckCircle2
-
-  return (
-    <div className="flex min-w-0 flex-wrap items-center gap-2 text-xs">
-      <span className="font-medium text-muted-foreground">{t('capabilities.hooks.health.title')}</span>
-      <span className={cn(
-        'inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 font-medium',
-        loading
-          ? 'bg-muted text-muted-foreground'
-          : hasChecks
-          ? 'bg-amber-500/10 text-amber-700 dark:text-amber-300'
-          : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
-      )}>
-        <Icon className="h-3.5 w-3.5" />
-        {loading
-          ? t('capabilities.hooks.health.loading')
-          : hasChecks
-            ? t('capabilities.hooks.health.summary', { count: checks.length })
-            : t('capabilities.hooks.health.ok')}
-      </span>
-      {hasChecks && (
-        <>
-          {counts.error > 0 && <HealthCountChip severity="error" count={counts.error} />}
-          {counts.warning > 0 && <HealthCountChip severity="warning" count={counts.warning} />}
-          {counts.info > 0 && <HealthCountChip severity="info" count={counts.info} />}
-        </>
-      )}
-    </div>
-  )
-}
-
-function HookHealthIssues({ checks }: { checks: HealthCheck[] }): React.ReactElement {
-  const { t } = useTranslation()
   const sortedChecks = useMemo(
     () => [...checks].sort((a, b) => healthSeverityRank(a.severity) - healthSeverityRank(b.severity)),
     [checks]
   )
+  const overallTone = healthOverallTone(checks)
 
   return (
-    <section
-      id="hook-health-checks"
-      aria-label={t('capabilities.hooks.health.title')}
-      className="scroll-mt-4 border-y border-border/70 bg-muted/20 px-1 py-1"
-    >
-      <div className="divide-y divide-border/70">
-        {sortedChecks.map((check) => (
-          <HookHealthCheckRow key={check.id} check={check} />
-        ))}
+    <div className="mx-2 mb-2 rounded-md border border-border/70 bg-muted/20 px-2 py-2">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <span className="text-xs font-medium text-foreground">{t('capabilities.hooks.health.title')}</span>
+        {loading ? (
+          <HealthStatusTip
+            id="hook-health-loading"
+            tone="loading"
+            label={t('capabilities.hooks.health.loading')}
+            detail={t('capabilities.hooks.health.loadingDetail')}
+            checks={[]}
+          />
+        ) : hasChecks ? (
+          <HealthStatusTip
+            id="hook-health-summary"
+            tone={overallTone}
+            label={t('capabilities.hooks.health.summary', { count: checks.length })}
+            detail={t('capabilities.hooks.health.detailsBody')}
+            checks={sortedChecks}
+          />
+        ) : (
+          <HealthStatusTip
+            id="hook-health-ok"
+            tone="ok"
+            label={t('capabilities.hooks.health.ok')}
+            detail={t('capabilities.hooks.health.okDetail')}
+            checks={[]}
+          />
+        )}
       </div>
-    </section>
-  )
-}
-
-function HookHealthCheckRow({ check }: { check: HealthCheck }): React.ReactElement {
-  const { t } = useTranslation()
-  const targetPath = check.target?.path ?? check.path
-
-  return (
-    <div className="grid gap-3 px-2 py-3 md:grid-cols-[minmax(0,1fr)_auto]">
-      <div className="min-w-0">
-        <div className="flex flex-wrap items-center gap-2">
-          <HealthSeverityBadge severity={check.severity} />
-          <span className="text-sm font-medium text-foreground">{check.title}</span>
-          <span className="rounded-md border border-border px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
-            {check.agentName}
-          </span>
-          {check.scope && (
-            <span className="rounded-md border border-border px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
-              {check.scope}
-            </span>
-          )}
+      {hasChecks && (
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {counts.error > 0 && <HealthSeverityTip severity="error" count={counts.error} checks={sortedChecks} />}
+          {counts.warning > 0 && <HealthSeverityTip severity="warning" count={counts.warning} checks={sortedChecks} />}
+          {counts.info > 0 && <HealthSeverityTip severity="info" count={counts.info} checks={sortedChecks} />}
         </div>
-        <p className="mt-1 text-xs leading-5 text-muted-foreground">{check.message}</p>
-        {check.fix ? (
-          <p className="mt-1 text-xs leading-5 text-muted-foreground">
-            <span className="font-medium text-foreground">{check.fix.label}: </span>
-            {check.fix.description}
-          </p>
-        ) : check.suggestion ? (
-          <p className="mt-1 text-xs leading-5 text-muted-foreground">{check.suggestion}</p>
-        ) : null}
-        {targetPath && <p className="mt-1 break-all font-mono text-[11px] text-muted-foreground">{targetPath}</p>}
-      </div>
-      {targetPath && (
-        <button
-          type="button"
-          onClick={() => void window.api?.shell.openPath(targetPath)}
-          className="h-fit shrink-0 rounded-md border border-border px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-accent active:translate-y-px"
-        >
-          {t('capabilities.hooks.health.openSource')}
-        </button>
       )}
     </div>
   )
 }
 
-function HealthCountChip({ severity, count }: { severity: HealthCheck['severity']; count: number }): React.ReactElement {
+function HealthSeverityTip({
+  severity,
+  count,
+  checks
+}: {
+  severity: HealthCheck['severity']
+  count: number
+  checks: HealthCheck[]
+}): React.ReactElement {
   const { t } = useTranslation()
+  const severityChecks = checks.filter((check) => check.severity === severity)
+
   return (
-    <span className={cn('rounded-md px-1.5 py-0.5 text-[11px] font-medium', healthSeverityClass(severity))}>
-      {t(`capabilities.hooks.health.severity.${severity}`, { count })}
+    <HealthStatusTip
+      id={`hook-health-${severity}`}
+      tone={severity}
+      label={t(`capabilities.hooks.health.severity.${severity}`, { count })}
+      detail={t(`capabilities.hooks.health.severityDetail.${severity}`)}
+      checks={severityChecks}
+    />
+  )
+}
+
+type HealthTipTone = HealthCheck['severity'] | 'ok' | 'loading'
+
+function HealthStatusTip({
+  id,
+  tone,
+  label,
+  detail,
+  checks
+}: {
+  id: string
+  tone: HealthTipTone
+  label: string
+  detail: string
+  checks: HealthCheck[]
+}): React.ReactElement {
+  const [open, setOpen] = useState(false)
+  const Icon = healthToneIcon(tone)
+
+  return (
+    <span
+      className="relative inline-flex"
+      onMouseEnter={() => setOpen(true)}
+      onMouseLeave={() => setOpen(false)}
+      onFocus={() => setOpen(true)}
+      onBlur={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setOpen(false)
+      }}
+    >
+      <button
+        type="button"
+        aria-describedby={open ? id : undefined}
+        className={cn(
+          'inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-[11px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+          healthToneClass(tone)
+        )}
+      >
+        <Icon className="h-3.5 w-3.5" />
+        {label}
+      </button>
+      {open && (
+        <span
+          id={id}
+          role="tooltip"
+          className="absolute left-0 top-full z-40 mt-2 w-80 max-w-[calc(100vw-2rem)] rounded-md border border-border bg-popover p-3 text-popover-foreground shadow-lg"
+        >
+          <span className="block text-xs font-semibold text-foreground">{label}</span>
+          <span className="mt-1 block text-xs leading-5 text-muted-foreground">{detail}</span>
+          {checks.length > 0 && (
+            <span className="mt-3 block space-y-2">
+              {checks.map((check) => (
+                <HookHealthCheckTipRow key={check.id} check={check} />
+              ))}
+            </span>
+          )}
+        </span>
+      )}
     </span>
   )
 }
 
-function HealthSeverityBadge({ severity }: { severity: HealthCheck['severity'] }): React.ReactElement {
+function HookHealthCheckTipRow({ check }: { check: HealthCheck }): React.ReactElement {
   const { t } = useTranslation()
+  const targetPath = check.target?.path ?? check.path
+
   return (
-    <span className={cn('rounded-md px-1.5 py-0.5 text-[11px] font-medium', healthSeverityClass(severity))}>
-      {t(`capabilities.hooks.health.severityLabel.${severity}`)}
+    <span className="block rounded-md border border-border/70 bg-background/80 p-2">
+      <span className="flex flex-wrap items-center gap-1.5">
+        <span className={cn('rounded-md px-1.5 py-0.5 text-[10px] font-medium', healthSeverityClass(check.severity))}>
+          {t(`capabilities.hooks.health.severityLabel.${check.severity}`)}
+        </span>
+        <span className="text-xs font-medium text-foreground">{check.title}</span>
+      </span>
+      <span className="mt-1 flex flex-wrap gap-1.5">
+        <span className="rounded-md border border-border px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+          {check.agentName}
+        </span>
+        {check.scope && (
+          <span className="rounded-md border border-border px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+            {check.scope}
+          </span>
+        )}
+      </span>
+      <span className="mt-1 block text-xs leading-5 text-muted-foreground">{check.message}</span>
+      {check.fix ? (
+        <span className="mt-1 block text-xs leading-5 text-muted-foreground">
+          <span className="font-medium text-foreground">{check.fix.label}: </span>
+          {check.fix.description}
+        </span>
+      ) : check.suggestion ? (
+        <span className="mt-1 block text-xs leading-5 text-muted-foreground">{check.suggestion}</span>
+      ) : null}
+      {targetPath && <span className="mt-1 block break-all font-mono text-[11px] text-muted-foreground">{targetPath}</span>}
+      {targetPath && (
+        <button
+          type="button"
+          onClick={() => void window.api?.shell.openPath(targetPath)}
+          className="mt-2 rounded-md border border-border px-2 py-1 text-[11px] font-medium text-foreground transition-colors hover:bg-accent active:translate-y-px"
+        >
+          {t('capabilities.hooks.health.openSource')}
+        </button>
+      )}
     </span>
   )
 }
@@ -640,6 +699,25 @@ function healthSeverityRank(severity: HealthCheck['severity']): number {
   if (severity === 'error') return 0
   if (severity === 'warning') return 1
   return 2
+}
+
+function healthOverallTone(checks: HealthCheck[]): HealthCheck['severity'] {
+  if (checks.some((check) => check.severity === 'error')) return 'error'
+  if (checks.some((check) => check.severity === 'warning')) return 'warning'
+  return 'info'
+}
+
+function healthToneIcon(tone: HealthTipTone): React.ComponentType<{ className?: string }> {
+  if (tone === 'ok') return CheckCircle2
+  if (tone === 'loading') return Info
+  if (tone === 'error' || tone === 'warning') return CircleAlert
+  return Info
+}
+
+function healthToneClass(tone: HealthTipTone): string {
+  if (tone === 'ok') return 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+  if (tone === 'loading') return 'bg-muted text-muted-foreground'
+  return healthSeverityClass(tone)
 }
 
 function healthSeverityClass(severity: HealthCheck['severity']): string {

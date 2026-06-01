@@ -668,11 +668,18 @@
         "review": "查看 Hook 检查",
         "detailsTitle": "Hook 检查详情",
         "detailsBody": "这些检查来自概览页使用的同一个健康检查器, 这里只保留 Hook 且匹配当前 Agent 视角的项。",
+        "loadingDetail": "Berth 正在读取当前 Agent 视角的 Hook 检查结果。",
+        "okDetail": "当前视角没有需要处理的 Hook 检查。",
         "openSource": "打开来源",
         "severity": {
           "error": "{{count}} 个错误",
           "warning": "{{count}} 个警告",
           "info": "{{count}} 条信息"
+        },
+        "severityDetail": {
+          "error": "这些 Hook 检查需要先修正配置, 否则不适合作为可靠 Hook 使用。",
+          "warning": "这些 Hook 可能仍能运行, 但 Berth 发现了风险或缺少平台专用设置。",
+          "info": "这些 Hook 检查只是信息提示, 不会阻止 Hook 使用。"
         },
         "severityLabel": {
           "error": "错误",

@@ -668,11 +668,18 @@
         "review": "Review hook checks",
         "detailsTitle": "Hook check details",
         "detailsBody": "These checks come from the same health scanner as Overview, filtered to hooks and the current Agent view.",
+        "loadingDetail": "Berth is reading hook scanner results for the current Agent view.",
+        "okDetail": "No hook health checks need attention for this view.",
         "openSource": "Open source",
         "severity": {
           "error": "{{count}} error",
           "warning": "{{count}} warning",
           "info": "{{count}} info"
+        },
+        "severityDetail": {
+          "error": "These hook checks need a configuration fix before the hook can be trusted.",
+          "warning": "These hook checks may still run, but Berth found a risk or a missing platform-specific setting.",
+          "info": "These hook checks are informational and do not block hook usage."
         },
         "severityLabel": {
           "error": "Error",

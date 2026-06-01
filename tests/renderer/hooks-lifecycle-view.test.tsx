@@ -239,17 +239,25 @@ describe('HooksLifecycleView', () => {
     expect(screen.queryByText(/Use this stage for guardrails/)).not.toBeInTheDocument()
   })
 
-  it('keeps a clean hook health state as a compact signal instead of a card', async () => {
+  it('keeps a clean hook health state inside the lifecycle sidebar with hover details', async () => {
     const { container } = renderHooks('codex', [hookAsset('codex-stop', 'codex', 'Stop')])
     await waitForHookHealthIdle()
 
-    expect(screen.getByText('Hook checks')).toBeInTheDocument()
-    expect(screen.getByText('Clear')).toBeInTheDocument()
+    const sidebar = screen.getByLabelText('Lifecycle')
+    const clearTag = within(sidebar).getByRole('button', { name: /Clear/ })
+
+    expect(screen.getAllByText('Hook checks')).toHaveLength(1)
+    expect(within(sidebar).getByText('Hook checks')).toBeInTheDocument()
+    expect(clearTag).toBeInTheDocument()
     expect(screen.queryByText('No hook health checks need attention for this view.')).not.toBeInTheDocument()
     expect(container.querySelector('#hook-health-checks')).toBeNull()
+
+    fireEvent.mouseEnter(clearTag)
+
+    expect(screen.getByText('No hook health checks need attention for this view.')).toBeInTheDocument()
   })
 
-  it('renders visible hook health checks inline before the lifecycle content', async () => {
+  it('shows visible hook health checks from sidebar status tag hover details', async () => {
     const checks: HealthCheck[] = [
       {
         id: 'codex:configuration:user-hook-windows-command',
@@ -290,15 +298,20 @@ describe('HooksLifecycleView', () => {
 
     const { container } = renderHooks('codex', [hookAsset('codex-stop', 'codex', 'Stop')])
 
-    expect(await screen.findByText('1 hook check needs attention')).toBeInTheDocument()
-    expect(screen.getByText('Codex hook has no Windows command override')).toBeInTheDocument()
+    const sidebar = screen.getByLabelText('Lifecycle')
+    expect(await within(sidebar).findByText('1 hook check needs attention')).toBeInTheDocument()
+    const warningTag = within(sidebar).getByRole('button', { name: /1 warning/ })
+
+    expect(screen.queryByText('Codex hook has no Windows command override')).not.toBeInTheDocument()
     expect(screen.queryByText('Claude Code hook is missing command')).not.toBeInTheDocument()
     expect(screen.queryByText('Codex MCP server is disabled')).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Review hook checks' })).not.toBeInTheDocument()
     expect(screen.queryByText('Hook check details')).not.toBeInTheDocument()
 
-    const healthPanel = container.querySelector('#hook-health-checks')
-    expect(healthPanel?.className).toContain('border-y')
-    expect(healthPanel?.className).not.toContain('rounded-lg')
+    fireEvent.mouseEnter(warningTag)
+
+    expect(screen.getByText('Codex hook has no Windows command override')).toBeInTheDocument()
+    expect(screen.getByText('A command hook is configured without commandWindows on Windows.')).toBeInTheDocument()
+    expect(container.querySelector('#hook-health-checks')).toBeNull()
   })
 })
