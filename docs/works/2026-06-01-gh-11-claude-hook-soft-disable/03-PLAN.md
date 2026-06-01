@@ -31,13 +31,15 @@
   - verify: `tests/unit/codex-config-parser.test.ts` + `tests/unit/hook-lifecycle.test.ts`。
 
 - [ ] 实现 Claude Code 单 Hook 软禁用
-  - [ ] 在 `hooks-manager.ts#setHookEnabled()` 中分发 Codex 与 Claude Code。
-  - [ ] 实现 Claude user settings 路径校验、hookKey 校验、managed 拒绝。
-  - [ ] 实现 per-file mutex、scenario 内 hook 子项 hash 匹配、写前复读 hash 和最多 3 次重算。
+  - [x] 在 `hooks-manager.ts#setHookEnabled()` 中分发 Codex 与 Claude Code。
+  - [x] 实现 Claude user settings 路径校验、hookKey 校验、managed 拒绝。
+  - [x] 实现 per-file mutex 和 scenario 内 hook 子项 hash 匹配。
+  - [ ] 实现写前复读 hash 和最多 3 次重算。
   - [ ] 实现文本级最小 JSON patch, 默认只改目标 hook 节点或目标容器。
-  - [ ] 实现禁用: 定位 hook、写 sidecar、移除 JSON 节点。
-  - [ ] 实现恢复: 读取 sidecar、去重、插回 settings、清理恢复点。
-  - [ ] 实现 sidecar schema 校验和损坏恢复点提示。
+  - [x] 实现禁用: 定位 hook、写 sidecar、移除 JSON 节点。
+  - [x] 实现恢复: 读取 sidecar、去重、插回 settings、清理恢复点。
+  - [x] 实现 sidecar schema 校验。
+  - [ ] 实现损坏恢复点提示。
   - [ ] 写 settings 前创建时间戳备份; settings 和 sidecar 都用 temp + rename。
   - [ ] 覆盖同 scenario 下重复 hookHash、同 matcher group 多组、目标 hook 已手动修改、active 已手动恢复、外部文件变更、sidecar 损坏等分支。
   - verify: `tests/unit/hooks-manager.test.ts`。
