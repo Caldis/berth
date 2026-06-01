@@ -65,3 +65,12 @@ verify 不通过项作为新任务追加于此, phase 退回 implement。
   - feedback: 每个模块的三块小介绍不再平铺占空间, 改为 hover/focus 才展示; 资产、来源、provider、风险等统计 tag 需要 hover 解释含义; 适用于所有使用共享引导面板的页面。
   - tests: `tests/renderer/feature-guide-panel.test.tsx`, `tests/renderer/feature-guidance.test.ts`, `tests/renderer/capabilities-guidance.test.tsx`, `tests/renderer/instructions-guidance.test.tsx`, `tests/renderer/sessions-pages.test.tsx`
   - verify: 旧实现下 `tests/renderer/feature-guide-panel.test.tsx` 新断言失败 1 项; 实现后 feature guide 3 项通过, feature guidance 4 项通过, capabilities guidance 2 项通过, instructions guidance 2 项通过, sessions pages 16 项通过; sessions 测试仍有既有 Recharts 0 宽高 warning, 不影响结果; `pnpm typecheck:web` 通过; `pnpm harness:check` 通过
+
+## verify 回写 2026-06-01 shared guide hover
+- `pnpm lint` 通过
+- `pnpm typecheck` 通过
+- `pnpm test` 50 个文件 / 329 项通过; 仍有既有 Recharts 0 宽高 warning, 不影响结果
+- `pnpm harness:check` 通过
+- Electron 视觉验收: 先执行 `pnpm dev:agent guard before --id shared-guide-hover-verify --json`, 记录用户 dev PID 226164 和 Electron 主进程 PID 493864; 手动启动独立实例 `shared-guide-hover-remote`, 带 `--remote-debugging-port=9336`; CDP 进入能力 Hooks 页面, 断言 `触发点` 说明初始隐藏、hover 后出现, `3 个资产` 统计 tag hover 后出现解释; 继续断言会话页 `为回看而分组` 和指令页记忆 `来源类型` 都是初始隐藏、hover 后出现, 对应统计 tag hover 说明可见。
+- 截图证据: 用真实 Electron 主进程 PID 229980 的窗口句柄 + DWM bounds + `PrintWindow` 截图, `C:\Users\mail\AppData\Local\Temp\berth-shared-guide-tip-hover-printwindow.png` 展示 tips hover 浮层, `C:\Users\mail\AppData\Local\Temp\berth-shared-guide-evidence-hover-printwindow.png` 展示统计 tag hover 浮层。
+- 清理: 按精确 owner PID 停止 `shared-guide-hover-remote` 进程树; `pnpm dev:agent guard after --id shared-guide-hover-verify --json` 返回 `guard-ok`, 用户 dev 进程未丢失; 截图 helper 摩擦已记录为 `docs/friction/20260601-4.0-verify-powershell-drawing-screenshot.md`。
