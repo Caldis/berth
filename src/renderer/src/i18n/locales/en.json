@@ -772,7 +772,7 @@
         }
       },
       "agentTips": {
-        "label": "Agent differences"
+        "label": "Agents"
       },
       "agentSupport": {
         "session-start": {
