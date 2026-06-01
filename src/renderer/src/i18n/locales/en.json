@@ -689,6 +689,37 @@
           "info": "Info"
         }
       },
+      "recovery": {
+        "title": "Recovery center",
+        "loading": "Reading restore points",
+        "summary": "{{count}} restore point(s), {{issues}} issue(s)",
+        "pointCount": "{{count}} restore point(s)",
+        "issueCount": "{{count}} issue(s)",
+        "emptyTitle": "No restore points",
+        "emptyBody": "Berth has no disabled Claude Code hook restore points to show.",
+        "restore": "Restore",
+        "clear": "Clear",
+        "working": "Working",
+        "openSource": "Open source",
+        "confirmRestore": "Restore this Claude Code hook? Berth will write it back to {{sourcePath}}. Event: {{event}}. Hook: {{summary}}",
+        "confirmClear": "Clear this restore point? Berth will only remove the sidecar entry and will not edit {{sourcePath}}. Event: {{event}}. Hook: {{summary}}",
+        "status": {
+          "recoverable": "Recoverable",
+          "source-missing": "Source missing",
+          "already-restored": "Already restored",
+          "invalid": "Invalid"
+        },
+        "statusDetail": {
+          "recoverable": "This restore point can be written back to the source file.",
+          "source-missing": "The source file is missing. Restore is disabled until the file exists again.",
+          "already-restored": "An equivalent hook already exists in the source file. You can clear the restore point.",
+          "invalid": "Berth cannot inspect this restore point safely."
+        },
+        "issueSeverity": {
+          "warning": "Warning",
+          "error": "Error"
+        }
+      },
       "stage": {
         "session-start": {
           "title": "Session starts",

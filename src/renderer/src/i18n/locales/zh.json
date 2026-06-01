@@ -689,6 +689,37 @@
           "info": "信息"
         }
       },
+      "recovery": {
+        "title": "恢复中心",
+        "loading": "正在读取恢复点",
+        "summary": "{{count}} 个恢复点, {{issues}} 个异常",
+        "pointCount": "{{count}} 个恢复点",
+        "issueCount": "{{count}} 个异常",
+        "emptyTitle": "没有恢复点",
+        "emptyBody": "Berth 当前没有可展示的 Claude Code Hook 禁用恢复点。",
+        "restore": "恢复",
+        "clear": "清理",
+        "working": "处理中",
+        "openSource": "打开来源",
+        "confirmRestore": "要恢复这个 Claude Code Hook 吗? Berth 会写回 {{sourcePath}}。事件: {{event}}。Hook: {{summary}}",
+        "confirmClear": "要清理这个恢复点吗? Berth 只会删除 sidecar 记录, 不会修改 {{sourcePath}}。事件: {{event}}。Hook: {{summary}}",
+        "status": {
+          "recoverable": "可恢复",
+          "source-missing": "来源缺失",
+          "already-restored": "已恢复",
+          "invalid": "无效"
+        },
+        "statusDetail": {
+          "recoverable": "这个恢复点可以写回来源文件。",
+          "source-missing": "来源文件不存在。文件恢复前不能执行恢复。",
+          "already-restored": "来源文件里已经存在等价 Hook, 可以清理恢复点。",
+          "invalid": "Berth 不能安全检查这个恢复点。"
+        },
+        "issueSeverity": {
+          "warning": "警告",
+          "error": "错误"
+        }
+      },
       "stage": {
         "session-start": {
           "title": "会话开始",
