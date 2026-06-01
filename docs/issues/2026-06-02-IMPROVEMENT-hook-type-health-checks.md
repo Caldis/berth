@@ -8,6 +8,11 @@ IMPROVEMENT
 
 Open
 
+## GitHub
+
+- Issue: https://github.com/Caldis/berth/issues/16
+- Number: #16
+
 ## 关联任务
 
 - 来源归档: `docs/works/_archive/2026-06-01-gh-11-claude-hook-soft-disable/`

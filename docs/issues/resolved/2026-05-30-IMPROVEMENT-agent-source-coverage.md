@@ -8,6 +8,10 @@ IMPROVEMENT
 
 Resolved
 
+## 完成日期
+
+2026-06-02
+
 ## 背景
 
 设置页“本地来源”已改为按 Agent 汇总, 明细只展示当前 scanner 实际返回的 scan roots。继续核对官方文档和当前代码后, 发现一些本机 Agent 来源没有纳入扫描模型。
