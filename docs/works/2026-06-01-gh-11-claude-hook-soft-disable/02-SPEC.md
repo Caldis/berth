@@ -10,6 +10,8 @@
 - Codex 现有 `[hooks.state]` 切换能力保持不变。
 - 初版只支持 Claude Code user scope; project/local/enterprise 继续只读。
 
+同时把 Hooks 页面从“写死 Claude/Codex 判断”收窄到统一的 hook capability 模型。短期只覆盖 Claude Code 和 Codex, 但接口设计要允许后续接入 Hermes、PI 或其他 Agent。
+
 ## 不做
 
 - 不给 Claude hook object 增加 `enabled: false`。官方没有该字段, 可能造成 UI 和实际执行不一致。
@@ -18,6 +20,50 @@
 - 不写 project `.claude/settings.json` 或 `.claude/settings.local.json`。这类文件可能属于仓库或本地项目状态, 需要单独确认和 diff 视图。
 
 ## 数据模型
+
+### Unified hook asset
+
+Claude Code 和 Codex 的 hook 配置格式不同:
+
+- Claude Code: hooks 定义在 JSON settings 中, 一个 event 下有 matcher group, matcher group 下有 hook 子项。
+- Codex: hooks 可来自 `config.toml` 或 `hooks.json`; 单 hook 状态由用户配置里的 `[hooks.state]` 管理, 官方 `/hooks` 也支持禁用 non-managed hook。
+
+UI 不应直接理解这些格式。parser 应把两者都映射成统一的 `HookAssetMeta`:
+
+```ts
+interface HookAssetMeta {
+  provider: 'claude-code' | 'codex'
+  event: string
+  matcher?: string
+  hookHash: string
+  scenarioHash: string
+  sourcePath: string
+  stateSourcePath?: string
+  enabled: boolean
+  effectiveEnabled?: boolean
+  canToggleHook: boolean
+  toggleStrategy: 'native-state' | 'soft-remove' | 'read-only'
+  managed?: boolean
+  occurrenceCount?: number
+  equivalentSources?: Array<{
+    agentId: string
+    sourcePath: string
+    scope: string
+    managed?: boolean
+  }>
+}
+```
+
+字段语义:
+
+- `enabled`: 当前 source 中这条 hook 是否注册。Claude soft disable 后为 `false`; Codex `[hooks.state]` 禁用后也为 `false`。
+- `effectiveEnabled`: 用户是否仍可能遇到同类 hook。若当前 source 禁用了, 但其他 source 仍有同 `event + matcher + hookHash`, 则为 `true`。
+- `toggleStrategy`:
+  - `native-state`: Agent 有原生或官方配置状态, 例如 Codex `[hooks.state]`。
+  - `soft-remove`: Agent 没有单 hook 状态, Berth 通过删除配置子项并保存恢复点实现, 例如 Claude Code user settings。
+  - `read-only`: 受管理、项目级、未知格式或安全原因导致不可写。
+
+Hooks 页面只依赖这个统一 meta 渲染行状态、确认文案和可用动作。
 
 ### Hook identity
 
@@ -49,6 +95,13 @@ type ClaudeHookKey = `claude-code:${string}:${string}:${string}`
 - `handlerIndex` / `hookIndex` 只能作为当前扫描到的位置, 用于定位文本 patch 范围或 UI 调试, 不能作为身份或恢复依据。
 - 同一 scenario 下出现多个相同 `hookHash`, UI 合并成一条 hook 资产, `meta.occurrenceCount` 记录数量。
 - 同一 `hookHash` 出现在不同 event 或 matcher 下, 视为不同场景里的同类 hook, 不互相覆盖。
+
+Codex 也使用同一套身份:
+
+- `hookHash` 只算 Codex hook 子项本身, 例如 command、commandWindows、type、async 等会影响行为的字段。
+- `scenarioHash` 只算 event 和 matcher。
+- Codex 当前已有 `hookKey` 用于 `[hooks.state]`; 后续要改成由 `scenarioHash + hookHash` 推导, 或至少在 meta 里同时保留旧 state key 与新统一 identity。
+- 如果 Codex 同一 scenario 下出现重复 `hookHash`, UI 也合并显示 `occurrenceCount`。禁用时写一条统一 state, 不按数组 index 拆多条。
 
 ### Asset meta
 
@@ -367,6 +420,18 @@ interface SetHookEnabledRequest {
   - 返回 unavailable, reason 改成 “仅支持用户级 Claude Code Hook 软禁用”。
 - 保留 Codex 原逻辑。
 
+Hooks 页面需要把状态分成两行信息:
+
+- `注册状态`: 当前 source 是否还有这条 hook。对应 `enabled`。
+- `实际影响`: 是否还有其他 source 提供同一 `event + matcher + hookHash`。对应 `effectiveEnabled` 和 `equivalentSources`。
+
+显示建议:
+
+- 行主状态 tag 展示 `启用` / `已禁用` / `只读`。
+- 若 `enabled === false` 但 `effectiveEnabled === true`, 在状态旁显示小 tag: `其他来源仍启用`。
+- hover/详情中列出其他来源路径、scope、managed 状态。
+- 操作确认文案必须说明“只影响当前 source”, 不暗示全局禁用。
+
 `src/renderer/src/components/capabilities/hooks-lifecycle-view.tsx`:
 
 - 删除 `toggleHook()` 里的 `hook.agentId !== 'codex'` 硬判断。
@@ -381,6 +446,90 @@ interface SetHookEnabledRequest {
   - active: 继续显示当前启用 tag。
   - disabled: 显示 disabled tag, hover/详情里说明这是 Berth 保存的恢复点。
 - 行内错误继续显示在当前行附近, 不增加全局提示。
+
+### Codex 兼容策略
+
+Codex 不需要 Claude 的 sidecar soft remove, 但需要进入同一套 UI 与身份模型:
+
+- parser 为 Codex hook 生成 `scenarioHash`、`hookHash`、`occurrenceCount`。
+- `toggleStrategy: 'native-state'`。
+- `stateSourcePath` 指向用户 `config.toml`。
+- `hookKey` 仍用于写 `[hooks.state]`, 但应从稳定 identity 生成, 避免 index 变化后状态丢失。
+- managed hook 继续 `read-only`, 与官方 “managed hooks can’t be disabled from the user hook browser” 行为保持一致。
+- 若 Codex hook 同时来自 `hooks.json` 和 inline `[hooks]`, UI 按 source 分行, 但用 `equivalentSources` 提醒同类 hook 仍存在于其他 source。
+
+这样 Claude 和 Codex 的差异只留在 adapter/action 层:
+
+- Claude: `toggleHook(false)` -> soft remove + sidecar。
+- Claude: `toggleHook(true)` -> sidecar restore。
+- Codex: `toggleHook(enabled)` -> 写 `[hooks.state]`。
+- UI: 只看 `toggleStrategy`、`enabled`、`effectiveEnabled`、`equivalentSources`。
+
+## Agent capability adapter
+
+仓库现在已经有 `AgentAdapter`, 但它主要负责 detect / scan / relation。hook 管理仍散在 parser、`hooks-manager.ts` 和 renderer 的 `agentId` 判断里。建议新增内部 `AgentCapabilityAdapter` 层, 先不做外部可安装 plugin:
+
+```ts
+interface AgentCapabilityAdapter {
+  id: string
+  displayName: string
+  scan(): Promise<{ assets: Asset[]; errors: ScanError[] }>
+  getHookStatus?(scope: AssetScope): HooksEnablementStatus
+  setHooksEnabled?(request: SetHooksEnabledRequest): SetHooksEnabledResult
+  getHookAction?(asset: Asset): HookActionDescriptor
+  setHookEnabled?(request: SetHookEnabledRequest): SetHookEnabledResult
+  describeHookIdentity?(asset: Asset): HookIdentity
+}
+
+interface HookActionDescriptor {
+  strategy: 'native-state' | 'soft-remove' | 'read-only'
+  canToggle: boolean
+  reasonKey?: string
+  confirmKey?: string
+  stateSourcePath?: string
+}
+
+interface HookIdentity {
+  event: string
+  matcher?: string
+  hookHash: string
+  scenarioHash: string
+}
+```
+
+迁移顺序:
+
+1. 把现有 `ClaudeCodeAdapter` 和 `CodexAdapter` 扩展为 capability adapter。
+2. `hooks-manager.ts` 不再按 `agentId` 写死分支, 改为查 adapter registry。
+3. renderer 不再判断 `hook.agentId === 'codex'`, 改为消费 `HookActionDescriptor`。
+4. health check、source coverage 仍可暂时保留原实现, 不在本任务中迁移。
+
+为什么不现在做外部 plugin:
+
+- hook 写入涉及本地配置文件修改, 需要文件路径校验、备份、并发控制和 UI 确认。外部 plugin 一旦能执行写操作, 权限模型会变复杂。
+- Hermes / PI 的官方配置格式还需要逐个确认, 现在先稳定内部接口更现实。
+- 先做内置 registry, 后续再把 adapter manifest 拆成磁盘 plugin:
+
+```ts
+interface AgentPluginManifest {
+  id: string
+  displayName: string
+  docs: string[]
+  sources: SourceDescriptor[]
+  assetTypes: AssetTypeDescriptor[]
+  actions: ActionDescriptor[]
+}
+```
+
+后续接入新 Agent 的最小流程:
+
+1. 读官方文档, 写 `AgentPluginManifest`。
+2. 写 source resolver, 说明用户级、项目级、managed 配置在哪里。
+3. 写 parser, 输出统一 `Asset` 和 `HookAssetMeta`。
+4. 如需写入, 实现 capability action, 并提供冲突处理与备份策略。
+5. 补目标测试和 UI snapshot。
+
+这让 Hermes / PI 的接入点集中在 adapter/plugin, 而不是分散到页面、IPC、health check 和 parser 的多处 `if agentId`。
 
 ## 文案
 

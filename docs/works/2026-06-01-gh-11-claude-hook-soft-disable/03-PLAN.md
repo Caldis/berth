@@ -10,6 +10,13 @@
   - [ ] sidecar 解析失败时转为 scanner error, 不中断其他资产扫描。
   - verify: parser / scanner 目标单测。
 
+- [ ] 对齐 Codex hook identity
+  - [ ] Codex hook asset 增加 `scenarioHash`、`hookHash`、`occurrenceCount`、`toggleStrategy`。
+  - [ ] 保留现有 `[hooks.state]` 写入策略, 但状态 key 迁移到稳定 identity 或兼容旧 key。
+  - [ ] managed hook 继续 read-only。
+  - [ ] hooks.json 与 inline hooks 出现同类 hook 时写入 `equivalentSources`。
+  - verify: `tests/unit/codex-config-parser.test.ts` + `tests/unit/hook-lifecycle.test.ts`。
+
 - [ ] 实现 Claude Code 单 Hook 软禁用
   - [ ] 在 `hooks-manager.ts#setHookEnabled()` 中分发 Codex 与 Claude Code。
   - [ ] 实现 Claude user settings 路径校验、hookKey 校验、managed 拒绝。
@@ -24,12 +31,20 @@
 
 - [ ] 调整 lifecycle 与 Hooks 页面
   - [ ] Claude user hook 从 unavailable 改为 confirmation action。
-  - [ ] 删除 renderer 的 codex-only toggle guard。
+  - [ ] 删除 renderer 的 codex-only toggle guard, 改按 `toggleStrategy` 判断。
   - [ ] 增加 Claude soft disable / restore 确认文案。
   - [ ] 恢复确认展示 command、event、sourcePath、disabledAt。
   - [ ] 同一 hook 在其他来源存在时显示提示, 明确当前操作只影响 user source。
+  - [ ] 区分注册状态 `enabled` 和实际影响 `effectiveEnabled`。
   - [ ] disabled 行显示为 Berth 恢复点状态, 不新增大块提示。
   - verify: `tests/unit/hook-lifecycle.test.ts` + `tests/renderer/hooks-lifecycle-view.test.tsx`。
+
+- [ ] 收口 adapter 边界
+  - [ ] 新增内部 `AgentCapabilityAdapter` / hook action descriptor 类型。
+  - [ ] Claude/Codex adapter 先实现 hook action descriptor, renderer 不再写死 agentId。
+  - [ ] `hooks-manager.ts` 通过 adapter registry 分发 hook 操作。
+  - [ ] 记录外部 plugin manifest 草案, 本任务不实现外部 plugin 加载。
+  - verify: `tests/unit/hooks-manager.test.ts` + `tests/unit/engine-scanner.test.ts`。
 
 - [ ] 文案与 i18n
   - [ ] 替换旧 `claudeNoSingleHookToggle` 展示语义。
