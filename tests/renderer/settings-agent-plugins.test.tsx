@@ -47,6 +47,7 @@ const plugins: AgentCapabilityPlugin[] = [
         reasonKey: 'settings.agentPluginPermissionReasons.claudeWrite'
       }
     ],
+    sourceDescriptors: [],
     sourceCoverage: {
       total: 2,
       counts: {
@@ -98,6 +99,7 @@ const plugins: AgentCapabilityPlugin[] = [
         reasonKey: 'settings.agentPluginPermissionReasons.codexWrite'
       }
     ],
+    sourceDescriptors: [],
     sourceCoverage: {
       total: 1,
       counts: {
