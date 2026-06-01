@@ -38,7 +38,7 @@ const CHART_COLORS = [
 const TIME_RANGES = [
   { value: 7, labelKey: 'overview.timeRange.7d' },
   { value: 30, labelKey: 'overview.timeRange.30d' },
-  { value: 365, labelKey: 'overview.timeRange.all' }
+  { value: 0, labelKey: 'overview.timeRange.all' }
 ] as const
 
 const COST_MODES: { value: CostMode; labelKey: string; tooltipKey: string }[] = [
@@ -162,7 +162,7 @@ function UsageLoadingSkeleton(): React.ReactElement {
 
 export function Usage(): React.ReactElement {
   const { t } = useTranslation()
-  const [days, setDays] = useState(30)
+  const [days, setDays] = useState(0)
   const [costMode, setCostMode] = useState<CostMode>('auto')
   const [usage, setUsage] = useState<UsageSummary | null>(null)
   const [hasLoadedUsage, setHasLoadedUsage] = useState(false)

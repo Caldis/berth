@@ -5,10 +5,10 @@
 - [x] 任务 1: 主进程 All 口径回归测试
   - 在 `tests/unit/usage-summary.test.ts` 增加 `days: 0` 全量累计测试, 先确认当前实现通过或失败状态。
   - 验证: `pnpm test -- tests/unit/usage-summary.test.ts` 通过, 11 tests passed。
-- [ ] 任务 2: Renderer 默认 All 与时间范围交互
+- [x] 任务 2: Renderer 默认 All 与时间范围交互
   - 在 `tests/renderer/sessions-pages.test.tsx` 更新默认请求断言, 并覆盖 30 天与 All 按钮传参。
   - 先跑测试看到当前实现失败, 再改 `src/renderer/src/pages/usage.tsx`。
-  - 验证: `pnpm test -- tests/renderer/sessions-pages.test.tsx`。
+  - 验证: `pnpm test -- tests/renderer/sessions-pages.test.tsx` 先按预期失败, 修复后通过, 16 tests passed。
 - [ ] 任务 3: 阶段收口
   - 跑目标测试、web/node typecheck、harness check。
   - 更新本清单和 INDEX.phase 到 verify。

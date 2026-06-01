@@ -460,7 +460,7 @@ describe('session pages', () => {
     expect(await screen.findByText('Input: 10')).toBeInTheDocument()
     expect(screen.getByText('Unknown: 5')).toBeInTheDocument()
     expect(window.api.usage.summary).toHaveBeenCalledWith({
-      days: 30,
+      days: 0,
       agentView: 'codex',
       costMode: 'auto'
     })
@@ -490,9 +490,46 @@ describe('session pages', () => {
 
     await waitFor(() => {
       expect(window.api.usage.summary).toHaveBeenLastCalledWith({
-        days: 30,
+        days: 0,
         agentView: 'all',
         costMode: 'estimated'
+      })
+    })
+  })
+
+  it('uses all-time usage by default and preserves explicit rolling ranges', async () => {
+    mockSessionApis()
+
+    render(
+      <MemoryRouter>
+        <Usage />
+      </MemoryRouter>
+    )
+
+    expect(await screen.findByText('Input: 10')).toBeInTheDocument()
+    expect(window.api.usage.summary).toHaveBeenCalledWith({
+      days: 0,
+      agentView: 'all',
+      costMode: 'auto'
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Last 30 days' }))
+
+    await waitFor(() => {
+      expect(window.api.usage.summary).toHaveBeenLastCalledWith({
+        days: 30,
+        agentView: 'all',
+        costMode: 'auto'
+      })
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: 'All time' }))
+
+    await waitFor(() => {
+      expect(window.api.usage.summary).toHaveBeenLastCalledWith({
+        days: 0,
+        agentView: 'all',
+        costMode: 'auto'
       })
     })
   })
@@ -530,7 +567,7 @@ describe('session pages', () => {
 
     expect(await screen.findByText('Input: 4')).toBeInTheDocument()
     expect(window.api.usage.summary).toHaveBeenLastCalledWith({
-      days: 30,
+      days: 0,
       agentView: 'all',
       costMode: 'auto'
     })
