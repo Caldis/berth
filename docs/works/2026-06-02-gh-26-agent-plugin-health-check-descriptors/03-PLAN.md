@@ -11,9 +11,10 @@
   - tests: `pnpm vitest run tests/unit/agent-capability-plugins.test.ts`
   - verify: 覆盖 hooks、config/settings、MCP、instructions、skills、agents、sessions; 不把运行时检查执行迁出 `health.ts`; 界面质量与交互验收不适用。
   - evidence: passed 2026-06-02, 10 tests.
-- [ ] 任务 3: 补齐 Settings renderer fixture, 确保新字段不改变当前 UI 行为。
+- [x] 任务 3: 补齐 Settings renderer fixture, 确保新字段不改变当前 UI 行为。
   - tests: `pnpm vitest run tests/renderer/settings-agent-plugins.test.tsx`
   - verify: Settings 默认摘要不增加详情噪音, 展开详情与外链行为不变。
+  - evidence: passed 2026-06-02, 3 tests.
 - [ ] 任务 4: 进入 verify 阶段前跑类型与 harness 目标检查。
   - tests: `pnpm typecheck`; `pnpm harness:check --work docs/works/2026-06-02-gh-26-agent-plugin-health-check-descriptors`
   - verify: 当前 work 产物合规, shared 类型全仓可用。
