@@ -242,75 +242,216 @@ export interface SettingsJson {
   [key: string]: unknown
 }
 
-export function parseHooks(filePath: string, scope: AssetScope): Asset[] {
+export interface ParseHooksOptions {
+  sidecarPath?: string
+  onSidecarError?: (error: Error, sidecarPath: string) => void
+}
+
+interface ClaudeDisabledHookEntry {
+  agentId: 'claude-code'
+  sourcePath: string
+  scope: 'user'
+  event: string
+  mode: 'nested' | 'direct'
+  matcher?: string
+  scenarioHash: string
+  containerTemplate?: Record<string, unknown>
+  hook: Record<string, unknown>
+  hookHash: string
+  removedCount: number
+  disabledAt: string
+}
+
+export function parseHooks(filePath: string, scope: AssetScope, options: ParseHooksOptions = {}): Asset[] {
   const settings = readSettingsJson(filePath)
-  if (!settings?.hooks) return []
   const assets = new Map<string, Asset>()
-  for (const [event, handlers] of Object.entries(settings.hooks)) {
-    if (!Array.isArray(handlers)) continue
+  if (settings?.hooks) {
+    for (const [event, handlers] of Object.entries(settings.hooks)) {
+      if (!Array.isArray(handlers)) continue
 
-    handlers.forEach((handler, handlerIndex) => {
-      const handlerRecord = isRecord(handler) ? handler : {}
-      const matcher = typeof handlerRecord.matcher === 'string' ? handlerRecord.matcher : undefined
-      const nestedHooks = Array.isArray(handlerRecord.hooks) ? handlerRecord.hooks : [handlerRecord]
-      const mode = Array.isArray(handlerRecord.hooks) ? 'nested' : 'direct'
-      const scenarioHash = buildHookScenarioHash(event, matcher)
+      handlers.forEach((handler, handlerIndex) => {
+        const handlerRecord = isRecord(handler) ? handler : {}
+        const matcher = typeof handlerRecord.matcher === 'string' ? handlerRecord.matcher : undefined
+        const nestedHooks = Array.isArray(handlerRecord.hooks) ? handlerRecord.hooks : [handlerRecord]
+        const mode = Array.isArray(handlerRecord.hooks) ? 'nested' : 'direct'
+        const scenarioHash = buildHookScenarioHash(event, matcher)
 
-      nestedHooks.forEach((hook, hookIndex) => {
-        const hookRecord = isRecord(hook) ? hook : {}
-        const command = typeof hookRecord.command === 'string' ? hookRecord.command : undefined
-        const hookType = typeof hookRecord.type === 'string' ? hookRecord.type : undefined
-        const entryPaths = command ? extractCommandEntryPaths(filePath, command, { scope }) : []
-        const hookHash = buildHookHash(hookRecord)
-        const hookKey = buildHookKey('claude-code', event, matcher, hookRecord)
-        const assetKey = `${scenarioHash}:${hookHash}`
-        const occurrence = { handlerIndex, hookIndex, mode }
-        const existing = assets.get(assetKey)
-        if (existing) {
-          const occurrences = Array.isArray(existing.meta.occurrences)
-            ? existing.meta.occurrences
-            : []
-          const existingEntryPaths = Array.isArray(existing.meta.entryPaths)
-            ? existing.meta.entryPaths.filter((value): value is string => typeof value === 'string')
-            : []
-          existing.meta.occurrences = [...occurrences, occurrence]
-          existing.meta.occurrenceCount = occurrences.length + 1
-          existing.meta.entryPaths = uniqueStrings([...existingEntryPaths, ...entryPaths])
-          return
-        }
-        assets.set(assetKey, {
-          id: makeId('hook'),
-          agentId: 'claude-code',
-          category: 'capability',
-          type: 'hook',
-          scope,
-          name: command ?? `${event} hook ${handlerIndex + 1}`,
-          path: filePath,
-          meta: {
-            provider: 'claude-code',
-            event,
-            eventType: event,
-            matcher,
-            command,
-            hookType,
-            entryPaths,
-            occurrences: [occurrence],
-            occurrenceCount: 1,
-            hookKey,
-            scenarioHash,
-            hookHash,
-            enabled: true,
-            effectiveEnabled: true,
-            canToggleHook: scope === 'user',
-            toggleStrategy: scope === 'user' ? 'soft-remove' : 'read-only',
-            stateSourcePath: filePath,
-            source: filePath
+        nestedHooks.forEach((hook, hookIndex) => {
+          const hookRecord = isRecord(hook) ? hook : {}
+          const command = typeof hookRecord.command === 'string' ? hookRecord.command : undefined
+          const hookType = typeof hookRecord.type === 'string' ? hookRecord.type : undefined
+          const entryPaths = command ? extractCommandEntryPaths(filePath, command, { scope }) : []
+          const hookHash = buildHookHash(hookRecord)
+          const hookKey = buildHookKey('claude-code', event, matcher, hookRecord)
+          const assetKey = `${scenarioHash}:${hookHash}`
+          const occurrence = { handlerIndex, hookIndex, mode }
+          const existing = assets.get(assetKey)
+          if (existing) {
+            const occurrences = Array.isArray(existing.meta.occurrences)
+              ? existing.meta.occurrences
+              : []
+            const existingEntryPaths = Array.isArray(existing.meta.entryPaths)
+              ? existing.meta.entryPaths.filter((value): value is string => typeof value === 'string')
+              : []
+            existing.meta.occurrences = [...occurrences, occurrence]
+            existing.meta.occurrenceCount = occurrences.length + 1
+            existing.meta.entryPaths = uniqueStrings([...existingEntryPaths, ...entryPaths])
+            return
           }
+          assets.set(assetKey, {
+            id: makeId('hook'),
+            agentId: 'claude-code',
+            category: 'capability',
+            type: 'hook',
+            scope,
+            name: command ?? `${event} hook ${handlerIndex + 1}`,
+            path: filePath,
+            meta: {
+              provider: 'claude-code',
+              event,
+              eventType: event,
+              matcher,
+              command,
+              hookType,
+              entryPaths,
+              occurrences: [occurrence],
+              occurrenceCount: 1,
+              hookKey,
+              scenarioHash,
+              hookHash,
+              enabled: true,
+              effectiveEnabled: true,
+              canToggleHook: scope === 'user',
+              toggleStrategy: scope === 'user' ? 'soft-remove' : 'read-only',
+              stateSourcePath: filePath,
+              source: filePath
+            }
+          })
         })
       })
+    }
+  }
+  appendDisabledClaudeHooks(assets, filePath, scope, options)
+  return Array.from(assets.values())
+}
+
+function appendDisabledClaudeHooks(
+  assets: Map<string, Asset>,
+  filePath: string,
+  scope: AssetScope,
+  options: ParseHooksOptions
+): void {
+  if (scope !== 'user') return
+  const sidecarPath = options.sidecarPath ?? path.join(path.dirname(filePath), '.berth', 'hooks-state.json')
+  if (!fs.existsSync(sidecarPath)) return
+
+  let entries: ClaudeDisabledHookEntry[]
+  try {
+    entries = readClaudeDisabledHookEntries(sidecarPath)
+  } catch (error) {
+    const normalized = error instanceof Error ? error : new Error(String(error))
+    if (options.onSidecarError) {
+      options.onSidecarError(normalized, sidecarPath)
+      return
+    }
+    throw normalized
+  }
+
+  for (const entry of entries) {
+    if (!samePath(entry.sourcePath, filePath)) continue
+    const hookHash = entry.hookHash || buildHookHash(entry.hook)
+    const scenarioHash = entry.scenarioHash || buildHookScenarioHash(entry.event, entry.matcher)
+    const assetKey = `${scenarioHash}:${hookHash}`
+    if (assets.has(assetKey)) continue
+
+    const command = typeof entry.hook.command === 'string' ? entry.hook.command : undefined
+    const hookType = typeof entry.hook.type === 'string' ? entry.hook.type : undefined
+    const entryPaths = command ? extractCommandEntryPaths(entry.sourcePath, command, { scope }) : []
+    assets.set(assetKey, {
+      id: makeId('hook'),
+      agentId: 'claude-code',
+      category: 'capability',
+      type: 'hook',
+      scope,
+      name: command ?? `${entry.event} hook`,
+      path: entry.sourcePath,
+      meta: {
+        provider: 'claude-code',
+        event: entry.event,
+        eventType: entry.event,
+        matcher: entry.matcher,
+        command,
+        hookType,
+        entryPaths,
+        occurrences: [],
+        occurrenceCount: Math.max(1, entry.removedCount),
+        hookKey: buildHookKey('claude-code', entry.event, entry.matcher, entry.hook),
+        scenarioHash,
+        hookHash,
+        enabled: false,
+        effectiveEnabled: false,
+        canToggleHook: true,
+        toggleStrategy: 'soft-remove',
+        stateSourcePath: sidecarPath,
+        source: entry.sourcePath,
+        disabledByBerth: true,
+        disabledAt: entry.disabledAt,
+        removedCount: entry.removedCount,
+        containerTemplate: entry.containerTemplate
+      }
     })
   }
-  return Array.from(assets.values())
+}
+
+function readClaudeDisabledHookEntries(sidecarPath: string): ClaudeDisabledHookEntry[] {
+  const parsed = JSON.parse(fs.readFileSync(sidecarPath, 'utf-8'))
+  if (!isRecord(parsed) || parsed.version !== 1 || !isRecord(parsed.disabled)) {
+    throw new Error('Invalid Claude hooks state file')
+  }
+
+  const entries: ClaudeDisabledHookEntry[] = []
+  for (const [key, value] of Object.entries(parsed.disabled)) {
+    const entry = parseClaudeDisabledHookEntry(value)
+    if (!entry) throw new Error(`Invalid Claude hooks state entry: ${key}`)
+    entries.push(entry)
+  }
+  return entries
+}
+
+function parseClaudeDisabledHookEntry(value: unknown): ClaudeDisabledHookEntry | null {
+  if (!isRecord(value)) return null
+  if (value.agentId !== 'claude-code' || value.scope !== 'user') return null
+  if (value.mode !== 'nested' && value.mode !== 'direct') return null
+  if (
+    typeof value.sourcePath !== 'string' ||
+    typeof value.event !== 'string' ||
+    typeof value.scenarioHash !== 'string' ||
+    typeof value.hookHash !== 'string' ||
+    typeof value.disabledAt !== 'string' ||
+    !isRecord(value.hook)
+  ) {
+    return null
+  }
+  return {
+    agentId: 'claude-code',
+    sourcePath: value.sourcePath,
+    scope: 'user',
+    event: value.event,
+    mode: value.mode,
+    matcher: typeof value.matcher === 'string' ? value.matcher : undefined,
+    scenarioHash: value.scenarioHash,
+    containerTemplate: isRecord(value.containerTemplate) ? value.containerTemplate : undefined,
+    hook: value.hook,
+    hookHash: value.hookHash,
+    removedCount: typeof value.removedCount === 'number' && Number.isFinite(value.removedCount)
+      ? value.removedCount
+      : 1,
+    disabledAt: value.disabledAt
+  }
+}
+
+function samePath(left: string, right: string): boolean {
+  return path.resolve(left).toLocaleLowerCase() === path.resolve(right).toLocaleLowerCase()
 }
 
 // ---------------------------------------------------------------------------

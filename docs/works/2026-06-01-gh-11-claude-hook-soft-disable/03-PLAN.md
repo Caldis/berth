@@ -18,8 +18,8 @@
   - [x] 增加 canonical JSON hash 和 `hookKey` 生成工具。
   - [x] 给 active user hook 写入 `enabled`、`canToggleHook`、`scenarioHash`、`hookHash`、`stateSourcePath`。
   - [x] 同一 scenario 下相同 `hookHash` 的子项合并为一条 asset, 并记录 `occurrenceCount`。
-  - [ ] 读取 `~/.claude/.berth/hooks-state.json`, 输出 disabled hook asset。
-  - [ ] sidecar 解析失败时转为 scanner error, 不中断其他资产扫描。
+  - [x] 读取 `~/.claude/.berth/hooks-state.json`, 输出 disabled hook asset。
+  - [x] sidecar 解析失败时转为 scanner error, 不中断其他资产扫描。
   - verify: parser / scanner 目标单测。
 
 - [ ] 对齐 Codex hook identity

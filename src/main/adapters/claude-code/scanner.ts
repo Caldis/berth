@@ -202,7 +202,21 @@ export function scanCapabilities(ctx: ScanContext): Asset[] {
   }
   for (const [fp, scope] of settingsSources) {
     if (fs.existsSync(fp)) {
-      const hooks = safeScan(ctx, fp, 'hook', () => parseHooks(fp, scope))
+      const sidecarPath = scope === 'user'
+        ? path.join(ctx.claudeDir, '.berth', 'hooks-state.json')
+        : undefined
+      const hooks = safeScan(ctx, fp, 'hook', () =>
+        parseHooks(fp, scope, {
+          sidecarPath,
+          onSidecarError: (error, statePath) => {
+            ctx.errors.push({
+              path: statePath,
+              type: 'hook-state',
+              message: error.message
+            })
+          }
+        })
+      )
       if (hooks) assets.push(...hooks)
 
       const perms = safeScan(ctx, fp, 'permission', () => parsePermissions(fp, scope))

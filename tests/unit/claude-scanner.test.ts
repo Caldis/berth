@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'fs'
 import { join } from 'path'
 import { tmpdir } from 'os'
+import { buildHookHash, buildHookScenarioHash } from '../../src/shared/hook-identity'
 import { scanCapabilities, scanInstructions, scanState } from '../../src/main/adapters/claude-code/scanner'
 import { parseHooks, parseStatuslinesFromSettings } from '../../src/main/adapters/claude-code/parsers'
 
@@ -109,6 +110,132 @@ describe('Claude Code scanner', () => {
         { handlerIndex: 0, hookIndex: 1, mode: 'nested' }
       ]
     })
+  })
+
+  it('reads disabled Claude hook restore points from the Berth sidecar', () => {
+    root = mkdtempSync(join(tmpdir(), 'berth-claude-hook-sidecar-'))
+    const settingsPath = join(root, 'settings.json')
+    const sidecarDir = join(root, '.berth')
+    const sidecarPath = join(sidecarDir, 'hooks-state.json')
+    const hook = { type: 'command', command: 'python hook.py' }
+    mkdirSync(sidecarDir, { recursive: true })
+    writeFileSync(settingsPath, JSON.stringify({ hooks: {} }))
+    writeFileSync(
+      sidecarPath,
+      JSON.stringify({
+        version: 1,
+        disabled: {
+          disabledHook: {
+            agentId: 'claude-code',
+            sourcePath: settingsPath,
+            scope: 'user',
+            event: 'SessionStart',
+            mode: 'nested',
+            matcher: 'startup',
+            scenarioHash: buildHookScenarioHash('SessionStart', 'startup'),
+            containerTemplate: { matcher: 'startup' },
+            hook,
+            hookHash: buildHookHash(hook),
+            removedCount: 2,
+            disabledAt: '2026-06-01T00:00:00.000Z'
+          }
+        }
+      })
+    )
+
+    const hooks = parseHooks(settingsPath, 'user', { sidecarPath })
+
+    expect(hooks).toHaveLength(1)
+    expect(hooks[0].meta).toMatchObject({
+      eventType: 'SessionStart',
+      matcher: 'startup',
+      command: 'python hook.py',
+      enabled: false,
+      effectiveEnabled: false,
+      canToggleHook: true,
+      toggleStrategy: 'soft-remove',
+      stateSourcePath: sidecarPath,
+      disabledByBerth: true,
+      disabledAt: '2026-06-01T00:00:00.000Z',
+      removedCount: 2,
+      occurrenceCount: 2
+    })
+    expect(hooks[0].meta.hookKey).toEqual(expect.stringMatching(/^claude-code:/))
+  })
+
+  it('hides disabled Claude sidecar entries when the same hook is active again', () => {
+    root = mkdtempSync(join(tmpdir(), 'berth-claude-hook-active-sidecar-'))
+    const settingsPath = join(root, 'settings.json')
+    const sidecarDir = join(root, '.berth')
+    const sidecarPath = join(sidecarDir, 'hooks-state.json')
+    const hook = { type: 'command', command: 'python hook.py' }
+    mkdirSync(sidecarDir, { recursive: true })
+    writeFileSync(
+      settingsPath,
+      JSON.stringify({
+        hooks: {
+          SessionStart: [{ matcher: 'startup', hooks: [hook] }]
+        }
+      })
+    )
+    writeFileSync(
+      sidecarPath,
+      JSON.stringify({
+        version: 1,
+        disabled: {
+          disabledHook: {
+            agentId: 'claude-code',
+            sourcePath: settingsPath,
+            scope: 'user',
+            event: 'SessionStart',
+            mode: 'nested',
+            matcher: 'startup',
+            scenarioHash: buildHookScenarioHash('SessionStart', 'startup'),
+            hook,
+            hookHash: buildHookHash(hook),
+            removedCount: 1,
+            disabledAt: '2026-06-01T00:00:00.000Z'
+          }
+        }
+      })
+    )
+
+    const hooks = parseHooks(settingsPath, 'user', { sidecarPath })
+
+    expect(hooks).toHaveLength(1)
+    expect(hooks[0].meta).toMatchObject({
+      enabled: true
+    })
+    expect(hooks[0].meta.disabledByBerth).toBeUndefined()
+  })
+
+  it('keeps active Claude hooks when the sidecar cannot be parsed', () => {
+    root = mkdtempSync(join(tmpdir(), 'berth-claude-hook-bad-sidecar-'))
+    const claudeDir = join(root, '.claude')
+    const sidecarDir = join(claudeDir, '.berth')
+    const settingsPath = join(claudeDir, 'settings.json')
+    const sidecarPath = join(sidecarDir, 'hooks-state.json')
+    mkdirSync(sidecarDir, { recursive: true })
+    writeFileSync(
+      settingsPath,
+      JSON.stringify({
+        hooks: {
+          SessionStart: [{ hooks: [{ type: 'command', command: 'echo start' }] }]
+        }
+      })
+    )
+    writeFileSync(sidecarPath, '{bad json')
+
+    const errors: { path: string; type: string; message: string }[] = []
+    const assets = scanCapabilities({ claudeDir, errors })
+
+    expect(assets.filter((asset) => asset.type === 'hook')).toHaveLength(1)
+    expect(errors).toEqual([
+      expect.objectContaining({
+        path: sidecarPath,
+        type: 'hook-state'
+      })
+    ])
   })
 
   it('detects Claude hook entry files from project-root commands', () => {
