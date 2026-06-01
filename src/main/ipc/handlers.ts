@@ -17,6 +17,9 @@ import type {
   MCPMergeInfo,
   SessionArtifacts,
   SessionToolEvent,
+  ClearHookRecoveryRequest,
+  ClearHookRecoveryResult,
+  HookRecoveryListResult,
   HooksAgentId,
   HooksEnablementStatus,
   SetHookEnabledRequest,
@@ -29,7 +32,14 @@ import { getSearch } from '../engine/search'
 import { buildUsageSummary } from '../engine/usage'
 import { normalizeTokenUsage } from '../../shared/token-usage'
 import { runHealthChecks } from '../engine/health'
-import { getAgentHooksStatus, getAgentHooksStatuses, setAgentHooksEnabled, setHookEnabled } from '../engine/hooks-manager'
+import {
+  clearHookRecovery,
+  getAgentHooksStatus,
+  getAgentHooksStatuses,
+  getHookRecoveries,
+  setAgentHooksEnabled,
+  setHookEnabled
+} from '../engine/hooks-manager'
 import { resolveRelations, buildImportChain } from '../engine/relations'
 import { parseMcpServers } from '../adapters/claude-code/parsers'
 import { parseClaudeSessionDetail } from '../adapters/claude-code/session-detail'
@@ -223,6 +233,20 @@ export function registerAssetHandlers(): void {
     'hooks:set-hook-enabled',
     async (_event, request: SetHookEnabledRequest): Promise<SetHookEnabledResult> => {
       const result = setHookEnabled(request)
+      const scanResult = await getScanner().scanAll()
+      getSearch().buildIndex(scanResult.assets)
+      return result
+    }
+  )
+
+  ipcMain.handle('hooks:recoveries', (): HookRecoveryListResult => {
+    return getHookRecoveries()
+  })
+
+  ipcMain.handle(
+    'hooks:clear-recovery',
+    async (_event, request: ClearHookRecoveryRequest): Promise<ClearHookRecoveryResult> => {
+      const result = clearHookRecovery(request)
       const scanResult = await getScanner().scanAll()
       getSearch().buildIndex(scanResult.assets)
       return result

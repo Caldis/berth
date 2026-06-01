@@ -3,7 +3,14 @@ import * as os from 'os'
 import * as path from 'path'
 import { parse as parseToml } from 'smol-toml'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { getAgentHooksStatus, getAgentHooksStatuses, setAgentHooksEnabled, setHookEnabled } from '../../src/main/engine/hooks-manager'
+import {
+  clearHookRecovery,
+  getAgentHooksStatus,
+  getAgentHooksStatuses,
+  getHookRecoveries,
+  setAgentHooksEnabled,
+  setHookEnabled
+} from '../../src/main/engine/hooks-manager'
 import { buildHookKey } from '../../src/shared/hook-identity'
 
 let tempDir: string | null = null
@@ -414,5 +421,159 @@ describe('hooks manager', () => {
       }, tempDir!)
     ).toThrow(/Invalid Claude hooks state/)
     expect(fs.readFileSync(settingsPath, 'utf-8')).toBe(before)
+  })
+
+  it('lists Claude restore points by current recovery status', () => {
+    const settingsPath = path.join(tempDir!, '.claude', 'settings.json')
+    const missingPath = path.join(tempDir!, '.claude', 'missing-settings.json')
+    const sidecarPath = path.join(tempDir!, '.claude', '.berth', 'hooks-state.json')
+    const activeHook = { type: 'command', command: 'echo active' }
+    const disabledHook = { type: 'http', url: 'http://localhost:8080/hooks/stop' }
+    const missingHook = { type: 'prompt', prompt: 'Check whether this turn can stop.' }
+    const activeKey = buildHookKey('claude-code', 'Stop', undefined, activeHook)
+    const disabledKey = buildHookKey('claude-code', 'SessionStart', 'startup', disabledHook)
+    const missingKey = buildHookKey('claude-code', 'UserPromptSubmit', undefined, missingHook)
+    fs.mkdirSync(path.dirname(settingsPath), { recursive: true })
+    fs.mkdirSync(path.dirname(sidecarPath), { recursive: true })
+    fs.writeFileSync(
+      settingsPath,
+      JSON.stringify({
+        hooks: {
+          Stop: [{ hooks: [activeHook] }]
+        }
+      })
+    )
+    fs.writeFileSync(
+      sidecarPath,
+      JSON.stringify({
+        version: 1,
+        disabled: {
+          [activeKey]: {
+            agentId: 'claude-code',
+            sourcePath: settingsPath,
+            scope: 'user',
+            event: 'Stop',
+            mode: 'nested',
+            scenarioHash: activeKey.split(':')[1],
+            hook: activeHook,
+            hookHash: activeKey.split(':')[2],
+            removedCount: 1,
+            disabledAt: '2026-06-01T00:00:00.000Z'
+          },
+          [disabledKey]: {
+            agentId: 'claude-code',
+            sourcePath: settingsPath,
+            scope: 'user',
+            event: 'SessionStart',
+            mode: 'nested',
+            matcher: 'startup',
+            scenarioHash: disabledKey.split(':')[1],
+            hook: disabledHook,
+            hookHash: disabledKey.split(':')[2],
+            removedCount: 1,
+            disabledAt: '2026-06-01T00:00:01.000Z'
+          },
+          [missingKey]: {
+            agentId: 'claude-code',
+            sourcePath: missingPath,
+            scope: 'user',
+            event: 'UserPromptSubmit',
+            mode: 'nested',
+            scenarioHash: missingKey.split(':')[1],
+            hook: missingHook,
+            hookHash: missingKey.split(':')[2],
+            removedCount: 1,
+            disabledAt: '2026-06-01T00:00:02.000Z'
+          }
+        }
+      })
+    )
+
+    const result = getHookRecoveries(tempDir!)
+    const pointsByKey = new Map(result.points.map((point) => [point.hookKey, point]))
+
+    expect(result.issues).toEqual([])
+    expect(pointsByKey.get(activeKey)).toMatchObject({
+      status: 'already-restored',
+      hookType: 'command',
+      command: 'echo active',
+      event: 'Stop'
+    })
+    expect(pointsByKey.get(disabledKey)).toMatchObject({
+      status: 'recoverable',
+      hookType: 'http',
+      command: 'http://localhost:8080/hooks/stop',
+      matcher: 'startup'
+    })
+    expect(pointsByKey.get(missingKey)).toMatchObject({
+      status: 'source-missing',
+      hookType: 'prompt',
+      command: 'Check whether this turn can stop.'
+    })
+  })
+
+  it('reports an invalid Claude restore sidecar without throwing', () => {
+    const sidecarPath = path.join(tempDir!, '.claude', '.berth', 'hooks-state.json')
+    fs.mkdirSync(path.dirname(sidecarPath), { recursive: true })
+    fs.writeFileSync(sidecarPath, JSON.stringify({ version: 1, disabled: { broken: { nope: true } } }))
+
+    const result = getHookRecoveries(tempDir!)
+
+    expect(result.points).toEqual([])
+    expect(result.issues).toEqual([
+      expect.objectContaining({
+        agentId: 'claude-code',
+        severity: 'error',
+        sourcePath: sidecarPath,
+        message: expect.stringContaining('Invalid Claude hooks state entry')
+      })
+    ])
+  })
+
+  it('clears a Claude restore point without changing the source settings', () => {
+    const settingsPath = path.join(tempDir!, '.claude', 'settings.json')
+    const sidecarPath = path.join(tempDir!, '.claude', '.berth', 'hooks-state.json')
+    const targetHook = { type: 'command', command: 'python hook.py' }
+    const hookKey = buildHookKey('claude-code', 'SessionStart', 'startup', targetHook)
+    fs.mkdirSync(path.dirname(settingsPath), { recursive: true })
+    fs.mkdirSync(path.dirname(sidecarPath), { recursive: true })
+    fs.writeFileSync(settingsPath, JSON.stringify({ hooks: { SessionStart: [] } }, null, 2))
+    const beforeSettings = fs.readFileSync(settingsPath, 'utf-8')
+    fs.writeFileSync(
+      sidecarPath,
+      JSON.stringify({
+        version: 1,
+        disabled: {
+          [hookKey]: {
+            agentId: 'claude-code',
+            sourcePath: settingsPath,
+            scope: 'user',
+            event: 'SessionStart',
+            mode: 'nested',
+            matcher: 'startup',
+            scenarioHash: hookKey.split(':')[1],
+            hook: targetHook,
+            hookHash: hookKey.split(':')[2],
+            removedCount: 1,
+            disabledAt: '2026-06-01T00:00:00.000Z'
+          }
+        }
+      })
+    )
+
+    const result = clearHookRecovery({
+      agentId: 'claude-code',
+      hookKey,
+      sourcePath: settingsPath
+    }, tempDir!)
+    const sidecar = JSON.parse(fs.readFileSync(sidecarPath, 'utf-8'))
+
+    expect(result).toEqual({
+      hookKey,
+      sourcePath: settingsPath,
+      changed: true
+    })
+    expect(sidecar.disabled[hookKey]).toBeUndefined()
+    expect(fs.readFileSync(settingsPath, 'utf-8')).toBe(beforeSettings)
   })
 })

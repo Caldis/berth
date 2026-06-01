@@ -4,6 +4,12 @@ import * as path from 'path'
 import { parse as parseToml, stringify as stringifyToml } from 'smol-toml'
 import { buildHookHash, buildHookScenarioHash } from '@shared/hook-identity'
 import type {
+  ClearHookRecoveryRequest,
+  ClearHookRecoveryResult,
+  HookRecoveryIssue,
+  HookRecoveryListResult,
+  HookRecoveryPoint,
+  HookRecoveryStatus,
   SetHookEnabledRequest,
   SetHookEnabledResult,
   HooksAgentId,
@@ -104,6 +110,61 @@ export function setHookEnabled(
   throw new Error(`Single hook enablement is not supported for ${request.agentId}`)
 }
 
+export function getHookRecoveries(homeDir = os.homedir()): HookRecoveryListResult {
+  const sidecarPath = getClaudeHookStatePath(homeDir)
+  if (!fs.existsSync(sidecarPath)) return { points: [], issues: [] }
+
+  try {
+    const { state } = readClaudeHooksStateWithText(sidecarPath)
+    const points = Object.entries(state.disabled)
+      .map(([hookKey, entry]) => toClaudeHookRecoveryPoint(hookKey, entry))
+      .sort(compareHookRecoveryPoints)
+    return { points, issues: [] }
+  } catch (error) {
+    return {
+      points: [],
+      issues: [toHookRecoveryIssue(sidecarPath, formatErrorMessage(error))]
+    }
+  }
+}
+
+export function clearHookRecovery(
+  request: ClearHookRecoveryRequest,
+  homeDir = os.homedir()
+): ClearHookRecoveryResult {
+  if (request.agentId !== 'claude-code') {
+    throw new Error(`Hook recovery cleanup is not supported for ${request.agentId}`)
+  }
+  if (!request.hookKey.trim()) {
+    throw new Error('Hook recovery cleanup requires a hook key')
+  }
+  parseHookKey(request.hookKey, 'claude-code')
+
+  const sidecarPath = getClaudeHookStatePath(homeDir)
+  return withHookFileLock(sidecarPath, () => {
+    const sidecar = readClaudeHooksStateWithText(sidecarPath)
+    const entry = sidecar.state.disabled[request.hookKey]
+    if (!entry) {
+      return {
+        hookKey: request.hookKey,
+        sourcePath: request.sourcePath,
+        changed: false
+      }
+    }
+    if (!samePath(entry.sourcePath, request.sourcePath)) {
+      throw new Error('Claude Code hook recovery source does not match the selected restore point')
+    }
+
+    delete sidecar.state.disabled[request.hookKey]
+    writeJsonFileIfUnchanged(sidecarPath, sidecar.state, sidecar.text)
+    return {
+      hookKey: request.hookKey,
+      sourcePath: request.sourcePath,
+      changed: true
+    }
+  })
+}
+
 const hookCapabilityPlugins: AgentHookCapabilityPlugin[] = [
   {
     agentId: 'claude-code',
@@ -141,6 +202,91 @@ function setCodexHookEnabled(
     changed: beforeEnabled !== request.enabled,
     sourcePath
   }
+}
+
+function toClaudeHookRecoveryPoint(hookKey: string, entry: ClaudeDisabledHookEntry): HookRecoveryPoint {
+  const inspection = inspectClaudeRecoverySource(entry)
+  const hookType = typeof entry.hook.type === 'string' ? entry.hook.type : 'unknown'
+  const command = hookRecoveryCommand(entry.hook)
+
+  return {
+    hookKey,
+    agentId: 'claude-code',
+    agentName: 'Claude Code',
+    sourcePath: entry.sourcePath,
+    scope: 'user',
+    event: entry.event,
+    matcher: entry.matcher,
+    hookType,
+    command,
+    summary: hookRecoverySummary(entry.hook),
+    createdAt: entry.disabledAt,
+    status: inspection.status,
+    message: inspection.message
+  }
+}
+
+function inspectClaudeRecoverySource(entry: ClaudeDisabledHookEntry): {
+  status: HookRecoveryStatus
+  message?: string
+} {
+  if (!fs.existsSync(entry.sourcePath)) {
+    return {
+      status: 'source-missing',
+      message: `Source file is missing: ${entry.sourcePath}`
+    }
+  }
+
+  try {
+    const settings = readJsonObject(entry.sourcePath) ?? {}
+    if (hasClaudeHook(settings, entry.scenarioHash, entry.hookHash)) {
+      return {
+        status: 'already-restored',
+        message: 'An equivalent hook already exists in the source file.'
+      }
+    }
+    return {
+      status: 'recoverable',
+      message: 'This restore point can be written back to the source file.'
+    }
+  } catch (error) {
+    return {
+      status: 'invalid',
+      message: formatErrorMessage(error)
+    }
+  }
+}
+
+function toHookRecoveryIssue(sourcePath: string, message: string): HookRecoveryIssue {
+  return {
+    agentId: 'claude-code',
+    sourcePath,
+    severity: 'error',
+    message
+  }
+}
+
+function compareHookRecoveryPoints(left: HookRecoveryPoint, right: HookRecoveryPoint): number {
+  return left.sourcePath.localeCompare(right.sourcePath) ||
+    left.event.localeCompare(right.event) ||
+    (left.matcher ?? '').localeCompare(right.matcher ?? '') ||
+    left.hookKey.localeCompare(right.hookKey)
+}
+
+function hookRecoveryCommand(hook: Record<string, unknown>): string | undefined {
+  if (typeof hook.command === 'string' && hook.command.trim()) return hook.command
+  if (typeof hook.url === 'string' && hook.url.trim()) return hook.url
+  if (typeof hook.server === 'string' && typeof hook.tool === 'string') return `${hook.server}.${hook.tool}`
+  if (typeof hook.prompt === 'string' && hook.prompt.trim()) return truncateInline(hook.prompt, 120)
+  return undefined
+}
+
+function hookRecoverySummary(hook: Record<string, unknown>): string {
+  return hookRecoveryCommand(hook) ?? truncateInline(JSON.stringify(hook), 120)
+}
+
+function formatErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error)
 }
 
 interface ParsedHookKey {
@@ -716,6 +862,10 @@ function cloneJson<T>(value: T): T {
 
 function samePath(left: string, right: string): boolean {
   return path.resolve(left).toLocaleLowerCase() === path.resolve(right).toLocaleLowerCase()
+}
+
+function truncateInline(value: string, maxLength: number): string {
+  return value.length > maxLength ? `${value.slice(0, maxLength - 1)}...` : value
 }
 
 function readBoolean(record: unknown, key: string): boolean | undefined {
