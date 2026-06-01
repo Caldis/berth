@@ -6,7 +6,7 @@ FEATURE
 
 ## 状态
 
-Open
+Done
 
 ## GitHub
 
@@ -16,6 +16,13 @@ Open
 ## 关联任务
 
 - 来源: `docs/issues/2026-06-01-FEATURE-agent-capability-plugin-system.md`
+- 归档: `docs/works/_archive/2026-06-02-gh-26-agent-plugin-health-check-descriptors/`
+
+## 完成记录
+
+- 2026-06-02: 已新增 Claude Code / Codex 内置插件的 health check descriptors, 覆盖当前 agent-specific 规则族。
+- 运行时文件读取、解析、平台判断、hash 与 dedupe 仍保留在 `src/main/engine/health.ts`。
+- Settings 插件 UI 维持原有摘要与展开交互, 只补齐数据契约兼容。
 
 ## PRD
 
