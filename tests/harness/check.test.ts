@@ -6,6 +6,7 @@ import { join } from 'node:path'
 // @ts-expect-error mjs sin tipos
 import {
   SMALL_CHANGE_EXEMPTION_CONSENT,
+  TEST_DISCIPLINE_RULE,
   checkWorks,
   checkFriction,
   checkIssues,
@@ -194,6 +195,19 @@ describe('checkEntryRules', () => {
         writeFileSync(path, current + '\n自己相关 git diff --cached')
       }
     }
+    mkdirSync(join(root, 'docs/works/_template'), { recursive: true })
+    for (const rel of [
+      '.agents/workflow/_shared.md',
+      '.agents/workflow/design.md',
+      '.agents/workflow/implement.md',
+      '.agents/workflow/verify.md',
+      'docs/works/_template/02-SPEC.md',
+      'docs/works/_template/03-PLAN.md'
+    ]) {
+      const path = join(root, rel)
+      const current = existsSync(path) ? readFileSync(path, 'utf8') : ''
+      writeFileSync(path, current + '\n' + TEST_DISCIPLINE_RULE)
+    }
   }
 
   it('根入口与 harness README 都声明小改动豁免确认规则时通过', () => {
@@ -221,5 +235,11 @@ describe('checkEntryRules', () => {
     writeEntryRules({ agents: true, readme: true })
     writeFileSync(join(root, '.agents/workflow/archive.md'), '自己相关')
     expect(checkEntryRules(root).some((e: string) => e.includes('frequent scoped commit'))).toBe(true)
+  })
+
+  it('缺少测试证据规则时报错', () => {
+    writeEntryRules({ agents: true, readme: true })
+    writeFileSync(join(root, '.agents/workflow/implement.md'), 'docs/issues 不属于当前主线\n自己相关 git diff --cached')
+    expect(checkEntryRules(root).some((e: string) => e.includes('test evidence'))).toBe(true)
   })
 })

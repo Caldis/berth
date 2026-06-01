@@ -11,6 +11,7 @@ const FRICTION_NAME = new RegExp(`^\\d{8}-(${VERBS.join('|')})-[a-z0-9-]+\\.md$`
 const PHASES = ['explore', 'design', 'blocked', 'implement', 'verify', 'polish', 'archive']
 const PHASE_RANK = { explore: 0, design: 1, blocked: 1, implement: 2, verify: 3, polish: 4, archive: 5 }
 export const SMALL_CHANGE_EXEMPTION_CONSENT = '小改动豁免前必须先声明豁免依据并征得用户确认。'
+export const TEST_DISCIPLINE_RULE = '测试证据或明确例外理由'
 
 function listDirs(p) {
   if (!existsSync(p)) return []
@@ -157,6 +158,22 @@ export function checkEntryRules(root) {
     const content = readFileSync(path, 'utf8')
     if (!content.includes('自己相关') || !content.includes('git diff --cached'))
       errors.push(`entry-rules: ${rel} missing frequent scoped commit rule`)
+  }
+  for (const rel of [
+    '.agents/workflow/_shared.md',
+    '.agents/workflow/design.md',
+    '.agents/workflow/implement.md',
+    '.agents/workflow/verify.md',
+    'docs/works/_template/02-SPEC.md',
+    'docs/works/_template/03-PLAN.md'
+  ]) {
+    const path = join(root, rel)
+    if (!existsSync(path)) {
+      errors.push(`entry-rules: missing ${rel}`)
+      continue
+    }
+    if (!readFileSync(path, 'utf8').includes(TEST_DISCIPLINE_RULE))
+      errors.push(`entry-rules: ${rel} missing test evidence rule`)
   }
   return errors
 }

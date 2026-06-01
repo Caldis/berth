@@ -5,11 +5,15 @@
 前置: INDEX.phase == verify。
 
 步骤:
-1. 机械检查: `pnpm lint`, `pnpm typecheck`, `pnpm test` 全绿 (CI 亦会拦截)。
-2. Code Review (只看机器判断不了的部分):
+1. 测试覆盖审计:
+   - 对照 03-PLAN, 确认每个实现项都有测试证据或明确例外理由。
+   - 对照本任务 diff, 确认每个行为变更都有 unit / renderer / e2e / harness 测试之一覆盖; 不适合自动化测试的项必须有替代验证证据。
+   - 若缺测试证据或例外理由含糊, 回写为 03-PLAN 新任务, 将 INDEX.phase 退回 implement。
+2. 机械检查: `pnpm lint`, `pnpm typecheck`, `pnpm test` 全绿 (CI 亦会拦截)。
+3. Code Review (只看机器判断不了的部分):
    - 对照 01-ANALYSIS.md 验收标准逐条核对产出。
    - 对照 02-SPEC.md 与 docs/ARCHITECTURE.md, 检查是否偏离设计、越界、违反 MVVM/进程隔离。
-3. 前端验收: 启动应用, 截图, 走通受影响界面的交互流程, 完成视觉与交互验收 (Agent 需"看到界面、摸到设备")。
+4. 前端验收: 启动应用, 截图, 走通受影响界面的交互流程, 完成视觉与交互验收 (Agent 需"看到界面、摸到设备")。
    - **先观测用户 dev, 但不接管、不复用、不清理**。如果用户已经运行 `pnpm dev` / `npm run dev`, 记录其 electron-vite PID 与 Electron 主进程 PID, 作为验收前后保护对象。
    - Agent 需要真实应用实例时, 使用独立 lifecycle: `pnpm dev:agent start --id <stable-id>`。该命令会传 `--berth-agent-instance=<stable-id>` 与独立 `--user-data-dir`, 并把 owner pid/state/log 写入系统临时目录。
    - 验收结束只能执行 `pnpm dev:agent stop <stable-id>` 清理本轮 Agent 实例。禁止使用按仓库路径批量清零的 `pkill` / `taskkill` / `Stop-Process` 命令, 因为它们会误杀用户 dev。
@@ -24,8 +28,8 @@
    - Windows UI 截图需用真实 `electron.exe` 主进程窗口, Playwright/CDP 只负责交互。不要用 `_electron.launch()` 返回进程的 `MainWindowHandle` 当截图句柄; 该 PID 可能没有主窗口句柄。高 DPI/显示缩放下, 优先用 Win32 枚举目标进程可见窗口, 再用 DWM `DWMWA_EXTENDED_FRAME_BOUNDS` 获取物理像素窗口边界后 `CopyFromScreen` 裁剪。
    - verify 过程中若遇到已验证的工具链 workaround、截图/进程/环境类问题、或用户纠正, 不等最终复盘: 先写入 `docs/friction/{YYYYMMDD}-verify-{summary}.md`, 必要时同步更新 workflow 规则, 跑 `pnpm harness:check` 通过后再继续最终汇报。
    - verify 过程中若发现已验证但不属于当前主线验收范围的产品 bug、功能缺口或改进项, 写入 `docs/issues/{YYYY-MM-DD}-{BUG|FEATURE|IMPROVEMENT}-{summary}.md`, 并在当前 verify 记录或 PLAN 中交叉引用; 不把旁支问题改成当前任务修复项, 除非用户明确扩大任务范围。
-4. 不通过项: 回写为 03-PLAN.md 新任务, 将 INDEX.phase 退回 implement, 重新进入开发循环。
-5. 全部通过后:
+5. 不通过项: 回写为 03-PLAN.md 新任务, 将 INDEX.phase 退回 implement, 重新进入开发循环。
+6. 全部通过后:
    - 若用户主动要求 Polish, 或 Agent 判断当前任务复杂且值得进一步检查, 只能先询问用户是否进入 `harness-polish`; 用户明确同意后再进入。
    - 若用户未要求或不同意 Polish, 提示用户确认验收, 然后 `harness-archive`。
    - 如果用户已明确认为任务完成或要求提交, 不要停在未提交工作区: 立即进入 archive 的归档与提交流程。若等待用户确认而暂不 archive, 最终说明必须明确“尚未提交, 下一步 archive/commit”。
