@@ -11,7 +11,7 @@
 - [x] 任务 3: 补齐 Settings 和 Hooks renderer 兼容测试。
   - tests: `pnpm vitest run tests/renderer/settings-agent-plugins.test.tsx tests/renderer/hooks-lifecycle-view.test.tsx`
   - verify: Settings 摘要不增加详情噪音; Hooks 生命周期侧栏、健康 hover、恢复中心、行级启用/禁用行为不变。
-- [ ] 任务 4: 进入 verify 阶段前跑类型与 harness 目标检查。
+- [x] 任务 4: 进入 verify 阶段前跑类型与 harness 目标检查。
   - tests: `pnpm typecheck`; `pnpm harness:check --work docs/works/2026-06-02-gh-27-agent-plugin-hook-schema-descriptors`
   - verify: 当前 work 产物合规, shared 类型全仓可用。
 

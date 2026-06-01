@@ -2,7 +2,7 @@
 task: 2026-06-02-gh-27-agent-plugin-hook-schema-descriptors
 task_id: GH-27
 type: feature
-phase: implement
+phase: verify
 created: 2026-06-02
 issue:
   number: 27
