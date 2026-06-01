@@ -134,6 +134,31 @@ describe('checkWorks', () => {
     expect(errs.some((e: string) => e.includes('gh_project.item_id'))).toBe(true)
   })
 
+  it('拒绝 Project item 占位符, 避免 active work 假装已绑定 Project', () => {
+    const name = '2026-05-29-gh-13-project-placeholder'
+    task(name, trackedFrontmatter(name, { number: 13, itemId: 'TBD' }), ['00-PRD.md'])
+    expect(checkWorks(root).some((e: string) => e.includes('PVTI_'))).toBe(true)
+  })
+
+  it('允许缺少 Project 授权时用 pending-auth + blocked 显式停住', () => {
+    const name = '2026-05-29-gh-14-project-pending-auth'
+    const frontmatter = [
+      `task: ${name}`,
+      'task_id: GH-14',
+      'type: feature',
+      'phase: blocked',
+      'created: 2026-05-29',
+      'issue:',
+      '  number: 14',
+      '  repo: Caldis/berth',
+      '  url: https://github.com/Caldis/berth/issues/14',
+      'gh_project:',
+      '  status: pending-auth'
+    ].join('\n')
+    task(name, frontmatter, ['00-PRD.md', '01-ANALYSIS.md'])
+    expect(checkWorks(root)).toEqual([])
+  })
+
   it('目录 issue number 必须与 task_id 和 issue.number 一致', () => {
     const name = '2026-05-29-gh-10-order-notes'
     task(name, trackedFrontmatter(name, { number: 11 }), ['00-PRD.md'])

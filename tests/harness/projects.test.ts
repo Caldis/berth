@@ -161,16 +161,16 @@ describe('harness-projects helpers', () => {
   it('auditTasks 检出 active Done 和 archived 未 Done', () => {
     writeIndex(
       join(root, 'docs/works/2026-06-01-active'),
-      ['---', 'task: active', 'type: feature', 'phase: verify', 'created: 2026-06-01', 'gh_project:', '  item_id: active-item', '---'].join('\n')
+      ['---', 'task: active', 'type: feature', 'phase: verify', 'created: 2026-06-01', 'gh_project:', '  item_id: PVTI_active', '---'].join('\n')
     )
     writeIndex(
       join(root, 'docs/works/_archive/2026-06-01-done'),
-      ['---', 'task: done', 'type: feature', 'phase: archive', 'created: 2026-06-01', 'gh_project:', '  item_id: done-item', '---'].join('\n')
+      ['---', 'task: done', 'type: feature', 'phase: archive', 'created: 2026-06-01', 'gh_project:', '  item_id: PVTI_done', '---'].join('\n')
     )
     const errors = auditTasks(root, {
       items: [
-        { id: 'active-item', status: 'Done' },
-        { id: 'done-item', status: 'In Progress' }
+        { id: 'PVTI_active', status: 'Done' },
+        { id: 'PVTI_done', status: 'In Progress' }
       ]
     })
     expect(errors).toEqual([
@@ -186,11 +186,26 @@ describe('harness-projects helpers', () => {
     )
     writeIndex(
       join(root, 'docs/works/2026-06-01-gh-124-missing-issue'),
-      ['---', 'task: missing issue', 'task_id: GH-124', 'type: feature', 'phase: explore', 'created: 2026-06-01', 'gh_project:', '  item_id: item-124', '---'].join('\n')
+      ['---', 'task: missing issue', 'task_id: GH-124', 'type: feature', 'phase: explore', 'created: 2026-06-01', 'gh_project:', '  item_id: PVTI_124', '---'].join('\n')
     )
     expect(auditTasks(root, { items: [] }, { strict: true })).toEqual([
       'missing item: active task missing gh_project.item_id',
       'missing issue: active task missing issue.number'
+    ])
+  })
+
+  it('auditTasks strict 拒绝 Project item 占位符, 但允许 pending-auth blocked 任务', () => {
+    writeIndex(
+      join(root, 'docs/works/2026-06-01-gh-123-placeholder'),
+      ['---', 'task: placeholder', 'task_id: GH-123', 'type: feature', 'phase: verify', 'created: 2026-06-01', 'issue:', '  number: 123', 'gh_project:', '  item_id: TBD', '---'].join('\n')
+    )
+    writeIndex(
+      join(root, 'docs/works/2026-06-01-gh-124-pending-auth'),
+      ['---', 'task: pending auth', 'task_id: GH-124', 'type: feature', 'phase: blocked', 'created: 2026-06-01', 'issue:', '  number: 124', 'gh_project:', '  status: pending-auth', '---'].join('\n')
+    )
+
+    expect(auditTasks(root, { items: [] }, { strict: true })).toEqual([
+      'placeholder: invalid gh_project.item_id "TBD"'
     ])
   })
 

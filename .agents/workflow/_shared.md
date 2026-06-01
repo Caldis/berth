@@ -45,6 +45,16 @@ artifacts:
 ---
 ```
 
+当 `gh` 暂时缺少 `project/read:project` scope 且无法写入 GitHub Project 时, 只能使用显式阻塞态, 不得填 `TBD` / `TODO` / 手写占位 item id:
+
+```yaml
+phase: blocked
+gh_project:
+  status: pending-auth
+```
+
+授权恢复后运行 `node scripts/harness-projects.mjs ensure docs/works/{task}` 回写真实 `PVTI_...` item id, 再把 `phase` 改回应继续的阶段。
+
 `phase` 表示任务当前所处阶段, 即 `harness-0.1-continue` 将续跑的步骤。action id 只用于 workflow 文件、skill 名和 friction 命名, 不替代 `INDEX.phase`。
 
 ## Action ID
@@ -89,7 +99,7 @@ artifacts:
 11. 已验证、边界清楚的增量必须小步频繁提交; 每次提交前只暂存自己相关文件, 用 `git diff --cached` 核对 staged 集合, 不提交无关工作区改动。共享工作区禁止 `git add -A`、`git add .` 和目录级批量 add; 显式列出本轮处理过的文件。若误提交了他人文件, 用 `git reset --soft HEAD~1` 拆回索引, 再 `git restore --staged <path>` 逐个踢出, 不用 destructive reset。
    - 多 Agent 并行导致别的 active work 破坏全局 `pnpm harness:check` 时, 当前任务阶段提交可先跑 `pnpm harness:check --work docs/works/{task}` 验证自己的任务目录。verify/archive 总收口仍必须跑全局 `pnpm harness:check`, 不能用局部检查替代。
 12. Polish 是可选阶段, 只能由用户主动要求, 或 Agent 在复杂任务 verify 通过后询问并取得明确同意后进入。Polish 只检查当前任务相关的深挖、修复、交互、视觉、可用性、适用性与性能问题, 不扩大范围。
-13. Active work 必须记录 `task_id`、`issue.number`、`issue.url` 和 `gh_project.item_id`。旧归档任务可保留历史企业 ticket 字段, 但 active works 不再新增这类字段。
+13. Active work 必须记录 `task_id`、`issue.number`、`issue.url` 和真实 `gh_project.item_id`。唯一例外是 `gh_project.status: pending-auth` 且 `phase: blocked`, 表示缺少 GitHub Project 授权, 不允许使用 `TBD` / `TODO` / 手写占位 item id。旧归档任务可保留历史企业 ticket 字段, 但 active works 不再新增这类字段。
 14. Archive 前必须同步 GitHub Project: 运行 `node scripts/harness-projects.mjs done <task-dir>`, 将 item 状态置 Done 并回读确认; 失败、缺授权或缺 `gh_project.item_id` 时停止 archive, 不移动目录。GitHub Issue 是否关闭由 PR closing keyword 或用户明确要求决定, archive 不默认关闭 Issue。
 15. 测试不是 verify 阶段补跑。Design 必须写测试策略和测试矩阵; Implement 每个实现项必须先写或更新目标测试, 跑目标测试通过后才可勾选。确实不适合自动化测试时, 必须在 03-PLAN 写清 `tests: not needed - <reason>` 和替代验证。每个实现项必须有测试证据或明确例外理由。
 16. 默认流程是 harness workflow。只有用户明确要求使用 Superpowers 流程时, Superpowers 才能接管流程; 否则只把 Superpowers 当作方法库。

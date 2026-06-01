@@ -10,6 +10,16 @@ const DEFAULT_OWNER = 'Caldis'
 const DEFAULT_PROJECT_NUMBER = 6
 const AUTH_HINT = 'gh auth refresh -h github.com -s project,read:project'
 const DEFAULT_REPO = 'Caldis/berth'
+const PROJECT_ITEM_ID = /^PVTI_[A-Za-z0-9_-]+$/
+
+export function isValidProjectItemId(value) {
+  return PROJECT_ITEM_ID.test(String(value || '').trim())
+}
+
+export function isPendingProjectAuth(frontmatter) {
+  const gh = frontmatter.gh_project || {}
+  return gh.status === 'pending-auth' && frontmatter.phase === 'blocked'
+}
 
 function ghJson(args) {
   try {
@@ -172,7 +182,7 @@ function projectContext(frontmatter) {
     number: gh.project_number || process.env.HARNESS_PROJECT_NUMBER || DEFAULT_PROJECT_NUMBER,
     projectId: gh.project_id,
     projectUrl: gh.project_url,
-    itemId: gh.item_id
+    itemId: isValidProjectItemId(gh.item_id) ? gh.item_id : undefined
   }
 }
 
@@ -274,8 +284,17 @@ export function auditTasks(root, itemsJson, options = {}) {
     const gh = frontmatter.gh_project || {}
     const issue = frontmatter.issue || {}
     if (strict && !issue.number) errors.push(`${frontmatter.task}: active task missing issue.number`)
-    if (strict && !gh.item_id) errors.push(`${frontmatter.task}: active task missing gh_project.item_id`)
-    if (!gh.item_id) continue
+    const itemId = String(gh.item_id || '').trim()
+    if (isPendingProjectAuth(frontmatter)) {
+      if (itemId) errors.push(`${frontmatter.task}: pending Project auth task must not keep gh_project.item_id`)
+      continue
+    }
+    if (strict && !itemId) errors.push(`${frontmatter.task}: active task missing gh_project.item_id`)
+    if (!itemId) continue
+    if (!isValidProjectItemId(itemId)) {
+      errors.push(`${frontmatter.task}: invalid gh_project.item_id "${itemId}"`)
+      continue
+    }
     const item = findProjectItem(itemsJson, { itemId: gh.item_id, task: frontmatter.task, title: taskTitle(frontmatter, dir), issueUrl: issue.url })
     if (item && item.status === 'Done') errors.push(`${frontmatter.task}: active task has Done project status`)
   }
@@ -283,6 +302,10 @@ export function auditTasks(root, itemsJson, options = {}) {
     const { frontmatter } = readTaskIndex(dir)
     const gh = frontmatter.gh_project || {}
     if (!gh.item_id) continue
+    if (!isValidProjectItemId(gh.item_id)) {
+      errors.push(`${frontmatter.task}: archived task has invalid gh_project.item_id "${gh.item_id}"`)
+      continue
+    }
     const issue = frontmatter.issue || {}
     const item = findProjectItem(itemsJson, { itemId: gh.item_id, task: frontmatter.task, title: taskTitle(frontmatter, dir), issueUrl: issue.url })
     if (!item) errors.push(`${frontmatter.task}: archived task project item not found`)
@@ -317,7 +340,7 @@ export function ensureStartedTask(taskDir, options = {}) {
 export function markDoneTask(taskDir, options = {}) {
   const gh = options.gh || ghJson
   const { indexPath, markdown, frontmatter } = readTaskIndex(taskDir)
-  if (!frontmatter.gh_project || !frontmatter.gh_project.item_id)
+  if (!frontmatter.gh_project || !isValidProjectItemId(frontmatter.gh_project.item_id))
     throw new Error('INDEX.md missing gh_project.item_id; run harness-projects ensure before archive')
   const context = ensureProject(projectContext(frontmatter), gh)
   setProjectStatus(context, 'Done', gh)

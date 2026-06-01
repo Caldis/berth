@@ -8,6 +8,7 @@ import { check as checkDistribution } from './harness-sync.mjs'
 
 const WORK_NAME = /^\d{4}-\d{2}-\d{2}-gh-(\d+)-[a-z0-9-]+$/
 const TASK_ID = /^GH-(\d+)$/
+const PROJECT_ITEM_ID = /^PVTI_[A-Za-z0-9_-]+$/
 const FRICTION_NAME = new RegExp(`^\\d{8}-(${ACTION_IDS.map((id) => id.replace(/\./g, '\\.')).join('|')})-[a-z0-9-]+\\.md$`)
 const PHASES = ['explore', 'design', 'blocked', 'implement', 'verify', 'polish', 'archive']
 const PHASE_RANK = { explore: 0, design: 1, blocked: 1, implement: 2, verify: 3, polish: 4, archive: 5 }
@@ -88,8 +89,19 @@ export function checkWorks(root, options = {}) {
     else if (!String(issue.url).endsWith(`/issues/${issueNumberFromName}`))
       errors.push(`works/${name}: issue.url does not match directory issue number ${issueNumberFromName}`)
     const gh = fm.gh_project || {}
-    if (!gh.item_id)
+    const projectStatus = String(gh.status || '').trim()
+    const projectItemId = String(gh.item_id || '').trim()
+    const projectPendingAuth = projectStatus === 'pending-auth'
+    if (projectPendingAuth) {
+      if (fm.phase !== 'blocked')
+        errors.push(`works/${name}: gh_project.status=pending-auth requires phase=blocked`)
+      if (projectItemId)
+        errors.push(`works/${name}: gh_project.status=pending-auth must not keep gh_project.item_id`)
+    } else if (!projectItemId) {
       errors.push(`works/${name}: frontmatter missing "gh_project.item_id"`)
+    } else if (!PROJECT_ITEM_ID.test(projectItemId)) {
+      errors.push(`works/${name}: gh_project.item_id must be a GitHub ProjectV2Item node id (PVTI_...), got "${projectItemId}"`)
+    }
     if (fm.type && !['feature', 'bug'].includes(fm.type))
       errors.push(`works/${name}: invalid type "${fm.type}"`)
     if (fm.phase && !PHASES.includes(fm.phase))
