@@ -46,3 +46,7 @@ Fixed
 - 已保留脚本引用解析, 资产来源以配置文件为准, 脚本路径作为 `entryPaths`。
 - 已按 Codex 官方配置接入 `[tui].status_line`, 并区分未设置、显式空数组隐藏、未知 item。
 - 已补单元测试和 renderer 测试覆盖 user/project `statusLine`、`subagentStatusLine`、inline command、script path、Codex footer items、空态和隐藏状态。
+
+## 归档
+
+- 任务归档路径: `docs/works/_archive/2026-05-30-gh-7-status-line-capability-compatibility/`

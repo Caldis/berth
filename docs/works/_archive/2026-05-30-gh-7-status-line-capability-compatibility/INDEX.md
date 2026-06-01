@@ -2,7 +2,7 @@
 task: 2026-05-30-gh-7-status-line-capability-compatibility
 task_id: GH-7
 type: feature
-phase: verify
+phase: archive
 created: 2026-05-30
 issue:
   number: 7
@@ -15,7 +15,7 @@ gh_project:
   project_number: 6
   project_url: https://github.com/users/Caldis/projects/6
   item_id: PVTI_lAHOADXbEs4BZHvQzguQC6o
-  item_status: In Progress
+  item_status: Done
 artifacts:
   source: 00-PRD.md
   analysis: 01-ANALYSIS.md
