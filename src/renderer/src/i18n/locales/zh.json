@@ -24,6 +24,28 @@
     "noResults": "未找到结果。",
     "hint": "按名称、类型或作用域搜索所有资产。"
   },
+  "assetGuide": {
+    "showDetails": "详情",
+    "hideDetails": "收起详情",
+    "suggestedPath": "建议查看顺序",
+    "path": {
+      "instructions": "指令",
+      "capabilities": "能力",
+      "boundaries": "权限和环境变量",
+      "sessions": "会话"
+    },
+    "evidence": {
+      "assets": "个资产",
+      "sources": "个来源",
+      "providers": "个 provider",
+      "risks": "个风险"
+    },
+    "providerMap": {
+      "provider": "Provider",
+      "config": "配置",
+      "meaning": "Berth 如何理解"
+    }
+  },
   "overview": {
     "title": "总览",
     "recentSessions": "最近会话",
@@ -65,6 +87,74 @@
     "sessionOverview": "运行概览",
     "durationUnknown": "未知",
     "toolTimelineDescription": "工具调用、状态、耗时和从 transcript 推导出的证据。",
+    "toolFilter": {
+      "label": "最小耗时",
+      "ariaLabel": "最小工具耗时",
+      "showing": "显示 {{shown}} / {{total}}",
+      "allDurations": "全部耗时",
+      "allStatuses": "全部",
+      "failedOnly": "失败",
+      "minDuration": ">= {{duration}}",
+      "emptyTitle": "这个区间里没有慢工具调用",
+      "emptyDescription": "降低耗时筛选阈值即可看到更快的调用。"
+    },
+    "toolTips": {
+      "agent": "在独立上下文里运行子代理。耗时包含被委派任务的完整执行过程，所以通常会比一次直接工具调用更长。",
+      "askUser": "弹出结构化问题并等待用户回答。耗时很长通常表示 agent 在等人输入。",
+      "shell": "在本地环境执行 shell 命令。测试、构建、安装、网络请求或 watch 命令通常会让耗时变长。",
+      "fileRead": "读取本地文件或资源，让 agent 在下一步行动前先核对当前状态。",
+      "fileWrite": "创建或编辑文件。失败常见原因是文件在读取后又被改过，或精确匹配的编辑目标没有命中。",
+      "fileSearch": "搜索文件、符号或文本。通常很快，但在大目录里跑宽泛模式也会变慢。",
+      "web": "执行 Web 搜索或抓取。耗时取决于网络、provider 限制、跳转和页面抽取。",
+      "skill": "加载 skill 指令包。这里有用的信息是后续步骤受哪个 workflow 影响。",
+      "tasks": "更新 agent 的任务或待办状态。这类调用解释计划状态，不代表应用行为。",
+      "patch": "通过本地编辑 helper 应用代码补丁。耗时短通常表示补丁干净命中。",
+      "mcp": "调用外部 MCP 或插件工具。耗时包含 connector 以及背后的本地或远端服务。",
+      "browser": "控制浏览器或 Playwright 会话，用于 UI 检查和验证。",
+      "image": "读取或附加图片，让 agent 检查视觉证据。",
+      "workspace": "加载本地工具使用的打包运行时或文档辅助库。",
+      "multiAgent": "协调另一个本地 agent 进程。耗时可能包含排队和另一个 agent 的工作时间。",
+      "hook": "执行会话或工具调用周边的 hook 逻辑。",
+      "plan": "切换计划模式状态，或在继续改代码前请求计划批准。",
+      "generic": "transcript 里的工具事件。主要看摘要、文件路径、状态和耗时。"
+    },
+    "checkpointSummary": {
+      "noDetailsTitle": "记录到 {{count}} 个 checkpoint",
+      "noDetailsDescription": "Checkpoint 是文件历史快照。这个 transcript 记录了数量，但没有包含每个 checkpoint 对应的变更文件或 diff。",
+      "omittedNoDetails": "已隐藏 {{count}} 个没有文件明细的 checkpoint。",
+      "recordedCount": "记录数",
+      "fileLists": "文件列表",
+      "missingDetails": "缺少明细",
+      "availableFields": "如果后续 transcript 暴露 checkpoint 时间、变更路径或文件数量，Berth 可以把这些字段列在这里。"
+    },
+    "modelInfo": {
+      "provider": "Provider",
+      "releaseDate": "模型日期",
+      "contextWindow": "上下文",
+      "maxOutput": "最大输出",
+      "knowledgeCutoff": "知识截止",
+      "notRecorded": "未记录",
+      "pricingTitle": "每 100 万 token 价格",
+      "noPricing": "本地价格目录没有匹配到这个模型 ID。",
+      "pricingSource": "来源: {{source}} · 匹配 {{model}}",
+      "providerSourceModelId": "从模型 ID 推断",
+      "providerSourcePricing": "来自价格目录",
+      "providerSourceAgent": "从 agent 推断",
+      "releaseSourceModelId": "来自模型 ID",
+      "releaseSourceModelCatalog": "来自官方模型资料",
+      "cacheSourceFromTranscript": "缓存 token 来自 transcript 里的 cache_read_input_tokens、cache_creation_input_tokens、cached_input_tokens 等 usage 字段。Berth 不会从文本内容猜缓存命中。",
+      "cacheSourceUnavailable": "这个 transcript 没有暴露 token breakdown，因此 Berth 无法识别缓存 token。",
+      "referenceLink": "打开官方模型资料"
+    },
+    "tabs": {
+      "label": "会话详情分区",
+      "overview": "概览",
+      "overviewDescription": "运行指标和会话信号",
+      "timeline": "时间线",
+      "timelineDescription": "工具调用、筛选和耗时",
+      "artifacts": "产物",
+      "artifactsDescription": "计划、待办、文件和 checkpoints"
+    },
     "signals": {
       "title": "会话信号",
       "description": "这些指标来自本地 transcript 推导，可能与供应商账单或遥测不同。",
@@ -162,74 +252,6 @@
         "title": "没有记录到 checkpoint",
         "description": "这个会话没有文件历史 checkpoint。"
       }
-    },
-    "toolFilter": {
-      "label": "最小耗时",
-      "ariaLabel": "最小工具耗时",
-      "showing": "显示 {{shown}} / {{total}}",
-      "allDurations": "全部耗时",
-      "allStatuses": "全部",
-      "failedOnly": "失败",
-      "minDuration": ">= {{duration}}",
-      "emptyTitle": "这个区间里没有慢工具调用",
-      "emptyDescription": "降低耗时筛选阈值即可看到更快的调用。"
-    },
-    "toolTips": {
-      "agent": "在独立上下文里运行子代理。耗时包含被委派任务的完整执行过程，所以通常会比一次直接工具调用更长。",
-      "askUser": "弹出结构化问题并等待用户回答。耗时很长通常表示 agent 在等人输入。",
-      "shell": "在本地环境执行 shell 命令。测试、构建、安装、网络请求或 watch 命令通常会让耗时变长。",
-      "fileRead": "读取本地文件或资源，让 agent 在下一步行动前先核对当前状态。",
-      "fileWrite": "创建或编辑文件。失败常见原因是文件在读取后又被改过，或精确匹配的编辑目标没有命中。",
-      "fileSearch": "搜索文件、符号或文本。通常很快，但在大目录里跑宽泛模式也会变慢。",
-      "web": "执行 Web 搜索或抓取。耗时取决于网络、provider 限制、跳转和页面抽取。",
-      "skill": "加载 skill 指令包。这里有用的信息是后续步骤受哪个 workflow 影响。",
-      "tasks": "更新 agent 的任务或待办状态。这类调用解释计划状态，不代表应用行为。",
-      "patch": "通过本地编辑 helper 应用代码补丁。耗时短通常表示补丁干净命中。",
-      "mcp": "调用外部 MCP 或插件工具。耗时包含 connector 以及背后的本地或远端服务。",
-      "browser": "控制浏览器或 Playwright 会话，用于 UI 检查和验证。",
-      "image": "读取或附加图片，让 agent 检查视觉证据。",
-      "workspace": "加载本地工具使用的打包运行时或文档辅助库。",
-      "multiAgent": "协调另一个本地 agent 进程。耗时可能包含排队和另一个 agent 的工作时间。",
-      "hook": "执行会话或工具调用周边的 hook 逻辑。",
-      "plan": "切换计划模式状态，或在继续改代码前请求计划批准。",
-      "generic": "transcript 里的工具事件。主要看摘要、文件路径、状态和耗时。"
-    },
-    "checkpointSummary": {
-      "noDetailsTitle": "记录到 {{count}} 个 checkpoint",
-      "noDetailsDescription": "Checkpoint 是文件历史快照。这个 transcript 记录了数量，但没有包含每个 checkpoint 对应的变更文件或 diff。",
-      "omittedNoDetails": "已隐藏 {{count}} 个没有文件明细的 checkpoint。",
-      "recordedCount": "记录数",
-      "fileLists": "文件列表",
-      "missingDetails": "缺少明细",
-      "availableFields": "如果后续 transcript 暴露 checkpoint 时间、变更路径或文件数量，Berth 可以把这些字段列在这里。"
-    },
-    "modelInfo": {
-      "provider": "Provider",
-      "releaseDate": "模型日期",
-      "contextWindow": "上下文",
-      "maxOutput": "最大输出",
-      "knowledgeCutoff": "知识截止",
-      "notRecorded": "未记录",
-      "pricingTitle": "每 100 万 token 价格",
-      "noPricing": "本地价格目录没有匹配到这个模型 ID。",
-      "pricingSource": "来源: {{source}} · 匹配 {{model}}",
-      "providerSourceModelId": "从模型 ID 推断",
-      "providerSourcePricing": "来自价格目录",
-      "providerSourceAgent": "从 agent 推断",
-      "releaseSourceModelId": "来自模型 ID",
-      "releaseSourceModelCatalog": "来自官方模型资料",
-      "cacheSourceFromTranscript": "缓存 token 来自 transcript 里的 cache_read_input_tokens、cache_creation_input_tokens、cached_input_tokens 等 usage 字段。Berth 不会从文本内容猜缓存命中。",
-      "cacheSourceUnavailable": "这个 transcript 没有暴露 token breakdown，因此 Berth 无法识别缓存 token。",
-      "referenceLink": "打开官方模型资料"
-    },
-    "tabs": {
-      "label": "会话详情分区",
-      "overview": "概览",
-      "overviewDescription": "运行指标和会话信号",
-      "timeline": "时间线",
-      "timelineDescription": "工具调用、筛选和耗时",
-      "artifacts": "产物",
-      "artifactsDescription": "计划、待办、文件和 checkpoints"
     }
   },
   "instructions": {
@@ -260,13 +282,13 @@
         "claudeMemory": "Claude Code 记忆",
         "codexAgentsMd": "Codex AGENTS.md",
         "claudeSkills": "Claude Code Skills",
+        "codexSkills": "Codex Skills",
         "codexConfig": "Codex 配置",
         "claudeSubagents": "Claude Code 子代理",
+        "codexSubagents": "Codex 子代理",
         "codexSlashCommands": "Codex 斜杠命令",
         "claudeOutputStyles": "Claude Code 输出样式",
-        "claudeSettings": "Claude Code 设置",
-        "codexSkills": "Codex Skills",
-        "codexSubagents": "Codex 子代理"
+        "claudeSettings": "Claude Code 设置"
       },
       "memories": {
         "title": "跨来源记忆笔记",
@@ -403,21 +425,86 @@
         "unknown": "未知"
       }
     },
+    "statusLine": {
+      "intro": {
+        "title": "状态栏展示会话实时状态",
+        "all": "Claude Code 和 Codex 都有状态栏, 但模型不同。Claude Code 运行配置好的命令并展示输出。Codex 从 config.toml 读取内置 footer item 的有序列表。",
+        "claude": "Claude Code 状态栏来自 settings.json 中的 command-backed 配置。命令可以是脚本路径或 inline shell command, 会在会话期间刷新。",
+        "codex": "Codex 状态栏是内置 TUI footer item, 持久化在 config.toml。Codex 不运行自定义状态栏脚本。"
+      },
+      "model": {
+        "claude": {
+          "title": "Claude Code 命令",
+          "body": "读取 settings 文件中的 statusLine 和 subagentStatusLine。命令可以引用本地脚本, 也可能被 disableAllHooks 禁用。"
+        },
+        "codex": {
+          "title": "Codex footer items",
+          "body": "读取 config.toml 里的 [tui].status_line。模型、目录、分支、token、速率限制和任务进度等 item 可被选择和排序。"
+        }
+      },
+      "summary": {
+        "total": "已配置状态栏资产",
+        "effective": "当前生效",
+        "claude": "Claude 命令展示面",
+        "codexItems": "Codex footer items",
+        "disabled": "被设置禁用",
+        "warnings": "警告",
+        "blocked": "阻断"
+      },
+      "effective": "生效",
+      "overridden": "被覆盖",
+      "overriddenBy": "被 {{scope}} 级别覆盖",
+      "setting": "设置项",
+      "command": "命令",
+      "footerItems": "Footer items",
+      "themeColors": "主题颜色",
+      "refreshInterval": "刷新间隔",
+      "padding": "边距",
+      "hideVimModeIndicator": "隐藏 Vim 模式",
+      "entryPaths": "引用脚本",
+      "disabled": "被 disableAllHooks 禁用",
+      "hidden": "status_line 显式为空, 因此 Codex 状态栏被隐藏, 不会回退到默认项。",
+      "unknownItems": "{{count}} 个未知 item 会被当前 Codex 忽略。",
+      "redactedCommand": "当前视图已隐藏命令里的敏感片段。需要核对原文时使用“查看原始文件”。",
+      "health": {
+        "ok": "正常",
+        "warning": "警告",
+        "blocked": "阻断"
+      },
+      "diagnostics": {
+        "ok": "配置可读取。",
+        "overridden": "更高优先级的 {{scope}} 级别设置会让这条状态栏配置不生效。",
+        "disabled": "当前 settings 文件启用了 disableAllHooks。",
+        "hidden": "Codex status_line 被显式设置为空。",
+        "unknownItems": "存在 {{count}} 个未知 Codex item。",
+        "missingCommand": "Claude Code statusLine 没有 command。",
+        "unresolvedEntry": "命令看起来像脚本路径, 但 Berth 没有确认到可读取的本地脚本。"
+      },
+      "defaultCodex": {
+        "title": "Codex 默认 footer",
+        "body": "没有发现 tui.status_line 设置, 因此 Codex 会使用内置默认 footer items。"
+      },
+      "empty": {
+        "all": "没有发现状态栏配置。Claude Code 使用 settings.json 的命令配置；Codex 在 tui.status_line 未设置时会回退到 model-with-reasoning 和 current-dir。",
+        "claude": "扫描到的 settings 文件里没有 Claude Code statusLine 或 subagentStatusLine 设置。",
+        "codex": "没有发现 Codex tui.status_line 设置。除非显式设置该字段, Codex 会使用默认 footer items。"
+      }
+    },
     "guidance": {
       "docs": {
         "mcpIntro": "MCP 概览",
         "mcpTools": "MCP tools 规范",
         "claudeMcp": "Claude Code MCP",
+        "codexMcp": "Codex MCP",
         "claudeHooks": "Claude Code Hooks",
+        "codexHooks": "Codex Hooks",
         "codexConfig": "Codex 配置",
         "claudePlugins": "Claude Code 插件",
         "claudeSettings": "Claude Code 设置",
         "claudeStatusLine": "Claude Code 状态栏",
         "claudePermissions": "Claude Code 权限",
         "codexPermissions": "Codex 权限",
-        "codexSecurity": "Codex 审批与沙箱",
-        "codexMcp": "Codex MCP",
-        "codexHooks": "Codex Hooks"
+        "codexSecurity": "Codex 审批与沙箱"
       },
       "mcp": {
         "title": "外部工具和数据来源",
@@ -629,169 +716,73 @@
       },
       "agentSupport": {
         "session-start": {
-          "claude": {
-            "summary": "Claude Code 可以在准备会话时运行 setup 和 session-start hooks。"
-          },
-          "codex": {
-            "summary": "Codex 在会话开始、恢复、清空或压缩后继续时支持 SessionStart。"
-          }
+          "claude": { "summary": "Claude Code 可以在准备会话时运行 setup 和 session-start hooks。" },
+          "codex": { "summary": "Codex 在会话开始、恢复、清空或压缩后继续时支持 SessionStart。" }
         },
         "user-input": {
-          "claude": {
-            "summary": "Claude Code 可以在用户输入提交前, 以及 prompt expansion 时运行 hooks。"
-          },
-          "codex": {
-            "summary": "Codex 支持在提示进入模型前运行 UserPromptSubmit。"
-          }
+          "claude": { "summary": "Claude Code 可以在用户输入提交前, 以及 prompt expansion 时运行 hooks。" },
+          "codex": { "summary": "Codex 支持在提示进入模型前运行 UserPromptSubmit。" }
         },
         "tool-before": {
-          "claude": {
-            "summary": "Claude Code 的 PreToolUse 覆盖范围较宽, 包含文件、shell、web 和 MCP 工具。"
-          },
-          "codex": {
-            "summary": "Codex 的 PreToolUse 可用于受支持的 shell、patch 和 MCP 工具调用。"
-          }
+          "claude": { "summary": "Claude Code 的 PreToolUse 覆盖范围较宽, 包含文件、shell、web 和 MCP 工具。" },
+          "codex": { "summary": "Codex 的 PreToolUse 可用于受支持的 shell、patch 和 MCP 工具调用。" }
         },
         "permission": {
-          "claude": {
-            "summary": "Claude Code 暴露权限请求、拒绝和 elicitation 相关事件。"
-          },
-          "codex": {
-            "summary": "Codex 在即将请求批准时暴露 PermissionRequest。"
-          }
+          "claude": { "summary": "Claude Code 暴露权限请求、拒绝和 elicitation 相关事件。" },
+          "codex": { "summary": "Codex 在即将请求批准时暴露 PermissionRequest。" }
         },
         "tool-after": {
-          "claude": {
-            "summary": "Claude Code 会区分工具成功输出、失败输出和批量工具完成。"
-          },
-          "codex": {
-            "summary": "Codex 使用 PostToolUse 表示受支持工具的输出, 其中也包含部分失败命令输出。"
-          }
+          "claude": { "summary": "Claude Code 会区分工具成功输出、失败输出和批量工具完成。" },
+          "codex": { "summary": "Codex 使用 PostToolUse 表示受支持工具的输出, 其中也包含部分失败命令输出。" }
         },
         "subagent": {
-          "claude": {
-            "summary": "Claude Code 暴露子 Agent、task 和 teammate idle 相关事件。"
-          },
-          "codex": {
-            "summary": "Codex 暴露子 Agent 开始和停止事件。"
-          }
+          "claude": { "summary": "Claude Code 暴露子 Agent、task 和 teammate idle 相关事件。" },
+          "codex": { "summary": "Codex 暴露子 Agent 开始和停止事件。" }
         },
         "context-maintenance": {
-          "claude": {
-            "summary": "Claude Code 暴露压缩, 以及指令、配置、cwd、文件变化事件。"
-          },
-          "codex": {
-            "summary": "Codex 暴露上下文压缩前后的 hooks。"
-          }
+          "claude": { "summary": "Claude Code 暴露压缩, 以及指令、配置、cwd、文件变化事件。" },
+          "codex": { "summary": "Codex 暴露上下文压缩前后的 hooks。" }
         },
         "session-stop": {
-          "claude": {
-            "summary": "Claude Code 可以响应 stop、stop failure 和 session end 事件。"
-          },
-          "codex": {
-            "summary": "Codex 在主 Agent 结束当前回合前支持 Stop。"
-          }
+          "claude": { "summary": "Claude Code 可以响应 stop、stop failure 和 session end 事件。" },
+          "codex": { "summary": "Codex 在主 Agent 结束当前回合前支持 Stop。" }
         },
         "environment": {
-          "claude": {
-            "summary": "Claude Code 支持通知和 worktree 相关事件。"
-          },
-          "codex": {
-            "summary": "Codex 没有暴露这个阶段对应的 hook event。"
-          }
+          "claude": { "summary": "Claude Code 支持通知和 worktree 相关事件。" },
+          "codex": { "summary": "Codex 没有暴露这个阶段对应的 hook event。" }
         }
       },
       "nativeEvents": {
-        "unknown": {
-          "description": "Berth 还没有映射这个事件。"
-        },
-        "Setup": {
-          "description": "Claude Code 准备会话设置时运行。"
-        },
-        "SessionStart": {
-          "description": "会话开始、恢复或上下文变化后继续时运行。"
-        },
-        "UserPromptSubmit": {
-          "description": "你提交提示后、模型收到提示前运行。"
-        },
-        "UserPromptExpansion": {
-          "description": "Claude Code 展开 prompt 内容时运行。"
-        },
-        "PreToolUse": {
-          "description": "受支持的工具调用执行前运行。"
-        },
-        "PermissionRequest": {
-          "description": "Agent 即将请求批准时运行。"
-        },
-        "PermissionDenied": {
-          "description": "Claude Code 权限请求被拒绝时运行。"
-        },
-        "Elicitation": {
-          "description": "Claude Code 请求结构化用户输入时运行。"
-        },
-        "ElicitationResult": {
-          "description": "Claude Code 收到结构化用户输入后运行。"
-        },
-        "PostToolUse": {
-          "description": "受支持的工具输出可用后运行。"
-        },
-        "PostToolUseFailure": {
-          "description": "Claude Code 工具失败后运行。"
-        },
-        "PostToolBatch": {
-          "description": "Claude Code 一批工具调用完成后运行。"
-        },
-        "SubagentStart": {
-          "description": "委派出去的 Agent 工作开始时运行。"
-        },
-        "SubagentStop": {
-          "description": "委派出去的 Agent 工作即将停止时运行。"
-        },
-        "TaskCreated": {
-          "description": "Claude Code 创建任务时运行。"
-        },
-        "TaskCompleted": {
-          "description": "Claude Code 完成任务时运行。"
-        },
-        "TeammateIdle": {
-          "description": "Claude Code teammate 进入空闲时运行。"
-        },
-        "PreCompact": {
-          "description": "上下文压缩前运行。"
-        },
-        "PostCompact": {
-          "description": "上下文压缩后运行。"
-        },
-        "InstructionsLoaded": {
-          "description": "Claude Code 加载指令时运行。"
-        },
-        "ConfigChange": {
-          "description": "Claude Code 观察到配置变化时运行。"
-        },
-        "CwdChanged": {
-          "description": "Claude Code 切换工作目录时运行。"
-        },
-        "FileChanged": {
-          "description": "Claude Code 观察到文件变化时运行。"
-        },
-        "Stop": {
-          "description": "主 Agent 结束当前回合前运行。"
-        },
-        "StopFailure": {
-          "description": "Claude Code 未能正常停止时运行。"
-        },
-        "SessionEnd": {
-          "description": "Claude Code 会话结束时运行。"
-        },
-        "WorktreeCreate": {
-          "description": "Claude Code 创建 worktree 时运行。"
-        },
-        "WorktreeRemove": {
-          "description": "Claude Code 移除 worktree 时运行。"
-        },
-        "Notification": {
-          "description": "Claude Code 发出用户通知时运行。"
-        }
+        "unknown": { "description": "Berth 还没有映射这个事件。" },
+        "Setup": { "description": "Claude Code 准备会话设置时运行。" },
+        "SessionStart": { "description": "会话开始、恢复或上下文变化后继续时运行。" },
+        "UserPromptSubmit": { "description": "你提交提示后、模型收到提示前运行。" },
+        "UserPromptExpansion": { "description": "Claude Code 展开 prompt 内容时运行。" },
+        "PreToolUse": { "description": "受支持的工具调用执行前运行。" },
+        "PermissionRequest": { "description": "Agent 即将请求批准时运行。" },
+        "PermissionDenied": { "description": "Claude Code 权限请求被拒绝时运行。" },
+        "Elicitation": { "description": "Claude Code 请求结构化用户输入时运行。" },
+        "ElicitationResult": { "description": "Claude Code 收到结构化用户输入后运行。" },
+        "PostToolUse": { "description": "受支持的工具输出可用后运行。" },
+        "PostToolUseFailure": { "description": "Claude Code 工具失败后运行。" },
+        "PostToolBatch": { "description": "Claude Code 一批工具调用完成后运行。" },
+        "SubagentStart": { "description": "委派出去的 Agent 工作开始时运行。" },
+        "SubagentStop": { "description": "委派出去的 Agent 工作即将停止时运行。" },
+        "TaskCreated": { "description": "Claude Code 创建任务时运行。" },
+        "TaskCompleted": { "description": "Claude Code 完成任务时运行。" },
+        "TeammateIdle": { "description": "Claude Code teammate 进入空闲时运行。" },
+        "PreCompact": { "description": "上下文压缩前运行。" },
+        "PostCompact": { "description": "上下文压缩后运行。" },
+        "InstructionsLoaded": { "description": "Claude Code 加载指令时运行。" },
+        "ConfigChange": { "description": "Claude Code 观察到配置变化时运行。" },
+        "CwdChanged": { "description": "Claude Code 切换工作目录时运行。" },
+        "FileChanged": { "description": "Claude Code 观察到文件变化时运行。" },
+        "Stop": { "description": "主 Agent 结束当前回合前运行。" },
+        "StopFailure": { "description": "Claude Code 未能正常停止时运行。" },
+        "SessionEnd": { "description": "Claude Code 会话结束时运行。" },
+        "WorktreeCreate": { "description": "Claude Code 创建 worktree 时运行。" },
+        "WorktreeRemove": { "description": "Claude Code 移除 worktree 时运行。" },
+        "Notification": { "description": "Claude Code 发出用户通知时运行。" }
       },
       "limitations": {
         "codexToolCoverage": "Codex 的工具 hooks 只覆盖 Bash、apply_patch 和 MCP tools, 不覆盖所有类似工具的动作。",
@@ -854,8 +845,8 @@
       "warning": "警告",
       "bypassEnabled": "{{scope}} 级别已启用 bypassPermissions，将跳过所有权限提示。",
       "allowList": "允许列表",
-      "denyList": "拒绝列表",
       "askList": "确认列表",
+      "denyList": "拒绝列表",
       "effective": {
         "title": "有效权限分布",
         "sources": "当前可见规则来自 {{count}} 个来源",
@@ -868,71 +859,6 @@
       "broadAllowWarning": {
         "title": "宽泛允许规则需要复查",
         "message": "{{count}} 条 allow 规则可能过宽，会明显减少运行时确认。"
-      }
-    },
-    "statusLine": {
-      "intro": {
-        "title": "状态栏展示会话实时状态",
-        "all": "Claude Code 和 Codex 都有状态栏, 但模型不同。Claude Code 运行配置好的命令并展示输出。Codex 从 config.toml 读取内置 footer item 的有序列表。",
-        "claude": "Claude Code 状态栏来自 settings.json 中的 command-backed 配置。命令可以是脚本路径或 inline shell command, 会在会话期间刷新。",
-        "codex": "Codex 状态栏是内置 TUI footer item, 持久化在 config.toml。Codex 不运行自定义状态栏脚本。"
-      },
-      "model": {
-        "claude": {
-          "title": "Claude Code 命令",
-          "body": "读取 settings 文件中的 statusLine 和 subagentStatusLine。命令可以引用本地脚本, 也可能被 disableAllHooks 禁用。"
-        },
-        "codex": {
-          "title": "Codex footer items",
-          "body": "读取 config.toml 里的 [tui].status_line。模型、目录、分支、token、速率限制和任务进度等 item 可被选择和排序。"
-        }
-      },
-      "summary": {
-        "total": "已配置状态栏资产",
-        "effective": "当前生效",
-        "claude": "Claude 命令展示面",
-        "codexItems": "Codex footer items",
-        "disabled": "被设置禁用",
-        "warnings": "警告",
-        "blocked": "阻断"
-      },
-      "effective": "生效",
-      "overridden": "被覆盖",
-      "overriddenBy": "被 {{scope}} 级别覆盖",
-      "setting": "设置项",
-      "command": "命令",
-      "footerItems": "Footer items",
-      "themeColors": "主题颜色",
-      "refreshInterval": "刷新间隔",
-      "padding": "边距",
-      "hideVimModeIndicator": "隐藏 Vim 模式",
-      "entryPaths": "引用脚本",
-      "disabled": "被 disableAllHooks 禁用",
-      "hidden": "status_line 显式为空, 因此 Codex 状态栏被隐藏, 不会回退到默认项。",
-      "unknownItems": "{{count}} 个未知 item 会被当前 Codex 忽略。",
-      "redactedCommand": "当前视图已隐藏命令里的敏感片段。需要核对原文时使用“查看原始文件”。",
-      "health": {
-        "ok": "正常",
-        "warning": "警告",
-        "blocked": "阻断"
-      },
-      "diagnostics": {
-        "ok": "配置可读取。",
-        "overridden": "更高优先级的 {{scope}} 级别设置会让这条状态栏配置不生效。",
-        "disabled": "当前 settings 文件启用了 disableAllHooks。",
-        "hidden": "Codex status_line 被显式设置为空。",
-        "unknownItems": "存在 {{count}} 个未知 Codex item。",
-        "missingCommand": "Claude Code statusLine 没有 command。",
-        "unresolvedEntry": "命令看起来像脚本路径, 但 Berth 没有确认到可读取的本地脚本。"
-      },
-      "defaultCodex": {
-        "title": "Codex 默认 footer",
-        "body": "没有发现 tui.status_line 设置, 因此 Codex 会使用内置默认 footer items。"
-      },
-      "empty": {
-        "all": "没有发现状态栏配置。Claude Code 使用 settings.json 的命令配置；Codex 在 tui.status_line 未设置时会回退到 model-with-reasoning 和 current-dir。",
-        "claude": "扫描到的 settings 文件里没有 Claude Code statusLine 或 subagentStatusLine 设置。",
-        "codex": "没有发现 Codex tui.status_line 设置。除非显式设置该字段, Codex 会使用默认 footer items。"
       }
     },
     "env": {
@@ -1156,27 +1082,5 @@
     "sensitive": "敏感",
     "yes": "是",
     "no": "否"
-  },
-  "assetGuide": {
-    "showDetails": "详情",
-    "hideDetails": "收起详情",
-    "suggestedPath": "建议查看顺序",
-    "path": {
-      "instructions": "指令",
-      "capabilities": "能力",
-      "boundaries": "权限和环境变量",
-      "sessions": "会话"
-    },
-    "evidence": {
-      "assets": "个资产",
-      "sources": "个来源",
-      "providers": "个 provider",
-      "risks": "个风险"
-    },
-    "providerMap": {
-      "provider": "Provider",
-      "config": "配置",
-      "meaning": "Berth 如何理解"
-    }
   }
 }

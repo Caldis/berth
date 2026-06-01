@@ -2,10 +2,13 @@ import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { ArrowLeft, ArrowRight, ChevronRight } from 'lucide-react'
 import { Seo } from '@/components/Seo'
+import { JsonLd } from '@/components/JsonLd'
 import { ArticleView } from '@/components/ArticleView'
 import { getArticle, getArticles, PILLAR_ORDER } from '@/content'
 import type { Pillar } from '@/content/types'
 import type { Lang } from '@/lib/langs'
+import { SITE_URL } from '@/lib/site'
+import { articleLd, breadcrumbLd } from '@/lib/schema'
 
 const UI: Record<Lang, { sources: string; claim: string; prev: string; next: string; back: string }> = {
   zh: { sources: '参考来源', claim: '厂商声明', prev: '上一篇', next: '下一篇', back: '知识库' },
@@ -45,6 +48,21 @@ export function Article({ lang, pillar, slug }: { lang: Lang; pillar: Pillar; sl
         path={`/knowledge/${pillar}/${slug}`}
         title={`${article.title} — Berth`}
         description={article.summary}
+      />
+      <JsonLd
+        data={articleLd({
+          lang,
+          title: article.title,
+          description: article.summary,
+          url: `${SITE_URL}/${lang}/knowledge/${pillar}/${slug}`,
+        })}
+      />
+      <JsonLd
+        data={breadcrumbLd([
+          { name: t('nav.knowledge'), url: `${SITE_URL}/${lang}/knowledge` },
+          { name: pillarMeta?.title ?? pillar, url: `${SITE_URL}/${lang}/knowledge` },
+          { name: article.title, url: `${SITE_URL}/${lang}/knowledge/${pillar}/${slug}` },
+        ])}
       />
       <article className="container-page py-16 sm:py-20">
         <div className="mx-auto max-w-2xl">

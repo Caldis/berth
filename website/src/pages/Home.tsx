@@ -15,10 +15,12 @@ import {
 } from 'lucide-react'
 import { GithubIcon } from '@/components/GithubIcon'
 import { Seo } from '@/components/Seo'
+import { JsonLd } from '@/components/JsonLd'
 import { AssetPanel } from '@/components/AssetPanel'
 import { HeroWave } from '@/components/HeroWave'
 import { useLang } from '@/lib/useLang'
 import { GITHUB_URL, RELEASES_URL } from '@/lib/site'
+import { softwareApplicationLd, faqLd } from '@/lib/schema'
 
 interface NamedItem {
   title: string
@@ -65,6 +67,8 @@ export function Home() {
   return (
     <>
       <Seo lang={lang} path="" title={t('meta.home.title')} description={t('meta.home.description')} />
+      <JsonLd data={softwareApplicationLd(lang, 'Berth', t('meta.home.description'))} />
+      <JsonLd data={faqLd(faqs)} />
 
       {/* Hero — centered editorial, gradient ribbon + product */}
       <section className="container-page py-20 text-center lg:py-28">

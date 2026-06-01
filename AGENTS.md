@@ -1,8 +1,12 @@
+# LANGUAGE
+- 必须使用中文进行回答
+
 # WEB_INFO_SEARCH
 - 始终使用英文检索内容
 
 # VERSION_MANAGEMENT
-- 不使用 worktree
+- 不使用 worktree, 只在主分支工作
+- 始终有其他 AI Agent 和你同时在修改主分支工作区, 因此你所有写操作都需要限定在你自己处理过的文件范围
 
 # COMMIT_POLICY
 - **最高优先级: 已验证、边界清楚的增量必须小步频繁提交。** 任何 feature / bug / harness 任务中, 完成一个可独立验证的子步骤并通过对应检查后, 立即只暂存自己相关文件、用 `git diff --cached` 核对 staged 集合、提交一次。

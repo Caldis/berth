@@ -24,6 +24,28 @@
     "noResults": "No results found.",
     "hint": "Search across all assets by name, type, or scope."
   },
+  "assetGuide": {
+    "showDetails": "Details",
+    "hideDetails": "Hide details",
+    "suggestedPath": "Suggested path",
+    "path": {
+      "instructions": "Instructions",
+      "capabilities": "Capabilities",
+      "boundaries": "Permissions and env",
+      "sessions": "Sessions"
+    },
+    "evidence": {
+      "assets": "assets",
+      "sources": "sources",
+      "providers": "providers",
+      "risks": "risks"
+    },
+    "providerMap": {
+      "provider": "Provider",
+      "config": "Config",
+      "meaning": "How Berth reads it"
+    }
+  },
   "overview": {
     "title": "Overview",
     "recentSessions": "Recent Sessions",
@@ -65,6 +87,74 @@
     "sessionOverview": "Run overview",
     "durationUnknown": "unknown",
     "toolTimelineDescription": "Tool calls, status, duration, and transcript-derived evidence.",
+    "toolFilter": {
+      "label": "Minimum duration",
+      "ariaLabel": "Minimum tool duration",
+      "showing": "Showing {{shown}} of {{total}}",
+      "allDurations": "All durations",
+      "allStatuses": "All",
+      "failedOnly": "Failed",
+      "minDuration": ">= {{duration}}",
+      "emptyTitle": "No slow tool calls in this range",
+      "emptyDescription": "Lower the duration filter to include faster calls."
+    },
+    "toolTips": {
+      "agent": "Runs a subagent in a separate context. Its duration includes the delegated task, so it is often longer than one direct tool call.",
+      "askUser": "Shows structured questions and waits for your answer. Long duration usually means the agent was blocked on human input.",
+      "shell": "Runs a shell command in the local environment. Long duration usually comes from tests, builds, installs, network calls, or watch commands.",
+      "fileRead": "Reads local files or resources so the agent can inspect current state before deciding what to do next.",
+      "fileWrite": "Creates or edits files. Failures often mean the file changed since it was read, or the exact edit target did not match.",
+      "fileSearch": "Searches files, symbols, or document text. It is usually cheap, but broad patterns over large trees can still be slow.",
+      "web": "Uses web search or fetch. Duration depends on network latency, provider limits, redirects, and page extraction.",
+      "skill": "Loads a skill instruction bundle. The useful signal is which workflow shaped the agent's later steps.",
+      "tasks": "Updates the agent's task or todo state. These calls explain planning state, not application behavior.",
+      "patch": "Applies a code patch through the local editing helper. Short duration usually means the patch matched cleanly.",
+      "mcp": "Calls an external MCP or plugin tool. Duration includes the connector and the remote or local service behind it.",
+      "browser": "Controls a browser or Playwright session for UI inspection and verification.",
+      "image": "Reads or attaches an image so the agent can inspect visual evidence.",
+      "workspace": "Loads bundled workspace runtimes or document helpers used by local tools.",
+      "multiAgent": "Coordinates another local agent process. Duration can include queueing and the other agent's work.",
+      "hook": "Runs hook-related logic around the session or a tool call.",
+      "plan": "Switches plan-mode state or asks for plan approval before code changes continue.",
+      "generic": "Transcript tool event. Check the summary, file path, status, and duration for the useful signal."
+    },
+    "checkpointSummary": {
+      "noDetailsTitle": "{{count}} checkpoints recorded",
+      "noDetailsDescription": "Checkpoints are file-history snapshots. This transcript records the count, but does not include the changed files or diff for each checkpoint.",
+      "omittedNoDetails": "{{count}} checkpoints without file details are hidden.",
+      "recordedCount": "Recorded",
+      "fileLists": "File lists",
+      "missingDetails": "Missing details",
+      "availableFields": "If the transcript exposes checkpoint timestamps, changed paths, or file counts later, Berth can list those fields here."
+    },
+    "modelInfo": {
+      "provider": "Provider",
+      "releaseDate": "Model date",
+      "contextWindow": "Context",
+      "maxOutput": "Max output",
+      "knowledgeCutoff": "Knowledge cutoff",
+      "notRecorded": "Not recorded",
+      "pricingTitle": "Price per 1M tokens",
+      "noPricing": "No local pricing match for this model id.",
+      "pricingSource": "Source: {{source}} · matched {{model}}",
+      "providerSourceModelId": "inferred from model id",
+      "providerSourcePricing": "from pricing catalog",
+      "providerSourceAgent": "inferred from agent",
+      "releaseSourceModelId": "from model id",
+      "releaseSourceModelCatalog": "from official model reference",
+      "cacheSourceFromTranscript": "Cache tokens come from transcript usage fields such as cache_read_input_tokens, cache_creation_input_tokens, and cached_input_tokens. Berth does not infer cache hits from text.",
+      "cacheSourceUnavailable": "This transcript did not expose a token breakdown, so Berth cannot identify cache tokens.",
+      "referenceLink": "Open official model reference"
+    },
+    "tabs": {
+      "label": "Session detail sections",
+      "overview": "Overview",
+      "overviewDescription": "Run metrics and session signals",
+      "timeline": "Timeline",
+      "timelineDescription": "Tool calls, filters, and latency",
+      "artifacts": "Artifacts",
+      "artifactsDescription": "Plans, todos, files, checkpoints"
+    },
     "signals": {
       "title": "Session signals",
       "description": "Local metrics derived from this transcript. Billing and provider telemetry may differ.",
@@ -162,74 +252,6 @@
         "title": "No checkpoints recorded",
         "description": "No file history checkpoint was found in this session."
       }
-    },
-    "toolFilter": {
-      "label": "Minimum duration",
-      "ariaLabel": "Minimum tool duration",
-      "showing": "Showing {{shown}} of {{total}}",
-      "allDurations": "All durations",
-      "allStatuses": "All",
-      "failedOnly": "Failed",
-      "minDuration": ">= {{duration}}",
-      "emptyTitle": "No slow tool calls in this range",
-      "emptyDescription": "Lower the duration filter to include faster calls."
-    },
-    "toolTips": {
-      "agent": "Runs a subagent in a separate context. Its duration includes the delegated task, so it is often longer than one direct tool call.",
-      "askUser": "Shows structured questions and waits for your answer. Long duration usually means the agent was blocked on human input.",
-      "shell": "Runs a shell command in the local environment. Long duration usually comes from tests, builds, installs, network calls, or watch commands.",
-      "fileRead": "Reads local files or resources so the agent can inspect current state before deciding what to do next.",
-      "fileWrite": "Creates or edits files. Failures often mean the file changed since it was read, or the exact edit target did not match.",
-      "fileSearch": "Searches files, symbols, or document text. It is usually cheap, but broad patterns over large trees can still be slow.",
-      "web": "Uses web search or fetch. Duration depends on network latency, provider limits, redirects, and page extraction.",
-      "skill": "Loads a skill instruction bundle. The useful signal is which workflow shaped the agent's later steps.",
-      "tasks": "Updates the agent's task or todo state. These calls explain planning state, not application behavior.",
-      "patch": "Applies a code patch through the local editing helper. Short duration usually means the patch matched cleanly.",
-      "mcp": "Calls an external MCP or plugin tool. Duration includes the connector and the remote or local service behind it.",
-      "browser": "Controls a browser or Playwright session for UI inspection and verification.",
-      "image": "Reads or attaches an image so the agent can inspect visual evidence.",
-      "workspace": "Loads bundled workspace runtimes or document helpers used by local tools.",
-      "multiAgent": "Coordinates another local agent process. Duration can include queueing and the other agent's work.",
-      "hook": "Runs hook-related logic around the session or a tool call.",
-      "plan": "Switches plan-mode state or asks for plan approval before code changes continue.",
-      "generic": "Transcript tool event. Check the summary, file path, status, and duration for the useful signal."
-    },
-    "checkpointSummary": {
-      "noDetailsTitle": "{{count}} checkpoints recorded",
-      "noDetailsDescription": "Checkpoints are file-history snapshots. This transcript records the count, but does not include the changed files or diff for each checkpoint.",
-      "omittedNoDetails": "{{count}} checkpoints without file details are hidden.",
-      "recordedCount": "Recorded",
-      "fileLists": "File lists",
-      "missingDetails": "Missing details",
-      "availableFields": "If the transcript exposes checkpoint timestamps, changed paths, or file counts later, Berth can list those fields here."
-    },
-    "modelInfo": {
-      "provider": "Provider",
-      "releaseDate": "Model date",
-      "contextWindow": "Context",
-      "maxOutput": "Max output",
-      "knowledgeCutoff": "Knowledge cutoff",
-      "notRecorded": "Not recorded",
-      "pricingTitle": "Price per 1M tokens",
-      "noPricing": "No local pricing match for this model id.",
-      "pricingSource": "Source: {{source}} · matched {{model}}",
-      "providerSourceModelId": "inferred from model id",
-      "providerSourcePricing": "from pricing catalog",
-      "providerSourceAgent": "inferred from agent",
-      "releaseSourceModelId": "from model id",
-      "releaseSourceModelCatalog": "from official model reference",
-      "cacheSourceFromTranscript": "Cache tokens come from transcript usage fields such as cache_read_input_tokens, cache_creation_input_tokens, and cached_input_tokens. Berth does not infer cache hits from text.",
-      "cacheSourceUnavailable": "This transcript did not expose a token breakdown, so Berth cannot identify cache tokens.",
-      "referenceLink": "Open official model reference"
-    },
-    "tabs": {
-      "label": "Session detail sections",
-      "overview": "Overview",
-      "overviewDescription": "Run metrics and session signals",
-      "timeline": "Timeline",
-      "timelineDescription": "Tool calls, filters, and latency",
-      "artifacts": "Artifacts",
-      "artifactsDescription": "Plans, todos, files, checkpoints"
     }
   },
   "instructions": {
@@ -260,13 +282,13 @@
         "claudeMemory": "Claude Code memory",
         "codexAgentsMd": "Codex AGENTS.md",
         "claudeSkills": "Claude Code skills",
+        "codexSkills": "Codex skills",
         "codexConfig": "Codex config",
         "claudeSubagents": "Claude Code subagents",
+        "codexSubagents": "Codex subagents",
         "codexSlashCommands": "Codex slash commands",
         "claudeOutputStyles": "Claude Code output styles",
-        "claudeSettings": "Claude Code settings",
-        "codexSkills": "Codex skills",
-        "codexSubagents": "Codex subagents"
+        "claudeSettings": "Claude Code settings"
       },
       "memories": {
         "title": "Memory notes across sources",
@@ -403,21 +425,86 @@
         "unknown": "Unknown"
       }
     },
+    "statusLine": {
+      "intro": {
+        "title": "Status lines show live session state",
+        "all": "Claude Code and Codex both expose a status line, but they work differently. Claude Code runs a configured command and renders its output. Codex renders an ordered list of built-in footer items from config.toml.",
+        "claude": "Claude Code status lines are command-backed settings from settings.json. The command can be a script or inline shell command, and Claude Code refreshes it during the session.",
+        "codex": "Codex status lines are built-in TUI footer items persisted in config.toml. Codex does not run a custom status-line script."
+      },
+      "model": {
+        "claude": {
+          "title": "Claude Code command",
+          "body": "Reads statusLine and subagentStatusLine from settings files. Commands can reference local scripts and may be disabled by disableAllHooks."
+        },
+        "codex": {
+          "title": "Codex footer items",
+          "body": "Reads [tui].status_line from config.toml. Items such as model, directory, branch, tokens, rate limits, and task progress are selected and ordered."
+        }
+      },
+      "summary": {
+        "total": "Configured status line assets",
+        "effective": "Currently effective",
+        "claude": "Claude command surfaces",
+        "codexItems": "Codex footer items",
+        "disabled": "Disabled by settings",
+        "warnings": "Warnings",
+        "blocked": "Blocked"
+      },
+      "effective": "Effective",
+      "overridden": "Overridden",
+      "overriddenBy": "Overridden by {{scope}} scope",
+      "setting": "Setting",
+      "command": "Command",
+      "footerItems": "Footer items",
+      "themeColors": "Theme colors",
+      "refreshInterval": "Refresh interval",
+      "padding": "Padding",
+      "hideVimModeIndicator": "Hide Vim mode",
+      "entryPaths": "Referenced scripts",
+      "disabled": "Disabled by disableAllHooks",
+      "hidden": "status_line is explicitly empty, so the Codex status line is hidden instead of using defaults.",
+      "unknownItems": "{{count}} unknown item(s) will be ignored by current Codex builds.",
+      "redactedCommand": "Sensitive command fragments are hidden in this view. Use View Raw to inspect the source file.",
+      "health": {
+        "ok": "OK",
+        "warning": "Warning",
+        "blocked": "Blocked"
+      },
+      "diagnostics": {
+        "ok": "Configuration is readable.",
+        "overridden": "A higher-priority {{scope}} scope setting wins for this status line kind.",
+        "disabled": "disableAllHooks is enabled in this settings file.",
+        "hidden": "Codex status_line is explicitly empty.",
+        "unknownItems": "{{count}} unknown Codex item(s) are present.",
+        "missingCommand": "Claude Code statusLine does not contain a command.",
+        "unresolvedEntry": "The command looks like a script path, but Berth did not confirm a readable local script."
+      },
+      "defaultCodex": {
+        "title": "Codex default footer",
+        "body": "No tui.status_line setting was found, so Codex falls back to its built-in default footer items."
+      },
+      "empty": {
+        "all": "No status line config was found. Claude Code uses settings.json command config; Codex falls back to model-with-reasoning and current-dir when tui.status_line is unset.",
+        "claude": "No Claude Code statusLine or subagentStatusLine setting was found in the scanned settings files.",
+        "codex": "No Codex tui.status_line setting was found. Codex will use its default footer items unless the field is explicitly set."
+      }
+    },
     "guidance": {
       "docs": {
         "mcpIntro": "MCP overview",
         "mcpTools": "MCP tools spec",
         "claudeMcp": "Claude Code MCP",
+        "codexMcp": "Codex MCP",
         "claudeHooks": "Claude Code hooks",
+        "codexHooks": "Codex hooks",
         "codexConfig": "Codex config",
         "claudePlugins": "Claude Code plugins",
         "claudeSettings": "Claude Code settings",
         "claudeStatusLine": "Claude Code status line",
         "claudePermissions": "Claude Code permissions",
         "codexPermissions": "Codex permissions",
-        "codexSecurity": "Codex approvals and sandbox",
-        "codexMcp": "Codex MCP",
-        "codexHooks": "Codex hooks"
+        "codexSecurity": "Codex approvals and sandbox"
       },
       "mcp": {
         "title": "External tools and data sources",
@@ -629,169 +716,73 @@
       },
       "agentSupport": {
         "session-start": {
-          "claude": {
-            "summary": "Claude Code can run setup and session-start hooks when it prepares a session."
-          },
-          "codex": {
-            "summary": "Codex supports SessionStart when a session starts, resumes, clears, or continues after compaction."
-          }
+          "claude": { "summary": "Claude Code can run setup and session-start hooks when it prepares a session." },
+          "codex": { "summary": "Codex supports SessionStart when a session starts, resumes, clears, or continues after compaction." }
         },
         "user-input": {
-          "claude": {
-            "summary": "Claude Code can run hooks before user input is submitted and when prompt expansion occurs."
-          },
-          "codex": {
-            "summary": "Codex supports UserPromptSubmit before the prompt reaches the model."
-          }
+          "claude": { "summary": "Claude Code can run hooks before user input is submitted and when prompt expansion occurs." },
+          "codex": { "summary": "Codex supports UserPromptSubmit before the prompt reaches the model." }
         },
         "tool-before": {
-          "claude": {
-            "summary": "Claude Code PreToolUse covers a broad tool surface, including file, shell, web, and MCP tools."
-          },
-          "codex": {
-            "summary": "Codex PreToolUse is available for supported shell, patch, and MCP tool calls."
-          }
+          "claude": { "summary": "Claude Code PreToolUse covers a broad tool surface, including file, shell, web, and MCP tools." },
+          "codex": { "summary": "Codex PreToolUse is available for supported shell, patch, and MCP tool calls." }
         },
         "permission": {
-          "claude": {
-            "summary": "Claude Code exposes permission requests, denials, and elicitation events."
-          },
-          "codex": {
-            "summary": "Codex exposes PermissionRequest when it is about to ask for approval."
-          }
+          "claude": { "summary": "Claude Code exposes permission requests, denials, and elicitation events." },
+          "codex": { "summary": "Codex exposes PermissionRequest when it is about to ask for approval." }
         },
         "tool-after": {
-          "claude": {
-            "summary": "Claude Code separates successful tool output, failed tool output, and tool batches."
-          },
-          "codex": {
-            "summary": "Codex uses PostToolUse for supported tool output, including some failed command output."
-          }
+          "claude": { "summary": "Claude Code separates successful tool output, failed tool output, and tool batches." },
+          "codex": { "summary": "Codex uses PostToolUse for supported tool output, including some failed command output." }
         },
         "subagent": {
-          "claude": {
-            "summary": "Claude Code exposes subagents, tasks, and teammate idle events."
-          },
-          "codex": {
-            "summary": "Codex exposes subagent start and stop events."
-          }
+          "claude": { "summary": "Claude Code exposes subagents, tasks, and teammate idle events." },
+          "codex": { "summary": "Codex exposes subagent start and stop events." }
         },
         "context-maintenance": {
-          "claude": {
-            "summary": "Claude Code exposes compaction plus instruction, config, cwd, and file change events."
-          },
-          "codex": {
-            "summary": "Codex exposes hooks before and after context compaction."
-          }
+          "claude": { "summary": "Claude Code exposes compaction plus instruction, config, cwd, and file change events." },
+          "codex": { "summary": "Codex exposes hooks before and after context compaction." }
         },
         "session-stop": {
-          "claude": {
-            "summary": "Claude Code can react to stop, stop failure, and session end events."
-          },
-          "codex": {
-            "summary": "Codex supports Stop before the main agent finishes a turn."
-          }
+          "claude": { "summary": "Claude Code can react to stop, stop failure, and session end events." },
+          "codex": { "summary": "Codex supports Stop before the main agent finishes a turn." }
         },
         "environment": {
-          "claude": {
-            "summary": "Claude Code supports notification and worktree events."
-          },
-          "codex": {
-            "summary": "Codex does not expose a hook event for this stage."
-          }
+          "claude": { "summary": "Claude Code supports notification and worktree events." },
+          "codex": { "summary": "Codex does not expose a hook event for this stage." }
         }
       },
       "nativeEvents": {
-        "unknown": {
-          "description": "Berth has not mapped this event yet."
-        },
-        "Setup": {
-          "description": "Runs while Claude Code prepares session setup."
-        },
-        "SessionStart": {
-          "description": "Runs when a session starts, resumes, or continues after context changes."
-        },
-        "UserPromptSubmit": {
-          "description": "Runs after you submit a prompt and before the model receives it."
-        },
-        "UserPromptExpansion": {
-          "description": "Runs when Claude Code expands prompt content."
-        },
-        "PreToolUse": {
-          "description": "Runs before a supported tool call executes."
-        },
-        "PermissionRequest": {
-          "description": "Runs when the agent is about to ask for approval."
-        },
-        "PermissionDenied": {
-          "description": "Runs when a Claude Code permission request is denied."
-        },
-        "Elicitation": {
-          "description": "Runs when Claude Code asks for structured user input."
-        },
-        "ElicitationResult": {
-          "description": "Runs when Claude Code receives structured user input."
-        },
-        "PostToolUse": {
-          "description": "Runs after supported tool output is available."
-        },
-        "PostToolUseFailure": {
-          "description": "Runs after a Claude Code tool fails."
-        },
-        "PostToolBatch": {
-          "description": "Runs after a Claude Code tool batch completes."
-        },
-        "SubagentStart": {
-          "description": "Runs when delegated agent work starts."
-        },
-        "SubagentStop": {
-          "description": "Runs when delegated agent work is about to stop."
-        },
-        "TaskCreated": {
-          "description": "Runs when Claude Code creates a task."
-        },
-        "TaskCompleted": {
-          "description": "Runs when Claude Code completes a task."
-        },
-        "TeammateIdle": {
-          "description": "Runs when a Claude Code teammate becomes idle."
-        },
-        "PreCompact": {
-          "description": "Runs before context compaction."
-        },
-        "PostCompact": {
-          "description": "Runs after context compaction."
-        },
-        "InstructionsLoaded": {
-          "description": "Runs when Claude Code loads instructions."
-        },
-        "ConfigChange": {
-          "description": "Runs when Claude Code observes config changes."
-        },
-        "CwdChanged": {
-          "description": "Runs when Claude Code changes working directory."
-        },
-        "FileChanged": {
-          "description": "Runs when Claude Code observes file changes."
-        },
-        "Stop": {
-          "description": "Runs before the main agent stops the current turn."
-        },
-        "StopFailure": {
-          "description": "Runs when Claude Code fails to stop cleanly."
-        },
-        "SessionEnd": {
-          "description": "Runs when a Claude Code session ends."
-        },
-        "WorktreeCreate": {
-          "description": "Runs when Claude Code creates a worktree."
-        },
-        "WorktreeRemove": {
-          "description": "Runs when Claude Code removes a worktree."
-        },
-        "Notification": {
-          "description": "Runs when Claude Code sends a user notification."
-        }
+        "unknown": { "description": "Berth has not mapped this event yet." },
+        "Setup": { "description": "Runs while Claude Code prepares session setup." },
+        "SessionStart": { "description": "Runs when a session starts, resumes, or continues after context changes." },
+        "UserPromptSubmit": { "description": "Runs after you submit a prompt and before the model receives it." },
+        "UserPromptExpansion": { "description": "Runs when Claude Code expands prompt content." },
+        "PreToolUse": { "description": "Runs before a supported tool call executes." },
+        "PermissionRequest": { "description": "Runs when the agent is about to ask for approval." },
+        "PermissionDenied": { "description": "Runs when a Claude Code permission request is denied." },
+        "Elicitation": { "description": "Runs when Claude Code asks for structured user input." },
+        "ElicitationResult": { "description": "Runs when Claude Code receives structured user input." },
+        "PostToolUse": { "description": "Runs after supported tool output is available." },
+        "PostToolUseFailure": { "description": "Runs after a Claude Code tool fails." },
+        "PostToolBatch": { "description": "Runs after a Claude Code tool batch completes." },
+        "SubagentStart": { "description": "Runs when delegated agent work starts." },
+        "SubagentStop": { "description": "Runs when delegated agent work is about to stop." },
+        "TaskCreated": { "description": "Runs when Claude Code creates a task." },
+        "TaskCompleted": { "description": "Runs when Claude Code completes a task." },
+        "TeammateIdle": { "description": "Runs when a Claude Code teammate becomes idle." },
+        "PreCompact": { "description": "Runs before context compaction." },
+        "PostCompact": { "description": "Runs after context compaction." },
+        "InstructionsLoaded": { "description": "Runs when Claude Code loads instructions." },
+        "ConfigChange": { "description": "Runs when Claude Code observes config changes." },
+        "CwdChanged": { "description": "Runs when Claude Code changes working directory." },
+        "FileChanged": { "description": "Runs when Claude Code observes file changes." },
+        "Stop": { "description": "Runs before the main agent stops the current turn." },
+        "StopFailure": { "description": "Runs when Claude Code fails to stop cleanly." },
+        "SessionEnd": { "description": "Runs when a Claude Code session ends." },
+        "WorktreeCreate": { "description": "Runs when Claude Code creates a worktree." },
+        "WorktreeRemove": { "description": "Runs when Claude Code removes a worktree." },
+        "Notification": { "description": "Runs when Claude Code sends a user notification." }
       },
       "limitations": {
         "codexToolCoverage": "Codex only applies tool hooks to Bash, apply_patch, and MCP tools. It does not cover every tool-like action.",
@@ -854,8 +845,8 @@
       "warning": "Warning",
       "bypassEnabled": "bypassPermissions is enabled in {{scope}} scope. This skips ALL permission prompts.",
       "allowList": "Allow list",
-      "denyList": "Deny list",
       "askList": "Ask list",
+      "denyList": "Deny list",
       "effective": {
         "title": "Effective permission distribution",
         "sources": "Visible rules from {{count}} source(s)",
@@ -868,71 +859,6 @@
       "broadAllowWarning": {
         "title": "Broad allow rules need review",
         "message": "{{count}} allow rule(s) look broad enough to reduce runtime prompts significantly."
-      }
-    },
-    "statusLine": {
-      "intro": {
-        "title": "Status lines show live session state",
-        "all": "Claude Code and Codex both expose a status line, but they work differently. Claude Code runs a configured command and renders its output. Codex renders an ordered list of built-in footer items from config.toml.",
-        "claude": "Claude Code status lines are command-backed settings from settings.json. The command can be a script or inline shell command, and Claude Code refreshes it during the session.",
-        "codex": "Codex status lines are built-in TUI footer items persisted in config.toml. Codex does not run a custom status-line script."
-      },
-      "model": {
-        "claude": {
-          "title": "Claude Code command",
-          "body": "Reads statusLine and subagentStatusLine from settings files. Commands can reference local scripts and may be disabled by disableAllHooks."
-        },
-        "codex": {
-          "title": "Codex footer items",
-          "body": "Reads [tui].status_line from config.toml. Items such as model, directory, branch, tokens, rate limits, and task progress are selected and ordered."
-        }
-      },
-      "summary": {
-        "total": "Configured status line assets",
-        "effective": "Currently effective",
-        "claude": "Claude command surfaces",
-        "codexItems": "Codex footer items",
-        "disabled": "Disabled by settings",
-        "warnings": "Warnings",
-        "blocked": "Blocked"
-      },
-      "effective": "Effective",
-      "overridden": "Overridden",
-      "overriddenBy": "Overridden by {{scope}} scope",
-      "setting": "Setting",
-      "command": "Command",
-      "footerItems": "Footer items",
-      "themeColors": "Theme colors",
-      "refreshInterval": "Refresh interval",
-      "padding": "Padding",
-      "hideVimModeIndicator": "Hide Vim mode",
-      "entryPaths": "Referenced scripts",
-      "disabled": "Disabled by disableAllHooks",
-      "hidden": "status_line is explicitly empty, so the Codex status line is hidden instead of using defaults.",
-      "unknownItems": "{{count}} unknown item(s) will be ignored by current Codex builds.",
-      "redactedCommand": "Sensitive command fragments are hidden in this view. Use View Raw to inspect the source file.",
-      "health": {
-        "ok": "OK",
-        "warning": "Warning",
-        "blocked": "Blocked"
-      },
-      "diagnostics": {
-        "ok": "Configuration is readable.",
-        "overridden": "A higher-priority {{scope}} scope setting wins for this status line kind.",
-        "disabled": "disableAllHooks is enabled in this settings file.",
-        "hidden": "Codex status_line is explicitly empty.",
-        "unknownItems": "{{count}} unknown Codex item(s) are present.",
-        "missingCommand": "Claude Code statusLine does not contain a command.",
-        "unresolvedEntry": "The command looks like a script path, but Berth did not confirm a readable local script."
-      },
-      "defaultCodex": {
-        "title": "Codex default footer",
-        "body": "No tui.status_line setting was found, so Codex falls back to its built-in default footer items."
-      },
-      "empty": {
-        "all": "No status line config was found. Claude Code uses settings.json command config; Codex falls back to model-with-reasoning and current-dir when tui.status_line is unset.",
-        "claude": "No Claude Code statusLine or subagentStatusLine setting was found in the scanned settings files.",
-        "codex": "No Codex tui.status_line setting was found. Codex will use its default footer items unless the field is explicitly set."
       }
     },
     "env": {
@@ -1157,27 +1083,5 @@
     "sensitive": "Sensitive",
     "yes": "Yes",
     "no": "No"
-  },
-  "assetGuide": {
-    "showDetails": "Details",
-    "hideDetails": "Hide details",
-    "suggestedPath": "Suggested path",
-    "path": {
-      "instructions": "Instructions",
-      "capabilities": "Capabilities",
-      "boundaries": "Permissions and env",
-      "sessions": "Sessions"
-    },
-    "evidence": {
-      "assets": "assets",
-      "sources": "sources",
-      "providers": "providers",
-      "risks": "risks"
-    },
-    "providerMap": {
-      "provider": "Provider",
-      "config": "Config",
-      "meaning": "How Berth reads it"
-    }
   }
 }
