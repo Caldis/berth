@@ -33,6 +33,11 @@
 - `pnpm harness:check` - passed after active works were renamed to `gh-{number}` and INDEX metadata was rewritten。
 - `node scripts/harness-projects.mjs check --strict` - all project statuses match local task state。
 - active paths旧字段关键字扫描 - no matches outside `_archive` and `docs/superpowers` historical design records。
+- `pnpm test tests/harness/sync.test.ts tests/harness/check.test.ts tests/harness/projects.test.ts` - 3 files / 45 tests passed。
+- `pnpm typecheck:node` - passed。
+- `pnpm harness:check` - all checks passed。
+- `node scripts/harness-projects.mjs check --strict` - all project statuses match local task state。
+- 旧前缀扫描 - only intentional legacy cleanup code/tests and historical work docs remain; no `opsw` hits。
 
 ## GitHub Issue 迁移记录
 
