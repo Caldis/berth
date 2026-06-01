@@ -68,11 +68,11 @@
   - verify: renderer 目标测试。
 
 - [ ] 总体验证
-  - [ ] `pnpm test -- tests/unit/hooks-manager.test.ts tests/unit/claude-scanner.test.ts tests/unit/hook-lifecycle.test.ts tests/renderer/hooks-lifecycle-view.test.tsx`
-  - [ ] `pnpm typecheck:node`
-  - [ ] `pnpm typecheck:web`
-  - [ ] `pnpm harness:check`
-  - [ ] 若 Hooks 页面视觉有明显变化, 运行 Electron 实测截图。
+  - [x] `pnpm test -- tests/unit/hooks-manager.test.ts tests/unit/claude-scanner.test.ts tests/unit/hook-lifecycle.test.ts tests/renderer/hooks-lifecycle-view.test.tsx`
+  - [x] `pnpm typecheck:node`
+  - [x] `pnpm typecheck:web`
+  - [x] `pnpm harness:check`
+  - [x] 若 Hooks 页面视觉有明显变化, 运行 Electron 实测截图。tests: not needed - 本次只调整行内启停逻辑和确认文案, 没有改页面布局。
 
 ## verify 回写
 verify 不通过项作为新任务追加于此, phase 退回 implement。
