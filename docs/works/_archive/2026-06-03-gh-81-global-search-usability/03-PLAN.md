@@ -18,9 +18,9 @@
   - tests: `pnpm test tests/renderer/search-dialog.test.tsx` passed
   - verify: 结果展示 title/type/agent/scope/path/match; ArrowUp/ArrowDown 切换 `aria-selected`; Enter 和 click 导航并关闭弹窗; Tab trap 和 Escape 保留。
 
-- [ ] 任务 5: 完成 GH-81 验证与归档。
-  - tests: `pnpm typecheck`, `pnpm test`, `pnpm harness:check`, `node scripts/harness-projects.mjs check --strict`
-  - verify: Electron 实测全局搜索, 截图确认 command palette 信息密度、结果行截断、状态反馈和键盘可达; archive 前同步 Project Done。
+- [x] 任务 5: 完成 GH-81 验证与归档。
+  - tests: `pnpm harness:prepush` passed; CI passed for `381c08e57523d296dd434d2d74456691244f98ac`; `pnpm harness:stats` status ok; `node scripts/harness-projects.mjs check --strict` passed.
+  - verify: Electron agent-owned 实例 `gh81-global-search` 实测全局搜索; `hook` 查询显示 4 条结果, 第一条默认选中, ArrowDown 后第二条选中, Enter 后关闭弹窗并进入能力页。截图: `C:\Users\mail\AppData\Local\Temp\berth-gh81-global-search-results.png`。
 
 ## verify 回写
 
