@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { ChevronLeft, ChevronRight, Search, Settings as SettingsIcon } from 'lucide-react'
@@ -14,6 +14,7 @@ export function Sidebar(): React.ReactElement {
   const location = useLocation()
   const navigate = useNavigate()
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const settingsButtonRef = useRef<HTMLButtonElement>(null)
   const collapsed = useAppStore((s) => s.sidebarCollapsed)
   const toggleSidebar = useAppStore((s) => s.toggleSidebar)
   const setSearchOpen = useAppStore((s) => s.setSearchOpen)
@@ -125,6 +126,7 @@ export function Sidebar(): React.ReactElement {
         <div className="shrink-0 border-t border-sidebar-border p-3">
           <div className={cn('flex gap-1', collapsed ? 'flex-col items-center' : 'items-center')}>
             <button
+              ref={settingsButtonRef}
               type="button"
               onClick={() => setSettingsOpen(true)}
               className={cn(
@@ -152,7 +154,11 @@ export function Sidebar(): React.ReactElement {
           </div>
         </div>
       </aside>
-      <SettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
+      <SettingsDialog
+        open={settingsOpen}
+        onOpenChange={setSettingsOpen}
+        returnFocusRef={settingsButtonRef}
+      />
     </>
   )
 }
