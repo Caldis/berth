@@ -44,7 +44,21 @@
     "placeholder": "搜索资产…",
     "shortcut": "⌘K",
     "noResults": "未找到结果。",
-    "hint": "按名称、类型或作用域搜索所有资产。"
+    "hint": "按名称、类型或作用域搜索所有资产。",
+    "loading": "正在搜索…",
+    "error": "搜索失败。",
+    "results": "搜索结果",
+    "match": "{{field}}: {{snippet}}",
+    "fields": {
+      "name": "名称",
+      "type": "类型",
+      "scope": "作用域",
+      "category": "分类",
+      "path": "路径",
+      "agentId": "Agent",
+      "summary": "摘要",
+      "metadata": "元数据"
+    }
   },
   "assetGuide": {
     "showDetails": "详情",

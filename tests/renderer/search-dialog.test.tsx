@@ -1,14 +1,46 @@
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import React from 'react'
-import { MemoryRouter } from 'react-router-dom'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import i18n from '../../src/renderer/src/i18n'
 import { SearchDialog } from '../../src/renderer/src/components/layout/search-dialog'
 import { useAppStore } from '../../src/renderer/src/stores/app'
+import type { SearchResult } from '../../src/shared/types/ipc'
+
+function searchResult(id: string, overrides: Partial<SearchResult['asset']> = {}): SearchResult {
+  return {
+    id,
+    score: 1,
+    matches: [{ field: 'metadata', snippet: 'berth' }],
+    asset: {
+      id,
+      agentId: 'codex',
+      category: 'state',
+      type: 'session',
+      scope: 'session',
+      name: `Session ${id}`,
+      path: `C:/Users/mail/.codex/sessions/${id}.jsonl`,
+      meta: {
+        project: 'berth',
+        model: 'gpt-5'
+      },
+      ...overrides
+    }
+  }
+}
+
+function LocationProbe(): React.ReactElement {
+  const location = useLocation()
+  return <div data-testid="location">{location.pathname}</div>
+}
 
 describe('SearchDialog', () => {
+  let searchMock: ReturnType<typeof vi.fn>
+
   beforeEach(async () => {
     await i18n.changeLanguage('zh')
+    searchMock = vi.fn(async () => [])
+    window.api.assets.search = searchMock
     act(() => {
       useAppStore.setState({ searchOpen: true })
     })
@@ -118,6 +150,83 @@ describe('SearchDialog', () => {
     fireEvent.click(screen.getByRole('button', { name: '用量' }))
 
     await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: /搜索资产/ })).not.toBeInTheDocument()
+    })
+  })
+
+  it('queries assets and renders identifiable result rows', async () => {
+    searchMock.mockResolvedValueOnce([
+      searchResult('session-abc', {
+        name: 'Fix global search',
+        meta: { project: 'berth', model: 'gpt-5' }
+      })
+    ])
+    render(
+      <MemoryRouter>
+        <SearchDialog />
+      </MemoryRouter>
+    )
+
+    fireEvent.change(screen.getByRole('textbox', { name: /搜索资产/ }), {
+      target: { value: 'berth' }
+    })
+
+    await waitFor(() => expect(searchMock).toHaveBeenCalledWith('berth'))
+    expect(await screen.findByRole('option', { name: /Fix global search/ })).toBeInTheDocument()
+    expect(screen.getByText('会话')).toBeInTheDocument()
+    expect(screen.getByText('Codex')).toBeInTheDocument()
+    expect(screen.getByText(/元数据: berth/)).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: '总览' })).not.toBeInTheDocument()
+  })
+
+  it('shows loading, empty, and error states for non-empty queries', async () => {
+    let resolveSearch: (value: SearchResult[]) => void = () => {}
+    searchMock.mockReturnValueOnce(new Promise<SearchResult[]>((resolve) => {
+      resolveSearch = resolve
+    }))
+    render(
+      <MemoryRouter>
+        <SearchDialog />
+      </MemoryRouter>
+    )
+
+    const input = screen.getByRole('textbox', { name: /搜索资产/ })
+    fireEvent.change(input, { target: { value: 'missing' } })
+
+    expect(await screen.findByText('正在搜索…')).toBeInTheDocument()
+    act(() => resolveSearch([]))
+    expect(await screen.findByText('未找到结果。')).toBeInTheDocument()
+
+    searchMock.mockRejectedValueOnce(new Error('search failed'))
+    fireEvent.change(input, { target: { value: 'broken' } })
+
+    expect(await screen.findByText('搜索失败。')).toBeInTheDocument()
+  })
+
+  it('navigates selected results with click and Enter', async () => {
+    searchMock.mockResolvedValue([
+      searchResult('first'),
+      searchResult('second', { name: 'Second session' })
+    ])
+    render(
+      <MemoryRouter initialEntries={['/']}>
+        <SearchDialog />
+        <Routes>
+          <Route path="*" element={<LocationProbe />} />
+        </Routes>
+      </MemoryRouter>
+    )
+
+    const input = screen.getByRole('textbox', { name: /搜索资产/ })
+    fireEvent.change(input, { target: { value: 'session' } })
+
+    const second = await screen.findByRole('option', { name: /Second session/ })
+    fireEvent.keyDown(input, { key: 'ArrowDown' })
+    expect(second).toHaveAttribute('aria-selected', 'true')
+
+    fireEvent.keyDown(input, { key: 'Enter' })
+    await waitFor(() => {
+      expect(screen.getByTestId('location')).toHaveTextContent('/sessions/second')
       expect(screen.queryByRole('dialog', { name: /搜索资产/ })).not.toBeInTheDocument()
     })
   })

@@ -45,7 +45,21 @@
     "placeholder": "Search assets...",
     "shortcut": "⌘K",
     "noResults": "No results found.",
-    "hint": "Search across all assets by name, type, or scope."
+    "hint": "Search across all assets by name, type, or scope.",
+    "loading": "Searching...",
+    "error": "Search failed.",
+    "results": "Search results",
+    "match": "{{field}}: {{snippet}}",
+    "fields": {
+      "name": "Name",
+      "type": "Type",
+      "scope": "Scope",
+      "category": "Category",
+      "path": "Path",
+      "agentId": "Agent",
+      "summary": "Summary",
+      "metadata": "Metadata"
+    }
   },
   "assetGuide": {
     "showDetails": "Details",

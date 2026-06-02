@@ -2,7 +2,7 @@
 task: 2026-06-03-gh-81-global-search-usability
 task_id: GH-81
 type: bug
-phase: implement
+phase: verify
 created: 2026-06-03
 priority: P1
 target_date: 

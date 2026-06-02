@@ -9,17 +9,21 @@ interface SearchDoc {
   scope: string
   category: string
   path: string
+  agentId: string
+  summary: string
+  metadata: string
 }
 
 export class AssetSearch {
   private index: MiniSearch<SearchDoc>
+  private indexedSignature: string | null = null
 
   constructor() {
     this.index = new MiniSearch<SearchDoc>({
-      fields: ['name', 'type', 'scope', 'category', 'path'],
-      storeFields: ['name', 'type', 'scope', 'category', 'path'],
+      fields: ['name', 'type', 'scope', 'category', 'path', 'agentId', 'summary', 'metadata'],
+      storeFields: ['name', 'type', 'scope', 'category', 'path', 'agentId', 'summary', 'metadata'],
       searchOptions: {
-        boost: { name: 3, type: 2 },
+        boost: { name: 4, type: 2, summary: 3, metadata: 2, agentId: 2 },
         fuzzy: 0.2,
         prefix: true
       }
@@ -27,33 +31,32 @@ export class AssetSearch {
   }
 
   buildIndex(assets: Asset[]): void {
+    this.buildIndexFromDocs(buildSearchDocs(assets))
+  }
+
+  ensureIndexed(assets: Asset[]): void {
+    const docs = buildSearchDocs(assets)
+    const signature = createIndexSignature(docs)
+    if (signature === this.indexedSignature) return
+    this.buildIndexFromDocs(docs, signature)
+  }
+
+  private buildIndexFromDocs(docs: SearchDoc[], signature = createIndexSignature(docs)): void {
     this.index.removeAll()
-    const docs: SearchDoc[] = assets.map((a) => ({
-      id: a.id,
-      name: a.name,
-      type: a.type,
-      scope: a.scope,
-      category: a.category,
-      path: a.path
-    }))
     this.index.addAll(docs)
+    this.indexedSignature = signature
   }
 
   search(query: string, assets: Asset[]): SearchResult[] {
     if (!query.trim()) return []
+    this.ensureIndexed(assets)
     const assetMap = new Map(assets.map((a) => [a.id, a]))
     const results = this.index.search(query)
     const searchResults: SearchResult[] = []
     for (const r of results) {
       const asset = assetMap.get(r.id)
       if (!asset) continue
-      const matches: { field: string; snippet: string }[] = []
-      for (const [field, terms] of Object.entries(r.match)) {
-        matches.push({
-          field,
-          snippet: Array.isArray(terms) ? terms.join(', ') : String(terms)
-        })
-      }
+      const matches = toSearchMatches(r.match)
       searchResults.push({
         id: r.id,
         asset,
@@ -61,7 +64,7 @@ export class AssetSearch {
         matches
       })
     }
-    return searchResults
+    return searchResults.slice(0, 20)
   }
 
   addAsset(asset: Asset): void {
@@ -77,8 +80,12 @@ export class AssetSearch {
       type: asset.type,
       scope: asset.scope,
       category: asset.category,
-      path: asset.path
+      path: asset.path,
+      agentId: asset.agentId,
+      summary: extractSearchSummary(asset),
+      metadata: extractSearchMetadata(asset)
     })
+    this.indexedSignature = null
   }
 
   removeAsset(id: string): void {
@@ -87,7 +94,147 @@ export class AssetSearch {
     } catch {
       // not in index
     }
+    this.indexedSignature = null
   }
+}
+
+function buildSearchDocs(assets: Asset[]): SearchDoc[] {
+  return assets.map((asset) => ({
+    id: asset.id,
+    name: asset.name,
+    type: asset.type,
+    scope: asset.scope,
+    category: asset.category,
+    path: asset.path,
+    agentId: asset.agentId,
+    summary: extractSearchSummary(asset),
+    metadata: extractSearchMetadata(asset)
+  }))
+}
+
+function createIndexSignature(docs: SearchDoc[]): string {
+  return docs
+    .map((doc) => [
+      doc.id,
+      doc.name,
+      doc.type,
+      doc.scope,
+      doc.category,
+      doc.path,
+      doc.agentId,
+      doc.summary,
+      doc.metadata
+    ].join('\u001f'))
+    .sort()
+    .join('\u001e')
+}
+
+function extractSearchSummary(asset: Asset): string {
+  return collectMetaText(asset, [
+    'title',
+    'description',
+    'summary',
+    'project',
+    'model',
+    'event',
+    'matcher',
+    'serverName',
+    'name'
+  ])
+}
+
+function extractSearchMetadata(asset: Asset): string {
+  const byType: Record<string, string[]> = {
+    session: ['project', 'projectPath', 'model', 'transcriptPath', 'skillsUsed', 'mcpServers', 'startedAt', 'endedAt'],
+    hook: ['event', 'matcher', 'type', 'hookType', 'command', 'sourcePath'],
+    skill: ['description', 'summary', 'name', 'scope', 'path'],
+    agent: ['description', 'summary', 'name', 'model'],
+    command: ['description', 'summary', 'command', 'name'],
+    'mcp-server': ['description', 'summary', 'serverName', 'name', 'command', 'transport'],
+    plugin: ['description', 'summary', 'name', 'version'],
+    permission: ['description', 'summary', 'name', 'rule'],
+    statusline: ['description', 'summary', 'command', 'name']
+  }
+  const preferredKeys = byType[asset.type] ?? []
+  return collectMetaText(asset, preferredKeys, true)
+}
+
+function collectMetaText(asset: Asset, preferredKeys: string[], includeShallow = false): string {
+  const parts: string[] = []
+  const seen = new Set<string>()
+
+  for (const key of preferredKeys) {
+    appendMetaValue(asset.meta[key], parts, seen, key)
+  }
+
+  if (includeShallow) {
+    for (const [key, value] of Object.entries(asset.meta)) {
+      if (preferredKeys.includes(key)) continue
+      appendMetaValue(value, parts, seen, key, 0)
+    }
+  }
+
+  return parts.join(' ')
+}
+
+function appendMetaValue(
+  value: unknown,
+  parts: string[],
+  seen: Set<string>,
+  key = '',
+  depth = 0
+): void {
+  if (isSensitiveSearchKey(key)) return
+
+  if (typeof value === 'string') {
+    const text = value.trim()
+    if (!text || text.length > 500 || seen.has(text)) return
+    seen.add(text)
+    parts.push(text)
+    return
+  }
+
+  if (typeof value === 'number' || typeof value === 'boolean') {
+    const text = String(value)
+    if (seen.has(text)) return
+    seen.add(text)
+    parts.push(text)
+    return
+  }
+
+  if (Array.isArray(value)) {
+    for (const item of value.slice(0, 20)) {
+      appendMetaValue(item, parts, seen, key, depth + 1)
+    }
+    return
+  }
+
+  if (!value || typeof value !== 'object' || depth > 1) return
+
+  for (const [childKey, childValue] of Object.entries(value as Record<string, unknown>)) {
+    appendMetaValue(childValue, parts, seen, childKey, depth + 1)
+  }
+}
+
+function isSensitiveSearchKey(key: string): boolean {
+  return /^(raw|content|body|message|messages|transcript|secret|token|api[_-]?key|password|credential)$/i.test(key)
+}
+
+function toSearchMatches(match: Record<string, string[] | string>): { field: string; snippet: string }[] {
+  const seen = new Set<string>()
+  const matches: { field: string; snippet: string }[] = []
+
+  for (const [term, fields] of Object.entries(match)) {
+    const fieldList = Array.isArray(fields) ? fields : [fields]
+    for (const field of fieldList) {
+      const key = `${field}:${term}`
+      if (seen.has(key)) continue
+      seen.add(key)
+      matches.push({ field, snippet: term })
+    }
+  }
+
+  return matches.slice(0, 6)
 }
 
 let _searchInstance: AssetSearch | null = null

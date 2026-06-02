@@ -2,6 +2,7 @@ import { ElectronAPI } from '@electron-toolkit/preload'
 import type {
   AgentScanSourceGroup,
   ScanResult,
+  SearchResult,
   SessionListResult,
   SessionDetailResult,
   HealthCheck,
@@ -50,7 +51,7 @@ interface BerthAPI {
     scanAll: () => Promise<ScanResult>
     scanSources: () => Promise<AgentScanSourceGroup[]>
     get: (id: string) => Promise<Asset | null>
-    search: (query: string) => Promise<unknown[]>
+    search: (query: string) => Promise<SearchResult[]>
     healthCheck: (opts?: { refresh?: boolean }) => Promise<HealthCheck[]>
     onChanged: (callback: (event: unknown) => void) => () => void
   }

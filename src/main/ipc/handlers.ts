@@ -141,8 +141,8 @@ export function registerAssetHandlers(): void {
     return resolveRelations(asset, scanner.getAllAssets())
   })
 
-  ipcMain.handle('assets:search', (_event, query: string): SearchResult[] => {
-    const scanner = getScanner()
+  ipcMain.handle('assets:search', async (_event, query: string): Promise<SearchResult[]> => {
+    const scanner = await ensureScanned()
     const search = getSearch()
     return search.search(query, scanner.getAllAssets())
   })
