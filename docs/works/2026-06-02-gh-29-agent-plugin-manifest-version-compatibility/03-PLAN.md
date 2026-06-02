@@ -28,10 +28,11 @@
   - verify: 类型、IPC 契约和任务态均通过; 若出现与当前任务无关的全局失败, 记录原因并保留目标测试证据。
   - evidence: 2026-06-02 `pnpm typecheck` 通过; `pnpm harness:check --work docs/works/2026-06-02-gh-29-agent-plugin-manifest-version-compatibility` 通过。
 
-- [ ] 5. 实测 Settings 页面
+- [x] 5. 实测 Settings 页面
   - files: 如发现 UI 问题, 只修改 Settings 相关文件。
   - tests: Electron 设置页截图 / 交互验证。
   - verify: valid / invalid / incompatible 三种 manifest 行在页面内可读, 不挤压内置 plugin 区块, hover/focus/展开状态正常。
+  - evidence: 2026-06-02 启动 agent-owned dev 实例 `gh29-manifest-ui`, 使用 renderer dev server + mock IPC 截图验证 Settings manifest 行; 截图 `C:\Users\mail\AppData\Local\Temp\berth-gh29-settings-manifest-ui.png`; valid / invalid / incompatible、展开详情、错误字段和路径均可见。实例已停止, `pnpm dev:agent guard after --id gh29-manifest-ui --json` 返回 `guard-ok`。
 
 ## 提交策略
 
