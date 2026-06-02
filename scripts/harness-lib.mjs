@@ -21,6 +21,8 @@ export const DEBT_THRESHOLDS = {
   requireOverrideReason: 60
 }
 
+export const MAINTENANCE_AUTO_PRIORITY = ['tooling-ci', 'ui-ux', 'testability', 'performance', 'dependency', 'docs', 'architecture']
+
 export const LEGACY_VERBS = [
   'new',
   'continue',

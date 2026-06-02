@@ -24,8 +24,8 @@ debt:
     confidence: medium
     rationale: "修改 harness 状态契约、校验、统计和 GitHub Project 同步脚本。"
   final:
-    incurred: 18
-    repaid: 10
+    incurred: 20
+    repaid: 12
     net: 8
     scope: global
     risk: high
@@ -34,7 +34,7 @@ debt:
       - architecture
       - testability
     confidence: high
-    rationale: "实现触及 harness schema、stats、GitHub Project 同步和 workflow 文档; 同时消除了任务分类、debt 统计和 Project 字段同步缺口。"
+    rationale: "实现触及 harness schema、stats、GitHub Project 同步和 workflow 文档; 同时消除了任务分类、debt 统计、Project 字段同步和 maintenance subtype 自动选择缺口。"
   revisions:
     - at: verify
       date: 2026-06-02
@@ -49,6 +49,17 @@ debt:
         net: 8
         confidence: high
       reason: "实现后确认影响面为 global; 自动化同步和规则文档偿还了部分 harness 流程 debt。"
+    - at: verify
+      date: 2026-06-03
+      from:
+        incurred: 18
+        repaid: 10
+        net: 8
+      to:
+        incurred: 20
+        repaid: 12
+        net: 8
+      reason: "补充 maintenance subtype 自动选择规则; stats 推荐减少人工判断, 但增加少量全局规则复杂度。"
 issue:
   number: 76
   repo: Caldis/berth

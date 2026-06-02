@@ -43,6 +43,7 @@ action: 0.0-new · 0.1-continue · 1.0-explore · 2.0-design · 3.0-implement ·
 - `source.kind`: `user-request | github-issue | docs-issues | docs-friction | ci | harness`。`issue` 与 `friction` 是来源, 不作为 subtype。
 - `debt.estimate` 从 new 开始填写, explore/design/implement 持续修正; 重要变化写入 `debt.revisions[]`。
 - `debt.final` 在 verify/archive 前填写。`pnpm harness:stats` 汇总 debt pool: `<20 ok`, `>=20 notice`, `>=40 recommend-maintenance`, `>=60 requires-override`。
+- maintenance 自动选择: `harness:stats` 达到维护阈值时输出 `maintenance=<subtype>:<score>`。平局优先级为 `tooling-ci > ui-ux > testability > performance > dependency > docs > architecture`; `architecture` 只有自身 area debt `>=40` 时自动选择。
 - GitHub Project 使用自定义字段同步 Task Type、Priority、日期、debt、scope、risk、source; 当前用户仓库不写真实 GitHub Issue Type。
 
 ## 阶段

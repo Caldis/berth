@@ -95,6 +95,12 @@ GitHub Project 字段定义:
 - `ensure` / `done` 调用 Project 字段同步。`done` 额外设置 `Archived at` 为当天日期。
 - 当前用户仓库不支持组织级 Issue Type API; 本轮不写真实 Issue Type, 只同步 Project `Task Type`。组织仓库可用时再加可选 Issue Type 层。对应验收 4、5。
 
+维护 subtype 自动选择 v1:
+- `harness:stats` 只有在 `recommend-maintenance` / `requires-override` 时输出 maintenance 推荐。
+- 推荐规则取正分最高的 debt area; 同分按 `tooling-ci > ui-ux > testability > performance > dependency > docs > architecture`。
+- `architecture` 只有自身 area debt `>=40` 时可自动选择; 否则跳过到下一个 area, 避免频繁结构调整。
+- 用户明确指定 feature/bug 时不被自动维护任务覆盖; 用户未指定时, `0.0-new` 使用 `harness:stats` 的推荐 subtype。
+
 ## 模块结构 / 组件拆分
 遵守 docs/ARCHITECTURE.md 的边界与约定。
 
@@ -141,6 +147,7 @@ GitHub Project 字段定义:
 |---|---|---|---|---|
 | maintenance/source/debt 本地 schema 校验 | harness unit | `tests/harness/check.test.ts` | `pnpm vitest run tests/harness/check.test.ts` | 不适用 |
 | debt pool 统计、unscored、area/type 分组 | harness unit | `tests/harness/stats.test.ts` | `pnpm vitest run tests/harness/stats.test.ts` | 不适用 |
+| maintenance subtype 自动推荐 | harness unit | `tests/harness/stats.test.ts` | `pnpm vitest run tests/harness/stats.test.ts` | 不适用 |
 | Project 字段定义、创建、同步、strict 校验 | harness unit | `tests/harness/projects.test.ts` | `pnpm vitest run tests/harness/projects.test.ts` | 不适用 |
 | workflow/template 分发与入口规则 | harness check | n/a | `pnpm harness:check --work docs/works/2026-06-02-gh-76-harness-task-type-debt-workflow`; `pnpm harness:check` | 不适用 |
 | 类型影响范围 | typecheck | n/a | `pnpm typecheck` | 不适用 |

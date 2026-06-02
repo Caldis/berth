@@ -23,6 +23,10 @@
   - files: `docs/works/2026-06-02-gh-76-harness-task-type-debt-workflow/INDEX.md`, `03-PLAN.md`
   - tests: `pnpm vitest run tests/harness/check.test.ts tests/harness/stats.test.ts tests/harness/projects.test.ts`; `pnpm typecheck`; `pnpm harness:check`; `node scripts/harness-projects.mjs check --strict`
   - verify: 2026-06-02 debt.final 校准为 incurred=18 / repaid=10 / net=8, phase 更新为 verify; `node scripts/harness-projects.mjs ensure docs/works/2026-06-02-gh-76-harness-task-type-debt-workflow` 同步当前任务 final debt; `pnpm vitest run tests/harness/check.test.ts tests/harness/stats.test.ts tests/harness/projects.test.ts` 66 tests passed; `pnpm harness:stats` debt total=11 status=ok; `node scripts/harness-projects.mjs check --strict` passed; `pnpm typecheck` passed; `pnpm harness:check` passed; 所有计划项有测试证据; 非 UI, 界面质量与交互验收不适用。
+- [x] 任务 6: maintenance subtype 自动选择规则
+  - files: `scripts/harness-lib.mjs`, `scripts/harness-stats.mjs`, `tests/harness/stats.test.ts`, `.agents/workflow/_shared.md`, `.agents/workflow/0.0-new.md`, `.agents/README.md`, `.agents/tools.md`, `02-SPEC.md`, `03-PLAN.md`
+  - tests: `pnpm vitest run tests/harness/stats.test.ts`
+  - verify: 2026-06-03 `pnpm vitest run tests/harness/stats.test.ts` 9 tests passed; `pnpm harness:check --work docs/works/2026-06-02-gh-76-harness-task-type-debt-workflow` passed; `pnpm harness:check` passed; `pnpm harness:stats` 当前 status=ok 所以不输出 maintenance 推荐; `node scripts/harness-projects.mjs check --strict` passed; 规则为 `tooling-ci > ui-ux > testability > performance > dependency > docs > architecture`; `architecture` 只有自身 area debt >=40 时自动选择; 非 UI, 界面质量与交互验收不适用。
 
 ## verify 回写
 verify 不通过项作为新任务追加于此, phase 退回 implement。

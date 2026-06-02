@@ -150,4 +150,101 @@ describe('collectStats', () => {
     )
     expect(collectStats(root).debt.status).toBe('recommend-maintenance')
   })
+
+  it('debt 未达到维护阈值时不推荐 maintenance subtype', () => {
+    indexedTask(
+      'docs/works',
+      '2026-05-30-low-debt',
+      [
+        'type: feature',
+        'phase: verify',
+        'created: 2026-05-30',
+        'debt:',
+        '  estimate:',
+        '    incurred: 10',
+        '    repaid: 0',
+        '    net: 10',
+        '    scope: module',
+        '    risk: medium',
+        '    areas:',
+        '      - ui-ux',
+        '    confidence: medium'
+      ].join('\n')
+    )
+    expect(collectStats(root).debt.maintenanceRecommendation).toBeNull()
+  })
+
+  it('maintenance subtype 平局时 docs 优先于 architecture', () => {
+    indexedTask(
+      'docs/works',
+      '2026-05-30-docs-debt',
+      [
+        'type: feature',
+        'phase: verify',
+        'created: 2026-05-30',
+        'debt:',
+        '  estimate:',
+        '    incurred: 40',
+        '    repaid: 0',
+        '    net: 40',
+        '    scope: module',
+        '    risk: medium',
+        '    areas:',
+        '      - docs',
+        '      - architecture',
+        '    confidence: medium'
+      ].join('\n')
+    )
+    expect(collectStats(root).debt.maintenanceRecommendation).toMatchObject({
+      subtype: 'docs',
+      area: 'docs',
+      score: 40
+    })
+  })
+
+  it('architecture 未满足保护条件时跳过到下一个 area', () => {
+    indexedTask(
+      'docs/works',
+      '2026-05-30-arch-debt',
+      [
+        'type: feature',
+        'phase: verify',
+        'created: 2026-05-30',
+        'debt:',
+        '  estimate:',
+        '    incurred: 38',
+        '    repaid: 0',
+        '    net: 38',
+        '    scope: module',
+        '    risk: medium',
+        '    areas:',
+        '      - architecture',
+        '    confidence: medium'
+      ].join('\n')
+    )
+    indexedTask(
+      'docs/works',
+      '2026-05-30-ui-debt',
+      [
+        'type: feature',
+        'phase: verify',
+        'created: 2026-05-30',
+        'debt:',
+        '  estimate:',
+        '    incurred: 7',
+        '    repaid: 0',
+        '    net: 7',
+        '    scope: module',
+        '    risk: medium',
+        '    areas:',
+        '      - ui-ux',
+        '    confidence: medium'
+      ].join('\n')
+    )
+    expect(collectStats(root).debt.maintenanceRecommendation).toMatchObject({
+      subtype: 'ui-ux',
+      area: 'ui-ux',
+      score: 7
+    })
+  })
 })

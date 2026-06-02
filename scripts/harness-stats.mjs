@@ -4,7 +4,7 @@
 import { readdirSync, readFileSync, existsSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { DEBT_THRESHOLDS, parseFrontmatter } from './harness-lib.mjs'
+import { DEBT_THRESHOLDS, MAINTENANCE_AUTO_PRIORITY, parseFrontmatter } from './harness-lib.mjs'
 import { check as checkDistribution, desiredArtifacts } from './harness-sync.mjs'
 
 function listTaskDirs(p) {
@@ -54,9 +54,36 @@ function addGroupedValue(group, key, value) {
   group[key] = (group[key] || 0) + value
 }
 
+function maintenancePriority(area) {
+  const index = MAINTENANCE_AUTO_PRIORITY.indexOf(area)
+  return index >= 0 ? index : MAINTENANCE_AUTO_PRIORITY.length
+}
+
+function selectMaintenanceRecommendation(debt) {
+  if (!['recommend-maintenance', 'requires-override'].includes(debt.status)) return null
+  const candidates = Object.entries(debt.byArea)
+    .filter(([, value]) => typeof value === 'number' && value > 0)
+    .map(([area, score]) => ({ area, score, subtype: area }))
+    .sort((a, b) => {
+      if (b.score !== a.score) return b.score - a.score
+      return maintenancePriority(a.area) - maintenancePriority(b.area)
+    })
+
+  for (const candidate of candidates) {
+    if (candidate.area === 'architecture' && candidate.score < DEBT_THRESHOLDS.recommendMaintenance) continue
+    return {
+      ...candidate,
+      reason: candidate.area === 'architecture'
+        ? 'architecture area reached recommend-maintenance threshold'
+        : 'highest positive debt area'
+    }
+  }
+  return null
+}
+
 function collectDebt(root) {
   const bases = [join(root, 'docs/works'), join(root, 'docs/works/_archive')]
-  const debt = { total: 0, status: 'ok', unscored: 0, byArea: {}, byType: {} }
+  const debt = { total: 0, status: 'ok', unscored: 0, byArea: {}, byType: {}, maintenanceRecommendation: null }
   for (const base of bases) {
     for (const name of listTaskDirs(base)) {
       const idx = join(base, name, 'INDEX.md')
@@ -75,6 +102,7 @@ function collectDebt(root) {
     }
   }
   debt.status = debtStatus(debt.total)
+  debt.maintenanceRecommendation = selectMaintenanceRecommendation(debt)
   return debt
 }
 
@@ -116,6 +144,10 @@ function groupLine(group) {
   return entries.length ? ` (${entries.map(([key, value]) => `${key}:${value}`).join(' ')})` : ''
 }
 
+function maintenanceLine(recommendation) {
+  return recommendation ? ` maintenance=${recommendation.subtype}:${recommendation.score}` : ''
+}
+
 function main() {
   const s = collectStats(process.cwd())
   const lines = [
@@ -125,7 +157,8 @@ function main() {
     `  friction active=${s.friction.active} archived=${s.friction.archived}`,
     `  issues   active=${s.issues.active} resolved=${s.issues.resolved}`,
     `  debt     total=${s.debt.total} status=${s.debt.status} unscored=${s.debt.unscored}` +
-      groupLine(s.debt.byArea),
+      groupLine(s.debt.byArea) +
+      maintenanceLine(s.debt.maintenanceRecommendation),
     `  dist     ${s.distribution.ok ? 'in-sync' : `DRIFT(${s.distribution.drift})`} (expected ${s.distribution.expected} artifacts)`
   ]
   console.log(lines.join('\n'))
