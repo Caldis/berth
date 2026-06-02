@@ -14,13 +14,17 @@ afterEach(() => {
   rmSync(root, { recursive: true, force: true })
 })
 
+function normalizeLinkTarget(value: string): string {
+  return value.replace(/\\/g, '/')
+}
+
 function expectSkillDistribution(path: string, target: string): void {
   if (lstatSync(path).isSymbolicLink()) {
-    expect(readlinkSync(path)).toBe(target)
+    expect(normalizeLinkTarget(readlinkSync(path))).toBe(normalizeLinkTarget(target))
     return
   }
 
-  const sourceSkill = join(root, target.replace(/^(\.\.\/)+/, ''), 'SKILL.md')
+  const sourceSkill = join(root, normalizeLinkTarget(target).replace(/^(\.\.\/)+/, ''), 'SKILL.md')
   const distributedSkill = join(path, 'SKILL.md')
   expect(existsSync(distributedSkill)).toBe(true)
   expect(readFileSync(distributedSkill, 'utf8')).toBe(readFileSync(sourceSkill, 'utf8'))

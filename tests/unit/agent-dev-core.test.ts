@@ -38,12 +38,22 @@ afterEach(() => {
 
 function makeContext() {
   const stateRoot = mkdtempSync(join(tmpdir(), 'berth-agent-core-test-'))
+  const root = join(stateRoot, 'repo')
   tempRoots.push(stateRoot)
   return createAgentDevContext({
-    root: 'D:\\Code\\berth',
+    root,
     stateRoot,
-    electronViteCli: 'D:\\Code\\berth\\node_modules\\electron-vite\\bin\\electron-vite.js'
+    electronViteCli: join(root, 'node_modules', 'electron-vite', 'bin', 'electron-vite.js')
   })
+}
+
+function devServerCommand(context: ReturnType<typeof createAgentDevContext>, extra = ''): string {
+  return `node ${context.electronViteCli} dev${extra ? ` ${extra}` : ''}`
+}
+
+function electronMainCommand(context: ReturnType<typeof createAgentDevContext>, agentId?: string): string {
+  const agentArg = agentId ? ` --berth-agent-instance=${agentId}` : ''
+  return `${join(context.root, 'node_modules', '.pnpm', 'electron', 'dist', 'electron.exe')} .${agentArg}`
 }
 
 describe('agent dev core', () => {
@@ -110,7 +120,7 @@ describe('agent dev core', () => {
   it('protects removals outside the state root', () => {
     const context = makeContext()
     expect(isInsideStateRoot(context, join(context.stateRoot, 'agent-1.json'))).toBe(true)
-    expect(isInsideStateRoot(context, 'D:\\Code\\berth\\package.json')).toBe(false)
+    expect(isInsideStateRoot(context, join(tmpdir(), 'berth-outside-package.json'))).toBe(false)
   })
 
   it('checks process command ownership before stopping', async () => {
@@ -215,15 +225,13 @@ describe('agent dev core', () => {
       {
         platform: 'win32',
         isPidRunning: () => true,
-        getProcessCommandLine: () =>
-          'node D:\\Code\\berth\\node_modules\\electron-vite\\bin\\electron-vite.js dev -- --berth-agent-instance=agent-1',
+        getProcessCommandLine: () => devServerCommand(context, '-- --berth-agent-instance=agent-1'),
         listProcesses: () => [
           {
             pid: 456,
             parentPid: 123,
             name: 'electron.exe',
-            commandLine:
-              'D:\\Code\\berth\\node_modules\\.pnpm\\electron\\dist\\electron.exe . --berth-agent-instance=agent-1'
+            commandLine: electronMainCommand(context, 'agent-1')
           }
         ],
         spawnSync: spawnSyncMock
@@ -264,8 +272,7 @@ describe('agent dev core', () => {
         {
           platform: 'win32',
           isPidRunning: () => true,
-          getProcessCommandLine: () =>
-            'node D:\\Code\\berth\\node_modules\\electron-vite\\bin\\electron-vite.js dev -- --berth-agent-instance=agent-1',
+          getProcessCommandLine: () => devServerCommand(context, '-- --berth-agent-instance=agent-1'),
           listProcesses: () => []
         }
       )
@@ -336,20 +343,19 @@ describe('agent dev core', () => {
           pid: 1,
           parentPid: 0,
           name: 'node.exe',
-          commandLine: 'node D:\\Code\\berth\\node_modules\\electron-vite\\bin\\electron-vite.js dev'
+          commandLine: devServerCommand(context)
         },
         {
           pid: 2,
           parentPid: 1,
           name: 'electron.exe',
-          commandLine: 'D:\\Code\\berth\\node_modules\\.pnpm\\electron\\dist\\electron.exe .'
+          commandLine: electronMainCommand(context)
         },
         {
           pid: 3,
           parentPid: 1,
           name: 'electron.exe',
-          commandLine:
-            'D:\\Code\\berth\\node_modules\\.pnpm\\electron\\dist\\electron.exe . --berth-agent-instance=agent-1'
+          commandLine: electronMainCommand(context, 'agent-1')
         }
       ],
       context
@@ -370,19 +376,19 @@ describe('agent dev core', () => {
       pid: 1,
       parentPid: 0,
       name: 'node.exe',
-      commandLine: 'node D:\\Code\\berth\\node_modules\\electron-vite\\bin\\electron-vite.js dev --watch'
+      commandLine: devServerCommand(context, '--watch')
     }
     const previousElectron = {
       pid: 2,
       parentPid: 1,
       name: 'electron.exe',
-      commandLine: 'D:\\Code\\berth\\node_modules\\.pnpm\\electron\\dist\\electron.exe .'
+      commandLine: electronMainCommand(context)
     }
     const replacementElectron = {
       pid: 4,
       parentPid: 1,
       name: 'electron.exe',
-      commandLine: 'D:\\Code\\berth\\node_modules\\.pnpm\\electron\\dist\\electron.exe .'
+      commandLine: electronMainCommand(context)
     }
 
     expect(
@@ -403,20 +409,19 @@ describe('agent dev core', () => {
       pid: 1,
       parentPid: 0,
       name: 'node.exe',
-      commandLine: 'node D:\\Code\\berth\\node_modules\\electron-vite\\bin\\electron-vite.js dev --watch'
+      commandLine: devServerCommand(context, '--watch')
     }
     const previousElectron = {
       pid: 2,
       parentPid: 1,
       name: 'electron.exe',
-      commandLine: 'D:\\Code\\berth\\node_modules\\.pnpm\\electron\\dist\\electron.exe .'
+      commandLine: electronMainCommand(context)
     }
     const agentElectron = {
       pid: 4,
       parentPid: 1,
       name: 'electron.exe',
-      commandLine:
-        'D:\\Code\\berth\\node_modules\\.pnpm\\electron\\dist\\electron.exe . --berth-agent-instance=agent-1'
+      commandLine: electronMainCommand(context, 'agent-1')
     }
 
     expect(
@@ -438,7 +443,7 @@ describe('agent dev core', () => {
         pid: 1,
         parentPid: 0,
         name: 'node.exe',
-        commandLine: 'node D:\\Code\\berth\\node_modules\\electron-vite\\bin\\electron-vite.js dev'
+        commandLine: devServerCommand(context)
       }
     ]
 
@@ -464,7 +469,7 @@ describe('agent dev core', () => {
     const context = makeContext()
     expect(
       commandOwnsAgentDevState(
-        'node D:\\Code\\berth\\node_modules\\electron-vite\\bin\\electron-vite.js dev -- --berth-agent-instance=agent-1',
+        devServerCommand(context, '-- --berth-agent-instance=agent-1'),
         { id: 'agent-1' },
         context
       )

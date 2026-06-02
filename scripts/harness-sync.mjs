@@ -39,6 +39,14 @@ function normalizeText(value) {
   return value.replace(/\r\n/g, '\n')
 }
 
+function normalizeLinkTarget(value) {
+  return String(value || '').replace(/\\/g, '/')
+}
+
+function linkTargetSourcePath(root, target) {
+  return join(root, normalizeLinkTarget(target).replace(/^(\.\.\/)+/, ''))
+}
+
 function fileInSync(path, content) {
   return existsSync(path) && normalizeText(readFileSync(path, 'utf8')) === normalizeText(content)
 }
@@ -80,12 +88,12 @@ function legacyArtifactPaths(root) {
 function linkInSync(root, path, target) {
   if (!existsSync(path)) return false
   try {
-    if (lstatSync(path).isSymbolicLink()) return readlinkSync(path) === target
+    if (lstatSync(path).isSymbolicLink()) return normalizeLinkTarget(readlinkSync(path)) === normalizeLinkTarget(target)
   } catch {
     return false
   }
   // 复制回退: 目录存在且其中 SKILL.md 内容与软链目标一致
-  const srcSkill = join(root, target.replace(/^(\.\.\/)+/, ''), 'SKILL.md')
+  const srcSkill = join(linkTargetSourcePath(root, target), 'SKILL.md')
   const dstSkill = join(path, 'SKILL.md')
   return existsSync(dstSkill) && existsSync(srcSkill) &&
     normalizeText(readFileSync(dstSkill, 'utf8')) === normalizeText(readFileSync(srcSkill, 'utf8'))
@@ -113,7 +121,7 @@ export function apply(root) {
       symlinkSync(it.target, it.path, 'dir')
     } catch (e) {
       if (e && (e.code === 'EPERM' || e.code === 'EEXIST')) {
-        const srcDir = join(root, it.target.replace(/^(\.\.\/)+/, ''))
+        const srcDir = linkTargetSourcePath(root, it.target)
         cpSync(srcDir, it.path, { recursive: true })
       } else {
         throw e
