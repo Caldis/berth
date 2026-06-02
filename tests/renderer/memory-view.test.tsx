@@ -19,6 +19,11 @@ vi.mock('../../src/renderer/src/hooks/use-memory', () => ({
   useMemory: () => memoryState
 }))
 
+function expectImportanceBadge(label: string, title: string): void {
+  const badge = screen.getAllByText(label).find((element) => element.getAttribute('title') === title)
+  expect(badge).toBeDefined()
+}
+
 describe('MemoryView', () => {
   beforeEach(async () => {
     await i18n.changeLanguage('en')
@@ -64,6 +69,8 @@ describe('MemoryView', () => {
 
     expect(screen.getByText('Missing note')).toBeInTheDocument()
     expect(screen.getByText('File missing')).toBeInTheDocument()
+    expectImportanceBadge('Active', 'Active — loaded on demand when relevant')
+    expect(screen.queryByText('active')).not.toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: /Missing note/ }))
 
@@ -247,9 +254,11 @@ describe('MemoryView', () => {
 
     render(<MemoryView />)
 
-    fireEvent.click(screen.getByRole('button', { name: 'core 1' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Core 1' }))
     expect(screen.getByText('Core note')).toBeInTheDocument()
     expect(screen.queryByText('Archive note')).not.toBeInTheDocument()
+    expectImportanceBadge('Core', 'Core — loaded into context every session')
+    expect(screen.queryByText('core')).not.toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: 'ops 1' }))
     expect(screen.getByText('Core note')).toBeInTheDocument()
@@ -266,6 +275,8 @@ describe('MemoryView', () => {
     render(<MemoryView />)
 
     expect(screen.getByText('文件缺失')).toBeInTheDocument()
+    expectImportanceBadge('活跃', '活跃 — 相关时按需加载')
+    expect(screen.queryByText('active')).not.toBeInTheDocument()
     expect(screen.getByText('记忆类型')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: '全部类型' })).toBeInTheDocument()
     expect(screen.getByText('标签')).toBeInTheDocument()

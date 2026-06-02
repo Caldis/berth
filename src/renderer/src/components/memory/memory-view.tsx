@@ -42,6 +42,13 @@ const importanceHintFallback: Record<MemoryImportance, string> = {
   unknown: 'Importance not specified'
 }
 
+const importanceLabelFallback: Record<MemoryImportance, string> = {
+  core: 'Core',
+  active: 'Active',
+  archive: 'Archive',
+  unknown: 'Unknown'
+}
+
 const emptyFallback: Record<string, { title: string; hint: string }> = {
   noSources: {
     title: 'No memory sources found',
@@ -83,9 +90,13 @@ function ImportanceBadge({ importance }: { importance: MemoryImportance }): Reac
       title={t(`memory.importanceHint.${importance}`, importanceHintFallback[importance])}
       className={cn('inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold', importanceColors[importance] ?? importanceColors.unknown)}
     >
-      {importance}
+      {formatImportanceLabel(t, importance)}
     </span>
   )
+}
+
+function formatImportanceLabel(t: ReturnType<typeof useTranslation>['t'], importance: MemoryImportance): string {
+  return t(`memory.importanceLabel.${importance}`, importanceLabelFallback[importance])
 }
 
 function SourceBadge({ label, id }: { label: string; id: string }): React.ReactElement {
@@ -487,8 +498,8 @@ export function MemoryView(): React.ReactElement {
     const counts = countBy(result.notes.map((note) => note.importance))
     return importanceOrder
       .filter((importance) => counts.has(importance))
-      .map((importance) => ({ id: importance, label: importance, count: counts.get(importance) ?? 0 }))
-  }, [result.notes])
+      .map((importance) => ({ id: importance, label: formatImportanceLabel(t, importance), count: counts.get(importance) ?? 0 }))
+  }, [result.notes, t])
 
   const tagOptions = useMemo(() => {
     const counts = countBy(result.notes.flatMap((note) => note.tags))

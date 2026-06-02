@@ -1460,6 +1460,12 @@
       "archive": "Archive — kept for reference, not auto-loaded",
       "unknown": "Importance not specified"
     },
+    "importanceLabel": {
+      "core": "Core",
+      "active": "Active",
+      "archive": "Archive",
+      "unknown": "Unknown"
+    },
     "empty": {
       "title": "No memories yet",
       "hint": "Your memory sources are connected but hold no notes."

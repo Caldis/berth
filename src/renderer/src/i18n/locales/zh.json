@@ -1453,6 +1453,12 @@
       "archive": "归档 — 仅作参考，不自动加载",
       "unknown": "未指定重要性"
     },
+    "importanceLabel": {
+      "core": "核心",
+      "active": "活跃",
+      "archive": "归档",
+      "unknown": "未知"
+    },
     "empty": {
       "title": "暂无记忆",
       "hint": "记忆来源已连接，但还没有笔记。"
