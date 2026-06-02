@@ -6,7 +6,7 @@ FEATURE
 
 ## 状态
 
-Open
+Resolved
 
 ## GitHub
 
@@ -17,6 +17,13 @@ Open
 
 - 来源归档: `docs/works/_archive/2026-06-01-gh-11-claude-hook-soft-disable/`
 - 第一阶段实现: `docs/works/_archive/2026-06-02-gh-12-agent-capability-plugin-system/`
+- Source descriptors: `docs/works/_archive/2026-06-02-gh-24-agent-plugin-source-descriptors/`
+- Asset descriptors: `docs/works/_archive/2026-06-02-gh-25-agent-plugin-asset-descriptors/`
+- Health check descriptors: `docs/works/_archive/2026-06-02-gh-26-agent-plugin-health-check-descriptors/`
+- Hook schema descriptors: `docs/works/_archive/2026-06-02-gh-27-agent-plugin-hook-schema-descriptors/`
+- Hook schema-driven UI: `docs/works/_archive/2026-06-02-gh-28-hooks-ui-schema-driven-presentation/`
+- Manifest and version compatibility: `docs/works/_archive/2026-06-02-gh-29-agent-plugin-manifest-version-compatibility/`
+- 后续 1.0 PRD: `docs/prd/2026-06-02-agent-capability-plugin-1.0-expansion.md`
 
 ## 当前进度
 
@@ -26,8 +33,8 @@ Open
 - 2026-06-02: health check descriptors 已完成。内置插件现在声明当前 Claude Code / Codex agent-specific 健康检查规则族, 运行时检查仍由 health engine 执行。
 - 2026-06-02: hook schema descriptors 已完成。内置插件现在声明 Claude Code / Codex 的 Hook event、lifecycle stage、matcher 支持、handler type、主展示字段、必填字段和运行模式。
 - 2026-06-02: Hook schema-driven UI 已完成。Hooks 页面现在从 plugin `hookSchema` 读取 event/stage/support 和 handler 主字段/runMode, 并保留 fallback。
-- 2026-06-02: 第三方插件 manifest 和版本兼容已拆为 `docs/issues/2026-06-02-FEATURE-agent-plugin-manifest-version-compatibility.md` / GH-29。
-- 后续仍有效: 等 GH-29 完成后再判断本父 issue 是否可移入 resolved。
+- 2026-06-02: 第三方插件 manifest 和版本兼容已完成并归档到 GH-29。
+- 2026-06-02: 父 issue 的分解和第一组实现已完成; 后续第三方插件启用、安装、生成 Hermes / PI 插件草案等能力已转为独立 PRD。
 
 ## PRD
 
@@ -122,3 +129,14 @@ Hook 页面不应该长期硬编码每个 handler type 的展示方式。插件�
 - Hook 展示字段来自 plugin schema, 页面不再硬编码各 Agent 的 handler type。
 - 第三方插件 manifest 有 schema 校验和版本兼容检查。
 - 插件权限能在 UI 中解释清楚, 尤其是写入和执行权限。
+
+## 解决说明
+
+本父 issue 用于把 Agent Capability Plugin 概念拆成可实现的阶段。当前已完成:
+
+- 内置 Claude Code / Codex plugin registry 与 Settings 展示。
+- source / asset / health check / hook schema descriptors。
+- Hooks 页面按 plugin hook schema 展示事件和 handler 主字段。
+- 第三方 manifest 只读加载、schema 校验、版本兼容和 Settings 状态展示。
+
+仍然有价值但范围更大的 1.0 能力已经转为 `docs/prd/2026-06-02-agent-capability-plugin-1.0-expansion.md`, 不继续挂在这个父 issue 下。
