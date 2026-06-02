@@ -203,7 +203,7 @@ describe('session pages', () => {
     )
 
     expect(await screen.findByText('Local conversation history')).toBeInTheDocument()
-    expect(screen.getByText('No sessions found')).toBeInTheDocument()
+    expect(await screen.findByText('No sessions found')).toBeInTheDocument()
     expect(screen.getByText(/Berth scans local Claude Code and Codex session history/)).toBeInTheDocument()
   })
 

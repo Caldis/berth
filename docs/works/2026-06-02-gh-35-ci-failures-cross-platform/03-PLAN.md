@@ -19,7 +19,11 @@
   - tests: `pnpm lint`; `pnpm typecheck`; `pnpm test`; `pnpm harness:check`
   - verify: 非 UI; 本地完整检查通过。
   - evidence: `pnpm lint`; `pnpm typecheck`; `pnpm test` (54 files / 419 tests); `pnpm harness:check`; `node scripts/harness-projects.mjs check --strict`; `pnpm build` 均通过。
-- [ ] 任务 5: 推送后等待 GitHub Actions 结果。
+- [x] 任务 5: 修复 CI 追加暴露的 sessions 空态测试等待问题。
+  - tests: `pnpm vitest run tests/renderer/sessions-pages.test.tsx`
+  - verify: 非 UI; 测试等待空态标题自身出现, 不再依赖已存在的 guidance 标题作为异步完成信号。
+  - evidence: `pnpm vitest run tests/renderer/sessions-pages.test.tsx` 通过, 16 个测试通过。
+- [ ] 任务 6: 推送后等待 GitHub Actions 结果。
   - tests: `gh run list --branch master --limit 5`; `gh run watch <run-id> --exit-status`
   - verify: 非 UI; 新 SHA 对应 CI run 成功后才能继续后续功能任务。
 
