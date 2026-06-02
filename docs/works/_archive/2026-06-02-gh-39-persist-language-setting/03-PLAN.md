@@ -15,9 +15,10 @@
   - tests: `pnpm exec vitest run tests/renderer/settings-agent-plugins.test.tsx`; `pnpm lint`; `pnpm typecheck`; `pnpm harness:check`
   - verify: 设置页现有行为不退化, harness 结构合法。
   - evidence: `pnpm exec vitest run tests/renderer/settings-agent-plugins.test.tsx` 通过, 1 file / 9 tests; `pnpm lint`; `pnpm typecheck`; `pnpm harness:check`; `pnpm test` 55 files / 428 tests; `pnpm build`; `pnpm test:e2e` 15 tests 均通过。
-- [ ] 任务 4: 推送前确认最近 CI 状态, 推送后等待新 SHA 的 GitHub Actions。
+- [x] 任务 4: 推送前确认最近 CI 状态, 推送后等待新 SHA 的 GitHub Actions。
   - tests: `gh run list --repo Caldis/berth --branch master --limit 5`; `gh run watch <run-id> --repo Caldis/berth --exit-status`
   - verify: 本地通过且远端 CI 通过后再继续后续任务。
+  - evidence: 推送前最近 master CI 为 success; `gh run watch 26798646644 --repo Caldis/berth --exit-status` 通过, SHA `5771702545c3574a25d65ba64ae5ec51919b2cf8`, Ubuntu 和 Windows job 均成功。
 
 ## verify 回写
 verify 不通过项作为新任务追加于此, phase 退回 implement。
