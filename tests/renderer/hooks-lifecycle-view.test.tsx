@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import React from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import '../../src/renderer/src/i18n'
+import i18n from '../../src/renderer/src/i18n'
 import { HooksLifecycleView } from '../../src/renderer/src/components/capabilities/hooks-lifecycle-view'
 import type { AgentView, Asset } from '../../src/shared/types/asset'
 import type { AgentCapabilityPlugin, AgentCapabilityPluginHookHandlerDescriptor } from '../../src/shared/types/agent-plugin'
@@ -88,7 +88,8 @@ async function waitForHookHealthIdle(): Promise<void> {
 }
 
 describe('HooksLifecycleView', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage('en')
     Object.defineProperty(navigator, 'clipboard', {
       configurable: true,
       value: { writeText: vi.fn(async () => undefined) }
@@ -653,6 +654,29 @@ describe('HooksLifecycleView', () => {
         sourcePath: 'C:\\Users\\test\\.claude\\settings.json',
         enabled: true
       })
+    })
+  })
+
+  it('localizes the recovery loading label in Chinese', async () => {
+    await i18n.changeLanguage('zh')
+    let resolveRecoveries: ((value: { points: []; issues: [] }) => void) | undefined
+    window.api.hooks.recoveries = vi.fn(
+      () => new Promise<{ points: []; issues: [] }>((resolve) => {
+        resolveRecoveries = resolve
+      })
+    )
+
+    renderHooks('claude', [hookAsset('claude-stop', 'claude-code', 'Stop')])
+
+    fireEvent.click(screen.getByText('恢复中心'))
+
+    expect(screen.getByLabelText('正在加载 Hook 恢复记录')).toBeInTheDocument()
+    expect(screen.queryByLabelText('Loading hook recoveries')).not.toBeInTheDocument()
+
+    resolveRecoveries?.({ points: [], issues: [] })
+
+    await waitFor(() => {
+      expect(screen.queryByLabelText('正在加载 Hook 恢复记录')).not.toBeInTheDocument()
     })
   })
 

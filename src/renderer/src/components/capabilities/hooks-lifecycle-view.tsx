@@ -246,8 +246,9 @@ function HookRecoveryCenter(): React.ReactElement {
 }
 
 function HookRecoverySkeleton(): React.ReactElement {
+  const { t } = useTranslation()
   return (
-    <div className="space-y-2" aria-label="Loading hook recoveries">
+    <div className="space-y-2" aria-label={t('capabilities.hooks.recovery.loadingLabel')}>
       <div className="h-4 w-48 animate-pulse rounded bg-muted" />
       <div className="h-10 animate-pulse rounded-md bg-muted/60" />
     </div>

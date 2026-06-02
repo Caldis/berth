@@ -696,6 +696,7 @@
       "recovery": {
         "title": "恢复中心",
         "loading": "正在读取恢复点",
+        "loadingLabel": "正在加载 Hook 恢复记录",
         "summary": "{{count}} 个恢复点, {{issues}} 个异常",
         "pointCount": "{{count}} 个恢复点",
         "issueCount": "{{count}} 个异常",

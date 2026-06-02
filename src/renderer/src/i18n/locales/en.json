@@ -696,6 +696,7 @@
       "recovery": {
         "title": "Recovery center",
         "loading": "Reading restore points",
+        "loadingLabel": "Loading hook recoveries",
         "summary": "{{count}} restore point(s), {{issues}} issue(s)",
         "pointCount": "{{count}} restore point(s)",
         "issueCount": "{{count}} issue(s)",
