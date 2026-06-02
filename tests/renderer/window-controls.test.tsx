@@ -2,6 +2,7 @@ import React from 'react'
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { WindowControls } from '../../src/renderer/src/components/layout/window-controls'
+import i18n from '../../src/renderer/src/i18n'
 
 describe('WindowControls', () => {
   const minimize = vi.fn(async () => {})
@@ -11,9 +12,10 @@ describe('WindowControls', () => {
   const removeMaximizedListener = vi.fn()
   let maximizedCallback: ((maximized: boolean) => void) | undefined
 
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.clearAllMocks()
     maximizedCallback = undefined
+    await i18n.changeLanguage('en')
 
     window.api.window = {
       minimize,
@@ -49,6 +51,24 @@ describe('WindowControls', () => {
     })
 
     expect(screen.getByLabelText('Restore window')).toBeInTheDocument()
+  })
+
+  it('localizes Windows chrome button labels in Chinese', async () => {
+    await i18n.changeLanguage('zh')
+
+    render(<WindowControls />)
+
+    expect(screen.getByLabelText('最小化窗口')).toBeInTheDocument()
+    expect(screen.getByLabelText('最大化窗口')).toBeInTheDocument()
+    expect(screen.getByLabelText('关闭窗口')).toBeInTheDocument()
+
+    await waitFor(() => expect(maximizedCallback).toBeDefined())
+    act(() => {
+      maximizedCallback?.(true)
+    })
+
+    expect(screen.getByLabelText('还原窗口')).toBeInTheDocument()
+    expect(screen.queryByLabelText('Restore window')).not.toBeInTheDocument()
   })
 
   it('removes maximize listener on unmount', () => {

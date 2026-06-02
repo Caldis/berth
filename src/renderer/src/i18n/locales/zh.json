@@ -66,6 +66,10 @@
       "7d": "近 7 天",
       "30d": "近 30 天",
       "all": "全部"
+    },
+    "healthCheckActions": {
+      "ignoreInfo": "忽略信息检查",
+      "copyFixSnippet": "复制修复片段"
     }
   },
   "sessions": {
@@ -1294,6 +1298,12 @@
   },
   "filter": {
     "allScopes": "全部作用域"
+  },
+  "windowControls": {
+    "minimize": "最小化窗口",
+    "maximize": "最大化窗口",
+    "restore": "还原窗口",
+    "close": "关闭窗口"
   },
   "inspector": {
     "copy": "复制到剪贴板"

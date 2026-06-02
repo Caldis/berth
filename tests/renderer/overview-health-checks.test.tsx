@@ -1,13 +1,17 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import React from 'react'
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
-import { describe, expect, it, vi } from 'vitest'
-import '../../src/renderer/src/i18n'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import i18n from '../../src/renderer/src/i18n'
 import { Overview } from '../../src/renderer/src/pages/overview'
 
 describe('overview health checks', () => {
-  it('renders info, warning and error checks grouped by agent', async () => {
+  beforeEach(async () => {
     localStorage.clear()
+    await i18n.changeLanguage('en')
+  })
+
+  it('renders info, warning and error checks grouped by agent', async () => {
     window.api.sessions.list = vi.fn(async () => ({ sessions: [], totalCount: 0 }))
     window.api.usage.summary = vi.fn(async () => ({
       totalCost: 0,
@@ -123,6 +127,80 @@ describe('overview health checks', () => {
 
     expect(await screen.findByText('/configuration/capabilities?tab=hooks')).toBeInTheDocument()
     expect(window.api.shell.openPath).not.toHaveBeenCalled()
+  })
+
+  it('localizes health check action titles in Chinese', async () => {
+    await i18n.changeLanguage('zh')
+    window.api.sessions.list = vi.fn(async () => ({ sessions: [], totalCount: 0 }))
+    window.api.usage.summary = vi.fn(async () => ({
+      totalCost: 0,
+      totalTokens: 0,
+      tokenUsage: {
+        inputTokens: 0,
+        outputTokens: 0,
+        cacheReadInputTokens: 0,
+        cacheCreationInputTokens: 0,
+        reasoningOutputTokens: 0,
+        unknownTokens: 0,
+        totalTokens: 0,
+        hasBreakdown: false
+      },
+      costSource: 'unknown',
+      dailyCosts: [],
+      dailyTokenUsage: [],
+      byModel: [],
+      byProject: [],
+      rateLimits: []
+    }))
+    window.api.assets.healthCheck = vi.fn(async () => [
+      {
+        id: 'claude-code:source:user-claude-md-missing',
+        severity: 'info',
+        category: 'source',
+        agentId: 'claude-code',
+        agentName: 'Claude Code',
+        title: 'User CLAUDE.md not found',
+        message: 'No user-level CLAUDE.md found.',
+        scope: 'user',
+        assetType: 'claude-md'
+      },
+      {
+        id: 'codex:configuration:user-hook-windows-command',
+        severity: 'warning',
+        category: 'configuration',
+        agentId: 'codex',
+        agentName: 'Codex',
+        title: 'Codex hook has no Windows command override',
+        message: 'A command hook is configured without commandWindows on Windows.',
+        fix: {
+          label: 'Suggested fix',
+          description: 'Add commandWindows or command_windows when the command differs on Windows.',
+          snippet: 'commandWindows = "powershell -File hook.ps1"'
+        },
+        scope: 'user',
+        assetType: 'hook'
+      }
+    ])
+    window.api.shell.openPath = vi.fn(async () => {})
+    window.api.shell.openExternal = vi.fn(async () => {})
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { writeText: vi.fn(async () => {}) }
+    })
+
+    render(
+      <MemoryRouter>
+        <Routes>
+          <Route path="/" element={<Overview />} />
+        </Routes>
+      </MemoryRouter>
+    )
+
+    expect(await screen.findByText('Claude Code')).toBeInTheDocument()
+    expect(screen.getByTitle('忽略信息检查')).toBeInTheDocument()
+    expect(screen.getByTitle('复制修复片段')).toBeInTheDocument()
+    expect(screen.queryByTitle('Ignore info check')).not.toBeInTheDocument()
+    expect(screen.queryByTitle('Copy fix snippet')).not.toBeInTheDocument()
   })
 })
 

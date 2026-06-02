@@ -7,6 +7,11 @@ import { resolve } from 'path'
 let app: ElectronApplication
 let page: Page
 
+const windowControlNames = {
+  maximize: /^(Maximize window|最大化窗口)$/,
+  restore: /^(Restore window|还原窗口)$/
+}
+
 test.beforeEach(async ({ browserName: _browserName }, testInfo) => {
   const userDataDir = testInfo.outputPath('user-data')
   mkdirSync(userDataDir, { recursive: true })
@@ -29,7 +34,7 @@ test('Windows custom titlebar buttons toggle maximize through Electron', async (
 
   await expectWindowApiReady()
 
-  const maximizeButton = page.getByLabel('Maximize window')
+  const maximizeButton = page.getByLabel(windowControlNames.maximize)
   await expect(maximizeButton).toBeVisible()
   await maximizeButton.click()
 
@@ -37,7 +42,7 @@ test('Windows custom titlebar buttons toggle maximize through Electron', async (
     .poll(() => app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].isMaximized()))
     .toBe(true)
 
-  const restoreButton = page.getByLabel('Restore window')
+  const restoreButton = page.getByLabel(windowControlNames.restore)
   await expect(restoreButton).toBeVisible()
   await restoreButton.click()
 
@@ -55,7 +60,7 @@ test.describe('native mouse hit testing', () => {
 
     await expectWindowApiReady()
 
-    const maximizeButton = page.getByLabel('Maximize window')
+    const maximizeButton = page.getByLabel(windowControlNames.maximize)
     await expect(maximizeButton).toBeVisible()
     await realMouseClick(await centerOf(maximizeButton))
 
@@ -63,7 +68,7 @@ test.describe('native mouse hit testing', () => {
       .poll(() => app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].isMaximized()))
       .toBe(true)
 
-    const restoreButton = page.getByLabel('Restore window')
+    const restoreButton = page.getByLabel(windowControlNames.restore)
     await expect(restoreButton).toBeVisible()
     await realMouseClick(await centerOf(restoreButton))
 

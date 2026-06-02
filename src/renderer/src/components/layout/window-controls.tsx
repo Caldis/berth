@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Copy, Minus, Square, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 export function WindowControls(): React.ReactElement {
+  const { t } = useTranslation()
   const [maximized, setMaximized] = useState(false)
 
   useEffect(() => {
@@ -30,7 +32,7 @@ export function WindowControls(): React.ReactElement {
       data-testid="window-controls"
     >
       <button
-        aria-label="Minimize window"
+        aria-label={t('windowControls.minimize')}
         className={buttonClass}
         type="button"
         onClick={() => void window.api.window.minimize()}
@@ -38,7 +40,7 @@ export function WindowControls(): React.ReactElement {
         <Minus className="h-3.5 w-3.5" />
       </button>
       <button
-        aria-label={maximized ? 'Restore window' : 'Maximize window'}
+        aria-label={maximized ? t('windowControls.restore') : t('windowControls.maximize')}
         className={buttonClass}
         type="button"
         onClick={() => void window.api.window.toggleMaximize()}
@@ -46,7 +48,7 @@ export function WindowControls(): React.ReactElement {
         {maximized ? <Copy className="h-3.5 w-3.5" /> : <Square className="h-3 w-3" />}
       </button>
       <button
-        aria-label="Close window"
+        aria-label={t('windowControls.close')}
         className={cn(
           buttonClass,
           'hover:bg-destructive hover:text-destructive-foreground active:bg-destructive/80'
