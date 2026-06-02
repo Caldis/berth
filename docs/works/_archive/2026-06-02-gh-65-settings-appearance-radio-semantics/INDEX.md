@@ -2,20 +2,20 @@
 task: 2026-06-02-gh-65-settings-appearance-radio-semantics
 task_id: GH-65
 type: bug
-phase: implement
+phase: archive
 created: 2026-06-02
 issue:
   number: 65
   repo: Caldis/berth
   url: https://github.com/Caldis/berth/issues/65
   id: I_kwDOSpnDwc8AAAABEHGXEQ
-  state: OPEN
+  state: CLOSED
 gh_project:
   status: tracked
   project_number: 6
   project_url: https://github.com/users/Caldis/projects/6
   item_id: PVTI_lAHOADXbEs4BZHvQzgufCn8
-  item_status: In Progress
+  item_status: Done
   project_id: PVT_kwHOADXbEs4BZHvQ
 artifacts:
   source: 00-BUG.md
