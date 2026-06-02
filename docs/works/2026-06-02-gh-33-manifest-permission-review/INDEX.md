@@ -2,7 +2,7 @@
 task: 2026-06-02-gh-33-manifest-permission-review
 task_id: GH-33
 type: feature
-phase: implement
+phase: verify
 created: 2026-06-02
 issue:
   number: 33
