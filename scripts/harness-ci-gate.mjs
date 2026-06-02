@@ -71,6 +71,16 @@ export function currentSha(deps = {}) {
   return execText('git', ['rev-parse', 'HEAD'], deps)
 }
 
+export function resolveCommitSha(sha, deps = {}) {
+  const value = String(sha || '').trim()
+  if (!value || value === 'HEAD') return currentSha(deps)
+  try {
+    return execText('git', ['rev-parse', value], deps)
+  } catch {
+    return value
+  }
+}
+
 export function ghRunListArgs({ branch, commit, limit = DEFAULT_LIMIT }) {
   const args = [
     'run',
@@ -150,7 +160,7 @@ export function baselineGate(options = {}, deps = {}) {
 
 export async function findRunForShaWithRetry(options = {}, deps = {}) {
   const branch = options.branch || currentBranch(deps)
-  const sha = !options.sha || options.sha === 'HEAD' ? currentSha(deps) : options.sha
+  const sha = resolveCommitSha(options.sha || 'HEAD', deps)
   const startedAt = Date.now()
   const timeoutMs = (options.timeoutSeconds || DEFAULT_TIMEOUT_SECONDS) * 1000
   const pollMs = (options.pollSeconds || DEFAULT_POLL_SECONDS) * 1000

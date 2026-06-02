@@ -10,6 +10,7 @@ import {
   ghRunListArgs,
   ghRunViewArgs,
   parseCliArgs,
+  resolveCommitSha,
   waitForShaRun
 } from '../../scripts/harness-ci-gate.mjs'
 
@@ -112,6 +113,7 @@ describe('harness-ci-gate helpers', () => {
     const fullSha = 'abcdef1234567890abcdef1234567890abcdef12'
     const execFileSync = vi.fn((command: string, args: string[]) => {
       if (command === 'git' && args.includes('--abbrev-ref')) return 'master\n'
+      if (command === 'git' && args.includes('abcdef1')) return `${fullSha}\n`
       if (command === 'gh') return JSON.stringify([{ workflowName: 'CI', status: 'queued', databaseId: 18, headSha: fullSha }])
       throw new Error('unexpected command')
     })
@@ -120,8 +122,16 @@ describe('harness-ci-gate helpers', () => {
     const result = await findRunForShaWithRetry({ workflow: 'CI', sha: 'abcdef1', limit: 5, timeoutSeconds: 1, pollSeconds: 1 }, { execFileSync, sleep })
 
     expect(result.run.databaseId).toBe(18)
-    expect(execFileSync).toHaveBeenCalledWith('gh', ghRunListArgs({ branch: 'master', commit: 'abcdef1', limit: 5 }), expect.anything())
+    expect(execFileSync).toHaveBeenCalledWith('gh', ghRunListArgs({ branch: 'master', commit: fullSha, limit: 5 }), expect.anything())
     expect(sleep).not.toHaveBeenCalled()
+  })
+
+  it('resolveCommitSha falls back to the provided value when git cannot resolve it', () => {
+    const execFileSync = vi.fn(() => {
+      throw new Error('not found')
+    })
+
+    expect(resolveCommitSha('abcdef1', { execFileSync })).toBe('abcdef1')
   })
 
   it('waitForShaRun watches the discovered run', async () => {
