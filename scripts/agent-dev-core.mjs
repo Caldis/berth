@@ -26,7 +26,7 @@ export function createAgentDevContext(options = {}) {
 
 export function usageText() {
   return `Usage:
-  pnpm dev:agent start [--id <id>] [--json]
+  pnpm dev:agent start [--id <id>] [--debug-port <port>] [--json]
   pnpm dev:agent stop <id> [--json]
   pnpm dev:agent stop --all [--json]
   pnpm dev:agent status [id] [--json]

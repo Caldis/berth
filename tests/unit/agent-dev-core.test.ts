@@ -23,6 +23,7 @@ import {
   start,
   statePath,
   stopOne,
+  usageText,
   writeState
 } from '../../scripts/agent-dev-core.mjs'
 
@@ -58,6 +59,10 @@ describe('agent dev core', () => {
       guardAction: 'before',
       id: 'agent-1'
     })
+  })
+
+  it('documents the debug port flag in usage text', () => {
+    expect(usageText()).toContain('start [--id <id>] [--debug-port <port>] [--json]')
   })
 
   it('parses debug port aliases for start', () => {
