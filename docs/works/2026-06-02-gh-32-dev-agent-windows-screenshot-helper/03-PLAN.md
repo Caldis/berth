@@ -23,3 +23,11 @@ Implement smoke test passed:
 - Visual inspection confirmed the PNG captured the real Berth overview window and was nonblank.
 - `pnpm dev:agent stop gh32-screenshot-smoke --json` stopped pid 477988.
 - `pnpm dev:agent guard after --id gh32-screenshot-smoke --json` returned `guard-ok`, `restarted: []`.
+
+2026-06-02 verify passed:
+
+- `pnpm lint`
+- `pnpm typecheck`
+- `pnpm test` passed, 54 files / 418 tests; Recharts zero-size warnings are pre-existing renderer test noise.
+- `pnpm harness:check`
+- `node scripts/harness-projects.mjs check --strict`
