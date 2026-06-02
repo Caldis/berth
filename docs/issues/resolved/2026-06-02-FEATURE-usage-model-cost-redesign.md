@@ -21,3 +21,10 @@
 - 先确认现有 usage 数据结构和来源。
 - 重新设计费用摘要、模型明细、来源说明和估算口径。
 - 删除速率限制与实验性功能标志, 或在代码中确认它们没有实际依赖后移除。
+
+---
+# 完成 (2026-06-03)
+- 已在 `docs/works/_archive/2026-06-03-gh-84-usage-model-cost-redesign/` 完成。
+- Usage 页面改为费用来源区 + 计价模式 select, 每个模型展示费用、token 和 cost source。
+- 删除 Usage 页面旧的 Rate Limits 与 Experimental Flags 区域。
+- 验证: `pnpm harness:prepush`; `pnpm build`; GitHub Actions CI#26850643053; dev agent `gh84-usage` CDP 断言与 `print-window` 截图。

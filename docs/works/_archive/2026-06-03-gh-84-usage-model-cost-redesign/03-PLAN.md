@@ -13,12 +13,12 @@
 - [x] 任务 3: 更新 Usage i18n 文案
   - tests: `pnpm test tests/renderer/sessions-pages.test.tsx tests/renderer/usage-tooltip-label.test.tsx`
   - verify: 中英文 key 对齐; 文案明确本地扫描/价格快照/真实账单边界。
-- [ ] 任务 4: 跑目标单元和页面检查
+- [x] 任务 4: 跑目标单元和页面检查
   - tests: `pnpm test tests/unit/pricing.test.ts tests/unit/usage-summary.test.ts tests/unit/usage-summary-normalizer.test.ts tests/renderer/sessions-pages.test.tsx tests/renderer/usage-tooltip-label.test.tsx`
-  - verify: 费用汇总逻辑未退化; renderer 用量页面行为通过。
-- [ ] 任务 5: 跑类型、构建、harness 和截图验收
+  - verify: `pnpm harness:prepush` 已覆盖全部 vitest; Usage renderer 相关断言通过, 费用汇总逻辑未退化。
+- [x] 任务 5: 跑类型、构建、harness 和截图验收
   - tests: `pnpm typecheck:web`; `pnpm build`; `pnpm harness:check`
-  - verify: dev agent + Playwright 截图确认桌面视口无文字重叠, 首屏信息顺序符合 SPEC。
+  - verify: `pnpm typecheck:web`; `pnpm build`; `pnpm harness:check`; `pnpm harness:prepush`; `pnpm harness:ci:wait -- --sha cc4335a868a50e713e07572ac30eef984325f979`; dev agent `gh84-usage` + CDP 断言 + `print-window` 截图 `C:\Users\mail\AppData\Local\Temp\berth-gh84-usage-print.png`。
 
 ## verify 回写
 verify 不通过项作为新任务追加于此, phase 退回 implement。
