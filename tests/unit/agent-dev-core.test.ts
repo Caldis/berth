@@ -4,6 +4,7 @@ import { join } from 'path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import {
+  captureScreenshot,
   cleanupState,
   collectProtectedUserDevProcesses,
   commandOwnsAgentDevState,
@@ -63,6 +64,7 @@ describe('agent dev core', () => {
 
   it('documents the debug port flag in usage text', () => {
     expect(usageText()).toContain('start [--id <id>] [--debug-port <port>] [--json]')
+    expect(usageText()).toContain('screenshot <id> [--output <path>] [--mode print-window|screen] [--json]')
   })
 
   it('parses debug port aliases for start', () => {
@@ -83,6 +85,26 @@ describe('agent dev core', () => {
       expect(() => parseArgs(['start', '--id', 'agent-1', '--debug-port', value])).toThrow(/debug port/i)
     }
     expect(() => parseArgs(['start', '--id', 'agent-1', '--debug-port'])).toThrow(/debug port/i)
+  })
+
+  it('parses screenshot output and mode options', () => {
+    expect(
+      parseArgs(['screenshot', 'agent-1', '--output', 'C:\\Temp\\berth-shot.png', '--mode', 'screen', '--json'])
+    ).toEqual({
+      command: 'screenshot',
+      all: false,
+      json: true,
+      id: 'agent-1',
+      output: 'C:\\Temp\\berth-shot.png',
+      mode: 'screen'
+    })
+    expect(parseArgs(['screenshot', '--id=agent-1', '--output=C:\\Temp\\shot.png'])).toMatchObject({
+      command: 'screenshot',
+      id: 'agent-1',
+      output: 'C:\\Temp\\shot.png',
+      mode: 'print-window'
+    })
+    expect(() => parseArgs(['screenshot', 'agent-1', '--mode', 'unknown'])).toThrow(/screenshot mode/i)
   })
 
   it('protects removals outside the state root', () => {
@@ -162,6 +184,97 @@ describe('agent dev core', () => {
       debugPort: 9335,
       devtoolsUrl: 'http://127.0.0.1:9335'
     })
+  })
+
+  it('captures screenshots for agent-owned Electron windows', async () => {
+    const context = makeContext()
+    writeState(context, {
+      id: 'agent-1',
+      pid: 123,
+      startedAt: '2026-05-31T00:00:00.000Z',
+      cwd: context.root,
+      profileDir: profileDir(context, 'agent-1'),
+      logPath: join(context.stateRoot, 'agent-1', 'electron-vite.log')
+    })
+    const spawnSyncMock = vi.fn(() => ({
+      status: 0,
+      stdout: JSON.stringify({
+        outputPath: 'C:\\Temp\\berth-shot.png',
+        mode: 'print-window',
+        electronPid: 456,
+        windowHandle: '0x123456',
+        bounds: { left: 1, top: 2, width: 300, height: 200 },
+        fileSize: 42
+      }),
+      stderr: ''
+    }))
+
+    const result = await captureScreenshot(
+      { id: 'agent-1' },
+      context,
+      {
+        platform: 'win32',
+        isPidRunning: () => true,
+        getProcessCommandLine: () =>
+          'node D:\\Code\\berth\\node_modules\\electron-vite\\bin\\electron-vite.js dev -- --berth-agent-instance=agent-1',
+        listProcesses: () => [
+          {
+            pid: 456,
+            parentPid: 123,
+            name: 'electron.exe',
+            commandLine:
+              'D:\\Code\\berth\\node_modules\\.pnpm\\electron\\dist\\electron.exe . --berth-agent-instance=agent-1'
+          }
+        ],
+        spawnSync: spawnSyncMock
+      }
+    )
+
+    expect(result).toMatchObject({
+      status: 'screenshot',
+      id: 'agent-1',
+      electronPid: 456,
+      outputPath: 'C:\\Temp\\berth-shot.png',
+      fileSize: 42
+    })
+    expect(spawnSyncMock).toHaveBeenCalledOnce()
+    const [command, args, options] = spawnSyncMock.mock.calls[0] || []
+    expect(command).toBe('powershell.exe')
+    expect(args).toContain('-EncodedCommand')
+    expect(options.env.BERTH_SCREENSHOT_PID).toBe('456')
+    expect(options.env.BERTH_SCREENSHOT_MODE).toBe('print-window')
+    expect(options.env.BERTH_SCREENSHOT_OUTPUT).toContain('screenshot.png')
+  })
+
+  it('rejects screenshot capture when no agent-owned Electron window exists', async () => {
+    const context = makeContext()
+    writeState(context, {
+      id: 'agent-1',
+      pid: 123,
+      startedAt: '2026-05-31T00:00:00.000Z',
+      cwd: context.root,
+      profileDir: profileDir(context, 'agent-1'),
+      logPath: join(context.stateRoot, 'agent-1', 'electron-vite.log')
+    })
+
+    await expect(
+      captureScreenshot(
+        { id: 'agent-1' },
+        context,
+        {
+          platform: 'win32',
+          isPidRunning: () => true,
+          getProcessCommandLine: () =>
+            'node D:\\Code\\berth\\node_modules\\electron-vite\\bin\\electron-vite.js dev -- --berth-agent-instance=agent-1',
+          listProcesses: () => []
+        }
+      )
+    ).rejects.toThrow(/Electron main process/i)
+  })
+
+  it('rejects screenshot capture on unsupported platforms', async () => {
+    const context = makeContext()
+    await expect(captureScreenshot({ id: 'agent-1' }, context, { platform: 'linux' })).rejects.toThrow(/Windows/i)
   })
 
   it('summarizes stale states in status data', () => {

@@ -10,7 +10,7 @@ import {
   writeFileSync
 } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { join, resolve, sep } from 'node:path'
+import { dirname, isAbsolute, join, resolve, sep } from 'node:path'
 import process from 'node:process'
 
 export function createAgentDevContext(options = {}) {
@@ -27,6 +27,7 @@ export function createAgentDevContext(options = {}) {
 export function usageText() {
   return `Usage:
   pnpm dev:agent start [--id <id>] [--debug-port <port>] [--json]
+  pnpm dev:agent screenshot <id> [--output <path>] [--mode print-window|screen] [--json]
   pnpm dev:agent stop <id> [--json]
   pnpm dev:agent stop --all [--json]
   pnpm dev:agent status [id] [--json]
@@ -64,9 +65,22 @@ function devtoolsUrlForPort(port) {
   return port ? `http://127.0.0.1:${port}` : undefined
 }
 
+export function normalizeScreenshotMode(value) {
+  const mode = String(value || 'print-window').trim()
+  if (mode !== 'print-window' && mode !== 'screen') {
+    throw new Error(`Invalid screenshot mode: ${mode || '<empty>'}`)
+  }
+  return mode
+}
+
 export function parseArgs(argv) {
   const command = argv[0] || 'status'
-  const options = { command, all: false, json: false }
+  const options = {
+    command,
+    all: false,
+    json: false,
+    ...(command === 'screenshot' ? { mode: 'print-window' } : {})
+  }
 
   let startIndex = 1
   if (command === 'guard') {
@@ -78,6 +92,24 @@ export function parseArgs(argv) {
     const arg = argv[index]
     if (arg === '--json') {
       options.json = true
+      continue
+    }
+    if (arg === '--output') {
+      options.output = argv[index + 1]
+      index += 1
+      continue
+    }
+    if (arg?.startsWith('--output=')) {
+      options.output = arg.slice('--output='.length)
+      continue
+    }
+    if (arg === '--mode') {
+      options.mode = normalizeScreenshotMode(argv[index + 1])
+      index += 1
+      continue
+    }
+    if (arg?.startsWith('--mode=')) {
+      options.mode = normalizeScreenshotMode(arg.slice('--mode='.length))
       continue
     }
     if (arg === '--id') {
@@ -473,6 +505,276 @@ function isElectronMainProcess(processInfo) {
   )
 }
 
+export function isAgentOwnedElectronMainProcess(processInfo, state, context) {
+  const command = normalizeForCompare(processInfo.commandLine)
+  const name = normalizeForCompare(processInfo.name)
+  return (
+    name.includes('electron') &&
+    command.includes('electron') &&
+    command.includes(`--berth-agent-instance=${normalizeForCompare(state.id)}`) &&
+    command.includes(normalizeForCompare(context.root)) &&
+    !command.includes('--type=')
+  )
+}
+
+export function findAgentOwnedElectronMainProcess(processes, state, context) {
+  return processes.find((processInfo) => isAgentOwnedElectronMainProcess(processInfo, state, context))
+}
+
+function resolveScreenshotOutputPath(options, context, id) {
+  if (!options.output) return join(instanceDir(context, id), 'screenshot.png')
+  return isAbsolute(options.output) ? resolve(options.output) : resolve(context.root, options.output)
+}
+
+function windowsScreenshotPowerShell() {
+  return `
+$ErrorActionPreference = 'Stop'
+Add-Type -AssemblyName System.Drawing
+Add-Type -ReferencedAssemblies @('System.Drawing.dll') -TypeDefinition @'
+using System;
+using System.Drawing;
+using System.Drawing.Imaging;
+using System.IO;
+using System.Runtime.InteropServices;
+
+public class BerthScreenshotResult
+{
+  public int ElectronPid { get; set; }
+  public string OutputPath { get; set; }
+  public string Mode { get; set; }
+  public string WindowHandle { get; set; }
+  public int Left { get; set; }
+  public int Top { get; set; }
+  public int Width { get; set; }
+  public int Height { get; set; }
+  public long FileSize { get; set; }
+}
+
+public class BerthScreenshotHelper
+{
+  private const int DWMWA_EXTENDED_FRAME_BOUNDS = 9;
+  private const uint PW_RENDERFULLCONTENT = 0x00000002;
+
+  private delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
+
+  [StructLayout(LayoutKind.Sequential)]
+  private struct RECT
+  {
+    public int Left;
+    public int Top;
+    public int Right;
+    public int Bottom;
+  }
+
+  [DllImport("user32.dll")]
+  private static extern bool EnumWindows(EnumWindowsProc enumFunc, IntPtr lParam);
+
+  [DllImport("user32.dll")]
+  private static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint processId);
+
+  [DllImport("user32.dll")]
+  private static extern bool IsWindowVisible(IntPtr hWnd);
+
+  [DllImport("user32.dll")]
+  private static extern bool GetWindowRect(IntPtr hWnd, out RECT rect);
+
+  [DllImport("dwmapi.dll")]
+  private static extern int DwmGetWindowAttribute(IntPtr hWnd, int attribute, out RECT rect, int attributeSize);
+
+  [DllImport("user32.dll")]
+  private static extern bool PrintWindow(IntPtr hWnd, IntPtr hdcBlt, uint flags);
+
+  private static IntPtr FindWindowForProcess(int targetPid)
+  {
+    IntPtr found = IntPtr.Zero;
+    EnumWindows(delegate(IntPtr hWnd, IntPtr lParam)
+    {
+      uint windowPid;
+      GetWindowThreadProcessId(hWnd, out windowPid);
+      if ((int)windowPid != targetPid || !IsWindowVisible(hWnd))
+      {
+        return true;
+      }
+
+      RECT bounds = GetBounds(hWnd);
+      if (bounds.Right > bounds.Left && bounds.Bottom > bounds.Top)
+      {
+        found = hWnd;
+        return false;
+      }
+
+      return true;
+    }, IntPtr.Zero);
+
+    return found;
+  }
+
+  private static RECT GetBounds(IntPtr hWnd)
+  {
+    RECT rect;
+    int hr = DwmGetWindowAttribute(hWnd, DWMWA_EXTENDED_FRAME_BOUNDS, out rect, Marshal.SizeOf(typeof(RECT)));
+    if (hr == 0 && rect.Right > rect.Left && rect.Bottom > rect.Top)
+    {
+      return rect;
+    }
+
+    if (!GetWindowRect(hWnd, out rect))
+    {
+      throw new Exception("GetWindowRect failed");
+    }
+    return rect;
+  }
+
+  public static BerthScreenshotResult Capture(int targetPid, string outputPath, string mode)
+  {
+    IntPtr hWnd = FindWindowForProcess(targetPid);
+    if (hWnd == IntPtr.Zero)
+    {
+      throw new Exception("No visible window found for pid " + targetPid);
+    }
+
+    RECT bounds = GetBounds(hWnd);
+    int width = bounds.Right - bounds.Left;
+    int height = bounds.Bottom - bounds.Top;
+    if (width <= 0 || height <= 0)
+    {
+      throw new Exception("Window bounds are empty");
+    }
+
+    string directory = Path.GetDirectoryName(outputPath);
+    if (!String.IsNullOrEmpty(directory))
+    {
+      Directory.CreateDirectory(directory);
+    }
+
+    using (Bitmap bitmap = new Bitmap(width, height))
+    {
+      using (Graphics graphics = Graphics.FromImage(bitmap))
+      {
+        if (mode == "screen")
+        {
+          graphics.CopyFromScreen(bounds.Left, bounds.Top, 0, 0, new Size(width, height), CopyPixelOperation.SourceCopy);
+        }
+        else
+        {
+          IntPtr hdc = graphics.GetHdc();
+          try
+          {
+            if (!PrintWindow(hWnd, hdc, PW_RENDERFULLCONTENT))
+            {
+              throw new Exception("PrintWindow failed");
+            }
+          }
+          finally
+          {
+            graphics.ReleaseHdc(hdc);
+          }
+        }
+      }
+
+      bitmap.Save(outputPath, ImageFormat.Png);
+    }
+
+    FileInfo file = new FileInfo(outputPath);
+    return new BerthScreenshotResult
+    {
+      ElectronPid = targetPid,
+      OutputPath = outputPath,
+      Mode = mode,
+      WindowHandle = "0x" + hWnd.ToInt64().ToString("x"),
+      Left = bounds.Left,
+      Top = bounds.Top,
+      Width = width,
+      Height = height,
+      FileSize = file.Length
+    };
+  }
+}
+'@
+
+$targetProcessId = [int]$env:BERTH_SCREENSHOT_PID
+$outputPath = $env:BERTH_SCREENSHOT_OUTPUT
+$mode = $env:BERTH_SCREENSHOT_MODE
+$result = [BerthScreenshotHelper]::Capture($targetProcessId, $outputPath, $mode)
+[pscustomobject]@{
+  electronPid = $result.ElectronPid
+  outputPath = $result.OutputPath
+  mode = $result.Mode
+  windowHandle = $result.WindowHandle
+  bounds = [pscustomobject]@{
+    left = $result.Left
+    top = $result.Top
+    width = $result.Width
+    height = $result.Height
+  }
+  fileSize = $result.FileSize
+} | ConvertTo-Json -Compress
+`
+}
+
+export function runWindowsScreenshotHelper({ electronPid, outputPath, mode }, deps = {}) {
+  const script = windowsScreenshotPowerShell()
+  const encoded = Buffer.from(script, 'utf16le').toString('base64')
+  const result = (deps.spawnSync || spawnSync)(
+    'powershell.exe',
+    ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-EncodedCommand', encoded],
+    {
+      encoding: 'utf8',
+      stdio: 'pipe',
+      env: {
+        ...process.env,
+        BERTH_SCREENSHOT_PID: String(electronPid),
+        BERTH_SCREENSHOT_OUTPUT: outputPath,
+        BERTH_SCREENSHOT_MODE: mode
+      }
+    }
+  )
+
+  if (result.status !== 0) {
+    throw new Error(result.stderr || result.stdout || 'Windows screenshot helper failed')
+  }
+
+  try {
+    return JSON.parse(String(result.stdout || '').trim())
+  } catch (error) {
+    throw new Error(`Windows screenshot helper returned invalid JSON: ${error instanceof Error ? error.message : String(error)}`)
+  }
+}
+
+export async function captureScreenshot(options, context = createAgentDevContext(), deps = {}) {
+  if ((deps.platform || process.platform) !== 'win32') {
+    throw new Error('dev:agent screenshot currently supports Windows only')
+  }
+  if (!options.id) throw new Error('screenshot requires an id')
+
+  const state = readState(context, options.id)
+  if (!state) throw new Error(`agent dev instance not found: ${options.id}`)
+  assertOwnedRunningState(state, context, deps)
+
+  const electronProcess = findAgentOwnedElectronMainProcess((deps.listProcesses || listProcesses)(), state, context)
+  if (!electronProcess) {
+    throw new Error(`Agent-owned Electron main process not found for ${options.id}`)
+  }
+
+  const outputPath = resolveScreenshotOutputPath(options, context, options.id)
+  mkdirSync(dirname(outputPath), { recursive: true })
+  const mode = normalizeScreenshotMode(options.mode)
+  const capture = (deps.runWindowsScreenshotHelper || runWindowsScreenshotHelper)(
+    {
+      electronPid: Number(electronProcess.pid),
+      outputPath,
+      mode
+    },
+    deps
+  )
+
+  return {
+    status: 'screenshot',
+    id: options.id,
+    ...capture
+  }
+}
+
 function findRestartedElectronReplacement(previousProcess, currentProcesses, currentPids) {
   if (!isElectronMainProcess(previousProcess)) return undefined
   if (!currentPids.has(Number(previousProcess.parentPid))) return undefined
@@ -552,6 +854,12 @@ export function formatResult(result, json = false) {
   if (result.status === 'stopped' || result.status === 'cleaned-stale') {
     return `${result.status} ${result.id} pid=${result.pid}\n`
   }
+  if (result.status === 'screenshot') {
+    const bounds = result.bounds
+      ? ` bounds=${result.bounds.left},${result.bounds.top},${result.bounds.width}x${result.bounds.height}`
+      : ''
+    return `screenshot ${result.id} pid=${result.electronPid} mode=${result.mode} output=${result.outputPath} size=${result.fileSize}${bounds}\n`
+  }
   if (result.status === 'missing') {
     return `missing ${result.id}\n`
   }
@@ -577,6 +885,7 @@ export function formatResult(result, json = false) {
 export async function runCli(argv, context = createAgentDevContext(), deps = {}) {
   const options = parseArgs(argv)
   if (options.command === 'start') return start(options, context, deps)
+  if (options.command === 'screenshot') return captureScreenshot(options, context, deps)
   if (options.command === 'stop') return stop(options, context, deps)
   if (options.command === 'status') return status(options, context, deps)
   if (options.command === 'guard' && options.guardAction === 'before') {
