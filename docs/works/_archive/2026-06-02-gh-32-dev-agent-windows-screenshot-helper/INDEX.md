@@ -2,7 +2,7 @@
 task: 2026-06-02-gh-32-dev-agent-windows-screenshot-helper
 task_id: GH-32
 type: feature
-phase: verify
+phase: archive
 created: 2026-06-02
 issue:
   number: 32
@@ -22,7 +22,7 @@ gh_project:
   project_url: https://github.com/users/Caldis/projects/6
   project_id: PVT_kwHOADXbEs4BZHvQ
   item_id: PVTI_lAHOADXbEs4BZHvQzgucMCI
-  item_status: In Progress
+  item_status: Done
 ---
 
 # Dev agent Windows screenshot helper
