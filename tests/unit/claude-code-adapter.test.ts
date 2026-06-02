@@ -1,4 +1,5 @@
 import * as fs from 'fs'
+import * as os from 'os'
 import * as path from 'path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -17,7 +18,7 @@ import { ClaudeCodeAdapter } from '../../src/main/adapters/claude-code'
 let tempDir: string | null = null
 
 beforeEach(() => {
-  tempDir = fs.mkdtempSync(path.join(process.env['TEMP'] ?? process.cwd(), 'berth-claude-adapter-'))
+  tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'berth-claude-adapter-'))
   mockHome.dir = tempDir
 })
 

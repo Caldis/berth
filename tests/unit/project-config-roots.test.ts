@@ -1,4 +1,5 @@
 import * as fs from 'fs'
+import * as os from 'os'
 import * as path from 'path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { resolveProjectConfigRoots } from '../../src/main/project-config-roots'
@@ -6,7 +7,7 @@ import { resolveProjectConfigRoots } from '../../src/main/project-config-roots'
 let tempDir: string | null = null
 
 beforeEach(() => {
-  tempDir = fs.mkdtempSync(path.join(process.env['TEMP'] ?? process.cwd(), 'berth-project-roots-'))
+  tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'berth-project-roots-'))
 })
 
 afterEach(() => {
