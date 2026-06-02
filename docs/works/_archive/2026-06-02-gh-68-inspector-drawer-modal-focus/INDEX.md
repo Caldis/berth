@@ -2,14 +2,14 @@
 task: 2026-06-02-gh-68-inspector-drawer-modal-focus
 task_id: GH-68
 type: bug
-phase: implement
+phase: archive
 created: 2026-06-02
 issue:
   number: 68
   repo: Caldis/berth
   url: https://github.com/Caldis/berth/issues/68
   id: I_kwDOSpnDwc8AAAABEHaSOw
-  state: OPEN
+  state: CLOSED
 artifacts:
   source: 00-BUG.md
   analysis: 01-ANALYSIS.md
@@ -21,7 +21,7 @@ gh_project:
   project_number: 6
   project_url: https://github.com/users/Caldis/projects/6
   item_id: PVTI_lAHOADXbEs4BZHvQzgufVgM
-  item_status: In Progress
+  item_status: Done
 ---
 
 # Inspector drawer should expose modal semantics and trap focus
