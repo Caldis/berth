@@ -2,7 +2,7 @@
 task: 2026-06-03-gh-81-global-search-usability
 task_id: GH-81
 type: bug
-phase: explore
+phase: implement
 created: 2026-06-03
 priority: P1
 target_date: 
@@ -21,8 +21,8 @@ debt:
       - architecture
       - testability
       - ui-ux
-    confidence: low
-    rationale: "0.0-new 初始估算; 全局搜索涉及 renderer 入口、搜索索引、IPC 查询、结果路由和键盘交互, explore/design 后校准。"
+    confidence: medium
+    rationale: "Explore/Design 后校准; 已确认问题集中在 renderer 搜索弹窗未接 IPC、main 搜索索引字段过窄、assets:search 未确保扫描与索引准备。"
   final:
     incurred:
     repaid:
@@ -32,7 +32,14 @@ debt:
     areas: []
     confidence:
     rationale:
-  revisions: []
+  revisions:
+    - phase: explore
+      date: 2026-06-03
+      from:
+        confidence: low
+      to:
+        confidence: medium
+      reason: "已审计 renderer/preload/main 搜索链路和测试覆盖, 影响范围明确。"
 issue:
   number: 81
   repo: Caldis/berth
@@ -60,9 +67,9 @@ artifacts:
 
 ## 产物
 - [x] 00-BUG.md — 原始输入快照
-- [ ] 01-ANALYSIS.md — Explore 产物
-- [ ] 02-SPEC.md — Design 产物
-- [ ] 03-PLAN.md — 活任务清单
+- [x] 01-ANALYSIS.md — Explore 产物
+- [x] 02-SPEC.md — Design 产物
+- [x] 03-PLAN.md — 活任务清单
 - [ ] 04-POLISH.md — 可选抛光记录
 
 ## 待澄清 (blocked 时填)
