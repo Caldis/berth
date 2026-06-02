@@ -36,6 +36,13 @@ function task(name: string, frontmatter: string, files: string[]): void {
   for (const f of files) writeFileSync(join(dir, f), 'x')
 }
 
+function archivedTask(name: string, frontmatter: string, files: string[]): void {
+  const dir = join(root, 'docs/works/_archive', name)
+  mkdirSync(dir, { recursive: true })
+  writeFileSync(join(dir, 'INDEX.md'), `---\n${frontmatter}\n---\n`)
+  for (const f of files) writeFileSync(join(dir, f), 'x')
+}
+
 function trackedFrontmatter(name: string, options: { type?: string; phase?: string; number?: number; itemId?: string } = {}): string {
   const number = options.number ?? Number(/-gh-(\d+)-/.exec(name)?.[1] || 1)
   return [
@@ -255,6 +262,35 @@ describe('checkWorks', () => {
   it('限定的 work 不存在时报错', () => {
     expect(checkWorks(root, { work: 'docs/works/missing-task' })).toEqual([
       'works: --work target not found "missing-task"'
+    ])
+  })
+
+  it('可限定检查已归档 work, 不被其他 active work 阻塞', () => {
+    const archived = '2026-05-29-gh-18-archived'
+    const invalid = '2026-05-29-gh-19-other'
+    archivedTask(archived, trackedFrontmatter(archived, { phase: 'archive', number: 18 }), [
+      '00-PRD.md',
+      '01-ANALYSIS.md',
+      '02-SPEC.md',
+      '03-PLAN.md'
+    ])
+    task(invalid, trackedFrontmatter(invalid, { phase: 'design', number: 19 }), ['00-PRD.md'])
+
+    expect(checkWorks(root).some((e: string) => e.includes('01-ANALYSIS.md'))).toBe(true)
+    expect(checkWorks(root, { work: `docs/works/_archive/${archived}` })).toEqual([])
+  })
+
+  it('归档目录中的 work 必须使用 archive phase', () => {
+    const archived = '2026-05-29-gh-20-not-archive'
+    archivedTask(archived, trackedFrontmatter(archived, { phase: 'verify', number: 20 }), [
+      '00-PRD.md',
+      '01-ANALYSIS.md',
+      '02-SPEC.md',
+      '03-PLAN.md'
+    ])
+
+    expect(checkWorks(root, { work: `docs/works/_archive/${archived}` })).toEqual([
+      `works/${archived}: archived work must use phase=archive`
     ])
   })
 })

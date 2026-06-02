@@ -47,6 +47,19 @@ function workNameFromArg(work) {
   return normalized.split(/[\\/]/).pop()
 }
 
+function prefersArchivedWork(work) {
+  return String(work || '').replace(/\\/g, '/').split('/').includes('_archive')
+}
+
+function resolveWorkEntry(root, work) {
+  const name = workNameFromArg(work)
+  const base = join(root, 'docs/works')
+  const active = { name, dir: join(base, name), archived: false }
+  const archived = { name, dir: join(base, '_archive', name), archived: true }
+  const candidates = prefersArchivedWork(work) ? [archived, active] : [active, archived]
+  return candidates.find((entry) => existsSync(entry.dir) && statSync(entry.dir).isDirectory())
+}
+
 function requiredArtifacts(type, phase) {
   const req = [type === 'bug' ? '00-BUG.md' : '00-PRD.md']
   const rank = PHASE_RANK[phase]
@@ -166,11 +179,12 @@ export function checkWorks(root, options = {}) {
   const errors = []
   const base = join(root, 'docs/works')
   const workFilter = options.work ? workNameFromArg(options.work) : undefined
-  const dirs = listDirs(base)
-  const names = workFilter ? dirs.filter((name) => name === workFilter) : dirs
-  if (workFilter && names.length === 0) errors.push(`works: --work target not found "${workFilter}"`)
-  for (const name of names) {
-    const dir = join(base, name)
+  const entries = workFilter
+    ? [resolveWorkEntry(root, options.work)].filter(Boolean)
+    : listDirs(base).map((name) => ({ name, dir: join(base, name), archived: false }))
+  if (workFilter && entries.length === 0) errors.push(`works: --work target not found "${workFilter}"`)
+  for (const entry of entries) {
+    const { name, dir, archived } = entry
     const workName = WORK_NAME.exec(name)
     if (!workName) {
       errors.push(`works: bad naming "${name}" (expect {YYYY-MM-DD}-gh-{number}-{summary})`)
@@ -226,8 +240,10 @@ export function checkWorks(root, options = {}) {
     validateTaskMetadata(errors, name, fm)
     if (fm.phase && !PHASES.includes(fm.phase))
       errors.push(`works/${name}: invalid phase "${fm.phase}"`)
-    if (fm.phase === 'archive')
+    if (fm.phase === 'archive' && !archived)
       errors.push(`works/${name}: phase=archive must be moved under docs/works/_archive`)
+    if (archived && fm.phase && fm.phase !== 'archive')
+      errors.push(`works/${name}: archived work must use phase=archive`)
     if (fm.type && fm.phase && PHASES.includes(fm.phase) && fm.phase !== 'archive') {
       for (const f of requiredArtifacts(fm.type, fm.phase)) {
         if (!existsSync(join(dir, f)))
