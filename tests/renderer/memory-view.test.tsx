@@ -1,7 +1,7 @@
 import { act, fireEvent, render, screen } from '@testing-library/react'
 import React from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import '../../src/renderer/src/i18n'
+import i18n from '../../src/renderer/src/i18n'
 import { MemoryView } from '../../src/renderer/src/components/memory/memory-view'
 import type { MemoryListResult } from '../../src/shared/types/memory'
 
@@ -20,7 +20,8 @@ vi.mock('../../src/renderer/src/hooks/use-memory', () => ({
 }))
 
 describe('MemoryView', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage('en')
     Element.prototype.scrollIntoView = vi.fn()
     memoryState.result = {
       sources: [
@@ -257,5 +258,23 @@ describe('MemoryView', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Clear filters' }))
     expect(screen.getByText('Core note')).toBeInTheDocument()
     expect(screen.getByText('Archive note')).toBeInTheDocument()
+  })
+
+  it('uses Chinese copy for missing notes and memory filters', async () => {
+    await i18n.changeLanguage('zh')
+
+    render(<MemoryView />)
+
+    expect(screen.getByText('文件缺失')).toBeInTheDocument()
+    expect(screen.getByText('记忆类型')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '全部类型' })).toBeInTheDocument()
+    expect(screen.getByText('标签')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '全部标签' })).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: /Missing note/ }))
+
+    expect(screen.getByText('索引中的记忆文件已不在磁盘上。')).toBeInTheDocument()
+    expect(screen.queryByText('File missing')).not.toBeInTheDocument()
+    expect(screen.queryByText('The indexed note file is missing on disk.')).not.toBeInTheDocument()
   })
 })

@@ -1319,6 +1319,12 @@
     "refresh": "Refresh",
     "relations": "Related",
     "clearFilters": "Clear filters",
+    "fileMissing": "File missing",
+    "fileMissingBody": "The indexed note file is missing on disk.",
+    "importance": "Importance",
+    "allImportance": "All importance",
+    "tags": "Tags",
+    "allTags": "All tags",
     "sourceError": "Source unavailable: {{error}}",
     "evidence": {
       "notes": "notes",

@@ -1315,6 +1315,12 @@
     "refresh": "刷新",
     "relations": "相关",
     "clearFilters": "清除筛选",
+    "fileMissing": "文件缺失",
+    "fileMissingBody": "索引中的记忆文件已不在磁盘上。",
+    "importance": "记忆类型",
+    "allImportance": "全部类型",
+    "tags": "标签",
+    "allTags": "全部标签",
     "sourceError": "来源不可用: {{error}}",
     "evidence": {
       "notes": "条记忆",
