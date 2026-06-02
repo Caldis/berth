@@ -2,13 +2,13 @@
 task: 2026-06-02-gh-40-localize-settings-report-issue-link
 task_id: GH-40
 type: bug
-phase: verify
+phase: archive
 created: 2026-06-02
 issue:
   number: 40
   repo: Caldis/berth
   url: https://github.com/Caldis/berth/issues/40
-  state: OPEN
+  state: CLOSED
   id: I_kwDOSpnDwc8AAAABEE12eg
 gh_project:
   status: tracked
@@ -16,7 +16,7 @@ gh_project:
   project_url: https://github.com/users/Caldis/projects/6
   project_id: PVT_kwHOADXbEs4BZHvQ
   item_id: PVTI_lAHOADXbEs4BZHvQzgucxAk
-  item_status: In Progress
+  item_status: Done
 artifacts:
   source: 00-BUG.md
   analysis: 01-ANALYSIS.md

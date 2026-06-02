@@ -15,9 +15,10 @@
   - tests: `pnpm lint`; `pnpm typecheck`; `pnpm harness:check`
   - verify: UI 文案变更不破坏类型、lint 和任务态。
   - evidence: `pnpm lint`; `pnpm typecheck`; `pnpm harness:check`; `pnpm test` 56 files / 430 tests; `pnpm build`; `pnpm test:e2e` 15 tests 均通过。
-- [ ] 任务 4: 推送前确认最近 CI 状态, 推送后等待新 SHA 的 GitHub Actions。
+- [x] 任务 4: 推送前确认最近 CI 状态, 推送后等待新 SHA 的 GitHub Actions。
   - tests: `gh run list --repo Caldis/berth --branch master --limit 5`; `gh run watch <run-id> --repo Caldis/berth --exit-status`
   - verify: 本地通过且远端 CI 通过后再继续后续任务。
+  - evidence: 推送前最近 master CI 为 success; `gh run watch 26799038835 --repo Caldis/berth --exit-status` 通过, SHA `762cff3562a7e749d1c34bc2ca40a6ddc129e554`, Ubuntu 和 Windows job 均成功。
 
 ## verify 回写
 verify 不通过项作为新任务追加于此, phase 退回 implement。
