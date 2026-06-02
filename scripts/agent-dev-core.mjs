@@ -46,6 +46,24 @@ export function normalizeId(value) {
   return normalized
 }
 
+export function normalizeDebugPort(value) {
+  const raw = String(value ?? '').trim()
+  if (!/^\d+$/.test(raw)) {
+    throw new Error(`Invalid debug port: ${raw || '<empty>'}`)
+  }
+
+  const port = Number(raw)
+  if (!Number.isInteger(port) || port < 1 || port > 65535) {
+    throw new Error(`Invalid debug port: ${raw}`)
+  }
+
+  return port
+}
+
+function devtoolsUrlForPort(port) {
+  return port ? `http://127.0.0.1:${port}` : undefined
+}
+
 export function parseArgs(argv) {
   const command = argv[0] || 'status'
   const options = { command, all: false, json: false }
@@ -69,6 +87,19 @@ export function parseArgs(argv) {
     }
     if (arg?.startsWith('--id=')) {
       options.id = normalizeId(arg.slice('--id='.length))
+      continue
+    }
+    if (arg === '--debug-port' || arg === '--remote-debugging-port') {
+      options.debugPort = normalizeDebugPort(argv[index + 1])
+      index += 1
+      continue
+    }
+    if (arg?.startsWith('--debug-port=')) {
+      options.debugPort = normalizeDebugPort(arg.slice('--debug-port='.length))
+      continue
+    }
+    if (arg?.startsWith('--remote-debugging-port=')) {
+      options.debugPort = normalizeDebugPort(arg.slice('--remote-debugging-port='.length))
       continue
     }
     if (arg === '--all') {
@@ -250,6 +281,14 @@ export async function start(options, context = createAgentDevContext(), deps = {
   mkdirSync(instanceDir(context, id), { recursive: true })
   mkdirSync(profileDir(context, id), { recursive: true })
 
+  const debugPort = options.debugPort
+  const devtoolsUrl = devtoolsUrlForPort(debugPort)
+  const electronArgs = [
+    `--berth-agent-instance=${id}`,
+    `--user-data-dir=${profileDir(context, id)}`
+  ]
+  if (debugPort) electronArgs.push(`--remote-debugging-port=${debugPort}`)
+
   const output = logPath(context, id)
   const logFd = openSync(output, 'a')
   const child = (deps.spawn || spawn)(
@@ -259,8 +298,7 @@ export async function start(options, context = createAgentDevContext(), deps = {
       'dev',
       '--watch',
       '--',
-      `--berth-agent-instance=${id}`,
-      `--user-data-dir=${profileDir(context, id)}`
+      ...electronArgs
     ],
     {
       cwd: context.root,
@@ -283,7 +321,8 @@ export async function start(options, context = createAgentDevContext(), deps = {
     startedAt: new Date().toISOString(),
     cwd: context.root,
     profileDir: profileDir(context, id),
-    logPath: output
+    logPath: output,
+    ...(debugPort ? { debugPort, devtoolsUrl } : {})
   }
   writeState(context, state)
 
@@ -507,7 +546,8 @@ export function formatResult(result, json = false) {
   if (json) return `${JSON.stringify(result, null, 2)}\n`
 
   if (result.status === 'started') {
-    return `started ${result.id} pid=${result.pid}\nprofile=${result.profileDir}\nlog=${result.logPath}\n`
+    const devtools = result.devtoolsUrl ? `devtools=${result.devtoolsUrl}\n` : ''
+    return `started ${result.id} pid=${result.pid}\nprofile=${result.profileDir}\nlog=${result.logPath}\n${devtools}`
   }
   if (result.status === 'stopped' || result.status === 'cleaned-stale') {
     return `${result.status} ${result.id} pid=${result.pid}\n`
@@ -518,7 +558,10 @@ export function formatResult(result, json = false) {
   if (result.status === 'ok' && Array.isArray(result.instances)) {
     if (result.instances.length === 0) return 'no agent dev instances\n'
     return `${result.instances
-      .map((item) => `${item.id} pid=${item.pid} running=${item.running} stale=${item.stale}`)
+      .map((item) => {
+        const devtools = item.devtoolsUrl ? ` devtools=${item.devtoolsUrl}` : ''
+        return `${item.id} pid=${item.pid} running=${item.running} stale=${item.stale}${devtools}`
+      })
       .join('\n')}\n`
   }
   if (result.status === 'guarded') {

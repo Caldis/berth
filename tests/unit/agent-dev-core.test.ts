@@ -60,6 +60,26 @@ describe('agent dev core', () => {
     })
   })
 
+  it('parses debug port aliases for start', () => {
+    expect(parseArgs(['start', '--id', 'agent-1', '--debug-port', '9335'])).toMatchObject({
+      command: 'start',
+      id: 'agent-1',
+      debugPort: 9335
+    })
+    expect(parseArgs(['start', '--id=agent-1', '--remote-debugging-port=9336'])).toMatchObject({
+      command: 'start',
+      id: 'agent-1',
+      debugPort: 9336
+    })
+  })
+
+  it('rejects invalid debug ports before starting', () => {
+    for (const value of ['', 'abc', '9335.5', '0', '65536']) {
+      expect(() => parseArgs(['start', '--id', 'agent-1', '--debug-port', value])).toThrow(/debug port/i)
+    }
+    expect(() => parseArgs(['start', '--id', 'agent-1', '--debug-port'])).toThrow(/debug port/i)
+  })
+
   it('protects removals outside the state root', () => {
     const context = makeContext()
     expect(isInsideStateRoot(context, join(context.stateRoot, 'agent-1.json'))).toBe(true)
@@ -116,6 +136,29 @@ describe('agent dev core', () => {
     expect(spawnMock).toHaveBeenCalledOnce()
   })
 
+  it('passes remote debugging port to Electron and records the endpoint', async () => {
+    const context = makeContext()
+    const spawnMock = vi.fn(() => ({ pid: 456, unref: vi.fn() }))
+    await start(
+      { id: 'agent-1', debugPort: 9335 },
+      context,
+      {
+        isPidRunning: () => false,
+        spawn: spawnMock,
+        waitForStart: vi.fn()
+      }
+    )
+
+    const spawnArgs = spawnMock.mock.calls[0]?.[1] || []
+    expect(spawnArgs).toContain('--remote-debugging-port=9335')
+
+    const state = readState(context, 'agent-1')
+    expect(state).toMatchObject({
+      debugPort: 9335,
+      devtoolsUrl: 'http://127.0.0.1:9335'
+    })
+  })
+
   it('summarizes stale states in status data', () => {
     const context = makeContext()
     const state = {
@@ -140,6 +183,31 @@ describe('agent dev core', () => {
       status: 'ok',
       instances: []
     })
+    expect(
+      formatResult({
+        status: 'ok',
+        instances: [
+          {
+            id: 'agent-1',
+            pid: 456,
+            running: true,
+            stale: false,
+            devtoolsUrl: 'http://127.0.0.1:9335'
+          }
+        ]
+      })
+    ).toContain('devtools=http://127.0.0.1:9335')
+    expect(
+      formatResult({
+        status: 'started',
+        id: 'agent-1',
+        pid: 456,
+        profileDir: 'profile',
+        logPath: 'log',
+        debugPort: 9335,
+        devtoolsUrl: 'http://127.0.0.1:9335'
+      })
+    ).toContain('devtools=http://127.0.0.1:9335')
   })
 
   it('collects and checks protected user dev processes', () => {
