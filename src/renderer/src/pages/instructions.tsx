@@ -16,7 +16,6 @@ import {
   FileCode,
   Hash
 } from 'lucide-react'
-import { cn } from '@/lib/utils'
 import { truncatePath } from '@/lib/utils'
 import { filterAssetsByAgentView } from '@/lib/agent-view'
 import { useAppStore } from '@/stores/app'
@@ -24,6 +23,7 @@ import { TabGroup, type TabDef } from '@/components/shared/tab-group'
 import { FilterBar } from '@/components/shared/filter-bar'
 import { DetailRow } from '@/components/shared/detail-row'
 import { EmptyState } from '@/components/shared/empty-state'
+import { ScopeBadge } from '@/components/shared/scope-badge'
 import { FeatureGuidePanel } from '@/components/shared/feature-guide-panel'
 import {
   buildFeatureGuideEvidence,
@@ -54,21 +54,6 @@ const tabTypeMap: Record<string, string[]> = {
   commands: ['command'],
   outputModes: ['output-mode'],
   agentTeams: ['team']
-}
-
-function ScopeBadge({ scope }: { scope: AssetScope }): React.ReactElement {
-  const { t } = useTranslation()
-  const colors: Record<string, string> = {
-    user: 'bg-blue-500/10 text-blue-600 dark:text-blue-400',
-    project: 'bg-green-500/10 text-green-600 dark:text-green-400',
-    enterprise: 'bg-purple-500/10 text-purple-600 dark:text-purple-400',
-    session: 'bg-orange-500/10 text-orange-600 dark:text-orange-400'
-  }
-  return (
-    <span className={cn('inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold', colors[scope] ?? 'bg-muted text-muted-foreground')}>
-      {t(`common.scope.${scope}`)}
-    </span>
-  )
 }
 
 /* ---------- Memory card ---------- */
@@ -102,7 +87,7 @@ function MemoryCard({ asset }: { asset: Asset }): React.ReactElement {
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             <span className="truncate text-sm font-medium text-foreground">{asset.name}</span>
-            <ScopeBadge scope={asset.scope} />
+            <ScopeBadge scope={asset.scope} className="rounded-full px-2 font-semibold" />
           </div>
           <p className="truncate text-xs text-muted-foreground font-mono">{truncatePath(asset.path)}</p>
         </div>
@@ -115,7 +100,7 @@ function MemoryCard({ asset }: { asset: Asset }): React.ReactElement {
 
       {expanded && (
         <div className="border-t border-border px-4 py-3 space-y-2">
-          <DetailRow label={t('instructions.scope')} value={<ScopeBadge scope={asset.scope} />} />
+          <DetailRow label={t('instructions.scope')} value={<ScopeBadge scope={asset.scope} className="rounded-full px-2 font-semibold" />} />
           <DetailRow label={t('instructions.path')} value={asset.path} mono />
 
           {imports.length > 0 && (
@@ -188,7 +173,7 @@ function SkillCard({ asset }: { asset: Asset }): React.ReactElement {
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             <span className="truncate text-sm font-medium text-foreground">{asset.name}</span>
-            <ScopeBadge scope={asset.scope} />
+            <ScopeBadge scope={asset.scope} className="rounded-full px-2 font-semibold" />
           </div>
           {description && (
             <p className="mt-0.5 truncate text-xs text-muted-foreground">{description}</p>
@@ -216,7 +201,7 @@ function SkillCard({ asset }: { asset: Asset }): React.ReactElement {
             <DetailRow label={t('instructions.description')} value={description} />
           )}
           <DetailRow label={t('instructions.trigger')} value={triggerType} />
-          <DetailRow label={t('instructions.scope')} value={<ScopeBadge scope={asset.scope} />} />
+          <DetailRow label={t('instructions.scope')} value={<ScopeBadge scope={asset.scope} className="rounded-full px-2 font-semibold" />} />
           <DetailRow label={t('instructions.path')} value={asset.path} mono />
 
           {tools.length > 0 && (
@@ -289,7 +274,7 @@ function GenericAssetCard({ asset, icon: Icon }: { asset: Asset; icon: React.Com
             <span className="truncate text-sm font-medium text-foreground">
               {asset.type === 'command' ? `/${asset.name}` : asset.name}
             </span>
-            <ScopeBadge scope={asset.scope} />
+            <ScopeBadge scope={asset.scope} className="rounded-full px-2 font-semibold" />
           </div>
           {description && (
             <p className="mt-0.5 truncate text-xs text-muted-foreground">{description}</p>
@@ -312,7 +297,7 @@ function GenericAssetCard({ asset, icon: Icon }: { asset: Asset; icon: React.Com
             <DetailRow label={t('instructions.description')} value={description} />
           )}
           {model && <DetailRow label={t('instructions.model')} value={model} />}
-          <DetailRow label={t('instructions.scope')} value={<ScopeBadge scope={asset.scope} />} />
+          <DetailRow label={t('instructions.scope')} value={<ScopeBadge scope={asset.scope} className="rounded-full px-2 font-semibold" />} />
           <DetailRow label={t('instructions.path')} value={asset.path} mono />
 
           <div className="flex gap-2 pt-1">
