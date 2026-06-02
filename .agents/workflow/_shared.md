@@ -4,7 +4,7 @@
 
 ## 最高优先级规则
 
-已验证、边界清楚的增量必须小步频繁提交并及时推送。完成一个可独立验证的子步骤并通过对应检查后, 立即只暂存自己相关文件、用 `git diff --cached` 核对 staged 集合、提交一次, 随后推送当前分支。不得把多个已完成阶段长时间堆在工作区最后一次性提交; archive / 收尾提交不能替代 implementation 过程中的小步提交。若因为风险、依赖关系或远端故障不能提交 / 推送, 必须在当轮说明阻塞原因。
+已验证、边界清楚的增量必须小步频繁提交并及时推送。完成一个可独立验证的子步骤并通过对应检查后, 立即只暂存自己相关文件、用 `git diff --cached` 核对 staged 集合、提交一次, 随后推送当前分支。不得把多个已完成阶段长时间堆在工作区最后一次性提交; archive / 收尾提交不能替代 implementation 过程中的小步提交。例外: 如果本轮只改了进度状态类文档, 例如 `INDEX.md` phase、`03-PLAN.md` 复选框或测试证据, 先不单独提交, 等下一次代码、测试、设计产物、归档或其他阶段结果一起提交并推送; 若它们是当前阶段唯一剩余变更, 则在阶段结束、归档或停手前提交。若因为风险、依赖关系或远端故障不能提交 / 推送, 必须在当轮说明阻塞原因。
 
 ## 任务标识
 
@@ -96,7 +96,7 @@ gh_project:
 8. 小改动豁免前必须先声明豁免依据并征得用户确认。确认前不得直接跳过 `harness-0.0-new`; 若实施中发现影响面超出声明范围, 停下重新申请或切入 harness。
 9. 涉及外部产品/平台/SDK/CLI 的功能行为、字段契约、费用口径、配置选项、文件格式、指标含义等可能随版本变化的内容时, Explore / Design 阶段必须先用英文检索官方文档或 primary source, 再写判断和方案; 官方无公开契约时, 才可使用本机样本作为 fallback, 并在产物中明确标注其经验性。常规网页检索只用 WebSearch/WebFetch; 除非用户明确要求浏览器实测、截图或交互验证, 不打开 GUI 浏览器。遇到 403 / Cloudflare 等拦截时, 先找官方 `.md` 版本、官方镜像或公告页, 再用搜索摘要并标注限制; 仍拿不到就跳过。
 10. 执行当前任务时发现已验证的产品 bug、功能缺口或改进项, 且不属于当前主线验收范围, 必须主动写入 `docs/issues/{YYYY-MM-DD}-{BUG|FEATURE|IMPROVEMENT}-{summary}.md`; 当前任务产物只保留交叉引用, 不把旁支问题混入当前实现, 除非用户明确扩大任务范围。
-11. 已验证、边界清楚的增量必须小步频繁提交并及时推送; 每次提交前只暂存自己相关文件, 用 `git diff --cached` 核对 staged 集合, 不提交无关工作区改动。共享工作区禁止 `git add -A`、`git add .` 和目录级批量 add; 显式列出本轮处理过的文件。提交成功后运行 `git push` 推送当前分支; 若远端拒绝或网络失败, 记录原因后继续可本地验证的工作, 但下一次可推送时先处理远端同步。若误提交了他人文件, 用 `git reset --soft HEAD~1` 拆回索引, 再 `git restore --staged <path>` 逐个踢出, 不用 destructive reset。
+11. 已验证、边界清楚的增量必须小步频繁提交并及时推送; 每次提交前只暂存自己相关文件, 用 `git diff --cached` 核对 staged 集合, 不提交无关工作区改动。共享工作区禁止 `git add -A`、`git add .` 和目录级批量 add; 显式列出本轮处理过的文件。提交成功后运行 `git push` 推送当前分支; 若远端拒绝或网络失败, 记录原因后继续可本地验证的工作, 但下一次可推送时先处理远端同步。仅改进度状态类文档时, 例如 `INDEX.md` phase、`03-PLAN.md` 复选框或测试证据, 不单独提交, 等下一次代码、测试、设计产物、归档或其他阶段结果一起提交并推送; 若这类文档是当前阶段唯一剩余变更, 则在阶段结束、归档或停手前提交。若误提交了他人文件, 用 `git reset --soft HEAD~1` 拆回索引, 再 `git restore --staged <path>` 逐个踢出, 不用 destructive reset。
    - 多 Agent 并行导致别的 active work 破坏全局 `pnpm harness:check` 时, 当前任务阶段提交可先跑 `pnpm harness:check --work docs/works/{task}` 验证自己的任务目录。verify/archive 总收口仍必须跑全局 `pnpm harness:check`, 不能用局部检查替代。
 12. Polish 是可选阶段, 只能由用户主动要求, 或 Agent 在复杂任务 verify 通过后询问并取得明确同意后进入。Polish 只检查当前任务相关的深挖、修复、交互、视觉、可用性、适用性与性能问题, 不扩大范围。
 13. Active work 必须记录 `task_id`、`issue.number`、`issue.url` 和真实 `gh_project.item_id`。唯一例外是 `gh_project.status: pending-auth` 且 `phase: blocked`, 表示缺少 GitHub Project 授权, 不允许使用 `TBD` / `TODO` / 手写占位 item id。旧归档任务可保留历史企业 ticket 字段, 但 active works 不再新增这类字段。
