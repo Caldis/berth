@@ -329,6 +329,91 @@ describe('agent plugin manifest validator', () => {
     ])
   })
 
+  it('discovers manifests from explicit plugin directories and child packages', () => {
+    const dir = makeTempDir()
+    const directPluginDir = path.join(dir, 'direct-plugin')
+    const packageRoot = path.join(dir, 'packages')
+    const childManifest = path.join(packageRoot, 'child-a', 'manifest.json')
+    const childPlugin = path.join(packageRoot, 'child-b', 'plugin.json')
+
+    writeJson(
+      path.join(directPluginDir, 'manifest.json'),
+      validManifest({ id: 'direct-agent', displayName: 'Direct Agent' })
+    )
+    writeJson(
+      path.join(directPluginDir, 'plugin.json'),
+      validManifest({ id: 'ignored-plugin', displayName: 'Ignored Plugin' })
+    )
+    writeJson(childManifest, validManifest({ id: 'child-a', displayName: 'Child A' }))
+    writeJson(childPlugin, validManifest({ id: 'child-b', displayName: 'Child B' }))
+
+    const result = loadAgentPluginManifests({
+      manifestPaths: [directPluginDir, packageRoot]
+    })
+
+    expect(result.map((entry) => entry.id)).toEqual(['direct-agent', 'child-a', 'child-b'])
+    expect(result.map((entry) => entry.path)).toEqual([
+      path.join(directPluginDir, 'manifest.json'),
+      childManifest,
+      childPlugin
+    ])
+  })
+
+  it('discovers package manifests from configured home and project plugin roots', () => {
+    const homeDir = makeTempDir()
+    const projectDir = makeTempDir()
+    const homeRoot = path.join(homeDir, '.berth', 'agent-plugins', 'home-root.json')
+    const homePackage = path.join(homeDir, '.berth', 'agent-plugins', 'home-package', 'manifest.json')
+    const projectRoot = path.join(projectDir, '.berth', 'agent-plugins', 'project-root.json')
+    const projectPackage = path.join(
+      projectDir,
+      '.berth',
+      'agent-plugins',
+      'project-package',
+      'plugin.json'
+    )
+
+    writeJson(homeRoot, validManifest({ id: 'home-root', displayName: 'Home Root' }))
+    writeJson(homePackage, validManifest({ id: 'home-package', displayName: 'Home Package' }))
+    writeJson(projectRoot, validManifest({ id: 'project-root', displayName: 'Project Root' }))
+    writeJson(
+      projectPackage,
+      validManifest({ id: 'project-package', displayName: 'Project Package' })
+    )
+
+    const result = loadAgentPluginManifests({
+      homeDir,
+      projectDir
+    })
+
+    expect(result.map((entry) => entry.id)).toEqual([
+      'home-root',
+      'home-package',
+      'project-root',
+      'project-package'
+    ])
+  })
+
+  it('marks duplicate package manifest ids by discovery order', () => {
+    const dir = makeTempDir()
+    const first = path.join(dir, 'packages', 'a', 'manifest.json')
+    const second = path.join(dir, 'packages', 'b', 'manifest.json')
+    writeJson(first, validManifest())
+    writeJson(second, validManifest())
+
+    const result = loadAgentPluginManifests({
+      manifestPaths: [path.join(dir, 'packages')]
+    })
+
+    expect(result[0]).toMatchObject({ path: first, status: 'valid', id: 'example-agent' })
+    expect(result[1]).toMatchObject({
+      path: second,
+      status: 'invalid',
+      id: 'example-agent',
+      errors: [expect.objectContaining({ code: 'manifest-id-duplicate' })]
+    })
+  })
+
   it('marks later duplicate manifest ids as invalid', () => {
     const dir = makeTempDir()
     const first = path.join(dir, 'first.json')

@@ -12,6 +12,7 @@ import type {
 
 const SUPPORTED_SCHEMA_VERSION = 1
 const MANIFEST_ENV = 'BERTH_AGENT_PLUGIN_MANIFESTS'
+const PACKAGE_MANIFEST_FILENAMES = ['manifest.json', 'plugin.json'] as const
 const PLUGIN_ID_RE = /^[a-z0-9][a-z0-9._-]{0,63}$/
 const SEMVER_RE = /^(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z.-]+))?$/
 
@@ -317,8 +318,8 @@ function discoverManifestPaths(
   const env = options.env ?? process.env
   const homeDir = options.homeDir ?? os.homedir()
   const candidates = [
-    ...(options.manifestPaths ?? []),
-    ...splitEnvPaths(env[MANIFEST_ENV]),
+    ...readManifestSources(options.manifestPaths ?? []),
+    ...readManifestSources(splitEnvPaths(env[MANIFEST_ENV])),
     ...readManifestDirectory(path.join(homeDir, '.berth', 'agent-plugins')),
     ...(options.projectDir
       ? readManifestDirectory(path.join(options.projectDir, '.berth', 'agent-plugins'))
@@ -336,6 +337,20 @@ function discoverManifestPaths(
   return unique
 }
 
+function readManifestSources(sources: string[]): string[] {
+  return sources.flatMap((source) => readManifestSource(source))
+}
+
+function readManifestSource(source: string): string[] {
+  try {
+    const stat = fs.statSync(source)
+    if (stat.isDirectory()) return readManifestDirectory(source)
+  } catch {
+    // Keep missing explicit sources as candidates so callers still see read errors.
+  }
+  return [source]
+}
+
 function splitEnvPaths(value: string | undefined): string[] {
   if (!value) return []
   return value
@@ -346,14 +361,44 @@ function splitEnvPaths(value: string | undefined): string[] {
 
 function readManifestDirectory(dir: string): string[] {
   try {
-    return fs
-      .readdirSync(dir, { withFileTypes: true })
-      .filter((entry) => entry.isFile() && entry.name.toLowerCase().endsWith('.json'))
+    const entries = fs.readdirSync(dir, { withFileTypes: true })
+    const preferredRootManifest = findPackageManifestFile(dir)
+    const rootManifests = entries
+      .filter((entry) => entry.isFile())
+      .filter((entry) => isManifestJsonFile(entry.name, preferredRootManifest))
       .map((entry) => path.join(dir, entry.name))
       .sort((a, b) => a.localeCompare(b))
+    const packageManifests = entries
+      .filter((entry) => entry.isDirectory())
+      .map((entry) => findPackageManifestFile(path.join(dir, entry.name)))
+      .filter((manifestPath): manifestPath is string => Boolean(manifestPath))
+      .sort((a, b) => a.localeCompare(b))
+
+    return [...rootManifests, ...packageManifests]
   } catch {
     return []
   }
+}
+
+function isManifestJsonFile(fileName: string, preferredRootManifest: string | undefined): boolean {
+  const normalizedName = fileName.toLowerCase()
+  if (!normalizedName.endsWith('.json')) return false
+  if (normalizedName === 'plugin.json' && preferredRootManifest?.endsWith('manifest.json')) {
+    return false
+  }
+  return true
+}
+
+function findPackageManifestFile(dir: string): string | undefined {
+  for (const fileName of PACKAGE_MANIFEST_FILENAMES) {
+    const manifestPath = path.join(dir, fileName)
+    try {
+      if (fs.statSync(manifestPath).isFile()) return manifestPath
+    } catch {
+      // Try the next supported manifest filename.
+    }
+  }
+  return undefined
 }
 
 function readCompatibility(
