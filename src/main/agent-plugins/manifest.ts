@@ -5,6 +5,7 @@ import type {
   AgentCapabilityPluginManifestActivationReadiness,
   AgentCapabilityPluginManifestEntry,
   AgentCapabilityPluginManifestImplementation,
+  AgentCapabilityPluginManifestPermission,
   AgentCapabilityPluginPermissionKind,
   AgentCapabilityPluginManifestValidationError
 } from '@shared/types/agent-plugin'
@@ -219,7 +220,7 @@ export function validateAgentPluginManifest(
 
   const compatibility = readCompatibility(value.agentCompatibility, errors)
   const implementation = readImplementation(value.implementation, errors)
-  validatePermissions(value.permissions, errors)
+  const permissions = readPermissions(value.permissions, errors)
   validateSourceDescriptors(value.sourceDescriptors, errors)
   validateAssetDescriptors(value.assetDescriptors, errors)
   validateHealthCheckDescriptors(value.healthCheckDescriptors, errors)
@@ -253,7 +254,7 @@ export function validateAgentPluginManifest(
   const activationReadiness = buildActivationReadiness({
     status,
     implementation,
-    blockedPermissionKinds: collectBlockedPermissionKinds(value.permissions)
+    blockedPermissionKinds: collectBlockedPermissionKinds(permissions)
   })
 
   return {
@@ -265,6 +266,7 @@ export function validateAgentPluginManifest(
     version,
     schemaVersion,
     implementation,
+    permissions: status === 'invalid' ? undefined : permissions,
     activationReadiness,
     agentCompatibility: compatibility
       ? {
@@ -395,13 +397,14 @@ function readCompatibility(
   }
 }
 
-function validatePermissions(
+function readPermissions(
   value: unknown,
   errors: AgentCapabilityPluginManifestValidationError[]
-): void {
+): AgentCapabilityPluginManifestPermission[] | undefined {
+  const initialErrorCount = errors.length
   if (!Array.isArray(value)) {
     errors.push(requiredError('permissions'))
-    return
+    return undefined
   }
   if (value.length === 0) {
     errors.push({
@@ -409,8 +412,10 @@ function validatePermissions(
       field: 'permissions',
       message: 'permissions must include at least one permission.'
     })
-    return
+    return undefined
   }
+
+  const permissions: AgentCapabilityPluginManifestPermission[] = []
 
   value.forEach((permission, index) => {
     const field = `permissions.${index}`
@@ -420,16 +425,33 @@ function validatePermissions(
     }
 
     const kind = readString(permission, 'kind')
+    const parsedKind = kind && includes(PERMISSION_KINDS, kind) ? kind : undefined
     if (!kind) {
       errors.push(requiredError(`${field}.kind`))
-    } else if (!includes(PERMISSION_KINDS, kind)) {
+    } else if (!parsedKind) {
       errors.push(enumError(`${field}.kind`, PERMISSION_KINDS))
     }
 
-    validateStringEnumArray(permission.scopes, `${field}.scopes`, ASSET_SCOPES, errors)
-    validateStringArray(permission.pathPatterns, `${field}.pathPatterns`, errors)
-    if (!readString(permission, 'reason')) errors.push(requiredError(`${field}.reason`))
+    const scopes = readStringEnumArray(permission.scopes, `${field}.scopes`, ASSET_SCOPES, errors)
+    const pathPatterns = readStringArray(permission.pathPatterns, `${field}.pathPatterns`, errors)
+    const reason = readString(permission, 'reason')
+    if (!reason) errors.push(requiredError(`${field}.reason`))
+    const backupStrategy = readOptionalString(permission, 'backupStrategy', `${field}.backupStrategy`, errors)
+    const conflictStrategy = readOptionalString(permission, 'conflictStrategy', `${field}.conflictStrategy`, errors)
+
+    if (parsedKind && scopes && pathPatterns && reason) {
+      permissions.push({
+        kind: parsedKind,
+        scopes,
+        pathPatterns,
+        reason,
+        ...(backupStrategy ? { backupStrategy } : {}),
+        ...(conflictStrategy ? { conflictStrategy } : {})
+      })
+    }
   })
+
+  return errors.length === initialErrorCount ? permissions : undefined
 }
 
 function readImplementation(
@@ -471,13 +493,14 @@ function readImplementation(
   }
 }
 
-function collectBlockedPermissionKinds(value: unknown): AgentCapabilityPluginPermissionKind[] {
-  if (!Array.isArray(value)) return []
+function collectBlockedPermissionKinds(
+  permissions: AgentCapabilityPluginManifestPermission[] | undefined
+): AgentCapabilityPluginPermissionKind[] {
+  if (!permissions) return []
   const found = new Set<AgentCapabilityPluginPermissionKind>()
 
-  value.forEach((permission) => {
-    if (!isRecord(permission)) return
-    const kind = readString(permission, 'kind')
+  permissions.forEach((permission) => {
+    const kind = permission.kind
     if (kind === 'write' || kind === 'execute') found.add(kind)
   })
 
@@ -810,6 +833,18 @@ function validateStringEnumArray<T extends readonly string[]>(
   })
 }
 
+function readStringEnumArray<T extends readonly string[]>(
+  value: unknown,
+  field: string,
+  allowedValues: T,
+  errors: AgentCapabilityPluginManifestValidationError[]
+): T[number][] | undefined {
+  const initialErrorCount = errors.length
+  validateStringEnumArray(value, field, allowedValues, errors)
+  if (errors.length !== initialErrorCount || !Array.isArray(value)) return undefined
+  return value.map((item) => String(item).trim() as T[number])
+}
+
 function validateStringArray(
   value: unknown,
   field: string,
@@ -828,6 +863,34 @@ function validateStringArray(
       })
     }
   })
+}
+
+function readStringArray(
+  value: unknown,
+  field: string,
+  errors: AgentCapabilityPluginManifestValidationError[]
+): string[] | undefined {
+  const initialErrorCount = errors.length
+  validateStringArray(value, field, errors)
+  if (errors.length !== initialErrorCount || !Array.isArray(value)) return undefined
+  return value.map((item) => String(item).trim())
+}
+
+function readOptionalString(
+  record: Record<string, unknown>,
+  key: string,
+  field: string,
+  errors: AgentCapabilityPluginManifestValidationError[]
+): string | undefined {
+  if (!(key in record) || record[key] == null) return undefined
+  const value = readString(record, key)
+  if (value) return value
+  errors.push({
+    code: 'manifest-field-invalid',
+    field,
+    message: `${field} must be a non-empty string when provided.`
+  })
+  return undefined
 }
 
 function invalidEntry(

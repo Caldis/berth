@@ -46,6 +46,14 @@ describe('agent plugin manifest validator', () => {
       },
       errors: []
     })
+    expect(entry.permissions).toEqual([
+      {
+        kind: 'read',
+        scopes: ['user'],
+        pathPatterns: ['~/.example'],
+        reason: 'Read local Example Agent configuration.'
+      }
+    ])
   })
 
   it('marks manifests with adapter metadata as activation-ready', () => {
@@ -109,7 +117,9 @@ describe('agent plugin manifest validator', () => {
             kind: 'write',
             scopes: ['user'],
             pathPatterns: ['~/.example/settings.json'],
-            reason: 'Edit local settings.'
+            reason: 'Edit local settings.',
+            backupStrategy: 'Write a timestamped copy before changing settings.',
+            conflictStrategy: 'Abort when the file changed after the latest scan.'
           },
           {
             kind: 'execute',
@@ -129,6 +139,46 @@ describe('agent plugin manifest validator', () => {
       reasonCode: 'permissionApprovalRequired',
       blockedPermissionKinds: ['write', 'execute']
     })
+    expect(entry.permissions).toEqual([
+      {
+        kind: 'write',
+        scopes: ['user'],
+        pathPatterns: ['~/.example/settings.json'],
+        reason: 'Edit local settings.',
+        backupStrategy: 'Write a timestamped copy before changing settings.',
+        conflictStrategy: 'Abort when the file changed after the latest scan.'
+      },
+      {
+        kind: 'execute',
+        scopes: ['user'],
+        pathPatterns: ['example-hook'],
+        reason: 'Run hook code.'
+      }
+    ])
+  })
+
+  it('does not expose parsed permissions for invalid manifests', () => {
+    const entry = validateAgentPluginManifest(
+      validManifest({
+        displayName: '',
+        permissions: [
+          {
+            kind: 'write',
+            scopes: ['user'],
+            pathPatterns: ['~/.example/settings.json'],
+            reason: 'Edit local settings.'
+          }
+        ]
+      }),
+      { path: 'invalid-with-permissions.json' }
+    )
+
+    expect(entry.status).toBe('invalid')
+    expect(entry.activationReadiness).toMatchObject({
+      status: 'invalid',
+      reasonCode: 'manifestInvalid'
+    })
+    expect(entry.permissions).toBeUndefined()
   })
 
   it('rejects invalid implementation metadata', () => {

@@ -40,6 +40,15 @@ export interface AgentCapabilityPluginPermission {
   sensitive?: boolean
 }
 
+export interface AgentCapabilityPluginManifestPermission {
+  kind: AgentCapabilityPluginPermissionKind
+  scopes: AssetScope[]
+  pathPatterns: string[]
+  reason: string
+  backupStrategy?: string
+  conflictStrategy?: string
+}
+
 export interface AgentCapabilityPluginSourceDescriptor {
   code: ScanSourceCode
   scope: AssetScope
@@ -225,6 +234,7 @@ export interface AgentCapabilityPluginManifestEntry {
   version?: string
   schemaVersion?: number
   implementation?: AgentCapabilityPluginManifestImplementation
+  permissions?: AgentCapabilityPluginManifestPermission[]
   activationReadiness: AgentCapabilityPluginManifestActivationReadiness
   agentCompatibility?: {
     agentId: string
