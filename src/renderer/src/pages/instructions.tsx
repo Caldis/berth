@@ -10,7 +10,6 @@ import {
   Brain,
   ChevronDown,
   ChevronRight,
-  Eye,
   FolderOpen,
   Link,
   FileCode,
@@ -24,6 +23,7 @@ import { FilterBar } from '@/components/shared/filter-bar'
 import { DetailRow } from '@/components/shared/detail-row'
 import { EmptyState } from '@/components/shared/empty-state'
 import { ScopeBadge } from '@/components/shared/scope-badge'
+import { ViewRawButton } from '@/components/shared/view-raw-button'
 import { FeatureGuidePanel } from '@/components/shared/feature-guide-panel'
 import {
   buildFeatureGuideEvidence,
@@ -60,17 +60,9 @@ const tabTypeMap: Record<string, string[]> = {
 function MemoryCard({ asset }: { asset: Asset }): React.ReactElement {
   const { t } = useTranslation()
   const [expanded, setExpanded] = useState(false)
-  const openInspector = useAppStore((s) => s.openInspector)
 
   const size = (asset.meta.size as number) ?? 0
   const imports = (asset.meta.imports as string[]) ?? []
-
-  const handleViewFile = useCallback(async () => {
-    try {
-      const full = await window.api?.assets.get(asset.id) as Asset | null
-      if (full?.raw) openInspector(asset.path, full.raw)
-    } catch { /* graceful */ }
-  }, [asset.id, asset.path, openInspector])
 
   const handleShowInExplorer = useCallback(() => {
     window.api?.shell.openPath(asset.path)
@@ -118,13 +110,7 @@ function MemoryCard({ asset }: { asset: Asset }): React.ReactElement {
           )}
 
           <div className="flex gap-2 pt-1">
-            <button
-              onClick={handleViewFile}
-              className="flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-accent"
-            >
-              <Eye className="h-3 w-3" />
-              {t('instructions.viewFile')}
-            </button>
+            <ViewRawButton asset={asset} label={t('instructions.viewFile')} />
             <button
               onClick={handleShowInExplorer}
               className="flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-accent"
@@ -143,20 +129,12 @@ function MemoryCard({ asset }: { asset: Asset }): React.ReactElement {
 function SkillCard({ asset }: { asset: Asset }): React.ReactElement {
   const { t } = useTranslation()
   const [expanded, setExpanded] = useState(false)
-  const openInspector = useAppStore((s) => s.openInspector)
 
   const description = (asset.meta.description as string) ?? ''
   const triggerType = (asset.meta.triggerType as string) ?? 'manual'
   const tools = (asset.meta.tools as string[]) ?? []
   const fileCount = (asset.meta.fileCount as number) ?? 0
   const lineCount = (asset.meta.lineCount as number) ?? 0
-
-  const handleViewFile = useCallback(async () => {
-    try {
-      const full = await window.api?.assets.get(asset.id) as Asset | null
-      if (full?.raw) openInspector(asset.path, full.raw)
-    } catch { /* graceful */ }
-  }, [asset.id, asset.path, openInspector])
 
   const handleShowInExplorer = useCallback(() => {
     window.api?.shell.openPath(asset.path)
@@ -218,13 +196,7 @@ function SkillCard({ asset }: { asset: Asset }): React.ReactElement {
           )}
 
           <div className="flex gap-2 pt-1">
-            <button
-              onClick={handleViewFile}
-              className="flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-accent"
-            >
-              <Eye className="h-3 w-3" />
-              {t('instructions.viewFile')}
-            </button>
+            <ViewRawButton asset={asset} label={t('instructions.viewFile')} />
             <button
               onClick={handleShowInExplorer}
               className="flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-accent"
@@ -243,19 +215,11 @@ function SkillCard({ asset }: { asset: Asset }): React.ReactElement {
 function GenericAssetCard({ asset, icon: Icon }: { asset: Asset; icon: React.ComponentType<{ className?: string }> }): React.ReactElement {
   const { t } = useTranslation()
   const [expanded, setExpanded] = useState(false)
-  const openInspector = useAppStore((s) => s.openInspector)
 
   const description = (asset.meta.description as string) ?? ''
   const model = (asset.meta.model as string) ?? ''
   const toolsCount = (asset.meta.toolsCount as number) ?? 0
   const agentCount = (asset.meta.agentCount as number) ?? 0
-
-  const handleViewFile = useCallback(async () => {
-    try {
-      const full = await window.api?.assets.get(asset.id) as Asset | null
-      if (full?.raw) openInspector(asset.path, full.raw)
-    } catch { /* graceful */ }
-  }, [asset.id, asset.path, openInspector])
 
   const handleShowInExplorer = useCallback(() => {
     window.api?.shell.openPath(asset.path)
@@ -301,13 +265,7 @@ function GenericAssetCard({ asset, icon: Icon }: { asset: Asset; icon: React.Com
           <DetailRow label={t('instructions.path')} value={asset.path} mono />
 
           <div className="flex gap-2 pt-1">
-            <button
-              onClick={handleViewFile}
-              className="flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-accent"
-            >
-              <Eye className="h-3 w-3" />
-              {t('instructions.viewFile')}
-            </button>
+            <ViewRawButton asset={asset} label={t('instructions.viewFile')} />
             <button
               onClick={handleShowInExplorer}
               className="flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-accent"

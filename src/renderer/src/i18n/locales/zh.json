@@ -1426,7 +1426,10 @@
     "close": "关闭窗口"
   },
   "inspector": {
-    "copy": "复制到剪贴板"
+    "copy": "复制到剪贴板",
+    "loadingRaw": "加载原文…",
+    "rawUnavailable": "原文不可用",
+    "rawUnavailableDetail": "这个资产没有可读取的原文内容。"
   },
   "memory": {
     "allSources": "全部来源",

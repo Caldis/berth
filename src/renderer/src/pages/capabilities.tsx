@@ -11,7 +11,6 @@ import {
   ChevronDown,
   ChevronRight,
   Circle,
-  Eye,
   Check,
   X as XIcon,
   AlertTriangle
@@ -25,6 +24,7 @@ import { FilterBar } from '@/components/shared/filter-bar'
 import { DetailRow } from '@/components/shared/detail-row'
 import { WarningBanner } from '@/components/shared/warning-banner'
 import { ScopeBadge } from '@/components/shared/scope-badge'
+import { ViewRawButton } from '@/components/shared/view-raw-button'
 import { HooksLifecycleView } from '@/components/capabilities/hooks-lifecycle-view'
 import { FeatureGuidePanel } from '@/components/shared/feature-guide-panel'
 import { buildFeatureGuideEvidence, capabilityGuideMap, type CapabilityGuideId } from '@/lib/feature-guidance'
@@ -78,7 +78,6 @@ function EmptyState({ icon: Icon, message }: { icon: React.ComponentType<{ class
 function McpServerCard({ asset }: { asset: Asset }): React.ReactElement {
   const { t } = useTranslation()
   const [expanded, setExpanded] = useState(false)
-  const openInspector = useAppStore((s) => s.openInspector)
 
   const status = (asset.meta.status as string) ?? 'unknown'
   const command = (asset.meta.command as string) ?? ''
@@ -91,13 +90,6 @@ function McpServerCard({ asset }: { asset: Asset }): React.ReactElement {
     : status === 'failed'
       ? 'text-destructive'
       : 'text-muted-foreground'
-
-  const handleViewFile = useCallback(async () => {
-    try {
-      const full = await window.api?.assets.get(asset.id) as Asset | null
-      if (full?.raw) openInspector(asset.path, full.raw)
-    } catch { /* graceful */ }
-  }, [asset.id, asset.path, openInspector])
 
   return (
     <div className="rounded-lg border border-border bg-card transition-colors hover:bg-accent/5">
@@ -142,13 +134,7 @@ function McpServerCard({ asset }: { asset: Asset }): React.ReactElement {
           )}
 
           <div className="flex gap-2 pt-1">
-            <button
-              onClick={handleViewFile}
-              className="flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-accent"
-            >
-              <Eye className="h-3 w-3" />
-              {t('common.viewRaw')}
-            </button>
+            <ViewRawButton asset={asset} />
           </div>
         </div>
       )}
@@ -200,19 +186,11 @@ function McpSummary({ assets }: { assets: Asset[] }): React.ReactElement {
 function PluginCard({ asset }: { asset: Asset }): React.ReactElement {
   const { t } = useTranslation()
   const [expanded, setExpanded] = useState(false)
-  const openInspector = useAppStore((s) => s.openInspector)
 
   const skillCount = (asset.meta.skillCount as number) ?? 0
   const commandCount = (asset.meta.commandCount as number) ?? 0
   const agentCount = (asset.meta.agentCount as number) ?? 0
   const containsTotal = skillCount + commandCount + agentCount
-
-  const handleViewFile = useCallback(async () => {
-    try {
-      const full = await window.api?.assets.get(asset.id) as Asset | null
-      if (full?.raw) openInspector(asset.path, full.raw)
-    } catch { /* graceful */ }
-  }, [asset.id, asset.path, openInspector])
 
   return (
     <div className="rounded-lg border border-border bg-card transition-colors hover:bg-accent/5">
@@ -241,13 +219,7 @@ function PluginCard({ asset }: { asset: Asset }): React.ReactElement {
           {agentCount > 0 && <DetailRow label={t('instructions.tabs.subagents')} value={String(agentCount)} />}
 
           <div className="flex gap-2 pt-1">
-            <button
-              onClick={handleViewFile}
-              className="flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-accent"
-            >
-              <Eye className="h-3 w-3" />
-              {t('common.viewRaw')}
-            </button>
+            <ViewRawButton asset={asset} />
           </div>
         </div>
       )}
@@ -476,7 +448,6 @@ function CodexDefaultStatusLine(): React.ReactElement {
 
 function StatusLineCard({ viewModel }: { viewModel: StatusLineViewModel }): React.ReactElement {
   const { t } = useTranslation()
-  const openInspector = useAppStore((s) => s.openInspector)
   const { asset, commandView, diagnostics, effective, overriddenBy } = viewModel
   const provider = (asset.meta.provider as string | undefined) ?? asset.agentId
   const isCodex = provider === 'codex'
@@ -487,14 +458,6 @@ function StatusLineCard({ viewModel }: { viewModel: StatusLineViewModel }): Reac
   const settingKey = (asset.meta.settingKey as string | undefined) ?? ''
   const hidden = asset.meta.hidden === true
   const statusLevel = getWorstDiagnosticLevel(diagnostics)
-
-  const handleViewFile = async (): Promise<void> => {
-    try {
-      const full = await window.api?.assets.get(asset.id) as Asset | null
-      const raw = full?.raw ?? asset.raw
-      if (raw) openInspector(asset.path, raw)
-    } catch { /* graceful */ }
-  }
 
   return (
     <div className="rounded-lg border border-border bg-card px-4 py-3">
@@ -597,13 +560,7 @@ function StatusLineCard({ viewModel }: { viewModel: StatusLineViewModel }): Reac
       </div>
 
       <div className="flex gap-2 pt-3">
-        <button
-          onClick={handleViewFile}
-          className="flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-accent"
-        >
-          <Eye className="h-3 w-3" />
-          {t('common.viewRaw')}
-        </button>
+        <ViewRawButton asset={asset} />
       </div>
     </div>
   )

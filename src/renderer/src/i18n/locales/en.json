@@ -1433,7 +1433,10 @@
     "close": "Close window"
   },
   "inspector": {
-    "copy": "Copy to clipboard"
+    "copy": "Copy to clipboard",
+    "loadingRaw": "Loading raw...",
+    "rawUnavailable": "Raw unavailable",
+    "rawUnavailableDetail": "Raw content is unavailable for this asset."
   },
   "memory": {
     "allSources": "All sources",
