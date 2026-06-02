@@ -28,11 +28,11 @@ import { CostSourceBadge } from '@/components/shared/cost-source-badge'
 import { NoticePanel } from '@/components/shared/notice-panel'
 
 const CHART_COLORS = [
-  'hsl(216, 57%, 25%)',
-  'hsl(24.6, 95%, 53.1%)',
-  'hsl(173, 58%, 39%)',
-  'hsl(43, 96%, 56%)',
-  'hsl(339, 81%, 59%)'
+  'hsl(var(--chart-1))',
+  'hsl(var(--chart-2))',
+  'hsl(var(--chart-3))',
+  'hsl(var(--chart-4))',
+  'hsl(var(--chart-5))'
 ]
 
 const TIME_RANGES = [
@@ -520,7 +520,7 @@ export function Usage(): React.ReactElement {
                   formatter={(value: number) => [`$${value.toFixed(2)}`, t('usage.cost')]}
                   labelFormatter={(label: string) => new Date(label).toLocaleDateString()}
                 />
-                <Bar dataKey="cost" fill="hsl(var(--accent))" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="cost" fill="hsl(var(--chart-1))" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           ) : (
