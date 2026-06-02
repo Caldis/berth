@@ -2,21 +2,21 @@
 task: 2026-06-02-gh-59-overview-cost-source-badge
 task_id: GH-59
 type: feature
-phase: implement
+phase: archive
 created: 2026-06-02
 issue:
   number: 59
   repo: Caldis/berth
   url: https://github.com/Caldis/berth/issues/59
   id: I_kwDOSpnDwc8AAAABEGcKKQ
-  state: OPEN
+  state: CLOSED
 gh_project:
   status: tracked
   project_id: PVT_kwHOADXbEs4BZHvQ
   project_number: 6
   project_url: https://github.com/users/Caldis/projects/6
   item_id: PVTI_lAHOADXbEs4BZHvQzgueYt8
-  item_status: In Progress
+  item_status: Done
 artifacts:
   source: 00-PRD.md
   analysis: 01-ANALYSIS.md

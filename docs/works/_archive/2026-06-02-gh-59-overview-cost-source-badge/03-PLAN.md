@@ -9,9 +9,9 @@
 - [x] 任务 2: 确认 Usage 费用说明未被破坏, 并完成类型检查。
   - tests: `pnpm vitest run tests/renderer/usage-tooltip-label.test.tsx` — 1 passed; `pnpm typecheck:web` — passed
   - verify: Usage 页现有费用 tooltip/说明仍通过; Overview 新文案不出现 raw enum。
-- [ ] 任务 3: 完成真实界面截图、全局检查、归档。
-  - tests: `pnpm lint`; `pnpm typecheck:web`; `pnpm typecheck:node`; `pnpm test`; `pnpm harness:check`; `node scripts/harness-projects.mjs check --strict`
-  - verify: 使用独立 `dev:agent` 实例在 zh/dark Overview 截图, 确认 badge 和金额不重叠; push 前当前分支 Actions 为 success, push 后等待本 SHA CI 通过。
+- [x] 任务 3: 完成真实界面截图、全局检查、归档。
+  - tests: `pnpm lint` — passed; `pnpm typecheck:web` — passed; `pnpm typecheck:node` — passed; `pnpm test` — 60 files / 446 tests; `pnpm harness:check` — passed; `node scripts/harness-projects.mjs check --strict` — passed
+  - verify: 使用独立 `dev:agent` 实例在 zh/dark Overview 截图, 费用卡显示“混合”和金额且不重叠。Renderer 截图: `C:\Users\mail\AppData\Local\Temp\berth-gh59-overview-cost-source.png`; Electron 窗口截图: `C:\Users\mail\AppData\Local\Temp\berth-gh59-overview-cost-source-window.png`。实现提交 push 前当前分支 Actions 为 success, push 后 `26811361258` 在 Ubuntu 与 Windows 均 success。
 
 ## verify 回写
 
