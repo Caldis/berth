@@ -58,6 +58,7 @@ export function useAssets(): {
 
 export function useSessions(opts?: {
   projectFilter?: string
+  projectPath?: string
   limit?: number
   agentView?: AgentView
 }): { sessions: SessionSummary[]; loading: boolean } {
@@ -70,14 +71,20 @@ export function useSessions(opts?: {
       return
     }
     setLoading(true)
+    const request = {
+      projectFilter: opts?.projectFilter,
+      limit: opts?.limit,
+      agentView: opts?.agentView,
+      ...(opts?.projectPath ? { projectPath: opts.projectPath } : {})
+    }
     window.api.sessions
-      .list({ projectFilter: opts?.projectFilter, limit: opts?.limit, agentView: opts?.agentView })
+      .list(request)
       .then((result) => {
         setSessions(result?.sessions ?? [])
       })
       .catch(() => {})
       .finally(() => setLoading(false))
-  }, [opts?.projectFilter, opts?.limit, opts?.agentView])
+  }, [opts?.projectFilter, opts?.projectPath, opts?.limit, opts?.agentView])
 
   return { sessions, loading }
 }
@@ -107,7 +114,7 @@ export function useSessionDetail(id: string): {
   return { detail, loading }
 }
 
-export function useUsageSummary(days: number, agentView?: AgentView): {
+export function useUsageSummary(days: number, agentView?: AgentView, projectPath?: string): {
   usage: UsageSummary | null
   loading: boolean
 } {
@@ -120,14 +127,19 @@ export function useUsageSummary(days: number, agentView?: AgentView): {
       return
     }
     setLoading(true)
+    const request = {
+      days,
+      agentView,
+      ...(projectPath ? { projectPath } : {})
+    }
     window.api.usage
-      .summary({ days, agentView })
+      .summary(request)
       .then((result) => {
         setUsage(result ?? null)
       })
       .catch(() => {})
       .finally(() => setLoading(false))
-  }, [days, agentView])
+  }, [days, agentView, projectPath])
 
   return { usage, loading }
 }

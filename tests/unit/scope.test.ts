@@ -5,6 +5,7 @@ import {
   normalizeProjectPath,
   normalizeProjectPathKey,
   normalizeScopeSelection,
+  projectPathForScope,
   sameProjectPath
 } from '../../src/shared/scope'
 
@@ -22,6 +23,16 @@ describe('project scope helpers', () => {
 
   it('falls back to global when project scope has no path', () => {
     expect(normalizeScopeSelection({ mode: 'project', projectPath: '' })).toEqual({ mode: 'global' })
+  })
+
+  it('returns a project path only for project scope', () => {
+    expect(projectPathForScope({ mode: 'global' })).toBeUndefined()
+    expect(projectPathForScope({ mode: 'user' })).toBeUndefined()
+    expect(projectPathForScope({
+      mode: 'project',
+      projectPath: 'D:/Code/berth',
+      projectPathKey: 'd:/code/berth'
+    })).toBe('D:/Code/berth')
   })
 
   it('creates stable project candidates from paths', () => {

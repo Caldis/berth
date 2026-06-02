@@ -58,6 +58,10 @@ export function normalizeScopeSelection(selection: Partial<AppScopeSelection> | 
   return DEFAULT_SCOPE_SELECTION
 }
 
+export function projectPathForScope(selection: AppScopeSelection): string | undefined {
+  return selection.mode === 'project' ? selection.projectPath : undefined
+}
+
 export function createProjectScopeCandidate(input: ProjectScopeCandidateInput): ProjectScopeCandidate | null {
   const path = normalizeProjectPath(input.path)
   const pathKey = normalizeProjectPathKey(path)

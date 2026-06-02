@@ -173,6 +173,45 @@ describe('session pages', () => {
     expect(screen.getAllByText('—').length).toBeGreaterThan(0)
   })
 
+  it('passes selected project scope to overview sessions and usage summaries', async () => {
+    mockSessionApis()
+    act(() => {
+      useAppStore.setState({
+        scopeSelection: {
+          mode: 'project',
+          projectPath: 'D:/Code/berth',
+          projectPathKey: 'd:/code/berth'
+        }
+      })
+    })
+
+    const view = render(
+      <MemoryRouter>
+        <Overview />
+      </MemoryRouter>
+    )
+
+    try {
+      expect(await screen.findByText('Fix session metadata')).toBeInTheDocument()
+      expect(window.api.sessions.list).toHaveBeenCalledWith({
+        projectFilter: undefined,
+        limit: 5,
+        agentView: 'all',
+        projectPath: 'D:/Code/berth'
+      })
+      expect(window.api.usage.summary).toHaveBeenCalledWith({
+        days: 7,
+        agentView: 'all',
+        projectPath: 'D:/Code/berth'
+      })
+    } finally {
+      view.unmount()
+      act(() => {
+        useAppStore.setState({ scopeSelection: { mode: 'global' } })
+      })
+    }
+  })
+
   it('renders sessions page without encoded project names or invalid date output', async () => {
     mockSessionApis()
 
@@ -191,6 +230,40 @@ describe('session pages', () => {
     expect(screen.getByText('38 tok')).toBeInTheDocument()
     expect(screen.getByText(/I 10 \/ O 5/)).toBeInTheDocument()
     expect(screen.getAllByText('claude-sonnet-4-20250514').length).toBeGreaterThan(0)
+  })
+
+  it('passes selected project scope to the sessions list', async () => {
+    mockSessionApis()
+    act(() => {
+      useAppStore.setState({
+        scopeSelection: {
+          mode: 'project',
+          projectPath: 'D:/Code/berth',
+          projectPathKey: 'd:/code/berth'
+        }
+      })
+    })
+
+    const view = render(
+      <MemoryRouter>
+        <Sessions />
+      </MemoryRouter>
+    )
+
+    try {
+      expect(await screen.findByText('Fix session metadata')).toBeInTheDocument()
+      expect(window.api.sessions.list).toHaveBeenCalledWith({
+        projectFilter: undefined,
+        limit: undefined,
+        agentView: 'all',
+        projectPath: 'D:/Code/berth'
+      })
+    } finally {
+      view.unmount()
+      act(() => {
+        useAppStore.setState({ scopeSelection: { mode: 'global' } })
+      })
+    }
   })
 
   it('localizes fallback titles for untitled sessions', async () => {
@@ -458,6 +531,40 @@ describe('session pages', () => {
     expect(screen.queryByText('$0.00')).not.toBeInTheDocument()
     expect(screen.getAllByText('38 tok').length).toBeGreaterThan(0)
     expect(screen.getByText('claude-sonnet-4-20250514')).toBeInTheDocument()
+  })
+
+  it('passes selected project scope to usage summary', async () => {
+    mockSessionApis()
+    act(() => {
+      useAppStore.setState({
+        scopeSelection: {
+          mode: 'project',
+          projectPath: 'D:/Code/berth',
+          projectPathKey: 'd:/code/berth'
+        }
+      })
+    })
+
+    const view = render(
+      <MemoryRouter>
+        <Usage />
+      </MemoryRouter>
+    )
+
+    try {
+      expect(await screen.findByText('Input: 10')).toBeInTheDocument()
+      expect(window.api.usage.summary).toHaveBeenCalledWith({
+        days: 0,
+        agentView: 'all',
+        costMode: 'auto',
+        projectPath: 'D:/Code/berth'
+      })
+    } finally {
+      view.unmount()
+      act(() => {
+        useAppStore.setState({ scopeSelection: { mode: 'global' } })
+      })
+    }
   })
 
   it('shows usage placeholders while the first summary request is loading', () => {

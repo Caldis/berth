@@ -24,6 +24,7 @@ import { FeatureGuidePanel } from '@/components/shared/feature-guide-panel'
 import { useAppStore } from '@/stores/app'
 import { TokenUsageDisplay } from '@/components/shared/token-usage-display'
 import { sessionGuide, type FeatureGuideEvidence } from '@/lib/feature-guidance'
+import { projectPathForScope } from '@shared/scope'
 
 type GroupBy = 'project' | 'date'
 
@@ -38,7 +39,9 @@ export function Sessions(): React.ReactElement {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const agentView = useAppStore((s) => s.agentView)
-  const { sessions, loading } = useSessions({ agentView })
+  const scopeSelection = useAppStore((s) => s.scopeSelection)
+  const projectPath = projectPathForScope(scopeSelection)
+  const { sessions, loading } = useSessions({ agentView, projectPath })
 
   const [filter, setFilter] = useState('')
   const [groupBy, setGroupBy] = useState<GroupBy>('project')

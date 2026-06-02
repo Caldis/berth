@@ -26,6 +26,7 @@ import { TokenUsageDisplay } from '@/components/shared/token-usage-display'
 import { useAppStore } from '@/stores/app'
 import { CostSourceBadge } from '@/components/shared/cost-source-badge'
 import { NoticePanel } from '@/components/shared/notice-panel'
+import { projectPathForScope } from '@shared/scope'
 
 const CHART_COLORS = [
   'hsl(var(--chart-1))',
@@ -171,12 +172,20 @@ export function Usage(): React.ReactElement {
   const [showPricingOverride, setShowPricingOverride] = useState(false)
   const [pricingOverrideCopied, setPricingOverrideCopied] = useState(false)
   const agentView = useAppStore((s) => s.agentView)
+  const scopeSelection = useAppStore((s) => s.scopeSelection)
+  const projectPath = projectPathForScope(scopeSelection)
 
   useEffect(() => {
     let cancelled = false
     setLoadError(false)
+    const request = {
+      days,
+      agentView,
+      costMode,
+      ...(projectPath ? { projectPath } : {})
+    }
     window.api?.usage
-      .summary({ days, agentView, costMode })
+      .summary(request)
       .then((data) => {
         if (!cancelled) {
           setUsage(normalizeUsageSummary(data))
@@ -193,7 +202,7 @@ export function Usage(): React.ReactElement {
     return () => {
       cancelled = true
     }
-  }, [agentView, costMode, days, reloadKey])
+  }, [agentView, costMode, days, projectPath, reloadKey])
 
   const hasCostData = usage && usage.dailyCosts.length > 0
   const hasModelData = usage && usage.byModel.length > 0

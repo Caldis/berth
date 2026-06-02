@@ -34,6 +34,7 @@ import { EmptyState } from '@/components/shared/empty-state'
 import type { HealthCheck } from '@shared/types/ipc'
 import { TokenUsageDisplay } from '@/components/shared/token-usage-display'
 import { CostSourceBadge } from '@/components/shared/cost-source-badge'
+import { projectPathForScope } from '@shared/scope'
 
 export function Overview(): React.ReactElement {
   const { t } = useTranslation()
@@ -41,12 +42,14 @@ export function Overview(): React.ReactElement {
   const allStats = useAppStore((s) => s.stats)
   const assets = useAppStore((s) => s.assets)
   const agentView = useAppStore((s) => s.agentView)
+  const scopeSelection = useAppStore((s) => s.scopeSelection)
+  const projectPath = projectPathForScope(scopeSelection)
   const stats = useMemo(() => {
     if (agentView === 'all') return allStats
     return computeStatsForAssets(filterAssetsByAgentView(assets, agentView))
   }, [agentView, allStats, assets])
-  const { sessions, loading: sessionsLoading } = useSessions({ limit: 5, agentView })
-  const { usage } = useUsageSummary(7, agentView)
+  const { sessions, loading: sessionsLoading } = useSessions({ limit: 5, agentView, projectPath })
+  const { usage } = useUsageSummary(7, agentView, projectPath)
   const { checks } = useHealthChecks()
   const [copiedFixId, setCopiedFixId] = useState<string | null>(null)
   const [ignoredHealthChecks, setIgnoredHealthChecks] = useState<Set<string>>(() => readIgnoredHealthChecks())

@@ -12,9 +12,9 @@
 - [x] 任务 3: 侧边栏增加 Project Scope Switcher
   - tests: `pnpm test tests/renderer/project-scope-switcher.test.tsx tests/renderer/sidebar-agent-view.test.tsx tests/renderer/app-store.test.ts` (13 passed); `pnpm typecheck:web`
   - verify: UI; `pnpm dev:agent start --id gh77-project-scope-ui --debug-port 9336 --json`, Playwright CDP 打开 `项目范围` 弹层并选择 `用户域`; 截图 `C:/Users/mail/AppData/Local/Temp/berth-gh77-project-scope-open.png` 与 `C:/Users/mail/AppData/Local/Temp/berth-gh77-project-scope-collapsed-open.png` 覆盖 expanded/collapsed sidebar。入口位于侧边栏 footer, 与 Agent selector 区分; 弹层有 global/user/project 分组、长路径截断、loading/empty/error/focus 状态。
-- [ ] 任务 4: Overview / Sessions / Usage 消费应用级 scope
-  - tests: `pnpm test <overview/session/usage-page-tests>`; `pnpm test:e2e tests/e2e/project-scope.e2e.ts`
-  - verify: UI; 切换 project 后 recent sessions、sessions list、usage summary 同步变化; 切回 global 恢复全量。
+- [x] 任务 4: Overview / Sessions / Usage 消费应用级 scope
+  - tests: `pnpm test tests/unit/scope.test.ts tests/renderer/sessions-pages.test.tsx` (26 passed); `pnpm typecheck:web`
+  - verify: Renderer; `projectPathForScope()` 只在 project scope 返回路径; Overview recent sessions、Overview 7 天 usage、Sessions list、Usage summary 在 project scope 下都向 IPC 传递精确 `projectPath`; global/user scope 不传 project path, 保持旧行为。主进程精确路径过滤证据见任务 2。稳定 Electron e2e 仍留到任务 7, 避免依赖本机历史会话 fixture。
 - [ ] 任务 5: Instructions / Capabilities 在应用级 scope 下过滤资产
   - tests: `pnpm test <instructions/capabilities-page-tests>`
   - verify: UI; project scope 下展示匹配项目资产和有效 user/enterprise 基础层级; 页面内 asset scope filter 不与应用 scope 冲突。
