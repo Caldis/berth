@@ -11,10 +11,10 @@
   - tests: `pnpm exec vitest run tests/renderer/scope-badge-palette.test.tsx`
   - verify: 所有 scope 文本仍渲染, class 不含 blue/green/purple/orange。
   - evidence: 2026-06-02 目标测试通过, 2 tests passed; shared `ScopeBadge` 使用统一 zinc 中性色, Instructions 无本地 ScopeBadge 颜色表。
-- [ ] 任务 3: 收口检查
+- [x] 任务 3: 收口检查
   - tests: `pnpm lint`; `pnpm typecheck:web`; `pnpm typecheck:node`; `pnpm test`; `pnpm harness:check`; `node scripts/harness-projects.mjs check --strict`
   - verify: 包含 GitHub Actions run 结果。
-  - evidence: 2026-06-02 本地通过 `pnpm lint`, `pnpm typecheck:web`, `pnpm typecheck:node`, `pnpm test` (60 files, 443 tests), `pnpm harness:check`, `node scripts/harness-projects.mjs check --strict`。
+  - evidence: 2026-06-02 本地通过 `pnpm lint`, `pnpm typecheck:web`, `pnpm typecheck:node`, `pnpm test` (60 files, 443 tests), `pnpm harness:check`, `node scripts/harness-projects.mjs check --strict`; commit `d88eaa0` 对应 CI run 26806260217 success。
 
 ## verify 回写
 

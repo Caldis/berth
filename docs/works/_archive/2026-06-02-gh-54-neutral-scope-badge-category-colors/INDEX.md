@@ -2,7 +2,7 @@
 task: 2026-06-02-gh-54-neutral-scope-badge-category-colors
 task_id: GH-54
 type: feature
-phase: verify
+phase: archive
 created: 2026-06-02
 issue:
   id: I_kwDOSpnDwc8AAAABEF2oCg
@@ -14,7 +14,7 @@ gh_project:
   status: tracked
   project_number: 6
   project_url: https://github.com/users/Caldis/projects/6
-  item_status: In Progress
+  item_status: Done
   project_id: PVT_kwHOADXbEs4BZHvQ
   item_id: PVTI_lAHOADXbEs4BZHvQzgudtoY
 artifacts:
