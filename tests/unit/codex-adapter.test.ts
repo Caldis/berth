@@ -1,4 +1,5 @@
 import * as fs from 'fs'
+import * as os from 'os'
 import * as path from 'path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -17,7 +18,7 @@ import { CodexAdapter } from '../../src/main/adapters/codex'
 let tempDir: string | null = null
 
 beforeEach(() => {
-  tempDir = fs.mkdtempSync(path.join(process.env['TEMP'] ?? process.cwd(), 'berth-codex-adapter-'))
+  tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'berth-codex-adapter-'))
   mockHome.dir = tempDir
 })
 
@@ -129,6 +130,84 @@ describe('CodexAdapter', () => {
         ['codex', 'skill', 'user', 'codex-skill'],
         ['codex', 'skill', 'user', 'user-skill'],
         ['codex', 'skill', 'project', 'project-skill']
+      ])
+    )
+  })
+
+  it('scans project Codex sources from parent project roots', async () => {
+    const repoDir = path.join(tempDir!, 'repo')
+    const cwd = path.join(repoDir, 'packages', 'app')
+    const codexDir = path.join(mockHome.dir, '.codex')
+    const projectCodexDir = path.join(repoDir, '.codex')
+    const projectSkillsDir = path.join(repoDir, '.agents', 'skills', 'project-skill')
+    fs.mkdirSync(path.join(repoDir, '.git'), { recursive: true })
+    fs.mkdirSync(path.join(projectCodexDir, 'agents'), { recursive: true })
+    fs.mkdirSync(projectSkillsDir, { recursive: true })
+    fs.mkdirSync(cwd, { recursive: true })
+    fs.mkdirSync(codexDir, { recursive: true })
+
+    fs.writeFileSync(path.join(repoDir, 'AGENTS.md'), '# Repo agents\n')
+    fs.writeFileSync(
+      path.join(projectCodexDir, 'config.toml'),
+      ['[mcp_servers.project]', 'command = "project-mcp"'].join('\n')
+    )
+    fs.writeFileSync(
+      path.join(projectCodexDir, 'hooks.json'),
+      JSON.stringify({ hooks: { Stop: [{ hooks: [{ type: 'command', command: 'echo project-stop' }] }] } })
+    )
+    fs.writeFileSync(
+      path.join(projectCodexDir, 'agents', 'mapper.toml'),
+      [
+        'name = "mapper"',
+        'description = "Maps code."',
+        'developer_instructions = "Read only."'
+      ].join('\n')
+    )
+    fs.writeFileSync(
+      path.join(projectSkillsDir, 'SKILL.md'),
+      ['---', 'name: project-skill', 'description: Project skill', '---', 'Body'].join('\n')
+    )
+
+    const adapter = new CodexAdapter(cwd)
+    const sources = await adapter.scanSourceCoverage()
+    const result = await adapter.scanAll()
+
+    expect(sources).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          path: path.join(repoDir, 'AGENTS.md'),
+          scope: 'project',
+          code: 'codex.project.agents-md'
+        }),
+        expect.objectContaining({
+          path: path.join(projectCodexDir, 'config.toml'),
+          scope: 'project',
+          code: 'codex.project.config'
+        }),
+        expect.objectContaining({
+          path: path.join(projectCodexDir, 'hooks.json'),
+          scope: 'project',
+          code: 'codex.project.hooks'
+        }),
+        expect.objectContaining({
+          path: path.join(projectCodexDir, 'agents'),
+          scope: 'project',
+          code: 'codex.project.agents-directory'
+        }),
+        expect.objectContaining({
+          path: path.join(repoDir, '.agents', 'skills'),
+          scope: 'project',
+          code: 'codex.project.skills'
+        })
+      ])
+    )
+    expect(result.assets.map((asset) => [asset.type, asset.scope, asset.name, asset.path])).toEqual(
+      expect.arrayContaining([
+        ['agents-md', 'project', 'AGENTS.md', path.join(repoDir, 'AGENTS.md')],
+        ['mcp-server', 'project', 'project', path.join(projectCodexDir, 'config.toml')],
+        ['hook', 'project', 'echo project-stop', path.join(projectCodexDir, 'hooks.json')],
+        ['agent', 'project', 'mapper', path.join(projectCodexDir, 'agents', 'mapper.toml')],
+        ['skill', 'project', 'project-skill', path.join(projectSkillsDir, 'SKILL.md')]
       ])
     )
   })

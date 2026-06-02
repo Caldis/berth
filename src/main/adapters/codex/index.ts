@@ -24,6 +24,7 @@ import {
   resolveCodexHomeDir as resolvePrimaryCodexHomeDir,
   resolveCodexHomeDirs
 } from '../../agent-homes'
+import { resolveProjectConfigRoots } from '../../project-config-roots'
 
 export class CodexAdapter implements AgentAdapter {
   readonly id = 'codex'
@@ -31,11 +32,11 @@ export class CodexAdapter implements AgentAdapter {
 
   private codexDirs: string[]
   private homeDir: string
-  private projectDir?: string
+  private projectDirs: string[]
 
   constructor(projectDir?: string, homeDir = os.homedir(), env = process.env) {
     this.homeDir = homeDir
-    this.projectDir = projectDir
+    this.projectDirs = resolveProjectConfigRoots(projectDir)
     this.codexDirs = resolveCodexHomeDirs(homeDir, env)
   }
 
@@ -121,10 +122,10 @@ export class CodexAdapter implements AgentAdapter {
       ['instruction']
     )
 
-    if (this.projectDir) {
+    for (const projectDir of this.projectDirs) {
       addRoot(
         roots,
-        path.join(this.projectDir, 'AGENTS.md'),
+        path.join(projectDir, 'AGENTS.md'),
         'project',
         'file',
         'codex.project.agents-md',
@@ -132,7 +133,7 @@ export class CodexAdapter implements AgentAdapter {
       )
       addRoot(
         roots,
-        path.join(this.projectDir, '.codex', 'config.toml'),
+        path.join(projectDir, '.codex', 'config.toml'),
         'project',
         'file',
         'codex.project.config',
@@ -140,7 +141,7 @@ export class CodexAdapter implements AgentAdapter {
       )
       addRoot(
         roots,
-        path.join(this.projectDir, '.codex', 'hooks.json'),
+        path.join(projectDir, '.codex', 'hooks.json'),
         'project',
         'file',
         'codex.project.hooks',
@@ -148,7 +149,7 @@ export class CodexAdapter implements AgentAdapter {
       )
       addRoot(
         roots,
-        path.join(this.projectDir, '.codex', 'agents'),
+        path.join(projectDir, '.codex', 'agents'),
         'project',
         'directory',
         'codex.project.agents-directory',
@@ -156,7 +157,7 @@ export class CodexAdapter implements AgentAdapter {
       )
       addRoot(
         roots,
-        path.join(this.projectDir, '.agents', 'skills'),
+        path.join(projectDir, '.agents', 'skills'),
         'project',
         'directory',
         'codex.project.skills',
@@ -213,8 +214,8 @@ export class CodexAdapter implements AgentAdapter {
 
     assets.push(...scanDir(errors, path.join(this.homeDir, '.agents', 'skills'), 'user', '**/SKILL.md', 'codex-skill', parseCodexSkill))
 
-    if (this.projectDir) {
-      const projectAgentsMd = path.join(this.projectDir, 'AGENTS.md')
+    for (const projectDir of this.projectDirs) {
+      const projectAgentsMd = path.join(projectDir, 'AGENTS.md')
       if (fs.existsSync(projectAgentsMd)) {
         const asset = safeScan(errors, projectAgentsMd, 'agents-md', () =>
           parseCodexAgentsMd(projectAgentsMd, 'project')
@@ -222,8 +223,8 @@ export class CodexAdapter implements AgentAdapter {
         if (asset) assets.push(asset)
       }
 
-      assets.push(...scanDir(errors, path.join(this.projectDir, '.codex', 'agents'), 'project', '**/*.toml', 'codex-agent', parseCodexCustomAgent))
-      assets.push(...scanDir(errors, path.join(this.projectDir, '.agents', 'skills'), 'project', '**/SKILL.md', 'codex-skill', parseCodexSkill))
+      assets.push(...scanDir(errors, path.join(projectDir, '.codex', 'agents'), 'project', '**/*.toml', 'codex-agent', parseCodexCustomAgent))
+      assets.push(...scanDir(errors, path.join(projectDir, '.agents', 'skills'), 'project', '**/SKILL.md', 'codex-skill', parseCodexSkill))
     }
 
     return assets
@@ -242,9 +243,9 @@ export class CodexAdapter implements AgentAdapter {
       }
     }
 
-    if (this.projectDir) {
-      const projectConfig = path.join(this.projectDir, '.codex', 'config.toml')
-      const projectHooks = path.join(this.projectDir, '.codex', 'hooks.json')
+    for (const projectDir of this.projectDirs) {
+      const projectConfig = path.join(projectDir, '.codex', 'config.toml')
+      const projectHooks = path.join(projectDir, '.codex', 'hooks.json')
       if (fs.existsSync(projectConfig)) {
         assets.push(...(safeScan(errors, projectConfig, 'codex-config', () => parseCodexConfig(projectConfig, 'project')) ?? []))
       }
