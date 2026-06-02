@@ -147,7 +147,7 @@ export function ProjectScopeSwitcher({ collapsed }: ProjectScopeSwitcherProps): 
 
       {open && (
         <div
-          className="absolute bottom-10 left-0 z-50 w-80 rounded-md border border-border bg-popover p-2 text-popover-foreground shadow-lg"
+          className="absolute bottom-10 left-0 z-50 max-h-[calc(100vh-7rem)] w-80 overflow-y-auto rounded-md border border-border bg-popover p-2 text-popover-foreground shadow-lg"
           role="listbox"
           aria-label={t('projectScope.listLabel')}
           onKeyDown={(event) => {
