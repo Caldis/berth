@@ -279,7 +279,9 @@ describe('HooksLifecycleView', () => {
     await waitFor(() => {
       expect(navigator.clipboard.writeText).toHaveBeenCalledWith(expect.stringContaining('"type": "http"'))
     })
-    expect(screen.getByRole('button', { name: 'Copied JSON' })).toBeInTheDocument()
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Copied JSON' })).toBeInTheDocument()
+    })
   })
 
   it('uses plugin handler schema for primary fields and parsed-only run mode', async () => {
