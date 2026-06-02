@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, type KeyboardEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useTheme } from '@/components/theme-provider'
 import {
@@ -12,6 +12,40 @@ import { cn } from '@/lib/utils'
 import { useAgentCapabilityPlugins, useScanSources } from '@/hooks/use-ipc'
 import { AgentCapabilityPluginsSection } from '@/components/settings/agent-capability-plugins-section'
 import { LocalSourcesSection } from '@/components/settings/local-sources-section'
+
+function getNextRadioIndex(key: string, currentIndex: number, optionCount: number): number | null {
+  if (optionCount <= 0) return null
+
+  switch (key) {
+    case 'ArrowRight':
+    case 'ArrowDown':
+      return (currentIndex + 1) % optionCount
+    case 'ArrowLeft':
+    case 'ArrowUp':
+      return (currentIndex - 1 + optionCount) % optionCount
+    case 'Home':
+      return 0
+    case 'End':
+      return optionCount - 1
+    default:
+      return null
+  }
+}
+
+function handleRadioKeyDown(
+  event: KeyboardEvent<HTMLButtonElement>,
+  currentIndex: number,
+  optionCount: number,
+  selectIndex: (index: number) => void
+): void {
+  const nextIndex = getNextRadioIndex(event.key, currentIndex, optionCount)
+  if (nextIndex === null) return
+
+  event.preventDefault()
+  selectIndex(nextIndex)
+  const radioButtons = event.currentTarget.parentElement?.querySelectorAll<HTMLButtonElement>('[role="radio"]')
+  radioButtons?.[nextIndex]?.focus()
+}
 
 function Toggle({
   enabled,
@@ -75,6 +109,11 @@ export function SettingsContent({
     localStorage.setItem('berth-advanced-mode', String(v))
   }
 
+  const selectLanguage = (language: string): void => {
+    void i18n.changeLanguage(language)
+    localStorage.setItem('berth-language', language)
+  }
+
   const themes = [
     { id: 'light' as const, labelKey: 'settings.themeLight', icon: Sun },
     { id: 'dark' as const, labelKey: 'settings.themeDark', icon: Moon },
@@ -98,49 +137,72 @@ export function SettingsContent({
         <div className="space-y-3 rounded-lg border border-border bg-card p-4">
           <div>
             <label className="text-sm font-medium">{t('settings.theme')}</label>
-            <div className="mt-2 flex gap-2">
-              {themes.map((themeOption) => (
-                <button
-                  key={themeOption.id}
-                  onClick={() => setTheme(themeOption.id)}
-                  className={cn(
-                    'flex items-center gap-2 rounded-md border px-3 py-2 text-sm transition-colors',
-                    theme === themeOption.id
-                      ? 'border-accent bg-accent/10 text-foreground'
-                      : 'border-border hover:border-accent/50'
-                  )}
-                >
-                  <themeOption.icon className="h-4 w-4" />
-                  {t(themeOption.labelKey)}
-                  {theme === themeOption.id && <Check className="h-3.5 w-3.5 text-accent" />}
-                </button>
-              ))}
+            <div className="mt-2 flex gap-2" role="radiogroup" aria-label={t('settings.theme')}>
+              {themes.map((themeOption, index) => {
+                const isSelected = theme === themeOption.id
+
+                return (
+                  <button
+                    key={themeOption.id}
+                    type="button"
+                    role="radio"
+                    aria-checked={isSelected}
+                    tabIndex={isSelected ? 0 : -1}
+                    onClick={() => setTheme(themeOption.id)}
+                    onKeyDown={(event) => {
+                      handleRadioKeyDown(event, index, themes.length, (nextIndex) => {
+                        setTheme(themes[nextIndex].id)
+                      })
+                    }}
+                    className={cn(
+                      'flex items-center gap-2 rounded-md border px-3 py-2 text-sm transition-colors',
+                      isSelected
+                        ? 'border-accent bg-accent/10 text-foreground'
+                        : 'border-border hover:border-accent/50'
+                    )}
+                  >
+                    <themeOption.icon className="h-4 w-4" aria-hidden="true" />
+                    {t(themeOption.labelKey)}
+                    {isSelected && <Check className="h-3.5 w-3.5 text-accent" aria-hidden="true" />}
+                  </button>
+                )
+              })}
             </div>
           </div>
 
           <div className="border-t border-border pt-3">
             <label className="text-sm font-medium">{t('settings.language')}</label>
-            <div className="mt-2 flex gap-2">
-              {languages.map((lang) => (
-                <button
-                  key={lang.id}
-                  onClick={() => {
-                    i18n.changeLanguage(lang.id)
-                    localStorage.setItem('berth-language', lang.id)
-                  }}
-                  className={cn(
-                    'flex items-center gap-2 rounded-md border px-3 py-2 text-sm transition-colors',
-                    i18n.language === lang.id
-                      ? 'border-accent bg-accent/10 text-foreground'
-                      : 'border-border hover:border-accent/50'
-                  )}
-                >
-                  {lang.label}
-                  {i18n.language === lang.id && (
-                    <Check className="h-3.5 w-3.5 text-accent" />
-                  )}
-                </button>
-              ))}
+            <div className="mt-2 flex gap-2" role="radiogroup" aria-label={t('settings.language')}>
+              {languages.map((lang, index) => {
+                const isSelected = i18n.language === lang.id
+
+                return (
+                  <button
+                    key={lang.id}
+                    type="button"
+                    role="radio"
+                    aria-checked={isSelected}
+                    tabIndex={isSelected ? 0 : -1}
+                    onClick={() => selectLanguage(lang.id)}
+                    onKeyDown={(event) => {
+                      handleRadioKeyDown(event, index, languages.length, (nextIndex) => {
+                        selectLanguage(languages[nextIndex].id)
+                      })
+                    }}
+                    className={cn(
+                      'flex items-center gap-2 rounded-md border px-3 py-2 text-sm transition-colors',
+                      isSelected
+                        ? 'border-accent bg-accent/10 text-foreground'
+                        : 'border-border hover:border-accent/50'
+                    )}
+                  >
+                    {lang.label}
+                    {isSelected && (
+                      <Check className="h-3.5 w-3.5 text-accent" aria-hidden="true" />
+                    )}
+                  </button>
+                )
+              })}
             </div>
           </div>
         </div>
