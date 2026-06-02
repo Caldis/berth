@@ -141,7 +141,7 @@ export function Sidebar(): React.ReactElement {
               type="button"
               onClick={toggleSidebar}
               className="titlebar-no-drag flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-sidebar-accent/10 hover:text-sidebar-foreground"
-              aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              aria-label={collapsed ? t('nav.expandSidebar') : t('nav.collapseSidebar')}
             >
               {collapsed ? (
                 <ChevronRight className="h-3.5 w-3.5" />

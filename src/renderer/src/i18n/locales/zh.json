@@ -10,7 +10,9 @@
     "instructions": "指令",
     "capabilities": "能力",
     "usage": "用量",
-    "settings": "设置"
+    "settings": "设置",
+    "expandSidebar": "展开侧边栏",
+    "collapseSidebar": "折叠侧边栏"
   },
   "agentView": {
     "label": "Agent 视角",

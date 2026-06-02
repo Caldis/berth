@@ -10,7 +10,9 @@
     "instructions": "Instructions",
     "capabilities": "Capabilities",
     "usage": "Usage",
-    "settings": "Settings"
+    "settings": "Settings",
+    "expandSidebar": "Expand sidebar",
+    "collapseSidebar": "Collapse sidebar"
   },
   "agentView": {
     "label": "Agent view",

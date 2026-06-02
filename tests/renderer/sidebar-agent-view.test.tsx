@@ -38,4 +38,19 @@ describe('Sidebar agent view selector', () => {
     expect(screen.getByRole('option', { name: 'Claude' })).toBeInTheDocument()
     expect(screen.getByRole('option', { name: 'Codex' })).toBeInTheDocument()
   })
+
+  it('localizes the sidebar collapse toggle label in Chinese', async () => {
+    await i18n.changeLanguage('zh')
+
+    render(
+      <MemoryRouter>
+        <Sidebar />
+      </MemoryRouter>
+    )
+
+    const collapseButton = screen.getByRole('button', { name: '折叠侧边栏' })
+    fireEvent.click(collapseButton)
+
+    expect(screen.getByRole('button', { name: '展开侧边栏' })).toBeInTheDocument()
+  })
 })
