@@ -11,9 +11,10 @@
   - tests: `pnpm lint`; `pnpm typecheck`; `pnpm harness:check`
   - verify: 目标测试与标准门禁通过。
   - evidence: `pnpm lint`; `pnpm typecheck`; `pnpm harness:check`; `pnpm test` (54 files / 424 tests); `pnpm build`; `pnpm test:e2e` (15 tests) 均通过。
-- [ ] 任务 3: 推送后等待 GitHub Actions。
+- [x] 任务 3: 推送后等待 GitHub Actions。
   - tests: `gh run list --branch master --limit 5`; `gh run watch <run-id> --exit-status`
   - verify: 新 SHA 对应 CI run 成功。
+  - evidence: `gh run watch 26798195124 --repo Caldis/berth --exit-status` 通过; SHA `6f314c4bda43f68429239950f9e2c4e36f0ae6f1`; Ubuntu 和 Windows job 均成功。
 
 ## verify 回写
 verify 不通过项作为新任务追加于此, phase 退回 implement。
