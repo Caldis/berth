@@ -1221,6 +1221,7 @@
   },
   "usage": {
     "title": "Usage",
+    "subtitle": "Local token and cost data from scanned Claude Code and Codex sessions.",
     "totalSpent": "Total Spent",
     "tokensUsed": "Tokens Used",
     "tokenUnit": "tok",
@@ -1265,8 +1266,10 @@
       "actual": "Show only provider-reported actual cost. Missing records stay unknown.",
       "estimated": "Show only pricing catalog estimates calculated from token usage."
     },
-    "costExplanationTitle": "Cost explanation",
+    "costExplanationTitle": "Cost source",
     "costScopeNotice": "Local scan data and catalog estimates may differ from provider billing.",
+    "sourceLocalScanTitle": "Local scan data",
+    "sourceLocalScanBody": "Read from local usage files, stats caches, and session transcripts. Berth does not query live billing here.",
     "costFormulaLabel": "Formula",
     "costFormula": {
       "actual": "Provider actual",
@@ -1313,11 +1316,12 @@
     "dailyCost": "Daily Cost",
     "byModel": "By Model",
     "byProject": "By Project",
-    "rateLimits": "Rate Limits",
-    "currentWindow": "Current Window",
-    "remaining": "remaining",
-    "resetsIn": "resets in",
-    "experimentalFlags": "Experimental Flags"
+    "modelCost": "Model cost",
+    "projectCost": "Project cost",
+    "tokenShare": "{{percentage}}% of tokens",
+    "emptyDailyCost": "No daily cost data for this range",
+    "emptyModels": "No model usage in this range",
+    "emptyProjects": "No project usage in this range"
   },
   "settings": {
     "title": "Settings",

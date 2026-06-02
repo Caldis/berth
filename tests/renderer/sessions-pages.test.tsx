@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import React from 'react'
 import { describe, expect, it, vi } from 'vitest'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
@@ -553,6 +553,10 @@ describe('session pages', () => {
     expect(screen.queryByText('$0.00')).not.toBeInTheDocument()
     expect(screen.getAllByText('38 tok').length).toBeGreaterThan(0)
     expect(screen.getByText('claude-sonnet-4-20250514')).toBeInTheDocument()
+    expect(screen.getByText('Cost source')).toBeInTheDocument()
+    expect(screen.getByText('Local scan data')).toBeInTheDocument()
+    expect(screen.queryByText('Rate Limits')).not.toBeInTheDocument()
+    expect(screen.queryByText('Experimental Flags')).not.toBeInTheDocument()
   })
 
   it('passes selected project scope to usage summary', async () => {
@@ -652,13 +656,13 @@ describe('session pages', () => {
     )
 
     expect(await screen.findByText('Input: 10')).toBeInTheDocument()
-    expect(screen.getByRole('radiogroup', { name: 'Cost mode' })).toBeInTheDocument()
-    expect(screen.getByRole('radio', { name: 'Auto' })).toHaveAttribute(
-      'title',
-      'Use provider actual cost when available, otherwise use the pricing catalog estimate.'
-    )
-    expect(screen.getByRole('radio', { name: 'Auto' })).toHaveAttribute('aria-checked', 'true')
-    fireEvent.click(screen.getByRole('radio', { name: 'Estimated' }))
+    expect(screen.queryByRole('radiogroup', { name: 'Cost mode' })).not.toBeInTheDocument()
+    const costModeSelect = screen.getByRole('combobox', { name: 'Cost mode' })
+    expect(costModeSelect).toHaveValue('auto')
+    expect(
+      screen.getByText('Use provider actual cost when available, otherwise use the pricing catalog estimate.')
+    ).toBeInTheDocument()
+    fireEvent.change(costModeSelect, { target: { value: 'estimated' } })
 
     await waitFor(() => {
       expect(window.api.usage.summary).toHaveBeenLastCalledWith({
@@ -774,7 +778,9 @@ describe('session pages', () => {
 
     expect(await screen.findByText('Input: 4')).toBeInTheDocument()
 
-    fireEvent.click(screen.getByRole('radio', { name: 'Estimated' }))
+    fireEvent.change(screen.getByRole('combobox', { name: 'Cost mode' }), {
+      target: { value: 'estimated' }
+    })
 
     expect(await screen.findByText('Usage data could not be loaded')).toBeInTheDocument()
     expect(
@@ -895,6 +901,11 @@ describe('session pages', () => {
     )
 
     expect(await screen.findByText('Pricing gaps')).toBeInTheDocument()
+    const byModel = screen.getByRole('region', { name: 'By Model' })
+    expect(within(byModel).getByText('test/priced-model')).toBeInTheDocument()
+    expect(within(byModel).getByText('$0.30')).toBeInTheDocument()
+    expect(within(byModel).getAllByText('Actual').length).toBeGreaterThan(0)
+    expect(within(byModel).getByText('12 tok')).toBeInTheDocument()
     expect(screen.getAllByText('Actual').length).toBeGreaterThan(0)
     expect(screen.getAllByText('Estimated').length).toBeGreaterThan(0)
     expect(screen.getByText('Delta')).toBeInTheDocument()
@@ -905,7 +916,8 @@ describe('session pages', () => {
         'Mixed: Combines provider-reported costs where available with catalog estimates for the rest.'
       ).length
     ).toBeGreaterThan(0)
-    expect(screen.getByText('Cost explanation')).toBeInTheDocument()
+    expect(screen.getByText('Cost source')).toBeInTheDocument()
+    expect(screen.getByText('Cost mode')).toBeInTheDocument()
     expect(
       screen.getByText('Local scan data and catalog estimates may differ from provider billing.')
     ).toBeInTheDocument()

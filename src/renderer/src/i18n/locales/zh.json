@@ -1217,6 +1217,7 @@
   },
   "usage": {
     "title": "用量",
+    "subtitle": "来自本地 Claude Code 和 Codex 会话扫描的 token 与费用数据。",
     "totalSpent": "总花费",
     "tokensUsed": "Token 用量",
     "tokenUnit": "tok",
@@ -1261,8 +1262,10 @@
       "actual": "只显示供应商返回的真实费用, 缺失记录保持未知。",
       "estimated": "只显示按 token 用量和价格表计算出的估算费用。"
     },
-    "costExplanationTitle": "费用说明",
+    "costExplanationTitle": "费用来源",
     "costScopeNotice": "本地扫描数据和价格表估算可能与供应商账单不同。",
+    "sourceLocalScanTitle": "本地扫描数据",
+    "sourceLocalScanBody": "读取本地用量文件、统计缓存和会话记录。Berth 不在这里查询实时账单。",
     "costFormulaLabel": "计算方式",
     "costFormula": {
       "actual": "供应商真实费用",
@@ -1309,11 +1312,12 @@
     "dailyCost": "每日花费",
     "byModel": "按模型",
     "byProject": "按项目",
-    "rateLimits": "速率限制",
-    "currentWindow": "当前窗口",
-    "remaining": "剩余",
-    "resetsIn": "重置倒计时",
-    "experimentalFlags": "实验性功能标志"
+    "modelCost": "模型费用",
+    "projectCost": "项目费用",
+    "tokenShare": "{{percentage}}% token",
+    "emptyDailyCost": "当前范围没有每日费用数据",
+    "emptyModels": "当前范围没有模型用量",
+    "emptyProjects": "当前范围没有项目用量"
   },
   "settings": {
     "title": "设置",
