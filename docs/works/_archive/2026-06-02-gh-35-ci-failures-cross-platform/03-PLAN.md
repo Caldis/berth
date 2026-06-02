@@ -27,9 +27,10 @@
   - tests: `pnpm vitest run tests/renderer/hooks-lifecycle-view.test.tsx`
   - verify: 非 UI; 测试等待复制按钮进入 `Copied JSON` 状态, 不只等待 clipboard mock 被调用。
   - evidence: `pnpm vitest run tests/renderer/hooks-lifecycle-view.test.tsx` 通过, 21 个测试通过。
-- [ ] 任务 7: 推送后等待 GitHub Actions 结果。
+- [x] 任务 7: 推送后等待 GitHub Actions 结果。
   - tests: `gh run list --branch master --limit 5`; `gh run watch <run-id> --exit-status`
   - verify: 非 UI; 新 SHA 对应 CI run 成功后才能继续后续功能任务。
+  - evidence: `gh run watch 26795799500 --exit-status` 通过; Ubuntu 与 Windows CI 均成功。
 
 ## verify 回写
 verify 不通过项作为新任务追加于此, phase 退回 implement。

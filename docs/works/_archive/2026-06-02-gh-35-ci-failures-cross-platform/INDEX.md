@@ -2,20 +2,20 @@
 task: 2026-06-02-gh-35-ci-failures-cross-platform
 task_id: GH-35
 type: bug
-phase: verify
+phase: archive
 created: 2026-06-02
 issue:
   number: 35
   repo: Caldis/berth
   url: https://github.com/Caldis/berth/issues/35
   id: I_kwDOSpnDwc8AAAABEEU7VA
-  state: OPEN
+  state: CLOSED
 gh_project:
   status: tracked
   project_number: 6
   project_url: https://github.com/users/Caldis/projects/6
   item_id: PVTI_lAHOADXbEs4BZHvQzgucTGU
-  item_status: In Progress
+  item_status: Done
   project_id: PVT_kwHOADXbEs4BZHvQ
 artifacts:
   source: 00-BUG.md
