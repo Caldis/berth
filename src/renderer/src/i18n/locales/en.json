@@ -773,12 +773,14 @@
       "health": {
         "title": "Hook checks",
         "loading": "Checking",
+        "refreshing": "Refreshing",
         "ok": "Clear",
         "summary": "{{count}} hook check needs attention",
         "review": "Review hook checks",
         "detailsTitle": "Hook check details",
         "detailsBody": "These checks come from the same health scanner as Overview, filtered to hooks and the current Agent view.",
         "loadingDetail": "Berth is reading hook scanner results for the current Agent view.",
+        "staleDetail": "Showing previous hook checks while Berth refreshes hook checks for this Agent view.",
         "okDetail": "No hook health checks need attention for this view.",
         "openSource": "Open source",
         "severity": {

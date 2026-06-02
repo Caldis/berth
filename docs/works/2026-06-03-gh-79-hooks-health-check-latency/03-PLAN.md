@@ -10,8 +10,8 @@
 - [x] 任务 2: 为 `useHealthChecks` 增加共享缓存、TTL、in-flight 去重和 assets changed 强制刷新
   - tests: `pnpm vitest run tests/renderer/use-health-checks.test.tsx` - 4 tests passed; `pnpm typecheck:web` - passed.
   - verify: 首次加载会请求; 第二个挂载命中缓存不重复请求; 并发挂载只发一次请求; `assets:changed` 保留旧结果并用 `{ refresh: true }` 刷新。
-- [ ] 任务 3: 在 Hooks 生命周期 sidebar 展示 stale/refreshing 状态, 不新增平铺说明
-  - tests: `pnpm vitest run tests/renderer/hooks-lifecycle-view.test.tsx`
+- [x] 任务 3: 在 Hooks 生命周期 sidebar 展示 stale/refreshing 状态, 不新增平铺说明
+  - tests: `pnpm vitest run tests/renderer/hooks-lifecycle-view.test.tsx` - 26 tests passed; `pnpm vitest run tests/renderer/use-health-checks.test.tsx tests/renderer/overview-health-checks.test.tsx tests/renderer/hooks-lifecycle-view.test.tsx` - 34 tests passed; `pnpm typecheck:web` - passed.
   - verify: sidebar tag 显示 `Refreshing`; hover/focus tooltip 说明当前展示旧结果并后台刷新 Hook + 当前 Agent 视角; 旧 severity tag 仍可见; 不改变 sticky sidebar 和卡片层级。
 - [ ] 任务 4: 回归检查与阶段收口
   - tests: `pnpm typecheck:web`; `pnpm typecheck:node`; `pnpm harness:check`

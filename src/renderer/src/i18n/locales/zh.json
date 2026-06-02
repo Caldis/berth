@@ -769,12 +769,14 @@
       "health": {
         "title": "Hook 检查",
         "loading": "检查中",
+        "refreshing": "刷新中",
         "ok": "正常",
         "summary": "{{count}} 个 Hook 检查需要处理",
         "review": "查看 Hook 检查",
         "detailsTitle": "Hook 检查详情",
         "detailsBody": "这些检查来自概览页使用的同一个健康检查器, 这里只保留 Hook 且匹配当前 Agent 视角的项。",
         "loadingDetail": "Berth 正在读取当前 Agent 视角的 Hook 检查结果。",
+        "staleDetail": "正在后台刷新当前 Agent 视角的 Hook 检查, 暂时展示上一次结果。",
         "okDetail": "当前视角没有需要处理的 Hook 检查。",
         "openSource": "打开来源",
         "severity": {

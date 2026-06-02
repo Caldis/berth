@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import React from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import i18n from '../../src/renderer/src/i18n'
@@ -746,6 +746,74 @@ describe('HooksLifecycleView', () => {
     expect(screen.getByText('Codex hook has no Windows command override')).toBeInTheDocument()
     expect(screen.getByText('A command hook is configured without commandWindows on Windows.')).toBeInTheDocument()
     expect(container.querySelector('#hook-health-checks')).toBeNull()
+  })
+
+  it('keeps previous hook health checks visible while refreshing stale results', async () => {
+    const checks: HealthCheck[] = [
+      {
+        id: 'codex:configuration:user-hook-windows-command',
+        severity: 'warning',
+        category: 'configuration',
+        agentId: 'codex',
+        agentName: 'Codex',
+        title: 'Windows command override missing',
+        message: 'This command has no Windows override.',
+        suggestion: 'Add command_windows for Windows shells.',
+        assetType: 'hook',
+        target: {
+          route: '/configuration/capabilities?tab=hooks',
+          path: 'C:\\Users\\test\\.codex\\hooks.json'
+        }
+      }
+    ]
+    let onChanged: (() => void) | null = null
+    let resolveNext: (checks: HealthCheck[]) => void = () => {}
+    const pendingNext = new Promise<HealthCheck[]>((resolve) => {
+      resolveNext = resolve
+    })
+    window.api.assets.healthCheck = vi
+      .fn()
+      .mockResolvedValueOnce(checks)
+      .mockReturnValueOnce(pendingNext)
+    window.api.assets.onChanged = vi.fn((callback: () => void) => {
+      onChanged = callback
+      return () => {
+        onChanged = null
+      }
+    })
+
+    renderHooks('codex', [hookAsset('codex-stop', 'codex', 'Stop')])
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /1 hook check needs attention/ })).toBeInTheDocument()
+    })
+
+    fireEvent.mouseEnter(screen.getByRole('button', { name: /1 warning/ }))
+    expect(screen.getByText('Windows command override missing')).toBeInTheDocument()
+    fireEvent.mouseLeave(screen.getByRole('button', { name: /1 warning/ }))
+
+    await act(async () => {
+      onChanged?.()
+    })
+
+    const sidebar = screen.getByLabelText('Lifecycle')
+    await waitFor(() => {
+      expect(within(sidebar).getByRole('button', { name: 'Refreshing' })).toBeInTheDocument()
+      expect(within(sidebar).getByRole('button', { name: /1 warning/ })).toBeInTheDocument()
+    })
+
+    fireEvent.mouseEnter(within(sidebar).getByRole('button', { name: 'Refreshing' }))
+    expect(screen.getByText('Showing previous hook checks while Berth refreshes hook checks for this Agent view.')).toBeInTheDocument()
+
+    await act(async () => {
+      resolveNext([])
+      await pendingNext
+    })
+
+    await waitFor(() => {
+      expect(within(sidebar).queryByRole('button', { name: 'Refreshing' })).not.toBeInTheDocument()
+      expect(within(sidebar).getByRole('button', { name: 'Clear' })).toBeInTheDocument()
+    })
   })
 
   it('localizes visible hook health checks from sidebar status tag hover details in Chinese', async () => {

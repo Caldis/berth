@@ -73,7 +73,7 @@ export function HooksLifecycleView({
     () => groupHookAssetsByStage(assets, agentView, { hookSchemas }),
     [assets, agentView, hookSchemas]
   )
-  const { checks: healthChecks, loading: healthLoading } = useHealthChecks()
+  const { checks: healthChecks, loading: healthLoading, stale: healthStale } = useHealthChecks()
   const hookHealthChecks = useMemo(
     () => visibleHookHealthChecks(healthChecks, agentView),
     [healthChecks, agentView]
@@ -123,7 +123,7 @@ export function HooksLifecycleView({
                 {t('capabilities.hooks.lifecycleCount', { count: hookCount })}
               </p>
             </div>
-            <HookHealthSignal checks={hookHealthChecks} loading={healthLoading} />
+            <HookHealthSignal checks={hookHealthChecks} loading={healthLoading} stale={healthStale} />
             <div
               data-testid="hook-lifecycle-stage-list"
               className="flex gap-2 overflow-x-auto pb-1 lg:block lg:max-h-[calc(100vh-10rem)] lg:space-y-1 lg:overflow-y-auto lg:pb-0 lg:pr-1"
@@ -441,7 +441,15 @@ function formatRecoveryTime(value: string | undefined): string | null {
   return date.toLocaleString()
 }
 
-function HookHealthSignal({ checks, loading }: { checks: HealthCheck[]; loading: boolean }): React.ReactElement {
+function HookHealthSignal({
+  checks,
+  loading,
+  stale
+}: {
+  checks: HealthCheck[]
+  loading: boolean
+  stale: boolean
+}): React.ReactElement {
   const { t } = useTranslation()
   const counts = countHealthSeverities(checks)
   const hasChecks = checks.length > 0
@@ -455,7 +463,15 @@ function HookHealthSignal({ checks, loading }: { checks: HealthCheck[]; loading:
     <div className="mx-2 mb-2 rounded-md border border-border/70 bg-muted/20 px-2 py-2">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <span className="text-xs font-medium text-foreground">{t('capabilities.hooks.health.title')}</span>
-        {loading ? (
+        {loading && stale ? (
+          <HealthStatusTip
+            id="hook-health-refreshing"
+            tone="loading"
+            label={t('capabilities.hooks.health.refreshing')}
+            detail={t('capabilities.hooks.health.staleDetail')}
+            checks={sortedChecks}
+          />
+        ) : loading ? (
           <HealthStatusTip
             id="hook-health-loading"
             tone="loading"
