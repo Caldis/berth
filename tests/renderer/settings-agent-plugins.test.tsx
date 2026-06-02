@@ -3,7 +3,10 @@ import React from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import '../../src/renderer/src/i18n'
 import { SettingsContent } from '../../src/renderer/src/pages/settings'
-import type { AgentCapabilityPlugin } from '../../src/shared/types/agent-plugin'
+import type {
+  AgentCapabilityPlugin,
+  AgentCapabilityPluginManifestEntry
+} from '../../src/shared/types/agent-plugin'
 
 const plugins: AgentCapabilityPlugin[] = [
   {
@@ -127,9 +130,70 @@ const plugins: AgentCapabilityPlugin[] = [
   }
 ]
 
+const manifests: AgentCapabilityPluginManifestEntry[] = [
+  {
+    path: 'C:\\Users\\test\\.berth\\agent-plugins\\claude-helper.json',
+    status: 'valid',
+    readonly: true,
+    id: 'claude-helper',
+    displayName: 'Claude Helper',
+    version: '0.2.0',
+    schemaVersion: 1,
+    agentCompatibility: {
+      agentId: 'claude-code',
+      name: 'Claude Code',
+      versionRange: '>=1.0.0 <2.0.0',
+      detectedVersion: '1.2.3'
+    },
+    errors: []
+  },
+  {
+    path: 'C:\\Users\\test\\.berth\\agent-plugins\\future-helper.json',
+    status: 'incompatible',
+    readonly: true,
+    id: 'future-helper',
+    displayName: 'Future Helper',
+    version: '1.0.0',
+    schemaVersion: 1,
+    agentCompatibility: {
+      agentId: 'claude-code',
+      name: 'Claude Code',
+      versionRange: '>=2.0.0',
+      detectedVersion: '1.2.3'
+    },
+    errors: [
+      {
+        code: 'manifest-agent-version-incompatible',
+        field: 'agentCompatibility.versionRange',
+        message: 'Detected Claude Code 1.2.3 does not match >=2.0.0.'
+      }
+    ]
+  },
+  {
+    path: 'C:\\Users\\test\\.berth\\agent-plugins\\broken.json',
+    status: 'invalid',
+    readonly: true,
+    id: 'broken-helper',
+    displayName: 'Broken Helper',
+    version: '0.1.0',
+    schemaVersion: 1,
+    agentCompatibility: {
+      agentId: 'codex',
+      name: 'Codex'
+    },
+    errors: [
+      {
+        code: 'manifest-permission-kind-unsupported',
+        field: 'permissions.0.kind',
+        message: 'Only read permissions are supported for third-party manifests.'
+      }
+    ]
+  }
+]
+
 describe('SettingsContent agent capability plugins', () => {
   beforeEach(() => {
-    window.api.agentPlugins.list = vi.fn(async () => ({ plugins }))
+    window.api.agentPlugins.list = vi.fn(async () => ({ plugins, manifests: [] }))
     window.api.assets.scanSources = vi.fn(async () => [])
     window.api.shell.openExternal = vi.fn(async () => {})
   })
@@ -176,5 +240,52 @@ describe('SettingsContent agent capability plugins', () => {
     fireEvent.click(screen.getByRole('button', { name: /Claude Code hooks/ }))
 
     expect(window.api.shell.openExternal).toHaveBeenCalledWith('https://code.claude.com/docs/en/hooks')
+  })
+
+  it('renders manifest summaries without default detail noise', async () => {
+    window.api.agentPlugins.list = vi.fn(async () => ({ plugins, manifests }))
+
+    render(<SettingsContent showTitle={false} />)
+
+    expect(await screen.findByText('Claude Helper')).toBeInTheDocument()
+    expect(screen.getByText('Future Helper')).toBeInTheDocument()
+    expect(screen.getByText('Broken Helper')).toBeInTheDocument()
+    expect(screen.getAllByText('Manifest')).toHaveLength(3)
+    expect(screen.getAllByText('Read-only')).toHaveLength(3)
+    expect(screen.getByText('Valid')).toBeInTheDocument()
+    expect(screen.getByText('Incompatible')).toBeInTheDocument()
+    expect(screen.getByText('Invalid')).toBeInTheDocument()
+    expect(screen.getAllByText('Target: Claude Code').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Range: >=2.0.0').length).toBeGreaterThan(0)
+    expect(screen.queryByText('Validation errors')).not.toBeInTheDocument()
+    expect(screen.queryByText('permissions.0.kind')).not.toBeInTheDocument()
+  })
+
+  it('expands manifest details for path, version range, and validation errors', async () => {
+    window.api.agentPlugins.list = vi.fn(async () => ({ plugins, manifests }))
+
+    render(<SettingsContent showTitle={false} />)
+
+    fireEvent.click(await screen.findByRole('button', { name: /Broken Helper/ }))
+
+    expect(screen.getByText('Manifest details')).toBeInTheDocument()
+    expect(screen.getByText('Path')).toBeInTheDocument()
+    expect(screen.getAllByText('C:\\Users\\test\\.berth\\agent-plugins\\broken.json').length)
+      .toBeGreaterThan(0)
+    expect(screen.getByText('Validation errors')).toBeInTheDocument()
+    expect(screen.getByText('manifest-permission-kind-unsupported')).toBeInTheDocument()
+    expect(screen.getByText('permissions.0.kind')).toBeInTheDocument()
+    expect(screen.getByText('Only read permissions are supported for third-party manifests.')).toBeInTheDocument()
+  })
+
+  it('keeps built-in plugins visible when manifests are invalid', async () => {
+    window.api.agentPlugins.list = vi.fn(async () => ({ plugins, manifests: [manifests[2]] }))
+
+    render(<SettingsContent showTitle={false} />)
+
+    expect(await screen.findByText('Claude Code')).toBeInTheDocument()
+    expect(screen.getByText('Codex')).toBeInTheDocument()
+    expect(screen.getByText('Broken Helper')).toBeInTheDocument()
+    expect(screen.getByText('Invalid')).toBeInTheDocument()
   })
 })

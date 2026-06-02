@@ -13,6 +13,7 @@ import { cn } from '@/lib/utils'
 import type {
   AgentCapabilityPlugin,
   AgentCapabilityPluginCapability,
+  AgentCapabilityPluginManifestEntry,
   AgentCapabilityPluginPermission,
   AgentCapabilityPluginSourceCoverage
 } from '@shared/types/agent-plugin'
@@ -22,22 +23,32 @@ const SOURCE_STATUS_ORDER: ScanSourceStatus[] = ['scanned', 'missing', 'not-scan
 
 interface AgentCapabilityPluginsSectionProps {
   plugins: AgentCapabilityPlugin[]
+  manifests: AgentCapabilityPluginManifestEntry[]
   loading: boolean
   error: string | null
 }
 
 export function AgentCapabilityPluginsSection({
   plugins,
+  manifests,
   loading,
   error
 }: AgentCapabilityPluginsSectionProps): ReactElement {
   const { t } = useTranslation()
   const [expandedPlugins, setExpandedPlugins] = useState<Record<string, boolean>>({})
+  const [expandedManifests, setExpandedManifests] = useState<Record<string, boolean>>({})
 
   const togglePlugin = (pluginId: string): void => {
     setExpandedPlugins((current) => ({
       ...current,
       [pluginId]: !current[pluginId]
+    }))
+  }
+
+  const toggleManifest = (manifestPath: string): void => {
+    setExpandedManifests((current) => ({
+      ...current,
+      [manifestPath]: !current[manifestPath]
     }))
   }
 
@@ -55,7 +66,7 @@ export function AgentCapabilityPluginsSection({
             {t('settings.agentPluginsLoadError', { error })}
           </div>
         )}
-        {!loading && !error && plugins.length === 0 && (
+        {!loading && !error && plugins.length === 0 && manifests.length === 0 && (
           <div className="p-4">
             <EmptyState
               icon={Puzzle}
@@ -115,6 +126,84 @@ export function AgentCapabilityPluginsSection({
                 </button>
                 {expanded && (
                   <PluginDetails plugin={plugin} />
+                )}
+              </div>
+            )
+          })}
+        {!loading && !error &&
+          manifests.map((manifest, index) => {
+            const expanded = expandedManifests[manifest.path] === true
+            const title = manifest.displayName ?? manifest.id ?? t('settings.agentPluginManifestUnknown')
+            return (
+              <div
+                key={manifest.path}
+                className={cn((plugins.length > 0 || index > 0) && 'border-t border-border')}
+              >
+                <button
+                  type="button"
+                  onClick={() => toggleManifest(manifest.path)}
+                  aria-expanded={expanded}
+                  className="grid w-full grid-cols-[1fr_auto] items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-accent/5"
+                >
+                  <div className="flex min-w-0 items-start gap-2">
+                    {expanded ? (
+                      <ChevronDown className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                    ) : (
+                      <ChevronRight className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                    )}
+                    <div className="min-w-0 space-y-1.5">
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <p
+                          className={cn(
+                            'text-sm font-medium',
+                            manifest.status !== 'valid' && 'text-muted-foreground'
+                          )}
+                        >
+                          {title}
+                        </p>
+                        <Badge>{t('settings.agentPluginManifest')}</Badge>
+                        <Badge>{t('settings.agentPluginReadOnly')}</Badge>
+                        <Badge tone={manifest.status === 'valid' ? 'strong' : 'muted'}>
+                          {t(`settings.agentPluginManifestStatus.${manifest.status}`)}
+                        </Badge>
+                        {manifest.version && (
+                          <Badge>{t('settings.agentPluginVersion', { version: manifest.version })}</Badge>
+                        )}
+                      </div>
+                      <div className="flex flex-wrap gap-1">
+                        {manifest.agentCompatibility && (
+                          <Badge>
+                            {t('settings.agentPluginTarget', {
+                              agent: manifest.agentCompatibility.name
+                            })}
+                          </Badge>
+                        )}
+                        {manifest.agentCompatibility?.versionRange && (
+                          <Badge>
+                            {t('settings.agentPluginManifestVersionRange', {
+                              range: manifest.agentCompatibility.versionRange
+                            })}
+                          </Badge>
+                        )}
+                        {manifest.errors.length > 0 && (
+                          <Badge tone="muted">
+                            {t('settings.agentPluginManifestErrorCount', {
+                              count: manifest.errors.length
+                            })}
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <p
+                    className="hidden max-w-[16rem] truncate text-right font-mono text-[11px] leading-5 text-muted-foreground sm:block"
+                    title={manifest.path}
+                  >
+                    {manifest.path}
+                  </p>
+                </button>
+                {expanded && (
+                  <ManifestDetails manifest={manifest} />
                 )}
               </div>
             )
@@ -179,6 +268,76 @@ function PluginDetails({ plugin }: { plugin: AgentCapabilityPlugin }): ReactElem
           </DetailBlock>
         )}
       </div>
+    </div>
+  )
+}
+
+function ManifestDetails({
+  manifest
+}: {
+  manifest: AgentCapabilityPluginManifestEntry
+}): ReactElement {
+  const { t } = useTranslation()
+
+  return (
+    <div className="border-t border-border/70 p-4">
+      <DetailBlock
+        icon={Puzzle}
+        title={t('settings.agentPluginManifestDetailsTitle')}
+      >
+        <div className="space-y-3">
+          <ManifestMetaRow label={t('settings.agentPluginManifestPath')}>
+            <p
+              className="truncate rounded-sm bg-muted/35 px-1.5 py-1 font-mono text-[11px] text-muted-foreground"
+              title={manifest.path}
+            >
+              {manifest.path}
+            </p>
+          </ManifestMetaRow>
+          {manifest.agentCompatibility && (
+            <>
+              <ManifestMetaRow label={t('settings.agentPluginManifestTarget')}>
+                <span>{manifest.agentCompatibility.name}</span>
+              </ManifestMetaRow>
+              {manifest.agentCompatibility.versionRange && (
+                <ManifestMetaRow label={t('settings.agentPluginManifestVersionRangeLabel')}>
+                  <span>{manifest.agentCompatibility.versionRange}</span>
+                </ManifestMetaRow>
+              )}
+              <ManifestMetaRow label={t('settings.agentPluginManifestDetectedVersionLabel')}>
+                <span>
+                  {manifest.agentCompatibility.detectedVersion ??
+                    t('settings.agentPluginManifestDetectedVersionUnknown')}
+                </span>
+              </ManifestMetaRow>
+            </>
+          )}
+          <div>
+            <p className="mb-2 text-xs font-medium text-foreground">
+              {t('settings.agentPluginManifestErrorsTitle')}
+            </p>
+            {manifest.errors.length > 0 ? (
+              <div className="divide-y divide-border/70 border-y border-border/70">
+                {manifest.errors.map((error, index) => (
+                  <div key={`${manifest.path}-${error.code}-${index}`} className="py-2.5">
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <Badge tone="muted">{error.code}</Badge>
+                      {error.field && <Badge>{error.field}</Badge>}
+                    </div>
+                    <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                      {error.message}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs leading-5 text-muted-foreground">
+                {t('settings.agentPluginManifestNoErrors')}
+              </p>
+            )}
+          </div>
+        </div>
+      </DetailBlock>
     </div>
   )
 }
@@ -306,6 +465,21 @@ function DetailBlock({
         {title}
       </div>
       {children}
+    </div>
+  )
+}
+
+function ManifestMetaRow({
+  label,
+  children
+}: {
+  label: string
+  children: React.ReactNode
+}): ReactElement {
+  return (
+    <div className="grid gap-1 text-xs sm:grid-cols-[8rem_1fr] sm:items-center">
+      <p className="text-muted-foreground">{label}</p>
+      <div className="min-w-0 text-foreground">{children}</div>
     </div>
   )
 }

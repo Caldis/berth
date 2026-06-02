@@ -55,6 +55,7 @@ export function SettingsContent({
   const { groups: scanSourceGroups, loading: scanSourcesLoading } = useScanSources()
   const {
     plugins: agentPlugins,
+    manifests: agentPluginManifests,
     loading: agentPluginsLoading,
     error: agentPluginsError
   } = useAgentCapabilityPlugins()
@@ -172,6 +173,7 @@ export function SettingsContent({
 
       <AgentCapabilityPluginsSection
         plugins={agentPlugins}
+        manifests={agentPluginManifests}
         loading={agentPluginsLoading}
         error={agentPluginsError}
       />

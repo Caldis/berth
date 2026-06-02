@@ -16,10 +16,11 @@
   - verify: `listAgentCapabilityPlugins()` 仍返回 Claude Code / Codex 两个内置 plugins; 同时返回 manifest status; invalid manifest 不影响内置 plugins; `AgentScanSourceGroup.version` 能参与兼容判断。
   - evidence: 2026-06-02 `pnpm test -- tests/unit/agent-plugin-manifest.test.ts tests/unit/agent-capability-plugins.test.ts` 通过, 23 tests passed。
 
-- [ ] 3. 接入 renderer hook 和 Settings manifest 展示
+- [x] 3. 接入 renderer hook 和 Settings manifest 展示
   - files: `src/renderer/src/hooks/use-ipc.ts`, `src/renderer/src/components/settings/agent-capability-plugins-section.tsx`, `src/renderer/src/i18n/locales/en.json`, `src/renderer/src/i18n/locales/zh.json`, `tests/renderer/settings-agent-plugins.test.tsx`
   - tests: `pnpm test -- tests/renderer/settings-agent-plugins.test.tsx`
   - verify: manifest 默认摘要低噪声展示; valid / invalid / incompatible badge 清楚; 展开后能看 path、versionRange、错误列表; 键盘可达; 长路径截断并有 title; 内置 plugin 不被 invalid manifest 清空。
+  - evidence: 2026-06-02 `pnpm test -- tests/renderer/settings-agent-plugins.test.tsx` 通过, 6 tests passed。
 
 - [ ] 4. 跑目标门禁并修正回归
   - files: 按测试结果限定到本任务已修改文件。

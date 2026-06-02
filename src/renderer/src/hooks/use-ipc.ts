@@ -1,7 +1,10 @@
 import { useEffect, useState, useCallback } from 'react'
 import type { AgentView, Asset, AssetStats, SessionSummary, UsageSummary } from '@shared/types/asset'
 import type { AgentScanSourceGroup, SessionDetailResult, HealthCheck } from '@shared/types/ipc'
-import type { AgentCapabilityPlugin } from '@shared/types/agent-plugin'
+import type {
+  AgentCapabilityPlugin,
+  AgentCapabilityPluginManifestEntry
+} from '@shared/types/agent-plugin'
 import { useAppStore } from '@/stores/app'
 
 const emptyStats: AssetStats = {
@@ -195,10 +198,12 @@ export function useScanSources(): {
 
 export function useAgentCapabilityPlugins(): {
   plugins: AgentCapabilityPlugin[]
+  manifests: AgentCapabilityPluginManifestEntry[]
   loading: boolean
   error: string | null
 } {
   const [plugins, setPlugins] = useState<AgentCapabilityPlugin[]>([])
+  const [manifests, setManifests] = useState<AgentCapabilityPluginManifestEntry[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -214,13 +219,15 @@ export function useAgentCapabilityPlugins(): {
       .list()
       .then((result) => {
         setPlugins(result?.plugins ?? [])
+        setManifests(result?.manifests ?? [])
       })
       .catch((err) => {
         setError(err instanceof Error ? err.message : String(err))
         setPlugins([])
+        setManifests([])
       })
       .finally(() => setLoading(false))
   }, [])
 
-  return { plugins, loading, error }
+  return { plugins, manifests, loading, error }
 }
