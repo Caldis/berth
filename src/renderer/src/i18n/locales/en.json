@@ -1172,6 +1172,12 @@
     },
     "agentPluginManifestReadinessTitle": "Activation readiness",
     "agentPluginManifestBlockedPermissions": "Blocked permissions",
+    "agentPluginManifestPermissionsTitle": "Permission review",
+    "agentPluginManifestPermissionReason": "Reason",
+    "agentPluginManifestPermissionPathPatterns": "Path patterns",
+    "agentPluginManifestPermissionBackupStrategy": "Backup strategy",
+    "agentPluginManifestPermissionConflictStrategy": "Conflict strategy",
+    "agentPluginManifestPermissionNotDeclared": "Not declared",
     "agentPluginManifestImplementationKind": "Implementation",
     "agentPluginManifestImplementationEntrypoint": "Entrypoint",
     "agentPluginManifestActivationStatus": {

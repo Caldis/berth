@@ -1169,6 +1169,12 @@
     },
     "agentPluginManifestReadinessTitle": "启用准备状态",
     "agentPluginManifestBlockedPermissions": "受限权限",
+    "agentPluginManifestPermissionsTitle": "权限审查",
+    "agentPluginManifestPermissionReason": "原因",
+    "agentPluginManifestPermissionPathPatterns": "路径模式",
+    "agentPluginManifestPermissionBackupStrategy": "备份策略",
+    "agentPluginManifestPermissionConflictStrategy": "冲突策略",
+    "agentPluginManifestPermissionNotDeclared": "未声明",
     "agentPluginManifestImplementationKind": "实现",
     "agentPluginManifestImplementationEntrypoint": "入口",
     "agentPluginManifestActivationStatus": {

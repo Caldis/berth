@@ -186,6 +186,28 @@ const manifests: AgentCapabilityPluginManifestEntry[] = [
     displayName: 'Blocked Helper',
     version: '0.4.0',
     schemaVersion: 1,
+    permissions: [
+      {
+        kind: 'read',
+        scopes: ['user'],
+        pathPatterns: ['~/.codex/config.toml'],
+        reason: 'Read local Codex configuration.'
+      },
+      {
+        kind: 'write',
+        scopes: ['user'],
+        pathPatterns: ['~/.codex/config.toml'],
+        reason: 'Store reviewed hook registration changes.',
+        backupStrategy: 'Create a .berth backup before editing.',
+        conflictStrategy: 'Abort if the file changed after the latest scan.'
+      },
+      {
+        kind: 'execute',
+        scopes: ['session'],
+        pathPatterns: ['codex hook command'],
+        reason: 'Run configured hook commands.'
+      }
+    ],
     activationReadiness: {
       status: 'blocked',
       reasonCode: 'permissionApprovalRequired',
@@ -326,6 +348,8 @@ describe('SettingsContent agent capability plugins', () => {
     expect(screen.queryByText('Activation readiness')).not.toBeInTheDocument()
     expect(screen.queryByText('Validation errors')).not.toBeInTheDocument()
     expect(screen.queryByText('./adapter.js')).not.toBeInTheDocument()
+    expect(screen.queryByText('~/.codex/config.toml')).not.toBeInTheDocument()
+    expect(screen.queryByText('Store reviewed hook registration changes.')).not.toBeInTheDocument()
     expect(screen.queryByText('permissions.0.kind')).not.toBeInTheDocument()
   })
 
@@ -356,8 +380,20 @@ describe('SettingsContent agent capability plugins', () => {
     expect(screen.getByText('Permission approval required')).toBeInTheDocument()
     expect(screen.getByText('This manifest requests write or execute permissions. Berth cannot activate it until permission review exists.')).toBeInTheDocument()
     expect(screen.getByText('Blocked permissions')).toBeInTheDocument()
-    expect(screen.getByText('Write')).toBeInTheDocument()
-    expect(screen.getByText('Execute')).toBeInTheDocument()
+    expect(screen.getByText('Permission review')).toBeInTheDocument()
+    expect(screen.getByText('Read local Codex configuration.')).toBeInTheDocument()
+    expect(screen.getByText('Store reviewed hook registration changes.')).toBeInTheDocument()
+    expect(screen.getByText('Run configured hook commands.')).toBeInTheDocument()
+    expect(screen.getAllByText('~/.codex/config.toml').length).toBeGreaterThan(0)
+    expect(screen.getByText('codex hook command')).toBeInTheDocument()
+    expect(screen.getAllByText('Backup strategy').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Conflict strategy').length).toBeGreaterThan(0)
+    expect(screen.getByText('Create a .berth backup before editing.')).toBeInTheDocument()
+    expect(screen.getByText('Abort if the file changed after the latest scan.')).toBeInTheDocument()
+    expect(screen.getAllByText('Not declared').length).toBeGreaterThan(0)
+    expect(screen.getByText('Session')).toBeInTheDocument()
+    expect(screen.getAllByText('Write').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Execute').length).toBeGreaterThan(0)
     expect(screen.getByText('No validation errors.')).toBeInTheDocument()
   })
 
@@ -376,6 +412,7 @@ describe('SettingsContent agent capability plugins', () => {
     expect(screen.getByText('manifest-field-invalid')).toBeInTheDocument()
     expect(screen.getByText('permissions.0.kind')).toBeInTheDocument()
     expect(screen.getByText('permissions.0.kind must be one of: read, write, execute.')).toBeInTheDocument()
+    expect(screen.queryByText('Permission review')).not.toBeInTheDocument()
   })
 
   it('keeps built-in plugins visible when manifests are invalid', async () => {

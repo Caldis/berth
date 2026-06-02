@@ -15,6 +15,7 @@ import type {
   AgentCapabilityPluginCapability,
   AgentCapabilityPluginManifestEntry,
   AgentCapabilityPluginManifestActivationStatus,
+  AgentCapabilityPluginManifestPermission,
   AgentCapabilityPluginPermission,
   AgentCapabilityPluginSourceCoverage
 } from '@shared/types/agent-plugin'
@@ -316,6 +317,9 @@ function ManifestDetails({
             </>
           )}
           <ManifestReadinessDetails manifest={manifest} />
+          {manifest.permissions && manifest.permissions.length > 0 && (
+            <ManifestPermissionsDetails permissions={manifest.permissions} />
+          )}
           <div>
             <p className="mb-2 text-xs font-medium text-foreground">
               {t('settings.agentPluginManifestErrorsTitle')}
@@ -403,6 +407,80 @@ function ManifestReadinessDetails({
           </div>
         )}
       </div>
+    </div>
+  )
+}
+
+function ManifestPermissionsDetails({
+  permissions
+}: {
+  permissions: AgentCapabilityPluginManifestPermission[]
+}): ReactElement {
+  const { t } = useTranslation()
+
+  return (
+    <div>
+      <p className="mb-2 text-xs font-medium text-foreground">
+        {t('settings.agentPluginManifestPermissionsTitle')}
+      </p>
+      <div className="divide-y divide-border/70 border-y border-border/70">
+        {permissions.map((permission, index) => (
+          <ManifestPermissionRow
+            key={`${permission.kind}-${permission.reason}-${index}`}
+            permission={permission}
+          />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function ManifestPermissionRow({
+  permission
+}: {
+  permission: AgentCapabilityPluginManifestPermission
+}): ReactElement {
+  const { t } = useTranslation()
+  const strategyFallback = t('settings.agentPluginManifestPermissionNotDeclared')
+
+  return (
+    <div className="space-y-2 py-2.5">
+      <div className="flex flex-wrap items-center gap-1.5">
+        <Badge tone={permission.kind === 'read' ? 'muted' : 'strong'}>
+          {t(`settings.agentPluginPermissionKinds.${permission.kind}`)}
+        </Badge>
+        {permission.scopes.map((scope) => (
+          <Badge key={`${permission.kind}-${scope}`}>
+            {t(`common.scope.${scope}`)}
+          </Badge>
+        ))}
+      </div>
+      <ManifestMetaRow label={t('settings.agentPluginManifestPermissionReason')}>
+        <p className="text-xs leading-5 text-muted-foreground">{permission.reason}</p>
+      </ManifestMetaRow>
+      <ManifestMetaRow label={t('settings.agentPluginManifestPermissionPathPatterns')}>
+        <div className="space-y-1">
+          {permission.pathPatterns.map((pathPattern) => (
+            <p
+              key={`${permission.kind}-${pathPattern}`}
+              className="truncate rounded-sm bg-muted/35 px-1.5 py-1 font-mono text-[11px] text-muted-foreground"
+              title={pathPattern}
+            >
+              {pathPattern}
+            </p>
+          ))}
+        </div>
+      </ManifestMetaRow>
+      <ManifestMetaRow label={t('settings.agentPluginManifestPermissionBackupStrategy')}>
+        <p className="text-xs leading-5 text-muted-foreground">
+          {permission.backupStrategy ?? strategyFallback}
+        </p>
+      </ManifestMetaRow>
+      <ManifestMetaRow label={t('settings.agentPluginManifestPermissionConflictStrategy')}>
+        <p className="text-xs leading-5 text-muted-foreground">
+          {permission.conflictStrategy ?? strategyFallback}
+        </p>
+      </ManifestMetaRow>
     </div>
   )
 }
