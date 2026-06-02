@@ -11,7 +11,7 @@
   - verify: 2026-06-02 添加 `overview.stats.*` 与 `overview.healthCount.*` locale key, Overview 改用 `t()`; `tests/renderer/overview-health-checks.test.tsx` 通过, 2 tests passed
 - [x] 任务 3: 收口检查
   - tests: `pnpm lint`; `pnpm typecheck:web`; `pnpm harness:check --work docs/works/2026-06-02-gh-48-localize-overview-labels`
-  - verify: 2026-06-02 `pnpm lint` 通过; `pnpm typecheck:web` 通过; `pnpm harness:check --work docs/works/2026-06-02-gh-48-localize-overview-labels` 通过; `pnpm test` 通过, 57 files / 437 tests
+  - verify: 2026-06-02 `pnpm lint` 通过; `pnpm typecheck:web` 通过; `pnpm harness:check --work docs/works/2026-06-02-gh-48-localize-overview-labels` 通过; `pnpm test` 通过, 57 files / 437 tests; GitHub Actions run 26802867638 通过
 
 ## verify 回写
 
