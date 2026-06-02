@@ -1,4 +1,5 @@
 import * as fs from 'fs'
+import * as os from 'os'
 import * as path from 'path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { getAssetWatchPaths } from '../../src/main/engine/watcher'
@@ -6,7 +7,7 @@ import { getAssetWatchPaths } from '../../src/main/engine/watcher'
 let tempDir: string | null = null
 
 beforeEach(() => {
-  tempDir = fs.mkdtempSync(path.join(process.env['TEMP'] ?? process.cwd(), 'berth-watcher-'))
+  tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'berth-watcher-'))
 })
 
 afterEach(() => {
@@ -41,6 +42,28 @@ describe('getAssetWatchPaths', () => {
         path.join(managedDir, 'managed-mcp.json'),
         path.join(homeDir, '.codex', 'sessions'),
         path.join(homeDir, '.codex', 'archived_sessions')
+      ])
+    )
+  })
+
+  it('includes parent project root paths when projectDir is a child cwd', () => {
+    const homeDir = path.join(tempDir!, 'home')
+    const managedDir = path.join(tempDir!, 'managed')
+    const repoDir = path.join(tempDir!, 'repo')
+    const cwd = path.join(repoDir, 'packages', 'app')
+    fs.mkdirSync(path.join(repoDir, '.git'), { recursive: true })
+    fs.mkdirSync(cwd, { recursive: true })
+
+    expect(getAssetWatchPaths(cwd, homeDir, managedDir)).toEqual(
+      expect.arrayContaining([
+        path.join(repoDir, '.claude'),
+        path.join(repoDir, '.mcp.json'),
+        path.join(repoDir, 'CLAUDE.md'),
+        path.join(repoDir, 'AGENTS.md'),
+        path.join(repoDir, '.codex'),
+        path.join(repoDir, '.agents', 'skills'),
+        path.join(cwd, '.claude'),
+        path.join(cwd, '.codex')
       ])
     )
   })

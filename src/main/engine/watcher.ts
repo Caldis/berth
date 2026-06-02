@@ -7,6 +7,7 @@ import type { BrowserWindow } from 'electron'
 import type { IpcEvents } from '@shared/types/ipc'
 import { resolveClaudeManagedDir } from '../adapters/claude-code'
 import { resolveClaudeDirs, resolveCodexHomeDirs } from '../agent-homes'
+import { resolveProjectConfigRoots } from '../project-config-roots'
 
 export class AssetWatcher {
   private watcher: FSWatcher | null = null
@@ -66,13 +67,13 @@ export function getAssetWatchPaths(
 ): string[] {
   const watchPaths = [...resolveClaudeDirs(homeDir, env)]
 
-  if (projectDir) {
-    watchPaths.push(path.join(projectDir, '.claude'))
-    watchPaths.push(path.join(projectDir, '.mcp.json'))
-    watchPaths.push(path.join(projectDir, 'CLAUDE.md'))
-    watchPaths.push(path.join(projectDir, 'AGENTS.md'))
-    watchPaths.push(path.join(projectDir, '.codex'))
-    watchPaths.push(path.join(projectDir, '.agents', 'skills'))
+  for (const projectRoot of resolveProjectConfigRoots(projectDir)) {
+    watchPaths.push(path.join(projectRoot, '.claude'))
+    watchPaths.push(path.join(projectRoot, '.mcp.json'))
+    watchPaths.push(path.join(projectRoot, 'CLAUDE.md'))
+    watchPaths.push(path.join(projectRoot, 'AGENTS.md'))
+    watchPaths.push(path.join(projectRoot, '.codex'))
+    watchPaths.push(path.join(projectRoot, '.agents', 'skills'))
   }
 
   watchPaths.push(path.join(homeDir, '.claude.json'))

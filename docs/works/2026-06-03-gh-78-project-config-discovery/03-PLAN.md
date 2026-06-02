@@ -12,8 +12,8 @@
 - [x] 任务 3: Codex adapter 使用 project roots
   - tests: `pnpm test tests/unit/codex-adapter.test.ts` (8 passed); `pnpm typecheck:node`
   - verify: 非 UI; 子目录 cwd 能扫到父级 `AGENTS.md`, `.codex/config.toml`, `.codex/hooks.json`, `.codex/agents`, `.agents/skills`。
-- [ ] 任务 4: watcher 使用 project roots
-  - tests: `pnpm test tests/unit/watcher.test.ts`
+- [x] 任务 4: watcher 使用 project roots
+  - tests: `pnpm test tests/unit/watcher.test.ts` (4 passed); `pnpm typecheck:node`
   - verify: 非 UI; watch paths 包含父级 project roots 的 Claude/Codex 配置路径。
 - [ ] 任务 5: project scope e2e 覆盖父级 project skill 可搜索
   - tests: `pnpm build`; `pnpm test:e2e tests/e2e/project-scope.e2e.ts`
