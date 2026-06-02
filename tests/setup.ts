@@ -48,7 +48,15 @@ const mockApi = {
     list: async () => ({ plugins: [] })
   },
   projectScope: {
-    candidates: async () => []
+    candidates: async () => [],
+    activate: async () => ({
+      scanResult: {
+        assets: [],
+        stats: { skills: 0, mcpServers: 0, sessions: 0, plugins: 0, hooks: 0, commands: 0, subagents: 0, teams: 0 },
+        errors: []
+      },
+      candidates: []
+    })
   },
   sessions: {
     list: async () => ({ sessions: [], totalCount: 0 }),

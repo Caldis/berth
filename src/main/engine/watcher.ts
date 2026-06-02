@@ -37,11 +37,17 @@ export class AssetWatcher {
     this.watcher.on('unlink', (filePath) => this.emit('removed', filePath))
   }
 
-  stop(): void {
+  async stop(): Promise<void> {
     if (this.watcher) {
-      this.watcher.close()
+      const watcher = this.watcher
       this.watcher = null
+      await watcher.close()
     }
+  }
+
+  async restart(projectDir?: string): Promise<void> {
+    await this.stop()
+    this.start(projectDir)
   }
 
   private emit(type: IpcEvents['assets:changed']['type'], filePath: string): void {
@@ -63,6 +69,10 @@ export function getAssetWatchPaths(
   if (projectDir) {
     watchPaths.push(path.join(projectDir, '.claude'))
     watchPaths.push(path.join(projectDir, '.mcp.json'))
+    watchPaths.push(path.join(projectDir, 'CLAUDE.md'))
+    watchPaths.push(path.join(projectDir, 'AGENTS.md'))
+    watchPaths.push(path.join(projectDir, '.codex'))
+    watchPaths.push(path.join(projectDir, '.agents', 'skills'))
   }
 
   watchPaths.push(path.join(homeDir, '.claude.json'))

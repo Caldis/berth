@@ -49,6 +49,7 @@ import { listMemory, readMemory } from '../memory'
 import { resolveModelPricing } from '../engine/pricing/catalog'
 import { listAgentCapabilityPlugins } from '../agent-plugins/registry'
 import { assetMatchesProjectPath } from '../project-scope'
+import { activateProjectScope } from '../project-scope-runtime'
 
 export function registerAssetHandlers(): void {
   ipcMain.handle('window:minimize', (event: IpcMainInvokeEvent): void => {
@@ -113,6 +114,10 @@ export function registerAssetHandlers(): void {
   ipcMain.handle('project-scope:candidates', async () => {
     const scanner = await ensureScanned()
     return scanner.getProjectScopeCandidates()
+  })
+
+  ipcMain.handle('project-scope:activate', async (_event, opts: { projectPath?: string } = {}) => {
+    return activateProjectScope(opts.projectPath)
   })
 
   ipcMain.handle(

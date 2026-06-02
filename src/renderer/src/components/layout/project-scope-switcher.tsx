@@ -18,6 +18,9 @@ export function ProjectScopeSwitcher({ collapsed }: ProjectScopeSwitcherProps): 
   const setScopeSelection = useAppStore((s) => s.setScopeSelection)
   const candidates = useAppStore((s) => s.projectCandidates)
   const setProjectCandidates = useAppStore((s) => s.setProjectCandidates)
+  const setAssets = useAppStore((s) => s.setAssets)
+  const setStats = useAppStore((s) => s.setStats)
+  const setScanning = useAppStore((s) => s.setScanning)
   const currentProject = useMemo(
     () => currentProjectCandidate(scopeSelection, candidates),
     [candidates, scopeSelection]
@@ -44,9 +47,24 @@ export function ProjectScopeSwitcher({ collapsed }: ProjectScopeSwitcherProps): 
     if (nextOpen) void loadCandidates()
   }
 
-  const selectScope = (selection: Partial<AppScopeSelection>): void => {
-    setScopeSelection(selection)
-    setOpen(false)
+  const selectScope = async (selection: Partial<AppScopeSelection>): Promise<void> => {
+    setLoading(true)
+    setError(null)
+    setScanning(true)
+    try {
+      const projectPath = selection.mode === 'project' ? selection.projectPath : undefined
+      const result = await window.api.projectScope.activate({ projectPath })
+      setAssets(result.scanResult.assets ?? [])
+      setStats(result.scanResult.stats)
+      setProjectCandidates(result.candidates ?? [])
+      setScopeSelection(selection)
+      setOpen(false)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err))
+    } finally {
+      setLoading(false)
+      setScanning(false)
+    }
   }
 
   return (
@@ -95,14 +113,14 @@ export function ProjectScopeSwitcher({ collapsed }: ProjectScopeSwitcherProps): 
               title={t('projectScope.global')}
               description={t('projectScope.globalDesc')}
               selected={scopeSelection.mode === 'global'}
-              onClick={() => selectScope({ mode: 'global' })}
+              onClick={() => void selectScope({ mode: 'global' })}
             />
             <ScopeOption
               icon={<UserRound className="h-3.5 w-3.5" />}
               title={t('projectScope.user')}
               description={t('projectScope.userDesc')}
               selected={scopeSelection.mode === 'user'}
-              onClick={() => selectScope({ mode: 'user' })}
+              onClick={() => void selectScope({ mode: 'user' })}
             />
           </div>
 
@@ -130,7 +148,7 @@ export function ProjectScopeSwitcher({ collapsed }: ProjectScopeSwitcherProps): 
                     key={candidate.id}
                     candidate={candidate}
                     selected={scopeSelection.mode === 'project' && scopeSelection.projectPathKey === candidate.pathKey}
-                    onClick={() => selectScope({ mode: 'project', projectPath: candidate.path })}
+                    onClick={() => void selectScope({ mode: 'project', projectPath: candidate.path })}
                   />
                 ))}
               </div>

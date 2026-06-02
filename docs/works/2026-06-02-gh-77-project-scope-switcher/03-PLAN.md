@@ -18,9 +18,9 @@
 - [x] 任务 5: Instructions / Capabilities 在应用级 scope 下过滤资产
   - tests: `pnpm test tests/unit/scope.test.ts tests/unit/project-scope.test.ts tests/renderer/instructions-guidance.test.tsx tests/renderer/capabilities-guidance.test.tsx` (21 passed); `pnpm typecheck:node`; `pnpm typecheck:web`
   - verify: Renderer; `filterAssetsByAppScope()` 支持 global/user/project 三种应用 scope。project scope 下保留 user/enterprise 基础层级, 仅展示路径匹配的 project/session 资产; Instructions skills 与 Capabilities hooks 已覆盖当前项目资产保留、其它项目资产隐藏。页面内 asset scope filter 继续叠加在应用级 scope 之后。
-- [ ] 任务 6: 切换 project scope 后处理扫描刷新与过期状态
-  - tests: `pnpm test <scanner-or-hook-test>`
-  - verify: 非 UI + UI; 不保留上一项目过期结果; 若本轮只做到现有资产过滤, 必须在 issue/plan 中保留 scanner 重建任务, 不标为完成。
+- [x] 任务 6: 切换 project scope 后处理扫描刷新与过期状态
+  - tests: `pnpm test tests/unit/project-scope-runtime.test.ts tests/unit/watcher.test.ts tests/renderer/project-scope-switcher.test.tsx` (10 passed); `pnpm typecheck:node`; `pnpm typecheck:web`
+  - verify: 非 UI; `project-scope:activate` 会按选择的项目路径重建 scanner, 扫描后重建 search index, 并重启 watcher。切回 global/user 时清空 projectDir, 避免继续沿用上一项目扫描上下文。renderer 选择 scope 成功后同步写入 assets/stats/project candidates, 再更新 scope selection。watcher 已纳入项目 `CLAUDE.md`、`AGENTS.md`、`.codex` 与 `.agents/skills` 路径。
 - [ ] 任务 7: 视觉和交互验收
   - tests: `pnpm build`; `pnpm test:e2e tests/e2e/project-scope.e2e.ts`
   - verify: UI; 用 `pnpm dev:agent` 打开真实 Electron, `print-window` 截图 expanded/collapsed 状态, 检查黑白工具壳、信息密度、键盘路径、窗口控制区不重叠。

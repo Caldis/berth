@@ -10,6 +10,7 @@ import type {
   HookRecoveryListResult,
   HooksAgentId,
   HooksEnablementStatus,
+  ProjectScopeActivationResult,
   SetHookEnabledRequest,
   SetHookEnabledResult,
   SetHooksEnabledRequest,
@@ -58,6 +59,7 @@ interface BerthAPI {
   }
   projectScope: {
     candidates: () => Promise<ProjectScopeCandidate[]>
+    activate: (opts: { projectPath?: string }) => Promise<ProjectScopeActivationResult>
   }
   sessions: {
     list: (opts: { projectFilter?: string; projectPath?: string; limit?: number; agentView?: AgentView }) => Promise<SessionListResult>

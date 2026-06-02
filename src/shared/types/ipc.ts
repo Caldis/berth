@@ -29,6 +29,12 @@ export interface ScanResult {
   errors: ScanError[]
 }
 
+export interface ProjectScopeActivationResult {
+  projectDir?: string
+  scanResult: ScanResult
+  candidates: ProjectScopeCandidate[]
+}
+
 export interface ScanError {
   path: string
   type: string
@@ -321,6 +327,7 @@ export interface IpcChannels {
   'assets:scan-sources': { args: []; result: AgentScanSourceGroup[] }
   'agent-plugins:list': { args: []; result: AgentCapabilityPluginListResult }
   'project-scope:candidates': { args: []; result: ProjectScopeCandidate[] }
+  'project-scope:activate': { args: [{ projectPath?: string }]; result: ProjectScopeActivationResult }
   'assets:scan-category': { args: [AssetCategory]; result: Asset[] }
   'assets:get': { args: [string]; result: Asset | null }
   'assets:relations': { args: [string]; result: Relation[] }

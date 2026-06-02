@@ -39,7 +39,8 @@ const api = {
     list: () => ipcRenderer.invoke('agent-plugins:list')
   },
   projectScope: {
-    candidates: () => ipcRenderer.invoke('project-scope:candidates')
+    candidates: () => ipcRenderer.invoke('project-scope:candidates'),
+    activate: (opts: { projectPath?: string }) => ipcRenderer.invoke('project-scope:activate', opts)
   },
   sessions: {
     list: (opts: { projectFilter?: string; projectPath?: string; limit?: number; agentView?: string }) =>

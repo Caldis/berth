@@ -5,6 +5,27 @@ import i18n from '../../src/renderer/src/i18n'
 import { ProjectScopeSwitcher } from '../../src/renderer/src/components/layout/project-scope-switcher'
 import { DEFAULT_SCOPE_SELECTION, createProjectScopeCandidate } from '../../src/shared/scope'
 import { useAppStore } from '../../src/renderer/src/stores/app'
+import type { ProjectScopeActivationResult } from '../../src/shared/types/ipc'
+
+function activationResult(projectPath?: string): ProjectScopeActivationResult {
+  const candidate = projectPath
+    ? createProjectScopeCandidate({
+      path: projectPath,
+      source: 'current',
+      sessionCount: 2
+    })
+    : null
+
+  return {
+    projectDir: candidate?.path,
+    scanResult: {
+      assets: [],
+      stats: { skills: 1, mcpServers: 0, sessions: 0, plugins: 0, hooks: 0, commands: 0, subagents: 0, teams: 0 },
+      errors: []
+    },
+    candidates: candidate ? [candidate] : []
+  }
+}
 
 describe('ProjectScopeSwitcher', () => {
   beforeEach(async () => {
@@ -20,6 +41,7 @@ describe('ProjectScopeSwitcher', () => {
         sessionCount: 2
       })!
     ])
+    window.api.projectScope.activate = vi.fn(async ({ projectPath }) => activationResult(projectPath))
   })
 
   it('loads project candidates and selects a project scope', async () => {
@@ -30,11 +52,15 @@ describe('ProjectScopeSwitcher', () => {
     expect(await screen.findByRole('option', { name: 'berth' })).toBeInTheDocument()
     fireEvent.click(screen.getByRole('option', { name: 'berth' }))
 
-    expect(useAppStore.getState().scopeSelection).toEqual({
-      mode: 'project',
-      projectPath: 'D:/Code/berth',
-      projectPathKey: 'd:/code/berth'
+    await waitFor(() => {
+      expect(window.api.projectScope.activate).toHaveBeenCalledWith({ projectPath: 'D:/Code/berth' })
+      expect(useAppStore.getState().scopeSelection).toEqual({
+        mode: 'project',
+        projectPath: 'D:/Code/berth',
+        projectPathKey: 'd:/code/berth'
+      })
     })
+    expect(useAppStore.getState().stats.skills).toBe(1)
   })
 
   it('can switch to user scope without project candidates', async () => {
@@ -44,7 +70,10 @@ describe('ProjectScopeSwitcher', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Project scope' }))
     fireEvent.click(await screen.findByRole('option', { name: 'User' }))
 
-    expect(useAppStore.getState().scopeSelection).toEqual({ mode: 'user' })
+    await waitFor(() => {
+      expect(window.api.projectScope.activate).toHaveBeenCalledWith({ projectPath: undefined })
+      expect(useAppStore.getState().scopeSelection).toEqual({ mode: 'user' })
+    })
   })
 
   it('keeps the icon-only trigger reachable when collapsed', () => {
