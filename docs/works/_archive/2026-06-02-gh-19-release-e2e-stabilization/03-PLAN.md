@@ -19,9 +19,10 @@
   - tests: `pnpm lint`; `pnpm typecheck`; `pnpm test`; `pnpm harness:check`; `pnpm build`
   - verify: 本地完整检查通过; 不改 UI。
   - evidence: `pnpm lint`; `pnpm typecheck`; `pnpm test` (54 files / 422 tests); `pnpm harness:check`; `node scripts/harness-projects.mjs check --strict`; `pnpm build`; `pnpm test:e2e` (15 tests) 均通过。
-- [ ] 任务 4: 推送后等待 GitHub Actions。
+- [x] 任务 4: 推送后等待 GitHub Actions。
   - tests: `gh run list --branch master --limit 5`; `gh run watch <run-id> --exit-status`
   - verify: 新 SHA 对应 CI run 成功。
+  - evidence: `gh run watch 26797628833 --repo Caldis/berth --exit-status` 通过; SHA `82bb117a5ed640954945e0276c6f1fbf552553db`; Ubuntu 和 Windows job 均成功, Windows 执行 `pnpm test:e2e`。
 
 ## verify 回写
 verify 不通过项作为新任务追加于此, phase 退回 implement。
