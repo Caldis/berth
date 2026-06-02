@@ -102,9 +102,10 @@ export function findLatestWorkflowRun(runs, workflowName = DEFAULT_WORKFLOW) {
 
 export function findWorkflowRunForSha(runs, { workflowName = DEFAULT_WORKFLOW, sha }) {
   const normalizedSha = String(sha || '').trim().toLowerCase()
+  if (!normalizedSha) return null
   return (runs || []).find((run) => {
     const headSha = String(run.headSha || '').toLowerCase()
-    return run.workflowName === workflowName && headSha === normalizedSha
+    return run.workflowName === workflowName && (headSha === normalizedSha || headSha.startsWith(normalizedSha))
   }) || null
 }
 

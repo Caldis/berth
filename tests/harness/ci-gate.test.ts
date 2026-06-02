@@ -52,13 +52,14 @@ describe('harness-ci-gate helpers', () => {
     expect(findLatestWorkflowRun(runs, 'CI')?.databaseId).toBe(2)
   })
 
-  it('finds a workflow run by exact sha', () => {
+  it('finds a workflow run by exact or short sha', () => {
     const runs = [
-      { workflowName: 'CI', headSha: 'aaa', databaseId: 1 },
-      { workflowName: 'CI', headSha: 'bbb', databaseId: 2 }
+      { workflowName: 'CI', headSha: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', databaseId: 1 },
+      { workflowName: 'CI', headSha: 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb', databaseId: 2 }
     ]
-    expect(findWorkflowRunForSha(runs, { workflowName: 'CI', sha: 'bbb' })?.databaseId).toBe(2)
-    expect(findWorkflowRunForSha(runs, { workflowName: 'CI', sha: 'bb' })).toBeNull()
+    expect(findWorkflowRunForSha(runs, { workflowName: 'CI', sha: 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb' })?.databaseId).toBe(2)
+    expect(findWorkflowRunForSha(runs, { workflowName: 'CI', sha: 'bbbbbbb' })?.databaseId).toBe(2)
+    expect(findWorkflowRunForSha(runs, { workflowName: 'CI', sha: 'bbac' })).toBeNull()
   })
 
   it('requires completed success baseline by default', () => {
@@ -104,6 +105,22 @@ describe('harness-ci-gate helpers', () => {
 
     expect(result.run.databaseId).toBe(8)
     expect(execFileSync).toHaveBeenCalledWith('gh', ghRunListArgs({ branch: 'master', commit: 'abcdef', limit: 5 }), expect.anything())
+    expect(sleep).not.toHaveBeenCalled()
+  })
+
+  it('findRunForShaWithRetry accepts short sha input', async () => {
+    const fullSha = 'abcdef1234567890abcdef1234567890abcdef12'
+    const execFileSync = vi.fn((command: string, args: string[]) => {
+      if (command === 'git' && args.includes('--abbrev-ref')) return 'master\n'
+      if (command === 'gh') return JSON.stringify([{ workflowName: 'CI', status: 'queued', databaseId: 18, headSha: fullSha }])
+      throw new Error('unexpected command')
+    })
+    const sleep = vi.fn(async () => undefined)
+
+    const result = await findRunForShaWithRetry({ workflow: 'CI', sha: 'abcdef1', limit: 5, timeoutSeconds: 1, pollSeconds: 1 }, { execFileSync, sleep })
+
+    expect(result.run.databaseId).toBe(18)
+    expect(execFileSync).toHaveBeenCalledWith('gh', ghRunListArgs({ branch: 'master', commit: 'abcdef1', limit: 5 }), expect.anything())
     expect(sleep).not.toHaveBeenCalled()
   })
 
