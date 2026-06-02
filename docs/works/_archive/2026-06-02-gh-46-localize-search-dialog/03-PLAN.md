@@ -11,7 +11,7 @@
   - verify: 2026-06-02 通过, 1 test passed; 断言 `总览`、`会话`、`指令`、`能力`、`用量` 可见, 英文页面名不可见
 - [x] 任务 3: 收口检查
   - tests: `pnpm typecheck:web`; `pnpm harness:check --work docs/works/2026-06-02-gh-46-localize-search-dialog`
-  - verify: 2026-06-02 `pnpm typecheck:web` 通过; `pnpm lint` 通过; `pnpm test` 通过, 57 files / 436 tests; `pnpm harness:check --work docs/works/2026-06-02-gh-46-localize-search-dialog` 通过; UI 结构不变
+  - verify: 2026-06-02 `pnpm typecheck:web` 通过; `pnpm lint` 通过; `pnpm test` 通过, 57 files / 436 tests; `pnpm harness:check --work docs/works/2026-06-02-gh-46-localize-search-dialog` 通过; GitHub Actions run 26801755952 通过; UI 结构不变
 
 ## verify 回写
 
