@@ -12,9 +12,9 @@
 - [x] 任务 3: 实现 i18n key 和组件调用。
   - tests: `pnpm exec vitest run tests/renderer/overview-health-checks.test.tsx tests/renderer/window-controls.test.tsx`
   - verify: 2026-06-02 13:12 `rg "Ignore info check|Copy fix snippet|Minimize window|Maximize window|Restore window|Close window" src/renderer/src tests/renderer` 确认源码无相关硬编码英文, 只剩测试断言。
-- [ ] 任务 4: 跑标准门禁并按 CI gate 推送。
+- [x] 任务 4: 跑标准门禁并按 CI gate 推送。
   - tests: `pnpm lint`; `pnpm typecheck`; `pnpm harness:check`; `pnpm test`; `pnpm build`; `pnpm test:e2e`; `gh run list`; `gh run watch`
-  - verify: 2026-06-02 13:12 `pnpm lint`; `pnpm typecheck`; `pnpm harness:check`; `pnpm test`; `pnpm build` 通过。2026-06-02 13:14 `pnpm test:e2e` 通过; 等待 push 前 CI 检查和 push 后新 SHA CI。
+  - verify: 2026-06-02 13:12 `pnpm lint`; `pnpm typecheck`; `pnpm harness:check`; `pnpm test`; `pnpm build` 通过。2026-06-02 13:14 `pnpm test:e2e` 通过。2026-06-02 13:15 push 前最近 5 次 master CI 均为 success; 2026-06-02 13:17 `gh run watch 26799976455 --repo Caldis/berth --exit-status` 通过, SHA `79e4b53aef72e82c5c8e8b58d28ceea94ab2e102`。
 
 ## verify 回写
 verify 不通过项作为新任务追加于此, phase 退回 implement。

@@ -2,13 +2,13 @@
 task: 2026-06-02-gh-42-localize-control-labels
 task_id: GH-42
 type: bug
-phase: verify
+phase: archive
 created: 2026-06-02
 issue:
   number: 42
   repo: Caldis/berth
   url: https://github.com/Caldis/berth/issues/42
-  state: OPEN
+  state: CLOSED
   id: I_kwDOSpnDwc8AAAABEE9d5Q
 gh_project:
   status: tracked
@@ -16,7 +16,7 @@ gh_project:
   project_url: https://github.com/users/Caldis/projects/6
   project_id: PVT_kwHOADXbEs4BZHvQ
   item_id: PVTI_lAHOADXbEs4BZHvQzguc4xQ
-  item_status: In Progress
+  item_status: Done
 artifacts:
   source: 00-BUG.md
   analysis: 01-ANALYSIS.md
