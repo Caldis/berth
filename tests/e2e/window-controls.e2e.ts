@@ -72,7 +72,10 @@ async function realMouseClick(point: { x: number; y: number }): Promise<void> {
   })
 
   const windowBounds = await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].getBounds())
-  const processId = app.process()?.pid
+  const nativeWindowHandle = await app.evaluate(({ BrowserWindow }) =>
+    Array.from(BrowserWindow.getAllWindows()[0].getNativeWindowHandle())
+  )
+  const hwnd = nativeWindowHandleToDecimal(nativeWindowHandle)
   const physicalPoint = {
     x: windowBounds.x + point.x,
     y: windowBounds.y + point.y
@@ -91,21 +94,45 @@ public static class MouseInput {
   [DllImport("user32.dll")]
   public static extern bool SetForegroundWindow(IntPtr hWnd);
   [DllImport("user32.dll")]
+  public static extern bool BringWindowToTop(IntPtr hWnd);
+  [DllImport("user32.dll")]
+  public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+  [DllImport("user32.dll")]
+  public static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
+  [DllImport("user32.dll")]
   public static extern bool SetCursorPos(int x, int y);
   [DllImport("user32.dll")]
   public static extern void mouse_event(int dwFlags, int dx, int dy, int dwData, UIntPtr dwExtraInfo);
 }
 "@
-$process = Get-Process -Id ${processId}
-[MouseInput]::SetForegroundWindow($process.MainWindowHandle) | Out-Null
-Start-Sleep -Milliseconds 120
+$hwnd = [IntPtr]${hwnd}
+$HWND_TOPMOST = [IntPtr](-1)
+$HWND_NOTOPMOST = [IntPtr](-2)
+$SW_SHOW = 5
+$SWP_NOSIZE = 0x0001
+$SWP_NOMOVE = 0x0002
+$SWP_SHOWWINDOW = 0x0040
+[MouseInput]::ShowWindow($hwnd, $SW_SHOW) | Out-Null
+[MouseInput]::SetWindowPos($hwnd, $HWND_TOPMOST, 0, 0, 0, 0, $SWP_NOSIZE -bor $SWP_NOMOVE -bor $SWP_SHOWWINDOW) | Out-Null
+Start-Sleep -Milliseconds 100
+[MouseInput]::BringWindowToTop($hwnd) | Out-Null
+[MouseInput]::SetForegroundWindow($hwnd) | Out-Null
+Start-Sleep -Milliseconds 200
 [MouseInput]::SetCursorPos(${physicalPoint.x}, ${physicalPoint.y}) | Out-Null
-Start-Sleep -Milliseconds 80
+Start-Sleep -Milliseconds 120
 [MouseInput]::mouse_event(0x0002, 0, 0, 0, [UIntPtr]::Zero)
-Start-Sleep -Milliseconds 80
+Start-Sleep -Milliseconds 120
 [MouseInput]::mouse_event(0x0004, 0, 0, 0, [UIntPtr]::Zero)
+[MouseInput]::SetWindowPos($hwnd, $HWND_NOTOPMOST, 0, 0, 0, 0, $SWP_NOSIZE -bor $SWP_NOMOVE -bor $SWP_SHOWWINDOW) | Out-Null
 `
     ],
     { stdio: 'pipe' }
   )
+}
+
+function nativeWindowHandleToDecimal(bytes: number[]): string {
+  return bytes
+    .slice(0, 8)
+    .reduce((value, byte, index) => value + (BigInt(byte) << BigInt(index * 8)), 0n)
+    .toString()
 }

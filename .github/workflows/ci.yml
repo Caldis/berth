@@ -26,4 +26,5 @@ jobs:
       - run: pnpm test
       - run: pnpm harness:check
       - run: pnpm build # smoke: production build must succeed
-        if: matrix.os == 'ubuntu-latest'
+      - run: pnpm test:e2e
+        if: matrix.os == 'windows-2022'
