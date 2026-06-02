@@ -2,13 +2,13 @@
 task: 2026-06-02-gh-43-localize-hooks-recovery-loading-label
 task_id: GH-43
 type: bug
-phase: verify
+phase: archive
 created: 2026-06-02
 issue:
   number: 43
   repo: Caldis/berth
   url: https://github.com/Caldis/berth/issues/43
-  state: OPEN
+  state: CLOSED
   id: I_kwDOSpnDwc8AAAABEFBZ4Q
 gh_project:
   status: tracked
@@ -16,7 +16,7 @@ gh_project:
   project_url: https://github.com/users/Caldis/projects/6
   project_id: PVT_kwHOADXbEs4BZHvQ
   item_id: PVTI_lAHOADXbEs4BZHvQzguc8YI
-  item_status: In Progress
+  item_status: Done
 artifacts:
   source: 00-BUG.md
   analysis: 01-ANALYSIS.md

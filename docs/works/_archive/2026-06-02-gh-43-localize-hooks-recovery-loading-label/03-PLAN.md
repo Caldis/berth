@@ -9,9 +9,9 @@
 - [x] 任务 2: 实现 i18n key 和组件调用。
   - tests: `pnpm exec vitest run tests/renderer/hooks-lifecycle-view.test.tsx`
   - verify: 2026-06-02 13:25 `rg --fixed-strings "Loading hook recoveries" src/renderer/src tests/renderer/hooks-lifecycle-view.test.tsx` 确认源码里只剩 en locale, 测试里只剩负断言。
-- [ ] 任务 3: 跑标准门禁并按 CI gate 推送。
+- [x] 任务 3: 跑标准门禁并按 CI gate 推送。
   - tests: `pnpm lint`; `pnpm typecheck`; `pnpm harness:check`; `pnpm test`; `pnpm build`; `pnpm test:e2e`; `gh run list`; `gh run watch`
-  - verify: 2026-06-02 13:25 `pnpm lint`; `pnpm typecheck`; `pnpm harness:check`; `pnpm test`; `pnpm build`; `pnpm test:e2e` 均通过; 等待 push 前 CI 检查和 push 后新 SHA CI。
+  - verify: 2026-06-02 13:25 `pnpm lint`; `pnpm typecheck`; `pnpm harness:check`; `pnpm test`; `pnpm build`; `pnpm test:e2e` 均通过。2026-06-02 13:26 push 前最近 5 次 master CI 均为 success; 2026-06-02 13:29 `gh run watch 26800343086 --repo Caldis/berth --exit-status` 通过, SHA `278cbfa71a5ba89ba07a27f4e1133429d8cf9b41`。
 
 ## verify 回写
 verify 不通过项作为新任务追加于此, phase 退回 implement。
