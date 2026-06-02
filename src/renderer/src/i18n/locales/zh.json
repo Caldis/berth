@@ -1289,7 +1289,8 @@
     "advancedMode": "高级模式",
     "advancedModeDesc": "显示临时、调试和缓存资产",
     "about": "关于",
-    "version": "版本"
+    "version": "版本",
+    "reportIssue": "报告问题"
   },
   "filter": {
     "allScopes": "全部作用域"

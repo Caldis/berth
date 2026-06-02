@@ -1293,7 +1293,8 @@
     "advancedMode": "Advanced Mode",
     "advancedModeDesc": "Show ephemeral, debug, and cache assets",
     "about": "About",
-    "version": "Version"
+    "version": "Version",
+    "reportIssue": "Report Issue"
   },
   "filter": {
     "allScopes": "All scopes"

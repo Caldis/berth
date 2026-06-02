@@ -210,7 +210,7 @@ export function SettingsContent({
               onClick={() => window.api?.shell.openExternal('https://github.com/Caldis/berth/issues')}
               className="flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
             >
-              Report Issue
+              {t('settings.reportIssue')}
             </button>
           </div>
         </div>
