@@ -2,21 +2,21 @@
 task: 2026-06-02-gh-74-overview-health-action-labels
 task_id: GH-74
 type: bug
-phase: verify
+phase: archive
 created: 2026-06-02
 issue:
   number: 74
   repo: Caldis/berth
   url: https://github.com/Caldis/berth/issues/74
   id: I_kwDOSpnDwc8AAAABEIYBvw
-  state: OPEN
+  state: CLOSED
 gh_project:
   status: tracked
   project_number: 6
   project_url: https://github.com/users/Caldis/projects/6
   project_id: PVT_kwHOADXbEs4BZHvQ
   item_id: PVTI_lAHOADXbEs4BZHvQzgugR-I
-  item_status: In Progress
+  item_status: Done
 artifacts:
   source: 00-BUG.md
   analysis: 01-ANALYSIS.md
