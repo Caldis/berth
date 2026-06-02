@@ -2,7 +2,7 @@
 task: 2026-06-03-gh-79-hooks-health-check-latency
 task_id: GH-79
 type: bug
-phase: implement
+phase: archive
 created: 2026-06-03
 priority: P1
 target_date: 
@@ -24,14 +24,17 @@ debt:
     confidence: medium
     rationale: "健康检查慢会跨 renderer 页面状态、IPC 与 main 数据层; 初始估算先按跨进程性能 bug 处理, explore/design 后校准。"
   final:
-    incurred:
-    repaid:
-    net:
-    scope:
-    risk:
-    areas: []
-    confidence:
-    rationale:
+    incurred: 4
+    repaid: 3
+    net: 1
+    scope: cross-process
+    risk: low
+    areas:
+      - performance
+      - architecture
+      - testability
+    confidence: high
+    rationale: "最终改动仍跨 renderer、preload/IPC 和 main, 但通过非强制健康检查路径、renderer 缓存、in-flight 去重、stale UI 和全量测试把重复扫描风险降到低。剩余 debt 是共享 hook 模块级缓存需要持续关注跨页面状态一致性。"
   revisions: []
 issue:
   number: 79
@@ -43,7 +46,7 @@ gh_project:
   status: tracked
   project_number: 6
   project_url: https://github.com/users/Caldis/projects/6
-  item_status: In Progress
+  item_status: Done
   project_id: PVT_kwHOADXbEs4BZHvQ
   item_id: PVTI_lAHOADXbEs4BZHvQzguh0FY
 artifacts:
