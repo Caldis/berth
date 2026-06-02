@@ -21,3 +21,9 @@
 - 先探索 bobcorn 的布局实现和当前 berth 的 app shell 结构。
 - 提炼可复用 shell 组件, 再迁移现有页面入口。
 - UI 验收必须覆盖折叠、拖曳、pin、面包屑、窗口控制按钮和页面主体宽度变化。
+
+# 完成记录
+- 完成日期: 2026-06-02
+- 任务: `docs/works/_archive/2026-06-02-gh-75-app-shell-navigation-foundation/`
+- GitHub Issue: https://github.com/Caldis/berth/issues/75
+- 已实现左侧栏折叠 / 调宽、顶部面包屑、pin 窗口控制和对应 renderer / e2e 覆盖。

@@ -15,9 +15,10 @@
 - [x] 任务 4: e2e 覆盖 app shell 与 Windows controls。
   - tests: `pnpm build`; `pnpm test:e2e tests/e2e/app.e2e.ts`; `pnpm test:e2e tests/e2e/window-controls.e2e.ts`
   - verify: sidebar 可见、可折叠、可拖曳; top nav 可见; window controls 稳定; Windows 下 pin 状态可切换。
-- [ ] 任务 5: 收口验证、关联本地 issue 与推送前门禁。
+- [x] 任务 5: 收口验证、关联本地 issue 与推送前门禁。
   - tests: `pnpm harness:prepush`
   - verify: `pnpm harness:check`; `node scripts/harness-projects.mjs check --strict`; CI wait 成功。
+  - evidence: `pnpm harness:prepush`; `pnpm test:e2e tests/e2e/app.e2e.ts`; `pnpm test:e2e tests/e2e/window-controls.e2e.ts`; `pnpm dev:agent screenshot gh75-shell-verify --mode print-window`; `pnpm harness:ci:wait -- --sha 818c47c1c0f19af1a983f6e37395f733dda0c49a`; `node scripts/harness-projects.mjs done docs/works/2026-06-02-gh-75-app-shell-navigation-foundation`。
 
 ## verify 回写
 verify 不通过项作为新任务追加于此, phase 退回 implement。
