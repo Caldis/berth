@@ -5,9 +5,13 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 // @ts-expect-error mjs sin tipos
 import {
+  CI_BASELINE_COMMAND,
+  CI_PREPUSH_COMMAND,
+  CI_WAIT_COMMAND,
   FRONTEND_TASTE_RULE,
   SMALL_CHANGE_EXEMPTION_CONSENT,
   TEST_DISCIPLINE_RULE,
+  checkCiGateRules,
   checkWorks,
   checkFriction,
   checkIssues,
@@ -397,5 +401,48 @@ describe('checkEntryRules', () => {
     writeEntryRules({ agents: true, readme: true })
     writeFileSync(join(root, '.agents/workflow/5.0-archive.md'), '自己相关 git diff --cached')
     expect(checkEntryRules(root).some((e: string) => e.includes('archive backlog reminder'))).toBe(true)
+  })
+})
+
+describe('checkCiGateRules', () => {
+  function writeCiGateFixtures(options: { packageScripts?: boolean; shared?: boolean; archive?: boolean; tools?: boolean } = {}): void {
+    const packageScripts = options.packageScripts !== false
+    const shared = options.shared !== false
+    const archive = options.archive !== false
+    const tools = options.tools !== false
+    if (packageScripts) {
+      writeFileSync(
+        join(root, 'package.json'),
+        JSON.stringify({
+          scripts: {
+            'harness:ci:baseline': 'node scripts/harness-ci-gate.mjs baseline',
+            'harness:ci:wait': 'node scripts/harness-ci-gate.mjs wait',
+            'harness:prepush': 'pnpm lint && pnpm typecheck && pnpm test && pnpm harness:check && pnpm harness:ci:baseline'
+          }
+        })
+      )
+    }
+    mkdirSync(join(root, '.agents/workflow'), { recursive: true })
+    mkdirSync(join(root, '.agents'), { recursive: true })
+    if (shared) writeFileSync(join(root, '.agents/workflow/_shared.md'), [CI_BASELINE_COMMAND, CI_WAIT_COMMAND, CI_PREPUSH_COMMAND].join('\n'))
+    if (archive) writeFileSync(join(root, '.agents/workflow/5.0-archive.md'), [CI_BASELINE_COMMAND, CI_WAIT_COMMAND].join('\n'))
+    if (tools) writeFileSync(join(root, '.agents/tools.md'), [CI_BASELINE_COMMAND, CI_WAIT_COMMAND, CI_PREPUSH_COMMAND].join('\n'))
+  }
+
+  it('package scripts and workflow references complete when all CI gate commands are present', () => {
+    writeCiGateFixtures()
+    expect(checkCiGateRules(root)).toEqual([])
+  })
+
+  it('missing package scripts are reported', () => {
+    writeCiGateFixtures({ packageScripts: false })
+    expect(checkCiGateRules(root).some((e: string) => e.includes('package.json'))).toBe(true)
+  })
+
+  it('missing workflow command references are reported', () => {
+    writeCiGateFixtures()
+    writeFileSync(join(root, '.agents/workflow/_shared.md'), CI_BASELINE_COMMAND)
+    const errors = checkCiGateRules(root)
+    expect(errors.some((e: string) => e.includes('.agents/workflow/_shared.md'))).toBe(true)
   })
 })

@@ -15,6 +15,9 @@ const PHASE_RANK = { explore: 0, design: 1, blocked: 1, implement: 2, verify: 3,
 export const SMALL_CHANGE_EXEMPTION_CONSENT = '小改动豁免前必须先声明豁免依据并征得用户确认。'
 export const TEST_DISCIPLINE_RULE = '测试证据或明确例外理由'
 export const FRONTEND_TASTE_RULE = '界面质量与交互验收'
+export const CI_BASELINE_COMMAND = 'pnpm harness:ci:baseline'
+export const CI_WAIT_COMMAND = 'pnpm harness:ci:wait'
+export const CI_PREPUSH_COMMAND = 'pnpm harness:prepush'
 const SUPERPOWERS_FLOW_POLICY = ['默认流程是 harness workflow', 'Superpowers 只能作为方法参考', 'Agent 自主判断并行或顺序执行']
 const ARCHIVE_BACKLOG_REMINDER = ['5.1-friction', '5.2-issues', '本次产生或关联的 friction / issues']
 const ALLOWED_SUPERPOWERS_DOCS = new Set([
@@ -293,10 +296,57 @@ export function checkEntryRules(root) {
   return errors
 }
 
+export function checkCiGateRules(root) {
+  const errors = []
+  const packagePath = join(root, 'package.json')
+  if (!existsSync(packagePath)) {
+    errors.push('ci-gate: missing package.json')
+  } else {
+    const content = readFileSync(packagePath, 'utf8')
+    for (const script of ['harness:ci:baseline', 'harness:ci:wait', 'harness:prepush']) {
+      if (!content.includes(`"${script}"`)) errors.push(`ci-gate: package.json missing ${script} script`)
+    }
+  }
+
+  for (const rel of ['.agents/tools.md', '.agents/workflow/_shared.md']) {
+    const path = join(root, rel)
+    if (!existsSync(path)) {
+      errors.push(`ci-gate: missing ${rel}`)
+      continue
+    }
+    const content = readFileSync(path, 'utf8')
+    for (const command of [CI_BASELINE_COMMAND, CI_WAIT_COMMAND, CI_PREPUSH_COMMAND]) {
+      if (!content.includes(command)) {
+        errors.push(`ci-gate: ${rel} missing ${command}`)
+        break
+      }
+    }
+  }
+
+  {
+    const rel = '.agents/workflow/5.0-archive.md'
+    const path = join(root, rel)
+    if (!existsSync(path)) {
+      errors.push(`ci-gate: missing ${rel}`)
+    } else {
+      const content = readFileSync(path, 'utf8')
+      for (const command of [CI_BASELINE_COMMAND, CI_WAIT_COMMAND]) {
+        if (!content.includes(command)) {
+          errors.push(`ci-gate: ${rel} missing ${command}`)
+          break
+        }
+      }
+    }
+  }
+
+  return errors
+}
+
 export function checkAll(root, options = {}) {
   const errors = [
     ...checkWorkflowSources(root),
     ...checkEntryRules(root),
+    ...checkCiGateRules(root),
     ...checkTemplates(root),
     ...checkWorks(root, options),
     ...checkFriction(root),

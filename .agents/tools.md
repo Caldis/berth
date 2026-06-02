@@ -19,6 +19,9 @@ berth 项目自用工具 (不含企业内部设施)。Agent 据此主动获取�
 - `run` skill / Playwright `_electron` REPL + 截图 — 启动应用做视觉/交互验收。
 - `pnpm lint` / `pnpm typecheck` — 机械检查。
 - `pnpm harness:check` / `pnpm harness:check --work docs/works/{task}` / `pnpm harness:sync` — harness 自检与分发。并行任务影响全局检查时, 用 `--work` 只验证当前任务目录; 总验证仍跑全局 `pnpm harness:check`。
+- `pnpm harness:ci:baseline` — push 前检查当前分支最近 `CI` GitHub Actions run; 默认要求 completed/success。CI 修复提交可显式追加 `-- --allow-failed-baseline`。
+- `pnpm harness:ci:wait` — push 后等待当前 `HEAD` 对应的 `CI` run; 也可传 `-- --sha <sha>`。
+- `pnpm harness:prepush` — 代码类提交的 push 前本地门禁: lint / typecheck / test / harness:check / Actions baseline。
 - `pnpm harness:projects:check` — 只读审计 GitHub Project 状态; archive 阶段用 `node scripts/harness-projects.mjs done <task-dir>` 强制置 Done 并回读确认。
 
 ## 网络与临时文件
