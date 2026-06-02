@@ -299,6 +299,104 @@ describe('overview health checks', () => {
     expect(screen.queryByText('settings.json does not declare the Claude Code settings JSON schema.')).not.toBeInTheDocument()
     expect(screen.queryByText('Add Claude settings schema')).not.toBeInTheDocument()
   })
+
+  it('shows the cost source scope on the overview cost card in Chinese', async () => {
+    await i18n.changeLanguage('zh')
+    window.api.sessions.list = vi.fn(async () => ({ sessions: [], totalCount: 0 }))
+    window.api.usage.summary = vi.fn(async () => ({
+      totalCost: 42.5,
+      actualCost: 12.5,
+      estimatedCost: 30,
+      costDelta: -17.5,
+      costMode: 'auto',
+      costSource: 'mixed',
+      costExplanation: {
+        formula: 'mixed',
+        pricingSources: [],
+        catalog: { sources: [] }
+      },
+      totalTokens: 0,
+      tokenUsage: {
+        inputTokens: 0,
+        outputTokens: 0,
+        cacheReadInputTokens: 0,
+        cacheCreationInputTokens: 0,
+        reasoningOutputTokens: 0,
+        unknownTokens: 0,
+        totalTokens: 0,
+        hasBreakdown: false
+      },
+      pricingMisses: [],
+      dailyCosts: [{ date: '2026-06-02', cost: 42.5 }],
+      dailyTokenUsage: [],
+      byModel: [],
+      byProject: [],
+      rateLimits: []
+    }))
+    window.api.assets.healthCheck = vi.fn(async () => [])
+
+    render(
+      <MemoryRouter>
+        <Routes>
+          <Route path="/" element={<Overview />} />
+        </Routes>
+      </MemoryRouter>
+    )
+
+    expect(await screen.findByText('混合')).toBeInTheDocument()
+    expect(screen.getByText('$42.50')).toBeInTheDocument()
+    expect(screen.getByLabelText(/本地扫描数据和价格表估算可能与供应商账单不同。/)).toBeInTheDocument()
+    expect(screen.queryByText('mixed')).not.toBeInTheDocument()
+  })
+
+  it('keeps unknown overview cost explicit without exposing raw enum values', async () => {
+    await i18n.changeLanguage('zh')
+    window.api.sessions.list = vi.fn(async () => ({ sessions: [], totalCount: 0 }))
+    window.api.usage.summary = vi.fn(async () => ({
+      totalCost: 0,
+      actualCost: 0,
+      estimatedCost: 0,
+      costDelta: 0,
+      costMode: 'auto',
+      costSource: 'unknown',
+      costExplanation: {
+        formula: 'unknown',
+        pricingSources: [],
+        catalog: { sources: [] }
+      },
+      totalTokens: 0,
+      tokenUsage: {
+        inputTokens: 0,
+        outputTokens: 0,
+        cacheReadInputTokens: 0,
+        cacheCreationInputTokens: 0,
+        reasoningOutputTokens: 0,
+        unknownTokens: 0,
+        totalTokens: 0,
+        hasBreakdown: false
+      },
+      pricingMisses: [],
+      dailyCosts: [],
+      dailyTokenUsage: [],
+      byModel: [],
+      byProject: [],
+      rateLimits: []
+    }))
+    window.api.assets.healthCheck = vi.fn(async () => [])
+
+    render(
+      <MemoryRouter>
+        <Routes>
+          <Route path="/" element={<Overview />} />
+        </Routes>
+      </MemoryRouter>
+    )
+
+    expect(await screen.findByText('未知')).toBeInTheDocument()
+    expect(screen.getByText('—')).toBeInTheDocument()
+    expect(screen.getByLabelText(/本地扫描数据和价格表估算可能与供应商账单不同。/)).toBeInTheDocument()
+    expect(screen.queryByText('unknown')).not.toBeInTheDocument()
+  })
 })
 
 function LocationProbe(): React.ReactElement {

@@ -33,6 +33,7 @@ import { StatCard } from '@/components/shared/stat-card'
 import { EmptyState } from '@/components/shared/empty-state'
 import type { HealthCheck } from '@shared/types/ipc'
 import { TokenUsageDisplay } from '@/components/shared/token-usage-display'
+import { CostSourceBadge } from '@/components/shared/cost-source-badge'
 
 export function Overview(): React.ReactElement {
   const { t } = useTranslation()
@@ -90,6 +91,9 @@ export function Overview(): React.ReactElement {
   const dailyCosts = usage?.dailyCosts ?? []
   const totalCost = usage?.totalCost ?? 0
   const hasKnownCost = usage != null && usage.costSource !== 'unknown'
+  const overviewCostSource = usage?.costSource ?? 'unknown'
+  const overviewCostSourceLabel = t(`usage.costSource.${overviewCostSource}`)
+  const overviewCostScopeNotice = t('usage.costScopeNotice')
 
   return (
     <div className="space-y-6">
@@ -168,11 +172,18 @@ export function Overview(): React.ReactElement {
 
         {/* Cost chart */}
         <div className="rounded-xl border border-border bg-card">
-          <div className="flex items-center justify-between border-b border-border px-4 py-3">
+          <div className="flex flex-wrap items-start justify-between gap-3 border-b border-border px-4 py-3">
             <h2 className="text-sm font-medium">{t('overview.costLast7Days')}</h2>
-            <span className="text-sm font-semibold text-card-foreground">
-              {hasKnownCost ? formatCurrency(totalCost) : '—'}
-            </span>
+            <div
+              className="flex min-w-0 items-center justify-end gap-2"
+              title={overviewCostScopeNotice}
+              aria-label={`${t('overview.costLast7Days')} · ${overviewCostSourceLabel}. ${overviewCostScopeNotice}`}
+            >
+              <CostSourceBadge source={overviewCostSource} />
+              <span className="text-sm font-semibold text-card-foreground">
+                {hasKnownCost ? formatCurrency(totalCost) : '—'}
+              </span>
+            </div>
           </div>
           {dailyCosts.length === 0 ? (
             <div className="p-4">
