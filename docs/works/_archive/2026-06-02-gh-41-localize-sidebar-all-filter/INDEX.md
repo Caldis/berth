@@ -2,13 +2,13 @@
 task: 2026-06-02-gh-41-localize-sidebar-all-filter
 task_id: GH-41
 type: bug
-phase: verify
+phase: archive
 created: 2026-06-02
 issue:
   number: 41
   repo: Caldis/berth
   url: https://github.com/Caldis/berth/issues/41
-  state: OPEN
+  state: CLOSED
   id: I_kwDOSpnDwc8AAAABEE5bAQ
 gh_project:
   status: tracked
@@ -16,7 +16,7 @@ gh_project:
   project_url: https://github.com/users/Caldis/projects/6
   project_id: PVT_kwHOADXbEs4BZHvQ
   item_id: PVTI_lAHOADXbEs4BZHvQzguc0Xw
-  item_status: In Progress
+  item_status: Done
 artifacts:
   source: 00-BUG.md
   analysis: 01-ANALYSIS.md

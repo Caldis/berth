@@ -12,9 +12,9 @@
 - [x] 任务 3: 跑标准门禁。
   - tests: `pnpm lint`; `pnpm typecheck`; `pnpm harness:check`
   - verify: 2026-06-02 12:58 `pnpm lint`; `pnpm typecheck`; `pnpm harness:check`; `pnpm test`; `pnpm build`; `pnpm test:e2e` 均通过。
-- [ ] 任务 4: 推送前确认最近 CI 状态, 推送后等待新 SHA 的 GitHub Actions。
+- [x] 任务 4: 推送前确认最近 CI 状态, 推送后等待新 SHA 的 GitHub Actions。
   - tests: `gh run list --repo Caldis/berth --branch master --limit 5`; `gh run watch <run-id> --repo Caldis/berth --exit-status`
-  - verify: 本地通过且远端 CI 通过后再继续后续任务。
+  - verify: 2026-06-02 13:00 push 前最近 5 次 master CI 均为 success; 2026-06-02 13:04 `gh run watch 26799484001 --repo Caldis/berth --exit-status` 通过, SHA `fd60b144eba3adbb42fa4b8529fefd41746b55b9`。
 
 ## verify 回写
 verify 不通过项作为新任务追加于此, phase 退回 implement。
