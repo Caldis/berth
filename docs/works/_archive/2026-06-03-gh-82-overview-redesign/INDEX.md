@@ -2,7 +2,7 @@
 task: 2026-06-03-gh-82-overview-redesign
 task_id: GH-82
 type: feature
-phase: implement
+phase: archive
 created: 2026-06-03
 priority: P1
 target_date: 
@@ -24,14 +24,17 @@ debt:
     confidence: medium
     rationale: "0.0-new 初始估算; 首页重构涉及 overview renderer、健康状态、最近会话、项目范围入口和视觉验收, explore/design 后校准。"
   final:
-    incurred:
-    repaid:
-    net:
-    scope:
-    risk:
-    areas: []
-    confidence:
-    rationale:
+    incurred: 5
+    repaid: 3
+    net: 2
+    scope: cross-process
+    risk: medium
+    areas:
+      - architecture
+      - testability
+      - ui-ux
+    confidence: high
+    rationale: "完成首页信息结构重排、当前 agent/project 范围展示、健康状态摘要、快捷入口新路由、最近会话和用量面板重做; renderer/full test/e2e/视觉检查和当前 SHA CI 均已通过。"
   revisions:
     - at: 2026-06-03
       phase: explore
@@ -40,6 +43,17 @@ debt:
       to:
         confidence: medium
       rationale: "Explore 确认首页重构集中在 renderer 页面、i18n 与测试, 不需要新增 IPC 或主进程契约; 影响面仍覆盖多数据源和首页视觉, scope/risk 暂不降低。"
+    - at: 2026-06-03
+      phase: verify
+      from:
+        net: 5
+        risk: high
+        confidence: medium
+      to:
+        net: 2
+        risk: medium
+        confidence: high
+      rationale: "本地 lint/typecheck/full test/harness、目标 e2e、Electron CDP 视觉检查和当前 SHA GitHub CI 均已通过。"
 issue:
   number: 82
   repo: Caldis/berth
@@ -50,7 +64,7 @@ gh_project:
   status: tracked
   project_number: 6
   project_url: https://github.com/users/Caldis/projects/6
-  item_status: In Progress
+  item_status: Done
   project_id: PVT_kwHOADXbEs4BZHvQ
   item_id: PVTI_lAHOADXbEs4BZHvQzguiYuQ
 artifacts:
