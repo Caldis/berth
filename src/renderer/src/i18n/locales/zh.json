@@ -1059,6 +1059,7 @@
     "inputTokensShort": "入",
     "outputTokensShort": "出",
     "breakdownUnavailable": "暂无明细",
+    "cost": "费用",
     "estimatedCost": "估算花费",
     "actualCost": "真实花费",
     "mixedCost": "混合花费",

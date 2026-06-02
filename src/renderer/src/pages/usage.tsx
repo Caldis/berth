@@ -517,7 +517,7 @@ export function Usage(): React.ReactElement {
                     borderRadius: '8px',
                     fontSize: '12px'
                   }}
-                  formatter={(value: number) => [`$${value.toFixed(2)}`, 'Cost']}
+                  formatter={(value: number) => [`$${value.toFixed(2)}`, t('usage.cost')]}
                   labelFormatter={(label: string) => new Date(label).toLocaleDateString()}
                 />
                 <Bar dataKey="cost" fill="hsl(var(--accent))" radius={[4, 4, 0, 0]} />

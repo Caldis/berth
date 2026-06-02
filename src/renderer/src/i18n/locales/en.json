@@ -1062,6 +1062,7 @@
     "inputTokensShort": "I",
     "outputTokensShort": "O",
     "breakdownUnavailable": "Breakdown unavailable",
+    "cost": "Cost",
     "estimatedCost": "Estimated cost",
     "actualCost": "Actual cost",
     "mixedCost": "Mixed cost",
