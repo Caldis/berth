@@ -16,16 +16,20 @@ const SOURCE_CLASS: Record<CostSource, string> = {
 
 export function CostSourceBadge({ source, className }: CostSourceBadgeProps): React.ReactElement {
   const { t } = useTranslation()
+  const label = t(`usage.costSource.${source}`)
+  const description = t(`usage.costSourceDescription.${source}`)
 
   return (
     <span
+      aria-label={`${label}: ${description}`}
+      title={description}
       className={cn(
         'inline-flex shrink-0 items-center rounded-md border px-1.5 py-0.5 text-[11px] font-medium leading-none',
         SOURCE_CLASS[source],
         className
       )}
     >
-      {t(`usage.costSource.${source}`)}
+      {label}
     </span>
   )
 }

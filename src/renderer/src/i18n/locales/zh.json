@@ -1143,6 +1143,12 @@
       "mixed": "混合",
       "unknown": "未知"
     },
+    "costSourceDescription": {
+      "actual": "来自本地用量记录里的供应商实报费用；仍是本地扫描结果，不等同于实时账单。",
+      "estimated": "根据本地 token 数据和价格表估算，可能与供应商账单不同。",
+      "mixed": "有实报费用的记录使用实报值，其余记录使用价格表估算。",
+      "unknown": "本地用量数据或价格表不足，无法计算这个费用。"
+    },
     "costModeLabel": "计价模式",
     "costMode": {
       "auto": "自动",

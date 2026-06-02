@@ -1146,6 +1146,12 @@
       "mixed": "Mixed",
       "unknown": "Unknown"
     },
+    "costSourceDescription": {
+      "actual": "Provider-reported cost found in local usage records. This is still local scan data, not a live billing statement.",
+      "estimated": "Estimated from local token data and the pricing catalog. It may differ from provider billing.",
+      "mixed": "Combines provider-reported costs where available with catalog estimates for the rest.",
+      "unknown": "Berth does not have enough local cost data or pricing data for this total."
+    },
     "costModeLabel": "Cost mode",
     "costMode": {
       "auto": "Auto",

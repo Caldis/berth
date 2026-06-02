@@ -345,7 +345,10 @@ describe('overview health checks', () => {
 
     expect(await screen.findByText('混合')).toBeInTheDocument()
     expect(screen.getByText('$42.50')).toBeInTheDocument()
-    expect(screen.getByLabelText(/本地扫描数据和价格表估算可能与供应商账单不同。/)).toBeInTheDocument()
+    expect(screen.getByLabelText('混合: 有实报费用的记录使用实报值，其余记录使用价格表估算。')).toHaveAttribute(
+      'title',
+      '有实报费用的记录使用实报值，其余记录使用价格表估算。'
+    )
     expect(screen.queryByText('mixed')).not.toBeInTheDocument()
   })
 
@@ -394,7 +397,10 @@ describe('overview health checks', () => {
 
     expect(await screen.findByText('未知')).toBeInTheDocument()
     expect(screen.getByText('—')).toBeInTheDocument()
-    expect(screen.getByLabelText(/本地扫描数据和价格表估算可能与供应商账单不同。/)).toBeInTheDocument()
+    expect(screen.getByLabelText('未知: 本地用量数据或价格表不足，无法计算这个费用。')).toHaveAttribute(
+      'title',
+      '本地用量数据或价格表不足，无法计算这个费用。'
+    )
     expect(screen.queryByText('unknown')).not.toBeInTheDocument()
   })
 })

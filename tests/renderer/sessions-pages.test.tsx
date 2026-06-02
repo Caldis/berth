@@ -771,6 +771,11 @@ describe('session pages', () => {
     expect(screen.getByText('Delta')).toBeInTheDocument()
     expect(screen.getByText('missing-model · 12 tok')).toBeInTheDocument()
     expect(screen.getAllByText('Mixed').length).toBeGreaterThan(0)
+    expect(
+      screen.getAllByLabelText(
+        'Mixed: Combines provider-reported costs where available with catalog estimates for the rest.'
+      ).length
+    ).toBeGreaterThan(0)
     expect(screen.getByText('Cost explanation')).toBeInTheDocument()
     expect(
       screen.getByText('Local scan data and catalog estimates may differ from provider billing.')

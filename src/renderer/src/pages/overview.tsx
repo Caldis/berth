@@ -92,8 +92,6 @@ export function Overview(): React.ReactElement {
   const totalCost = usage?.totalCost ?? 0
   const hasKnownCost = usage != null && usage.costSource !== 'unknown'
   const overviewCostSource = usage?.costSource ?? 'unknown'
-  const overviewCostSourceLabel = t(`usage.costSource.${overviewCostSource}`)
-  const overviewCostScopeNotice = t('usage.costScopeNotice')
 
   return (
     <div className="space-y-6">
@@ -174,11 +172,7 @@ export function Overview(): React.ReactElement {
         <div className="rounded-xl border border-border bg-card">
           <div className="flex flex-wrap items-start justify-between gap-3 border-b border-border px-4 py-3">
             <h2 className="text-sm font-medium">{t('overview.costLast7Days')}</h2>
-            <div
-              className="flex min-w-0 items-center justify-end gap-2"
-              title={overviewCostScopeNotice}
-              aria-label={`${t('overview.costLast7Days')} · ${overviewCostSourceLabel}. ${overviewCostScopeNotice}`}
-            >
+            <div className="flex min-w-0 items-center justify-end gap-2">
               <CostSourceBadge source={overviewCostSource} />
               <span className="text-sm font-semibold text-card-foreground">
                 {hasKnownCost ? formatCurrency(totalCost) : '—'}
