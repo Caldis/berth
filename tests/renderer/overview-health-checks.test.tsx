@@ -208,6 +208,8 @@ describe('overview health checks', () => {
     )
 
     expect(await screen.findByText('Claude Code')).toBeInTheDocument()
+    expect(screen.getByText('技能')).toBeInTheDocument()
+    expect(screen.queryByText('Skills')).not.toBeInTheDocument()
     expect(screen.getByText('插件')).toBeInTheDocument()
     expect(screen.queryByText('Plugins')).not.toBeInTheDocument()
     expect(screen.getByText('1 条信息')).toBeInTheDocument()

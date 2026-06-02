@@ -65,7 +65,7 @@
     "noIssues": "所有系统运行正常",
     "started": "开始时间",
     "stats": {
-      "skills": "Skills",
+      "skills": "技能",
       "plugins": "插件"
     },
     "healthCount": {
