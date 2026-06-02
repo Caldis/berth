@@ -11,7 +11,7 @@
   - verify: 2026-06-02 先用 `pnpm exec vitest run tests/renderer/sessions-pages.test.tsx -t "localizes fallback titles"` 复现失败; 添加 `sessions.fallbackTitle` 后同一测试通过; 完整 `tests/renderer/sessions-pages.test.tsx` 通过, 17 tests passed; 页面代码中已无硬编码 `Session #`
 - [x] 任务 3: 收口检查
   - tests: `pnpm typecheck:web`; `pnpm harness:check --work docs/works/2026-06-02-gh-47-localize-session-fallback-titles`
-  - verify: 2026-06-02 `pnpm lint` 通过; `pnpm typecheck:web` 通过; `pnpm harness:check --work docs/works/2026-06-02-gh-47-localize-session-fallback-titles` 通过; `pnpm test` 通过, 57 files / 437 tests
+  - verify: 2026-06-02 `pnpm lint` 通过; `pnpm typecheck:web` 通过; `pnpm harness:check --work docs/works/2026-06-02-gh-47-localize-session-fallback-titles` 通过; `pnpm test` 通过, 57 files / 437 tests; GitHub Actions run 26802308537 通过
 
 ## verify 回写
 

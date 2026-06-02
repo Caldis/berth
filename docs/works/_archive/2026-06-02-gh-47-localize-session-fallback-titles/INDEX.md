@@ -2,7 +2,7 @@
 task: 2026-06-02-gh-47-localize-session-fallback-titles
 task_id: GH-47
 type: bug
-phase: implement
+phase: archive
 created: 2026-06-02
 issue:
   id: I_kwDOSpnDwc8AAAABEFTRww
@@ -14,7 +14,7 @@ gh_project:
   status: tracked
   project_number: 6
   project_url: https://github.com/users/Caldis/projects/6
-  item_status: In Progress
+  item_status: Done
   project_id: PVT_kwHOADXbEs4BZHvQ
   item_id: PVTI_lAHOADXbEs4BZHvQzgudLE0
 artifacts:
