@@ -6,11 +6,13 @@
   "nav": {
     "overview": "Overview",
     "sessions": "Sessions",
+    "sessionDetail": "Session detail",
     "configuration": "CONFIGURATION",
     "instructions": "Instructions",
     "capabilities": "Capabilities",
     "usage": "Usage",
     "settings": "Settings",
+    "breadcrumb": "Breadcrumb",
     "resizeSidebar": "Resize sidebar",
     "expandSidebar": "Expand sidebar",
     "collapseSidebar": "Collapse sidebar"

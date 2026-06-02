@@ -9,8 +9,8 @@
 - [x] 任务 2: 增加 sidebar width 状态、resize handle 与折叠后的主体宽度计算。
   - tests: `pnpm test tests/renderer/sidebar-agent-view.test.tsx`; `pnpm typecheck:web`
   - verify: expanded/collapsed width 稳定, resize clamp 生效, drag/no-drag 区域不影响导航按钮。
-- [ ] 任务 3: 增加顶部导航栏和路由面包屑。
-  - tests: `pnpm test tests/renderer/top-navigation.test.tsx`
+- [x] 任务 3: 增加顶部导航栏和路由面包屑。
+  - tests: `pnpm test tests/renderer/top-navigation.test.tsx`; `pnpm typecheck:web`
   - verify: `/`, `/sessions`, `/sessions/:id`, `/configuration/instructions`, `/configuration/capabilities`, `/usage` 面包屑正确。
 - [ ] 任务 4: e2e 覆盖 app shell 与 Windows controls。
   - tests: `pnpm build`; `pnpm test:e2e tests/e2e/app.e2e.ts`; `pnpm test:e2e tests/e2e/window-controls.e2e.ts`
