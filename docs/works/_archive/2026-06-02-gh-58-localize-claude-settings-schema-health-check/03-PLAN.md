@@ -9,9 +9,10 @@
 - [x] 任务 2: 补充 Overview 与 Hooks hover renderer 测试。
   - tests: `pnpm vitest run tests/renderer/overview-health-checks.test.tsx tests/renderer/hooks-lifecycle-view.test.tsx` — 25 passed
   - verify: 两个入口均覆盖 title / message / fix。
-- [ ] 任务 3: 完成验证、归档并处理 docs issue。
-  - tests: `pnpm lint`; `pnpm typecheck:web`; `pnpm typecheck:node`; `pnpm test`; `pnpm harness:check`; `node scripts/harness-projects.mjs check --strict`; `pnpm harness:issues`
-  - verify: `docs/issues/2026-06-02-BUG-localize-claude-settings-schema-health-check.md` 移入 resolved。
+- [x] 任务 3: 完成验证、归档并处理 docs issue。
+  - tests: `pnpm lint`; `pnpm typecheck:web`; `pnpm typecheck:node`; `pnpm test` — 60 files / 444 tests; `pnpm harness:check`; `node scripts/harness-projects.mjs check --strict`; `pnpm harness:issues`
+  - verify: 本地检查通过; push 前 master 最新 Actions 为 success; push 后 `26809854829` 在 Ubuntu 与 Windows 均 success。Overview 断言截图: `C:\Users\mail\AppData\Local\Temp\berth-gh58-claude-settings-health-overview.png`; Electron 窗口截图: `C:\Users\mail\AppData\Local\Temp\berth-gh58-claude-settings-health-window.png`。
+  - issue: `docs/issues/2026-06-02-BUG-localize-claude-settings-schema-health-check.md` 移入 resolved。
 
 ## verify 回写
 

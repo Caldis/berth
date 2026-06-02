@@ -29,3 +29,15 @@
 - `src/renderer/src/i18n/locales/en.json`
 - `src/renderer/src/i18n/locales/zh.json`
 - Overview / Hooks health check renderer tests
+
+## Resolution
+
+- 完成日期: 2026-06-02
+- 关联任务: `docs/works/_archive/2026-06-02-gh-58-localize-claude-settings-schema-health-check`
+- 关联 GitHub Issue: https://github.com/Caldis/berth/issues/58
+- 关联提交: `c2a5dbd3e031523c8a624af142ea6c5e2d521817`
+- 新增 Claude settings schema health check 的 title / message / fix / evidence i18n 映射。
+- Overview 与 Hooks 生命周期 hover 详情共用 renderer 测试覆盖。
+- 验证截图:
+  - `C:\Users\mail\AppData\Local\Temp\berth-gh58-claude-settings-health-overview.png`
+  - `C:\Users\mail\AppData\Local\Temp\berth-gh58-claude-settings-health-window.png`
