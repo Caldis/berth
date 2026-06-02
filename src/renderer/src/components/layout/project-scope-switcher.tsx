@@ -72,6 +72,12 @@ export function ProjectScopeSwitcher({ collapsed }: ProjectScopeSwitcherProps): 
       <button
         type="button"
         onClick={toggleOpen}
+        onKeyDown={(event) => {
+          if (event.key === 'Escape' && open) {
+            event.stopPropagation()
+            setOpen(false)
+          }
+        }}
         className={cn(
           'flex h-8 w-full min-w-0 items-center gap-2 rounded-md text-muted-foreground transition-colors hover:bg-sidebar-accent/10 hover:text-sidebar-foreground focus:outline-none focus:ring-1 focus:ring-sidebar-ring',
           collapsed ? 'w-8 justify-center' : 'justify-start px-2.5'

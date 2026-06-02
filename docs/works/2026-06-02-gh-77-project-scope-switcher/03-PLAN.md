@@ -21,9 +21,9 @@
 - [x] 任务 6: 切换 project scope 后处理扫描刷新与过期状态
   - tests: `pnpm test tests/unit/project-scope-runtime.test.ts tests/unit/watcher.test.ts tests/renderer/project-scope-switcher.test.tsx` (10 passed); `pnpm typecheck:node`; `pnpm typecheck:web`
   - verify: 非 UI; `project-scope:activate` 会按选择的项目路径重建 scanner, 扫描后重建 search index, 并重启 watcher。切回 global/user 时清空 projectDir, 避免继续沿用上一项目扫描上下文。renderer 选择 scope 成功后同步写入 assets/stats/project candidates, 再更新 scope selection。watcher 已纳入项目 `CLAUDE.md`、`AGENTS.md`、`.codex` 与 `.agents/skills` 路径。
-- [ ] 任务 7: 视觉和交互验收
-  - tests: `pnpm build`; `pnpm test:e2e tests/e2e/project-scope.e2e.ts`
-  - verify: UI; 用 `pnpm dev:agent` 打开真实 Electron, `print-window` 截图 expanded/collapsed 状态, 检查黑白工具壳、信息密度、键盘路径、窗口控制区不重叠。
+- [x] 任务 7: 视觉和交互验收
+  - tests: `pnpm test tests/renderer/project-scope-switcher.test.tsx` (5 passed); `pnpm build`; `pnpm test:e2e tests/e2e/project-scope.e2e.ts` (1 passed)
+  - verify: UI; `tests/e2e/project-scope.e2e.ts` 使用临时 `CODEX_HOME` 和项目 skill fixture, 实测打开项目范围、键盘 Escape 关闭、选择项目后搜索索引能找到项目 skill, 切回用户域后项目 skill 从搜索结果消失。真实 Electron `dev:agent` 实例 `gh77-project-scope-final` 使用 CDP 打开弹层, `print-window` 截图 expanded/collapsed: `C:/Users/mail/AppData/Local/Temp/berth-gh77-project-scope-final-expanded.png`, `C:/Users/mail/AppData/Local/Temp/berth-gh77-project-scope-final-collapsed.png`; guard after 返回 `guard-ok`, 窗口控制区未被遮挡。
 - [ ] 任务 8: harness verify / archive
   - tests: `pnpm harness:check --work docs/works/2026-06-02-gh-77-project-scope-switcher`; `node scripts/harness-projects.mjs check --strict`; `pnpm harness:prepush`
   - verify: 非 UI; 所有实现测试和 UI 验收通过后, `harness-projects done`, 移动到 `_archive`, 推送并等待 CI。

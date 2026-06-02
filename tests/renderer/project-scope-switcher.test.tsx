@@ -82,6 +82,18 @@ describe('ProjectScopeSwitcher', () => {
     expect(screen.getByRole('button', { name: 'Project scope' })).toHaveAttribute('aria-haspopup', 'listbox')
   })
 
+  it('closes the project scope menu with Escape while focus remains on the trigger', async () => {
+    render(<ProjectScopeSwitcher collapsed={false} />)
+
+    const trigger = screen.getByRole('button', { name: 'Project scope' })
+    fireEvent.click(trigger)
+    expect(await screen.findByRole('listbox', { name: 'Project scope options' })).toBeInTheDocument()
+
+    fireEvent.keyDown(trigger, { key: 'Escape' })
+
+    expect(screen.queryByRole('listbox', { name: 'Project scope options' })).not.toBeInTheDocument()
+  })
+
   it('shows an empty state when no project is available', async () => {
     window.api.projectScope.candidates = vi.fn(async () => [])
     render(<ProjectScopeSwitcher collapsed={false} />)
