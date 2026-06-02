@@ -2,20 +2,20 @@
 task: 2026-06-02-gh-66-settings-dialog-focus-trap
 task_id: GH-66
 type: bug
-phase: implement
+phase: archive
 created: 2026-06-02
 issue:
   number: 66
   repo: Caldis/berth
   url: https://github.com/Caldis/berth/issues/66
   id: I_kwDOSpnDwc8AAAABEHM01g
-  state: OPEN
+  state: CLOSED
 gh_project:
   status: tracked
   project_number: 6
   project_url: https://github.com/users/Caldis/projects/6
   item_id: PVTI_lAHOADXbEs4BZHvQzgufI14
-  item_status: In Progress
+  item_status: Done
   project_id: PVT_kwHOADXbEs4BZHvQ
 artifacts:
   source: 00-BUG.md
