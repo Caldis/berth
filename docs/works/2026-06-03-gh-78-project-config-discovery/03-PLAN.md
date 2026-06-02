@@ -15,8 +15,8 @@
 - [x] 任务 4: watcher 使用 project roots
   - tests: `pnpm test tests/unit/watcher.test.ts` (4 passed); `pnpm typecheck:node`
   - verify: 非 UI; watch paths 包含父级 project roots 的 Claude/Codex 配置路径。
-- [ ] 任务 5: project scope e2e 覆盖父级 project skill 可搜索
-  - tests: `pnpm build`; `pnpm test:e2e tests/e2e/project-scope.e2e.ts`
+- [x] 任务 5: project scope e2e 覆盖父级 project skill 可搜索
+  - tests: `pnpm build`; `pnpm test:e2e tests/e2e/project-scope.e2e.ts` (1 passed)
   - verify: UI 数据可见; session cwd 位于项目子目录, project skill 位于父级 `.agents/skills`, 切换到项目后搜索能找到, 切回用户域后消失。
 - [ ] 任务 6: verify / archive
   - tests: `pnpm harness:check --work docs/works/2026-06-03-gh-78-project-config-discovery`; `pnpm harness:prepush`; `node scripts/harness-projects.mjs check --strict`

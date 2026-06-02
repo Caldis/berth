@@ -15,18 +15,21 @@ test.beforeEach(async ({ browserName: _browserName }, testInfo) => {
   const userDataDir = join(tempDir, 'user-data')
   const codexHome = join(tempDir, 'codex-home')
   const projectDir = join(tempDir, 'e2e-project')
+  const projectCwd = join(projectDir, 'packages', 'app')
   const sessionsDir = join(codexHome, 'sessions')
   const skillDir = join(projectDir, '.agents', 'skills', 'e2e-skill')
 
   mkdirSync(userDataDir, { recursive: true })
   mkdirSync(sessionsDir, { recursive: true })
+  mkdirSync(join(projectDir, '.git'), { recursive: true })
+  mkdirSync(projectCwd, { recursive: true })
   mkdirSync(skillDir, { recursive: true })
   writeFileSync(
     join(sessionsDir, 'rollout-e2e-project.jsonl'),
     JSON.stringify({
       type: 'session_meta',
       timestamp: '2026-06-02T00:00:00.000Z',
-      payload: { id: 'e2e-project-session', cwd: projectDir, model: 'gpt-5' }
+      payload: { id: 'e2e-project-session', cwd: projectCwd, model: 'gpt-5' }
     }) + '\n'
   )
   writeFileSync(
@@ -64,11 +67,11 @@ test('switches project scope and rebuilds the searchable project assets', async 
   await expect(page.getByRole('listbox', { name: /^(Project scope options|项目范围选项)$/ })).toHaveCount(0)
 
   await trigger.click()
-  const option = page.getByRole('option', { name: 'e2e-project' })
+  const option = page.getByRole('option', { name: 'app' })
   await expect(option).toBeVisible()
   await option.click()
 
-  await expect(trigger).toContainText('e2e-project')
+  await expect(trigger).toContainText('app')
   await expect.poll(() => hasSearchResult('e2e-skill')).toBe(true)
 
   await trigger.click()
