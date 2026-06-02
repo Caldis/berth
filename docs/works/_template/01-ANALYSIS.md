@@ -6,6 +6,13 @@
 ## 关联与依赖
 调用关系、region/scope 差异、历史设计取舍。
 
+## 任务分类与 debt 校准
+- type / maintenance.subtype:
+- source.kind / refs:
+- debt estimate 修正:
+- scope / risk / areas / confidence:
+- revision:
+
 ## 验收标准
 逐条编号, SPEC 与 verify 据此核对。
 1.

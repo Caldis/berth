@@ -33,9 +33,17 @@ action: 0.0-new · 0.1-continue · 1.0-explore · 2.0-design · 3.0-implement ·
 
 ## 何时进入
 
-- feature / bug 开发任务: 落代码前必须用 `harness-0.0-new` 建任务态, 禁止跳过直接实现或调试。
+- feature / bug / maintenance 开发任务: 落代码前必须用 `harness-0.0-new` 建任务态, 禁止跳过直接实现或调试。
 - 小改动 (单行/拼写/纯文案注释, 或单一文件·单一关注点·门禁即可验收的小改动如弃用 API 替换) 可直接处理 + 跑门禁, 不建任务态。小改动豁免前必须先声明豁免依据并征得用户确认。
 - 存疑默认走 harness; 进行中的任务用 `harness-0.1-continue` 续跑。
+
+## Task Type 与 Debt
+
+- `type`: `feature | bug | maintenance`。maintenance 需填写 subtype: `ui-ux | performance | architecture | testability | tooling-ci | dependency | docs`。
+- `source.kind`: `user-request | github-issue | docs-issues | docs-friction | ci | harness`。`issue` 与 `friction` 是来源, 不作为 subtype。
+- `debt.estimate` 从 new 开始填写, explore/design/implement 持续修正; 重要变化写入 `debt.revisions[]`。
+- `debt.final` 在 verify/archive 前填写。`pnpm harness:stats` 汇总 debt pool: `<20 ok`, `>=20 notice`, `>=40 recommend-maintenance`, `>=60 requires-override`。
+- GitHub Project 使用自定义字段同步 Task Type、Priority、日期、debt、scope、risk、source; 当前用户仓库不写真实 GitHub Issue Type。
 
 ## 阶段
 
@@ -45,6 +53,6 @@ Archive 必须先把 GitHub Project item 置为 Done 并回读确认, 失败则�
 状态见各任务 `docs/works/{task}/INDEX.md`; 摩擦见 `docs/friction/`; 产品问题见 `docs/issues/`。
 Archive 后提醒本次产生或关联的 friction / issues; 用户可选运行 `harness-5.1-friction` 或 `harness-5.2-issues`, Agent 不自动执行。
 
-## 观测 (v2)
+## 观测
 
-工作流健康度观测机制留待 v2, 当前未实现。
+`pnpm harness:stats` 输出 works 阶段分布、friction/issues 数量、debt pool 状态和分发状态。

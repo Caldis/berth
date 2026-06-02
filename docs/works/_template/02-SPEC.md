@@ -4,6 +4,14 @@
 
 ## 数据契约
 
+## 任务分类与 debt
+- type / maintenance.subtype:
+- source.kind / refs:
+- debt.estimate:
+- debt.final 预期:
+- revisions:
+- Project 字段同步:
+
 ## 模块结构 / 组件拆分
 遵守 docs/ARCHITECTURE.md 的边界与约定。
 

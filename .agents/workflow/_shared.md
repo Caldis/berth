@@ -22,9 +22,36 @@ SUMMARY 为 kebab-case。任务目录位于 `docs/works/`。`issue.number` 是�
 ---
 task: 2026-06-01-gh-123-order-notes
 task_id: GH-123
-type: feature          # feature | bug
+type: feature          # feature | bug | maintenance
 phase: explore         # explore | design | implement | verify | polish | blocked | archive
 created: 2026-06-01
+priority: P2           # P0 | P1 | P2 | P3
+target_date:
+maintenance:
+  subtype: performance # 仅 type=maintenance 时填写
+source:
+  kind: user-request   # user-request | github-issue | docs-issues | docs-friction | ci | harness
+  refs: []
+debt:
+  estimate:
+    incurred: 3
+    repaid: 0
+    net: 3
+    scope: module      # file | module | cross-process | global
+    risk: medium       # low | medium | high
+    areas: [architecture]
+    confidence: low    # low | medium | high
+    rationale: "0.0-new 初始估算; explore/design 后校准。"
+  final:
+    incurred:
+    repaid:
+    net:
+    scope:
+    risk:
+    areas: []
+    confidence:
+    rationale:
+  revisions: []
 issue:
   number: 123
   repo: Caldis/berth
@@ -37,7 +64,7 @@ gh_project:
   item_id: PVTI_xxx
   item_status: In Progress
 artifacts:
-  source: 00-PRD.md    # feature: 00-PRD.md; bug: 00-BUG.md
+  source: 00-PRD.md    # feature/maintenance: 00-PRD.md; bug: 00-BUG.md
   analysis: 01-ANALYSIS.md
   spec: 02-SPEC.md
   plan: 03-PLAN.md
@@ -56,6 +83,18 @@ gh_project:
 授权恢复后运行 `node scripts/harness-projects.mjs ensure docs/works/{task}` 回写真实 `PVTI_...` item id, 再把 `phase` 改回应继续的阶段。
 
 `phase` 表示任务当前所处阶段, 即 `harness-0.1-continue` 将续跑的步骤。action id 只用于 workflow 文件、skill 名和 friction 命名, 不替代 `INDEX.phase`。
+
+## 任务分类、source 与 debt
+
+- `type` 只使用 `feature | bug | maintenance`。`issue` 与 `friction` 是 `source.kind`, 不作为 type 或 maintenance subtype。
+- `maintenance.subtype` 只在 `type: maintenance` 时出现, 且必须是 `ui-ux | performance | architecture | testability | tooling-ci | dependency | docs`。
+- `debt.estimate` 是当前已知估算, 从 new 开始填写, explore/design/implement 发现影响面变化时必须修正。
+- 估算发生有意义变化时, 追加 `debt.revisions[]`, 记录阶段、日期、from/to 和 reason; 不只静默改数字。
+- `debt.final` 在 verify/archive 前填写, archive 不接受只有 estimate 的新任务。统计口径优先 `final.net`, 没有 final 时临时用 `estimate.net`。
+- `net = incurred - repaid`。feature / bug 通常增加 debt; maintenance 通常设置 `repaid > 0`, 目标是降低项目总 debt。
+- `pnpm harness:stats` 汇总项目 debt pool。阈值: `<20 ok`, `>=20 notice`, `>=40 recommend-maintenance`, `>=60 requires-override`; 超过 60 继续做非维护任务时, INDEX 必须写 `debt.override_reason`。
+- Agent 可按 `debt.estimate.net`、scope 与 risk 调整任务顺序和并行度: 高 risk/global 优先顺序执行并扩大验证; file/module 且文件不重叠时可并行。该判断不能跳过测试、设计或 Project 同步。
+- 当前 Caldis/berth 用户仓库不写 GitHub Issue Type; 类型同步到 GitHub Project 自定义字段 `Task Type`。
 
 ## Action ID
 
@@ -100,14 +139,15 @@ gh_project:
    - 多 Agent 并行导致别的 active work 破坏全局 `pnpm harness:check` 时, 当前任务阶段提交可先跑 `pnpm harness:check --work docs/works/{task}` 验证自己的任务目录。verify/archive 总收口仍必须跑全局 `pnpm harness:check`, 不能用局部检查替代。
 12. Polish 是可选阶段, 只能由用户主动要求, 或 Agent 在复杂任务 verify 通过后询问并取得明确同意后进入。Polish 只检查当前任务相关的深挖、修复、交互、视觉、可用性、适用性与性能问题, 不扩大范围。
 13. Active work 必须记录 `task_id`、`issue.number`、`issue.url` 和真实 `gh_project.item_id`。唯一例外是 `gh_project.status: pending-auth` 且 `phase: blocked`, 表示缺少 GitHub Project 授权, 不允许使用 `TBD` / `TODO` / 手写占位 item id。旧归档任务可保留历史企业 ticket 字段, 但 active works 不再新增这类字段。
-14. Archive 前必须同步 GitHub Project: 运行 `node scripts/harness-projects.mjs done <task-dir>`, 将 item 状态置 Done 并回读确认; 失败、缺授权或缺 `gh_project.item_id` 时停止 archive, 不移动目录。GitHub Issue 是否关闭由 PR closing keyword 或用户明确要求决定, archive 不默认关闭 Issue。
-15. 测试不是 verify 阶段补跑。Design 必须写测试策略和测试矩阵; Implement 每个实现项必须先写或更新目标测试, 跑目标测试通过后才可勾选。确实不适合自动化测试时, 必须在 03-PLAN 写清 `tests: not needed - <reason>` 和替代验证。每个实现项必须有测试证据或明确例外理由。
-16. 默认流程是 harness workflow。只有用户明确要求使用 Superpowers 流程时, Superpowers 才能接管流程; 否则只把 Superpowers 当作方法库。
-17. 进入 harness 后, Superpowers 只能作为方法参考: 不创建 active `docs/superpowers/plans` 或 `docs/superpowers/specs`, 不要求 worktree, 不覆盖 INDEX.phase, 不把 `writing-plans` / `executing-plans` 的流程问答注入当前任务。所有 spec / plan 输出都写入当前 work 的 `02-SPEC.md` / `03-PLAN.md`。
-18. Agent 自主判断并行或顺序执行。文件不重叠、模块边界清楚、测试可独立运行时可并行; 同一批文件反复修改、测试强耦合、任务依赖前一步结果、或涉及全局迁移/状态机/脚本入口时顺序执行。不得把 subagent 并行或主 session 执行作为用户选择题。
-19. Archive 后必须提醒本次产生或关联的 friction / issues, 并给出可选下一步: `harness-5.1-friction` 处理 friction, `harness-5.2-issues` 处理 docs/issues。提醒不等于自动执行, 未经用户要求不得进入这两个可选动作。
-20. 临时文件写系统临时目录 (`$env:TEMP` / `os.tmpdir()`) 或已约定的忽略目录, 不写项目目录, 也不在 Windows 上使用 `/tmp`。不把不可靠命令塞进大批量并行调用; 一个可能失败的命令应单独跑, 便于看清真实错误。
-21. 前端或 UI 相关任务必须有界面质量与交互验收。Explore 记录现有设计系统、页面密度、用户路径和状态问题; Design 写清布局层级、组件选择、交互反馈、加载/空/错误/禁用/focus 状态、响应式、可访问性、文案/i18n 与视觉一致性; Verify 按这些条目实测。Polish 只能加深检查, 不能替代 Design 阶段的界面方案。
+14. GitHub Project 字段必须可用: `node scripts/harness-projects.mjs fields ensure` 确认 `Task Type`、`Priority`、日期、debt、scope、risk、source 等自定义字段; `ensure` / `done` 会同步这些字段。`node scripts/harness-projects.mjs check --strict` 用于检查 Project 状态与可读字段值。
+15. Archive 前必须同步 GitHub Project: 运行 `node scripts/harness-projects.mjs done <task-dir>`, 将 item 状态置 Done, 同步 `Archived at` 与最终 debt 字段, 再回读 Project item 确认; 失败、缺授权或缺 `gh_project.item_id` 时停止 archive, 不移动目录。GitHub Issue 是否关闭由 PR closing keyword 或用户明确要求决定, archive 不默认关闭 Issue。
+16. 测试不是 verify 阶段补跑。Design 必须写测试策略和测试矩阵; Implement 每个实现项必须先写或更新目标测试, 跑目标测试通过后才可勾选。确实不适合自动化测试时, 必须在 03-PLAN 写清 `tests: not needed - <reason>` 和替代验证。每个实现项必须有测试证据或明确例外理由。
+17. 默认流程是 harness workflow。只有用户明确要求使用 Superpowers 流程时, Superpowers 才能接管流程; 否则只把 Superpowers 当作方法库。
+18. 进入 harness 后, Superpowers 只能作为方法参考: 不创建 active `docs/superpowers/plans` 或 `docs/superpowers/specs`, 不要求 worktree, 不覆盖 INDEX.phase, 不把 `writing-plans` / `executing-plans` 的流程问答注入当前任务。所有 spec / plan 输出都写入当前 work 的 `02-SPEC.md` / `03-PLAN.md`。
+19. Agent 自主判断并行或顺序执行。文件不重叠、模块边界清楚、测试可独立运行时可并行; 同一批文件反复修改、测试强耦合、任务依赖前一步结果、或涉及全局迁移/状态机/脚本入口时顺序执行。不得把 subagent 并行或主 session 执行作为用户选择题。
+20. Archive 后必须提醒本次产生或关联的 friction / issues, 并给出可选下一步: `harness-5.1-friction` 处理 friction, `harness-5.2-issues` 处理 docs/issues。提醒不等于自动执行, 未经用户要求不得进入这两个可选动作。
+21. 临时文件写系统临时目录 (`$env:TEMP` / `os.tmpdir()`) 或已约定的忽略目录, 不写项目目录, 也不在 Windows 上使用 `/tmp`。不把不可靠命令塞进大批量并行调用; 一个可能失败的命令应单独跑, 便于看清真实错误。
+22. 前端或 UI 相关任务必须有界面质量与交互验收。Explore 记录现有设计系统、页面密度、用户路径和状态问题; Design 写清布局层级、组件选择、交互反馈、加载/空/错误/禁用/focus 状态、响应式、可访问性、文案/i18n 与视觉一致性; Verify 按这些条目实测。Polish 只能加深检查, 不能替代 Design 阶段的界面方案。
 
 ## 工具
 
