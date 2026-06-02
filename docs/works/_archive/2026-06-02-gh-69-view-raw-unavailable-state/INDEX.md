@@ -2,14 +2,14 @@
 task: 2026-06-02-gh-69-view-raw-unavailable-state
 task_id: GH-69
 type: bug
-phase: implement
+phase: archive
 created: 2026-06-02
 issue:
   number: 69
   repo: Caldis/berth
   url: https://github.com/Caldis/berth/issues/69
   id: I_kwDOSpnDwc8AAAABEHn6yw
-  state: OPEN
+  state: CLOSED
 artifacts:
   source: 00-BUG.md
   analysis: 01-ANALYSIS.md
@@ -21,7 +21,7 @@ gh_project:
   project_url: https://github.com/users/Caldis/projects/6
   project_id: PVT_kwHOADXbEs4BZHvQ
   item_id: PVTI_lAHOADXbEs4BZHvQzgufhsA
-  item_status: In Progress
+  item_status: Done
 ---
 
 # View Raw buttons should not fail silently when raw content is unavailable

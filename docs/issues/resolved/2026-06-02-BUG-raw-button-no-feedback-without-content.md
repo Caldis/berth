@@ -14,5 +14,7 @@
 - 按钮可见, 但 `assets.get(asset.id)` 没有返回 `raw` 内容, 点击后界面没有变化。
 
 # 解决方案
-- 在所有 View Raw 入口统一按 `asset.raw` / `assets.get(...).raw` 可用性控制按钮状态。
-- raw 不可用但入口仍需保留时, 将按钮置为 disabled 并提供简短原因提示。
+- 完成日期: 2026-06-02
+- 关联任务: GH-69 / https://github.com/Caldis/berth/issues/69
+- 关联提交: `1aedd62`
+- 解决方式: 新增共享 `ViewRawButton`, 能力页和指令页同类入口统一使用。raw 可用时打开 InspectorDrawer; raw 不可用或读取失败时, 按钮变为禁用态并显示明确原因。

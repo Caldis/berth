@@ -9,9 +9,12 @@
 - [x] 任务 2: 实现 ViewRawButton 并替换能力页/指令页同类入口。
   - tests: `pnpm vitest run tests/renderer/view-raw-button.test.tsx` (pass, 4 tests); `pnpm vitest run tests/renderer/view-raw-button.test.tsx tests/renderer/status-line-section.test.tsx tests/renderer/capabilities-guidance.test.tsx tests/renderer/instructions-guidance.test.tsx` (pass, 4 files / 20 tests); `pnpm typecheck:web` (pass)
   - verify: View Raw 入口不再静默失败; 现有按钮风格和布局不退化。
-- [ ] 任务 3: 跑局部 harness、提交前门禁、真实 UI 验收、归档。
-  - tests: `pnpm harness:check --work docs/works/2026-06-02-gh-69-view-raw-unavailable-state`; `pnpm harness:prepush`
-  - verify: agent-owned Electron 中复现 MCP raw 不可用按钮变为可解释的禁用态; status line raw 可用入口仍打开 drawer; push 前后检查 GitHub Actions。
+- [x] 任务 3: 跑局部 harness、提交前门禁、真实 UI 验收、归档。
+  - tests: `pnpm harness:check --work docs/works/2026-06-02-gh-69-view-raw-unavailable-state` (pass); `pnpm harness:prepush` (pass, 64 files / 479 tests, CI baseline success)
+  - verify: implementation commit `1aedd62` pushed after local checks and CI baseline; `pnpm harness:ci:wait -- --sha 1aedd62cd8803b7d91952e69ae40ee25364c0fd5` confirmed `CI#26819792395` success.
+  - UI: agent-owned Electron `gh69-view-raw-unavailable`, CDP verified MCP `openaiDeveloperDocs` raw unavailable action becomes disabled with title `这个资产没有可读取的原文内容。`; no drawer opens for unavailable raw; status line raw action still opens InspectorDrawer with `aria-modal=true`.
+  - screenshots: `C:\Users\mail\AppData\Local\Temp\berth-gh69-view-raw-unavailable-cdp.png`; `C:\Users\mail\AppData\Local\Temp\berth-gh69-view-raw-drawer-cdp.png`; `C:\Users\mail\AppData\Local\Temp\berth-gh69-view-raw-drawer-print-window.png`.
+  - process guard: protected user dev node `452032` / Electron `259388` remained alive, no restart.
 
 ## verify 回写
 verify 不通过项作为新任务追加于此, phase 退回 implement。
