@@ -11,11 +11,11 @@
   - tests: `pnpm exec vitest run tests/renderer/sidebar-agent-view.test.tsx`
   - verify: 不修改布局; icon-only button label 与语言一致
   - evidence: 2026-06-02 `pnpm exec vitest run tests/renderer/sidebar-agent-view.test.tsx` 通过, 3 tests passed。
-- [ ] 任务 3: 收口检查
+- [x] 任务 3: 收口检查
   - tests: `pnpm lint`; `pnpm typecheck:web`; `pnpm test`; `pnpm harness:check`; `node scripts/harness-projects.mjs check --strict`
   - verify: 包含 GitHub Actions run 结果
   - evidence: 2026-06-02 本地检查通过: `pnpm lint`; `pnpm typecheck:web`; `pnpm test` (58 files, 439 tests); `pnpm harness:check`; `node scripts/harness-projects.mjs check --strict`。
-  - pending: GitHub Actions run 结果待 push 后回写。
+  - evidence: GitHub Actions run `26804348379` passed for commit `187a50c`。
 
 ## verify 回写
 
