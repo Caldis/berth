@@ -2,7 +2,7 @@
 task: 2026-06-02-gh-29-agent-plugin-manifest-version-compatibility
 task_id: GH-29
 type: feature
-phase: verify
+phase: archive
 created: 2026-06-02
 issue:
   number: 29
@@ -22,7 +22,7 @@ gh_project:
   project_number: 6
   project_url: https://github.com/users/Caldis/projects/6
   item_id: PVTI_lAHOADXbEs4BZHvQzguatnk
-  item_status: In Progress
+  item_status: Done
 ---
 
 # Agent plugin manifest and version compatibility

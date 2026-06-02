@@ -6,7 +6,7 @@ FEATURE
 
 ## 状态
 
-Open
+Resolved
 
 ## GitHub
 
@@ -16,6 +16,8 @@ Open
 ## 关联任务
 
 - 来源: `docs/issues/2026-06-01-FEATURE-agent-capability-plugin-system.md`
+- 归档: `docs/works/_archive/2026-06-02-gh-29-agent-plugin-manifest-version-compatibility/`
+- 完成提交: `4aef00c`, `b452259`, `07d7a2e`
 
 ## PRD
 
@@ -37,3 +39,10 @@ Open
 - 无效 manifest fail closed, 并给出可操作错误信息。
 - plugin version 和目标 Agent 兼容性能进入 UI 数据或状态。
 - 内置 plugin 行为不变。
+
+## 结果
+
+- 新增只读 Agent Capability Plugin manifest parser / validator。
+- `agent-plugins:list` 返回内置 plugins 和 manifest load status。
+- Settings 展示 valid / invalid / incompatible manifest 状态, 展开后可看路径、版本范围和校验错误。
+- 第三方 manifest 不进入 active plugin 列表, 不执行未知代码, write / execute 权限 fail closed。
