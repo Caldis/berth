@@ -2,7 +2,7 @@
 task: 2026-06-02-gh-31-dev-agent-debug-port
 task_id: GH-31
 type: feature
-phase: design
+phase: implement
 created: 2026-06-02
 issue:
   number: 31
@@ -32,8 +32,8 @@ gh_project:
 ## 产物
 - [x] 00-PRD.md — 原始输入快照
 - [x] 01-ANALYSIS.md — Explore 产物
-- [ ] 02-SPEC.md — Design 产物
-- [ ] 03-PLAN.md — 活任务清单
+- [x] 02-SPEC.md — Design 产物
+- [x] 03-PLAN.md — 活任务清单
 - [ ] 04-POLISH.md — 可选抛光记录
 
 ## 待澄清 (blocked 时填)
