@@ -17,3 +17,9 @@
 - 先补原始会话样本和单元测试。
 - 明确 token rate 的定义, 避免用不可靠时间戳或不完整 token 字段计算。
 - 将 skills / MCP / hooks 识别改为可测试的解析器逻辑。
+
+# 处理结果
+- 已在 GH-80 中修复。
+- 归档任务: `docs/works/_archive/2026-06-03-gh-80-session-detail-activity-metrics/`
+- 主要提交: `505094d fix(sessions): derive activity metrics from usage events`
+- 验证: `pnpm typecheck`; `pnpm test`; `pnpm harness:check`; `node scripts/harness-projects.mjs check --strict`; CI `505094d` 通过; Electron 实测 Session Detail Overview 通过。

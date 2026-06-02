@@ -2,7 +2,7 @@
 task: 2026-06-03-gh-80-session-detail-activity-metrics
 task_id: GH-80
 type: bug
-phase: implement
+phase: archive
 created: 2026-06-03
 priority: P1
 target_date: 
@@ -24,14 +24,17 @@ debt:
     confidence: medium
     rationale: "explore 确认问题跨 main parser、sessions:get detail 契约和 renderer session detail 展示; Codex 侧 skills/MCP/hooks 元数据缺口会影响列表、详情和关系解析, token rate 文案和显示也需要 UI 校准。"
   final:
-    incurred:
-    repaid:
-    net:
-    scope:
-    risk:
-    areas: []
-    confidence:
-    rationale:
+    incurred: 4
+    repaid: 3
+    net: 1
+    scope: cross-process
+    risk: low
+    areas:
+      - architecture
+      - testability
+      - ui-ux
+    confidence: high
+    rationale: "已补 Claude/Codex parser usage window、Codex 结构化 skill/MCP/hook 提取、sessions:get activityMetrics 契约、Session Detail UI 来源文案和覆盖测试。剩余 net=1 来自 Codex rollout JSONL 缺少官方稳定 schema, parser 仍需以本地结构化字段容错。"
   revisions:
     - at: 2026-06-03
       from:
@@ -55,7 +58,7 @@ gh_project:
   status: tracked
   project_number: 6
   project_url: https://github.com/users/Caldis/projects/6
-  item_status: In Progress
+  item_status: Done
   project_id: PVT_kwHOADXbEs4BZHvQ
   item_id: PVTI_lAHOADXbEs4BZHvQzguiCCY
 artifacts:

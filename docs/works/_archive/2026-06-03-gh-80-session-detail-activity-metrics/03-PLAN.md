@@ -13,9 +13,9 @@
 - [x] 任务 3: 更新 Session Detail UI 使用 activityMetrics 并补 i18n
   - tests: `pnpm vitest run tests/renderer/sessions-pages.test.tsx`; `pnpm typecheck:web`。
   - verify: 界面质量与交互验收项: 没有新增平铺说明; token rate 继续在 Session signals 内; reliable 显示 `19 tok/min + Usage events`, unreliable 显示 `— + Not enough timing data`; tab roles/empty states 未退化。
-- [ ] 任务 4: 回归检查与阶段收口
-  - tests: `pnpm typecheck`; `pnpm test`; `pnpm harness:check`; `node scripts/harness-projects.mjs check --strict`。
-  - verify: 任务计划中的测试证据完整; Electron 实测 Session Detail Overview, 确认 token rate 文案和 loaded assets 不挤压布局; 进入 verify 阶段。
+- [x] 任务 4: 回归检查与阶段收口
+  - tests: `pnpm typecheck`; `pnpm test`; `pnpm harness:check`; `node scripts/harness-projects.mjs check --strict`; CI `505094d` 通过。
+  - verify: Electron agent `gh80-session-metrics` 实测 Session Detail Overview; `TOKEN 速率` 显示 `Usage 事件` 来源, 加载资产区域保持在右侧面板内; 截图 `C:/Users/mail/AppData/Local/Temp/berth-gh80-session-detail.png`; dev agent 已停止。
 
 ## verify 回写
 verify 不通过项作为新任务追加于此, phase 退回 implement。
