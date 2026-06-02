@@ -1,10 +1,10 @@
-import { useRef, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { ChevronLeft, ChevronRight, Search, Settings as SettingsIcon } from 'lucide-react'
 import type { AgentView } from '@shared/types/asset'
 import { cn } from '@/lib/utils'
-import { useAppStore } from '@/stores/app'
+import { SIDEBAR_COLLAPSED_WIDTH, useAppStore } from '@/stores/app'
 import { navSections } from './nav-config'
 import { isMacPlatform } from '@/lib/platform'
 import { SettingsDialog } from './settings-dialog'
@@ -17,11 +17,41 @@ export function Sidebar(): React.ReactElement {
   const settingsButtonRef = useRef<HTMLButtonElement>(null)
   const collapsed = useAppStore((s) => s.sidebarCollapsed)
   const toggleSidebar = useAppStore((s) => s.toggleSidebar)
+  const sidebarWidth = useAppStore((s) => s.sidebarWidth)
+  const setSidebarWidth = useAppStore((s) => s.setSidebarWidth)
   const setSearchOpen = useAppStore((s) => s.setSearchOpen)
   const agentView = useAppStore((s) => s.agentView)
   const setAgentView = useAppStore((s) => s.setAgentView)
 
   const isMac = isMacPlatform()
+  const effectiveWidth = collapsed ? SIDEBAR_COLLAPSED_WIDTH : sidebarWidth
+
+  const handleResizeMouseDown = useCallback(
+    (event: React.MouseEvent<HTMLDivElement>) => {
+      if (collapsed) return
+      event.preventDefault()
+
+      const startX = event.clientX
+      const startWidth = sidebarWidth
+
+      const handleMouseMove = (moveEvent: MouseEvent): void => {
+        setSidebarWidth(startWidth + moveEvent.clientX - startX)
+      }
+
+      const handleMouseUp = (): void => {
+        document.removeEventListener('mousemove', handleMouseMove)
+        document.removeEventListener('mouseup', handleMouseUp)
+        document.body.style.cursor = ''
+        document.body.style.userSelect = ''
+      }
+
+      document.addEventListener('mousemove', handleMouseMove)
+      document.addEventListener('mouseup', handleMouseUp)
+      document.body.style.cursor = 'col-resize'
+      document.body.style.userSelect = 'none'
+    },
+    [collapsed, setSidebarWidth, sidebarWidth]
+  )
 
   const isActive = (path: string): boolean => {
     if (path === '/') return location.pathname === '/'
@@ -32,10 +62,24 @@ export function Sidebar(): React.ReactElement {
     <>
       <aside
         className={cn(
-          'fixed left-0 top-0 z-30 flex h-full flex-col border-r border-sidebar-border bg-sidebar transition-[width] duration-200',
-          collapsed ? 'w-16' : 'w-60'
+          'fixed left-0 top-0 z-30 flex h-full flex-col border-r border-sidebar-border bg-sidebar transition-[width] duration-200'
         )}
+        style={{ width: effectiveWidth }}
+        data-testid="app-sidebar"
       >
+        {!collapsed && (
+          <div
+            role="separator"
+            aria-orientation="vertical"
+            aria-label={t('nav.resizeSidebar')}
+            className={cn(
+              'titlebar-no-drag absolute right-[-4px] top-0 h-full w-2 cursor-col-resize',
+              'before:absolute before:inset-y-0 before:left-1/2 before:w-px before:-translate-x-1/2 before:bg-transparent',
+              'hover:before:bg-sidebar-accent/40'
+            )}
+            onMouseDown={handleResizeMouseDown}
+          />
+        )}
         {/* macOS reserves a draggable band for the traffic-light buttons (positioned
             at 16,16 in src/main/index.ts). Its height matches the main content's top
             drag strip (app-layout.tsx) so content begins on one line across the window,

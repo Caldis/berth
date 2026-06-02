@@ -1,9 +1,22 @@
 import { create } from 'zustand'
 import type { AgentView, Asset, AssetStats, SessionSummary, UsageSummary } from '@shared/types/asset'
 
+export const SIDEBAR_COLLAPSED_WIDTH = 64
+export const SIDEBAR_DEFAULT_WIDTH = 248
+export const SIDEBAR_MIN_WIDTH = 200
+export const SIDEBAR_MAX_WIDTH = 360
+
+export function clampSidebarWidth(width: number): number {
+  if (!Number.isFinite(width)) return SIDEBAR_DEFAULT_WIDTH
+  return Math.max(SIDEBAR_MIN_WIDTH, Math.min(SIDEBAR_MAX_WIDTH, Math.round(width)))
+}
+
 interface AppState {
   sidebarCollapsed: boolean
+  sidebarWidth: number
   toggleSidebar: () => void
+  setSidebarCollapsed: (collapsed: boolean) => void
+  setSidebarWidth: (width: number) => void
 
   searchOpen: boolean
   setSearchOpen: (open: boolean) => void
@@ -38,7 +51,10 @@ interface AppState {
 
 export const useAppStore = create<AppState>((set) => ({
   sidebarCollapsed: false,
+  sidebarWidth: SIDEBAR_DEFAULT_WIDTH,
   toggleSidebar: () => set((s) => ({ sidebarCollapsed: !s.sidebarCollapsed })),
+  setSidebarCollapsed: (sidebarCollapsed) => set({ sidebarCollapsed }),
+  setSidebarWidth: (sidebarWidth) => set({ sidebarWidth: clampSidebarWidth(sidebarWidth) }),
 
   searchOpen: false,
   setSearchOpen: (searchOpen) => set({ searchOpen }),

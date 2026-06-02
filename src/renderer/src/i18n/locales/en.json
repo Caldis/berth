@@ -11,6 +11,7 @@
     "capabilities": "Capabilities",
     "usage": "Usage",
     "settings": "Settings",
+    "resizeSidebar": "Resize sidebar",
     "expandSidebar": "Expand sidebar",
     "collapseSidebar": "Collapse sidebar"
   },
