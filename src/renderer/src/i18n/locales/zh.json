@@ -1297,6 +1297,121 @@
       "missing": "{{count}} 缺失",
       "not-scanned": "{{count}} 未扫描"
     },
+    "agentPluginSourceRowStatus": {
+      "scanned": "已扫描",
+      "missing": "缺失",
+      "not-scanned": "未扫描"
+    },
+    "agentPluginSourceKinds": {
+      "directory": "目录",
+      "file": "文件",
+      "policy": "策略",
+      "unknown": "未知来源"
+    },
+    "agentPluginSourceDeclared": "已声明",
+    "agentPluginSourceDetectedOnly": "仅扫描发现",
+    "agentPluginSourcePathPattern": "模式: {{pattern}}",
+    "agentPluginSourceNoRows": "没有具体来源行。",
+    "agentPluginSourceCodes": {
+      "project": {
+        "current-candidate": "当前项目候选来源",
+        "session-derived-candidate": "从会话推断的项目候选来源"
+      }
+    },
+    "agentPluginSources": {
+      "claude": {
+        "user": {
+          "data-directory": {
+            "label": "用户数据目录",
+            "description": "用户级 Claude Code 资产, 包括指令、Hooks、会话、计划、用量数据和集成。"
+          },
+          "global-config": {
+            "label": "全局配置",
+            "description": "Claude Code 用户配置, 可声明 MCP server 等共享能力。"
+          }
+        },
+        "project": {
+          "directory": {
+            "label": "项目 .claude 目录",
+            "description": "项目级 Claude Code 指令、Hooks、权限和团队配置。"
+          },
+          "mcp-config": {
+            "label": "项目 MCP 配置",
+            "description": "Claude Code 可用的项目 MCP server 定义。"
+          }
+        },
+        "enterprise": {
+          "managed-settings": {
+            "label": "托管设置",
+            "description": "企业托管的 Claude Code 设置和策略能力规则。"
+          },
+          "managed-mcp": {
+            "label": "托管 MCP 配置",
+            "description": "企业托管的 MCP server 定义。"
+          }
+        }
+      },
+      "codex": {
+        "user": {
+          "config": {
+            "label": "用户配置",
+            "description": "Codex 用户配置, 用于 MCP server、Hooks、状态栏、沙箱和审批设置。"
+          },
+          "hooks": {
+            "label": "用户 Hooks 文件",
+            "description": "在 config.toml 外声明的 Codex 用户级 Hooks。"
+          },
+          "agents-md": {
+            "label": "用户 AGENTS.md",
+            "description": "Codex 用户级长期指令。"
+          },
+          "agents-directory": {
+            "label": "用户 agents 目录",
+            "description": "用户级 Codex 子 Agent 定义。"
+          },
+          "codex-home-skills": {
+            "label": "Codex skills 目录",
+            "description": "存放在 Codex home 下的 skills。"
+          },
+          "sessions": {
+            "label": "用户会话",
+            "description": "Codex 本地会话 transcript。"
+          },
+          "shared-skills": {
+            "label": "共享 skills 目录",
+            "description": "多个本地 Agent 共享的 skills。"
+          }
+        },
+        "session": {
+          "archived-sessions": {
+            "label": "归档会话",
+            "description": "已归档的 Codex 会话 transcript。"
+          }
+        },
+        "project": {
+          "agents-md": {
+            "label": "项目 AGENTS.md",
+            "description": "仓库级 Codex 指令。"
+          },
+          "config": {
+            "label": "项目配置",
+            "description": "项目级 Codex 配置, 用于本地能力声明。"
+          },
+          "hooks": {
+            "label": "项目 Hooks 文件",
+            "description": "在 config.toml 外声明的 Codex 项目级 Hooks。"
+          },
+          "agents-directory": {
+            "label": "项目 agents 目录",
+            "description": "项目级 Codex 子 Agent 定义。"
+          },
+          "skills": {
+            "label": "项目 skills 目录",
+            "description": "项目内 Codex skills。"
+          }
+        }
+      }
+    },
     "agentPluginCapabilityStatus": {
       "available": "可用",
       "partial": "部分可用",

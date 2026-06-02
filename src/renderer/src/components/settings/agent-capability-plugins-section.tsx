@@ -17,6 +17,7 @@ import type {
   AgentCapabilityPluginManifestActivationStatus,
   AgentCapabilityPluginManifestPermission,
   AgentCapabilityPluginPermission,
+  AgentCapabilityPluginSource,
   AgentCapabilityPluginSourceCoverage
 } from '@shared/types/agent-plugin'
 import type { ScanSourceStatus } from '@shared/types/asset'
@@ -588,6 +589,73 @@ function SourceCoverageDetails({
       <p className="text-xs leading-5 text-muted-foreground">
         {formatCoverage(t, coverage)}
       </p>
+      {coverage.sources.length > 0 ? (
+        <div className="divide-y divide-border/70 border-y border-border/70">
+          {coverage.sources.map((source, index) => (
+            <PluginSourceRow key={`${source.path}-${source.code ?? index}`} source={source} />
+          ))}
+        </div>
+      ) : (
+        <p className="rounded-md border border-border/70 bg-muted/20 px-3 py-2 text-xs text-muted-foreground">
+          {t('settings.agentPluginSourceNoRows')}
+        </p>
+      )}
+    </div>
+  )
+}
+
+function PluginSourceRow({
+  source
+}: {
+  source: AgentCapabilityPluginSource
+}): ReactElement {
+  const { t } = useTranslation()
+  const title = source.labelKey
+    ? t(source.labelKey)
+    : source.code
+      ? t(`settings.agentPluginSourceCodes.${source.code}`, { defaultValue: source.code })
+      : source.pathPattern ?? source.path
+  const description = source.descriptionKey ? t(source.descriptionKey) : null
+  const visiblePath = source.path || source.pathPattern
+
+  return (
+    <div className="space-y-1.5 py-2.5">
+      <div className="flex flex-wrap items-center gap-1.5">
+        <p className="min-w-0 text-xs font-medium text-foreground">{title}</p>
+        <Badge tone={source.status === 'scanned' ? 'strong' : 'muted'}>
+          {t(`settings.agentPluginSourceRowStatus.${source.status}`)}
+        </Badge>
+        <Badge>{t(`common.scope.${source.scope}`)}</Badge>
+        <Badge>
+          {t(`settings.agentPluginSourceKinds.${source.kind ?? 'unknown'}`)}
+        </Badge>
+        {(source.categories ?? []).map((category) => (
+          <Badge key={`${source.path}-${category}`}>
+            {t(`common.category.${category}`)}
+          </Badge>
+        ))}
+        <Badge tone={source.declared ? 'strong' : 'muted'}>
+          {source.declared
+            ? t('settings.agentPluginSourceDeclared')
+            : t('settings.agentPluginSourceDetectedOnly')}
+        </Badge>
+      </div>
+      {description && (
+        <p className="text-xs leading-5 text-muted-foreground">{description}</p>
+      )}
+      {visiblePath && (
+        <p
+          className="truncate rounded-sm bg-muted/35 px-1.5 py-1 font-mono text-[11px] text-muted-foreground"
+          title={visiblePath}
+        >
+          {visiblePath}
+        </p>
+      )}
+      {source.pathPattern && source.pathPattern !== visiblePath && (
+        <p className="text-[11px] leading-4 text-muted-foreground">
+          {t('settings.agentPluginSourcePathPattern', { pattern: source.pathPattern })}
+        </p>
+      )}
     </div>
   )
 }

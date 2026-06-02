@@ -59,13 +59,47 @@ const plugins: AgentCapabilityPlugin[] = [
     },
     healthCheckDescriptors: [],
     sourceCoverage: {
-      total: 2,
+      total: 3,
       counts: {
         scanned: 1,
         missing: 1,
-        'not-scanned': 0
+        'not-scanned': 1
       },
-      sources: []
+      sources: [
+        {
+          path: 'C:\\Users\\test\\.claude',
+          scope: 'user',
+          status: 'scanned',
+          code: 'claude.user.data-directory',
+          kind: 'directory',
+          categories: ['instruction', 'capability'],
+          declared: true,
+          labelKey: 'settings.agentPluginSources.claude.user.data-directory.label',
+          descriptionKey: 'settings.agentPluginSources.claude.user.data-directory.description',
+          pathPattern: '~/.claude'
+        },
+        {
+          path: 'D:\\workspace\\.claude',
+          scope: 'project',
+          status: 'missing',
+          code: 'claude.project.directory',
+          kind: 'directory',
+          categories: ['instruction', 'capability'],
+          declared: true,
+          labelKey: 'settings.agentPluginSources.claude.project.directory.label',
+          descriptionKey: 'settings.agentPluginSources.claude.project.directory.description',
+          pathPattern: '<project>/.claude'
+        },
+        {
+          path: 'D:\\workspace',
+          scope: 'project',
+          status: 'not-scanned',
+          code: 'project.session-derived-candidate',
+          kind: 'directory',
+          categories: ['instruction'],
+          declared: false
+        }
+      ]
     },
     references: [
       {
@@ -312,6 +346,8 @@ describe('SettingsContent agent capability plugins', () => {
   it('expands plugin details for permissions, capabilities, and sources', async () => {
     render(<SettingsContent showTitle={false} />)
 
+    expect(screen.queryByText('C:\\Users\\test\\.claude')).not.toBeInTheDocument()
+
     fireEvent.click(await screen.findByRole('button', { name: /Claude Code/ }))
 
     expect(screen.getByText('Permissions')).toBeInTheDocument()
@@ -324,7 +360,27 @@ describe('SettingsContent agent capability plugins', () => {
     expect(screen.getByText('Source discovery')).toBeInTheDocument()
     expect(screen.getByText('Hook actions')).toBeInTheDocument()
     expect(screen.getByText('Partial')).toBeInTheDocument()
-    expect(screen.getAllByText('1 scanned · 1 missing · 0 not scanned').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('1 scanned · 1 missing · 1 not scanned').length).toBeGreaterThan(0)
+    expect(screen.getByText('User data directory')).toBeInTheDocument()
+    expect(screen.getByText('Project .claude directory')).toBeInTheDocument()
+    expect(screen.getByText('Session-derived project candidate')).toBeInTheDocument()
+    expect(screen.queryByText('project.session-derived-candidate')).not.toBeInTheDocument()
+    expect(screen.getByText('C:\\Users\\test\\.claude')).toBeInTheDocument()
+    expect(screen.getByText('D:\\workspace\\.claude')).toBeInTheDocument()
+    expect(screen.getByText('D:\\workspace')).toBeInTheDocument()
+    expect(screen.getAllByText('Directory').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Declared').length).toBeGreaterThan(0)
+    expect(screen.getByText('Detected only')).toBeInTheDocument()
+    expect(screen.getByText('Pattern: ~/.claude')).toBeInTheDocument()
+    expect(screen.getByText('Pattern: <project>/.claude')).toBeInTheDocument()
+  })
+
+  it('shows a compact empty source state when a plugin has no concrete source rows', async () => {
+    render(<SettingsContent showTitle={false} />)
+
+    fireEvent.click(await screen.findByRole('button', { name: /Codex/ }))
+
+    expect(screen.getByText('No concrete source rows.')).toBeInTheDocument()
   })
 
   it('opens plugin references from the expanded detail area', async () => {

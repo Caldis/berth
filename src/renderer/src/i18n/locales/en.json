@@ -1303,6 +1303,121 @@
       "missing": "{{count}} missing",
       "not-scanned": "{{count}} not scanned"
     },
+    "agentPluginSourceRowStatus": {
+      "scanned": "Scanned",
+      "missing": "Missing",
+      "not-scanned": "Not scanned"
+    },
+    "agentPluginSourceKinds": {
+      "directory": "Directory",
+      "file": "File",
+      "policy": "Policy",
+      "unknown": "Unknown source"
+    },
+    "agentPluginSourceDeclared": "Declared",
+    "agentPluginSourceDetectedOnly": "Detected only",
+    "agentPluginSourcePathPattern": "Pattern: {{pattern}}",
+    "agentPluginSourceNoRows": "No concrete source rows.",
+    "agentPluginSourceCodes": {
+      "project": {
+        "current-candidate": "Current project candidate",
+        "session-derived-candidate": "Session-derived project candidate"
+      }
+    },
+    "agentPluginSources": {
+      "claude": {
+        "user": {
+          "data-directory": {
+            "label": "User data directory",
+            "description": "User-level Claude Code assets, including instructions, hooks, sessions, plans, usage data, and integrations."
+          },
+          "global-config": {
+            "label": "Global config",
+            "description": "Claude Code user config that can declare shared capabilities such as MCP servers."
+          }
+        },
+        "project": {
+          "directory": {
+            "label": "Project .claude directory",
+            "description": "Project-level Claude Code instructions, hooks, permissions, and team configuration."
+          },
+          "mcp-config": {
+            "label": "Project MCP config",
+            "description": "Project MCP server definitions available to Claude Code."
+          }
+        },
+        "enterprise": {
+          "managed-settings": {
+            "label": "Managed settings",
+            "description": "Enterprise managed Claude Code settings and policy-backed capability rules."
+          },
+          "managed-mcp": {
+            "label": "Managed MCP config",
+            "description": "Enterprise managed MCP server definitions."
+          }
+        }
+      },
+      "codex": {
+        "user": {
+          "config": {
+            "label": "User config",
+            "description": "Codex user config for MCP servers, hooks, status line, sandbox, and approval settings."
+          },
+          "hooks": {
+            "label": "User hooks file",
+            "description": "Codex user hooks declared outside config.toml."
+          },
+          "agents-md": {
+            "label": "User AGENTS.md",
+            "description": "Durable Codex user guidance."
+          },
+          "agents-directory": {
+            "label": "User agents directory",
+            "description": "User-level Codex subagent definitions."
+          },
+          "codex-home-skills": {
+            "label": "Codex skills directory",
+            "description": "Skills stored under Codex home."
+          },
+          "sessions": {
+            "label": "User sessions",
+            "description": "Codex local session transcripts."
+          },
+          "shared-skills": {
+            "label": "Shared skills directory",
+            "description": "Skills shared across local agents."
+          }
+        },
+        "session": {
+          "archived-sessions": {
+            "label": "Archived sessions",
+            "description": "Archived Codex session transcripts."
+          }
+        },
+        "project": {
+          "agents-md": {
+            "label": "Project AGENTS.md",
+            "description": "Repository-level Codex instructions."
+          },
+          "config": {
+            "label": "Project config",
+            "description": "Project-level Codex config for local capability declarations."
+          },
+          "hooks": {
+            "label": "Project hooks file",
+            "description": "Project-level Codex hooks declared outside config.toml."
+          },
+          "agents-directory": {
+            "label": "Project agents directory",
+            "description": "Project-level Codex subagent definitions."
+          },
+          "skills": {
+            "label": "Project skills directory",
+            "description": "Project-local Codex skills."
+          }
+        }
+      }
+    },
     "agentPluginCapabilityStatus": {
       "available": "Available",
       "partial": "Partial",
