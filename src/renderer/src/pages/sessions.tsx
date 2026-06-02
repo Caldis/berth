@@ -178,7 +178,7 @@ export function Sessions(): React.ReactElement {
                       >
                         <div className="min-w-0 flex-1">
                           <p className="truncate text-sm font-medium text-card-foreground">
-                            {session.title || `Session #${session.id.slice(0, 8)}`}
+                            {session.title || t('sessions.fallbackTitle', { id: session.id.slice(0, 8) })}
                           </p>
                           <div className="mt-0.5 flex items-center gap-3 text-xs text-muted-foreground">
                             <span className="flex items-center gap-1">

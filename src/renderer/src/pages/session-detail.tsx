@@ -66,6 +66,7 @@ export function SessionDetail(): React.ReactElement {
   }
 
   const summary = detail?.summary
+  const fallbackTitle = t('sessions.fallbackTitle', { id: id?.slice(0, 8) ?? '' })
 
   // Group hooks by event
   const hooksByEvent = detail?.hooksFired ?? []
@@ -95,12 +96,12 @@ export function SessionDetail(): React.ReactElement {
         </button>
         <div>
           <div className="text-xs text-muted-foreground">
-            {t('sessions.title')} / Session #{id?.slice(0, 8)}
+            {t('sessions.title')} / {fallbackTitle}
           </div>
           <h1 className="text-xl font-semibold tracking-tight">
             {loading
               ? t('common.loading')
-              : summary?.title || `Session #${id?.slice(0, 8)}`}
+              : summary?.title || fallbackTitle}
           </h1>
         </div>
       </div>

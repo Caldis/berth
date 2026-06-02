@@ -74,6 +74,7 @@
   },
   "sessions": {
     "title": "会话",
+    "fallbackTitle": "会话 #{{id}}",
     "filter": "筛选会话…",
     "groupBy": "分组",
     "project": "项目",

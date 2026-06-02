@@ -74,6 +74,7 @@
   },
   "sessions": {
     "title": "Sessions",
+    "fallbackTitle": "Session #{{id}}",
     "filter": "Filter sessions...",
     "groupBy": "Group by",
     "project": "Project",

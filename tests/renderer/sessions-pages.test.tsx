@@ -2,7 +2,7 @@ import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import React from 'react'
 import { describe, expect, it, vi } from 'vitest'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
-import '../../src/renderer/src/i18n'
+import i18n from '../../src/renderer/src/i18n'
 import { Overview } from '../../src/renderer/src/pages/overview'
 import { Sessions } from '../../src/renderer/src/pages/sessions'
 import { SessionDetail } from '../../src/renderer/src/pages/session-detail'
@@ -69,10 +69,10 @@ function makeAsset(type: Asset['type'], name: string): Asset {
   }
 }
 
-function mockSessionApis(): void {
-  window.api.sessions.list = vi.fn(async () => ({ sessions: [summary], totalCount: 1 }))
+function mockSessionApis(session: SessionSummary = summary): void {
+  window.api.sessions.list = vi.fn(async () => ({ sessions: [session], totalCount: 1 }))
   window.api.sessions.get = vi.fn(async () => ({
-    summary,
+    summary: session,
     modelInfo,
     skillsUsed: [makeAsset('skill', 'frontend-design')],
     mcpServers: [makeAsset('mcp-server', 'plugin_playwright_playwright')],
@@ -123,15 +123,15 @@ function mockSessionApis(): void {
     actualCost: 0,
     estimatedCost: 0,
     costDelta: 0,
-    totalTokens: summary.tokenUsage.totalTokens,
-    tokenUsage: summary.tokenUsage,
+    totalTokens: session.tokenUsage.totalTokens,
+    tokenUsage: session.tokenUsage,
     costSource: 'unknown',
     pricingMisses: [],
     dailyCosts: [],
     dailyTokenUsage: [],
     byModel: [
       {
-        model: summary.model,
+        model: session.model,
         percentage: 100,
         cost: 0,
         actualCost: 0,
@@ -139,8 +139,8 @@ function mockSessionApis(): void {
         costDelta: 0,
         costSource: 'unknown',
         pricingMisses: [],
-        tokens: summary.tokenUsage.totalTokens,
-        tokenUsage: summary.tokenUsage
+        tokens: session.tokenUsage.totalTokens,
+        tokenUsage: session.tokenUsage
       }
     ],
     byProject: [],
@@ -191,6 +191,49 @@ describe('session pages', () => {
     expect(screen.getByText('38 tok')).toBeInTheDocument()
     expect(screen.getByText(/I 10 \/ O 5/)).toBeInTheDocument()
     expect(screen.getAllByText('claude-sonnet-4-20250514').length).toBeGreaterThan(0)
+  })
+
+  it('localizes fallback titles for untitled sessions', async () => {
+    const untitledSummary: SessionSummary = { ...summary, title: '' }
+    mockSessionApis(untitledSummary)
+    await i18n.changeLanguage('zh')
+
+    try {
+      const overview = render(
+        <MemoryRouter>
+          <Overview />
+        </MemoryRouter>
+      )
+
+      expect(await screen.findByText('会话 #session-')).toBeInTheDocument()
+      expect(screen.queryByText('Session #session-')).not.toBeInTheDocument()
+      overview.unmount()
+
+      const sessions = render(
+        <MemoryRouter>
+          <Sessions />
+        </MemoryRouter>
+      )
+
+      expect(await screen.findByText('会话 #session-')).toBeInTheDocument()
+      expect(screen.queryByText('Session #session-')).not.toBeInTheDocument()
+      sessions.unmount()
+
+      const detail = render(
+        <MemoryRouter initialEntries={['/sessions/session-session-abc']}>
+          <Routes>
+            <Route path="/sessions/:id" element={<SessionDetail />} />
+          </Routes>
+        </MemoryRouter>
+      )
+
+      expect(await screen.findByText('会话 / 会话 #session-')).toBeInTheDocument()
+      expect(screen.getByRole('heading', { name: '会话 #session-' })).toBeInTheDocument()
+      expect(screen.queryByText('Session #session-')).not.toBeInTheDocument()
+      detail.unmount()
+    } finally {
+      await i18n.changeLanguage('en')
+    }
   })
 
   it('shows sessions guidance and an instructive empty state when no sessions are found', async () => {
