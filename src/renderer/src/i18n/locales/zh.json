@@ -14,7 +14,7 @@
   },
   "agentView": {
     "label": "Agent 视角",
-    "all": "All",
+    "all": "全部",
     "claude": "Claude",
     "codex": "Codex"
   },
