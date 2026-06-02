@@ -8,6 +8,7 @@ import { Sessions } from '../../src/renderer/src/pages/sessions'
 import { SessionDetail } from '../../src/renderer/src/pages/session-detail'
 import { Usage } from '../../src/renderer/src/pages/usage'
 import type { Asset, SessionSummary, UsageSummary } from '../../src/shared/types/asset'
+import type { SessionActivityMetrics } from '../../src/shared/types/ipc'
 import { normalizeTokenUsage } from '../../src/shared/token-usage'
 import { useAppStore } from '../../src/renderer/src/stores/app'
 
@@ -56,6 +57,14 @@ const modelInfo = {
   }
 }
 
+const activityMetrics: SessionActivityMetrics = {
+  tokenRatePerMinute: 19,
+  tokenRateDurationSeconds: 120,
+  tokenRateSource: 'usage-events',
+  tokenRateStartedAt: '2026-05-30T01:02:00.000Z',
+  tokenRateEndedAt: '2026-05-30T01:04:00.000Z'
+}
+
 function makeAsset(type: Asset['type'], name: string): Asset {
   return {
     id: `${type}-${name}`,
@@ -74,6 +83,7 @@ function mockSessionApis(session: SessionSummary = summary): void {
   window.api.sessions.get = vi.fn(async () => ({
     summary: session,
     modelInfo,
+    activityMetrics,
     skillsUsed: [makeAsset('skill', 'frontend-design')],
     mcpServers: [makeAsset('mcp-server', 'plugin_playwright_playwright')],
     hooksFired: [{ event: 'Stop', count: 2 }],
@@ -355,7 +365,8 @@ describe('session pages', () => {
     expect(screen.getByText('1 / 2')).toBeInTheDocument()
     expect(screen.getByText('50%')).toBeInTheDocument()
     expect(screen.getByText('Token rate')).toBeInTheDocument()
-    expect(screen.getByText('7.6 tok/min')).toBeInTheDocument()
+    expect(screen.getByText('19 tok/min')).toBeInTheDocument()
+    expect(screen.getByText('Usage events')).toBeInTheDocument()
     expect(screen.getByText('Cache read share')).toBeInTheDocument()
     expect(screen.getByText('60.6%')).toBeInTheDocument()
     expect(screen.getByText('frontend-design')).toBeInTheDocument()
@@ -418,6 +429,7 @@ describe('session pages', () => {
     mockSessionApis()
     window.api.sessions.get = vi.fn(async () => ({
       summary,
+      activityMetrics,
       skillsUsed: [],
       mcpServers: [],
       hooksFired: [],
@@ -484,6 +496,13 @@ describe('session pages', () => {
   it('uses explanatory section empty states in session detail', async () => {
     window.api.sessions.get = vi.fn(async () => ({
       summary,
+      activityMetrics: {
+        tokenRatePerMinute: null,
+        tokenRateDurationSeconds: 0,
+        tokenRateSource: 'unavailable',
+        tokenRateStartedAt: '2026-05-30T01:02:00.000Z',
+        tokenRateEndedAt: '2026-05-30T01:02:00.000Z'
+      },
       skillsUsed: [],
       mcpServers: [],
       hooksFired: [],
@@ -508,6 +527,9 @@ describe('session pages', () => {
     )
 
     expect(await screen.findByText('No skills were loaded')).toBeInTheDocument()
+    expect(screen.getByText('Token rate')).toBeInTheDocument()
+    expect(screen.getByText('Not enough timing data')).toBeInTheDocument()
+    expect(screen.queryByText('7.6 tok/min')).not.toBeInTheDocument()
     selectSessionDetailTab(/Timeline/)
     expect(screen.getByText('No tool events recorded')).toBeInTheDocument()
     selectSessionDetailTab(/Artifacts/)

@@ -275,6 +275,8 @@
       "avgToolTime": "Avg tool time",
       "slowestTool": "Slowest tool",
       "tokenRate": "Token rate",
+      "tokenRateSourceUsageEvents": "Usage events",
+      "tokenRateSourceUnavailable": "Not enough timing data",
       "costRate": "Cost rate",
       "cacheReadShare": "Cache read share"
     },

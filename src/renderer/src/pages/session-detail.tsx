@@ -577,6 +577,7 @@ interface SessionSignals {
   avgToolDurationMs: number | null
   slowestTool: { name: string; durationMs: number } | null
   tokenRatePerMinute: number | null
+  tokenRateSource: SessionDetailResult['activityMetrics']['tokenRateSource']
   cacheReadShare: number | null
   costRatePerMinute: number | null
 }
@@ -891,6 +892,7 @@ function SessionSignalsPanel({ signals }: { signals: SessionSignals }): React.Re
           icon={Hash}
           label={t('sessions.signals.tokenRate')}
           value={signals.tokenRatePerMinute == null ? '—' : `${formatRate(signals.tokenRatePerMinute)} tok/min`}
+          detail={tokenRateSourceLabel(signals.tokenRateSource, t)}
         />
         <SignalMetric
           icon={Coins}
@@ -1304,7 +1306,8 @@ function buildSessionSignals(detail: SessionDetailResult): SessionSignals {
     failedRate: detail.toolTimeline.length > 0 ? (failedCount / detail.toolTimeline.length) * 100 : null,
     avgToolDurationMs: durations.length > 0 ? durationTotal / durations.length : null,
     slowestTool: slowest ? { name: slowest.event.name, durationMs: slowest.durationMs } : null,
-    tokenRatePerMinute: sessionMinutes == null ? null : detail.summary.tokenUsage.totalTokens / sessionMinutes,
+    tokenRatePerMinute: detail.activityMetrics.tokenRatePerMinute,
+    tokenRateSource: detail.activityMetrics.tokenRateSource,
     cacheReadShare: inputSideTokens > 0
       ? (detail.summary.tokenUsage.cacheReadInputTokens / inputSideTokens) * 100
       : null,
@@ -1312,6 +1315,14 @@ function buildSessionSignals(detail: SessionDetailResult): SessionSignals {
       ? null
       : detail.summary.cost / sessionMinutes
   }
+}
+
+function tokenRateSourceLabel(
+  source: SessionDetailResult['activityMetrics']['tokenRateSource'],
+  t: Translate
+): string {
+  if (source === 'usage-events') return t('sessions.signals.tokenRateSourceUsageEvents')
+  return t('sessions.signals.tokenRateSourceUnavailable')
 }
 
 function getToolDurationMs(event: SessionToolEvent): number | null {

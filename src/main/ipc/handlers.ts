@@ -14,6 +14,7 @@ import type {
   ImportChainNode,
   SessionListResult,
   SessionDetailResult,
+  SessionActivityMetrics,
   SessionModelInfo,
   MCPMergeInfo,
   SessionArtifacts,
@@ -211,6 +212,7 @@ export function registerAssetHandlers(): void {
       return {
         summary,
         modelInfo: toSessionModelInfo(summary.model, asset.agentId),
+        activityMetrics: toSessionActivityMetrics(summary, asset),
         skillsUsed: resolveSessionNamedAssets(asset, allAssets, 'skill', readStringArray(asset.meta, 'skillsUsed')),
         mcpServers: resolveSessionNamedAssets(
           asset,
@@ -364,6 +366,31 @@ function toSessionModelInfo(model: string, agentId: string): SessionModelInfo {
           updatedAt: pricing.updatedAt
         }
       : null
+  }
+}
+
+function toSessionActivityMetrics(summary: SessionSummary, asset: Asset): SessionActivityMetrics {
+  const startedAt = readString(asset.meta, 'usageStartedAt') ?? null
+  const endedAt = readString(asset.meta, 'usageEndedAt') ?? null
+  const durationSeconds =
+    readNumber(asset.meta, 'usageDuration') ??
+    calculateDurationSeconds(startedAt, endedAt)
+  if (durationSeconds != null && durationSeconds > 0 && summary.tokenUsage.totalTokens > 0) {
+    return {
+      tokenRatePerMinute: summary.tokenUsage.totalTokens / (durationSeconds / 60),
+      tokenRateDurationSeconds: durationSeconds,
+      tokenRateSource: 'usage-events',
+      tokenRateStartedAt: startedAt,
+      tokenRateEndedAt: endedAt
+    }
+  }
+
+  return {
+    tokenRatePerMinute: null,
+    tokenRateDurationSeconds: durationSeconds,
+    tokenRateSource: 'unavailable',
+    tokenRateStartedAt: startedAt,
+    tokenRateEndedAt: endedAt
   }
 }
 
@@ -531,6 +558,7 @@ function toHookEvents(asset: Asset): { event: string; count: number }[] {
   }
 
   const hooksFired = readNumber(asset.meta, 'hooksFired') ?? 0
+  if (asset.agentId !== 'claude-code' && asset.agentId !== 'claude') return []
   return hooksFired > 0 ? [{ event: 'Stop', count: hooksFired }] : []
 }
 
@@ -569,6 +597,17 @@ function readStringArray(record: Record<string, unknown>, key: string): string[]
   const value = record[key]
   if (!Array.isArray(value)) return []
   return value.filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
+}
+
+function calculateDurationSeconds(
+  startedAt: string | null,
+  endedAt: string | null
+): number | null {
+  if (!startedAt || !endedAt) return null
+  const start = new Date(startedAt).getTime()
+  const end = new Date(endedAt).getTime()
+  if (Number.isNaN(start) || Number.isNaN(end)) return null
+  return Math.max(0, Math.round((end - start) / 1000))
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

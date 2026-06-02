@@ -403,10 +403,15 @@ export function parseCodexSessionMeta(filePath: string): Asset {
   let sessionId = fallbackSessionId
   let firstTimestamp: string | undefined
   let lastTimestamp: string | undefined
+  let usageStartedAt: string | undefined
+  let usageEndedAt: string | undefined
   let title: string | undefined
   let model: string | undefined
   let projectPath: string | undefined
   let tokenUsage = emptyTokenUsage()
+  const skillsUsed = new Set<string>()
+  const mcpServers = new Set<string>()
+  const hookEventCounts = new Map<string, number>()
 
   const meta: Record<string, unknown> = {
     sessionId,
@@ -452,6 +457,28 @@ export function parseCodexSessionMeta(filePath: string): Asset {
         if (payloadType === 'token_count') {
           const candidate = readTokenUsage(payload)
           if (candidate.totalTokens >= tokenUsage.totalTokens) tokenUsage = candidate
+          if (timestamp && candidate.totalTokens > 0) {
+            usageStartedAt ??= timestamp
+            usageEndedAt = timestamp
+          }
+        }
+        const hookEvent = readCodexHookEventFromEvent(payload, payloadType)
+        if (hookEvent) {
+          addHookCount(hookEventCounts, hookEvent.event, hookEvent.count)
+        }
+      }
+
+      if (type === 'response_item') {
+        const itemType = readString(payload, 'type')
+        if (isCodexToolCall(itemType)) {
+          const args = readToolArguments(payload)
+          const name = readToolName(payload, itemType)
+          const mcp = parseMcpToolName(name)
+          if (mcp) mcpServers.add(mcp.server)
+          const skillName = readCodexSkillName(name, args)
+          if (skillName) skillsUsed.add(skillName)
+          const hookEvent = readCodexHookEventFromTool(name, args)
+          if (hookEvent) addHookCount(hookEventCounts, hookEvent, 1)
         }
       }
     }
@@ -462,6 +489,8 @@ export function parseCodexSessionMeta(filePath: string): Asset {
   const resolvedProjectPath = projectPath ?? ''
   const project = projectNameFromPath(resolvedProjectPath, 'Codex')
   const duration = calculateDurationSeconds(firstTimestamp, lastTimestamp)
+  const usageDuration = calculateDurationSeconds(usageStartedAt, usageEndedAt)
+  const hookCountsObject = Object.fromEntries(hookEventCounts)
 
   meta.sessionId = sessionId
   meta.project = project
@@ -471,13 +500,16 @@ export function parseCodexSessionMeta(filePath: string): Asset {
   meta.startedAt = firstTimestamp
   meta.endedAt = lastTimestamp
   meta.duration = duration
+  meta.usageStartedAt = usageStartedAt
+  meta.usageEndedAt = usageEndedAt
+  meta.usageDuration = usageDuration
   meta.totalTokens = tokenUsage.totalTokens
   meta.tokenUsage = tokenUsage
   meta.hasUsage = tokenUsage.totalTokens > 0
-  meta.skillsUsed = []
-  meta.mcpServers = []
-  meta.hooksFired = 0
-  meta.hookEventCounts = {}
+  meta.skillsUsed = Array.from(skillsUsed).sort()
+  meta.mcpServers = Array.from(mcpServers).sort()
+  meta.hooksFired = Array.from(hookEventCounts.values()).reduce((sum, count) => sum + count, 0)
+  meta.hookEventCounts = hookCountsObject
 
   return {
     id: `codex-session-${sessionId}-${hashString(filePath)}`,
@@ -833,6 +865,65 @@ function parseMcpToolName(name: string): { server: string; tool: string } | unde
     server: rest.slice(0, separator),
     tool: rest.slice(separator + 2)
   }
+}
+
+function readCodexSkillName(toolName: string, args: Record<string, unknown>): string | undefined {
+  const normalized = toolName.toLowerCase()
+  if (normalized === 'skill' || normalized === 'load_skill' || normalized === 'use_skill') {
+    return firstString(args, ['skill', 'skill_name', 'skillName', 'name'])
+  }
+  if (!normalized.startsWith('skill__')) return undefined
+  const suffix = toolName.slice('skill__'.length).split('__')[0]?.trim()
+  return suffix || firstString(args, ['skill', 'skill_name', 'skillName', 'name'])
+}
+
+function readCodexHookEventFromTool(
+  toolName: string,
+  args: Record<string, unknown>
+): string | undefined {
+  const normalized = toolName.toLowerCase()
+  if (!normalized.includes('hook')) return undefined
+  return firstString(args, [
+    'hook_event_name',
+    'hookEventName',
+    'event',
+    'event_name',
+    'hookEvent',
+    'type'
+  ]) ?? toolName
+}
+
+function readCodexHookEventFromEvent(
+  payload: Record<string, unknown>,
+  payloadType: string | undefined
+): { event: string; count: number } | undefined {
+  const explicitHookEvent = firstString(payload, [
+    'hook_event_name',
+    'hookEventName',
+    'hookEvent'
+  ])
+  const payloadIsHookEvent = payloadType?.toLowerCase().includes('hook') === true
+  const isHookEvent = Boolean(explicitHookEvent) || payloadIsHookEvent
+  if (!isHookEvent) return undefined
+  const event = explicitHookEvent ?? firstString(payload, ['event', 'event_name']) ?? payloadType
+  if (!event) return undefined
+  return {
+    event,
+    count: readPositiveCount(payload) ?? 1
+  }
+}
+
+function readPositiveCount(record: Record<string, unknown>): number | undefined {
+  const value =
+    readNumber(record, 'hookCount') ??
+    readNumber(record, 'hook_count') ??
+    readNumber(record, 'count')
+  if (value == null || value <= 0) return undefined
+  return Math.max(1, Math.floor(value))
+}
+
+function addHookCount(counts: Map<string, number>, event: string, count: number): void {
+  counts.set(event, (counts.get(event) ?? 0) + count)
 }
 
 function readTokenUsage(payload: Record<string, unknown>): TokenUsageBreakdown {

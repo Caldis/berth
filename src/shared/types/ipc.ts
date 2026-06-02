@@ -143,9 +143,20 @@ export interface SessionModelInfo {
   pricing: SessionModelPricingInfo | null
 }
 
+export type SessionTokenRateSource = 'usage-events' | 'unavailable'
+
+export interface SessionActivityMetrics {
+  tokenRatePerMinute: number | null
+  tokenRateDurationSeconds: number | null
+  tokenRateSource: SessionTokenRateSource
+  tokenRateStartedAt: string | null
+  tokenRateEndedAt: string | null
+}
+
 export interface SessionDetailResult {
   summary: SessionSummary
   modelInfo?: SessionModelInfo
+  activityMetrics: SessionActivityMetrics
   skillsUsed: Asset[]
   mcpServers: Asset[]
   hooksFired: { event: string; count: number }[]

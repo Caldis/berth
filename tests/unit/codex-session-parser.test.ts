@@ -14,6 +14,81 @@ afterEach(() => {
 })
 
 describe('Codex session parser', () => {
+  it('extracts structured Codex activity metadata without scanning tool output text', () => {
+    tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'berth-codex-session-'))
+    const rolloutPath = path.join(tempDir, 'rollout-2026-06-03T01-00-00-codex-activity.jsonl')
+    fs.writeFileSync(
+      rolloutPath,
+      [
+        JSON.stringify({
+          type: 'session_meta',
+          timestamp: '2026-06-03T01:00:00.000Z',
+          payload: { id: 'codex-activity', cwd: 'D:\\Code\\berth' }
+        }),
+        JSON.stringify({
+          type: 'event_msg',
+          timestamp: '2026-06-03T01:00:10.000Z',
+          payload: { type: 'token_count', total_tokens: 20 }
+        }),
+        JSON.stringify({
+          type: 'response_item',
+          timestamp: '2026-06-03T01:00:20.000Z',
+          payload: {
+            type: 'function_call',
+            call_id: 'call-skill',
+            name: 'Skill',
+            arguments: { skill: 'frontend-design' }
+          }
+        }),
+        JSON.stringify({
+          type: 'response_item',
+          timestamp: '2026-06-03T01:00:30.000Z',
+          payload: {
+            type: 'function_call',
+            call_id: 'call-mcp',
+            name: 'mcp__browser__browser_navigate',
+            arguments: { url: 'http://localhost:5173' }
+          }
+        }),
+        JSON.stringify({
+          type: 'event_msg',
+          timestamp: '2026-06-03T01:00:40.000Z',
+          payload: { type: 'hook_finished', hook_event_name: 'PostToolUse' }
+        }),
+        JSON.stringify({
+          type: 'event_msg',
+          timestamp: '2026-06-03T01:00:50.000Z',
+          payload: { type: 'hook_finished', event_name: 'PostToolUse', hookCount: 2 }
+        }),
+        JSON.stringify({
+          type: 'event_msg',
+          timestamp: '2026-06-03T01:01:10.000Z',
+          payload: { type: 'token_count', total_tokens: 80 }
+        }),
+        JSON.stringify({
+          type: 'response_item',
+          timestamp: '2026-06-03T01:05:00.000Z',
+          payload: {
+            type: 'function_call_output',
+            call_id: 'ignored-output',
+            output: 'Skill: should-not-be-read mcp__ignored__tool hook Stop'
+          }
+        })
+      ].join('\n')
+    )
+
+    const asset = parseCodexSessionMeta(rolloutPath)
+
+    expect(asset.meta.totalTokens).toBe(80)
+    expect(asset.meta.usageStartedAt).toBe('2026-06-03T01:00:10.000Z')
+    expect(asset.meta.usageEndedAt).toBe('2026-06-03T01:01:10.000Z')
+    expect(asset.meta.usageDuration).toBe(60)
+    expect(asset.meta.skillsUsed).toEqual(['frontend-design'])
+    expect(asset.meta.mcpServers).toEqual(['browser'])
+    expect(asset.meta.hooksFired).toBe(3)
+    expect(asset.meta.hookEventCounts).toEqual({ PostToolUse: 3 })
+  })
+
   it('extracts metadata, tool timeline, and artifacts from rollout JSONL', () => {
     tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'berth-codex-session-'))
     const rolloutPath = path.join(tempDir, 'rollout-2026-05-30T02-00-00-codex-abc.jsonl')

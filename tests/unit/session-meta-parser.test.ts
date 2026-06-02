@@ -87,6 +87,9 @@ describe('parseSessionMeta', () => {
     expect(asset.meta.startedAt).toBe('2026-05-30T01:00:00.000Z')
     expect(asset.meta.endedAt).toBe('2026-05-30T01:05:00.000Z')
     expect(asset.meta.duration).toBe(300)
+    expect(asset.meta.usageStartedAt).toBe('2026-05-30T01:02:00.000Z')
+    expect(asset.meta.usageEndedAt).toBe('2026-05-30T01:02:00.000Z')
+    expect(asset.meta.usageDuration).toBe(0)
     expect(asset.meta.model).toBe('claude-sonnet-4-20250514')
     expect(asset.meta.totalTokens).toBe(38)
     expect(asset.meta.tokenUsage).toMatchObject({

@@ -271,6 +271,8 @@
       "avgToolTime": "平均工具耗时",
       "slowestTool": "最慢工具",
       "tokenRate": "Token 速率",
+      "tokenRateSourceUsageEvents": "Usage 事件",
+      "tokenRateSourceUnavailable": "时间数据不足",
       "costRate": "费用速率",
       "cacheReadShare": "缓存读占比"
     },

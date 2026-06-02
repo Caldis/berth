@@ -672,6 +672,8 @@ export function parseSessionMeta(filePath: string, projectName: string): Asset {
   let sessionId = fallbackSessionId
   let firstTimestamp: string | undefined
   let lastTimestamp: string | undefined
+  let usageStartedAt: string | undefined
+  let usageEndedAt: string | undefined
   let title: string | undefined
   let model: string | undefined
   let projectPath: string | undefined
@@ -746,6 +748,10 @@ export function parseSessionMeta(filePath: string, projectName: string): Asset {
       const usage = isRecord(message?.usage) ? message.usage : undefined
       if (usage) {
         sawUsage = true
+        if (timestamp) {
+          usageStartedAt ??= timestamp
+          usageEndedAt = timestamp
+        }
         messageTokenUsage = addTokenUsage(messageTokenUsage, normalizeTokenUsage(usage))
       }
 
@@ -781,6 +787,7 @@ export function parseSessionMeta(filePath: string, projectName: string): Asset {
   const resolvedProjectPath = projectPath ?? decodeClaudeProjectDir(projectName)
   const project = projectNameFromPath(resolvedProjectPath, projectName)
   const duration = calculateDurationSeconds(firstTimestamp, lastTimestamp)
+  const usageDuration = calculateDurationSeconds(usageStartedAt, usageEndedAt)
   const hookCountsObject = Object.fromEntries(hookEventCounts)
   const tokenUsage = sawUsage ? messageTokenUsage : legacyTokenUsage
 
@@ -792,6 +799,9 @@ export function parseSessionMeta(filePath: string, projectName: string): Asset {
   meta.startedAt = firstTimestamp
   meta.endedAt = lastTimestamp
   meta.duration = duration
+  meta.usageStartedAt = usageStartedAt
+  meta.usageEndedAt = usageEndedAt
+  meta.usageDuration = usageDuration
   meta.totalTokens = tokenUsage.totalTokens
   meta.tokenUsage = tokenUsage
   meta.hasUsage = tokenUsage.totalTokens > 0
