@@ -11,9 +11,10 @@
   - tests: `pnpm lint`; `pnpm typecheck`; `pnpm test`; `pnpm harness:check`; `pnpm build`
   - verify: 本地完整检查通过; 非 UI 任务, 界面验收不适用。
   - evidence: `pnpm lint`; `pnpm typecheck`; `pnpm test` (54 files / 419 tests); `pnpm harness:check`; `pnpm build` 均通过。
-- [ ] 任务 3: 推送后等待 GitHub Actions。
+- [x] 任务 3: 推送后等待 GitHub Actions。
   - tests: `gh run list --branch master --limit 5`; `gh run watch <run-id> --exit-status`; `gh run view <run-id> --job <windows-job-id> --log`
   - verify: 新 SHA 对应 CI run 成功, Windows job 显示固定 label `windows-2022`; 非 UI 任务, 界面验收不适用。
+  - evidence: `gh run watch 26796574709 --exit-status` 通过; Windows job 为 `verify (windows-2022)`, job id `78994188140`; `Set up job` 日志显示 Microsoft Windows Server 2022, `Image: windows-2022`, SHA `faa38a6bda23c4921fbb3fb880412a6bddffbcf5`。
 
 ## verify 回写
 verify 不通过项作为新任务追加于此, phase 退回 implement。
