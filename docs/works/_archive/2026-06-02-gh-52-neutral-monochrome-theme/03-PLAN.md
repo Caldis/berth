@@ -11,12 +11,12 @@
   - tests: `pnpm exec vitest run tests/renderer/theme-palette.test.ts`
   - verify: 不改布局、不改 DOM; 旧橙色不再作为全局 accent 或 Usage palette
   - evidence: 2026-06-02 `pnpm exec vitest run tests/renderer/theme-palette.test.ts` 通过, 2 tests passed。
-- [ ] 任务 3: 本地检查与界面截图
+- [x] 任务 3: 本地检查与界面截图
   - tests: `pnpm lint`; `pnpm typecheck:web`; `pnpm test`; `pnpm harness:check`; `node scripts/harness-projects.mjs check --strict`
   - verify: 包含本地截图验收和 GitHub Actions run 结果
   - evidence: 2026-06-02 本地检查通过: `pnpm lint`; `pnpm typecheck:web`; `pnpm test` (59 files, 441 tests); `pnpm harness:check`; `node scripts/harness-projects.mjs check --strict`。
   - evidence: `pnpm dev:agent start --id neutral-theme-verify --debug-port 9340` 后用 `print-window` 截图验证 Usage 页; dark active 状态为白底近黑字 `rgb(250,250,250)` / `rgb(9,9,11)`, light active 状态为近黑底白字 `rgb(24,24,27)` / `rgb(250,250,250)`。
-  - pending: GitHub Actions run 结果待 push 后回写。
+  - evidence: GitHub Actions run `26805122056` passed for commit `b1f439b`。
 
 ## verify 回写
 
