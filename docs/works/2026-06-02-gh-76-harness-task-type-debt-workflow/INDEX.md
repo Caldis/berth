@@ -2,7 +2,7 @@
 task: 2026-06-02-gh-76-harness-task-type-debt-workflow
 task_id: GH-76
 type: feature
-phase: implement
+phase: verify
 created: 2026-06-02
 priority: P1
 target_date: 2026-06-03
@@ -24,15 +24,31 @@ debt:
     confidence: medium
     rationale: "修改 harness 状态契约、校验、统计和 GitHub Project 同步脚本。"
   final:
-    incurred:
-    repaid:
-    net:
-    scope:
-    risk:
-    areas: []
-    confidence:
-    rationale:
-  revisions: []
+    incurred: 18
+    repaid: 10
+    net: 8
+    scope: global
+    risk: high
+    areas:
+      - tooling-ci
+      - architecture
+      - testability
+    confidence: high
+    rationale: "实现触及 harness schema、stats、GitHub Project 同步和 workflow 文档; 同时消除了任务分类、debt 统计和 Project 字段同步缺口。"
+  revisions:
+    - at: verify
+      date: 2026-06-02
+      from:
+        incurred: 13
+        repaid: 0
+        net: 13
+        confidence: medium
+      to:
+        incurred: 18
+        repaid: 10
+        net: 8
+        confidence: high
+      reason: "实现后确认影响面为 global; 自动化同步和规则文档偿还了部分 harness 流程 debt。"
 issue:
   number: 76
   repo: Caldis/berth
