@@ -17,8 +17,10 @@ type Box = {
 const navNames = {
   overview: /^(Overview|总览)$/,
   sessions: /^(Sessions|会话)$/,
-  instructions: /^(Instructions|指令)$/,
-  capabilities: /^(Capabilities|能力)$/,
+  memories: /^(Memories|记忆) - (Long-lived notes and sources|长期记忆与来源)$/,
+  conventions: /^(Conventions|约定) - (Project rule files|项目规则文件)$/,
+  skills: /^(Skills) - (Reusable workflows|可复用流程)$/,
+  hooks: /^(Hooks) - (Lifecycle automation|生命周期自动化)$/,
   usage: /^(Usage|用量)$/
 }
 
@@ -88,25 +90,22 @@ test.describe('App Shell', () => {
       .toBeGreaterThan(initialBox!.width + 30)
   })
 
-  test('sidebar item spacing is consistent inside configuration group', async () => {
+  test('sidebar item spacing is consistent inside promoted instruction group', async () => {
     const itemBox = async (name: RegExp): Promise<Box> => {
       const box = await navButton(name).boundingBox()
       expect(box).not.toBeNull()
       return box!
     }
 
-    const overview = await itemBox(navNames.overview)
-    const sessions = await itemBox(navNames.sessions)
-    const instructions = await itemBox(navNames.instructions)
-    const capabilities = await itemBox(navNames.capabilities)
-    const usage = await itemBox(navNames.usage)
+    const memories = await itemBox(navNames.memories)
+    const conventions = await itemBox(navNames.conventions)
+    const skills = await itemBox(navNames.skills)
 
     const gapBetween = (previous: Box, next: Box): number => next.y - previous.y - previous.height
 
-    const regularGap = gapBetween(overview, sessions)
+    const regularGap = gapBetween(memories, conventions)
 
-    expect(gapBetween(instructions, capabilities)).toBeCloseTo(regularGap, 0)
-    expect(gapBetween(capabilities, usage)).toBeCloseTo(regularGap, 0)
+    expect(gapBetween(conventions, skills)).toBeCloseTo(regularGap, 0)
   })
 
   test('overview page loads by default', async () => {
@@ -125,16 +124,16 @@ test.describe('App Shell', () => {
     await expect(breadcrumb).toContainText(/Sessions|会话/)
   })
 
-  test('can navigate to instructions', async () => {
-    await navButton(navNames.instructions).click()
+  test('can navigate to promoted instruction pages', async () => {
+    await navButton(navNames.skills).click()
     const heading = page.locator('h1')
-    await expect(heading).toContainText(/Instructions|指令/)
+    await expect(heading).toContainText(/Skills/)
   })
 
-  test('can navigate to capabilities', async () => {
-    await navButton(navNames.capabilities).click()
+  test('can navigate to promoted capability pages', async () => {
+    await navButton(navNames.hooks).click()
     const heading = page.locator('h1')
-    await expect(heading).toContainText(/Capabilities|能力/)
+    await expect(heading).toContainText(/Hooks/)
   })
 
   test('can navigate to usage', async () => {

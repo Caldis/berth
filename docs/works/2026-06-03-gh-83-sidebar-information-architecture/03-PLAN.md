@@ -26,7 +26,7 @@
   - verify: hook 搜索结果跳转 `/capabilities/hooks`; instruction-like 结果路由已按类型映射到新 instructions 路径
 - [x] 任务 6: 类型、harness 和视觉验证
   - scope: 全部本任务触达文件
-  - tests: `pnpm typecheck:web` passed; `pnpm harness:check` passed; target renderer tests passed; `pnpm harness:prepush` passed with 74 test files / 559 tests
+  - tests: `pnpm typecheck:web` passed; `pnpm harness:check` passed; target renderer tests passed; `pnpm harness:prepush` passed with 74 test files / 559 tests; after CI exposed stale e2e selectors, `pnpm build` passed and `pnpm test:e2e tests/e2e/app.e2e.ts` passed with 14 tests
   - verify: Electron CDP 实测 Hooks 与环境变量入口、Agent 视角、Project scope; screenshots `C:\Users\mail\AppData\Local\Temp\berth-gh83-sidebar-ia.png`, `C:\Users\mail\AppData\Local\Temp\berth-gh83-sidebar-env.png`
 
 ## verify 回写
