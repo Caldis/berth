@@ -2,7 +2,7 @@
 task: 2026-06-03-gh-80-session-detail-activity-metrics
 task_id: GH-80
 type: bug
-phase: explore
+phase: implement
 created: 2026-06-03
 priority: P1
 target_date: 
@@ -12,16 +12,17 @@ source:
     - docs/issues/2026-06-02-BUG-session-detail-activity-metrics.md
 debt:
   estimate:
-    incurred: 3
+    incurred: 4
     repaid: 0
-    net: 3
-    scope: module
+    net: 4
+    scope: cross-process
     risk: medium
     areas:
       - architecture
       - testability
-    confidence: low
-    rationale: "会话详情页指标涉及原始会话解析、token rate 定义和 skills/MCP/hooks 识别; 初始按模块级解析 bug 估算, explore/design 后校准。"
+      - ui-ux
+    confidence: medium
+    rationale: "explore 确认问题跨 main parser、sessions:get detail 契约和 renderer session detail 展示; Codex 侧 skills/MCP/hooks 元数据缺口会影响列表、详情和关系解析, token rate 文案和显示也需要 UI 校准。"
   final:
     incurred:
     repaid:
@@ -31,7 +32,19 @@ debt:
     areas: []
     confidence:
     rationale:
-  revisions: []
+  revisions:
+    - at: 2026-06-03
+      from:
+        incurred: 3
+        net: 3
+        scope: module
+        confidence: low
+      to:
+        incurred: 4
+        net: 4
+        scope: cross-process
+        confidence: medium
+      reason: "explore 发现 Codex session meta 当前将 skillsUsed/mcpServers/hooksFired 置空, sessions:get 和 renderer 指标都会消费这些字段。"
 issue:
   number: 80
   repo: Caldis/berth
@@ -59,9 +72,9 @@ artifacts:
 
 ## 产物
 - [x] 00-BUG.md — 原始输入快照
-- [ ] 01-ANALYSIS.md — Explore 产物
-- [ ] 02-SPEC.md — Design 产物
-- [ ] 03-PLAN.md — 活任务清单
+- [x] 01-ANALYSIS.md — Explore 产物
+- [x] 02-SPEC.md — Design 产物
+- [x] 03-PLAN.md — 活任务清单
 - [ ] 04-POLISH.md — 可选抛光记录
 
 ## 待澄清 (blocked 时填)
