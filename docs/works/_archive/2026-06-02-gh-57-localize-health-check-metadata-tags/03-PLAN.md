@@ -9,9 +9,10 @@
 - [x] 任务 2: 接入 Overview 与 Hooks 生命周期 hover 详情。
   - tests: `pnpm vitest run tests/renderer/overview-health-checks.test.tsx tests/renderer/hooks-lifecycle-view.test.tsx` — 25 passed
   - verify: 页面密度不变, hover 详情可读。
-- [ ] 任务 3: 完成目标检查与界面截图验证。
-  - tests: `pnpm lint`; `pnpm typecheck:web`; `pnpm typecheck:node`; `pnpm test`; `pnpm harness:check`; `node scripts/harness-projects.mjs check --strict`
-  - verify: 本地检查通过, push 前确认当前分支最近 GitHub Actions 非当前会话红灯, push 后等待新 SHA CI。
+- [x] 任务 3: 完成目标检查与界面截图验证。
+  - tests: `pnpm lint`; `pnpm typecheck:web`; `pnpm typecheck:node`; `pnpm test` — 60 files / 444 tests; `pnpm harness:check`; `node scripts/harness-projects.mjs check --strict`
+  - verify: 本地检查通过; push 前 master 最新 Actions 为 success; push 后 `26808976447` 在 Ubuntu 与 Windows 均 success。Overview 截图: `C:\Users\mail\AppData\Local\Temp\berth-gh57-health-metadata-overview-print.png`; Hooks 截图: `C:\Users\mail\AppData\Local\Temp\berth-gh57-hooks-hover-cdp.png`。
+  - follow-up: verify 发现旁支 bug `docs/issues/2026-06-02-BUG-localize-claude-settings-schema-health-check.md`, 不属于 GH-57 元信息 tag 范围。
 
 ## verify 回写
 

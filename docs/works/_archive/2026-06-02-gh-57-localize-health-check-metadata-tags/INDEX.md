@@ -2,7 +2,7 @@
 task: 2026-06-02-gh-57-localize-health-check-metadata-tags
 task_id: GH-57
 type: bug
-phase: verify
+phase: archive
 created: 2026-06-02
 issue:
   number: 57
@@ -16,7 +16,7 @@ gh_project:
   project_url: https://github.com/users/Caldis/projects/6
   project_id: PVT_kwHOADXbEs4BZHvQ
   item_id: PVTI_lAHOADXbEs4BZHvQzgueFxg
-  item_status: In Progress
+  item_status: Done
 artifacts:
   source: 00-BUG.md
   analysis: 01-ANALYSIS.md
