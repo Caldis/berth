@@ -2,19 +2,19 @@
 task: 2026-06-02-gh-34-discover-local-plugin-package-manifests
 task_id: GH-34
 type: feature
-phase: verify
+phase: archive
 created: 2026-06-02
 issue:
   number: 34
   repo: Caldis/berth
   url: https://github.com/Caldis/berth/issues/34
-  state: OPEN
+  state: CLOSED
   id: I_kwDOSpnDwc8AAAABEEUA8Q
 gh_project:
   status: tracked
   project_number: 6
   project_url: https://github.com/users/Caldis/projects/6
-  item_status: In Progress
+  item_status: Done
   project_id: PVT_kwHOADXbEs4BZHvQ
   item_id: PVTI_lAHOADXbEs4BZHvQzgucfXM
 artifacts:
