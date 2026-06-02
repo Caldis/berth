@@ -788,6 +788,6 @@ describe('session pages', () => {
     await waitFor(() => {
       expect(writeText).toHaveBeenCalledWith(expect.stringContaining('inputCostPerToken'))
     })
-    expect(screen.getByRole('button', { name: 'Copied' })).toBeInTheDocument()
+    expect(await screen.findByRole('button', { name: 'Copied' })).toBeInTheDocument()
   })
 })
