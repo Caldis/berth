@@ -2,7 +2,7 @@
 task: 2026-06-03-gh-85-local-sources-project-integration
 task_id: GH-85
 type: feature
-phase: explore
+phase: implement
 created: 2026-06-03
 priority: P2
 target_date: 
@@ -12,17 +12,16 @@ source:
     - docs/issues/2026-06-02-IMPROVEMENT-local-sources-project-integration.md
 debt:
   estimate:
-    incurred: 4
+    incurred: 2
     repaid: 0
-    net: 4
-    scope: cross-process
+    net: 2
+    scope: module
     risk: medium
     areas:
-      - architecture
       - ui-ux
       - testability
-    confidence: low
-    rationale: "0.0-new 初始估算; 本地来源整合到项目功能涉及设置页、项目范围、扫描来源和来源状态展示, explore/design 后校准。"
+    confidence: medium
+    rationale: "Explore/Design 确认现有 assets:scan-sources 与 project-scope:candidates 已有足够契约; 本轮主要迁移 renderer 展示和测试, 不改主进程扫描契约。"
   final:
     incurred:
     repaid:
@@ -32,7 +31,31 @@ debt:
     areas: []
     confidence:
     rationale:
-  revisions: []
+  revisions:
+    - phase: explore
+      date: 2026-06-03
+      from:
+        incurred: 4
+        repaid: 0
+        net: 4
+        scope: cross-process
+        risk: medium
+        areas:
+          - architecture
+          - ui-ux
+          - testability
+        confidence: low
+      to:
+        incurred: 2
+        repaid: 0
+        net: 2
+        scope: module
+        risk: medium
+        areas:
+          - ui-ux
+          - testability
+        confidence: medium
+      reason: "现有 ProjectScopeCandidate、ScanRoot 与 assets:scan-sources 已覆盖项目来源展示所需字段; 不需要新增 IPC 或扫描器数据契约。"
 issue:
   number: 85
   repo: Caldis/berth
@@ -60,9 +83,9 @@ artifacts:
 
 ## 产物
 - [x] 00-PRD.md — 原始输入快照
-- [ ] 01-ANALYSIS.md — Explore 产物
-- [ ] 02-SPEC.md — Design 产物
-- [ ] 03-PLAN.md — 活任务清单
+- [x] 01-ANALYSIS.md — Explore 产物
+- [x] 02-SPEC.md — Design 产物
+- [x] 03-PLAN.md — 活任务清单
 - [ ] 04-POLISH.md — 可选抛光记录
 
 ## 待澄清 (blocked 时填)
