@@ -3,8 +3,10 @@ import * as path from 'path'
 import type { AgentAdapter, Asset, AssetCategory, AssetStats } from '@shared/types/asset'
 import type { ScanRoot } from '@shared/types/asset'
 import type { AgentScanSourceGroup, ScanResult } from '@shared/types/ipc'
+import type { ProjectScopeCandidate } from '@shared/scope'
 import { ClaudeCodeAdapter } from '../adapters/claude-code'
 import { CodexAdapter } from '../adapters/codex'
+import { projectScopeCandidatesFromAssets } from '../project-scope'
 
 interface HookEquivalentSource {
   id: string
@@ -94,6 +96,10 @@ export class AssetScanner {
 
   getProjectDir(): string | undefined {
     return this.projectDir
+  }
+
+  getProjectScopeCandidates(): ProjectScopeCandidate[] {
+    return projectScopeCandidatesFromAssets(this.cachedAssets, this.projectDir)
   }
 
   hasScanned(): boolean {

@@ -6,9 +6,9 @@
 - [x] 任务 1: 新增应用级 scope 类型、路径规范化 helper、store 状态
   - tests: `pnpm test tests/unit/scope.test.ts tests/renderer/app-store.test.ts` (8 passed); `pnpm typecheck:web`; `pnpm typecheck:node`
   - verify: 非 UI; `global` / `user` / `project` 三种状态可表达, project scope 会规范化 path/pathKey; 空 project path 回退 global; Windows 路径大小写归一并去重。
-- [ ] 任务 2: 主进程生成项目候选, sessions/usage 接受精确 project path
-  - tests: `pnpm test <project-scope-helper-test> <usage-or-handler-test>`
-  - verify: 非 UI; 候选来自当前 projectDir 与历史 session, 去重稳定; sessions/usage 过滤不再依赖模糊字符串。
+- [x] 任务 2: 主进程生成项目候选, sessions/usage 接受精确 project path
+  - tests: `pnpm test tests/unit/project-scope.test.ts tests/unit/usage-summary.test.ts tests/unit/engine-scanner.test.ts` (21 passed); `pnpm typecheck:node`; `pnpm typecheck:web`
+  - verify: 非 UI; `projectScopeCandidatesFromAssets()` 从当前 projectDir 与历史 session 合并候选并去重; `sessions:list` / `usage:summary` 接受 `projectPath`, 精确匹配规范化路径, 不使用模糊项目名。
 - [ ] 任务 3: 侧边栏增加 Project Scope Switcher
   - tests: `pnpm test src/renderer/src/components/layout/project-scope-switcher.test.tsx`
   - verify: UI; expanded/collapsed sidebar 都有入口; 与 Agent selector 区分; 弹层有 global/user/project 分组、长路径截断、loading/empty/error/focus 状态。

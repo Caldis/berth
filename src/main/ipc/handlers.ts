@@ -48,6 +48,7 @@ import { parseCodexSessionDetail } from '../adapters/codex/parsers'
 import { listMemory, readMemory } from '../memory'
 import { resolveModelPricing } from '../engine/pricing/catalog'
 import { listAgentCapabilityPlugins } from '../agent-plugins/registry'
+import { assetMatchesProjectPath } from '../project-scope'
 
 export function registerAssetHandlers(): void {
   ipcMain.handle('window:minimize', (event: IpcMainInvokeEvent): void => {
@@ -109,6 +110,11 @@ export function registerAssetHandlers(): void {
     })
   })
 
+  ipcMain.handle('project-scope:candidates', async () => {
+    const scanner = await ensureScanned()
+    return scanner.getProjectScopeCandidates()
+  })
+
   ipcMain.handle(
     'assets:scan-category',
     async (_event, category: AssetCategory): Promise<Asset[]> => {
@@ -152,7 +158,7 @@ export function registerAssetHandlers(): void {
     'sessions:list',
     async (
       _event,
-      opts: { projectFilter?: string; limit?: number; agentView?: AgentView }
+      opts: { projectFilter?: string; projectPath?: string; limit?: number; agentView?: AgentView }
     ): Promise<SessionListResult> => {
       const scanner = await ensureScanned()
       let sessions = scanner
@@ -162,6 +168,9 @@ export function registerAssetHandlers(): void {
 
       if (opts.projectFilter) {
         sessions = sessions.filter((s) => sessionMatchesProjectFilter(s, opts.projectFilter!))
+      }
+      if (opts.projectPath) {
+        sessions = sessions.filter((s) => assetMatchesProjectPath(s, opts.projectPath))
       }
 
       sessions.sort((a, b) => getSessionSortTime(b) - getSessionSortTime(a))
@@ -213,11 +222,11 @@ export function registerAssetHandlers(): void {
 
   ipcMain.handle(
     'usage:summary',
-    async (_event, opts: { days: number; agentView?: AgentView; costMode?: CostMode }): Promise<UsageSummary> => {
+    async (_event, opts: { days: number; agentView?: AgentView; costMode?: CostMode; projectPath?: string }): Promise<UsageSummary> => {
       const scanner = await ensureScanned()
       return buildUsageSummary(
         scanner.getAllAssets().filter((asset) => sessionMatchesAgentView(asset, opts.agentView)),
-        { days: opts.days, costMode: opts.costMode }
+        { days: opts.days, costMode: opts.costMode, projectPath: opts.projectPath }
       )
     }
   )

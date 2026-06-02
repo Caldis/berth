@@ -38,13 +38,16 @@ const api = {
   agentPlugins: {
     list: () => ipcRenderer.invoke('agent-plugins:list')
   },
+  projectScope: {
+    candidates: () => ipcRenderer.invoke('project-scope:candidates')
+  },
   sessions: {
-    list: (opts: { projectFilter?: string; limit?: number; agentView?: string }) =>
+    list: (opts: { projectFilter?: string; projectPath?: string; limit?: number; agentView?: string }) =>
       ipcRenderer.invoke('sessions:list', opts),
     get: (id: string) => ipcRenderer.invoke('sessions:get', id)
   },
   usage: {
-    summary: (opts: { days: number; agentView?: string; costMode?: string }) =>
+    summary: (opts: { days: number; agentView?: string; costMode?: string; projectPath?: string }) =>
       ipcRenderer.invoke('usage:summary', opts)
   },
   memory: {

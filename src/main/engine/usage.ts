@@ -23,12 +23,14 @@ import {
   type UsageCostResolution
 } from './pricing'
 import { normalizeUsageSummary } from '@shared/usage-summary'
+import { filterAssetsByProjectPath } from '../project-scope'
 
 type Numberish = number | null | undefined
 type UsageSummaryOptions = {
   costMode?: CostMode
   days?: number
   now?: Date | string
+  projectPath?: string
   pricingCatalog?: readonly ModelPricing[]
 }
 type UsageEntry = {
@@ -310,7 +312,7 @@ export function buildUsageSummary(
   options: UsageSummaryOptions = {}
 ): UsageSummary {
   const groups = new Map<string, Asset[]>()
-  for (const asset of assets) {
+  for (const asset of filterAssetsByProjectPath(assets, options.projectPath)) {
     const group = groups.get(asset.agentId) ?? []
     group.push(asset)
     groups.set(asset.agentId, group)

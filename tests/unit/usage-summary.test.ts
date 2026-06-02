@@ -510,4 +510,43 @@ describe('buildUsageSummary', () => {
     expect(summary.dailyTokenUsage).toHaveLength(1)
     expect(summary.dailyTokenUsage[0]).toMatchObject({ date: '2026-05-30' })
   })
+
+  it('filters session-derived usage by exact project path', () => {
+    const berthSession: Asset = {
+      id: 'codex-session-berth',
+      agentId: 'codex',
+      category: 'state',
+      type: 'session',
+      scope: 'session',
+      name: 'Berth Session',
+      path: 'C:\\Users\\test\\.codex\\sessions\\berth.jsonl',
+      meta: {
+        startedAt: '2026-05-30T01:00:00.000Z',
+        project: 'berth',
+        projectPath: 'D:\\Code\\berth',
+        model: 'gpt-5.3-codex',
+        tokenUsage: { inputTokens: 20, outputTokens: 10, totalTokens: 30 }
+      }
+    }
+    const cloneSession: Asset = {
+      ...berthSession,
+      id: 'codex-session-berth-clone',
+      name: 'Clone Session',
+      meta: {
+        ...berthSession.meta,
+        project: 'berth-clone',
+        projectPath: 'D:\\Code\\berth-clone',
+        tokenUsage: { inputTokens: 100, outputTokens: 50, totalTokens: 150 }
+      }
+    }
+
+    const summary = buildUsageSummary([berthSession, cloneSession], {
+      projectPath: 'd:/code/berth/',
+      days: 7,
+      now: '2026-05-30T12:00:00.000Z'
+    })
+
+    expect(summary.totalTokens).toBe(30)
+    expect(summary.byProject).toMatchObject([{ project: 'berth', tokens: 30 }])
+  })
 })

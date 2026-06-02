@@ -13,6 +13,7 @@ import type {
 } from './asset'
 import type { MemoryListResult, MemoryNote } from './memory'
 import type { AgentCapabilityPluginListResult } from './agent-plugin'
+import type { ProjectScopeCandidate } from '../scope'
 
 export interface PlatformInfo {
   platform: NodeJS.Platform
@@ -319,15 +320,16 @@ export interface IpcChannels {
   'assets:scan-all': { args: []; result: ScanResult }
   'assets:scan-sources': { args: []; result: AgentScanSourceGroup[] }
   'agent-plugins:list': { args: []; result: AgentCapabilityPluginListResult }
+  'project-scope:candidates': { args: []; result: ProjectScopeCandidate[] }
   'assets:scan-category': { args: [AssetCategory]; result: Asset[] }
   'assets:get': { args: [string]; result: Asset | null }
   'assets:relations': { args: [string]; result: Relation[] }
   'assets:search': { args: [string]; result: SearchResult[] }
   'assets:health-check': { args: []; result: HealthCheck[] }
   'assets:import-chain': { args: [string]; result: ImportChainNode }
-  'sessions:list': { args: [{ projectFilter?: string; limit?: number; agentView?: AgentView }]; result: SessionListResult }
+  'sessions:list': { args: [{ projectFilter?: string; projectPath?: string; limit?: number; agentView?: AgentView }]; result: SessionListResult }
   'sessions:get': { args: [string]; result: SessionDetailResult | null }
-  'usage:summary': { args: [{ days: number; agentView?: AgentView; costMode?: CostMode }]; result: UsageSummary }
+  'usage:summary': { args: [{ days: number; agentView?: AgentView; costMode?: CostMode; projectPath?: string }]; result: UsageSummary }
   'memory:list': { args: []; result: MemoryListResult }
   'memory:get': { args: [string]; result: MemoryNote | null }
   'mcp:merged': { args: []; result: MCPMergeInfo[] }
