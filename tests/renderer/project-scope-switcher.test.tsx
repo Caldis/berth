@@ -1,11 +1,11 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import React from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import i18n from '../../src/renderer/src/i18n'
 import { ProjectScopeSwitcher } from '../../src/renderer/src/components/layout/project-scope-switcher'
 import { DEFAULT_SCOPE_SELECTION, createProjectScopeCandidate } from '../../src/shared/scope'
 import { useAppStore } from '../../src/renderer/src/stores/app'
-import type { ProjectScopeActivationResult } from '../../src/shared/types/ipc'
+import type { AgentScanSourceGroup, ProjectScopeActivationResult } from '../../src/shared/types/ipc'
 
 function activationResult(projectPath?: string): ProjectScopeActivationResult {
   const candidate = projectPath
@@ -27,6 +27,65 @@ function activationResult(projectPath?: string): ProjectScopeActivationResult {
   }
 }
 
+const scanSourceGroups: AgentScanSourceGroup[] = [
+  {
+    agentId: 'claude-code',
+    agentName: 'Claude Code',
+    installed: true,
+    roots: [],
+    sources: [
+      {
+        path: 'C:\\Users\\test\\.claude',
+        scope: 'user',
+        code: 'claude.user.data-directory',
+        categories: ['instruction'],
+        kind: 'directory',
+        status: 'scanned'
+      },
+      {
+        path: 'D:\\Code\\berth\\.claude',
+        scope: 'project',
+        code: 'claude.project.directory',
+        categories: ['instruction', 'capability'],
+        kind: 'directory',
+        status: 'scanned'
+      },
+      {
+        path: 'D:\\Code\\berth\\.mcp.json',
+        scope: 'project',
+        code: 'claude.project.mcp-config',
+        categories: ['integration'],
+        kind: 'file',
+        status: 'missing'
+      }
+    ]
+  },
+  {
+    agentId: 'codex',
+    agentName: 'Codex',
+    installed: true,
+    roots: [],
+    sources: [
+      {
+        path: 'D:\\Code\\berth\\AGENTS.md',
+        scope: 'project',
+        code: 'codex.project.agents-md',
+        categories: ['instruction'],
+        kind: 'file',
+        status: 'scanned'
+      },
+      {
+        path: 'D:\\Code\\other\\.codex\\config.toml',
+        scope: 'project',
+        code: 'codex.project.config',
+        categories: ['capability'],
+        kind: 'file',
+        status: 'scanned'
+      }
+    ]
+  }
+]
+
 describe('ProjectScopeSwitcher', () => {
   beforeEach(async () => {
     await i18n.changeLanguage('en')
@@ -42,6 +101,8 @@ describe('ProjectScopeSwitcher', () => {
       })!
     ])
     window.api.projectScope.activate = vi.fn(async ({ projectPath }) => activationResult(projectPath))
+    window.api.assets.scanSources = vi.fn(async () => scanSourceGroups)
+    window.api.shell.openPath = vi.fn(async () => {})
   })
 
   it('loads project candidates and selects a project scope', async () => {
@@ -61,6 +122,58 @@ describe('ProjectScopeSwitcher', () => {
       })
     })
     expect(useAppStore.getState().stats.skills).toBe(1)
+  })
+
+  it('shows project source summaries and selected project source details', async () => {
+    render(<ProjectScopeSwitcher collapsed={false} />)
+
+    const trigger = screen.getByRole('button', { name: 'Project scope' })
+    fireEvent.click(trigger)
+
+    const option = await screen.findByRole('option', { name: 'berth' })
+    expect(option).toHaveTextContent('3 sources')
+    expect(option).toHaveTextContent('2 Scanned')
+    expect(option).toHaveTextContent('1 Missing')
+
+    fireEvent.click(option)
+    await waitFor(() => {
+      expect(useAppStore.getState().scopeSelection).toEqual({
+        mode: 'project',
+        projectPath: 'D:/Code/berth',
+        projectPathKey: 'd:/code/berth'
+      })
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Project scope' }))
+
+    expect(await screen.findByText('Project sources')).toBeInTheDocument()
+    expect(screen.getByText('Claude Code')).toBeInTheDocument()
+    expect(screen.getByText('Codex')).toBeInTheDocument()
+    expect(screen.getByText('Project Claude Code directory')).toBeInTheDocument()
+    expect(screen.getByText('Project MCP config file')).toBeInTheDocument()
+    expect(screen.getByText('Codex project instructions')).toBeInTheDocument()
+    expect(screen.getByText('D:\\Code\\berth\\.claude')).toBeInTheDocument()
+    expect(screen.getByText('D:\\Code\\berth\\.mcp.json')).toBeInTheDocument()
+    expect(screen.queryByText('D:\\Code\\other\\.codex\\config.toml')).not.toBeInTheDocument()
+
+    const row = screen.getByText('D:\\Code\\berth\\.claude').closest('[data-project-source-root]')
+    expect(row).not.toBeNull()
+    fireEvent.click(within(row as HTMLElement).getByRole('button', { name: 'Show in Explorer' }))
+
+    expect(window.api.shell.openPath).toHaveBeenCalledWith('D:\\Code\\berth\\.claude')
+  })
+
+  it('keeps project selection usable when source loading fails', async () => {
+    window.api.assets.scanSources = vi.fn(async () => {
+      throw new Error('source boom')
+    })
+
+    render(<ProjectScopeSwitcher collapsed={false} />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Project scope' }))
+
+    expect(await screen.findByText('Could not load project sources.')).toBeInTheDocument()
+    expect(await screen.findByRole('option', { name: 'berth' })).toBeInTheDocument()
   })
 
   it('can switch to user scope without project candidates', async () => {

@@ -4,16 +4,16 @@
 每个实现项必须有测试证据或明确例外理由。
 实现中若发现 debt 初估不准, 更新 INDEX.md `debt.estimate`, 并追加 `debt.revisions[]`。
 
-- [ ] 任务 1: 更新 ProjectScopeSwitcher renderer 测试
+- [x] 任务 1: 更新 ProjectScopeSwitcher renderer 测试
   - tests: `pnpm test tests/renderer/project-scope-switcher.test.tsx`
   - verify: 覆盖项目候选来源摘要、当前项目来源明细、来源加载失败、路径打开动作; 界面验收项覆盖信息密度、状态、长路径。
-- [ ] 任务 2: 在 ProjectScopeSwitcher 中整合项目来源
+- [x] 任务 2: 在 ProjectScopeSwitcher 中整合项目来源
   - tests: `pnpm test tests/renderer/project-scope-switcher.test.tsx`
   - verify: 打开项目范围时加载 `assets.scanSources`; 候选行显示来源状态摘要; 当前项目显示来源明细; 来源失败不阻断项目选择。
-- [ ] 任务 3: 从 Settings 页面移除 Local Sources 区块
+- [x] 任务 3: 从 Settings 页面移除 Local Sources 区块
   - tests: `pnpm test tests/renderer/settings-sources.test.tsx tests/renderer/settings-page.test.tsx`
   - verify: SettingsContent 不再调用 `assets.scanSources`; 页面不出现 `Local Sources` / `本地来源`; 全局设置入口仍可用。
-- [ ] 任务 4: 更新中英文 i18n 文案
+- [x] 任务 4: 更新中英文 i18n 文案
   - tests: `pnpm test tests/renderer/project-scope-switcher.test.tsx tests/renderer/settings-sources.test.tsx`
   - verify: 英文 `Project sources`; 中文 `项目来源`; source count / scanned / missing / not scanned 文案在项目切换器中可读。
 - [ ] 任务 5: 跑类型、构建、harness、视觉和 CI 验收

@@ -54,6 +54,13 @@
     "projects": "Projects",
     "emptyProjects": "No project candidates yet.",
     "loadError": "Could not refresh projects.",
+    "sourceCount_one": "{{count}} source",
+    "sourceCount_other": "{{count}} sources",
+    "projectSources": "Project sources",
+    "projectSourcesHint": "Select a project to see project source files.",
+    "projectSourcesLoading": "Loading project sources...",
+    "projectSourcesError": "Could not load project sources.",
+    "projectSourcesEmpty": "No project sources found for this project.",
     "sessionCount_one": "{{count}} session",
     "sessionCount_other": "{{count}} sessions",
     "sources": {

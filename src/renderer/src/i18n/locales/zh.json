@@ -54,6 +54,12 @@
     "projects": "项目",
     "emptyProjects": "还没有发现项目候选。",
     "loadError": "无法刷新项目。",
+    "sourceCount": "{{count}} 个来源",
+    "projectSources": "项目来源",
+    "projectSourcesHint": "选择项目后查看项目来源文件。",
+    "projectSourcesLoading": "正在加载项目来源…",
+    "projectSourcesError": "无法加载项目来源。",
+    "projectSourcesEmpty": "这个项目没有发现项目级来源。",
     "sessionCount": "{{count}} 个会话",
     "sources": {
       "current": "当前目录",

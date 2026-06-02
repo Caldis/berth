@@ -9,9 +9,8 @@ import {
   ExternalLink
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { useAgentCapabilityPlugins, useScanSources } from '@/hooks/use-ipc'
+import { useAgentCapabilityPlugins } from '@/hooks/use-ipc'
 import { AgentCapabilityPluginsSection } from '@/components/settings/agent-capability-plugins-section'
-import { LocalSourcesSection } from '@/components/settings/local-sources-section'
 
 function getNextRadioIndex(key: string, currentIndex: number, optionCount: number): number | null {
   if (optionCount <= 0) return null
@@ -91,7 +90,6 @@ export function SettingsContent({
   const { t, i18n } = useTranslation()
   const { theme, setTheme } = useTheme()
   const [advancedMode, setAdvancedMode] = useState(false)
-  const { groups: scanSourceGroups, loading: scanSourcesLoading } = useScanSources()
   const {
     plugins: agentPlugins,
     manifests: agentPluginManifests,
@@ -248,8 +246,6 @@ export function SettingsContent({
         loading={agentPluginsLoading}
         error={agentPluginsError}
       />
-
-      <LocalSourcesSection groups={scanSourceGroups} loading={scanSourcesLoading} />
 
       {/* About */}
       <section className="space-y-3">

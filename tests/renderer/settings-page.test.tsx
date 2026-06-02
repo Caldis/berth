@@ -26,7 +26,8 @@ describe('SettingsContent page chrome', () => {
 
   async function waitForSettingsAsyncSections(): Promise<void> {
     await screen.findByText('The plugin registry is not available.')
-    await screen.findByText('No supported local sources found.')
+    expect(screen.queryByText('No supported local sources found.')).not.toBeInTheDocument()
+    expect(window.api.assets.scanSources).not.toHaveBeenCalled()
   }
 
   it('renders the report issue action in English', async () => {
@@ -74,7 +75,8 @@ describe('SettingsContent page chrome', () => {
     renderSettingsContent()
 
     await screen.findByText('插件注册表当前不可用。')
-    await screen.findByText('未发现支持的本地来源。')
+    expect(screen.queryByText('未发现支持的本地来源。')).not.toBeInTheDocument()
+    expect(window.api.assets.scanSources).not.toHaveBeenCalled()
 
     expect(screen.getByRole('switch', { name: '高级模式' })).toBeInTheDocument()
   })
