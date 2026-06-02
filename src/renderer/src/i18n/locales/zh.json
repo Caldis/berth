@@ -113,15 +113,57 @@
   },
   "overview": {
     "title": "总览",
+    "kicker": "本地工作区",
+    "subtitle": "当前范围内的 Agent 资产、最近活动、用量和健康检查。",
+    "currentAgent": "当前 Agent",
+    "projectScope": "项目范围",
+    "quickActions": "总览快捷入口",
+    "openSessions": "打开会话",
     "recentSessions": "最近会话",
     "costLast7Days": "近 7 天费用",
     "rateLimits": "速率限制",
     "healthChecks": "健康检查",
     "noIssues": "所有系统运行正常",
+    "loadingUsage": "正在加载用量图表",
     "started": "开始时间",
+    "scope": {
+      "global": "全部本地数据",
+      "user": "用户级范围"
+    },
     "stats": {
       "skills": "技能",
+      "mcp": "MCP",
       "plugins": "插件"
+    },
+    "metricDescriptions": {
+      "skills": "可复用流程",
+      "mcp": "已连接工具",
+      "sessions": "本地会话",
+      "plugins": "Agent 扩展"
+    },
+    "empty": {
+      "sessionsTitle": "暂无最近会话",
+      "sessionsDescription": "Berth 扫描到本地 Claude Code 或 Codex 会话后会显示在这里。",
+      "usageTitle": "近 7 天暂无用量记录",
+      "usageDescription": "扫描到带 token 或费用数据的会话后会显示用量。",
+      "healthTitle": "暂无需要处理的健康检查",
+      "healthDescription": "当配置或本地文件需要检查时, 警告和错误会显示在这里。"
+    },
+    "healthSummary": {
+      "loading": "正在检查健康状态",
+      "stale": "正在刷新健康状态",
+      "ok": "正常",
+      "info": "信息提示",
+      "warning": "需要检查",
+      "error": "需要处理"
+    },
+    "healthSummaryDetail": {
+      "loading": "正在读取本地 Agent 配置。",
+      "stale": "刷新期间暂时显示上一次结果。",
+      "ok": "当前没有可见的健康检查需要处理。",
+      "info": "当前只有信息类检查。",
+      "warning": "继续使用前建议检查警告项。",
+      "error": "请先修复错误项。"
     },
     "healthCount": {
       "error": "{{count}} 个错误",

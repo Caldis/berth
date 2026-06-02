@@ -111,6 +111,11 @@ test.describe('App Shell', () => {
   test('overview page loads by default', async () => {
     const heading = page.locator('h1')
     await expect(heading).toBeVisible()
+    await expect(heading).toContainText(/Overview|总览/)
+    await expect(page.getByTestId('overview-hero')).toContainText(/Current agent|当前 Agent/)
+    await expect(page.getByTestId('overview-hero')).toContainText(/Project scope|项目范围/)
+    await expect(page.getByRole('region', { name: /Overview quick actions|总览快捷入口/ })).toBeVisible()
+    await expect(page.getByRole('heading', { name: /Health Checks|健康检查/ })).toBeVisible()
   })
 
   test('can navigate to sessions', async () => {

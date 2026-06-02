@@ -114,15 +114,57 @@
   },
   "overview": {
     "title": "Overview",
+    "kicker": "Local workspace",
+    "subtitle": "Current agent assets, recent activity, usage and health checks for the selected scope.",
+    "currentAgent": "Current agent",
+    "projectScope": "Project scope",
+    "quickActions": "Overview quick actions",
+    "openSessions": "Open sessions",
     "recentSessions": "Recent Sessions",
     "costLast7Days": "Cost (last 7 days)",
     "rateLimits": "Rate Limits",
     "healthChecks": "Health Checks",
     "noIssues": "All systems operational",
+    "loadingUsage": "Loading usage chart",
     "started": "Started",
+    "scope": {
+      "global": "All local data",
+      "user": "User scope"
+    },
     "stats": {
       "skills": "Skills",
+      "mcp": "MCP",
       "plugins": "Plugins"
+    },
+    "metricDescriptions": {
+      "skills": "Reusable workflows",
+      "mcp": "Connected tools",
+      "sessions": "Local conversations",
+      "plugins": "Agent extensions"
+    },
+    "empty": {
+      "sessionsTitle": "No recent sessions",
+      "sessionsDescription": "Sessions will appear here after Berth finds local Claude Code or Codex transcripts.",
+      "usageTitle": "No usage recorded for the last 7 days",
+      "usageDescription": "Usage appears after scanned sessions include token or cost data.",
+      "healthTitle": "No health checks need attention",
+      "healthDescription": "Warnings and errors will appear here when configuration or local files need review."
+    },
+    "healthSummary": {
+      "loading": "Checking health",
+      "stale": "Refreshing health",
+      "ok": "Healthy",
+      "info": "Informational",
+      "warning": "Needs review",
+      "error": "Needs attention"
+    },
+    "healthSummaryDetail": {
+      "loading": "Reading local agent configuration.",
+      "stale": "Showing the last result while a refresh is running.",
+      "ok": "No visible health checks need attention.",
+      "info": "Only informational checks are visible.",
+      "warning": "Review warnings before relying on this setup.",
+      "error": "Fix errors before treating this setup as ready."
     },
     "healthCount": {
       "error_one": "{{count}} error",
