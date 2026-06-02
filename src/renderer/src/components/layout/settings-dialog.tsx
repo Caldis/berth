@@ -37,6 +37,7 @@ export function SettingsDialog({
 
   useEffect(() => {
     if (!open) return
+    const returnFocusElement = returnFocusRef?.current
 
     const handleKeyDown = (event: KeyboardEvent): void => {
       if (event.key === 'Escape') {
@@ -74,7 +75,7 @@ export function SettingsDialog({
     window.addEventListener('keydown', handleKeyDown)
     return () => {
       window.removeEventListener('keydown', handleKeyDown)
-      returnFocusRef?.current?.focus()
+      returnFocusElement?.focus()
     }
   }, [open, onOpenChange, returnFocusRef])
 
