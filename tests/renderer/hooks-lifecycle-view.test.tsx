@@ -625,6 +625,32 @@ describe('HooksLifecycleView', () => {
     expect(stageList.className).toContain('lg:overflow-y-auto')
   })
 
+  it('marks the current lifecycle stage in the sticky sidebar', async () => {
+    const scrollIntoView = vi.fn()
+    Element.prototype.scrollIntoView = scrollIntoView
+
+    renderHooks('all', [
+      hookAsset('claude-pre', 'claude-code', 'PreToolUse'),
+      hookAsset('codex-stop', 'codex', 'Stop')
+    ])
+    await waitForHookHealthIdle()
+
+    const sidebar = screen.getByLabelText('Lifecycle')
+    const sessionStartButton = within(sidebar).getByRole('button', { name: /Session starts/ })
+    const toolBeforeButton = within(sidebar).getByRole('button', { name: /Before a tool runs/ })
+
+    expect(sessionStartButton).toHaveAttribute('aria-current', 'true')
+    expect(sessionStartButton.className).toContain('bg-accent')
+    expect(toolBeforeButton).not.toHaveAttribute('aria-current')
+
+    fireEvent.click(toolBeforeButton)
+
+    expect(toolBeforeButton).toHaveAttribute('aria-current', 'true')
+    expect(toolBeforeButton.className).toContain('bg-accent')
+    expect(sessionStartButton).not.toHaveAttribute('aria-current')
+    expect(scrollIntoView).toHaveBeenCalledWith({ block: 'start', behavior: 'smooth' })
+  })
+
   it('shows sidebar stage summaries, numeric count tags, and structured recommendations', async () => {
     renderHooks('all', [
       hookAsset('claude-pre', 'claude-code', 'PreToolUse'),

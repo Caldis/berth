@@ -81,8 +81,18 @@ export function HooksLifecycleView({
   const hookCount = assets.length
   const hasSearch = search.trim().length > 0
   const hasScopeFilter = scope !== 'all'
+  const [activeStageId, setActiveStageId] = useState<string | null>(null)
+  const currentStageId = activeStageId ?? groups[0]?.id ?? null
+
+  useEffect(() => {
+    setActiveStageId((current) => {
+      if (current && groups.some((group) => group.id === current)) return current
+      return groups[0]?.id ?? null
+    })
+  }, [groups])
 
   const scrollToStage = (id: string): void => {
+    setActiveStageId(id)
     document.getElementById(`hook-stage-${id}`)?.scrollIntoView({ block: 'start', behavior: 'smooth' })
   }
 
@@ -118,32 +128,47 @@ export function HooksLifecycleView({
               data-testid="hook-lifecycle-stage-list"
               className="flex gap-2 overflow-x-auto pb-1 lg:block lg:max-h-[calc(100vh-10rem)] lg:space-y-1 lg:overflow-y-auto lg:pb-0 lg:pr-1"
             >
-              {groups.map((group, index) => (
-                <button
-                  key={group.id}
-                  type="button"
-                  onClick={() => scrollToStage(group.id)}
-                  className="flex min-w-[230px] items-center gap-2 rounded-md px-2 py-2 text-left transition-colors hover:bg-accent lg:w-full lg:min-w-0"
-                >
-                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded bg-muted text-[10px] font-semibold text-muted-foreground">
-                    {String(index + 1).padStart(2, '0')}
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-xs font-medium text-foreground">
-                      {group.stage ? t(group.stage.titleKey) : t('capabilities.hooks.unknown.title')}
-                    </span>
-                    <span className="block truncate text-[11px] text-muted-foreground">
-                      {group.stage ? t(group.stage.summaryKey) : t('capabilities.hooks.unknown.body')}
-                    </span>
-                  </span>
-                  <span
-                    title={t('capabilities.hooks.hookCount', { count: group.hooks.length })}
-                    className="ml-auto flex h-5 min-w-5 shrink-0 items-center justify-center rounded-md border border-border bg-background px-1.5 text-[11px] font-semibold text-muted-foreground"
+              {groups.map((group, index) => {
+                const isCurrent = currentStageId === group.id
+                return (
+                  <button
+                    key={group.id}
+                    type="button"
+                    aria-current={isCurrent ? 'true' : undefined}
+                    onClick={() => scrollToStage(group.id)}
+                    className={cn(
+                      'flex min-w-[230px] items-center gap-2 rounded-md px-2 py-2 text-left transition-colors lg:w-full lg:min-w-0',
+                      isCurrent
+                        ? 'bg-accent text-foreground shadow-sm ring-1 ring-border/70'
+                        : 'hover:bg-accent'
+                    )}
                   >
-                    {group.hooks.length}
-                  </span>
-                </button>
-              ))}
+                    <span className={cn(
+                      'flex h-5 w-5 shrink-0 items-center justify-center rounded text-[10px] font-semibold',
+                      isCurrent ? 'bg-background text-foreground' : 'bg-muted text-muted-foreground'
+                    )}>
+                      {String(index + 1).padStart(2, '0')}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-xs font-medium text-foreground">
+                        {group.stage ? t(group.stage.titleKey) : t('capabilities.hooks.unknown.title')}
+                      </span>
+                      <span className={cn(
+                        'block truncate text-[11px]',
+                        isCurrent ? 'text-foreground/70' : 'text-muted-foreground'
+                      )}>
+                        {group.stage ? t(group.stage.summaryKey) : t('capabilities.hooks.unknown.body')}
+                      </span>
+                    </span>
+                    <span
+                      title={t('capabilities.hooks.hookCount', { count: group.hooks.length })}
+                      className="ml-auto flex h-5 min-w-5 shrink-0 items-center justify-center rounded-md border border-border bg-background px-1.5 text-[11px] font-semibold text-muted-foreground"
+                    >
+                      {group.hooks.length}
+                    </span>
+                  </button>
+                )
+              })}
             </div>
           </div>
         </aside>
