@@ -11,10 +11,10 @@
   - files: `scripts/harness-stats.mjs`, `tests/harness/stats.test.ts`, `package.json` 如需新增脚本
   - tests: `pnpm vitest run tests/harness/stats.test.ts`
   - verify: 2026-06-02 `pnpm vitest run tests/harness/stats.test.ts` 6 tests passed; `pnpm harness:stats` 输出 debt total/status/unscored/areas, 旧 works/friction/issues/dist 行保留; 非 UI, 界面质量与交互验收不适用。
-- [ ] 任务 3: GitHub Project 字段创建与同步
+- [x] 任务 3: GitHub Project 字段创建与同步
   - files: `scripts/harness-projects.mjs`, `tests/harness/projects.test.ts`, `package.json` 如需新增脚本
   - tests: `pnpm vitest run tests/harness/projects.test.ts`
-  - verify: `fields ensure` 创建缺失字段; `ensure`/`done` 同步 Task Type/Priority/date/debt/scope/risk/source; `check --strict` 发现远端字段漂移; 当前用户仓库不伪装 GitHub Issue Type; 非 UI, 界面质量与交互验收不适用。
+  - verify: 2026-06-02 `pnpm vitest run tests/harness/projects.test.ts` 19 tests passed; `node scripts/harness-projects.mjs fields ensure` 创建并确认 14 个 Project 自定义字段; `node scripts/harness-projects.mjs ensure docs/works/2026-06-02-gh-76-harness-task-type-debt-workflow` 同步当前任务 Task Type/Priority/date/debt/scope/risk/source; `node scripts/harness-projects.mjs check --strict` passed; 当前用户仓库不伪装 GitHub Issue Type; 非 UI, 界面质量与交互验收不适用。
 - [ ] 任务 4: workflow 与工具文档
   - files: `.agents/workflow/_shared.md`, `.agents/workflow/0.0-new.md`, `.agents/workflow/1.0-explore.md`, `.agents/workflow/2.0-design.md`, `.agents/workflow/3.0-implement.md`, `.agents/workflow/4.0-verify.md`, `.agents/workflow/5.0-archive.md`, `.agents/README.md`, `.agents/tools.md`, `docs/works/_template/01-ANALYSIS.md`, `docs/works/_template/02-SPEC.md`, `docs/works/_template/03-PLAN.md`
   - tests: `pnpm harness:check --work docs/works/2026-06-02-gh-76-harness-task-type-debt-workflow`; `pnpm harness:check`

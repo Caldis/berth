@@ -4,13 +4,40 @@ import { execFileSync } from 'node:child_process'
 import { existsSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs'
 import { basename, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { parseFrontmatter } from './harness-lib.mjs'
+import {
+  DEBT_CONFIDENCES,
+  DEBT_RISKS,
+  DEBT_SCOPES,
+  MAINTENANCE_SUBTYPES,
+  PRIORITIES,
+  SOURCE_KINDS,
+  TASK_TYPES,
+  parseFrontmatter
+} from './harness-lib.mjs'
 
 const DEFAULT_OWNER = 'Caldis'
 const DEFAULT_PROJECT_NUMBER = 6
 const AUTH_HINT = 'gh auth refresh -h github.com -s project,read:project'
 const DEFAULT_REPO = 'Caldis/berth'
 const PROJECT_ITEM_ID = /^PVTI_[A-Za-z0-9_-]+$/
+const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/
+
+export const PROJECT_FIELD_DEFINITIONS = [
+  { name: 'Task Type', dataType: 'SINGLE_SELECT', kind: 'single-select', options: TASK_TYPES },
+  { name: 'Priority', dataType: 'SINGLE_SELECT', kind: 'single-select', options: PRIORITIES },
+  { name: 'Start date', dataType: 'DATE', kind: 'date' },
+  { name: 'Target date', dataType: 'DATE', kind: 'date' },
+  { name: 'Archived at', dataType: 'DATE', kind: 'date' },
+  { name: 'Debt Incurred', dataType: 'NUMBER', kind: 'number' },
+  { name: 'Debt Repaid', dataType: 'NUMBER', kind: 'number' },
+  { name: 'Debt Net', dataType: 'NUMBER', kind: 'number' },
+  { name: 'Debt Scope', dataType: 'SINGLE_SELECT', kind: 'single-select', options: DEBT_SCOPES },
+  { name: 'Debt Risk', dataType: 'SINGLE_SELECT', kind: 'single-select', options: DEBT_RISKS },
+  { name: 'Debt Confidence', dataType: 'SINGLE_SELECT', kind: 'single-select', options: DEBT_CONFIDENCES },
+  { name: 'Debt Areas', dataType: 'TEXT', kind: 'text' },
+  { name: 'Maintenance Subtype', dataType: 'SINGLE_SELECT', kind: 'single-select', options: MAINTENANCE_SUBTYPES },
+  { name: 'Source Kind', dataType: 'SINGLE_SELECT', kind: 'single-select', options: SOURCE_KINDS }
+]
 
 export function isValidProjectItemId(value) {
   return PROJECT_ITEM_ID.test(String(value || '').trim())
@@ -44,6 +71,219 @@ export function findStatusField(fieldsJson) {
   const done = (field.options || []).find((option) => option.name === 'Done')
   const inProgress = (field.options || []).find((option) => option.name === 'In Progress')
   return done ? { fieldId: field.id, doneOptionId: done.id, inProgressOptionId: inProgress && inProgress.id } : null
+}
+
+export function findProjectField(fieldsJson, name) {
+  return (fieldsJson.fields || []).find((candidate) => candidate.name === name) || null
+}
+
+function findFieldOption(field, name) {
+  return (field.options || []).find((option) => option.name === name) || null
+}
+
+function isPlainObject(value) {
+  return value && typeof value === 'object' && !Array.isArray(value)
+}
+
+function isPresent(value) {
+  return value !== undefined && value !== null && value !== ''
+}
+
+function finiteNumber(value) {
+  return typeof value === 'number' && Number.isFinite(value) ? value : undefined
+}
+
+function formatDateOnly(value) {
+  if (value instanceof Date && !Number.isNaN(value.getTime())) return value.toISOString().slice(0, 10)
+  const text = String(value || '').trim()
+  return DATE_ONLY.test(text) ? text : undefined
+}
+
+function todayDateOnly() {
+  return new Date().toISOString().slice(0, 10)
+}
+
+function effectiveDebtSnapshot(frontmatter) {
+  const debt = frontmatter && frontmatter.debt
+  if (!isPlainObject(debt)) return null
+  if (isPlainObject(debt.final) && finiteNumber(debt.final.net) !== undefined) return debt.final
+  if (isPlainObject(debt.estimate) && finiteNumber(debt.estimate.net) !== undefined) return debt.estimate
+  return null
+}
+
+export function auditProjectFieldDefinitions(fieldsJson) {
+  const errors = []
+  for (const definition of PROJECT_FIELD_DEFINITIONS) {
+    const field = findProjectField(fieldsJson, definition.name)
+    if (!field) {
+      errors.push(`Project field "${definition.name}" missing; run node scripts/harness-projects.mjs fields ensure`)
+      continue
+    }
+    if (definition.kind === 'single-select') {
+      for (const option of definition.options) {
+        if (!findFieldOption(field, option)) errors.push(`Project field "${definition.name}" missing option "${option}"`)
+      }
+    }
+  }
+  return errors
+}
+
+export function ensureProjectFields(context, fieldsJson, gh = ghJson) {
+  const created = []
+  for (const definition of PROJECT_FIELD_DEFINITIONS) {
+    const field = findProjectField(fieldsJson, definition.name)
+    if (!field) {
+      const args = [
+        'project',
+        'field-create',
+        String(context.number),
+        '--owner',
+        context.owner,
+        '--name',
+        definition.name,
+        '--data-type',
+        definition.dataType,
+        '--format',
+        'json'
+      ]
+      if (definition.kind === 'single-select') args.push('--single-select-options', definition.options.join(','))
+      created.push(gh(args))
+      continue
+    }
+    if (definition.kind === 'single-select') {
+      for (const option of definition.options) {
+        if (!findFieldOption(field, option))
+          throw new Error(`GitHub Project field "${definition.name}" missing option "${option}"`)
+      }
+    }
+  }
+  return { created }
+}
+
+function loadProjectFields(context, gh = ghJson) {
+  return gh(['project', 'field-list', String(context.number), '--owner', context.owner, '--format', 'json', '--limit', '100'])
+}
+
+function loadEnsuredProjectFields(context, gh = ghJson) {
+  let fields = loadProjectFields(context, gh)
+  const result = ensureProjectFields(context, fields, gh)
+  if (result.created.length > 0) fields = loadProjectFields(context, gh)
+  const errors = auditProjectFieldDefinitions(fields)
+  if (errors.length > 0) throw new Error('GitHub Project fields are incomplete:\n' + errors.map((error) => `  - ${error}`).join('\n'))
+  return fields
+}
+
+function pushFieldSpec(specs, field, value) {
+  if (isPresent(value)) specs.push({ field, value })
+}
+
+export function projectFieldValueSpecs(frontmatter, options = {}) {
+  const specs = []
+  const debt = effectiveDebtSnapshot(frontmatter)
+  pushFieldSpec(specs, 'Task Type', frontmatter.type)
+  pushFieldSpec(specs, 'Priority', frontmatter.priority)
+  pushFieldSpec(specs, 'Start date', formatDateOnly(frontmatter.created))
+  pushFieldSpec(specs, 'Target date', formatDateOnly(frontmatter.target_date))
+  pushFieldSpec(specs, 'Archived at', formatDateOnly(options.archivedAt))
+  if (debt) {
+    pushFieldSpec(specs, 'Debt Incurred', finiteNumber(debt.incurred))
+    pushFieldSpec(specs, 'Debt Repaid', finiteNumber(debt.repaid))
+    pushFieldSpec(specs, 'Debt Net', finiteNumber(debt.net))
+    pushFieldSpec(specs, 'Debt Scope', debt.scope)
+    pushFieldSpec(specs, 'Debt Risk', debt.risk)
+    pushFieldSpec(specs, 'Debt Confidence', debt.confidence)
+    if (Array.isArray(debt.areas) && debt.areas.length > 0)
+      pushFieldSpec(specs, 'Debt Areas', debt.areas.map((area) => String(area)).join(','))
+  }
+  if (frontmatter.type === 'maintenance' && isPlainObject(frontmatter.maintenance))
+    pushFieldSpec(specs, 'Maintenance Subtype', frontmatter.maintenance.subtype)
+  if (isPlainObject(frontmatter.source)) pushFieldSpec(specs, 'Source Kind', frontmatter.source.kind)
+  return specs
+}
+
+function editProjectField(context, fieldsJson, spec, gh = ghJson) {
+  const definition = PROJECT_FIELD_DEFINITIONS.find((candidate) => candidate.name === spec.field)
+  const field = findProjectField(fieldsJson, spec.field)
+  if (!definition || !field) throw new Error(`Project field "${spec.field}" missing; run node scripts/harness-projects.mjs fields ensure`)
+
+  const args = [
+    'project',
+    'item-edit',
+    '--id',
+    context.itemId,
+    '--project-id',
+    context.projectId,
+    '--field-id',
+    field.id
+  ]
+  if (definition.kind === 'single-select') {
+    const option = findFieldOption(field, String(spec.value))
+    if (!option) throw new Error(`GitHub Project field "${spec.field}" missing option "${spec.value}"`)
+    args.push('--single-select-option-id', option.id)
+  } else if (definition.kind === 'number') {
+    args.push('--number', String(spec.value))
+  } else if (definition.kind === 'date') {
+    args.push('--date', String(spec.value))
+  } else {
+    args.push('--text', String(spec.value))
+  }
+  args.push('--format', 'json')
+  gh(args)
+}
+
+export function syncProjectFields(context, frontmatter, gh = ghJson, options = {}) {
+  if (!context.projectId) throw new Error('GitHub Project id missing; run harness-projects ensure first')
+  if (!context.itemId) throw new Error('GitHub Project item id missing; run harness-projects ensure first')
+  const fields = options.fieldsJson || loadEnsuredProjectFields(context, gh)
+  for (const spec of projectFieldValueSpecs(frontmatter, options)) editProjectField(context, fields, spec, gh)
+}
+
+function fieldValueFromObject(value) {
+  if (!isPresent(value)) return undefined
+  if (!isPlainObject(value)) return value
+  if ('value' in value) return fieldValueFromObject(value.value)
+  if ('text' in value) return value.text
+  if ('number' in value) return value.number
+  if ('date' in value) return value.date
+  if ('name' in value) return value.name
+  if ('singleSelectOption' in value) return fieldValueFromObject(value.singleSelectOption)
+  return undefined
+}
+
+export function projectItemFieldValue(item, fieldName) {
+  if (!item) return undefined
+  if (Object.prototype.hasOwnProperty.call(item, fieldName)) return fieldValueFromObject(item[fieldName])
+  const lowerFirst = fieldName.charAt(0).toLowerCase() + fieldName.slice(1)
+  if (Object.prototype.hasOwnProperty.call(item, lowerFirst)) return fieldValueFromObject(item[lowerFirst])
+  const arrays = []
+  if (Array.isArray(item.fieldValues)) arrays.push(item.fieldValues)
+  if (isPlainObject(item.fieldValues) && Array.isArray(item.fieldValues.nodes)) arrays.push(item.fieldValues.nodes)
+  if (Array.isArray(item.fields)) arrays.push(item.fields)
+  for (const values of arrays) {
+    for (const value of values) {
+      const name = value.fieldName || (value.field && value.field.name) || (value.projectField && value.projectField.name)
+      if (name === fieldName) return fieldValueFromObject(value)
+      if (value.name === fieldName && 'value' in value) return fieldValueFromObject(value)
+    }
+  }
+  return undefined
+}
+
+function sameProjectFieldValue(actual, expected) {
+  if (!isPresent(actual)) return true
+  if (typeof expected === 'number') return Number(actual) === expected
+  return String(actual) === String(expected)
+}
+
+function auditProjectFieldValues(frontmatter, item, options = {}) {
+  const errors = []
+  for (const spec of projectFieldValueSpecs(frontmatter, options)) {
+    const actual = projectItemFieldValue(item, spec.field)
+    if (!sameProjectFieldValue(actual, spec.value)) {
+      errors.push(`${frontmatter.task}: Project field ${spec.field} is ${actual}, expected ${spec.value}`)
+    }
+  }
+  return errors
 }
 
 export function taskIdFromIssueNumber(number) {
@@ -247,8 +487,8 @@ function ensureItem(context, taskDir, frontmatter, issue, gh = ghJson) {
   return { ...context, itemId: created.id }
 }
 
-function setProjectStatus(context, statusName, gh = ghJson) {
-  const fields = gh(['project', 'field-list', String(context.number), '--owner', context.owner, '--format', 'json'])
+function setProjectStatus(context, statusName, gh = ghJson, fieldsJson) {
+  const fields = fieldsJson || loadProjectFields(context, gh)
   const status = findStatusField(fields)
   if (!status) throw new Error('GitHub Project Status field with Done option not found')
   const optionId = statusName === 'Done' ? status.doneOptionId : status.inProgressOptionId
@@ -279,6 +519,8 @@ export function listTaskDirs(base) {
 export function auditTasks(root, itemsJson, options = {}) {
   const errors = []
   const strict = Boolean(options.strict)
+  const fieldsJson = options.fieldsJson
+  if (strict && fieldsJson) errors.push(...auditProjectFieldDefinitions(fieldsJson))
   for (const dir of listTaskDirs(join(root, 'docs/works'))) {
     const { frontmatter } = readTaskIndex(dir)
     const gh = frontmatter.gh_project || {}
@@ -297,6 +539,7 @@ export function auditTasks(root, itemsJson, options = {}) {
     }
     const item = findProjectItem(itemsJson, { itemId: gh.item_id, task: frontmatter.task, title: taskTitle(frontmatter, dir), issueUrl: issue.url })
     if (item && item.status === 'Done') errors.push(`${frontmatter.task}: active task has Done project status`)
+    if (strict && fieldsJson && item) errors.push(...auditProjectFieldValues(frontmatter, item))
   }
   for (const dir of listTaskDirs(join(root, 'docs/works/_archive'))) {
     const { frontmatter } = readTaskIndex(dir)
@@ -320,7 +563,9 @@ export function ensureStartedTask(taskDir, options = {}) {
   const issue = readIssue(frontmatter, gh)
   let context = ensureProject(projectContext(frontmatter), gh)
   context = ensureItem(context, taskDir, frontmatter, issue, gh)
-  setProjectStatus(context, 'In Progress', gh)
+  const fields = loadEnsuredProjectFields(context, gh)
+  setProjectStatus(context, 'In Progress', gh, fields)
+  syncProjectFields(context, frontmatter, gh, { fieldsJson: fields })
   const next = updateTaskTrackingFrontmatter(markdown, {
     task_id: taskIdFromIssueNumber(issue.number),
     issue,
@@ -343,7 +588,9 @@ export function markDoneTask(taskDir, options = {}) {
   if (!frontmatter.gh_project || !isValidProjectItemId(frontmatter.gh_project.item_id))
     throw new Error('INDEX.md missing gh_project.item_id; run harness-projects ensure before archive')
   const context = ensureProject(projectContext(frontmatter), gh)
-  setProjectStatus(context, 'Done', gh)
+  const fields = loadEnsuredProjectFields(context, gh)
+  setProjectStatus(context, 'Done', gh, fields)
+  syncProjectFields(context, frontmatter, gh, { fieldsJson: fields, archivedAt: todayDateOnly() })
   const items = gh(['project', 'item-list', String(context.number), '--owner', context.owner, '--format', 'json', '--limit', '500'])
   const issue = issueContext(frontmatter)
   const item = findProjectItem(items, { itemId: context.itemId, task: frontmatter.task, title: taskTitle(frontmatter, taskDir), issueUrl: issue.url })
@@ -361,18 +608,22 @@ export function markDoneTask(taskDir, options = {}) {
 }
 
 function checkProjects(root) {
+  const number = process.env.HARNESS_PROJECT_NUMBER || DEFAULT_PROJECT_NUMBER
+  const owner = process.env.HARNESS_PROJECT_OWNER || DEFAULT_OWNER
   const items = ghJson([
     'project',
     'item-list',
-    String(process.env.HARNESS_PROJECT_NUMBER || DEFAULT_PROJECT_NUMBER),
+    String(number),
     '--owner',
-    process.env.HARNESS_PROJECT_OWNER || DEFAULT_OWNER,
+    owner,
     '--format',
     'json',
     '--limit',
     '200'
   ])
-  const errors = auditTasks(root, items, { strict: process.argv.includes('--strict') })
+  const strict = process.argv.includes('--strict')
+  const fields = strict ? ghJson(['project', 'field-list', String(number), '--owner', owner, '--format', 'json', '--limit', '100']) : undefined
+  const errors = auditTasks(root, items, { strict, fieldsJson: fields })
   if (errors.length > 0) {
     console.error('harness-projects: FAILED\n' + errors.map((error) => `  - ${error}`).join('\n'))
     process.exit(1)
@@ -382,6 +633,16 @@ function checkProjects(root) {
 
 function main() {
   const [cmd, taskDirArg] = process.argv.slice(2)
+  if (cmd === 'fields') {
+    if (taskDirArg !== 'ensure') throw new Error('usage: node scripts/harness-projects.mjs fields ensure')
+    const context = ensureProject({
+      owner: process.env.HARNESS_PROJECT_OWNER || DEFAULT_OWNER,
+      number: process.env.HARNESS_PROJECT_NUMBER || DEFAULT_PROJECT_NUMBER
+    })
+    const fields = loadEnsuredProjectFields(context)
+    console.log(`harness-projects: ${PROJECT_FIELD_DEFINITIONS.length} custom fields ready for Project #${context.number}`)
+    return fields
+  }
   if (cmd === 'ensure' || cmd === 'start') {
     if (!taskDirArg) throw new Error('usage: node scripts/harness-projects.mjs ensure <task-dir>')
     ensureStartedTask(taskDirArg)
