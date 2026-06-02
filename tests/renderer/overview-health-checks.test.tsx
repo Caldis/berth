@@ -114,11 +114,19 @@ describe('overview health checks', () => {
 
     expect(window.api.shell.openExternal).toHaveBeenCalledWith('https://developers.openai.com/codex/hooks')
 
-    fireEvent.click(screen.getByTitle('Copy fix snippet'))
+    const copyFixSnippetButton = screen.getByRole('button', { name: 'Copy fix snippet' })
+    expect(copyFixSnippetButton).toHaveAttribute('aria-label', 'Copy fix snippet')
+    expect(copyFixSnippetButton).toHaveAttribute('title', 'Copy fix snippet')
+
+    fireEvent.click(copyFixSnippetButton)
 
     expect(navigator.clipboard.writeText).toHaveBeenCalledWith('commandWindows = "powershell -File hook.ps1"')
 
-    fireEvent.click(screen.getByTitle('Ignore info check'))
+    const ignoreInfoButton = screen.getByRole('button', { name: 'Ignore info check' })
+    expect(ignoreInfoButton).toHaveAttribute('aria-label', 'Ignore info check')
+    expect(ignoreInfoButton).toHaveAttribute('title', 'Ignore info check')
+
+    fireEvent.click(ignoreInfoButton)
 
     expect(screen.queryByText('User CLAUDE.md not found')).not.toBeInTheDocument()
     expect(localStorage.getItem('berth-ignored-health-checks')).toContain('claude-code:source:user-claude-md-missing')
@@ -267,10 +275,17 @@ describe('overview health checks', () => {
     expect(screen.queryByText('1 info')).not.toBeInTheDocument()
     expect(screen.queryByText('1 warning')).not.toBeInTheDocument()
     expect(screen.queryByText('1 error')).not.toBeInTheDocument()
-    expect(screen.getAllByTitle('忽略信息检查').length).toBeGreaterThan(0)
-    expect(screen.getByTitle('复制修复片段')).toBeInTheDocument()
-    expect(screen.queryByTitle('Ignore info check')).not.toBeInTheDocument()
-    expect(screen.queryByTitle('Copy fix snippet')).not.toBeInTheDocument()
+    const ignoreInfoButtons = screen.getAllByRole('button', { name: '忽略信息检查' })
+    expect(ignoreInfoButtons.length).toBeGreaterThan(0)
+    expect(ignoreInfoButtons[0]).toHaveAttribute('aria-label', '忽略信息检查')
+    expect(ignoreInfoButtons[0]).toHaveAttribute('title', '忽略信息检查')
+
+    const copyFixSnippetButton = screen.getByRole('button', { name: '复制修复片段' })
+    expect(copyFixSnippetButton).toBeInTheDocument()
+    expect(copyFixSnippetButton).toHaveAttribute('aria-label', '复制修复片段')
+    expect(copyFixSnippetButton).toHaveAttribute('title', '复制修复片段')
+    expect(screen.queryByRole('button', { name: 'Ignore info check' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Copy fix snippet' })).not.toBeInTheDocument()
     expect(screen.getByText('Skill 缺少 SKILL.md')).toBeInTheDocument()
     expect(screen.getByText('.system 没有 SKILL.md 入口文件。')).toBeInTheDocument()
     expect(screen.getAllByText(/建议修复:/).length).toBeGreaterThan(0)

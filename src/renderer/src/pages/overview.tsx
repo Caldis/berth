@@ -320,6 +320,7 @@ export function Overview(): React.ReactElement {
                             {check.severity === 'info' && (
                               <button
                                 type="button"
+                                aria-label={t('overview.healthCheckActions.ignoreInfo')}
                                 title={t('overview.healthCheckActions.ignoreInfo')}
                                 onClick={ignoreCheck}
                                 className="rounded border border-border p-0.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
@@ -344,6 +345,7 @@ export function Overview(): React.ReactElement {
                               </pre>
                               <button
                                 type="button"
+                                aria-label={t('overview.healthCheckActions.copyFixSnippet')}
                                 title={t('overview.healthCheckActions.copyFixSnippet')}
                                 onClick={(event) => copyFixSnippet(event, check.fix!.snippet!)}
                                 className="shrink-0 rounded border border-border p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
