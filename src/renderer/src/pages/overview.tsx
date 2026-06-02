@@ -50,7 +50,7 @@ export function Overview(): React.ReactElement {
 
   const statCards = [
     {
-      label: 'Skills',
+      label: t('overview.stats.skills'),
       value: stats.skills,
       icon: Sparkles,
       color: 'text-blue-500',
@@ -71,7 +71,7 @@ export function Overview(): React.ReactElement {
       path: '/sessions'
     },
     {
-      label: 'Plugins',
+      label: t('overview.stats.plugins'),
       value: stats.plugins,
       icon: Puzzle,
       color: 'text-purple-500',
@@ -236,9 +236,9 @@ export function Overview(): React.ReactElement {
                 <div className="flex items-center justify-between bg-muted/20 px-4 py-2">
                   <span className="text-xs font-medium text-muted-foreground">{group.agentName}</span>
                   <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
-                    {group.errors > 0 && <span>{group.errors} error</span>}
-                    {group.warnings > 0 && <span>{group.warnings} warning</span>}
-                    {group.info > 0 && <span>{group.info} info</span>}
+                    {group.errors > 0 && <span>{t('overview.healthCount.error', { count: group.errors })}</span>}
+                    {group.warnings > 0 && <span>{t('overview.healthCount.warning', { count: group.warnings })}</span>}
+                    {group.info > 0 && <span>{t('overview.healthCount.info', { count: group.info })}</span>}
                   </div>
                 </div>
                 <div className="divide-y divide-border">

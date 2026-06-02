@@ -179,6 +179,17 @@ describe('overview health checks', () => {
         },
         scope: 'user',
         assetType: 'hook'
+      },
+      {
+        id: 'codex:syntax:user-config-invalid',
+        severity: 'error',
+        category: 'syntax',
+        agentId: 'codex',
+        agentName: 'Codex',
+        title: 'Invalid Codex config.toml',
+        message: 'config.toml contains invalid TOML.',
+        scope: 'user',
+        assetType: 'mcp-server'
       }
     ])
     window.api.shell.openPath = vi.fn(async () => {})
@@ -197,6 +208,14 @@ describe('overview health checks', () => {
     )
 
     expect(await screen.findByText('Claude Code')).toBeInTheDocument()
+    expect(screen.getByText('插件')).toBeInTheDocument()
+    expect(screen.queryByText('Plugins')).not.toBeInTheDocument()
+    expect(screen.getByText('1 条信息')).toBeInTheDocument()
+    expect(screen.getByText('1 个警告')).toBeInTheDocument()
+    expect(screen.getByText('1 个错误')).toBeInTheDocument()
+    expect(screen.queryByText('1 info')).not.toBeInTheDocument()
+    expect(screen.queryByText('1 warning')).not.toBeInTheDocument()
+    expect(screen.queryByText('1 error')).not.toBeInTheDocument()
     expect(screen.getByTitle('忽略信息检查')).toBeInTheDocument()
     expect(screen.getByTitle('复制修复片段')).toBeInTheDocument()
     expect(screen.queryByTitle('Ignore info check')).not.toBeInTheDocument()

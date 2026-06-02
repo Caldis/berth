@@ -62,6 +62,18 @@
     "healthChecks": "Health Checks",
     "noIssues": "All systems operational",
     "started": "Started",
+    "stats": {
+      "skills": "Skills",
+      "plugins": "Plugins"
+    },
+    "healthCount": {
+      "error_one": "{{count}} error",
+      "error_other": "{{count}} errors",
+      "warning_one": "{{count}} warning",
+      "warning_other": "{{count}} warnings",
+      "info_one": "{{count}} info",
+      "info_other": "{{count}} info"
+    },
     "timeRange": {
       "7d": "Last 7 days",
       "30d": "Last 30 days",
