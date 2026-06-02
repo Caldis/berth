@@ -8,6 +8,7 @@ import {
   findRunForShaWithRetry,
   findWorkflowRunForSha,
   ghRunListArgs,
+  ghRunViewArgs,
   parseCliArgs,
   waitForShaRun
 } from '../../scripts/harness-ci-gate.mjs'
@@ -111,15 +112,21 @@ describe('harness-ci-gate helpers', () => {
       if (command === 'git' && args.includes('--abbrev-ref')) return 'master\n'
       if (command === 'git') return 'abcdef\n'
       if (command === 'gh' && args[1] === 'list') {
-        return JSON.stringify([{ workflowName: 'CI', status: 'completed', conclusion: 'success', databaseId: 9, headSha: 'abcdef' }])
+        return JSON.stringify([{ workflowName: 'CI', status: 'in_progress', conclusion: '', databaseId: 9, headSha: 'abcdef' }])
       }
       if (command === 'gh' && args[1] === 'watch') return ''
+      if (command === 'gh' && args[1] === 'view') {
+        expect(args).toEqual(ghRunViewArgs(9))
+        return JSON.stringify({ workflowName: 'CI', status: 'completed', conclusion: 'success', databaseId: 9, headSha: 'abcdef' })
+      }
       throw new Error(`unexpected command: ${command} ${args.join(' ')}`)
     })
 
-    await waitForShaRun({ workflow: 'CI', sha: 'HEAD', limit: 5 }, { execFileSync })
+    const result = await waitForShaRun({ workflow: 'CI', sha: 'HEAD', limit: 5 }, { execFileSync })
 
     expect(execFileSync).toHaveBeenCalledWith('gh', ['run', 'watch', '9', '--exit-status'], { stdio: 'inherit' })
+    expect(result.run.status).toBe('completed')
+    expect(result.run.conclusion).toBe('success')
   })
 
   it('describeRun keeps workflow, id, status, conclusion, sha and url', () => {

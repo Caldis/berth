@@ -86,6 +86,16 @@ export function ghRunListArgs({ branch, commit, limit = DEFAULT_LIMIT }) {
   return args
 }
 
+export function ghRunViewArgs(runId) {
+  return [
+    'run',
+    'view',
+    String(runId),
+    '--json',
+    'databaseId,headSha,status,conclusion,workflowName,url,createdAt'
+  ]
+}
+
 export function findLatestWorkflowRun(runs, workflowName = DEFAULT_WORKFLOW) {
   return (runs || []).find((run) => run.workflowName === workflowName) || null
 }
@@ -158,7 +168,8 @@ export async function waitForShaRun(options = {}, deps = {}) {
   const { branch, sha, run } = await findRunForShaWithRetry(options, deps)
   const execFile = deps.execFileSync || execFileSync
   execFile('gh', ['run', 'watch', String(run.databaseId), '--exit-status'], { stdio: 'inherit' })
-  return { branch, sha, run }
+  const updatedRun = execJson('gh', ghRunViewArgs(run.databaseId), deps) || run
+  return { branch, sha, run: updatedRun }
 }
 
 async function main() {
