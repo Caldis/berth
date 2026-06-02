@@ -16,3 +16,10 @@
 ## verify 回写
 
 verify 不通过项作为新任务追加于此, phase 退回 implement。
+
+## 最终验证
+
+- `pnpm harness:prepush` - passed, 65 files / 484 tests.
+- `pnpm harness:ci:wait -- --sha 2fa6c333de226ad9707796262047cc2a5d735c26 --timeout 120 --poll 5` - passed, `CI#26822959911`.
+- GitHub Issue #72 closed.
+- GitHub Project item `PVTI_lAHOADXbEs4BZHvQzguf6Jw` marked Done and verified by `node scripts\harness-projects.mjs done docs\works\2026-06-02-gh-72-cost-source-badge-details`.
