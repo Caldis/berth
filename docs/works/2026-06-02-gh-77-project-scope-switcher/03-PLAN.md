@@ -3,9 +3,9 @@
 从 02-SPEC 拆解。每任务可独立执行与验证, 顺序确定。implement 阶段维护此清单。
 每个实现项必须有测试证据或明确例外理由。
 
-- [ ] 任务 1: 新增应用级 scope 类型、路径规范化 helper、store 状态
-  - tests: `pnpm test src/shared/scope.test.ts src/renderer/src/stores/app.test.ts`
-  - verify: 非 UI; 确认 global/user/project 三种状态可表达, project 必须带 path, Windows 路径大小写归一。
+- [x] 任务 1: 新增应用级 scope 类型、路径规范化 helper、store 状态
+  - tests: `pnpm test tests/unit/scope.test.ts tests/renderer/app-store.test.ts` (8 passed); `pnpm typecheck:web`; `pnpm typecheck:node`
+  - verify: 非 UI; `global` / `user` / `project` 三种状态可表达, project scope 会规范化 path/pathKey; 空 project path 回退 global; Windows 路径大小写归一并去重。
 - [ ] 任务 2: 主进程生成项目候选, sessions/usage 接受精确 project path
   - tests: `pnpm test <project-scope-helper-test> <usage-or-handler-test>`
   - verify: 非 UI; 候选来自当前 projectDir 与历史 session, 去重稳定; sessions/usage 过滤不再依赖模糊字符串。

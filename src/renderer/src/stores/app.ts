@@ -1,4 +1,11 @@
 import { create } from 'zustand'
+import {
+  DEFAULT_SCOPE_SELECTION,
+  mergeProjectScopeCandidates,
+  normalizeScopeSelection,
+  type AppScopeSelection,
+  type ProjectScopeCandidate
+} from '@shared/scope'
 import type { AgentView, Asset, AssetStats, SessionSummary, UsageSummary } from '@shared/types/asset'
 
 export const SIDEBAR_COLLAPSED_WIDTH = 64
@@ -23,6 +30,11 @@ interface AppState {
 
   agentView: AgentView
   setAgentView: (agentView: AgentView) => void
+
+  scopeSelection: AppScopeSelection
+  projectCandidates: ProjectScopeCandidate[]
+  setScopeSelection: (selection: Partial<AppScopeSelection>) => void
+  setProjectCandidates: (candidates: ProjectScopeCandidate[]) => void
 
   assets: Asset[]
   setAssets: (assets: Asset[]) => void
@@ -61,6 +73,11 @@ export const useAppStore = create<AppState>((set) => ({
 
   agentView: 'all',
   setAgentView: (agentView) => set({ agentView }),
+
+  scopeSelection: DEFAULT_SCOPE_SELECTION,
+  projectCandidates: [],
+  setScopeSelection: (scopeSelection) => set({ scopeSelection: normalizeScopeSelection(scopeSelection) }),
+  setProjectCandidates: (projectCandidates) => set({ projectCandidates: mergeProjectScopeCandidates(projectCandidates) }),
 
   assets: [],
   setAssets: (assets) => set({ assets }),
