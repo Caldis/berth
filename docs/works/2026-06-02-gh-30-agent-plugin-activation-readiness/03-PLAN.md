@@ -10,10 +10,10 @@
   - tests: `pnpm test -- tests/unit/agent-plugin-manifest.test.ts tests/unit/agent-capability-plugins.test.ts`
   - verify: `write` / `execute` 不再作为 validation error; duplicate manifest id 同步变成 readiness invalid; built-in plugin 列表不变。2026-06-02 通过目标测试。
 
-- [ ] 更新 Settings 插件列表与详情展示。
+- [x] 更新 Settings 插件列表与详情展示。
   - files: `src/renderer/src/components/settings/agent-capability-plugins-section.tsx`, `src/renderer/src/i18n/locales/en.json`, `src/renderer/src/i18n/locales/zh.json`, `tests/renderer/settings-agent-plugins.test.tsx`
   - tests: `pnpm test -- tests/renderer/settings-agent-plugins.test.tsx`
-  - verify: 列表只显示短 readiness 标签; 展开详情展示原因、implementation、blocked permissions; 关键说明不是 hover-only; 中英文 key 都存在。
+  - verify: 列表只显示短 readiness 标签; 展开详情展示原因、implementation、blocked permissions; 关键说明不是 hover-only; 中英文 key 都存在。2026-06-02 通过渲染测试和 `pnpm typecheck`。
 
 - [ ] 运行实现阶段检查并转入 verify。
   - files: `docs/works/2026-06-02-gh-30-agent-plugin-activation-readiness/INDEX.md`, `docs/works/2026-06-02-gh-30-agent-plugin-activation-readiness/03-PLAN.md`

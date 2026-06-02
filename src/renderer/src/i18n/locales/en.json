@@ -1170,6 +1170,34 @@
       "invalid": "Invalid",
       "incompatible": "Incompatible"
     },
+    "agentPluginManifestReadinessTitle": "Activation readiness",
+    "agentPluginManifestBlockedPermissions": "Blocked permissions",
+    "agentPluginManifestImplementationKind": "Implementation",
+    "agentPluginManifestImplementationEntrypoint": "Entrypoint",
+    "agentPluginManifestActivationStatus": {
+      "metadata-only": "Metadata",
+      "activation-ready": "Ready",
+      "blocked": "Blocked",
+      "incompatible": "Incompatible",
+      "invalid": "Invalid"
+    },
+    "agentPluginManifestActivationReasons": {
+      "metadataOnly": "Metadata only",
+      "implementationDeclared": "Implementation declared",
+      "permissionApprovalRequired": "Permission approval required",
+      "agentVersionIncompatible": "Agent version mismatch",
+      "manifestInvalid": "Validation failed"
+    },
+    "agentPluginManifestActivationReasonDetails": {
+      "metadataOnly": "This manifest only provides metadata and descriptors.",
+      "implementationDeclared": "This manifest declares adapter metadata. Berth still keeps third-party code non-executable.",
+      "permissionApprovalRequired": "This manifest requests write or execute permissions. Berth cannot activate it until permission review exists.",
+      "agentVersionIncompatible": "The detected Agent version does not match this manifest.",
+      "manifestInvalid": "This manifest has validation errors and cannot be activated."
+    },
+    "agentPluginManifestImplementationKinds": {
+      "adapter": "Adapter"
+    },
     "agentPluginPermissionKinds": {
       "read": "Read",
       "write": "Write",

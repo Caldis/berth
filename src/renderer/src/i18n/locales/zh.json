@@ -1167,6 +1167,34 @@
       "invalid": "无效",
       "incompatible": "不兼容"
     },
+    "agentPluginManifestReadinessTitle": "启用准备状态",
+    "agentPluginManifestBlockedPermissions": "受限权限",
+    "agentPluginManifestImplementationKind": "实现",
+    "agentPluginManifestImplementationEntrypoint": "入口",
+    "agentPluginManifestActivationStatus": {
+      "metadata-only": "元数据",
+      "activation-ready": "可准备启用",
+      "blocked": "受限",
+      "incompatible": "不兼容",
+      "invalid": "无效"
+    },
+    "agentPluginManifestActivationReasons": {
+      "metadataOnly": "仅元数据",
+      "implementationDeclared": "已声明实现",
+      "permissionApprovalRequired": "需要权限确认",
+      "agentVersionIncompatible": "Agent 版本不匹配",
+      "manifestInvalid": "校验失败"
+    },
+    "agentPluginManifestActivationReasonDetails": {
+      "metadataOnly": "这个 Manifest 只提供元数据和描述信息。",
+      "implementationDeclared": "这个 Manifest 声明了 adapter 元数据。Berth 当前仍不会执行第三方代码。",
+      "permissionApprovalRequired": "这个 Manifest 申请了写入或执行权限。Berth 还没有权限确认模型, 因此不能启用。",
+      "agentVersionIncompatible": "当前检测到的 Agent 版本不符合这个 Manifest 的要求。",
+      "manifestInvalid": "这个 Manifest 存在校验错误, 不能启用。"
+    },
+    "agentPluginManifestImplementationKinds": {
+      "adapter": "Adapter"
+    },
     "agentPluginPermissionKinds": {
       "read": "读取",
       "write": "写入",

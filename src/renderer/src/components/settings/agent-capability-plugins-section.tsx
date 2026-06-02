@@ -14,6 +14,7 @@ import type {
   AgentCapabilityPlugin,
   AgentCapabilityPluginCapability,
   AgentCapabilityPluginManifestEntry,
+  AgentCapabilityPluginManifestActivationStatus,
   AgentCapabilityPluginPermission,
   AgentCapabilityPluginSourceCoverage
 } from '@shared/types/agent-plugin'
@@ -134,6 +135,7 @@ export function AgentCapabilityPluginsSection({
           manifests.map((manifest, index) => {
             const expanded = expandedManifests[manifest.path] === true
             const title = manifest.displayName ?? manifest.id ?? t('settings.agentPluginManifestUnknown')
+            const readinessStatus = manifest.activationReadiness.status
             return (
               <div
                 key={manifest.path}
@@ -156,15 +158,16 @@ export function AgentCapabilityPluginsSection({
                         <p
                           className={cn(
                             'text-sm font-medium',
-                            manifest.status !== 'valid' && 'text-muted-foreground'
+                            (readinessStatus === 'invalid' || readinessStatus === 'incompatible') &&
+                              'text-muted-foreground'
                           )}
                         >
                           {title}
                         </p>
                         <Badge>{t('settings.agentPluginManifest')}</Badge>
                         <Badge>{t('settings.agentPluginReadOnly')}</Badge>
-                        <Badge tone={manifest.status === 'valid' ? 'strong' : 'muted'}>
-                          {t(`settings.agentPluginManifestStatus.${manifest.status}`)}
+                        <Badge tone={readinessTone(readinessStatus)}>
+                          {t(`settings.agentPluginManifestActivationStatus.${readinessStatus}`)}
                         </Badge>
                         {manifest.version && (
                           <Badge>{t('settings.agentPluginVersion', { version: manifest.version })}</Badge>
@@ -312,6 +315,7 @@ function ManifestDetails({
               </ManifestMetaRow>
             </>
           )}
+          <ManifestReadinessDetails manifest={manifest} />
           <div>
             <p className="mb-2 text-xs font-medium text-foreground">
               {t('settings.agentPluginManifestErrorsTitle')}
@@ -338,6 +342,67 @@ function ManifestDetails({
           </div>
         </div>
       </DetailBlock>
+    </div>
+  )
+}
+
+function ManifestReadinessDetails({
+  manifest
+}: {
+  manifest: AgentCapabilityPluginManifestEntry
+}): ReactElement {
+  const { t } = useTranslation()
+  const readiness = manifest.activationReadiness
+
+  return (
+    <div>
+      <p className="mb-2 text-xs font-medium text-foreground">
+        {t('settings.agentPluginManifestReadinessTitle')}
+      </p>
+      <div className="rounded-md border border-border/70 bg-muted/20 p-3">
+        <div className="flex flex-wrap items-center gap-1.5">
+          <Badge tone={readinessTone(readiness.status)}>
+            {t(`settings.agentPluginManifestActivationStatus.${readiness.status}`)}
+          </Badge>
+          <Badge>{t(`settings.agentPluginManifestActivationReasons.${readiness.reasonCode}`)}</Badge>
+        </div>
+        <p className="mt-2 text-xs leading-5 text-muted-foreground">
+          {t(`settings.agentPluginManifestActivationReasonDetails.${readiness.reasonCode}`, {
+            defaultValue: readiness.message
+          })}
+        </p>
+        {manifest.implementation && (
+          <div className="mt-3 space-y-2">
+            <ManifestMetaRow label={t('settings.agentPluginManifestImplementationKind')}>
+              <Badge>
+                {t(`settings.agentPluginManifestImplementationKinds.${manifest.implementation.kind}`)}
+              </Badge>
+            </ManifestMetaRow>
+            <ManifestMetaRow label={t('settings.agentPluginManifestImplementationEntrypoint')}>
+              <p
+                className="truncate rounded-sm bg-muted/35 px-1.5 py-1 font-mono text-[11px] text-muted-foreground"
+                title={manifest.implementation.entrypoint}
+              >
+                {manifest.implementation.entrypoint}
+              </p>
+            </ManifestMetaRow>
+          </div>
+        )}
+        {readiness.blockedPermissionKinds && readiness.blockedPermissionKinds.length > 0 && (
+          <div className="mt-3 space-y-2">
+            <p className="text-xs text-muted-foreground">
+              {t('settings.agentPluginManifestBlockedPermissions')}
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              {readiness.blockedPermissionKinds.map((kind) => (
+                <Badge key={`${manifest.path}-${kind}`} tone="muted">
+                  {t(`settings.agentPluginPermissionKinds.${kind}`)}
+                </Badge>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   )
 }
@@ -503,6 +568,10 @@ function Badge({
       {children}
     </span>
   )
+}
+
+function readinessTone(status: AgentCapabilityPluginManifestActivationStatus): 'muted' | 'strong' {
+  return status === 'metadata-only' || status === 'activation-ready' ? 'strong' : 'muted'
 }
 
 function formatCoverage(
