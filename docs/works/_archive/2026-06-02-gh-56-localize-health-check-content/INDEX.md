@@ -2,7 +2,7 @@
 task: 2026-06-02-gh-56-localize-health-check-content
 task_id: GH-56
 type: bug
-phase: verify
+phase: archive
 created: 2026-06-02
 issue:
   id: I_kwDOSpnDwc8AAAABEGB5-w
@@ -22,7 +22,7 @@ gh_project:
   project_number: 6
   project_url: https://github.com/users/Caldis/projects/6
   item_id: PVTI_lAHOADXbEs4BZHvQzgud5Mo
-  item_status: In Progress
+  item_status: Done
 ---
 
 # Localize Overview Health Check Content

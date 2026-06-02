@@ -16,5 +16,9 @@
 - 页面主导航和统计卡已显示中文, 但健康检查条目仍出现 `Skill is missing SKILL.md`、`Suggested fix` 等英文文案。
 
 # 解决方案
-- 将健康检查定义中的用户可见文案纳入 i18n 资源。
-- renderer 测试覆盖中文 Overview 健康检查标题与建议文案。
+- 完成日期: 2026-06-02
+- 关联任务: `docs/works/_archive/2026-06-02-gh-56-localize-health-check-content`
+- 关联提交: `a924389116917bcf4054ded649a19a34797329d5`
+- 新增 renderer 侧健康检查 i18n helper, Overview 与 Hooks 生命周期 hover 详情共用。
+- 中英文资源新增健康检查标题、说明、修复建议与 evidence label 翻译。
+- 测试覆盖中文 Overview 健康检查内容与 Hooks hover 详情。

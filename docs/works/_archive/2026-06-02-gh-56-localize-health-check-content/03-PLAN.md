@@ -20,6 +20,7 @@
   - verify: 包含视觉验收与 GitHub Actions run 结果。
   - evidence: 2026-06-02 本地通过 `pnpm lint`; `pnpm typecheck:web`; `pnpm typecheck:node`; `pnpm test` (60 files / 444 tests); `pnpm harness:check`; `node scripts/harness-projects.mjs check --strict`。
   - evidence: 2026-06-02 视觉验收截图 `C:\Users\mail\AppData\Local\Temp\berth-gh56-health-i18n-overview.png`, Overview 健康检查标题、说明、建议和 evidence label 已显示中文。
+  - evidence: GitHub Actions CI run 26808016661 passed for `a924389116917bcf4054ded649a19a34797329d5` on Ubuntu and Windows。
 
 ## verify 回写
 
