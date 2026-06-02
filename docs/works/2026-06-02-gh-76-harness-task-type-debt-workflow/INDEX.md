@@ -2,8 +2,37 @@
 task: 2026-06-02-gh-76-harness-task-type-debt-workflow
 task_id: GH-76
 type: feature
-phase: design
+phase: implement
 created: 2026-06-02
+priority: P1
+target_date: 2026-06-03
+source:
+  kind: user-request
+  refs:
+    - https://github.com/Caldis/berth/issues/76
+debt:
+  estimate:
+    incurred: 13
+    repaid: 0
+    net: 13
+    scope: global
+    risk: high
+    areas:
+      - tooling-ci
+      - architecture
+      - testability
+    confidence: medium
+    rationale: "修改 harness 状态契约、校验、统计和 GitHub Project 同步脚本。"
+  final:
+    incurred:
+    repaid:
+    net:
+    scope:
+    risk:
+    areas: []
+    confidence:
+    rationale:
+  revisions: []
 issue:
   number: 76
   repo: Caldis/berth
@@ -32,8 +61,8 @@ artifacts:
 ## 产物
 - [x] 00-PRD.md / 00-BUG.md — 原始输入快照
 - [x] 01-ANALYSIS.md — Explore 产物
-- [ ] 02-SPEC.md — Design 产物
-- [ ] 03-PLAN.md — 活任务清单
+- [x] 02-SPEC.md — Design 产物
+- [x] 03-PLAN.md — 活任务清单
 - [ ] 04-POLISH.md — 可选抛光记录
 
 ## 待澄清 (blocked 时填)
