@@ -1,6 +1,5 @@
-import { useState, useMemo, useCallback, useEffect } from 'react'
+import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useSearchParams } from 'react-router-dom'
 import {
   Plug,
   Webhook,
@@ -19,7 +18,6 @@ import { cn } from '@/lib/utils'
 import { filterAssetsByAgentView } from '@/lib/agent-view'
 import { useAppStore } from '@/stores/app'
 import { useAgentCapabilityPlugins } from '@/hooks/use-ipc'
-import { TabGroup, type TabDef } from '@/components/shared/tab-group'
 import { FilterBar } from '@/components/shared/filter-bar'
 import { DetailRow } from '@/components/shared/detail-row'
 import { WarningBanner } from '@/components/shared/warning-banner'
@@ -42,15 +40,6 @@ import { filterAssetsByAppScope } from '@shared/scope'
 
 type ScopeFilter = 'all' | AssetScope
 
-const tabs: TabDef[] = [
-  { id: 'mcp', labelKey: 'capabilities.tabs.mcp', icon: Plug },
-  { id: 'hooks', labelKey: 'capabilities.tabs.hooks', icon: Webhook },
-  { id: 'plugins', labelKey: 'capabilities.tabs.plugins', icon: Puzzle },
-  { id: 'statusLine', labelKey: 'capabilities.tabs.statusLine', icon: Activity },
-  { id: 'permissions', labelKey: 'capabilities.tabs.permissions', icon: Shield },
-  { id: 'env', labelKey: 'capabilities.tabs.env', icon: Variable }
-]
-
 const DEFAULT_CAPABILITY_TAB = 'mcp'
 
 const tabTypeMap: Record<string, string[]> = {
@@ -62,7 +51,7 @@ const tabTypeMap: Record<string, string[]> = {
   env: ['env']
 }
 
-function normalizeCapabilityTab(value: string | null): string {
+function normalizeCapabilityTab(value: string | undefined): string {
   return value && tabTypeMap[value] ? value : DEFAULT_CAPABILITY_TAB
 }
 
@@ -777,44 +766,19 @@ const tabIconMap: Record<string, React.ComponentType<{ className?: string }>> = 
 }
 
 /* ---------- Main page ---------- */
-export function Capabilities(): React.ReactElement {
+export function Capabilities({ activeSection }: { activeSection?: string } = {}): React.ReactElement {
   const { t } = useTranslation()
   const assets = useAppStore((s) => s.assets)
   const agentView = useAppStore((s) => s.agentView)
   const scopeSelection = useAppStore((s) => s.scopeSelection)
   const { plugins } = useAgentCapabilityPlugins()
-  const [searchParams, setSearchParams] = useSearchParams()
-  const queryTab = normalizeCapabilityTab(searchParams.get('tab'))
-  const [activeTab, setActiveTab] = useState(queryTab)
+  const activeTab = normalizeCapabilityTab(activeSection)
   const [search, setSearch] = useState('')
   const [scope, setScope] = useState<ScopeFilter>('all')
   const visibleAssets = useMemo(
     () => filterAssetsByAppScope(filterAssetsByAgentView(assets, agentView), scopeSelection),
     [assets, agentView, scopeSelection]
   )
-
-  useEffect(() => {
-    setActiveTab((current) => current === queryTab ? current : queryTab)
-  }, [queryTab])
-
-  const handleTabChange = useCallback((tabId: string) => {
-    setActiveTab(tabId)
-    setSearchParams((current) => {
-      const next = new URLSearchParams(current)
-      next.set('tab', tabId)
-      return next
-    })
-  }, [setSearchParams])
-
-  // Build tab counts
-  const tabCounts = useMemo(() => {
-    const counts: Record<string, number> = {}
-    for (const tab of tabs) {
-      const types = tabTypeMap[tab.id] ?? []
-      counts[tab.id] = visibleAssets.filter((a) => types.includes(a.type)).length
-    }
-    return counts
-  }, [visibleAssets])
 
   // Filter assets for active tab
   const filteredAssets = useMemo(() => {
@@ -887,9 +851,7 @@ export function Capabilities(): React.ReactElement {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-semibold tracking-tight">{t('capabilities.title')}</h1>
-
-      <TabGroup tabs={tabs} activeTab={activeTab} onTabChange={handleTabChange} counts={tabCounts} />
+      <h1 className="text-2xl font-semibold tracking-tight">{t(`capabilities.tabs.${activeTab}`)}</h1>
 
       {showFilter && (
         <FilterBar

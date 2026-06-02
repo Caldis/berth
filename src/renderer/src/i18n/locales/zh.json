@@ -15,7 +15,28 @@
     "breadcrumb": "面包屑",
     "resizeSidebar": "调整侧边栏宽度",
     "expandSidebar": "展开侧边栏",
-    "collapseSidebar": "折叠侧边栏"
+    "collapseSidebar": "折叠侧边栏",
+    "sections": {
+      "work": "工作",
+      "instructions": "指令",
+      "capabilities": "能力",
+      "operations": "运行"
+    },
+    "descriptions": {
+      "memories": "长期记忆与来源",
+      "conventions": "项目规则文件",
+      "skills": "可复用流程",
+      "subagents": "专用 Agent 角色",
+      "commands": "斜杠命令",
+      "outputModes": "输出格式",
+      "agentTeams": "Agent 编排",
+      "mcp": "外部工具连接",
+      "hooks": "生命周期自动化",
+      "plugins": "能力插件",
+      "statusLine": "运行状态栏",
+      "permissions": "权限边界",
+      "env": "敏感值与继承"
+    }
   },
   "agentView": {
     "label": "Agent 视角",

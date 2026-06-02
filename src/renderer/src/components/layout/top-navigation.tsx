@@ -3,7 +3,7 @@ import { useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { navSections } from './nav-config'
+import { findNavMatch } from './nav-config'
 
 type BreadcrumbItem = {
   key: string
@@ -18,17 +18,14 @@ function routeBreadcrumbs(pathname: string): BreadcrumbItem[] {
     ]
   }
 
-  for (const section of navSections) {
-    for (const item of section.items) {
-      if (item.path === pathname) {
-        return section.labelKey
-          ? [
-              { key: section.labelKey, labelKey: section.labelKey },
-              { key: item.id, labelKey: item.labelKey }
-            ]
-          : [{ key: item.id, labelKey: item.labelKey }]
-      }
-    }
+  const match = findNavMatch(pathname)
+  if (match) {
+    return match.section.labelKey
+      ? [
+          { key: match.section.id, labelKey: match.section.labelKey },
+          { key: match.item.id, labelKey: match.item.labelKey }
+        ]
+      : [{ key: match.item.id, labelKey: match.item.labelKey }]
   }
 
   return [{ key: 'overview', labelKey: 'nav.overview' }]

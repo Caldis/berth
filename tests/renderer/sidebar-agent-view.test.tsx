@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import React from 'react'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { MemoryRouter } from 'react-router-dom'
@@ -24,19 +24,19 @@ describe('Sidebar agent view selector', () => {
     })
   })
 
-  it('updates the global agent view from the header dropdown', () => {
+  it('updates the global agent view from the footer switcher', () => {
     render(
       <MemoryRouter>
         <Sidebar />
       </MemoryRouter>
     )
 
-    fireEvent.change(screen.getByLabelText('Agent view'), { target: { value: 'codex' } })
+    fireEvent.click(within(screen.getByRole('group', { name: 'Agent view' })).getByRole('button', { name: 'Codex' }))
 
     expect(useAppStore.getState().agentView).toBe('codex')
   })
 
-  it('localizes the all-agents option in Chinese', async () => {
+  it('localizes the all-agents switcher in Chinese', async () => {
     await i18n.changeLanguage('zh')
 
     render(
@@ -45,10 +45,11 @@ describe('Sidebar agent view selector', () => {
       </MemoryRouter>
     )
 
-    expect(screen.getByRole('option', { name: '全部' })).toHaveValue('all')
-    expect(screen.queryByRole('option', { name: 'All' })).not.toBeInTheDocument()
-    expect(screen.getByRole('option', { name: 'Claude' })).toBeInTheDocument()
-    expect(screen.getByRole('option', { name: 'Codex' })).toBeInTheDocument()
+    const switcher = screen.getByRole('group', { name: 'Agent 视角' })
+    expect(within(switcher).getByRole('button', { name: '全部' })).toHaveAttribute('aria-pressed', 'true')
+    expect(within(switcher).queryByRole('button', { name: 'All' })).not.toBeInTheDocument()
+    expect(within(switcher).getByRole('button', { name: 'Claude' })).toBeInTheDocument()
+    expect(within(switcher).getByRole('button', { name: 'Codex' })).toBeInTheDocument()
   })
 
   it('localizes the sidebar collapse toggle label in Chinese', async () => {
@@ -115,5 +116,17 @@ describe('Sidebar agent view selector', () => {
     )
 
     expect(screen.getByRole('button', { name: 'Project scope' })).toBeInTheDocument()
+  })
+
+  it('promotes instruction and capability sections into sidebar navigation', () => {
+    render(
+      <MemoryRouter initialEntries={['/capabilities/hooks']}>
+        <Sidebar />
+      </MemoryRouter>
+    )
+
+    expect(screen.getByRole('button', { name: 'Hooks - Lifecycle automation' })).toBeInTheDocument()
+    expect(screen.getByText('Reusable workflows')).toBeInTheDocument()
+    expect(screen.getByText('Permission boundaries')).toBeInTheDocument()
   })
 })

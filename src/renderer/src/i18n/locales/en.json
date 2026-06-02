@@ -15,7 +15,28 @@
     "breadcrumb": "Breadcrumb",
     "resizeSidebar": "Resize sidebar",
     "expandSidebar": "Expand sidebar",
-    "collapseSidebar": "Collapse sidebar"
+    "collapseSidebar": "Collapse sidebar",
+    "sections": {
+      "work": "WORK",
+      "instructions": "INSTRUCTIONS",
+      "capabilities": "CAPABILITIES",
+      "operations": "RUN"
+    },
+    "descriptions": {
+      "memories": "Long-lived notes and sources",
+      "conventions": "Project rule files",
+      "skills": "Reusable workflows",
+      "subagents": "Specialized agent roles",
+      "commands": "Slash commands",
+      "outputModes": "Output formats",
+      "agentTeams": "Agent orchestration",
+      "mcp": "External tool connections",
+      "hooks": "Lifecycle automation",
+      "plugins": "Capability plugins",
+      "statusLine": "Runtime status surface",
+      "permissions": "Permission boundaries",
+      "env": "Environment variables"
+    }
   },
   "agentView": {
     "label": "Agent view",

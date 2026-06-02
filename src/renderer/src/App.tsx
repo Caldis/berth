@@ -1,4 +1,4 @@
-import { Routes, Route } from 'react-router-dom'
+import { Navigate, Route, Routes, useSearchParams } from 'react-router-dom'
 import { ThemeProvider } from '@/components/theme-provider'
 import { AppLayout } from '@/components/layout/app-layout'
 import { Overview } from '@/pages/overview'
@@ -9,6 +9,21 @@ import { Capabilities } from '@/pages/capabilities'
 import { Usage } from '@/pages/usage'
 import { PageErrorBoundary } from '@/components/layout/page-error-boundary'
 
+const capabilityLegacyTabRoutes: Record<string, string> = {
+  mcp: '/capabilities/mcp',
+  hooks: '/capabilities/hooks',
+  plugins: '/capabilities/plugins',
+  statusLine: '/capabilities/status-line',
+  permissions: '/capabilities/permissions',
+  env: '/capabilities/env'
+}
+
+export function LegacyCapabilitiesRedirect(): React.ReactElement {
+  const [searchParams] = useSearchParams()
+  const tab = searchParams.get('tab') ?? 'mcp'
+  return <Navigate to={capabilityLegacyTabRoutes[tab] ?? '/capabilities/mcp'} replace />
+}
+
 export default function App(): React.ReactElement {
   return (
     <ThemeProvider defaultTheme="system">
@@ -17,8 +32,25 @@ export default function App(): React.ReactElement {
           <Route path="/" element={<Overview />} />
           <Route path="/sessions" element={<Sessions />} />
           <Route path="/sessions/:id" element={<SessionDetail />} />
-          <Route path="/configuration/instructions" element={<Instructions />} />
-          <Route path="/configuration/capabilities" element={<Capabilities />} />
+          <Route path="/instructions" element={<Navigate to="/instructions/skills" replace />} />
+          <Route path="/instructions/memories" element={<Instructions activeSection="memories" />} />
+          <Route path="/instructions/conventions" element={<Instructions activeSection="conventions" />} />
+          <Route path="/instructions/skills" element={<Instructions activeSection="skills" />} />
+          <Route path="/instructions/subagents" element={<Instructions activeSection="subagents" />} />
+          <Route path="/instructions/commands" element={<Instructions activeSection="commands" />} />
+          <Route path="/instructions/output-modes" element={<Instructions activeSection="outputModes" />} />
+          <Route path="/instructions/agent-teams" element={<Instructions activeSection="agentTeams" />} />
+          <Route path="/instructions/*" element={<Navigate to="/instructions/skills" replace />} />
+          <Route path="/capabilities" element={<Navigate to="/capabilities/mcp" replace />} />
+          <Route path="/capabilities/mcp" element={<Capabilities activeSection="mcp" />} />
+          <Route path="/capabilities/hooks" element={<Capabilities activeSection="hooks" />} />
+          <Route path="/capabilities/plugins" element={<Capabilities activeSection="plugins" />} />
+          <Route path="/capabilities/status-line" element={<Capabilities activeSection="statusLine" />} />
+          <Route path="/capabilities/permissions" element={<Capabilities activeSection="permissions" />} />
+          <Route path="/capabilities/env" element={<Capabilities activeSection="env" />} />
+          <Route path="/capabilities/*" element={<Navigate to="/capabilities/mcp" replace />} />
+          <Route path="/configuration/instructions" element={<Navigate to="/instructions/skills" replace />} />
+          <Route path="/configuration/capabilities" element={<LegacyCapabilitiesRedirect />} />
           <Route
             path="/usage"
             element={

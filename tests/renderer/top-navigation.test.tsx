@@ -25,12 +25,12 @@ describe('TopNavigation', () => {
     expect(within(breadcrumb).getByText('Usage')).toBeInTheDocument()
   })
 
-  it('shows configuration section before configuration pages', () => {
-    renderTopNavigation('/configuration/capabilities')
+  it('shows promoted capability pages under the capability section', () => {
+    renderTopNavigation('/capabilities/hooks')
 
     const breadcrumb = screen.getByRole('navigation', { name: 'Breadcrumb' })
-    expect(within(breadcrumb).getByText('CONFIGURATION')).toBeInTheDocument()
-    expect(within(breadcrumb).getByText('Capabilities')).toBeInTheDocument()
+    expect(within(breadcrumb).getByText('CAPABILITIES')).toBeInTheDocument()
+    expect(within(breadcrumb).getByText('Hooks')).toBeInTheDocument()
   })
 
   it('shows session detail routes under Sessions', () => {

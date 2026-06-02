@@ -43,13 +43,13 @@ const quickActions: QuickAction[] = [
     id: 'instructions',
     labelKey: 'nav.instructions',
     icon: FileText,
-    path: '/configuration/instructions'
+    path: '/instructions/skills'
   },
   {
     id: 'capabilities',
     labelKey: 'nav.capabilities',
     icon: Plug,
-    path: '/configuration/capabilities'
+    path: '/capabilities/hooks'
   },
   { id: 'usage', labelKey: 'nav.usage', icon: BarChart3, path: '/usage' }
 ]
@@ -375,12 +375,18 @@ function SearchResultRow({ result, selected, onSelect }: SearchResultRowProps): 
 function routeForAsset(asset: Asset): string {
   if (asset.type === 'session') return `/sessions/${asset.id}`
   if (asset.type === 'usage-data' || asset.type === 'stats-cache') return '/usage'
-  if (['hook', 'mcp-server', 'permission', 'plugin', 'statusline', 'env'].includes(asset.type)) {
-    return '/configuration/capabilities'
-  }
-  if (['claude-md', 'agents-md', 'command', 'agent', 'skill', 'output-mode', 'team'].includes(asset.type)) {
-    return '/configuration/instructions'
-  }
+  if (asset.type === 'hook') return '/capabilities/hooks'
+  if (asset.type === 'mcp-server') return '/capabilities/mcp'
+  if (asset.type === 'permission') return '/capabilities/permissions'
+  if (asset.type === 'plugin') return '/capabilities/plugins'
+  if (asset.type === 'statusline') return '/capabilities/status-line'
+  if (asset.type === 'env') return '/capabilities/env'
+  if (asset.type === 'skill') return '/instructions/skills'
+  if (asset.type === 'command') return '/instructions/commands'
+  if (asset.type === 'agent') return '/instructions/subagents'
+  if (asset.type === 'output-mode') return '/instructions/output-modes'
+  if (asset.type === 'team') return '/instructions/agent-teams'
+  if (asset.type === 'claude-md' || asset.type === 'agents-md') return '/instructions/conventions'
   return '/'
 }
 

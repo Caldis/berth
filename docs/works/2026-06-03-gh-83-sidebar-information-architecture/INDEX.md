@@ -2,7 +2,7 @@
 task: 2026-06-03-gh-83-sidebar-information-architecture
 task_id: GH-83
 type: feature
-phase: implement
+phase: verify
 created: 2026-06-03
 priority: P1
 target_date: 

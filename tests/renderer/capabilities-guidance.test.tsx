@@ -129,10 +129,10 @@ function LocationProbe(): React.ReactElement {
   return <span data-testid="location">{location.pathname}{location.search}</span>
 }
 
-function renderCapabilities(initialEntry = '/configuration/capabilities'): void {
+function renderCapabilities(activeSection = 'mcp', initialEntry = `/capabilities/${activeSection}`): void {
   render(
     <MemoryRouter initialEntries={[initialEntry]}>
-      <Capabilities />
+      <Capabilities activeSection={activeSection} />
       <LocationProbe />
     </MemoryRouter>
   )
@@ -145,9 +145,7 @@ describe('Capabilities guidance surfaces', () => {
   })
 
   it('keeps hook concept guidance in the page guide instead of the lifecycle tool', async () => {
-    renderCapabilities()
-
-    fireEvent.click(screen.getByRole('button', { name: /Hooks/ }))
+    renderCapabilities('hooks', '/capabilities/hooks')
 
     expect(await screen.findByText('Lifecycle automation')).toBeInTheDocument()
     expect(screen.queryByText('Trigger point')).not.toBeInTheDocument()
@@ -160,9 +158,7 @@ describe('Capabilities guidance surfaces', () => {
 
   it('keeps status line model guidance in the page guide instead of the status tool', async () => {
     useAppStore.setState({ assets: [statusLineAsset()], agentView: 'all' })
-    renderCapabilities()
-
-    fireEvent.click(screen.getByRole('button', { name: /Status Line/ }))
+    renderCapabilities('statusLine', '/capabilities/status-line')
 
     expect(await screen.findByText('Runtime status surface')).toBeInTheDocument()
     expect(screen.queryByText('Claude Code command')).not.toBeInTheDocument()
@@ -174,34 +170,32 @@ describe('Capabilities guidance surfaces', () => {
     expect(screen.getByText('tui.status_line')).toBeInTheDocument()
   })
 
-  it('selects the tab requested by the URL query', async () => {
-    renderCapabilities('/configuration/capabilities?tab=hooks')
+  it('renders the section requested by the route', async () => {
+    renderCapabilities('hooks', '/capabilities/hooks')
 
     expect(await screen.findByText('Lifecycle automation')).toBeInTheDocument()
-    expect(screen.getByTestId('location')).toHaveTextContent('/configuration/capabilities?tab=hooks')
+    expect(screen.getByTestId('location')).toHaveTextContent('/capabilities/hooks')
   })
 
-  it('falls back to MCP when the URL query uses an unknown tab', async () => {
-    renderCapabilities('/configuration/capabilities?tab=unknown')
+  it('falls back to MCP when the section is unknown', async () => {
+    renderCapabilities('unknown', '/capabilities/unknown')
 
     expect(await screen.findByText('External tools and data sources')).toBeInTheDocument()
   })
 
-  it('updates the URL query when the user changes tabs', async () => {
+  it('does not render the old capability tab switcher', async () => {
     useAppStore.setState({ assets: [statusLineAsset()], agentView: 'all' })
-    renderCapabilities('/configuration/capabilities?tab=hooks')
-
-    fireEvent.click(screen.getByRole('button', { name: /Status Line/ }))
+    renderCapabilities('statusLine', '/capabilities/status-line')
 
     expect(await screen.findByText('Runtime status surface')).toBeInTheDocument()
-    expect(screen.getByTestId('location')).toHaveTextContent('/configuration/capabilities?tab=statusLine')
+    expect(screen.queryByRole('button', { name: /Hooks/ })).not.toBeInTheDocument()
   })
 
   it('passes agent plugin hook schema into the Hooks tab', async () => {
     useAppStore.setState({ assets: [codexPromptHookAsset()], agentView: 'all' })
     window.api.agentPlugins.list = vi.fn(async () => ({ plugins: [codexHookSchemaPlugin()] }))
 
-    renderCapabilities('/configuration/capabilities?tab=hooks')
+    renderCapabilities('hooks', '/capabilities/hooks')
 
     expect(await screen.findByText('Summarize this turn before stopping.')).toBeInTheDocument()
     expect(await screen.findByText('Parsed only')).toBeInTheDocument()
@@ -222,7 +216,7 @@ describe('Capabilities guidance surfaces', () => {
       agentView: 'all'
     })
 
-    renderCapabilities('/configuration/capabilities?tab=hooks')
+    renderCapabilities('hooks', '/capabilities/hooks')
 
     expect(await screen.findByText('pwsh project-hook.ps1')).toBeInTheDocument()
     expect(screen.getByText('pwsh user-hook.ps1')).toBeInTheDocument()

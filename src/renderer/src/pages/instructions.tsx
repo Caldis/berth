@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   FileText,
@@ -18,7 +18,6 @@ import {
 import { truncatePath } from '@/lib/utils'
 import { filterAssetsByAgentView } from '@/lib/agent-view'
 import { useAppStore } from '@/stores/app'
-import { TabGroup, type TabDef } from '@/components/shared/tab-group'
 import { FilterBar } from '@/components/shared/filter-bar'
 import { DetailRow } from '@/components/shared/detail-row'
 import { EmptyState } from '@/components/shared/empty-state'
@@ -37,16 +36,6 @@ import { MemoryView } from '@/components/memory/memory-view'
 import { useMemory } from '@/hooks/use-memory'
 
 type ScopeFilter = 'all' | AssetScope
-
-const tabs: TabDef[] = [
-  { id: 'memories', labelKey: 'instructions.tabs.memories', icon: Brain },
-  { id: 'conventions', labelKey: 'instructions.tabs.conventions', icon: FileText },
-  { id: 'skills', labelKey: 'instructions.tabs.skills', icon: Sparkles },
-  { id: 'subagents', labelKey: 'instructions.tabs.subagents', icon: Bot },
-  { id: 'commands', labelKey: 'instructions.tabs.commands', icon: Terminal },
-  { id: 'outputModes', labelKey: 'instructions.tabs.outputModes', icon: Palette },
-  { id: 'agentTeams', labelKey: 'instructions.tabs.agentTeams', icon: Users }
-]
 
 const tabTypeMap: Record<string, string[]> = {
   conventions: ['claude-md', 'agents-md'],
@@ -292,31 +281,24 @@ const tabIconMap: Record<string, React.ComponentType<{ className?: string }>> = 
   agentTeams: Users
 }
 
+function normalizeInstructionSection(value: string | undefined): string {
+  return value && Object.prototype.hasOwnProperty.call(tabIconMap, value) ? value : 'skills'
+}
+
 /* ---------- Main page ---------- */
-export function Instructions(): React.ReactElement {
+export function Instructions({ activeSection }: { activeSection?: string } = {}): React.ReactElement {
   const { t } = useTranslation()
   const assets = useAppStore((s) => s.assets)
   const agentView = useAppStore((s) => s.agentView)
   const scopeSelection = useAppStore((s) => s.scopeSelection)
   const { result: memoryResult } = useMemory()
-  const [activeTab, setActiveTab] = useState('skills')
+  const activeTab = normalizeInstructionSection(activeSection)
   const [search, setSearch] = useState('')
   const [scope, setScope] = useState<ScopeFilter>('all')
   const visibleAssets = useMemo(
     () => filterAssetsByAppScope(filterAssetsByAgentView(assets, agentView), scopeSelection),
     [assets, agentView, scopeSelection]
   )
-
-  // Build tab counts
-  const tabCounts = useMemo(() => {
-    const counts: Record<string, number> = {}
-    for (const tab of tabs) {
-      const types = tabTypeMap[tab.id] ?? []
-      counts[tab.id] = visibleAssets.filter((a) => types.includes(a.type)).length
-    }
-    counts['memories'] = memoryResult.notes.length
-    return counts
-  }, [visibleAssets, memoryResult])
 
   // Filter assets for active tab
   const filteredAssets = useMemo(() => {
@@ -399,9 +381,7 @@ export function Instructions(): React.ReactElement {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-semibold tracking-tight">{t('instructions.title')}</h1>
-
-      <TabGroup tabs={tabs} activeTab={activeTab} onTabChange={setActiveTab} counts={tabCounts} />
+      <h1 className="text-2xl font-semibold tracking-tight">{t(`instructions.tabs.${activeTab}`)}</h1>
 
       {activeTab !== 'memories' && (
         <FilterBar

@@ -31,9 +31,7 @@ describe('Instructions guidance surfaces', () => {
   })
 
   it('shows a feature guide for the Memories tab before the memory list', async () => {
-    render(<Instructions />)
-
-    fireEvent.click(screen.getByRole('button', { name: /Memories/ }))
+    render(<Instructions activeSection="memories" />)
 
     expect(await screen.findByText('Memory notes across sources')).toBeInTheDocument()
     expect(screen.getByText(/Berth groups native memory files and durable local notes/)).toBeInTheDocument()
@@ -44,9 +42,7 @@ describe('Instructions guidance surfaces', () => {
   })
 
   it('uses an instructive memory empty state when no sources are found', async () => {
-    render(<Instructions />)
-
-    fireEvent.click(screen.getByRole('button', { name: /Memories/ }))
+    render(<Instructions activeSection="memories" />)
 
     expect(await screen.findByText('No memory sources found')).toBeInTheDocument()
     expect(screen.getByText(/Berth looks for native Claude Code memory and united-memory/)).toBeInTheDocument()

@@ -5,7 +5,7 @@ import { ChevronLeft, ChevronRight, Search, Settings as SettingsIcon } from 'luc
 import type { AgentView } from '@shared/types/asset'
 import { cn } from '@/lib/utils'
 import { SIDEBAR_COLLAPSED_WIDTH, useAppStore } from '@/stores/app'
-import { navSections } from './nav-config'
+import { navItemMatchesLocation, navSections } from './nav-config'
 import { isMacPlatform } from '@/lib/platform'
 import { SettingsDialog } from './settings-dialog'
 import { ProjectScopeSwitcher } from './project-scope-switcher'
@@ -21,8 +21,6 @@ export function Sidebar(): React.ReactElement {
   const sidebarWidth = useAppStore((s) => s.sidebarWidth)
   const setSidebarWidth = useAppStore((s) => s.setSidebarWidth)
   const setSearchOpen = useAppStore((s) => s.setSearchOpen)
-  const agentView = useAppStore((s) => s.agentView)
-  const setAgentView = useAppStore((s) => s.setAgentView)
 
   const isMac = isMacPlatform()
   const effectiveWidth = collapsed ? SIDEBAR_COLLAPSED_WIDTH : sidebarWidth
@@ -53,11 +51,6 @@ export function Sidebar(): React.ReactElement {
     },
     [collapsed, setSidebarWidth, sidebarWidth]
   )
-
-  const isActive = (path: string): boolean => {
-    if (path === '/') return location.pathname === '/'
-    return location.pathname.startsWith(path)
-  }
 
   return (
     <>
@@ -98,18 +91,6 @@ export function Sidebar(): React.ReactElement {
               </span>
             )}
           </div>
-          {!collapsed && (
-            <select
-              value={agentView}
-              onChange={(event) => setAgentView(event.target.value as AgentView)}
-              className="titlebar-no-drag ml-auto h-7 rounded-md border border-sidebar-border bg-sidebar px-2 text-xs text-sidebar-foreground outline-none ring-ring transition-colors hover:bg-sidebar-accent/10 focus:ring-1"
-              aria-label={t('agentView.label')}
-            >
-              <option value="all">{t('agentView.all')}</option>
-              <option value="claude">{t('agentView.claude')}</option>
-              <option value="codex">{t('agentView.codex')}</option>
-            </select>
-          )}
         </div>
 
         <div className="px-3 pb-2">
@@ -143,23 +124,41 @@ export function Sidebar(): React.ReactElement {
               )}
               <div className="flex flex-col gap-1">
                 {section.items.map((item) => {
-                  const active = isActive(item.path)
+                  const active = navItemMatchesLocation(item, location.pathname, location.search)
+                  const label = t(item.labelKey)
+                  const description = item.descriptionKey ? t(item.descriptionKey) : ''
+                  const title = description ? `${label} - ${description}` : label
                   return (
                     <button
                       key={item.id}
                       type="button"
                       onClick={() => navigate(item.path)}
+                      aria-label={title}
                       className={cn(
-                        'titlebar-no-drag flex w-full items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm transition-colors',
+                        'titlebar-no-drag flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
                         active
                           ? 'bg-accent text-accent-foreground font-medium'
                           : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/10 hover:text-sidebar-foreground',
                         collapsed && 'justify-center px-0'
                       )}
-                      title={collapsed ? t(item.labelKey) : undefined}
+                      title={collapsed ? title : undefined}
                     >
                       <item.icon className="h-4 w-4 shrink-0" />
-                      {!collapsed && <span>{t(item.labelKey)}</span>}
+                      {!collapsed && (
+                        <span className="min-w-0 flex-1 text-left">
+                          <span className="block truncate leading-5">{label}</span>
+                          {description && (
+                            <span
+                              className={cn(
+                                'block truncate text-[11px] font-normal leading-4',
+                                active ? 'text-accent-foreground/70' : 'text-muted-foreground'
+                              )}
+                            >
+                              {description}
+                            </span>
+                          )}
+                        </span>
+                      )}
                     </button>
                   )
                 })}
@@ -170,6 +169,7 @@ export function Sidebar(): React.ReactElement {
 
         <div className="shrink-0 border-t border-sidebar-border p-3">
           <div className={cn('flex gap-1', collapsed ? 'flex-col items-center' : 'flex-col')}>
+            <AgentViewSwitcher collapsed={collapsed} />
             <ProjectScopeSwitcher collapsed={collapsed} />
             <div className={cn('flex gap-1', collapsed ? 'flex-col items-center' : 'items-center')}>
               <button
@@ -208,5 +208,43 @@ export function Sidebar(): React.ReactElement {
         returnFocusRef={settingsButtonRef}
       />
     </>
+  )
+}
+
+function AgentViewSwitcher({ collapsed }: { collapsed: boolean }): React.ReactElement | null {
+  const { t } = useTranslation()
+  const agentView = useAppStore((s) => s.agentView)
+  const setAgentView = useAppStore((s) => s.setAgentView)
+  const options: AgentView[] = ['all', 'claude', 'codex']
+
+  if (collapsed) return null
+
+  return (
+    <div className="titlebar-no-drag rounded-md border border-sidebar-border bg-sidebar p-1.5">
+      <div className="mb-1 px-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+        {t('agentView.label')}
+      </div>
+      <div className="grid grid-cols-3 gap-1" role="group" aria-label={t('agentView.label')}>
+        {options.map((option) => {
+          const active = agentView === option
+          return (
+            <button
+              key={option}
+              type="button"
+              aria-pressed={active}
+              onClick={() => setAgentView(option)}
+              className={cn(
+                'h-7 rounded text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
+                active
+                  ? 'bg-accent text-accent-foreground'
+                  : 'text-muted-foreground hover:bg-sidebar-accent/10 hover:text-sidebar-foreground'
+              )}
+            >
+              {t(`agentView.${option}`)}
+            </button>
+          )
+        })}
+      </div>
+    </div>
   )
 }

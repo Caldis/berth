@@ -230,4 +230,35 @@ describe('SearchDialog', () => {
       expect(screen.queryByRole('dialog', { name: /搜索资产/ })).not.toBeInTheDocument()
     })
   })
+
+  it('routes asset results to the promoted first-level pages', async () => {
+    searchMock.mockResolvedValueOnce([
+      searchResult('hook-stop', {
+        category: 'capability',
+        type: 'hook',
+        name: 'Stop hook',
+        path: 'C:/Users/mail/.codex/config.toml',
+        meta: { eventType: 'Stop' }
+      })
+    ])
+    render(
+      <MemoryRouter initialEntries={['/']}>
+        <SearchDialog />
+        <Routes>
+          <Route path="*" element={<LocationProbe />} />
+        </Routes>
+      </MemoryRouter>
+    )
+
+    fireEvent.change(screen.getByRole('textbox', { name: /搜索资产/ }), {
+      target: { value: 'hook' }
+    })
+
+    fireEvent.click(await screen.findByRole('option', { name: /Stop hook/ }))
+
+    await waitFor(() => {
+      expect(screen.getByTestId('location')).toHaveTextContent('/capabilities/hooks')
+      expect(screen.queryByRole('dialog', { name: /搜索资产/ })).not.toBeInTheDocument()
+    })
+  })
 })
