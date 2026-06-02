@@ -8,23 +8,40 @@ import { ScopeBadge } from '../../src/renderer/src/components/shared/scope-badge
 
 const root = process.cwd()
 const instructionsPage = fs.readFileSync(path.join(root, 'src/renderer/src/pages/instructions.tsx'), 'utf8')
+const scopeBadgeSource = fs.readFileSync(path.join(root, 'src/renderer/src/components/shared/scope-badge.tsx'), 'utf8')
+const categoryColorPattern = /(?:bg|text|border)-(?:blue|green|purple|orange)/
+const scopeLabels = {
+  user: 'User',
+  project: 'Project',
+  enterprise: 'Enterprise',
+  session: 'Session'
+} as const
 
 describe('ScopeBadge palette', () => {
   beforeEach(async () => {
     await i18n.changeLanguage('en')
   })
 
-  it('renders session scope with neutral colors instead of orange', () => {
-    render(<ScopeBadge scope="session" />)
+  it('renders all scopes with neutral category colors', () => {
+    render(
+      <>
+        {Object.keys(scopeLabels).map((scope) => (
+          <ScopeBadge key={scope} scope={scope as keyof typeof scopeLabels} />
+        ))}
+      </>
+    )
 
-    const badge = screen.getByText('Session')
-    expect(badge.className).toContain('bg-zinc-500/10')
-    expect(badge.className).toContain('text-zinc-700')
-    expect(badge.className).toContain('dark:text-zinc-300')
-    expect(badge.className).not.toMatch(/orange/)
+    for (const label of Object.values(scopeLabels)) {
+      const badge = screen.getByText(label)
+      expect(badge.className).toContain('bg-zinc-500/10')
+      expect(badge.className).toContain('text-zinc-700')
+      expect(badge.className).toContain('dark:text-zinc-300')
+      expect(badge.className).not.toMatch(categoryColorPattern)
+    }
   })
 
-  it('keeps Instructions from redefining orange session scope colors locally', () => {
-    expect(instructionsPage).not.toMatch(/bg-orange|text-orange/)
+  it('keeps scope color tables from reintroducing category colors', () => {
+    expect(scopeBadgeSource).not.toMatch(categoryColorPattern)
+    expect(instructionsPage).not.toMatch(/function ScopeBadge|scopeColors|const colors: Record/)
   })
 })
