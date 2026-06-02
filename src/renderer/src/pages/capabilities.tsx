@@ -38,6 +38,7 @@ import {
   type PermissionRuleRow
 } from '@/lib/capability-assets'
 import type { AgentView, Asset, AssetScope } from '@shared/types/asset'
+import { filterAssetsByAppScope } from '@shared/scope'
 
 type ScopeFilter = 'all' | AssetScope
 
@@ -780,13 +781,17 @@ export function Capabilities(): React.ReactElement {
   const { t } = useTranslation()
   const assets = useAppStore((s) => s.assets)
   const agentView = useAppStore((s) => s.agentView)
+  const scopeSelection = useAppStore((s) => s.scopeSelection)
   const { plugins } = useAgentCapabilityPlugins()
   const [searchParams, setSearchParams] = useSearchParams()
   const queryTab = normalizeCapabilityTab(searchParams.get('tab'))
   const [activeTab, setActiveTab] = useState(queryTab)
   const [search, setSearch] = useState('')
   const [scope, setScope] = useState<ScopeFilter>('all')
-  const visibleAssets = useMemo(() => filterAssetsByAgentView(assets, agentView), [assets, agentView])
+  const visibleAssets = useMemo(
+    () => filterAssetsByAppScope(filterAssetsByAgentView(assets, agentView), scopeSelection),
+    [assets, agentView, scopeSelection]
+  )
 
   useEffect(() => {
     setActiveTab((current) => current === queryTab ? current : queryTab)

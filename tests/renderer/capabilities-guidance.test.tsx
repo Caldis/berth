@@ -24,6 +24,22 @@ function hookAsset(): Asset {
   }
 }
 
+function scopedHookAsset(id: string, scope: Asset['scope'], path: string, command: string): Asset {
+  return {
+    id,
+    agentId: 'codex',
+    category: 'capability',
+    type: 'hook',
+    scope,
+    name: id,
+    path,
+    meta: {
+      eventType: 'Stop',
+      command
+    }
+  }
+}
+
 function statusLineAsset(): Asset {
   return {
     id: 'codex-status',
@@ -124,7 +140,7 @@ function renderCapabilities(initialEntry = '/configuration/capabilities'): void 
 
 describe('Capabilities guidance surfaces', () => {
   beforeEach(() => {
-    useAppStore.setState({ assets: [hookAsset()], agentView: 'all' })
+    useAppStore.setState({ assets: [hookAsset()], agentView: 'all', scopeSelection: { mode: 'global' } })
     window.api.agentPlugins.list = vi.fn(async () => ({ plugins: [] }))
   })
 
@@ -189,5 +205,27 @@ describe('Capabilities guidance surfaces', () => {
 
     expect(await screen.findByText('Summarize this turn before stopping.')).toBeInTheDocument()
     expect(await screen.findByText('Parsed only')).toBeInTheDocument()
+  })
+
+  it('filters capability assets by selected project scope', async () => {
+    useAppStore.setState({
+      scopeSelection: {
+        mode: 'project',
+        projectPath: 'D:/Code/berth',
+        projectPathKey: 'd:/code/berth'
+      },
+      assets: [
+        scopedHookAsset('user-hook', 'user', 'C:/Users/mail/.codex/hooks.json', 'pwsh user-hook.ps1'),
+        scopedHookAsset('project-hook', 'project', 'D:/Code/berth/.codex/hooks.json', 'pwsh project-hook.ps1'),
+        scopedHookAsset('other-project-hook', 'project', 'D:/Code/other/.codex/hooks.json', 'pwsh other-hook.ps1')
+      ],
+      agentView: 'all'
+    })
+
+    renderCapabilities('/configuration/capabilities?tab=hooks')
+
+    expect(await screen.findByText('pwsh project-hook.ps1')).toBeInTheDocument()
+    expect(screen.getByText('pwsh user-hook.ps1')).toBeInTheDocument()
+    expect(screen.queryByText('pwsh other-hook.ps1')).not.toBeInTheDocument()
   })
 })

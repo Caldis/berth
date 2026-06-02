@@ -1,3 +1,5 @@
+import type { Asset } from './types/asset'
+
 export type AppScopeMode = 'global' | 'user' | 'project'
 
 export type ProjectScopeCandidateSource = 'current' | 'session' | 'scan-source'
@@ -62,6 +64,31 @@ export function projectPathForScope(selection: AppScopeSelection): string | unde
   return selection.mode === 'project' ? selection.projectPath : undefined
 }
 
+export function assetProjectPath(asset: Asset): string | undefined {
+  return readString(asset.meta, 'projectPath')
+}
+
+export function assetMatchesProjectPath(asset: Asset, projectPath: string | undefined): boolean {
+  if (!projectPath) return true
+  const explicitProjectPath = assetProjectPath(asset)
+  if (explicitProjectPath) return sameProjectPath(explicitProjectPath, projectPath)
+  return asset.scope === 'project' && pathIsInsideProject(asset.path, projectPath)
+}
+
+export function assetMatchesAppScope(asset: Asset, selection: AppScopeSelection): boolean {
+  if (selection.mode === 'global') return true
+  if (selection.mode === 'user') return asset.scope === 'user' || asset.scope === 'enterprise'
+  if (asset.scope === 'user' || asset.scope === 'enterprise') return true
+  if (asset.scope === 'project' || asset.scope === 'session') {
+    return assetMatchesProjectPath(asset, selection.projectPath)
+  }
+  return false
+}
+
+export function filterAssetsByAppScope(assets: Asset[], selection: AppScopeSelection): Asset[] {
+  return assets.filter((asset) => assetMatchesAppScope(asset, selection))
+}
+
 export function createProjectScopeCandidate(input: ProjectScopeCandidateInput): ProjectScopeCandidate | null {
   const path = normalizeProjectPath(input.path)
   const pathKey = normalizeProjectPathKey(path)
@@ -120,8 +147,20 @@ function projectNameFromPath(projectPath: string): string {
   return parts[parts.length - 1] || projectPath
 }
 
+function pathIsInsideProject(assetPath: string, projectPath: string): boolean {
+  const assetPathKey = normalizeProjectPathKey(assetPath)
+  const projectPathKey = normalizeProjectPathKey(projectPath)
+  if (!assetPathKey || !projectPathKey) return false
+  return assetPathKey === projectPathKey || assetPathKey.startsWith(`${projectPathKey}/`)
+}
+
 function uniqueSources(sources: ProjectScopeCandidateSource[]): ProjectScopeCandidateSource[] {
   return Array.from(new Set(sources))
+}
+
+function readString(record: Record<string, unknown>, key: string): string | undefined {
+  const value = record[key]
+  return typeof value === 'string' && value.trim() ? value : undefined
 }
 
 function newestIso(left?: string, right?: string): string | undefined {

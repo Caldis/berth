@@ -32,6 +32,7 @@ import {
   type InstructionGuideId
 } from '@/lib/feature-guidance'
 import type { Asset, AssetScope } from '@shared/types/asset'
+import { filterAssetsByAppScope } from '@shared/scope'
 import { MemoryView } from '@/components/memory/memory-view'
 import { useMemory } from '@/hooks/use-memory'
 
@@ -296,11 +297,15 @@ export function Instructions(): React.ReactElement {
   const { t } = useTranslation()
   const assets = useAppStore((s) => s.assets)
   const agentView = useAppStore((s) => s.agentView)
+  const scopeSelection = useAppStore((s) => s.scopeSelection)
   const { result: memoryResult } = useMemory()
   const [activeTab, setActiveTab] = useState('skills')
   const [search, setSearch] = useState('')
   const [scope, setScope] = useState<ScopeFilter>('all')
-  const visibleAssets = useMemo(() => filterAssetsByAgentView(assets, agentView), [assets, agentView])
+  const visibleAssets = useMemo(
+    () => filterAssetsByAppScope(filterAssetsByAgentView(assets, agentView), scopeSelection),
+    [assets, agentView, scopeSelection]
+  )
 
   // Build tab counts
   const tabCounts = useMemo(() => {

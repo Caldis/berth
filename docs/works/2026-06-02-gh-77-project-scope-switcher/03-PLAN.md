@@ -15,9 +15,9 @@
 - [x] 任务 4: Overview / Sessions / Usage 消费应用级 scope
   - tests: `pnpm test tests/unit/scope.test.ts tests/renderer/sessions-pages.test.tsx` (26 passed); `pnpm typecheck:web`
   - verify: Renderer; `projectPathForScope()` 只在 project scope 返回路径; Overview recent sessions、Overview 7 天 usage、Sessions list、Usage summary 在 project scope 下都向 IPC 传递精确 `projectPath`; global/user scope 不传 project path, 保持旧行为。主进程精确路径过滤证据见任务 2。稳定 Electron e2e 仍留到任务 7, 避免依赖本机历史会话 fixture。
-- [ ] 任务 5: Instructions / Capabilities 在应用级 scope 下过滤资产
-  - tests: `pnpm test <instructions/capabilities-page-tests>`
-  - verify: UI; project scope 下展示匹配项目资产和有效 user/enterprise 基础层级; 页面内 asset scope filter 不与应用 scope 冲突。
+- [x] 任务 5: Instructions / Capabilities 在应用级 scope 下过滤资产
+  - tests: `pnpm test tests/unit/scope.test.ts tests/unit/project-scope.test.ts tests/renderer/instructions-guidance.test.tsx tests/renderer/capabilities-guidance.test.tsx` (21 passed); `pnpm typecheck:node`; `pnpm typecheck:web`
+  - verify: Renderer; `filterAssetsByAppScope()` 支持 global/user/project 三种应用 scope。project scope 下保留 user/enterprise 基础层级, 仅展示路径匹配的 project/session 资产; Instructions skills 与 Capabilities hooks 已覆盖当前项目资产保留、其它项目资产隐藏。页面内 asset scope filter 继续叠加在应用级 scope 之后。
 - [ ] 任务 6: 切换 project scope 后处理扫描刷新与过期状态
   - tests: `pnpm test <scanner-or-hook-test>`
   - verify: 非 UI + UI; 不保留上一项目过期结果; 若本轮只做到现有资产过滤, 必须在 issue/plan 中保留 scanner 重建任务, 不标为完成。

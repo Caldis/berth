@@ -1,20 +1,13 @@
 import type { Asset } from '@shared/types/asset'
 import {
+  assetProjectPath,
+  assetMatchesProjectPath,
   createProjectScopeCandidate,
   mergeProjectScopeCandidates,
-  sameProjectPath,
   type ProjectScopeCandidate
 } from '@shared/scope'
 
-export function assetProjectPath(asset: Asset): string | undefined {
-  return readString(asset.meta, 'projectPath')
-}
-
-export function assetMatchesProjectPath(asset: Asset, projectPath: string | undefined): boolean {
-  if (!projectPath) return true
-  const assetPath = assetProjectPath(asset)
-  return assetPath ? sameProjectPath(assetPath, projectPath) : false
-}
+export { assetProjectPath, assetMatchesProjectPath }
 
 export function filterAssetsByProjectPath(assets: Asset[], projectPath: string | undefined): Asset[] {
   if (!projectPath) return assets
