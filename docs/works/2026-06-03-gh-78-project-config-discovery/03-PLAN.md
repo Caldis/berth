@@ -4,11 +4,11 @@
 每个实现项必须有测试证据或明确例外理由。
 
 - [x] 任务 1: 新增 project config roots helper
-  - tests: `pnpm test tests/unit/project-config-roots.test.ts` (3 passed)
-  - verify: 非 UI; 子目录 cwd 返回仓库根到 cwd 的层级目录, 根目录选择保持单 root, 空 project dir 返回空列表。
-- [ ] 任务 2: Claude Code adapter/scanner 使用 project roots
-  - tests: `pnpm test tests/unit/claude-code-adapter.test.ts tests/unit/claude-scanner.test.ts`
-  - verify: 非 UI; 子目录 cwd 能扫到父级 `.claude/skills`, `.claude/agents`, `.claude/settings.json`, `.mcp.json` 和 `CLAUDE.md`。
+  - tests: `pnpm test tests/unit/project-config-roots.test.ts` (4 passed)
+  - verify: 非 UI; 子目录 cwd 返回仓库根到 cwd 的层级目录, 根目录选择保持单 root, 空 project dir 返回空列表; 无 `.git` 时只使用当前目录, 避免误扫用户 home。
+- [x] 任务 2: Claude Code adapter/scanner 使用 project roots
+  - tests: `pnpm test tests/unit/claude-code-adapter.test.ts tests/unit/claude-scanner.test.ts` (15 passed)
+  - verify: 非 UI; 子目录 cwd 能扫到父级 `.claude/skills`, `.claude/agents`, `.claude/settings.json`, `.mcp.json` 和 `CLAUDE.md`; scan source coverage 能报告父级 `.claude` 与 `.mcp.json`。
 - [ ] 任务 3: Codex adapter 使用 project roots
   - tests: `pnpm test tests/unit/codex-adapter.test.ts`
   - verify: 非 UI; 子目录 cwd 能扫到父级 `AGENTS.md`, `.codex/config.toml`, `.codex/hooks.json`, `.codex/agents`, `.agents/skills`。

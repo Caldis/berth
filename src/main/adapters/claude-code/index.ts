@@ -21,6 +21,7 @@ import {
   type ScanContext
 } from './scanner'
 import { resolveClaudeDirs } from '../../agent-homes'
+import { resolveProjectConfigRoots } from '../../project-config-roots'
 
 interface ClaudeCodeAdapterOptions {
   managedDir?: string
@@ -36,6 +37,7 @@ export class ClaudeCodeAdapter implements AgentAdapter {
   private claudeDirs: string[]
   private managedDir: string
   private projectDir: string | undefined
+  private projectDirs: string[]
 
   constructor(projectDir?: string, options: ClaudeCodeAdapterOptions = {}) {
     const homeDir = options.homeDir ?? os.homedir()
@@ -43,6 +45,7 @@ export class ClaudeCodeAdapter implements AgentAdapter {
     this.claudeDir = this.claudeDirs[0]
     this.managedDir = options.managedDir ?? resolveClaudeManagedDir()
     this.projectDir = projectDir
+    this.projectDirs = resolveProjectConfigRoots(projectDir)
   }
 
   async detect(): Promise<DetectResult> {
@@ -100,8 +103,8 @@ export class ClaudeCodeAdapter implements AgentAdapter {
         })
       }
     }
-    if (this.projectDir) {
-      const projectDotClaude = path.join(this.projectDir, '.claude')
+    for (const projectDir of this.projectDirs) {
+      const projectDotClaude = path.join(projectDir, '.claude')
       if (fs.existsSync(projectDotClaude)) {
         sources.push({
           path: projectDotClaude,
@@ -112,7 +115,7 @@ export class ClaudeCodeAdapter implements AgentAdapter {
           status: 'scanned'
         })
       }
-      const projectMcp = path.join(this.projectDir, '.mcp.json')
+      const projectMcp = path.join(projectDir, '.mcp.json')
       if (fs.existsSync(projectMcp)) {
         sources.push({
           path: projectMcp,
@@ -219,6 +222,7 @@ export class ClaudeCodeAdapter implements AgentAdapter {
     return this.claudeDirs.map((claudeDir, index) => ({
       claudeDir,
       projectDir: index === 0 ? this.projectDir : undefined,
+      projectDirs: index === 0 ? this.projectDirs : undefined,
       managedDir: index === 0 ? this.managedDir : undefined,
       errors
     }))

@@ -55,4 +55,4 @@
 - loading / error 行为不变: 切换 project scope 时仍先执行 `activateProjectScope`, 成功后更新 assets / stats / candidates。
 
 ## 未决问题
-- 无需向用户澄清。实现时采用保守规则: 从当前 cwd 向上寻找配置层级, 在最近的 `.git` 根处停止; 若没有 `.git`, 最多使用当前目录和实际存在配置的父级目录, 避免扫描整个磁盘。
+- 无需向用户澄清。实现时采用保守规则: 从当前 cwd 向上寻找配置层级, 在最近的 `.git` 根处停止; 若没有 `.git`, 只使用当前选择目录, 避免误把用户 home 下的 `.claude` / `.codex` 当作项目配置。

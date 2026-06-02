@@ -8,7 +8,7 @@
   - `resolveProjectConfigRoots(projectDir?: string): string[]`
   - 输入为空时返回 `[]`。
   - 输入为 cwd 时, 返回从仓库根到 cwd 的目录序列; 若向上过程中找到 `.git`, 在该目录停止并包含它。
-  - 若没有 `.git`, 返回 cwd 到文件系统根之间实际遍历到的目录序列, 但 adapter 只读取固定配置文件 / 目录, 不枚举整棵父级目录。
+  - 若没有 `.git`, 只返回当前选择目录, 避免把用户 home 或磁盘根下的同名目录误判为项目配置。
   - 返回值去重, Windows 下大小写不敏感。
 - `ScanContext` 增加 `projectDirs?: string[]`, 保留 `projectDir?: string` 兼容现有测试和 parser command path 推导。
 - `ScanSourceCode` 不新增枚举。已有 `claude.project.directory` / `claude.project.mcp-config` / `codex.project.*` 可重复出现于多个父级目录, UI 通过 `path` 区分来源。

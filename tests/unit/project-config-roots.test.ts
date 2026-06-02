@@ -41,4 +41,11 @@ describe('resolveProjectConfigRoots', () => {
 
     expect(resolveProjectConfigRoots(repo + path.sep)).toEqual([path.resolve(repo)])
   })
+
+  it('does not walk into user directories when a repository root cannot be found', () => {
+    const project = path.join(tempDir!, 'detached-project', 'src')
+    fs.mkdirSync(project, { recursive: true })
+
+    expect(resolveProjectConfigRoots(project)).toEqual([path.resolve(project)])
+  })
 })

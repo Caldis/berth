@@ -30,6 +30,7 @@ import {
 export interface ScanContext {
   claudeDir: string // ~/.claude
   projectDir?: string // current project root (if any)
+  projectDirs?: string[] // project config roots from repository root to current cwd
   managedDir?: string // file-based managed settings directory
   errors: ScanError[]
 }
@@ -80,14 +81,14 @@ export function scanInstructions(ctx: ScanContext): Asset[] {
   }
 
   // CLAUDE.md / AGENTS.md at project scope (.claude/)
-  if (ctx.projectDir) {
-    const projectClaudeDir = path.join(ctx.projectDir, '.claude')
+  for (const projectDir of projectDirsFromContext(ctx)) {
+    const projectClaudeDir = path.join(projectDir, '.claude')
     for (const [file, parser] of [
       ['CLAUDE.md', parseClaudeMd],
       ['AGENTS.md', parseAgentsMd]
     ] as const) {
       // Check project root
-      const rootFp = path.join(ctx.projectDir, file)
+      const rootFp = path.join(projectDir, file)
       if (fs.existsSync(rootFp)) {
         const a = safeScan(ctx, rootFp, file, () => parser(rootFp, 'project'))
         if (a) assets.push(a)
@@ -103,9 +104,9 @@ export function scanInstructions(ctx: ScanContext): Asset[] {
 
   // Skills
   assets.push(...scanDir(ctx, path.join(ctx.claudeDir, 'skills'), 'user', '**/*.md', parseSkill))
-  if (ctx.projectDir) {
+  for (const projectDir of projectDirsFromContext(ctx)) {
     assets.push(
-      ...scanDir(ctx, path.join(ctx.projectDir, '.claude', 'skills'), 'project', '**/*.md', parseSkill)
+      ...scanDir(ctx, path.join(projectDir, '.claude', 'skills'), 'project', '**/*.md', parseSkill)
     )
   }
 
@@ -113,11 +114,11 @@ export function scanInstructions(ctx: ScanContext): Asset[] {
   assets.push(
     ...scanDir(ctx, path.join(ctx.claudeDir, 'agents'), 'user', '**/*.md', parseAgent)
   )
-  if (ctx.projectDir) {
+  for (const projectDir of projectDirsFromContext(ctx)) {
     assets.push(
       ...scanDir(
         ctx,
-        path.join(ctx.projectDir, '.claude', 'agents'),
+        path.join(projectDir, '.claude', 'agents'),
         'project',
         '**/*.md',
         parseAgent
@@ -129,11 +130,11 @@ export function scanInstructions(ctx: ScanContext): Asset[] {
   assets.push(
     ...scanDir(ctx, path.join(ctx.claudeDir, 'commands'), 'user', '**/*.md', parseCommand)
   )
-  if (ctx.projectDir) {
+  for (const projectDir of projectDirsFromContext(ctx)) {
     assets.push(
       ...scanDir(
         ctx,
-        path.join(ctx.projectDir, '.claude', 'commands'),
+        path.join(projectDir, '.claude', 'commands'),
         'project',
         '**/*.md',
         parseCommand
@@ -150,11 +151,11 @@ export function scanInstructions(ctx: ScanContext): Asset[] {
   assets.push(
     ...scanDir(ctx, path.join(ctx.claudeDir, 'teams'), 'user', '**/*.{yml,yaml}', parseTeam)
   )
-  if (ctx.projectDir) {
+  for (const projectDir of projectDirsFromContext(ctx)) {
     assets.push(
       ...scanDir(
         ctx,
-        path.join(ctx.projectDir, '.claude', 'teams'),
+        path.join(projectDir, '.claude', 'teams'),
         'project',
         '**/*.{yml,yaml}',
         parseTeam
@@ -180,8 +181,8 @@ export function scanCapabilities(ctx: ScanContext): Asset[] {
   if (ctx.managedDir) {
     mcpSources.push([path.join(ctx.managedDir, 'managed-mcp.json'), 'enterprise'])
   }
-  if (ctx.projectDir) {
-    mcpSources.push([path.join(ctx.projectDir, '.mcp.json'), 'project'])
+  for (const projectDir of projectDirsFromContext(ctx)) {
+    mcpSources.push([path.join(projectDir, '.mcp.json'), 'project'])
   }
   for (const [fp, scope] of mcpSources) {
     if (fs.existsSync(fp)) {
@@ -197,8 +198,8 @@ export function scanCapabilities(ctx: ScanContext): Asset[] {
   if (ctx.managedDir) {
     settingsSources.push([path.join(ctx.managedDir, 'managed-settings.json'), 'enterprise'])
   }
-  if (ctx.projectDir) {
-    settingsSources.push([path.join(ctx.projectDir, '.claude', 'settings.json'), 'project'])
+  for (const projectDir of projectDirsFromContext(ctx)) {
+    settingsSources.push([path.join(projectDir, '.claude', 'settings.json'), 'project'])
   }
   for (const [fp, scope] of settingsSources) {
     if (fs.existsSync(fp)) {
@@ -230,8 +231,8 @@ export function scanCapabilities(ctx: ScanContext): Asset[] {
     }
   }
 
-  if (ctx.projectDir) {
-    const localSettings = path.join(ctx.projectDir, '.claude', 'settings.local.json')
+  for (const projectDir of projectDirsFromContext(ctx)) {
+    const localSettings = path.join(projectDir, '.claude', 'settings.local.json')
     if (fs.existsSync(localSettings)) {
       const statuslines = safeScan(ctx, localSettings, 'statusline', () =>
         parseStatuslinesFromSettings(localSettings, 'project')
@@ -262,6 +263,11 @@ export function scanCapabilities(ctx: ScanContext): Asset[] {
   }
 
   return assets
+}
+
+function projectDirsFromContext(ctx: ScanContext): string[] {
+  if (ctx.projectDirs && ctx.projectDirs.length > 0) return ctx.projectDirs
+  return ctx.projectDir ? [ctx.projectDir] : []
 }
 
 // ---------------------------------------------------------------------------
