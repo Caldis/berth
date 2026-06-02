@@ -24,6 +24,11 @@ describe('SettingsContent page chrome', () => {
     )
   }
 
+  async function waitForSettingsAsyncSections(): Promise<void> {
+    await screen.findByText('The plugin registry is not available.')
+    await screen.findByText('No supported local sources found.')
+  }
+
   it('renders the report issue action in English', async () => {
     renderSettingsContent()
 
@@ -45,6 +50,33 @@ describe('SettingsContent page chrome', () => {
     expect(reportIssue).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Report Issue' })).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'GitHub' })).toBeInTheDocument()
+  })
+
+  it('exposes the advanced mode switch with an accessible name and state', async () => {
+    renderSettingsContent()
+
+    await waitForSettingsAsyncSections()
+
+    const advancedModeSwitch = screen.getByRole('switch', { name: 'Advanced Mode' })
+
+    expect(advancedModeSwitch).toHaveAttribute('aria-checked', 'false')
+    expect(advancedModeSwitch).toHaveAttribute('title', 'Advanced Mode')
+
+    fireEvent.click(advancedModeSwitch)
+
+    expect(advancedModeSwitch).toHaveAttribute('aria-checked', 'true')
+    expect(localStorage.getItem('berth-advanced-mode')).toBe('true')
+  })
+
+  it('localizes the advanced mode switch name in Chinese', async () => {
+    await i18n.changeLanguage('zh')
+
+    renderSettingsContent()
+
+    await screen.findByText('插件注册表当前不可用。')
+    await screen.findByText('未发现支持的本地来源。')
+
+    expect(screen.getByRole('switch', { name: '高级模式' })).toBeInTheDocument()
   })
 
   it('exposes appearance choices as named radio groups', async () => {

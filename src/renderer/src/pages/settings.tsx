@@ -49,15 +49,20 @@ function handleRadioKeyDown(
 
 function Toggle({
   enabled,
-  onToggle
+  onToggle,
+  ariaLabel
 }: {
   enabled: boolean
   onToggle: (v: boolean) => void
+  ariaLabel: string
 }): React.ReactElement {
   return (
     <button
+      type="button"
       role="switch"
       aria-checked={enabled}
+      aria-label={ariaLabel}
+      title={ariaLabel}
       onClick={() => onToggle(!enabled)}
       className={cn(
         'relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full transition-colors',
@@ -228,7 +233,11 @@ export function SettingsContent({
               <p className="text-sm font-medium">{t('settings.advancedMode')}</p>
               <p className="text-xs text-muted-foreground">{t('settings.advancedModeDesc')}</p>
             </div>
-            <Toggle enabled={advancedMode} onToggle={handleAdvancedMode} />
+            <Toggle
+              enabled={advancedMode}
+              onToggle={handleAdvancedMode}
+              ariaLabel={t('settings.advancedMode')}
+            />
           </div>
         </div>
       </section>
