@@ -9,9 +9,9 @@
 - [x] 任务 2: 使用 i18n label 修复 tooltip formatter
   - tests: `pnpm exec vitest run tests/renderer/usage-tooltip-label.test.tsx`; `pnpm exec vitest run tests/renderer/sessions-pages.test.tsx`
   - verify: 2026-06-02 新增 `usage.cost` en/zh key, tooltip formatter 改用 `t('usage.cost')`; `usage-tooltip-label.test.tsx` 通过, 1 test passed; `sessions-pages.test.tsx` 通过, 17 tests passed
-- [ ] 任务 3: 收口检查
+- [x] 任务 3: 收口检查
   - tests: `pnpm lint`; `pnpm typecheck:web`; `pnpm test`; `pnpm harness:check`; `node scripts/harness-projects.mjs check --strict`
-  - verify: 2026-06-02 `pnpm lint` 通过; `pnpm typecheck:web` 通过; `pnpm test` 通过, 58 files / 438 tests; `pnpm harness:check` 通过; `node scripts/harness-projects.mjs check --strict` 通过; 等待 GitHub Actions run 结果
+  - verify: 2026-06-02 `pnpm lint` 通过; `pnpm typecheck:web` 通过; `pnpm test` 通过, 58 files / 438 tests; `pnpm harness:check` 通过; `node scripts/harness-projects.mjs check --strict` 通过; GitHub Actions run 26803864753 通过
 
 ## verify 回写
 
