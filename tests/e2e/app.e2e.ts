@@ -55,6 +55,39 @@ test.describe('App Shell', () => {
     await expect(sidebar).toBeVisible()
   })
 
+  test('sidebar can be resized and collapsed without losing the shell layout', async () => {
+    const sidebar = page.getByTestId('app-sidebar')
+    const initialBox = await sidebar.boundingBox()
+    expect(initialBox).not.toBeNull()
+
+    const resizeHandle = page.locator('[role="separator"][aria-orientation="vertical"]')
+    await expect(resizeHandle).toBeVisible()
+
+    const handleBox = await resizeHandle.boundingBox()
+    expect(handleBox).not.toBeNull()
+    await page.mouse.move(handleBox!.x + handleBox!.width / 2, handleBox!.y + 80)
+    await page.mouse.down()
+    await page.mouse.move(handleBox!.x + handleBox!.width / 2 + 72, handleBox!.y + 80)
+    await page.mouse.up()
+
+    await expect
+      .poll(async () => (await sidebar.boundingBox())?.width ?? 0)
+      .toBeGreaterThan(initialBox!.width + 30)
+
+    await page.locator('aside').getByRole('button', { name: /^(Collapse sidebar|折叠侧边栏)$/ }).click()
+    await expect
+      .poll(async () => (await sidebar.boundingBox())?.width ?? 0)
+      .toBeLessThan(90)
+
+    await expect(resizeHandle).toHaveCount(0)
+
+    await page.locator('aside').getByRole('button', { name: /^(Expand sidebar|展开侧边栏)$/ }).click()
+    await expect(resizeHandle).toBeVisible()
+    await expect
+      .poll(async () => (await sidebar.boundingBox())?.width ?? 0)
+      .toBeGreaterThan(initialBox!.width + 30)
+  })
+
   test('sidebar item spacing is consistent inside configuration group', async () => {
     const itemBox = async (name: RegExp): Promise<Box> => {
       const box = await navButton(name).boundingBox()
@@ -85,6 +118,11 @@ test.describe('App Shell', () => {
     await navButton(navNames.sessions).click()
     const heading = page.locator('h1')
     await expect(heading).toContainText(/Sessions|会话/)
+
+    const breadcrumb = page.getByTestId('top-navigation').getByRole('navigation', {
+      name: /^(Breadcrumb|面包屑)$/
+    })
+    await expect(breadcrumb).toContainText(/Sessions|会话/)
   })
 
   test('can navigate to instructions', async () => {

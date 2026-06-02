@@ -12,7 +12,7 @@
 - [x] 任务 3: 增加顶部导航栏和路由面包屑。
   - tests: `pnpm test tests/renderer/top-navigation.test.tsx`; `pnpm typecheck:web`
   - verify: `/`, `/sessions`, `/sessions/:id`, `/configuration/instructions`, `/configuration/capabilities`, `/usage` 面包屑正确。
-- [ ] 任务 4: e2e 覆盖 app shell 与 Windows controls。
+- [x] 任务 4: e2e 覆盖 app shell 与 Windows controls。
   - tests: `pnpm build`; `pnpm test:e2e tests/e2e/app.e2e.ts`; `pnpm test:e2e tests/e2e/window-controls.e2e.ts`
   - verify: sidebar 可见、可折叠、可拖曳; top nav 可见; window controls 稳定; Windows 下 pin 状态可切换。
 - [ ] 任务 5: 收口验证、关联本地 issue 与推送前门禁。

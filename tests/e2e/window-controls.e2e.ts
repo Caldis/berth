@@ -51,6 +51,31 @@ test('Windows custom titlebar buttons toggle maximize through Electron', async (
     .toBe(false)
 })
 
+test('Windows custom titlebar pin toggles always-on-top through Electron', async () => {
+  test.skip(process.platform !== 'win32', 'Windows titlebar hit testing is only meaningful on Windows')
+
+  await expect(page.getByTestId('window-controls')).toBeVisible()
+
+  await expectWindowApiReady()
+
+  const pinButton = page.getByLabel(/^(Pin window|固定窗口)$/)
+  await expect(pinButton).toBeVisible()
+  await expect(pinButton).toHaveAttribute('aria-pressed', 'false')
+  await pinButton.click()
+
+  await expect
+    .poll(() => app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].isAlwaysOnTop()))
+    .toBe(true)
+
+  const unpinButton = page.getByLabel(/^(Unpin window|取消固定窗口)$/)
+  await expect(unpinButton).toHaveAttribute('aria-pressed', 'true')
+  await unpinButton.click()
+
+  await expect
+    .poll(() => app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].isAlwaysOnTop()))
+    .toBe(false)
+})
+
 test.describe('native mouse hit testing', () => {
   test.skip(process.platform !== 'win32', 'Windows titlebar hit testing is only meaningful on Windows')
   test.skip(process.env.CI === 'true', 'Hosted Windows runners do not expose stable foreground window clicks')
@@ -84,7 +109,9 @@ async function expectWindowApiReady(): Promise<void> {
       typeof window.api.window.minimize === 'function' &&
       typeof window.api.window.toggleMaximize === 'function' &&
       typeof window.api.window.close === 'function' &&
-      typeof window.api.window.isMaximized === 'function'
+      typeof window.api.window.isMaximized === 'function' &&
+      typeof window.api.window.setAlwaysOnTop === 'function' &&
+      typeof window.api.window.isAlwaysOnTop === 'function'
     )
   })
 
