@@ -22,10 +22,11 @@
   - verify: manifest 默认摘要低噪声展示; valid / invalid / incompatible badge 清楚; 展开后能看 path、versionRange、错误列表; 键盘可达; 长路径截断并有 title; 内置 plugin 不被 invalid manifest 清空。
   - evidence: 2026-06-02 `pnpm test -- tests/renderer/settings-agent-plugins.test.tsx` 通过, 6 tests passed。
 
-- [ ] 4. 跑目标门禁并修正回归
+- [x] 4. 跑目标门禁并修正回归
   - files: 按测试结果限定到本任务已修改文件。
   - tests: `pnpm typecheck`, `pnpm harness:check --work docs/works/2026-06-02-gh-29-agent-plugin-manifest-version-compatibility`
   - verify: 类型、IPC 契约和任务态均通过; 若出现与当前任务无关的全局失败, 记录原因并保留目标测试证据。
+  - evidence: 2026-06-02 `pnpm typecheck` 通过; `pnpm harness:check --work docs/works/2026-06-02-gh-29-agent-plugin-manifest-version-compatibility` 通过。
 
 - [ ] 5. 实测 Settings 页面
   - files: 如发现 UI 问题, 只修改 Settings 相关文件。
