@@ -4,7 +4,7 @@
 import { readdirSync, readFileSync, existsSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { VERBS, parseFrontmatter } from './harness-lib.mjs'
+import { DEBT_THRESHOLDS, parseFrontmatter } from './harness-lib.mjs'
 import { check as checkDistribution, desiredArtifacts } from './harness-sync.mjs'
 
 function listTaskDirs(p) {
@@ -22,6 +22,60 @@ function listIssueFiles(p) {
   return readdirSync(p).filter((n) =>
     n.endsWith('.md') && n !== 'AGENTS.md' && !n.startsWith('_') && statSync(join(p, n)).isFile()
   )
+}
+
+function isPlainObject(value) {
+  return value && typeof value === 'object' && !Array.isArray(value)
+}
+
+function finiteNumber(value) {
+  return typeof value === 'number' && Number.isFinite(value) ? value : undefined
+}
+
+function effectiveDebtSnapshot(frontmatter) {
+  const debt = frontmatter && frontmatter.debt
+  if (!isPlainObject(debt)) return null
+  const finalNet = isPlainObject(debt.final) ? finiteNumber(debt.final.net) : undefined
+  if (finalNet !== undefined) return debt.final
+  const estimateNet = isPlainObject(debt.estimate) ? finiteNumber(debt.estimate.net) : undefined
+  if (estimateNet !== undefined) return debt.estimate
+  return null
+}
+
+function debtStatus(total) {
+  if (total >= DEBT_THRESHOLDS.requireOverrideReason) return 'requires-override'
+  if (total >= DEBT_THRESHOLDS.recommendMaintenance) return 'recommend-maintenance'
+  if (total >= DEBT_THRESHOLDS.notice) return 'notice'
+  return 'ok'
+}
+
+function addGroupedValue(group, key, value) {
+  if (!key) return
+  group[key] = (group[key] || 0) + value
+}
+
+function collectDebt(root) {
+  const bases = [join(root, 'docs/works'), join(root, 'docs/works/_archive')]
+  const debt = { total: 0, status: 'ok', unscored: 0, byArea: {}, byType: {} }
+  for (const base of bases) {
+    for (const name of listTaskDirs(base)) {
+      const idx = join(base, name, 'INDEX.md')
+      const frontmatter = existsSync(idx) ? parseFrontmatter(readFileSync(idx, 'utf8')) : null
+      const snapshot = effectiveDebtSnapshot(frontmatter)
+      const net = snapshot ? finiteNumber(snapshot.net) : undefined
+      if (net === undefined) {
+        debt.unscored += 1
+        continue
+      }
+      debt.total += net
+      addGroupedValue(debt.byType, frontmatter.type || 'unknown', net)
+      if (Array.isArray(snapshot.areas)) {
+        for (const area of snapshot.areas) addGroupedValue(debt.byArea, String(area), net)
+      }
+    }
+  }
+  debt.status = debtStatus(debt.total)
+  return debt
 }
 
 export function collectStats(root) {
@@ -52,8 +106,14 @@ export function collectStats(root) {
     works: { active: worksActive, byPhase, archived: worksArchived },
     friction: { active: frictionActive, archived: frictionArchived },
     issues: { active: issuesActive, resolved: issuesResolved },
+    debt: collectDebt(root),
     distribution: { ok: dist.ok, expected: desiredArtifacts(root).length, drift: dist.drift.length }
   }
+}
+
+function groupLine(group) {
+  const entries = Object.entries(group)
+  return entries.length ? ` (${entries.map(([key, value]) => `${key}:${value}`).join(' ')})` : ''
 }
 
 function main() {
@@ -64,6 +124,8 @@ function main() {
       (s.works.active ? ` (${Object.entries(s.works.byPhase).map(([k, v]) => `${k}:${v}`).join(' ')})` : ''),
     `  friction active=${s.friction.active} archived=${s.friction.archived}`,
     `  issues   active=${s.issues.active} resolved=${s.issues.resolved}`,
+    `  debt     total=${s.debt.total} status=${s.debt.status} unscored=${s.debt.unscored}` +
+      groupLine(s.debt.byArea),
     `  dist     ${s.distribution.ok ? 'in-sync' : `DRIFT(${s.distribution.drift})`} (expected ${s.distribution.expected} artifacts)`
   ]
   console.log(lines.join('\n'))

@@ -20,6 +20,12 @@ function task(name: string, phase: string): void {
   writeFileSync(join(dir, 'INDEX.md'), `---\ntask: ${name}\ntype: feature\nphase: ${phase}\ncreated: 2026-05-30\n---\n`)
 }
 
+function indexedTask(base: string, name: string, frontmatter: string): void {
+  const dir = join(root, base, name)
+  mkdirSync(dir, { recursive: true })
+  writeFileSync(join(dir, 'INDEX.md'), `---\ntask: ${name}\n${frontmatter}\n---\n`)
+}
+
 describe('collectStats', () => {
   it('空仓库: 全 0', () => {
     const s = collectStats(root)
@@ -58,5 +64,90 @@ describe('collectStats', () => {
     const s = collectStats(root)
     expect(s.issues.active).toBe(1)
     expect(s.issues.resolved).toBe(1)
+  })
+
+  it('聚合 debt pool, 使用 final 优先, 缺失记录为 unscored', () => {
+    indexedTask(
+      'docs/works',
+      '2026-05-30-active-debt',
+      [
+        'type: feature',
+        'phase: implement',
+        'created: 2026-05-30',
+        'debt:',
+        '  estimate:',
+        '    incurred: 9',
+        '    repaid: 2',
+        '    net: 7',
+        '    scope: module',
+        '    risk: medium',
+        '    areas:',
+        '      - architecture',
+        '      - testability',
+        '    confidence: medium'
+      ].join('\n')
+    )
+    indexedTask(
+      'docs/works/_archive',
+      '2026-05-29-archived-maintenance',
+      [
+        'type: maintenance',
+        'phase: archive',
+        'created: 2026-05-29',
+        'debt:',
+        '  estimate:',
+        '    incurred: 0',
+        '    repaid: 3',
+        '    net: -3',
+        '    scope: module',
+        '    risk: low',
+        '    areas:',
+        '      - architecture',
+        '    confidence: low',
+        '  final:',
+        '    incurred: 1',
+        '    repaid: 8',
+        '    net: -7',
+        '    scope: global',
+        '    risk: medium',
+        '    areas:',
+        '      - tooling-ci',
+        '    confidence: high'
+      ].join('\n')
+    )
+    task('2026-05-30-unscored', 'explore')
+
+    const s = collectStats(root)
+    expect(s.debt.total).toBe(0)
+    expect(s.debt.unscored).toBe(1)
+    expect(s.debt.byType.feature).toBe(7)
+    expect(s.debt.byType.maintenance).toBe(-7)
+    expect(s.debt.byArea.architecture).toBe(7)
+    expect(s.debt.byArea.testability).toBe(7)
+    expect(s.debt.byArea['tooling-ci']).toBe(-7)
+    expect(s.debt.status).toBe('ok')
+  })
+
+  it('debt total 达到阈值时给出状态', () => {
+    indexedTask(
+      'docs/works',
+      '2026-05-30-high-debt',
+      [
+        'type: feature',
+        'phase: verify',
+        'created: 2026-05-30',
+        'debt:',
+        '  estimate:',
+        '    incurred: 45',
+        '    repaid: 0',
+        '    net: 45',
+        '    scope: global',
+        '    risk: high',
+        '    areas:',
+        '      - architecture',
+        '    confidence: medium'
+      ].join('\n')
+    )
+    expect(collectStats(root).debt.status).toBe('recommend-maintenance')
   })
 })

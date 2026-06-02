@@ -7,10 +7,10 @@
   - files: `scripts/harness-lib.mjs`, `scripts/harness-check.mjs`, `docs/works/_template/INDEX.md`, `tests/harness/check.test.ts`
   - tests: `pnpm vitest run tests/harness/check.test.ts`; `pnpm harness:check --work docs/works/2026-06-02-gh-76-harness-task-type-debt-workflow`
   - verify: 2026-06-02 `pnpm vitest run tests/harness/check.test.ts` 41 tests passed; `pnpm harness:check --work docs/works/2026-06-02-gh-76-harness-task-type-debt-workflow` passed; `pnpm harness:check` passed. `maintenance` 合法、非法 subtype/source/debt 被拒绝; 旧任务缺 debt 不报错; 非 UI, 界面质量与交互验收不适用。
-- [ ] 任务 2: debt pool 统计
+- [x] 任务 2: debt pool 统计
   - files: `scripts/harness-stats.mjs`, `tests/harness/stats.test.ts`, `package.json` 如需新增脚本
   - tests: `pnpm vitest run tests/harness/stats.test.ts`
-  - verify: 输出 total/threshold/unscored/byArea/byType; 旧 works/friction/issues/dist 行不退化; 非 UI, 界面质量与交互验收不适用。
+  - verify: 2026-06-02 `pnpm vitest run tests/harness/stats.test.ts` 6 tests passed; `pnpm harness:stats` 输出 debt total/status/unscored/areas, 旧 works/friction/issues/dist 行保留; 非 UI, 界面质量与交互验收不适用。
 - [ ] 任务 3: GitHub Project 字段创建与同步
   - files: `scripts/harness-projects.mjs`, `tests/harness/projects.test.ts`, `package.json` 如需新增脚本
   - tests: `pnpm vitest run tests/harness/projects.test.ts`
