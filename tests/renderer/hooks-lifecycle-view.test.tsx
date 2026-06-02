@@ -631,15 +631,35 @@ describe('HooksLifecycleView', () => {
         scope: 'user',
         assetType: 'hook',
         target: { route: '/configuration/capabilities?tab=hooks' }
+      },
+      {
+        id: 'claude-code:configuration:user-settings-schema-missing',
+        severity: 'info',
+        category: 'configuration',
+        agentId: 'claude-code',
+        agentName: 'Claude Code',
+        title: 'Claude settings schema is not declared',
+        message: 'settings.json does not declare the Claude Code settings JSON schema.',
+        fix: {
+          label: 'Add Claude settings schema',
+          description: 'Add the official Claude Code settings schema near the top of the JSON file.'
+        },
+        scope: 'user',
+        assetType: 'hook',
+        target: { route: '/configuration/capabilities?tab=hooks' }
       }
     ]
     window.api.assets.healthCheck = vi.fn(async () => checks)
 
-    renderHooks('codex', [hookAsset('codex-stop', 'codex', 'Stop')])
+    renderHooks('all', [
+      hookAsset('codex-stop', 'codex', 'Stop'),
+      hookAsset('claude-stop', 'claude-code', 'Stop')
+    ])
 
     const sidebar = screen.getByLabelText('生命周期')
-    expect(await within(sidebar).findByText('1 个 Hook 检查需要处理')).toBeInTheDocument()
+    expect(await within(sidebar).findByText('2 个 Hook 检查需要处理')).toBeInTheDocument()
     const warningTag = within(sidebar).getByRole('button', { name: /1 个警告/ })
+    const infoTag = within(sidebar).getByRole('button', { name: /1 条信息/ })
 
     fireEvent.mouseEnter(warningTag)
 
@@ -651,6 +671,16 @@ describe('HooksLifecycleView', () => {
     expect(screen.queryByText('Codex hook has no Windows command override')).not.toBeInTheDocument()
     expect(screen.queryByText('A command hook is configured without commandWindows on Windows.')).not.toBeInTheDocument()
     expect(screen.queryByText('user')).not.toBeInTheDocument()
+
+    fireEvent.mouseLeave(warningTag)
+    fireEvent.mouseEnter(infoTag)
+
+    expect(screen.getByText('Claude Code settings schema 未声明')).toBeInTheDocument()
+    expect(screen.getByText('settings.json 没有声明 Claude Code settings JSON schema。')).toBeInTheDocument()
+    expect(screen.getByText(/添加 Claude Code settings schema:/)).toBeInTheDocument()
+    expect(screen.getByText('在 JSON 文件顶部附近添加官方 Claude Code settings schema。')).toBeInTheDocument()
+    expect(screen.queryByText('Claude settings schema is not declared')).not.toBeInTheDocument()
+    expect(screen.queryByText('settings.json does not declare the Claude Code settings JSON schema.')).not.toBeInTheDocument()
   })
 
   it('shows the recovery center and restores a recoverable Claude hook', async () => {

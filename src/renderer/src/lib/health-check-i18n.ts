@@ -22,11 +22,15 @@ const EXACT_TEXT_KEYS: Record<string, string> = {
   'config.toml does not include the official Codex TOML schema comment.': 'healthChecks.text.messages.codexConfigSchemaMissing',
   'Add Codex config schema': 'healthChecks.text.fixLabels.addCodexConfigSchema',
   'Add the official Codex TOML schema comment near the top of config.toml.': 'healthChecks.text.fixDescriptions.addCodexConfigSchema',
+  'Claude settings schema is not declared': 'healthChecks.text.titles.claudeSettingsSchemaMissing',
+  'Add Claude settings schema': 'healthChecks.text.fixLabels.addClaudeSettingsSchema',
+  'Add the official Claude Code settings schema near the top of the JSON file.': 'healthChecks.text.fixDescriptions.addClaudeSettingsSchema',
   'Suggested fix': 'healthChecks.text.fixLabels.suggestedFix',
   'Codex skills': 'healthChecks.text.evidence.codexSkills',
   'Codex config reference': 'healthChecks.text.evidence.codexConfigReference',
   'Codex hooks': 'healthChecks.text.evidence.codexHooks',
-  'Claude Code hooks': 'healthChecks.text.evidence.claudeHooks'
+  'Claude Code hooks': 'healthChecks.text.evidence.claudeHooks',
+  'Claude Code settings': 'healthChecks.text.evidence.claudeSettings'
 }
 
 const PATTERN_TEXT_KEYS: Array<{
@@ -37,6 +41,11 @@ const PATTERN_TEXT_KEYS: Array<{
   {
     pattern: /^(.+) has no SKILL\.md entrypoint\.$/,
     key: 'healthChecks.text.messages.skillMissingEntryPoint',
+    values: (match) => ({ name: match[1] })
+  },
+  {
+    pattern: /^(.+) does not declare the Claude Code settings JSON schema\.$/,
+    key: 'healthChecks.text.messages.claudeSettingsSchemaMissing',
     values: (match) => ({ name: match[1] })
   }
 ]

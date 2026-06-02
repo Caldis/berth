@@ -94,7 +94,8 @@
         "claudeHookMissingCommand": "Claude Code hook is missing command",
         "invalidCodexConfig": "Invalid Codex config.toml",
         "skillMissingEntryPoint": "Skill is missing SKILL.md",
-        "codexConfigSchemaMissing": "Codex config schema comment is not declared"
+        "codexConfigSchemaMissing": "Codex config schema comment is not declared",
+        "claudeSettingsSchemaMissing": "Claude settings schema is not declared"
       },
       "messages": {
         "noUserClaudeMd": "No user-level CLAUDE.md found.",
@@ -102,11 +103,13 @@
         "claudeHookMissingCommand": "PreToolUse contains a command hook without a command.",
         "invalidCodexConfig": "config.toml contains invalid TOML.",
         "skillMissingEntryPoint": "{{name}} has no SKILL.md entrypoint.",
-        "codexConfigSchemaMissing": "config.toml does not include the official Codex TOML schema comment."
+        "codexConfigSchemaMissing": "config.toml does not include the official Codex TOML schema comment.",
+        "claudeSettingsSchemaMissing": "{{name}} does not declare the Claude Code settings JSON schema."
       },
       "fixLabels": {
         "suggestedFix": "Suggested fix",
-        "addCodexConfigSchema": "Add Codex config schema"
+        "addCodexConfigSchema": "Add Codex config schema",
+        "addClaudeSettingsSchema": "Add Claude settings schema"
       },
       "fixDescriptions": {
         "createUserClaudeMd": "Create ~/.claude/CLAUDE.md if you want shared Claude Code instructions.",
@@ -114,13 +117,15 @@
         "addHookCommand": "Add a command value or remove the hook entry.",
         "fixCodexToml": "Fix the TOML syntax in Codex config.toml.",
         "addSkillEntryPoint": "Add SKILL.md or move non-skill files outside the skills directory.",
-        "addCodexConfigSchema": "Add the official Codex TOML schema comment near the top of config.toml."
+        "addCodexConfigSchema": "Add the official Codex TOML schema comment near the top of config.toml.",
+        "addClaudeSettingsSchema": "Add the official Claude Code settings schema near the top of the JSON file."
       },
       "evidence": {
         "codexSkills": "Codex skills",
         "codexConfigReference": "Codex config reference",
         "codexHooks": "Codex hooks",
-        "claudeHooks": "Claude Code hooks"
+        "claudeHooks": "Claude Code hooks",
+        "claudeSettings": "Claude Code settings"
       },
       "confidence": {
         "high": "High confidence",

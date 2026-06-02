@@ -2,7 +2,7 @@
 task: 2026-06-02-gh-58-localize-claude-settings-schema-health-check
 task_id: GH-58
 type: bug
-phase: implement
+phase: verify
 created: 2026-06-02
 issue:
   number: 58

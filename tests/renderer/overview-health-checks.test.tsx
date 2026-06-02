@@ -223,6 +223,22 @@ describe('overview health checks', () => {
         },
         scope: 'user',
         assetType: 'mcp-server'
+      },
+      {
+        id: 'claude-code:configuration:user-settings-schema-missing',
+        severity: 'info',
+        category: 'configuration',
+        agentId: 'claude-code',
+        agentName: 'Claude Code',
+        title: 'Claude settings schema is not declared',
+        message: 'settings.json does not declare the Claude Code settings JSON schema.',
+        evidence: [{ label: 'Claude Code settings', url: 'https://code.claude.com/docs/en/settings' }],
+        fix: {
+          label: 'Add Claude settings schema',
+          description: 'Add the official Claude Code settings schema near the top of the JSON file.'
+        },
+        scope: 'user',
+        assetType: 'claude-md'
       }
     ])
     window.api.shell.openPath = vi.fn(async () => {})
@@ -265,6 +281,11 @@ describe('overview health checks', () => {
     expect(screen.getByText(/添加 Codex 配置 schema/)).toBeInTheDocument()
     expect(screen.getByText('在 config.toml 顶部附近添加官方 Codex TOML schema 注释。')).toBeInTheDocument()
     expect(screen.getByText('Codex 配置参考')).toBeInTheDocument()
+    expect(screen.getByText('Claude Code settings schema 未声明')).toBeInTheDocument()
+    expect(screen.getByText('settings.json 没有声明 Claude Code settings JSON schema。')).toBeInTheDocument()
+    expect(screen.getByText(/添加 Claude Code settings schema/)).toBeInTheDocument()
+    expect(screen.getByText('在 JSON 文件顶部附近添加官方 Claude Code settings schema。')).toBeInTheDocument()
+    expect(screen.getByText('Claude Code 设置文档')).toBeInTheDocument()
     expect(screen.getAllByText('用户级').length).toBeGreaterThan(0)
     expect(screen.getByText('中等可信')).toBeInTheDocument()
     expect(screen.getAllByText('MCP 服务').length).toBeGreaterThan(0)
@@ -274,6 +295,9 @@ describe('overview health checks', () => {
     expect(screen.queryByText('Skill is missing SKILL.md')).not.toBeInTheDocument()
     expect(screen.queryByText('Suggested fix')).not.toBeInTheDocument()
     expect(screen.queryByText('Codex config schema comment is not declared')).not.toBeInTheDocument()
+    expect(screen.queryByText('Claude settings schema is not declared')).not.toBeInTheDocument()
+    expect(screen.queryByText('settings.json does not declare the Claude Code settings JSON schema.')).not.toBeInTheDocument()
+    expect(screen.queryByText('Add Claude settings schema')).not.toBeInTheDocument()
   })
 })
 
