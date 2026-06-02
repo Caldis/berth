@@ -13,30 +13,27 @@ import { cn } from '@/lib/utils'
 
 interface QuickAction {
   id: string
-  label: string
+  labelKey: string
   icon: React.ComponentType<{ className?: string }>
   path: string
-  group: string
 }
 
 const quickActions: QuickAction[] = [
-  { id: 'overview', label: 'Overview', icon: Search, path: '/', group: 'Pages' },
-  { id: 'sessions', label: 'Sessions', icon: MessageSquare, path: '/sessions', group: 'Pages' },
+  { id: 'overview', labelKey: 'nav.overview', icon: Search, path: '/' },
+  { id: 'sessions', labelKey: 'nav.sessions', icon: MessageSquare, path: '/sessions' },
   {
     id: 'instructions',
-    label: 'Instructions',
+    labelKey: 'nav.instructions',
     icon: FileText,
-    path: '/configuration/instructions',
-    group: 'Pages'
+    path: '/configuration/instructions'
   },
   {
     id: 'capabilities',
-    label: 'Capabilities',
+    labelKey: 'nav.capabilities',
     icon: Plug,
-    path: '/configuration/capabilities',
-    group: 'Pages'
+    path: '/configuration/capabilities'
   },
-  { id: 'usage', label: 'Usage', icon: BarChart3, path: '/usage', group: 'Pages' }
+  { id: 'usage', labelKey: 'nav.usage', icon: BarChart3, path: '/usage' }
 ]
 
 export function SearchDialog(): React.ReactElement | null {
@@ -92,7 +89,7 @@ export function SearchDialog(): React.ReactElement | null {
               )}
             >
               <action.icon className="h-4 w-4 text-muted-foreground" />
-              <span>{action.label}</span>
+              <span>{t(action.labelKey)}</span>
             </button>
           ))}
         </div>
