@@ -2,7 +2,7 @@
 task: 2026-06-03-gh-83-sidebar-information-architecture
 task_id: GH-83
 type: feature
-phase: explore
+phase: implement
 created: 2026-06-03
 priority: P1
 target_date: 
@@ -21,7 +21,7 @@ debt:
       - architecture
       - ui-ux
       - testability
-    confidence: low
+    confidence: medium
     rationale: "0.0-new 初始估算; 侧边栏信息架构会影响全局导航、页面内 tab、agent 视角入口和多页面路由, explore/design 后校准。"
   final:
     incurred:
@@ -32,7 +32,14 @@ debt:
     areas: []
     confidence:
     rationale:
-  revisions: []
+  revisions:
+    - at: 2026-06-03
+      phase: explore
+      from:
+        confidence: low
+      to:
+        confidence: medium
+      rationale: "Explore 确认变更集中在 renderer 导航、路由、i18n 与测试, 不涉及 IPC 或主进程; 风险仍是 global/high, 但边界更清楚。"
 issue:
   number: 83
   repo: Caldis/berth
@@ -60,9 +67,9 @@ artifacts:
 
 ## 产物
 - [x] 00-PRD.md — 原始输入快照
-- [ ] 01-ANALYSIS.md — Explore 产物
-- [ ] 02-SPEC.md — Design 产物
-- [ ] 03-PLAN.md — 活任务清单
+- [x] 01-ANALYSIS.md — Explore 产物
+- [x] 02-SPEC.md — Design 产物
+- [x] 03-PLAN.md — 活任务清单
 - [ ] 04-POLISH.md — 可选抛光记录
 
 ## 待澄清 (blocked 时填)
