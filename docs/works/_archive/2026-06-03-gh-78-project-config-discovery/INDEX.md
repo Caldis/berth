@@ -2,14 +2,14 @@
 task: 2026-06-03-gh-78-project-config-discovery
 task_id: GH-78
 type: bug
-phase: implement
+phase: archive
 created: 2026-06-03
 priority: P1
 target_date:
 source:
   kind: docs-issues
   refs:
-    - docs/issues/2026-06-02-BUG-project-config-discovery.md
+    - docs/issues/resolved/2026-06-02-BUG-project-config-discovery.md
 debt:
   estimate:
     incurred: 5
@@ -23,15 +23,30 @@ debt:
     confidence: medium
     rationale: "项目级配置发现会影响 scanner、IPC、搜索索引和多个 renderer 页面, 需要跨进程修复并补 fixture。"
   final:
-    incurred:
-    repaid:
-    net:
-    scope:
-    risk:
-    areas: []
-    confidence:
-    rationale:
-  revisions: []
+    incurred: 6
+    repaid: 5
+    net: 1
+    scope: cross-process
+    risk: low
+    areas:
+      - architecture
+      - testability
+    confidence: high
+    rationale: "新增 project config roots helper 并让 Claude/Codex scanner、source coverage、watcher 和 project scope e2e 共用同一套子目录到仓库根发现规则; 主要缺口已修复, 剩余 debt 是跨进程路径层级逻辑的长期维护成本。"
+  revisions:
+    - at: verify
+      date: 2026-06-03
+      from:
+        incurred: 5
+        repaid: 0
+        net: 5
+        confidence: medium
+      to:
+        incurred: 6
+        repaid: 5
+        net: 1
+        confidence: high
+      reason: "实现后确认影响面仍为 cross-process; 新增少量路径 helper 复杂度, 但补齐了父级项目配置扫描、source coverage、watcher 和 e2e 覆盖。"
 issue:
   number: 78
   repo: Caldis/berth
@@ -44,7 +59,7 @@ gh_project:
   project_url: https://github.com/users/Caldis/projects/6
   project_id: PVT_kwHOADXbEs4BZHvQ
   item_id: PVTI_lAHOADXbEs4BZHvQzguhchQ
-  item_status: In Progress
+  item_status: Done
 artifacts:
   source: 00-BUG.md
   analysis: 01-ANALYSIS.md
