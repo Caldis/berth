@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import React from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import '../../src/renderer/src/i18n'
+import i18n from '../../src/renderer/src/i18n'
 import { FeatureGuidePanel } from '../../src/renderer/src/components/shared/feature-guide-panel'
 import type { FeatureGuideDefinition } from '../../src/renderer/src/lib/feature-guidance'
 
@@ -40,7 +40,8 @@ const guide: FeatureGuideDefinition = {
 }
 
 describe('FeatureGuidePanel', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage('en')
     window.api.shell.openExternal = vi.fn(async () => {})
   })
 
@@ -71,6 +72,30 @@ describe('FeatureGuidePanel', () => {
     expect(screen.getByText('Trigger point')).toBeInTheDocument()
     expect(screen.getByText(/runs when the agent reaches/)).toBeInTheDocument()
     expect(screen.getByText(/visible local asset rows/i)).toBeInTheDocument()
+  })
+
+  it('uses localized Chinese evidence and provider labels', async () => {
+    await i18n.changeLanguage('zh')
+
+    render(
+      <FeatureGuidePanel
+        guide={guide}
+        evidence={[
+          { labelKey: 'assetGuide.evidence.assets', value: 4 },
+          { labelKey: 'assetGuide.evidence.providers', value: 1 }
+        ]}
+      />
+    )
+
+    expect(screen.getByText('4')).toBeInTheDocument()
+    expect(screen.getByText('个资产')).toBeInTheDocument()
+    expect(screen.getByText('1')).toBeInTheDocument()
+    expect(screen.getByText('个提供方')).toBeInTheDocument()
+    expect(screen.queryByText(/provider/i)).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: /详情/ }))
+
+    expect(screen.getByText('提供方')).toBeInTheDocument()
   })
 
   it('keeps dense details behind an explicit disclosure', () => {

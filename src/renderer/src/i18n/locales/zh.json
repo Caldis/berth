@@ -39,17 +39,17 @@
     "evidence": {
       "assets": "个资产",
       "sources": "个来源",
-      "providers": "个 provider",
+      "providers": "个提供方",
       "risks": "个风险"
     },
     "evidenceHelp": {
       "assets": "当前视图里通过 Agent、模块、搜索和作用域筛选后仍可见的本地资产条目数。",
       "sources": "这些可见资产来自多少个不同的本地来源路径或配置文件。",
-      "providers": "这些可见资产覆盖多少类 Agent 或 provider, 例如 Claude Code、Codex 或抽象本地资产。",
+      "providers": "这些可见资产覆盖多少类 Agent 或提供方, 例如 Claude Code、Codex 或抽象本地资产。",
       "risks": "Berth 在当前视图里标记为敏感、过宽、被覆盖、不兼容或需要复查的条目数。"
     },
     "providerMap": {
-      "provider": "Provider",
+      "provider": "提供方",
       "config": "配置",
       "meaning": "Berth 如何理解"
     }
@@ -113,7 +113,7 @@
       "fileRead": "读取本地文件或资源，让 agent 在下一步行动前先核对当前状态。",
       "fileWrite": "创建或编辑文件。失败常见原因是文件在读取后又被改过，或精确匹配的编辑目标没有命中。",
       "fileSearch": "搜索文件、符号或文本。通常很快，但在大目录里跑宽泛模式也会变慢。",
-      "web": "执行 Web 搜索或抓取。耗时取决于网络、provider 限制、跳转和页面抽取。",
+      "web": "执行 Web 搜索或抓取。耗时取决于网络、提供方限制、跳转和页面抽取。",
       "skill": "加载 skill 指令包。这里有用的信息是后续步骤受哪个 workflow 影响。",
       "tasks": "更新 agent 的任务或待办状态。这类调用解释计划状态，不代表应用行为。",
       "patch": "通过本地编辑 helper 应用代码补丁。耗时短通常表示补丁干净命中。",
@@ -136,7 +136,7 @@
       "availableFields": "如果后续 transcript 暴露 checkpoint 时间、变更路径或文件数量，Berth 可以把这些字段列在这里。"
     },
     "modelInfo": {
-      "provider": "Provider",
+      "provider": "提供方",
       "releaseDate": "模型日期",
       "contextWindow": "上下文",
       "maxOutput": "最大输出",
@@ -200,7 +200,7 @@
         "providers": {
           "claude": "Claude Code 会为运行过的会话保存本地 transcript 文件。",
           "codex": "Codex 会为 CLI 工作保存本地会话历史。",
-          "abstract": "Berth 把不同 provider 都视为本地会话时间线。"
+          "abstract": "Berth 把不同提供方都视为本地会话时间线。"
         },
         "insights": {
           "group": {
@@ -314,7 +314,7 @@
         "providers": {
           "claude": "Claude Code 记忆文件可保存用户级和项目级上下文。",
           "codex": "Codex 通过 AGENTS.md 和导入指令接收持久仓库规则。",
-          "abstract": "Berth 也会汇总不绑定单一 provider 的本地记忆笔记。"
+          "abstract": "Berth 也会汇总不绑定单一提供方的本地记忆笔记。"
         },
         "insights": {
           "sources": {
@@ -348,7 +348,7 @@
         "title": "可复用工作流包",
         "summary": "Skills 把可重复过程打包成指令和可选文件。Agent 只在相关时加载正文，所以很长的流程不会一直占用上下文。",
         "points": {
-          "role": "同一个抽象概念可以由 Claude Code skills、Codex skill 配置或其他 provider 的能力包承载。",
+          "role": "同一个抽象概念可以由 Claude Code skills、Codex skill 配置或其他提供方的能力包承载。",
           "scope": "用户级 skill 可跨项目使用；项目级 skill 记录团队流程，并可随仓库版本管理。",
           "review": "信任第三方 skill 前，应阅读它的指令和随附脚本。"
         },
@@ -362,7 +362,7 @@
         "summary": "子代理是带有独立指令、工具和有时带模型选择的命名角色。主 Agent 可以把聚焦任务委派给它们，而不是把所有角色塞进同一个提示。",
         "points": {
           "role": "适合处理需要更窄角色的重复任务，例如审查、探索或调研。",
-          "scope": "不同 provider 的支持方式不同，但抽象资产都是委派工作者定义。",
+          "scope": "不同提供方的支持方式不同，但抽象资产都是委派工作者定义。",
           "review": "依赖委派前，检查工具权限、模型设置和触发描述。"
         },
         "providers": {
@@ -401,7 +401,7 @@
         "summary": "Agent Teams 描述多个 Agent 角色如何一起工作。Berth 把它视为编排资产，而不是单个提示或工具。",
         "points": {
           "role": "适合多个角色会反复一起出现、需要固定交接方式的工作流。",
-          "scope": "当前这类资产仍偏 provider 特定，但抽象模型是可复用协作计划。",
+          "scope": "当前这类资产仍偏提供方特定，但抽象模型是可复用协作计划。",
           "review": "信任组合流程前，检查每个成员角色和共享工具权限。"
         },
         "providers": {
@@ -538,7 +538,7 @@
         "summary": "Hooks 是在 Agent 走到某个生命周期时运行的命令或处理器，例如工具调用前后、压缩前后或停止前。",
         "points": {
           "role": "适合做检查、记录、保护规则和上下文更新。",
-          "scope": "不同 provider 暴露的事件不同，Berth 会映射到一套共享生命周期视图。",
+          "scope": "不同提供方暴露的事件不同，Berth 会映射到一套共享生命周期视图。",
           "review": "Hook 命令可以运行本地代码。启用前检查触发点、匹配器和入口文件。"
         },
         "providers": {
@@ -551,7 +551,7 @@
         "summary": "插件把多个资产打包在一起，例如 skills、agents、hooks、MCP servers 和设置。它适合把一组能力作为整体安装、版本管理和共享。",
         "points": {
           "role": "适合可复用分发，不适合一次性项目配置。",
-          "scope": "已安装插件可能是用户级、项目级或策略管理，取决于 provider。",
+          "scope": "已安装插件可能是用户级、项目级或策略管理，取决于提供方。",
           "review": "启用外部插件前，检查 manifest 和其中打包的组件。"
         },
         "providers": {
@@ -564,7 +564,7 @@
         "summary": "状态栏资产把当前会话的紧凑信息显示出来，例如模型、目录、分支、费用或任务状态。",
         "points": {
           "role": "适合展示一眼能看完的状态，不适合放长指令或隐藏自动化。",
-          "scope": "不同 provider 的支持不同，但抽象资产都是附着在 Agent UI 上的状态读数。",
+          "scope": "不同提供方的支持不同，但抽象资产都是附着在 Agent UI 上的状态读数。",
           "review": "脚本可能随会话更新反复运行，应保持快速且安全。"
         },
         "providers": {
@@ -587,9 +587,9 @@
       },
       "env": {
         "title": "会话和子进程环境",
-        "summary": "环境变量配置 Agent 进程、hooks、MCP servers、遥测和 provider 集成。它们常用于功能开关或指向密钥。",
+        "summary": "环境变量配置 Agent 进程、hooks、MCP servers、遥测和提供方集成。它们常用于功能开关或指向密钥。",
         "points": {
-          "role": "当运行时行为依赖本机、provider 或集成设置时，用环境变量。",
+          "role": "当运行时行为依赖本机、提供方或集成设置时，用环境变量。",
           "scope": "有些变量作用于每个会话；有些只转发给某个 MCP server 或子进程。",
           "review": "Berth 应显示变量名和来源，不显示密钥值。包含 key 或 token 的变量都按敏感信息处理。"
         },
@@ -1007,8 +1007,8 @@
     "env": {
       "groups": {
         "provider": {
-          "title": "Provider 和认证",
-          "body": "密钥、token、模型选择和 provider 专属运行设置。"
+          "title": "提供方和认证",
+          "body": "密钥、token、模型选择和提供方专属运行设置。"
         },
         "mcp": {
           "title": "MCP 子进程",
@@ -1132,7 +1132,7 @@
     "language": "语言",
     "scanning": "扫描",
     "scanDirectories": "扫描目录",
-    "agentPlugins": "Agent Capability Plugins",
+    "agentPlugins": "Agent 能力插件",
     "agentPluginsEmpty": "插件注册表当前不可用。",
     "agentPluginsLoadError": "插件注册表加载失败: {{error}}",
     "agentPluginBuiltIn": "内置",

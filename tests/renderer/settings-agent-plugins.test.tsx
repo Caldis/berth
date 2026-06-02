@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import React from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import '../../src/renderer/src/i18n'
+import i18n from '../../src/renderer/src/i18n'
 import { SettingsContent } from '../../src/renderer/src/pages/settings'
 import type {
   AgentCapabilityPlugin,
@@ -276,7 +276,8 @@ const manifests: AgentCapabilityPluginManifestEntry[] = [
 ]
 
 describe('SettingsContent agent capability plugins', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
+    await i18n.changeLanguage('en')
     window.api.agentPlugins.list = vi.fn(async () => ({ plugins, manifests: [] }))
     window.api.assets.scanSources = vi.fn(async () => [])
     window.api.shell.openExternal = vi.fn(async () => {})
@@ -297,6 +298,15 @@ describe('SettingsContent agent capability plugins', () => {
     expect(screen.getByText('2 capabilities')).toBeInTheDocument()
     expect(screen.queryByText('Permissions')).not.toBeInTheDocument()
     expect(screen.queryByText('~/.claude/settings.json')).not.toBeInTheDocument()
+  })
+
+  it('uses localized Chinese plugin heading', async () => {
+    await i18n.changeLanguage('zh')
+
+    render(<SettingsContent showTitle={false} />)
+
+    expect(await screen.findByText('Agent 能力插件')).toBeInTheDocument()
+    expect(screen.queryByText('Agent Capability Plugins')).not.toBeInTheDocument()
   })
 
   it('expands plugin details for permissions, capabilities, and sources', async () => {
