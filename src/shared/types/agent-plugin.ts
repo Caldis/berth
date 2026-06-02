@@ -181,6 +181,35 @@ export type AgentCapabilityPluginManifestStatus =
   | 'invalid'
   | 'incompatible'
 
+export type AgentCapabilityPluginManifestImplementationKind = 'adapter'
+
+export interface AgentCapabilityPluginManifestImplementation {
+  kind: AgentCapabilityPluginManifestImplementationKind
+  entrypoint: string
+}
+
+export type AgentCapabilityPluginManifestActivationStatus =
+  | 'metadata-only'
+  | 'activation-ready'
+  | 'blocked'
+  | 'incompatible'
+  | 'invalid'
+
+export type AgentCapabilityPluginManifestActivationReasonCode =
+  | 'metadataOnly'
+  | 'implementationDeclared'
+  | 'permissionApprovalRequired'
+  | 'agentVersionIncompatible'
+  | 'manifestInvalid'
+
+export interface AgentCapabilityPluginManifestActivationReadiness {
+  status: AgentCapabilityPluginManifestActivationStatus
+  reasonCode: AgentCapabilityPluginManifestActivationReasonCode
+  message: string
+  implementationKind?: AgentCapabilityPluginManifestImplementationKind
+  blockedPermissionKinds?: AgentCapabilityPluginPermissionKind[]
+}
+
 export interface AgentCapabilityPluginManifestValidationError {
   code: string
   message: string
@@ -195,6 +224,8 @@ export interface AgentCapabilityPluginManifestEntry {
   displayName?: string
   version?: string
   schemaVersion?: number
+  implementation?: AgentCapabilityPluginManifestImplementation
+  activationReadiness: AgentCapabilityPluginManifestActivationReadiness
   agentCompatibility?: {
     agentId: string
     name: string

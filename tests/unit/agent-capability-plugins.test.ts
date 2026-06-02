@@ -285,6 +285,10 @@ describe('agent capability plugin registry', () => {
         path: validPath,
         status: 'valid',
         id: 'claude-helper',
+        activationReadiness: expect.objectContaining({
+          status: 'metadata-only',
+          reasonCode: 'metadataOnly'
+        }),
         agentCompatibility: expect.objectContaining({
           agentId: 'claude-code',
           detectedVersion: '1.2.3'
@@ -294,12 +298,20 @@ describe('agent capability plugin registry', () => {
         path: invalidPath,
         status: 'invalid',
         id: 'codex',
+        activationReadiness: expect.objectContaining({
+          status: 'invalid',
+          reasonCode: 'manifestInvalid'
+        }),
         errors: [expect.objectContaining({ code: 'manifest-id-reserved' })]
       }),
       expect.objectContaining({
         path: incompatiblePath,
         status: 'incompatible',
         id: 'future-claude-helper',
+        activationReadiness: expect.objectContaining({
+          status: 'incompatible',
+          reasonCode: 'agentVersionIncompatible'
+        }),
         errors: [expect.objectContaining({ code: 'manifest-agent-version-incompatible' })]
       })
     ])

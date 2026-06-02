@@ -2,7 +2,10 @@ import * as fs from 'fs'
 import * as os from 'os'
 import * as path from 'path'
 import type {
+  AgentCapabilityPluginManifestActivationReadiness,
   AgentCapabilityPluginManifestEntry,
+  AgentCapabilityPluginManifestImplementation,
+  AgentCapabilityPluginPermissionKind,
   AgentCapabilityPluginManifestValidationError
 } from '@shared/types/agent-plugin'
 
@@ -74,6 +77,7 @@ const HOOK_SUPPORT_VALUES = ['supported', 'partial', 'unsupported'] as const
 const HOOK_HANDLER_RUN_MODES = ['runnable', 'parsed-only', 'unsupported'] as const
 const HOOK_FIELD_KINDS = ['string', 'string-array', 'boolean', 'number', 'object'] as const
 const PERMISSION_KINDS = ['read', 'write', 'execute'] as const
+const BLOCKED_PERMISSION_KINDS = ['write', 'execute'] as const
 
 export interface AgentCapabilityPluginManifestLoadOptions {
   homeDir?: string
@@ -133,18 +137,11 @@ export function loadAgentPluginManifests(
 
     if (entry.id && entry.status !== 'invalid') {
       if (seenManifestIds.has(entry.id)) {
-        return {
-          ...entry,
-          status: 'invalid',
-          errors: [
-            ...entry.errors,
-            {
-              code: 'manifest-id-duplicate',
-              field: 'id',
-              message: `Manifest id "${entry.id}" is already used by another manifest.`
-            }
-          ]
-        }
+        return markEntryInvalid(entry, {
+          code: 'manifest-id-duplicate',
+          field: 'id',
+          message: `Manifest id "${entry.id}" is already used by another manifest.`
+        })
       }
       seenManifestIds.add(entry.id)
     }
@@ -221,6 +218,7 @@ export function validateAgentPluginManifest(
   }
 
   const compatibility = readCompatibility(value.agentCompatibility, errors)
+  const implementation = readImplementation(value.implementation, errors)
   validatePermissions(value.permissions, errors)
   validateSourceDescriptors(value.sourceDescriptors, errors)
   validateAssetDescriptors(value.assetDescriptors, errors)
@@ -251,6 +249,11 @@ export function validateAgentPluginManifest(
       : errors.length > 0
         ? 'invalid'
         : 'valid'
+  const activationReadiness = buildActivationReadiness({
+    status,
+    implementation,
+    blockedPermissionKinds: collectBlockedPermissionKinds(value.permissions)
+  })
 
   return {
     path: context.path,
@@ -260,6 +263,8 @@ export function validateAgentPluginManifest(
     displayName,
     version,
     schemaVersion,
+    implementation,
+    activationReadiness,
     agentCompatibility: compatibility
       ? {
           ...compatibility,
@@ -401,7 +406,7 @@ function validatePermissions(
     errors.push({
       code: 'manifest-permissions-empty',
       field: 'permissions',
-      message: 'permissions must include at least one read permission.'
+      message: 'permissions must include at least one permission.'
     })
     return
   }
@@ -418,18 +423,108 @@ function validatePermissions(
       errors.push(requiredError(`${field}.kind`))
     } else if (!includes(PERMISSION_KINDS, kind)) {
       errors.push(enumError(`${field}.kind`, PERMISSION_KINDS))
-    } else if (kind !== 'read') {
-      errors.push({
-        code: 'manifest-permission-kind-unsupported',
-        field: `${field}.kind`,
-        message: 'Only read permissions are supported for third-party manifests.'
-      })
     }
 
     validateStringEnumArray(permission.scopes, `${field}.scopes`, ASSET_SCOPES, errors)
     validateStringArray(permission.pathPatterns, `${field}.pathPatterns`, errors)
     if (!readString(permission, 'reason')) errors.push(requiredError(`${field}.reason`))
   })
+}
+
+function readImplementation(
+  value: unknown,
+  errors: AgentCapabilityPluginManifestValidationError[]
+): AgentCapabilityPluginManifestImplementation | undefined {
+  if (value == null) return undefined
+  if (!isRecord(value)) {
+    errors.push(objectError('implementation'))
+    return undefined
+  }
+
+  const kind = readString(value, 'kind')
+  const entrypoint = readString(value, 'entrypoint')
+
+  if (!kind) {
+    errors.push(requiredError('implementation.kind'))
+  } else if (kind !== 'adapter') {
+    errors.push(enumError('implementation.kind', ['adapter']))
+  }
+
+  if (!entrypoint) {
+    errors.push(requiredError('implementation.entrypoint'))
+  } else if (!isRelativeLocalPath(entrypoint)) {
+    errors.push({
+      code: 'manifest-implementation-entrypoint-invalid',
+      field: 'implementation.entrypoint',
+      message: 'implementation.entrypoint must be a relative local path.'
+    })
+  }
+
+  if (kind !== 'adapter' || !entrypoint || !isRelativeLocalPath(entrypoint)) {
+    return undefined
+  }
+
+  return {
+    kind,
+    entrypoint
+  }
+}
+
+function collectBlockedPermissionKinds(value: unknown): AgentCapabilityPluginPermissionKind[] {
+  if (!Array.isArray(value)) return []
+  const found = new Set<AgentCapabilityPluginPermissionKind>()
+
+  value.forEach((permission) => {
+    if (!isRecord(permission)) return
+    const kind = readString(permission, 'kind')
+    if (kind === 'write' || kind === 'execute') found.add(kind)
+  })
+
+  return BLOCKED_PERMISSION_KINDS.filter((kind) => found.has(kind))
+}
+
+function buildActivationReadiness({
+  status,
+  implementation,
+  blockedPermissionKinds
+}: {
+  status: AgentCapabilityPluginManifestEntry['status']
+  implementation: AgentCapabilityPluginManifestImplementation | undefined
+  blockedPermissionKinds: AgentCapabilityPluginPermissionKind[]
+}): AgentCapabilityPluginManifestActivationReadiness {
+  if (status === 'invalid') return invalidActivationReadiness()
+
+  if (status === 'incompatible') {
+    return {
+      status: 'incompatible',
+      reasonCode: 'agentVersionIncompatible',
+      message: 'Detected agent version does not match this manifest.'
+    }
+  }
+
+  if (blockedPermissionKinds.length > 0) {
+    return {
+      status: 'blocked',
+      reasonCode: 'permissionApprovalRequired',
+      message: 'This manifest declares write or execute permissions, which need an approval model before activation.',
+      blockedPermissionKinds
+    }
+  }
+
+  if (implementation) {
+    return {
+      status: 'activation-ready',
+      reasonCode: 'implementationDeclared',
+      message: 'This manifest declares adapter implementation metadata, but Berth does not execute third-party plugin code yet.',
+      implementationKind: implementation.kind
+    }
+  }
+
+  return {
+    status: 'metadata-only',
+    reasonCode: 'metadataOnly',
+    message: 'This manifest only provides metadata and descriptors.'
+  }
 }
 
 function validateSourceDescriptors(
@@ -645,6 +740,14 @@ function validateReferences(
   })
 }
 
+function isRelativeLocalPath(value: string): boolean {
+  return (
+    !path.isAbsolute(value) &&
+    !/^[A-Za-z][A-Za-z0-9+.-]*:/.test(value) &&
+    (value.startsWith('./') || value.startsWith('../'))
+  )
+}
+
 function isSupportedVersionRange(range: string): boolean {
   const trimmed = range.trim()
   if (trimmed === '*') return true
@@ -734,7 +837,28 @@ function invalidEntry(
     path: manifestPath,
     status: 'invalid',
     readonly: true,
+    activationReadiness: invalidActivationReadiness(),
     errors: [error]
+  }
+}
+
+function markEntryInvalid(
+  entry: AgentCapabilityPluginManifestEntry,
+  error: AgentCapabilityPluginManifestValidationError
+): AgentCapabilityPluginManifestEntry {
+  return {
+    ...entry,
+    status: 'invalid',
+    activationReadiness: invalidActivationReadiness(),
+    errors: [...entry.errors, error]
+  }
+}
+
+function invalidActivationReadiness(): AgentCapabilityPluginManifestActivationReadiness {
+  return {
+    status: 'invalid',
+    reasonCode: 'manifestInvalid',
+    message: 'Manifest has validation errors and cannot be activated.'
   }
 }
 

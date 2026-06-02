@@ -1,17 +1,17 @@
 # 任务清单 (Design 产物 / 活清单)
 
-- [ ] 扩展 manifest readiness 类型与测试 fixture。
+- [x] 扩展 manifest readiness 类型与测试 fixture。
   - files: `src/shared/types/agent-plugin.ts`, `tests/unit/agent-plugin-manifest.test.ts`
   - tests: `pnpm test -- tests/unit/agent-plugin-manifest.test.ts`
-  - verify: read-only、implementation、write/execute、incompatible、invalid 状态都有断言。
+  - verify: read-only、implementation、write/execute、incompatible、invalid 状态都有断言。2026-06-02 通过 `pnpm test -- tests/unit/agent-plugin-manifest.test.ts tests/unit/agent-capability-plugins.test.ts`。
 
-- [ ] 实现主进程 manifest readiness 计算。
+- [x] 实现主进程 manifest readiness 计算。
   - files: `src/main/agent-plugins/manifest.ts`, `tests/unit/agent-plugin-manifest.test.ts`, `tests/unit/agent-capability-plugins.test.ts`
   - tests: `pnpm test -- tests/unit/agent-plugin-manifest.test.ts tests/unit/agent-capability-plugins.test.ts`
-  - verify: `write` / `execute` 不再作为 validation error; duplicate manifest id 同步变成 readiness invalid; built-in plugin 列表不变。
+  - verify: `write` / `execute` 不再作为 validation error; duplicate manifest id 同步变成 readiness invalid; built-in plugin 列表不变。2026-06-02 通过目标测试。
 
 - [ ] 更新 Settings 插件列表与详情展示。
-  - files: `src/renderer/src/components/settings/agent-capability-plugins-section.tsx`, `src/renderer/src/i18n/locales/en-US.ts`, `src/renderer/src/i18n/locales/zh-CN.ts`, `tests/renderer/settings-agent-plugins.test.tsx`
+  - files: `src/renderer/src/components/settings/agent-capability-plugins-section.tsx`, `src/renderer/src/i18n/locales/en.json`, `src/renderer/src/i18n/locales/zh.json`, `tests/renderer/settings-agent-plugins.test.tsx`
   - tests: `pnpm test -- tests/renderer/settings-agent-plugins.test.tsx`
   - verify: 列表只显示短 readiness 标签; 展开详情展示原因、implementation、blocked permissions; 关键说明不是 hover-only; 中英文 key 都存在。
 

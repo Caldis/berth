@@ -34,11 +34,41 @@ describe('agent plugin manifest validator', () => {
       displayName: 'Example Agent',
       version: '0.1.0',
       schemaVersion: 1,
+      activationReadiness: {
+        status: 'metadata-only',
+        reasonCode: 'metadataOnly'
+      },
       agentCompatibility: {
         agentId: 'example-agent',
         name: 'Example Agent',
         versionRange: '>=1.0.0 <2.0.0',
         detectedVersion: '1.4.0'
+      },
+      errors: []
+    })
+  })
+
+  it('marks manifests with adapter metadata as activation-ready', () => {
+    const entry = validateAgentPluginManifest(
+      validManifest({
+        implementation: {
+          kind: 'adapter',
+          entrypoint: './adapter.js'
+        }
+      }),
+      { path: 'adapter.json' }
+    )
+
+    expect(entry).toMatchObject({
+      status: 'valid',
+      implementation: {
+        kind: 'adapter',
+        entrypoint: './adapter.js'
+      },
+      activationReadiness: {
+        status: 'activation-ready',
+        reasonCode: 'implementationDeclared',
+        implementationKind: 'adapter'
       },
       errors: []
     })
@@ -71,7 +101,7 @@ describe('agent plugin manifest validator', () => {
     )
   })
 
-  it('rejects write and execute permissions for third-party manifests', () => {
+  it('blocks write and execute permissions without treating them as validation errors', () => {
     const entry = validateAgentPluginManifest(
       validManifest({
         permissions: [
@@ -92,9 +122,39 @@ describe('agent plugin manifest validator', () => {
       { path: 'permissions.json' }
     )
 
+    expect(entry.status).toBe('valid')
+    expect(entry.errors).toEqual([])
+    expect(entry.activationReadiness).toMatchObject({
+      status: 'blocked',
+      reasonCode: 'permissionApprovalRequired',
+      blockedPermissionKinds: ['write', 'execute']
+    })
+  })
+
+  it('rejects invalid implementation metadata', () => {
+    const entry = validateAgentPluginManifest(
+      validManifest({
+        implementation: {
+          kind: 'adapter',
+          entrypoint: 'https://example.com/adapter.js'
+        }
+      }),
+      { path: 'bad-implementation.json' }
+    )
+
     expect(entry.status).toBe('invalid')
-    expect(entry.errors.filter((error) => error.code === 'manifest-permission-kind-unsupported'))
-      .toHaveLength(2)
+    expect(entry.activationReadiness).toMatchObject({
+      status: 'invalid',
+      reasonCode: 'manifestInvalid'
+    })
+    expect(entry.errors).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: 'manifest-implementation-entrypoint-invalid',
+          field: 'implementation.entrypoint'
+        })
+      ])
+    )
   })
 
   it('rejects non-https references', () => {
@@ -130,6 +190,10 @@ describe('agent plugin manifest validator', () => {
     })
 
     expect(entry.status).toBe('incompatible')
+    expect(entry.activationReadiness).toMatchObject({
+      status: 'incompatible',
+      reasonCode: 'agentVersionIncompatible'
+    })
     expect(entry.errors).toEqual([
       expect.objectContaining({
         code: 'manifest-agent-version-incompatible',
@@ -167,6 +231,10 @@ describe('agent plugin manifest validator', () => {
     expect(result[1]).toMatchObject({
       path: invalidPath,
       status: 'invalid',
+      activationReadiness: {
+        status: 'invalid',
+        reasonCode: 'manifestInvalid'
+      },
       errors: [expect.objectContaining({ code: 'manifest-json-invalid' })]
     })
   })
@@ -212,6 +280,10 @@ describe('agent plugin manifest validator', () => {
     expect(result[1]).toMatchObject({
       status: 'invalid',
       id: 'example-agent',
+      activationReadiness: {
+        status: 'invalid',
+        reasonCode: 'manifestInvalid'
+      },
       errors: [expect.objectContaining({ code: 'manifest-id-duplicate' })]
     })
   })
