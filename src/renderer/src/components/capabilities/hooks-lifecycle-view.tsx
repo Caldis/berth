@@ -30,7 +30,7 @@ import {
   type HookRiskHint,
   type HookStageGroup
 } from '@/lib/hook-lifecycle'
-import { localizeHealthCheck } from '@/lib/health-check-i18n'
+import { localizeHealthCheck, localizeHealthCheckScope } from '@/lib/health-check-i18n'
 import type { AgentView, Asset, AssetScope } from '@shared/types/asset'
 import type {
   AgentCapabilityPlugin,
@@ -569,7 +569,7 @@ function HookHealthCheckTipRow({ check }: { check: HealthCheck }): React.ReactEl
         </span>
         {check.scope && (
           <span className="rounded-md border border-border px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
-            {check.scope}
+            {localizeHealthCheckScope(check.scope, t)}
           </span>
         )}
       </span>

@@ -61,6 +61,18 @@ export function localizeHealthCheck(check: HealthCheck, t: TFunction): HealthChe
   }
 }
 
+export function localizeHealthCheckScope(scope: string, t: TFunction): string {
+  return t(`common.scope.${scope}`, { defaultValue: scope })
+}
+
+export function localizeHealthCheckConfidence(confidence: string, t: TFunction): string {
+  return t(`healthChecks.text.confidence.${confidence}`, { defaultValue: confidence })
+}
+
+export function localizeHealthCheckAssetType(assetType: string, t: TFunction): string {
+  return t(`healthChecks.text.assetTypes.${assetType}`, { defaultValue: assetType })
+}
+
 function translateHealthCheckText(text: string, t: TFunction): string {
   const exactKey = EXACT_TEXT_KEYS[text]
   if (exactKey) return t(exactKey, { defaultValue: text })

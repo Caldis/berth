@@ -23,7 +23,12 @@ import { formatCurrency, formatOptionalCurrency, formatOptionalRelativeTime, tru
 import { useSessions, useUsageSummary, useHealthChecks } from '@/hooks/use-ipc'
 import { useAppStore } from '@/stores/app'
 import { computeStatsForAssets, filterAssetsByAgentView } from '@/lib/agent-view'
-import { localizeHealthCheck } from '@/lib/health-check-i18n'
+import {
+  localizeHealthCheck,
+  localizeHealthCheckAssetType,
+  localizeHealthCheckConfidence,
+  localizeHealthCheckScope
+} from '@/lib/health-check-i18n'
 import { StatCard } from '@/components/shared/stat-card'
 import { EmptyState } from '@/components/shared/empty-state'
 import type { HealthCheck } from '@shared/types/ipc'
@@ -298,13 +303,13 @@ export function Overview(): React.ReactElement {
                               {displayCheck.title}
                             </span>
                             {check.scope && (
-                              <span className="rounded border border-border px-1.5 py-0.5 text-[10px] uppercase text-muted-foreground">
-                                {check.scope}
+                              <span className="rounded border border-border px-1.5 py-0.5 text-[10px] text-muted-foreground">
+                                {localizeHealthCheckScope(check.scope, t)}
                               </span>
                             )}
                             {check.confidence && (
                               <span className="rounded border border-border px-1.5 py-0.5 text-[10px] text-muted-foreground">
-                                {check.confidence}
+                                {localizeHealthCheckConfidence(check.confidence, t)}
                               </span>
                             )}
                             {check.severity === 'info' && (
@@ -374,7 +379,7 @@ export function Overview(): React.ReactElement {
                         </div>
                         {check.assetType && (
                           <span className="shrink-0 text-[10px] text-muted-foreground">
-                            {check.assetType}
+                            {localizeHealthCheckAssetType(check.assetType, t)}
                           </span>
                         )}
                       </div>

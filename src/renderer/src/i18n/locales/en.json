@@ -121,6 +121,27 @@
         "codexConfigReference": "Codex config reference",
         "codexHooks": "Codex hooks",
         "claudeHooks": "Claude Code hooks"
+      },
+      "confidence": {
+        "high": "High confidence",
+        "medium": "Medium confidence",
+        "low": "Low confidence"
+      },
+      "assetTypes": {
+        "agent": "Agent",
+        "agents-md": "AGENTS.md",
+        "claude-md": "CLAUDE.md",
+        "command": "Command",
+        "env": "Environment",
+        "hook": "Hook",
+        "mcp-server": "MCP server",
+        "output-mode": "Output mode",
+        "permission": "Permission",
+        "plugin": "Plugin",
+        "session": "Session",
+        "skill": "Skill",
+        "statusline": "Status line",
+        "team": "Agent team"
       }
     }
   },

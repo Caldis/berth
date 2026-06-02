@@ -2,7 +2,7 @@
 task: 2026-06-02-gh-57-localize-health-check-metadata-tags
 task_id: GH-57
 type: bug
-phase: implement
+phase: verify
 created: 2026-06-02
 issue:
   number: 57

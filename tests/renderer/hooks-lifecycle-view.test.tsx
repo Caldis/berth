@@ -628,6 +628,7 @@ describe('HooksLifecycleView', () => {
           description: 'Add commandWindows or command_windows when the command differs on Windows.'
         },
         path: 'C:\\Users\\test\\.codex\\hooks.json',
+        scope: 'user',
         assetType: 'hook',
         target: { route: '/configuration/capabilities?tab=hooks' }
       }
@@ -646,8 +647,10 @@ describe('HooksLifecycleView', () => {
     expect(screen.getByText('这个命令 Hook 在 Windows 上没有配置 commandWindows。')).toBeInTheDocument()
     expect(screen.getByText(/建议修复:/)).toBeInTheDocument()
     expect(screen.getByText('如果 Windows 命令不同, 添加 commandWindows 或 command_windows。')).toBeInTheDocument()
+    expect(screen.getAllByText('用户级').length).toBeGreaterThan(0)
     expect(screen.queryByText('Codex hook has no Windows command override')).not.toBeInTheDocument()
     expect(screen.queryByText('A command hook is configured without commandWindows on Windows.')).not.toBeInTheDocument()
+    expect(screen.queryByText('user')).not.toBeInTheDocument()
   })
 
   it('shows the recovery center and restores a recoverable Claude hook', async () => {

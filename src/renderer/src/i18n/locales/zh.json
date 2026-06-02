@@ -118,6 +118,27 @@
         "codexConfigReference": "Codex 配置参考",
         "codexHooks": "Codex Hooks 文档",
         "claudeHooks": "Claude Code Hooks 文档"
+      },
+      "confidence": {
+        "high": "高可信",
+        "medium": "中等可信",
+        "low": "低可信"
+      },
+      "assetTypes": {
+        "agent": "Agent",
+        "agents-md": "AGENTS.md",
+        "claude-md": "CLAUDE.md",
+        "command": "命令",
+        "env": "环境变量",
+        "hook": "Hook",
+        "mcp-server": "MCP 服务",
+        "output-mode": "输出模式",
+        "permission": "权限",
+        "plugin": "插件",
+        "session": "会话",
+        "skill": "Skill",
+        "statusline": "状态栏",
+        "team": "Agent 团队"
       }
     }
   },

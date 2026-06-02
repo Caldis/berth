@@ -177,6 +177,7 @@ describe('overview health checks', () => {
           description: 'Add commandWindows or command_windows when the command differs on Windows.',
           snippet: 'commandWindows = "powershell -File hook.ps1"'
         },
+        confidence: 'medium',
         scope: 'user',
         assetType: 'hook'
       },
@@ -264,6 +265,12 @@ describe('overview health checks', () => {
     expect(screen.getByText(/添加 Codex 配置 schema/)).toBeInTheDocument()
     expect(screen.getByText('在 config.toml 顶部附近添加官方 Codex TOML schema 注释。')).toBeInTheDocument()
     expect(screen.getByText('Codex 配置参考')).toBeInTheDocument()
+    expect(screen.getAllByText('用户级').length).toBeGreaterThan(0)
+    expect(screen.getByText('中等可信')).toBeInTheDocument()
+    expect(screen.getAllByText('MCP 服务').length).toBeGreaterThan(0)
+    expect(screen.queryByText('user')).not.toBeInTheDocument()
+    expect(screen.queryByText('medium')).not.toBeInTheDocument()
+    expect(screen.queryByText('mcp-server')).not.toBeInTheDocument()
     expect(screen.queryByText('Skill is missing SKILL.md')).not.toBeInTheDocument()
     expect(screen.queryByText('Suggested fix')).not.toBeInTheDocument()
     expect(screen.queryByText('Codex config schema comment is not declared')).not.toBeInTheDocument()
