@@ -2,14 +2,14 @@
 task: 2026-06-02-gh-67-search-dialog-modal-focus
 task_id: GH-67
 type: bug
-phase: implement
+phase: archive
 created: 2026-06-02
 issue:
   number: 67
   repo: Caldis/berth
   url: https://github.com/Caldis/berth/issues/67
   id: I_kwDOSpnDwc8AAAABEHT9sg
-  state: OPEN
+  state: CLOSED
 artifacts:
   source: 00-BUG.md
   analysis: 01-ANALYSIS.md
@@ -21,7 +21,7 @@ gh_project:
   project_number: 6
   project_url: https://github.com/users/Caldis/projects/6
   item_id: PVTI_lAHOADXbEs4BZHvQzgufP4U
-  item_status: In Progress
+  item_status: Done
 ---
 
 # Search dialog should expose modal semantics and trap focus
