@@ -51,7 +51,7 @@ interface BerthAPI {
     scanSources: () => Promise<AgentScanSourceGroup[]>
     get: (id: string) => Promise<Asset | null>
     search: (query: string) => Promise<unknown[]>
-    healthCheck: () => Promise<HealthCheck[]>
+    healthCheck: (opts?: { refresh?: boolean }) => Promise<HealthCheck[]>
     onChanged: (callback: (event: unknown) => void) => () => void
   }
   agentPlugins: {

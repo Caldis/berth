@@ -28,7 +28,7 @@ const api = {
     scanSources: () => ipcRenderer.invoke('assets:scan-sources'),
     get: (id: string) => ipcRenderer.invoke('assets:get', id),
     search: (query: string) => ipcRenderer.invoke('assets:search', query),
-    healthCheck: () => ipcRenderer.invoke('assets:health-check'),
+    healthCheck: (opts?: { refresh?: boolean }) => ipcRenderer.invoke('assets:health-check', opts),
     onChanged: (callback: (event: unknown) => void) => {
       const handler = (_: unknown, event: unknown): void => callback(event)
       ipcRenderer.on('assets:changed', handler)

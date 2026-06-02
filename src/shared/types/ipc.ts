@@ -182,6 +182,10 @@ export interface HealthCheck {
   confidence?: HealthCheckConfidence
 }
 
+export interface HealthCheckRequest {
+  refresh?: boolean
+}
+
 export type HealthCheckSeverity = 'info' | 'warning' | 'error'
 
 export type HealthCheckConfidence = 'high' | 'medium' | 'low'
@@ -332,7 +336,7 @@ export interface IpcChannels {
   'assets:get': { args: [string]; result: Asset | null }
   'assets:relations': { args: [string]; result: Relation[] }
   'assets:search': { args: [string]; result: SearchResult[] }
-  'assets:health-check': { args: []; result: HealthCheck[] }
+  'assets:health-check': { args: [HealthCheckRequest?]; result: HealthCheck[] }
   'assets:import-chain': { args: [string]; result: ImportChainNode }
   'sessions:list': { args: [{ projectFilter?: string; projectPath?: string; limit?: number; agentView?: AgentView }]; result: SessionListResult }
   'sessions:get': { args: [string]; result: SessionDetailResult | null }

@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import type { AgentView, Asset, AssetStats, SessionSummary, UsageSummary } from '@shared/types/asset'
 import type { AgentScanSourceGroup, SessionDetailResult, HealthCheck } from '@shared/types/ipc'
 import type {
@@ -16,6 +16,47 @@ const emptyStats: AssetStats = {
   commands: 0,
   subagents: 0,
   teams: 0
+}
+
+const HEALTH_CHECK_CACHE_TTL_MS = 60_000
+
+interface HealthCheckCache {
+  checks: HealthCheck[]
+  lastCheckedAt: string
+  checkedAtMs: number
+}
+
+let healthCheckCache: HealthCheckCache | null = null
+let healthCheckInFlight: Promise<HealthCheckCache> | null = null
+
+function isHealthCheckCacheFresh(cache: HealthCheckCache | null): cache is HealthCheckCache {
+  return cache != null && Date.now() - cache.checkedAtMs < HEALTH_CHECK_CACHE_TTL_MS
+}
+
+function requestHealthChecks(refresh: boolean): Promise<HealthCheckCache> {
+  if (healthCheckInFlight) return healthCheckInFlight
+
+  healthCheckInFlight = window.api.assets
+    .healthCheck({ refresh })
+    .then((result) => {
+      const snapshot = {
+        checks: result ?? [],
+        lastCheckedAt: new Date().toISOString(),
+        checkedAtMs: Date.now()
+      }
+      healthCheckCache = snapshot
+      return snapshot
+    })
+    .finally(() => {
+      healthCheckInFlight = null
+    })
+
+  return healthCheckInFlight
+}
+
+export function resetHealthCheckCacheForTests(): void {
+  healthCheckCache = null
+  healthCheckInFlight = null
 }
 
 export function useAssets(): {
@@ -147,40 +188,65 @@ export function useUsageSummary(days: number, agentView?: AgentView, projectPath
 export function useHealthChecks(): {
   checks: HealthCheck[]
   loading: boolean
+  stale: boolean
   lastCheckedAt: string | null
-  refresh: () => void
+  refresh: (opts?: { force?: boolean }) => void
 } {
-  const [checks, setChecks] = useState<HealthCheck[]>([])
-  const [loading, setLoading] = useState(true)
-  const [lastCheckedAt, setLastCheckedAt] = useState<string | null>(null)
+  const cached = healthCheckCache
+  const mountedRef = useRef(false)
+  const [checks, setChecks] = useState<HealthCheck[]>(cached?.checks ?? [])
+  const [loading, setLoading] = useState(cached == null)
+  const [stale, setStale] = useState(false)
+  const [lastCheckedAt, setLastCheckedAt] = useState<string | null>(cached?.lastCheckedAt ?? null)
 
-  const refresh = useCallback(() => {
+  const refresh = useCallback((opts: { force?: boolean } = {}) => {
     if (!window.api?.assets?.healthCheck) {
       setLoading(false)
+      setStale(false)
       return
     }
+    const previous = healthCheckCache
+    if (previous) {
+      setChecks(previous.checks)
+      setLastCheckedAt(previous.lastCheckedAt)
+    }
     setLoading(true)
-    window.api.assets
-      .healthCheck()
-      .then((result) => {
-        setChecks(result ?? [])
-        setLastCheckedAt(new Date().toISOString())
+    setStale(previous != null)
+    requestHealthChecks(opts.force === true)
+      .then((snapshot) => {
+        if (!mountedRef.current) return
+        setChecks(snapshot.checks)
+        setLastCheckedAt(snapshot.lastCheckedAt)
+        setStale(false)
       })
       .catch(() => {})
-      .finally(() => setLoading(false))
+      .finally(() => {
+        if (!mountedRef.current) return
+        setLoading(false)
+      })
   }, [])
 
   useEffect(() => {
-    refresh()
+    mountedRef.current = true
+    const currentCache = healthCheckCache
+    if (isHealthCheckCacheFresh(currentCache)) {
+      setChecks(currentCache.checks)
+      setLastCheckedAt(currentCache.lastCheckedAt)
+      setLoading(false)
+      setStale(false)
+    } else {
+      refresh({ force: false })
+    }
     const unsubscribe = window.api?.assets?.onChanged?.(() => {
-      refresh()
+      refresh({ force: true })
     })
     return () => {
+      mountedRef.current = false
       if (unsubscribe) unsubscribe()
     }
   }, [refresh])
 
-  return { checks, loading, lastCheckedAt, refresh }
+  return { checks, loading, stale, lastCheckedAt, refresh }
 }
 
 export function useScanSources(): {

@@ -4,11 +4,11 @@
 每个实现项必须有测试证据或明确例外理由。
 实现中若发现 debt 初估不准, 更新 INDEX.md `debt.estimate`, 并追加 `debt.revisions[]`。
 
-- [ ] 任务 1: 扩展健康检查 IPC 请求参数, main 端避免非强制路径重复全量扫描
-  - tests: `pnpm typecheck:node`; 必要时补 main/IPC 单测
+- [x] 任务 1: 扩展健康检查 IPC 请求参数, main 端避免非强制路径重复全量扫描
+  - tests: `pnpm typecheck:node` - passed.
   - verify: `assets:health-check` 默认复用已扫描 scanner 缓存; `{ refresh: true }` 仍强制 `scanAll()`; 非 UI。
-- [ ] 任务 2: 为 `useHealthChecks` 增加共享缓存、TTL、in-flight 去重和 assets changed 强制刷新
-  - tests: `pnpm vitest run tests/renderer/use-health-checks.test.tsx`
+- [x] 任务 2: 为 `useHealthChecks` 增加共享缓存、TTL、in-flight 去重和 assets changed 强制刷新
+  - tests: `pnpm vitest run tests/renderer/use-health-checks.test.tsx` - 4 tests passed; `pnpm typecheck:web` - passed.
   - verify: 首次加载会请求; 第二个挂载命中缓存不重复请求; 并发挂载只发一次请求; `assets:changed` 保留旧结果并用 `{ refresh: true }` 刷新。
 - [ ] 任务 3: 在 Hooks 生命周期 sidebar 展示 stale/refreshing 状态, 不新增平铺说明
   - tests: `pnpm vitest run tests/renderer/hooks-lifecycle-view.test.tsx`

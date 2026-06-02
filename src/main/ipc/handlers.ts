@@ -10,6 +10,7 @@ import type {
   ScanResult,
   SearchResult,
   HealthCheck,
+  HealthCheckRequest,
   ImportChainNode,
   SessionListResult,
   SessionDetailResult,
@@ -145,9 +146,11 @@ export function registerAssetHandlers(): void {
     return search.search(query, scanner.getAllAssets())
   })
 
-  ipcMain.handle('assets:health-check', async (): Promise<HealthCheck[]> => {
+  ipcMain.handle('assets:health-check', async (_event, opts: HealthCheckRequest = {}): Promise<HealthCheck[]> => {
     const scanner = getScanner()
-    await scanner.scanAll()
+    if (opts.refresh || !scanner.hasScanned()) {
+      await scanner.scanAll()
+    }
     return runHealthChecks({
       projectDir: scanner.getProjectDir(),
       assets: scanner.getAllAssets(),
