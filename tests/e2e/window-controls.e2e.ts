@@ -22,11 +22,58 @@ test.afterEach(async () => {
   await app.close()
 })
 
-test('Windows custom titlebar buttons are clickable', async () => {
+test('Windows custom titlebar buttons toggle maximize through Electron', async () => {
   test.skip(process.platform !== 'win32', 'Windows titlebar hit testing is only meaningful on Windows')
 
   await expect(page.getByTestId('window-controls')).toBeVisible()
 
+  await expectWindowApiReady()
+
+  const maximizeButton = page.getByLabel('Maximize window')
+  await expect(maximizeButton).toBeVisible()
+  await maximizeButton.click()
+
+  await expect
+    .poll(() => app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].isMaximized()))
+    .toBe(true)
+
+  const restoreButton = page.getByLabel('Restore window')
+  await expect(restoreButton).toBeVisible()
+  await restoreButton.click()
+
+  await expect
+    .poll(() => app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].isMaximized()))
+    .toBe(false)
+})
+
+test.describe('native mouse hit testing', () => {
+  test.skip(process.platform !== 'win32', 'Windows titlebar hit testing is only meaningful on Windows')
+  test.skip(process.env.CI === 'true', 'Hosted Windows runners do not expose stable foreground window clicks')
+
+  test('Windows custom titlebar buttons accept real OS mouse clicks', async () => {
+    await expect(page.getByTestId('window-controls')).toBeVisible()
+
+    await expectWindowApiReady()
+
+    const maximizeButton = page.getByLabel('Maximize window')
+    await expect(maximizeButton).toBeVisible()
+    await realMouseClick(await centerOf(maximizeButton))
+
+    await expect
+      .poll(() => app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].isMaximized()))
+      .toBe(true)
+
+    const restoreButton = page.getByLabel('Restore window')
+    await expect(restoreButton).toBeVisible()
+    await realMouseClick(await centerOf(restoreButton))
+
+    await expect
+      .poll(() => app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].isMaximized()))
+      .toBe(false)
+  })
+})
+
+async function expectWindowApiReady(): Promise<void> {
   const windowApiReady = await page.evaluate(() => {
     return (
       typeof window.api.window.minimize === 'function' &&
@@ -37,23 +84,7 @@ test('Windows custom titlebar buttons are clickable', async () => {
   })
 
   expect(windowApiReady).toBe(true)
-
-  const maximizeButton = page.getByLabel('Maximize window')
-  await expect(maximizeButton).toBeVisible()
-  await realMouseClick(await centerOf(maximizeButton))
-
-  await expect
-    .poll(() => app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].isMaximized()))
-    .toBe(true)
-
-  const restoreButton = page.getByLabel('Restore window')
-  await expect(restoreButton).toBeVisible()
-  await realMouseClick(await centerOf(restoreButton))
-
-  await expect
-    .poll(() => app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].isMaximized()))
-    .toBe(false)
-})
+}
 
 async function centerOf(locator: ReturnType<Page['getByLabel']>): Promise<{ x: number; y: number }> {
   const box = await locator.boundingBox()

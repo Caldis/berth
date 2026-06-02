@@ -10,11 +10,15 @@
 - [x] 任务 2: 验证全量 E2E 并接入 Windows CI。
   - tests: `pnpm test:e2e`
   - verify: 全量 Electron E2E 通过; Playwright workers 固定为 1; CI 在 `windows-2022` 执行 `pnpm test:e2e`。
-  - evidence: `pnpm test:e2e` 通过, 14 passed, using 1 worker。
+  - evidence: `pnpm test:e2e` 通过, 15 passed, using 1 worker。
+- [x] 任务 2.1: 修复 GitHub hosted Windows 上真实鼠标测试不稳定。
+  - tests: `pnpm exec playwright test tests/e2e/window-controls.e2e.ts --retries=0`; `pnpm test:e2e`
+  - verify: CI 保留稳定 Electron E2E 覆盖; 真实 OS 鼠标命中测试只在本地 Windows 执行。
+  - evidence: `pnpm exec playwright test tests/e2e/window-controls.e2e.ts --retries=0` 通过, 2 passed; `CI=true pnpm exec playwright test tests/e2e/window-controls.e2e.ts --retries=0` 通过, 1 passed / 1 skipped; `pnpm test:e2e` 通过, 15 passed; `CI=true pnpm test:e2e` 通过, 14 passed / 1 skipped。
 - [x] 任务 3: 本地门禁。
   - tests: `pnpm lint`; `pnpm typecheck`; `pnpm test`; `pnpm harness:check`; `pnpm build`
   - verify: 本地完整检查通过; 不改 UI。
-  - evidence: `pnpm lint`; `pnpm typecheck`; `pnpm test` (54 files / 422 tests); `pnpm harness:check`; `node scripts/harness-projects.mjs check --strict`; `pnpm build`; build 后 `pnpm test:e2e` (14 tests) 均通过。
+  - evidence: `pnpm lint`; `pnpm typecheck`; `pnpm test` (54 files / 422 tests); `pnpm harness:check`; `node scripts/harness-projects.mjs check --strict`; `pnpm build`; `pnpm test:e2e` (15 tests) 均通过。
 - [ ] 任务 4: 推送后等待 GitHub Actions。
   - tests: `gh run list --branch master --limit 5`; `gh run watch <run-id> --exit-status`
   - verify: 新 SHA 对应 CI run 成功。
