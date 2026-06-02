@@ -226,9 +226,10 @@ export function validateAgentPluginManifest(
   validateHookSchema(value.hookSchema, compatibility?.agentId, errors)
   validateReferences(value.references, errors)
 
-  const detectedVersion = compatibility
+  const detectedVersionValue = compatibility
     ? context.agentVersions?.[compatibility.agentId]
     : undefined
+  const detectedVersion = typeof detectedVersionValue === 'string' ? detectedVersionValue : undefined
 
   if (
     compatibility?.versionRange &&

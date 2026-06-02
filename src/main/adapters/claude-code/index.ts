@@ -55,7 +55,7 @@ export class ClaudeCodeAdapter implements AgentAdapter {
       if (fs.existsSync(statsPath)) {
         try {
           const stats = JSON.parse(fs.readFileSync(statsPath, 'utf-8'))
-          version = stats.version
+          version = typeof stats.version === 'string' ? stats.version : undefined
         } catch {
           // ignore
         }

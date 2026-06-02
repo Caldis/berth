@@ -202,6 +202,20 @@ describe('agent plugin manifest validator', () => {
     ])
   })
 
+  it('ignores non-string detected agent versions', () => {
+    const entry = validateAgentPluginManifest(validManifest(), {
+      path: 'runtime-version.json',
+      agentVersions: {
+        'example-agent': 1 as unknown as string
+      }
+    })
+
+    expect(entry.status).toBe('valid')
+    expect(entry.agentCompatibility?.detectedVersion).toBeUndefined()
+    expect(entry.activationReadiness.status).toBe('metadata-only')
+    expect(entry.errors).toEqual([])
+  })
+
   it('validates supported version range expressions', () => {
     expect(isVersionInRange('1.2.3', '*')).toBe(true)
     expect(isVersionInRange('1.2.3', '1.2.3')).toBe(true)

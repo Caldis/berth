@@ -15,6 +15,11 @@
   - tests: `pnpm test -- tests/renderer/settings-agent-plugins.test.tsx`
   - verify: 列表只显示短 readiness 标签; 展开详情展示原因、implementation、blocked permissions; 关键说明不是 hover-only; 中英文 key 都存在。2026-06-02 通过渲染测试和 `pnpm typecheck`。
 
+- [x] 修复真实 agent version 非字符串导致 manifest list 崩溃。
+  - files: `src/main/agent-plugins/manifest.ts`, `src/main/adapters/claude-code/index.ts`, `tests/unit/agent-plugin-manifest.test.ts`
+  - tests: `pnpm test -- tests/unit/agent-plugin-manifest.test.ts`
+  - verify: 非字符串 detected version 被忽略。2026-06-02 通过 `pnpm test -- tests/unit/agent-plugin-manifest.test.ts`; Settings 视觉复测不再显示 `value.trim is not a function`。
+
 - [x] 运行实现阶段检查并转入 verify。
   - files: `docs/works/2026-06-02-gh-30-agent-plugin-activation-readiness/INDEX.md`, `docs/works/2026-06-02-gh-30-agent-plugin-activation-readiness/03-PLAN.md`
   - tests: `pnpm typecheck`; `pnpm test -- tests/unit/agent-plugin-manifest.test.ts tests/unit/agent-capability-plugins.test.ts tests/renderer/settings-agent-plugins.test.tsx`; `pnpm harness:check --work docs/works/2026-06-02-gh-30-agent-plugin-activation-readiness`
