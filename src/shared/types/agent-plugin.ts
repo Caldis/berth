@@ -176,6 +176,34 @@ export interface AgentCapabilityPluginReference {
   url: string
 }
 
+export type AgentCapabilityPluginManifestStatus =
+  | 'valid'
+  | 'invalid'
+  | 'incompatible'
+
+export interface AgentCapabilityPluginManifestValidationError {
+  code: string
+  message: string
+  field?: string
+}
+
+export interface AgentCapabilityPluginManifestEntry {
+  path: string
+  status: AgentCapabilityPluginManifestStatus
+  readonly: true
+  id?: string
+  displayName?: string
+  version?: string
+  schemaVersion?: number
+  agentCompatibility?: {
+    agentId: string
+    name: string
+    versionRange?: string
+    detectedVersion?: string
+  }
+  errors: AgentCapabilityPluginManifestValidationError[]
+}
+
 export interface AgentCapabilityPlugin {
   id: AgentCapabilityPluginId
   displayName: string

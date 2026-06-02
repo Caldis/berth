@@ -4,10 +4,11 @@
 
 本任务按顺序执行。原因是 shared 类型、主进程 registry、renderer hook 和 Settings UI 都依赖同一份 `AgentCapabilityPluginListResult` 契约, 并行修改同一批文件容易制造不必要冲突。
 
-- [ ] 1. 新增 manifest shared 类型与 parser / validator
+- [x] 1. 新增 manifest shared 类型与 parser / validator
   - files: `src/shared/types/agent-plugin.ts`, `src/main/agent-plugins/manifest.ts`, `tests/unit/agent-plugin-manifest.test.ts`
   - tests: `pnpm test -- tests/unit/agent-plugin-manifest.test.ts`
   - verify: 有效 manifest、JSON 错误、schemaVersion 错误、id 冲突、write/execute 权限、非 https reference、versionRange 匹配/不匹配均被覆盖。
+  - evidence: 2026-06-02 `pnpm test -- tests/unit/agent-plugin-manifest.test.ts` 通过, 9 tests passed。
 
 - [ ] 2. 接入 registry、IPC 和 detected version
   - files: `src/shared/types/ipc.ts`, `src/main/engine/scanner.ts`, `src/main/agent-plugins/registry.ts`, `src/main/ipc/handlers.ts`, `tests/unit/agent-capability-plugins.test.ts`
