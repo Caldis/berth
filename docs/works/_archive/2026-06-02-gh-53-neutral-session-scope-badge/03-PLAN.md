@@ -11,10 +11,10 @@
   - tests: `pnpm exec vitest run tests/renderer/scope-badge-palette.test.tsx`
   - verify: Instructions 保持 rounded pill 视觉, 不再重复颜色表
   - evidence: 2026-06-02 目标测试通过, 2 tests passed; session badge 使用 zinc 色值, Instructions 复用 shared `ScopeBadge`。
-- [ ] 任务 3: 收口检查
+- [x] 任务 3: 收口检查
   - tests: `pnpm lint`; `pnpm typecheck:web`; `pnpm test`; `pnpm harness:check`; `node scripts/harness-projects.mjs check --strict`
   - verify: 包含 GitHub Actions run 结果
-  - evidence: 2026-06-02 本地通过 `pnpm lint`, `pnpm typecheck:web`, `pnpm typecheck:node`, `pnpm test` (60 files, 443 tests), `pnpm harness:check`, `node scripts/harness-projects.mjs check --strict`; push 前 Actions 基线最新 5 次均为 success, 最新 run 26805296056。
+  - evidence: 2026-06-02 本地通过 `pnpm lint`, `pnpm typecheck:web`, `pnpm typecheck:node`, `pnpm test` (60 files, 443 tests), `pnpm harness:check`, `node scripts/harness-projects.mjs check --strict`; push 前 Actions 基线最新 5 次均为 success, 最新 run 26805296056; commit `f16a2ef` 对应 CI run 26805718041 success。
 
 ## verify 回写
 
