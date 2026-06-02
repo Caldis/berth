@@ -11,7 +11,7 @@
   - verify: 2026-06-02 通过, 6 tests passed; 断言 `文件缺失`、`记忆类型`、`全部类型`、`标签`、`全部标签` 和 missing body 可见
 - [x] 任务 3: 收口检查
   - tests: `pnpm typecheck:web`; `pnpm harness:check --work docs/works/2026-06-02-gh-45-localize-memory-labels`
-  - verify: 2026-06-02 `pnpm typecheck:web` 通过; `pnpm lint` 通过; `pnpm test` 通过, 56 files / 435 tests; `pnpm harness:check --work docs/works/2026-06-02-gh-45-localize-memory-labels` 通过; UI 结构不变
+  - verify: 2026-06-02 `pnpm typecheck:web` 通过; `pnpm lint` 通过; `pnpm test` 通过, 56 files / 435 tests; `pnpm harness:check --work docs/works/2026-06-02-gh-45-localize-memory-labels` 通过; push 后 GitHub Actions run 26801279637 通过; UI 结构不变
 
 ## verify 回写
 
