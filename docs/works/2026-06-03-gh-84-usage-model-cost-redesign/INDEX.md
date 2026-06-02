@@ -2,7 +2,7 @@
 task: 2026-06-03-gh-84-usage-model-cost-redesign
 task_id: GH-84
 type: feature
-phase: explore
+phase: implement
 created: 2026-06-03
 priority: P1
 target_date: 
@@ -12,17 +12,16 @@ source:
     - docs/issues/2026-06-02-FEATURE-usage-model-cost-redesign.md
 debt:
   estimate:
-    incurred: 5
+    incurred: 3
     repaid: 0
-    net: 5
-    scope: cross-process
-    risk: high
+    net: 3
+    scope: module
+    risk: medium
     areas:
-      - architecture
-      - testability
       - ui-ux
-    confidence: low
-    rationale: "0.0-new 初始估算; 用量重设计涉及 usage 数据来源、费用口径、模型明细、控件移除和 UI 验收, explore/design 后校准。"
+      - testability
+    confidence: medium
+    rationale: "Explore 确认 usage 数据契约已包含费用来源、模型明细、价格缺口和口径字段; 本轮实现可收在 renderer/i18n/tests, 保持 IPC 兼容。"
   final:
     incurred:
     repaid:
@@ -32,7 +31,31 @@ debt:
     areas: []
     confidence:
     rationale:
-  revisions: []
+  revisions:
+    - phase: explore
+      date: 2026-06-03
+      from:
+        incurred: 5
+        repaid: 0
+        net: 5
+        scope: cross-process
+        risk: high
+        areas:
+          - architecture
+          - testability
+          - ui-ux
+        confidence: low
+      to:
+        incurred: 3
+        repaid: 0
+        net: 3
+        scope: module
+        risk: medium
+        areas:
+          - ui-ux
+          - testability
+        confidence: medium
+      reason: "主进程汇总和共享类型已具备关键字段; GH-84 只需要调整 Usage renderer 信息结构、文案和测试。"
 issue:
   number: 84
   repo: Caldis/berth
@@ -60,9 +83,9 @@ artifacts:
 
 ## 产物
 - [x] 00-PRD.md — 原始输入快照
-- [ ] 01-ANALYSIS.md — Explore 产物
-- [ ] 02-SPEC.md — Design 产物
-- [ ] 03-PLAN.md — 活任务清单
+- [x] 01-ANALYSIS.md — Explore 产物
+- [x] 02-SPEC.md — Design 产物
+- [x] 03-PLAN.md — 活任务清单
 - [ ] 04-POLISH.md — 可选抛光记录
 
 ## 待澄清 (blocked 时填)
