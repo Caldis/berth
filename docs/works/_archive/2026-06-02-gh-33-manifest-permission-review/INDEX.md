@@ -2,7 +2,7 @@
 task: 2026-06-02-gh-33-manifest-permission-review
 task_id: GH-33
 type: feature
-phase: verify
+phase: archive
 created: 2026-06-02
 issue:
   number: 33
@@ -15,7 +15,7 @@ gh_project:
   project_number: 6
   project_url: https://github.com/users/Caldis/projects/6
   item_id: PVTI_lAHOADXbEs4BZHvQzgucOsM
-  item_status: In Progress
+  item_status: Done
   project_id: PVT_kwHOADXbEs4BZHvQ
 artifacts:
   source: 00-PRD.md

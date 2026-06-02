@@ -21,3 +21,14 @@
 
 ## verify 回写
 verify 不通过项作为新任务追加于此, phase 退回 implement。
+
+2026-06-02 verify passed:
+
+- `pnpm lint`
+- `pnpm typecheck`
+- `pnpm test` — 54 files, 419 tests passed. Existing Recharts zero-size stderr in `tests/renderer/sessions-pages.test.tsx` is unrelated test noise.
+- `pnpm harness:check`
+- `node scripts/harness-projects.mjs check --strict`
+- UI: agent-owned `pnpm dev:agent start --id gh33-permission-review-verify --debug-port 9341`; Playwright CDP opened Settings, expanded the temp `Review Helper` manifest, and asserted permission review labels, reasons, paths, backup strategy, conflict strategy, and missing strategy fallback.
+- UI screenshot: `C:\Users\mail\AppData\Local\Temp\berth-agent-dev\gh33-permission-review-verify\screenshot.png` showed the permission review section in the real Electron window.
+- Cleanup: `pnpm dev:agent stop gh33-permission-review-verify --json`; `pnpm dev:agent guard after --id gh33-permission-review-verify --json` returned `guard-ok`.
