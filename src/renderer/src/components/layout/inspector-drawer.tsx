@@ -1,10 +1,25 @@
-import { useCallback, useEffect } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { X, Copy, Check } from 'lucide-react'
 import { useState } from 'react'
 import { cn } from '@/lib/utils'
 import { useAppStore } from '@/stores/app'
 import { truncatePath } from '@/lib/utils'
+
+const FOCUSABLE_SELECTOR = [
+  'a[href]',
+  'button:not([disabled])',
+  'input:not([disabled])',
+  'select:not([disabled])',
+  'textarea:not([disabled])',
+  '[tabindex]:not([tabindex="-1"])'
+].join(',')
+
+function getFocusableElements(root: HTMLElement): HTMLElement[] {
+  return Array.from(root.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).filter(
+    (element) => element.getAttribute('aria-hidden') !== 'true'
+  )
+}
 
 export function InspectorDrawer(): React.ReactElement | null {
   const { t } = useTranslation()
@@ -13,6 +28,8 @@ export function InspectorDrawer(): React.ReactElement | null {
   const content = useAppStore((s) => s.inspectorContent)
   const closeInspector = useAppStore((s) => s.closeInspector)
   const [copied, setCopied] = useState(false)
+  const drawerRef = useRef<HTMLDivElement>(null)
+  const closeButtonRef = useRef<HTMLButtonElement>(null)
 
   const handleCopy = useCallback(async () => {
     if (!content) return
@@ -27,12 +44,45 @@ export function InspectorDrawer(): React.ReactElement | null {
 
   useEffect(() => {
     const handler = (e: KeyboardEvent): void => {
-      if (e.key === 'Escape' && open) {
+      if (!open) return
+
+      if (e.key === 'Escape') {
         e.preventDefault()
         closeInspector()
+        return
+      }
+
+      if (e.key !== 'Tab') return
+
+      const drawer = drawerRef.current
+      if (!drawer) return
+
+      const focusableElements = getFocusableElements(drawer)
+      if (focusableElements.length === 0) return
+
+      const firstFocusable = focusableElements[0]
+      const lastFocusable = focusableElements[focusableElements.length - 1]
+      const activeElement = document.activeElement
+
+      if (e.shiftKey) {
+        if (!activeElement || activeElement === firstFocusable || !drawer.contains(activeElement)) {
+          e.preventDefault()
+          lastFocusable.focus()
+        }
+        return
+      }
+
+      if (!activeElement || activeElement === lastFocusable || !drawer.contains(activeElement)) {
+        e.preventDefault()
+        firstFocusable.focus()
       }
     }
     window.addEventListener('keydown', handler)
+
+    if (open) {
+      closeButtonRef.current?.focus()
+    }
+
     return () => window.removeEventListener('keydown', handler)
   }, [open, closeInspector])
 
@@ -41,10 +91,14 @@ export function InspectorDrawer(): React.ReactElement | null {
   return (
     <>
       {/* Backdrop */}
-      <div className="fixed inset-0 z-40 bg-black/30" onClick={closeInspector} />
+      <div aria-hidden="true" className="fixed inset-0 z-40 bg-black/30" onClick={closeInspector} />
 
       {/* Drawer */}
       <div
+        ref={drawerRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label={t('common.viewRaw')}
         className={cn(
           'fixed right-0 top-0 z-50 flex h-full w-full max-w-2xl flex-col border-l border-border bg-background shadow-2xl',
           'animate-in slide-in-from-right duration-200'
@@ -61,18 +115,27 @@ export function InspectorDrawer(): React.ReactElement | null {
             )}
           </div>
           <button
+            type="button"
+            aria-label={t('inspector.copy')}
             onClick={handleCopy}
             className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
             title={t('inspector.copy')}
           >
-            {copied ? <Check className="h-3.5 w-3.5 text-green-500" /> : <Copy className="h-3.5 w-3.5" />}
+            {copied ? (
+              <Check aria-hidden="true" className="h-3.5 w-3.5 text-green-500" />
+            ) : (
+              <Copy aria-hidden="true" className="h-3.5 w-3.5" />
+            )}
           </button>
           <button
+            ref={closeButtonRef}
+            type="button"
+            aria-label={t('common.close')}
             onClick={closeInspector}
             className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
             title={t('common.close')}
           >
-            <X className="h-3.5 w-3.5" />
+            <X aria-hidden="true" className="h-3.5 w-3.5" />
           </button>
         </div>
 
