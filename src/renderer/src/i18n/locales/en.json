@@ -553,6 +553,10 @@
       "setting": "Setting",
       "command": "Command",
       "footerItems": "Footer items",
+      "itemLabels": {
+        "model-with-reasoning": "Model + reasoning",
+        "current-dir": "Current directory"
+      },
       "themeColors": "Theme colors",
       "refreshInterval": "Refresh interval",
       "padding": "Padding",
@@ -581,7 +585,7 @@
         "body": "No tui.status_line setting was found, so Codex falls back to its built-in default footer items."
       },
       "empty": {
-        "all": "No status line config was found. Claude Code uses settings.json command config; Codex falls back to model-with-reasoning and current-dir when tui.status_line is unset.",
+        "all": "No status line config was found. Claude Code uses settings.json command config; Codex falls back to Model + reasoning and Current directory when tui.status_line is unset.",
         "claude": "No Claude Code statusLine or subagentStatusLine setting was found in the scanned settings files.",
         "codex": "No Codex tui.status_line setting was found. Codex will use its default footer items unless the field is explicitly set."
       }

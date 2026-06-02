@@ -287,6 +287,10 @@ const SCOPE_RANK: Record<AssetScope, number> = {
   session: 1
 }
 
+function formatCodexStatusLineItemLabel(t: ReturnType<typeof useTranslation>['t'], item: string): string {
+  return t(`capabilities.statusLine.itemLabels.${item}`, { defaultValue: item })
+}
+
 function getStatusLineGroupKey(asset: Asset): string {
   const provider = (asset.meta.provider as string | undefined) ?? asset.agentId
   if (provider === 'codex') return 'codex:footer-items'
@@ -461,8 +465,8 @@ function CodexDefaultStatusLine(): React.ReactElement {
       <p className="mt-1 text-xs leading-5 text-muted-foreground">{t('capabilities.statusLine.defaultCodex.body')}</p>
       <div className="mt-2 flex flex-wrap gap-1.5">
         {CODEX_DEFAULT_STATUS_LINE_ITEMS.map((item) => (
-          <span key={item} className="rounded-md border border-border bg-card px-2 py-1 font-mono text-xs text-foreground">
-            {item}
+          <span key={item} title={item} className="rounded-md border border-border bg-card px-2 py-1 text-xs font-medium text-foreground">
+            {formatCodexStatusLineItemLabel(t, item)}
           </span>
         ))}
       </div>
@@ -529,14 +533,15 @@ function StatusLineCard({ viewModel }: { viewModel: StatusLineViewModel }): Reac
                 {items.map((item) => (
                   <span
                     key={item}
+                    title={item}
                     className={cn(
-                      'rounded-md border px-2 py-1 font-mono text-xs',
+                      'rounded-md border px-2 py-1 text-xs font-medium',
                       unknownItems.includes(item)
                         ? 'border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300'
                         : 'border-border bg-muted/40 text-foreground'
                     )}
                   >
-                    {item}
+                    {formatCodexStatusLineItemLabel(t, item)}
                   </span>
                 ))}
               </div>

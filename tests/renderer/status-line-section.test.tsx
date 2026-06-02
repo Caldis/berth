@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react'
 import React from 'react'
-import { describe, expect, it } from 'vitest'
-import '../../src/renderer/src/i18n'
+import { beforeEach, describe, expect, it } from 'vitest'
+import i18n from '../../src/renderer/src/i18n'
 import { StatusLineSection } from '../../src/renderer/src/pages/capabilities'
 import type { AgentView, Asset } from '../../src/shared/types/asset'
 
@@ -23,6 +23,10 @@ function renderStatusLine(agentView: AgentView, assets: Asset[]): void {
 }
 
 describe('StatusLineSection', () => {
+  beforeEach(async () => {
+    await i18n.changeLanguage('en')
+  })
+
   it('shows Claude command-backed status line details', () => {
     renderStatusLine('claude', [
       statusLineAsset('claude-status', 'claude-code', {
@@ -60,7 +64,9 @@ describe('StatusLineSection', () => {
     expect(screen.queryByText('Status lines show live session state')).not.toBeInTheDocument()
     expect(screen.queryByText(/Reads \[tui\]\.status_line from config\.toml/)).not.toBeInTheDocument()
     expect(screen.getByText('tui.status_line')).toBeInTheDocument()
-    expect(screen.getByText('model-with-reasoning')).toBeInTheDocument()
+    expect(screen.getByText('Model + reasoning')).toHaveAttribute('title', 'model-with-reasoning')
+    expect(screen.getByText('Current directory')).toHaveAttribute('title', 'current-dir')
+    expect(screen.queryByText('model-with-reasoning')).not.toBeInTheDocument()
     expect(screen.getByText('not-a-real-item')).toBeInTheDocument()
     expect(screen.getByText('1 unknown item(s) will be ignored by current Codex builds.')).toBeInTheDocument()
     expect(screen.getByText('No')).toBeInTheDocument()
@@ -86,7 +92,26 @@ describe('StatusLineSection', () => {
     expect(screen.queryByText('Status lines show live session state')).not.toBeInTheDocument()
     expect(screen.getByText(/No status line config was found/)).toBeInTheDocument()
     expect(screen.getByText('Codex default footer')).toBeInTheDocument()
-    expect(screen.getByText('model-with-reasoning')).toBeInTheDocument()
+    expect(screen.getByText('Model + reasoning')).toHaveAttribute('title', 'model-with-reasoning')
+    expect(screen.getByText('Current directory')).toHaveAttribute('title', 'current-dir')
+  })
+
+  it('localizes Codex footer item labels in Chinese', async () => {
+    await i18n.changeLanguage('zh')
+
+    renderStatusLine('codex', [
+      statusLineAsset('codex-status', 'codex', {
+        provider: 'codex',
+        settingKey: 'tui.status_line',
+        statusLineKind: 'footer-items',
+        items: ['model-with-reasoning', 'current-dir']
+      })
+    ])
+
+    expect(screen.getByText('Footer 项')).toBeInTheDocument()
+    expect(screen.getByText('模型与推理')).toHaveAttribute('title', 'model-with-reasoning')
+    expect(screen.getByText('当前目录')).toHaveAttribute('title', 'current-dir')
+    expect(screen.queryByText('model-with-reasoning')).not.toBeInTheDocument()
   })
 
   it('marks the highest-priority status line as effective', () => {

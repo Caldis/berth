@@ -531,7 +531,7 @@
           "body": "读取 settings 文件中的 statusLine 和 subagentStatusLine。命令可以引用本地脚本, 也可能被 disableAllHooks 禁用。"
         },
         "codex": {
-          "title": "Codex footer items",
+          "title": "Codex footer 项",
           "body": "读取 config.toml 里的 [tui].status_line。模型、目录、分支、token、速率限制和任务进度等 item 可被选择和排序。"
         }
       },
@@ -539,7 +539,7 @@
         "total": "已配置状态栏资产",
         "effective": "当前生效",
         "claude": "Claude 命令展示面",
-        "codexItems": "Codex footer items",
+        "codexItems": "Codex footer 项",
         "disabled": "被设置禁用",
         "warnings": "警告",
         "blocked": "阻断"
@@ -549,7 +549,11 @@
       "overriddenBy": "被 {{scope}} 级别覆盖",
       "setting": "设置项",
       "command": "命令",
-      "footerItems": "Footer items",
+      "footerItems": "Footer 项",
+      "itemLabels": {
+        "model-with-reasoning": "模型与推理",
+        "current-dir": "当前目录"
+      },
       "themeColors": "主题颜色",
       "refreshInterval": "刷新间隔",
       "padding": "边距",
@@ -575,12 +579,12 @@
       },
       "defaultCodex": {
         "title": "Codex 默认 footer",
-        "body": "没有发现 tui.status_line 设置, 因此 Codex 会使用内置默认 footer items。"
+        "body": "没有发现 tui.status_line 设置, 因此 Codex 会使用内置默认 footer 项。"
       },
       "empty": {
-        "all": "没有发现状态栏配置。Claude Code 使用 settings.json 的命令配置；Codex 在 tui.status_line 未设置时会回退到 model-with-reasoning 和 current-dir。",
+        "all": "没有发现状态栏配置。Claude Code 使用 settings.json 的命令配置；Codex 在 tui.status_line 未设置时会回退到“模型与推理”和“当前目录”。",
         "claude": "扫描到的 settings 文件里没有 Claude Code statusLine 或 subagentStatusLine 设置。",
-        "codex": "没有发现 Codex tui.status_line 设置。除非显式设置该字段, Codex 会使用默认 footer items。"
+        "codex": "没有发现 Codex tui.status_line 设置。除非显式设置该字段, Codex 会使用默认 footer 项。"
       }
     },
     "guidance": {
@@ -649,7 +653,7 @@
         },
         "providers": {
           "claude": "Claude Code 状态栏运行配置好的命令并展示输出。",
-          "codex": "Codex 状态栏从 config.toml 选择有序的内置 footer items。"
+          "codex": "Codex 状态栏从 config.toml 选择有序的内置 footer 项。"
         }
       },
       "permissions": {
