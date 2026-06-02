@@ -39,3 +39,12 @@
 - 每完成一个上面的独立步骤并通过对应验证, 立即显式暂存本步骤文件。
 - 提交前运行 `git diff --cached` 核对 staged 集合。
 - 提交成功后立即 `git push` 推送当前分支。
+
+## Verify 证据
+
+- 2026-06-02 `pnpm lint` 通过。
+- 2026-06-02 `pnpm typecheck` 通过。
+- 2026-06-02 `pnpm test` 通过, 54 files / 405 tests passed。测试输出仍包含既有 Recharts 0 尺寸 warning, 无失败。
+- 2026-06-02 `pnpm harness:check` 通过。
+- 2026-06-02 `node scripts/harness-projects.mjs check --strict` 通过。
+- 2026-06-02 Settings manifest UI 截图验证通过: `C:\Users\mail\AppData\Local\Temp\berth-gh29-settings-manifest-ui.png`。
