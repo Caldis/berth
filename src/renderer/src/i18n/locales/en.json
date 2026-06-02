@@ -1342,6 +1342,44 @@
       "healthChecksNotPluginOwned": "Health checks are available today, but their rules still live in the health engine instead of the plugin registry.",
       "uiGuidanceInProgress": "Settings uses this plugin metadata now. Other pages still have Agent-specific presentation code."
     },
+    "agentPluginHookHandlers": {
+      "claude-code": {
+        "command": {
+          "label": "Command",
+          "description": "Runs a local command or script."
+        },
+        "http": {
+          "label": "HTTP",
+          "description": "Calls an HTTP endpoint."
+        },
+        "mcp-tool": {
+          "label": "MCP tool",
+          "description": "Calls an MCP server tool."
+        },
+        "prompt": {
+          "label": "Prompt",
+          "description": "Runs a prompt handler."
+        },
+        "agent": {
+          "label": "Agent",
+          "description": "Starts an agent handler."
+        }
+      },
+      "codex": {
+        "command": {
+          "label": "Command",
+          "description": "Runs a local command or script."
+        },
+        "prompt": {
+          "label": "Prompt",
+          "description": "Parsed by Berth; not treated as a runnable Codex command hook."
+        },
+        "agent": {
+          "label": "Agent",
+          "description": "Parsed by Berth; not treated as a runnable Codex command hook."
+        }
+      }
+    },
     "agentPluginPermissionReasons": {
       "claudeRead": "Berth reads Claude Code instructions, capabilities, sessions, usage data, integrations, and managed policy files from these locations.",
       "claudeWrite": "Berth writes only user-level hook state: disableAllHooks, soft-disabled hook restore data, and recovery cleanup.",

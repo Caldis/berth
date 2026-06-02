@@ -68,7 +68,32 @@ function hookSchemaPlugin(
     assetDescriptors: [],
     hookSchema: {
       agentId,
-      events: [],
+      events: [
+        {
+          eventType: 'PreToolUse',
+          stageId: 'tool-before',
+          support: 'supported',
+          matcherSupported: true,
+          labelKey: 'settings.agentPluginHookEvents.test.preToolUse.label',
+          descriptionKey: 'settings.agentPluginHookEvents.test.preToolUse.description'
+        },
+        {
+          eventType: 'PostToolUse',
+          stageId: 'tool-after',
+          support: 'supported',
+          matcherSupported: true,
+          labelKey: 'settings.agentPluginHookEvents.test.postToolUse.label',
+          descriptionKey: 'settings.agentPluginHookEvents.test.postToolUse.description'
+        },
+        {
+          eventType: 'Stop',
+          stageId: 'session-stop',
+          support: 'supported',
+          matcherSupported: false,
+          labelKey: 'settings.agentPluginHookEvents.test.stop.label',
+          descriptionKey: 'settings.agentPluginHookEvents.test.stop.description'
+        }
+      ],
       handlers
     },
     healthCheckDescriptors: [],
@@ -262,16 +287,86 @@ describe('HooksLifecycleView', () => {
           model: 'claude-sonnet-4-5'
         }
       })
+    ], [
+      hookSchemaPlugin('claude-code', [
+        {
+          type: 'http',
+          runMode: 'runnable',
+          primaryFieldNames: ['url'],
+          labelKey: 'settings.agentPluginHookHandlers.claude-code.http.label',
+          descriptionKey: 'settings.agentPluginHookHandlers.claude-code.http.description',
+          fields: [
+            {
+              name: 'type',
+              kind: 'string',
+              required: true,
+              labelKey: 'settings.agentPluginHookHandlers.claude-code.http.fields.type.label',
+              descriptionKey: 'settings.agentPluginHookHandlers.claude-code.http.fields.type.description'
+            },
+            {
+              name: 'url',
+              kind: 'string',
+              required: true,
+              primary: true,
+              labelKey: 'settings.agentPluginHookHandlers.claude-code.http.fields.url.label',
+              descriptionKey: 'settings.agentPluginHookHandlers.claude-code.http.fields.url.description'
+            },
+            {
+              name: 'timeout',
+              kind: 'number',
+              labelKey: 'settings.agentPluginHookHandlers.claude-code.http.fields.timeout.label',
+              descriptionKey: 'settings.agentPluginHookHandlers.claude-code.http.fields.timeout.description'
+            },
+            {
+              name: 'statusMessage',
+              kind: 'string',
+              labelKey: 'settings.agentPluginHookHandlers.claude-code.http.fields.statusMessage.label',
+              descriptionKey: 'settings.agentPluginHookHandlers.claude-code.http.fields.statusMessage.description'
+            }
+          ]
+        },
+        {
+          type: 'prompt',
+          runMode: 'runnable',
+          primaryFieldNames: ['prompt'],
+          labelKey: 'settings.agentPluginHookHandlers.claude-code.prompt.label',
+          descriptionKey: 'settings.agentPluginHookHandlers.claude-code.prompt.description',
+          fields: [
+            {
+              name: 'type',
+              kind: 'string',
+              required: true,
+              labelKey: 'settings.agentPluginHookHandlers.claude-code.prompt.fields.type.label',
+              descriptionKey: 'settings.agentPluginHookHandlers.claude-code.prompt.fields.type.description'
+            },
+            {
+              name: 'prompt',
+              kind: 'string',
+              required: true,
+              primary: true,
+              labelKey: 'settings.agentPluginHookHandlers.claude-code.prompt.fields.prompt.label',
+              descriptionKey: 'settings.agentPluginHookHandlers.claude-code.prompt.fields.prompt.description'
+            },
+            {
+              name: 'model',
+              kind: 'string',
+              labelKey: 'settings.agentPluginHookHandlers.claude-code.prompt.fields.model.label',
+              descriptionKey: 'settings.agentPluginHookHandlers.claude-code.prompt.fields.model.description'
+            }
+          ]
+        }
+      ])
     ])
     await waitForHookHealthIdle()
 
-    expect(screen.getByText('http')).toBeInTheDocument()
+    expect(screen.getByText('HTTP')).toHaveAttribute('title', 'http')
     expect(screen.getByText('http://localhost:8080/hooks/pre-tool-use')).toBeInTheDocument()
     expect(screen.getByText('30s')).toBeInTheDocument()
     expect(screen.getByText('Checking command')).toBeInTheDocument()
-    expect(screen.getByText('prompt')).toBeInTheDocument()
+    expect(screen.getByText('Prompt')).toHaveAttribute('title', 'prompt')
     expect(screen.getByText('Review the turn and decide whether Claude can stop.')).toBeInTheDocument()
     expect(screen.getByText('claude-sonnet-4-5')).toBeInTheDocument()
+    expect(screen.queryByText('prompt')).not.toBeInTheDocument()
 
     fireEvent.click(screen.getAllByText('JSON')[0])
     expect(screen.getByText(/"type": "http"/)).toBeInTheDocument()
@@ -285,7 +380,22 @@ describe('HooksLifecycleView', () => {
     })
   })
 
+  it('falls back to raw hook type when no handler schema is available', async () => {
+    renderHooks('claude', [
+      hookAsset('claude-webhook', 'claude-code', 'PostToolUse', {
+        hookType: 'webhook',
+        endpoint: 'https://hooks.example.test/post-tool'
+      })
+    ])
+    await waitForHookHealthIdle()
+
+    expect(screen.getByText('webhook')).toBeInTheDocument()
+    expect(screen.getByText('echo stop')).toBeInTheDocument()
+  })
+
   it('uses plugin handler schema for primary fields and parsed-only run mode', async () => {
+    i18n.addResource('en', 'translation', 'settings.agentPluginHookHandlers.claude-code.webhook.label', 'Webhook')
+
     renderHooks('all', [
       hookAsset('claude-custom', 'claude-code', 'PostToolUse', {
         hookType: 'webhook',
@@ -358,9 +468,9 @@ describe('HooksLifecycleView', () => {
     ])
     await waitForHookHealthIdle()
 
-    expect(screen.getByText('webhook')).toBeInTheDocument()
+    expect(screen.getByText('Webhook')).toHaveAttribute('title', 'webhook')
     expect(screen.getByText('https://hooks.example.test/post-tool')).toBeInTheDocument()
-    expect(screen.getByText('prompt')).toBeInTheDocument()
+    expect(screen.getByText('Prompt')).toBeInTheDocument()
     expect(screen.getByText('Summarize this turn before stopping.')).toBeInTheDocument()
     expect(screen.getByText('Parsed only')).toBeInTheDocument()
 

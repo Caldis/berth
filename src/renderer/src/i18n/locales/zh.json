@@ -1336,6 +1336,44 @@
       "healthChecksNotPluginOwned": "健康检查当前可用, 但规则仍在 health engine 中, 还没有迁入插件注册表。",
       "uiGuidanceInProgress": "设置页已经使用这组插件元数据。其他页面仍有 Agent 专属展示代码。"
     },
+    "agentPluginHookHandlers": {
+      "claude-code": {
+        "command": {
+          "label": "命令",
+          "description": "运行本地命令或脚本。"
+        },
+        "http": {
+          "label": "HTTP",
+          "description": "调用 HTTP endpoint。"
+        },
+        "mcp-tool": {
+          "label": "MCP 工具",
+          "description": "调用 MCP server tool。"
+        },
+        "prompt": {
+          "label": "Prompt",
+          "description": "运行 prompt handler。"
+        },
+        "agent": {
+          "label": "Agent",
+          "description": "启动 agent handler。"
+        }
+      },
+      "codex": {
+        "command": {
+          "label": "命令",
+          "description": "运行本地命令或脚本。"
+        },
+        "prompt": {
+          "label": "Prompt",
+          "description": "Berth 会解析, 但不把它视为 Codex 可运行 command hook。"
+        },
+        "agent": {
+          "label": "Agent",
+          "description": "Berth 会解析, 但不把它视为 Codex 可运行 command hook。"
+        }
+      }
+    },
     "agentPluginPermissionReasons": {
       "claudeRead": "Berth 会从这些位置读取 Claude Code 指令、能力、会话、用量数据、集成和 managed policy 文件。",
       "claudeWrite": "Berth 只写用户级 Hook 状态: disableAllHooks、软禁用 Hook 恢复数据和恢复记录清理。",

@@ -863,8 +863,11 @@ function HookAssetRow({
       <div className="flex flex-wrap items-start gap-3">
         <div className="min-w-0 flex-1">
           <div className="flex min-w-0 flex-wrap items-center gap-2">
-            <span className="rounded-md bg-muted px-1.5 py-0.5 font-mono text-[10px] font-medium text-muted-foreground">
-              {display.type}
+            <span
+              title={display.type}
+              className="rounded-md bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground"
+            >
+              {display.typeLabelKey ? t(display.typeLabelKey, { defaultValue: display.type }) : display.type}
             </span>
             {display.runMode && display.runMode !== 'runnable' && (
               <span className="rounded-md border border-amber-500/30 bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-medium text-amber-700 dark:text-amber-300">
@@ -978,6 +981,7 @@ interface HookConfigItem {
 
 interface HookDisplayDetails {
   type: string
+  typeLabelKey?: string
   primary: string
   configItems: HookConfigItem[]
   runMode?: AgentCapabilityPluginHookHandlerDescriptor['runMode']
@@ -1046,6 +1050,7 @@ function applyHandlerDescriptor(
 
   return {
     type: fallback.type,
+    typeLabelKey: handlerDescriptor.labelKey,
     primary: truncateInline(primary, 160),
     configItems: configItems.length > 0 ? configItems : fallback.configItems,
     runMode: handlerDescriptor.runMode
