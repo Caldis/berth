@@ -10,10 +10,11 @@
   - verify: 有效 manifest、JSON 错误、schemaVersion 错误、id 冲突、write/execute 权限、非 https reference、versionRange 匹配/不匹配均被覆盖。
   - evidence: 2026-06-02 `pnpm test -- tests/unit/agent-plugin-manifest.test.ts` 通过, 9 tests passed。
 
-- [ ] 2. 接入 registry、IPC 和 detected version
+- [x] 2. 接入 registry、IPC 和 detected version
   - files: `src/shared/types/ipc.ts`, `src/main/engine/scanner.ts`, `src/main/agent-plugins/registry.ts`, `src/main/ipc/handlers.ts`, `tests/unit/agent-capability-plugins.test.ts`
   - tests: `pnpm test -- tests/unit/agent-capability-plugins.test.ts`
   - verify: `listAgentCapabilityPlugins()` 仍返回 Claude Code / Codex 两个内置 plugins; 同时返回 manifest status; invalid manifest 不影响内置 plugins; `AgentScanSourceGroup.version` 能参与兼容判断。
+  - evidence: 2026-06-02 `pnpm test -- tests/unit/agent-plugin-manifest.test.ts tests/unit/agent-capability-plugins.test.ts` 通过, 23 tests passed。
 
 - [ ] 3. 接入 renderer hook 和 Settings manifest 展示
   - files: `src/renderer/src/hooks/use-ipc.ts`, `src/renderer/src/components/settings/agent-capability-plugins-section.tsx`, `src/renderer/src/i18n/locales/en.json`, `src/renderer/src/i18n/locales/zh.json`, `tests/renderer/settings-agent-plugins.test.tsx`

@@ -38,6 +38,7 @@ export interface AgentScanSourceGroup {
   agentId: string
   agentName: string
   installed: boolean
+  version?: string
   roots: ScanRoot[]
   sources?: ScanRoot[]
 }

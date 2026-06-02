@@ -1,8 +1,13 @@
-import { describe, expect, it } from 'vitest'
+import * as fs from 'fs'
+import * as os from 'os'
+import * as path from 'path'
+import { afterEach, describe, expect, it } from 'vitest'
 import { listAgentCapabilityPlugins } from '../../src/main/agent-plugins/registry'
 import type { AgentScanSourceGroup } from '../../src/shared/types/ipc'
 import type { HealthCheckCategory, HealthCheckSeverity } from '../../src/shared/types/ipc'
 import type { AssetType, ScanSourceCode } from '../../src/shared/types/asset'
+
+const tempDirs: string[] = []
 
 const claudeDescriptorCodes: ScanSourceCode[] = [
   'claude.user.data-directory',
@@ -177,6 +182,7 @@ const scanGroups: AgentScanSourceGroup[] = [
     agentId: 'claude-code',
     agentName: 'Claude Code',
     installed: true,
+    version: '1.2.3',
     roots: [
       {
         path: 'C:\\Users\\test\\.claude',
@@ -225,12 +231,78 @@ const scanGroups: AgentScanSourceGroup[] = [
 ]
 
 describe('agent capability plugin registry', () => {
+  afterEach(() => {
+    for (const dir of tempDirs.splice(0)) {
+      fs.rmSync(dir, { recursive: true, force: true })
+    }
+  })
+
   it('lists built-in Claude Code and Codex plugins', () => {
     const result = listAgentCapabilityPlugins(scanGroups)
 
     expect(result.plugins.map((plugin) => plugin.id)).toEqual(['claude-code', 'codex'])
     expect(result.plugins.every((plugin) => plugin.builtin)).toBe(true)
     expect(result.plugins.every((plugin) => plugin.enabled)).toBe(true)
+  })
+
+  it('returns third-party manifest statuses without changing built-in plugins', () => {
+    const dir = makeTempDir()
+    const validPath = path.join(dir, 'valid.json')
+    const invalidPath = path.join(dir, 'invalid.json')
+    const incompatiblePath = path.join(dir, 'incompatible.json')
+    writeJson(validPath, pluginManifest({
+      id: 'claude-helper',
+      displayName: 'Claude Helper',
+      agentCompatibility: {
+        agentId: 'claude-code',
+        name: 'Claude Code',
+        versionRange: '>=1.0.0 <2.0.0'
+      }
+    }))
+    writeJson(invalidPath, pluginManifest({
+      id: 'codex',
+      displayName: 'Codex Shadow'
+    }))
+    writeJson(incompatiblePath, pluginManifest({
+      id: 'future-claude-helper',
+      displayName: 'Future Claude Helper',
+      agentCompatibility: {
+        agentId: 'claude-code',
+        name: 'Claude Code',
+        versionRange: '>=2.0.0'
+      }
+    }))
+
+    const result = listAgentCapabilityPlugins(scanGroups, {
+      manifestPaths: [validPath, invalidPath, incompatiblePath],
+      homeDir: makeTempDir(),
+      env: {}
+    })
+
+    expect(result.plugins.map((plugin) => plugin.id)).toEqual(['claude-code', 'codex'])
+    expect(result.manifests).toEqual([
+      expect.objectContaining({
+        path: validPath,
+        status: 'valid',
+        id: 'claude-helper',
+        agentCompatibility: expect.objectContaining({
+          agentId: 'claude-code',
+          detectedVersion: '1.2.3'
+        })
+      }),
+      expect.objectContaining({
+        path: invalidPath,
+        status: 'invalid',
+        id: 'codex',
+        errors: [expect.objectContaining({ code: 'manifest-id-reserved' })]
+      }),
+      expect.objectContaining({
+        path: incompatiblePath,
+        status: 'incompatible',
+        id: 'future-claude-helper',
+        errors: [expect.objectContaining({ code: 'manifest-agent-version-incompatible' })]
+      })
+    ])
   })
 
   it('derives detected state and source coverage from scan source groups', () => {
@@ -546,3 +618,37 @@ describe('agent capability plugin registry', () => {
     })
   })
 })
+
+function pluginManifest(overrides: Record<string, unknown> = {}): Record<string, unknown> {
+  return {
+    schemaVersion: 1,
+    id: 'example-agent',
+    displayName: 'Example Agent',
+    version: '0.1.0',
+    agentCompatibility: {
+      agentId: 'example-agent',
+      name: 'Example Agent',
+      versionRange: '*'
+    },
+    permissions: [
+      {
+        kind: 'read',
+        scopes: ['user'],
+        pathPatterns: ['~/.example'],
+        reason: 'Read local Example Agent configuration.'
+      }
+    ],
+    ...overrides
+  }
+}
+
+function makeTempDir(): string {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'berth-agent-plugin-registry-'))
+  tempDirs.push(dir)
+  return dir
+}
+
+function writeJson(filePath: string, value: unknown): void {
+  fs.mkdirSync(path.dirname(filePath), { recursive: true })
+  fs.writeFileSync(filePath, JSON.stringify(value, null, 2), 'utf8')
+}

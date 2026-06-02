@@ -93,7 +93,12 @@ export function registerAssetHandlers(): void {
   })
 
   ipcMain.handle('agent-plugins:list', async (): Promise<AgentCapabilityPluginListResult> => {
-    return listAgentCapabilityPlugins(await getScanner().getScanSourceGroups())
+    const scanner = getScanner()
+    return listAgentCapabilityPlugins(await scanner.getScanSourceGroups(), {
+      homeDir: os.homedir(),
+      projectDir: scanner.getProjectDir(),
+      env: process.env
+    })
   })
 
   ipcMain.handle(

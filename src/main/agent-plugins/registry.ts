@@ -23,9 +23,11 @@ import type {
   ScanSourceKind,
   ScanSourceStatus
 } from '@shared/types/asset'
+import { loadAgentPluginManifests } from './manifest'
 
 const PLUGIN_SCHEMA_VERSION = 1
 const BUILTIN_PLUGIN_VERSION = '0.1.0'
+const BUILTIN_PLUGIN_IDS = ['claude-code', 'codex'] as const
 
 const SOURCE_STATUSES: ScanSourceStatus[] = ['scanned', 'missing', 'not-scanned']
 
@@ -1018,15 +1020,32 @@ const CODEX_HEALTH_CHECK_DESCRIPTORS: AgentCapabilityPluginHealthCheckDescriptor
   })
 ]
 
+export interface AgentCapabilityPluginRegistryOptions {
+  homeDir?: string
+  projectDir?: string
+  env?: NodeJS.ProcessEnv
+  manifestPaths?: string[]
+}
+
 export function listAgentCapabilityPlugins(
-  groups: AgentScanSourceGroup[] = []
+  groups: AgentScanSourceGroup[] = [],
+  options: AgentCapabilityPluginRegistryOptions = {}
 ): AgentCapabilityPluginListResult {
   return {
     plugins: [
       buildClaudeCodePlugin(findGroup(groups, 'claude-code')),
       buildCodexPlugin(findGroup(groups, 'codex'))
-    ]
+    ],
+    manifests: loadAgentPluginManifests({
+      ...options,
+      agentVersions: toAgentVersions(groups),
+      reservedIds: BUILTIN_PLUGIN_IDS
+    })
   }
+}
+
+function toAgentVersions(groups: AgentScanSourceGroup[]): Record<string, string | undefined> {
+  return Object.fromEntries(groups.map((group) => [group.agentId, group.version]))
 }
 
 function buildClaudeCodePlugin(group: AgentScanSourceGroup | undefined): AgentCapabilityPlugin {

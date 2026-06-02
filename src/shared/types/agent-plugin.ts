@@ -229,4 +229,5 @@ export interface AgentCapabilityPlugin {
 
 export interface AgentCapabilityPluginListResult {
   plugins: AgentCapabilityPlugin[]
+  manifests: AgentCapabilityPluginManifestEntry[]
 }

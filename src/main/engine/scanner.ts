@@ -117,6 +117,7 @@ export class AssetScanner {
           agentId: adapter.id,
           agentName: adapter.displayName,
           installed: result.installed,
+          version: result.version,
           roots: result.paths,
           sources: sourceCoverage
         })
