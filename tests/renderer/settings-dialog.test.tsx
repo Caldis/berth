@@ -33,7 +33,8 @@ describe('SettingsDialog focus management', () => {
 
   async function waitForSettingsContent(): Promise<void> {
     await screen.findByText('The plugin registry is not available.')
-    await screen.findByText('No supported local sources found.')
+    expect(screen.queryByText('No supported local sources found.')).not.toBeInTheDocument()
+    expect(window.api.assets.scanSources).not.toHaveBeenCalled()
   }
 
   it('keeps Tab and Shift+Tab inside the open dialog', async () => {
