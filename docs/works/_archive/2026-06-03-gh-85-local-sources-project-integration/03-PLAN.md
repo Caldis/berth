@@ -16,9 +16,15 @@
 - [x] 任务 4: 更新中英文 i18n 文案
   - tests: `pnpm test tests/renderer/project-scope-switcher.test.tsx tests/renderer/settings-sources.test.tsx`
   - verify: 英文 `Project sources`; 中文 `项目来源`; source count / scanned / missing / not scanned 文案在项目切换器中可读。
-- [ ] 任务 5: 跑类型、构建、harness、视觉和 CI 验收
+- [x] 任务 5: 跑类型、构建、harness、视觉和 CI 验收
   - tests: `pnpm typecheck:web`; `pnpm build`; `pnpm harness:check`; `pnpm harness:prepush`
   - verify: dev agent + CDP + `print-window` 截图确认项目切换器下拉无溢出、长路径裁剪正常、Settings 页面没有旧本地来源区块。
 
 ## verify 回写
-verify 不通过项作为新任务追加于此, phase 退回 implement。
+- `pnpm test tests/renderer/project-scope-switcher.test.tsx tests/renderer/settings-sources.test.tsx tests/renderer/settings-page.test.tsx` 通过。
+- `pnpm typecheck:web` 通过。
+- `pnpm build` 通过。
+- `pnpm harness:prepush` 通过。
+- GitHub Actions CI#26851960400、CI#26852233761 通过。
+- dev agent `gh85-sources` CDP 断言通过: 项目切换器出现项目来源摘要与当前项目来源明细, Settings 页面不再出现旧 Local Sources 区块。
+- dev agent `print-window` 截图: `C:\Users\mail\AppData\Local\Temp\berth-gh85-sources-print-2.png`, 确认弹层位于窗口内, 长路径裁剪正常。

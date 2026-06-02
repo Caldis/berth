@@ -2,7 +2,7 @@
 task: 2026-06-03-gh-85-local-sources-project-integration
 task_id: GH-85
 type: feature
-phase: implement
+phase: archive
 created: 2026-06-03
 priority: P2
 target_date: 
@@ -23,14 +23,16 @@ debt:
     confidence: medium
     rationale: "Explore/Design 确认现有 assets:scan-sources 与 project-scope:candidates 已有足够契约; 本轮主要迁移 renderer 展示和测试, 不改主进程扫描契约。"
   final:
-    incurred:
-    repaid:
-    net:
-    scope:
-    risk:
-    areas: []
-    confidence:
-    rationale:
+    incurred: 2
+    repaid: 1
+    net: 1
+    scope: module
+    risk: low
+    areas:
+      - ui-ux
+      - testability
+    confidence: high
+    rationale: "实现仅改 renderer project scope switcher、Settings 和对应测试; 本地 prepush、build、GitHub Actions 与 dev agent 视觉验收均通过, 额外修复了项目范围弹层顶部裁切问题。"
   revisions:
     - phase: explore
       date: 2026-06-03
@@ -56,6 +58,29 @@ debt:
           - testability
         confidence: medium
       reason: "现有 ProjectScopeCandidate、ScanRoot 与 assets:scan-sources 已覆盖项目来源展示所需字段; 不需要新增 IPC 或扫描器数据契约。"
+    - phase: verify
+      date: 2026-06-03
+      from:
+        incurred: 2
+        repaid: 0
+        net: 2
+        scope: module
+        risk: medium
+        areas:
+          - ui-ux
+          - testability
+        confidence: medium
+      to:
+        incurred: 2
+        repaid: 1
+        net: 1
+        scope: module
+        risk: low
+        areas:
+          - ui-ux
+          - testability
+        confidence: high
+      reason: "目标 renderer 测试、全量 prepush、build、CI 与 dev agent 截图均通过; 视觉验收发现并修复了弹层超出窗口顶部的问题。"
 issue:
   number: 85
   repo: Caldis/berth
@@ -66,7 +91,7 @@ gh_project:
   status: tracked
   project_number: 6
   project_url: https://github.com/users/Caldis/projects/6
-  item_status: In Progress
+  item_status: Done
   project_id: PVT_kwHOADXbEs4BZHvQ
   item_id: PVTI_lAHOADXbEs4BZHvQzguiZCA
 artifacts:
@@ -86,6 +111,6 @@ artifacts:
 - [x] 01-ANALYSIS.md — Explore 产物
 - [x] 02-SPEC.md — Design 产物
 - [x] 03-PLAN.md — 活任务清单
-- [ ] 04-POLISH.md — 可选抛光记录
+- [x] 04-POLISH.md — 可选抛光记录
 
 ## 待澄清 (blocked 时填)
