@@ -15,7 +15,7 @@
   - tests: `pnpm test -- tests/renderer/settings-agent-plugins.test.tsx`
   - verify: 列表只显示短 readiness 标签; 展开详情展示原因、implementation、blocked permissions; 关键说明不是 hover-only; 中英文 key 都存在。2026-06-02 通过渲染测试和 `pnpm typecheck`。
 
-- [ ] 运行实现阶段检查并转入 verify。
+- [x] 运行实现阶段检查并转入 verify。
   - files: `docs/works/2026-06-02-gh-30-agent-plugin-activation-readiness/INDEX.md`, `docs/works/2026-06-02-gh-30-agent-plugin-activation-readiness/03-PLAN.md`
   - tests: `pnpm typecheck`; `pnpm test -- tests/unit/agent-plugin-manifest.test.ts tests/unit/agent-capability-plugins.test.ts tests/renderer/settings-agent-plugins.test.tsx`; `pnpm harness:check --work docs/works/2026-06-02-gh-30-agent-plugin-activation-readiness`
-  - verify: 任务清单全部有测试证据后, `INDEX.phase` 改为 `verify`。
+  - verify: 2026-06-02 以上命令全部通过, `INDEX.phase` 改为 `verify`。

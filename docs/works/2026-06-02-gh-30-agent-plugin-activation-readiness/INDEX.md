@@ -2,7 +2,7 @@
 task: 2026-06-02-gh-30-agent-plugin-activation-readiness
 task_id: GH-30
 type: feature
-phase: implement
+phase: verify
 created: 2026-06-02
 issue:
   number: 30
