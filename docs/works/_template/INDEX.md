@@ -4,6 +4,32 @@ task_id: GH-{ISSUE_NUMBER}
 type: feature
 phase: explore
 created: {YYYY-MM-DD}
+priority: P2
+target_date: 
+source:
+  kind: user-request
+  refs: []
+debt:
+  estimate:
+    incurred: 3
+    repaid: 0
+    net: 3
+    scope: module
+    risk: medium
+    areas:
+      - architecture
+    confidence: low
+    rationale: "0.0-new 初始估算; explore/design 后校准。"
+  final:
+    incurred:
+    repaid:
+    net:
+    scope:
+    risk:
+    areas: []
+    confidence:
+    rationale:
+  revisions: []
 issue:
   number: {ISSUE_NUMBER}
   repo: Caldis/berth

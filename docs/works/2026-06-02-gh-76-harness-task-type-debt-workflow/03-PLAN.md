@@ -3,10 +3,10 @@
 从 02-SPEC 拆解。每任务可独立执行与验证, 顺序确定。implement 阶段维护此清单。
 每个实现项必须有测试证据或明确例外理由。
 
-- [ ] 任务 1: 本地 schema 与模板
+- [x] 任务 1: 本地 schema 与模板
   - files: `scripts/harness-lib.mjs`, `scripts/harness-check.mjs`, `docs/works/_template/INDEX.md`, `tests/harness/check.test.ts`
   - tests: `pnpm vitest run tests/harness/check.test.ts`; `pnpm harness:check --work docs/works/2026-06-02-gh-76-harness-task-type-debt-workflow`
-  - verify: `maintenance` 合法、非法 subtype/source/debt 被拒绝; 旧任务缺 debt 不报错; 非 UI, 界面质量与交互验收不适用。
+  - verify: 2026-06-02 `pnpm vitest run tests/harness/check.test.ts` 41 tests passed; `pnpm harness:check --work docs/works/2026-06-02-gh-76-harness-task-type-debt-workflow` passed; `pnpm harness:check` passed. `maintenance` 合法、非法 subtype/source/debt 被拒绝; 旧任务缺 debt 不报错; 非 UI, 界面质量与交互验收不适用。
 - [ ] 任务 2: debt pool 统计
   - files: `scripts/harness-stats.mjs`, `tests/harness/stats.test.ts`, `package.json` 如需新增脚本
   - tests: `pnpm vitest run tests/harness/stats.test.ts`

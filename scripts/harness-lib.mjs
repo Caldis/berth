@@ -6,6 +6,21 @@ import yaml from 'js-yaml'
 export const SKILL_PREFIX = 'harness'
 export const LEGACY_SKILL_PREFIXES = ['opsx']
 
+export const TASK_TYPES = ['feature', 'bug', 'maintenance']
+export const MAINTENANCE_SUBTYPES = ['ui-ux', 'performance', 'architecture', 'testability', 'tooling-ci', 'dependency', 'docs']
+export const SOURCE_KINDS = ['user-request', 'github-issue', 'docs-issues', 'docs-friction', 'ci', 'harness']
+export const PRIORITIES = ['P0', 'P1', 'P2', 'P3']
+export const DEBT_SCOPES = ['file', 'module', 'cross-process', 'global']
+export const DEBT_RISKS = ['low', 'medium', 'high']
+export const DEBT_CONFIDENCES = ['low', 'medium', 'high']
+export const DEBT_AREAS = ['ui-ux', 'performance', 'architecture', 'testability', 'tooling-ci', 'dependency', 'docs']
+
+export const DEBT_THRESHOLDS = {
+  notice: 20,
+  recommendMaintenance: 40,
+  requireOverrideReason: 60
+}
+
 export const LEGACY_VERBS = [
   'new',
   'continue',

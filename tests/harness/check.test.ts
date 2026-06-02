@@ -163,6 +163,77 @@ describe('checkWorks', () => {
     expect(checkWorks(root)).toEqual([])
   })
 
+  it('接受 maintenance task 的 subtype/source/debt estimate', () => {
+    const name = '2026-05-29-gh-15-maintain-ci'
+    const frontmatter = [
+      trackedFrontmatter(name, { type: 'maintenance', number: 15 }),
+      'priority: P1',
+      'maintenance:',
+      '  subtype: tooling-ci',
+      'source:',
+      '  kind: docs-friction',
+      '  refs:',
+      '    - docs/friction/20260529-4.0-verify-ci.md',
+      'debt:',
+      '  estimate:',
+      '    incurred: 0',
+      '    repaid: 8',
+      '    net: -8',
+      '    scope: global',
+      '    risk: medium',
+      '    areas:',
+      '      - tooling-ci',
+      '    confidence: medium',
+      '    rationale: CI workflow hardening',
+      '  revisions: []'
+    ].join('\n')
+    task(name, frontmatter, ['00-PRD.md'])
+    expect(checkWorks(root)).toEqual([])
+  })
+
+  it('校验 maintenance/source/priority/debt 枚举与 net 关系', () => {
+    const name = '2026-05-29-gh-16-bad-debt'
+    const frontmatter = [
+      trackedFrontmatter(name, { type: 'maintenance', number: 16 }),
+      'priority: P9',
+      'maintenance:',
+      '  subtype: issue',
+      'source:',
+      '  kind: friction',
+      'debt:',
+      '  estimate:',
+      '    incurred: 3',
+      '    repaid: 1',
+      '    net: 9',
+      '    scope: project',
+      '    risk: risky',
+      '    areas:',
+      '      - issue',
+      '    confidence: guessed'
+    ].join('\n')
+    task(name, frontmatter, ['00-PRD.md'])
+    const errs = checkWorks(root)
+    expect(errs.some((e: string) => e.includes('priority'))).toBe(true)
+    expect(errs.some((e: string) => e.includes('maintenance.subtype'))).toBe(true)
+    expect(errs.some((e: string) => e.includes('source.kind'))).toBe(true)
+    expect(errs.some((e: string) => e.includes('debt.estimate.net'))).toBe(true)
+    expect(errs.some((e: string) => e.includes('debt.estimate.scope'))).toBe(true)
+    expect(errs.some((e: string) => e.includes('debt.estimate.risk'))).toBe(true)
+    expect(errs.some((e: string) => e.includes('debt.estimate.areas'))).toBe(true)
+    expect(errs.some((e: string) => e.includes('debt.estimate.confidence'))).toBe(true)
+  })
+
+  it('feature 不允许携带 maintenance block', () => {
+    const name = '2026-05-29-gh-17-feature-with-maintenance'
+    const frontmatter = [
+      trackedFrontmatter(name, { number: 17 }),
+      'maintenance:',
+      '  subtype: architecture'
+    ].join('\n')
+    task(name, frontmatter, ['00-PRD.md'])
+    expect(checkWorks(root).some((e: string) => e.includes('maintenance block'))).toBe(true)
+  })
+
   it('目录 issue number 必须与 task_id 和 issue.number 一致', () => {
     const name = '2026-05-29-gh-10-order-notes'
     task(name, trackedFrontmatter(name, { number: 11 }), ['00-PRD.md'])

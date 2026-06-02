@@ -3,7 +3,18 @@
 import { readdirSync, readFileSync, existsSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { ACTION_IDS, parseFrontmatter } from './harness-lib.mjs'
+import {
+  ACTION_IDS,
+  DEBT_AREAS,
+  DEBT_CONFIDENCES,
+  DEBT_RISKS,
+  DEBT_SCOPES,
+  MAINTENANCE_SUBTYPES,
+  PRIORITIES,
+  SOURCE_KINDS,
+  TASK_TYPES,
+  parseFrontmatter
+} from './harness-lib.mjs'
 import { check as checkDistribution } from './harness-sync.mjs'
 
 const WORK_NAME = /^\d{4}-\d{2}-\d{2}-gh-(\d+)-[a-z0-9-]+$/
@@ -12,6 +23,7 @@ const PROJECT_ITEM_ID = /^PVTI_[A-Za-z0-9_-]+$/
 const FRICTION_NAME = new RegExp(`^\\d{8}-(${ACTION_IDS.map((id) => id.replace(/\./g, '\\.')).join('|')})-[a-z0-9-]+\\.md$`)
 const PHASES = ['explore', 'design', 'blocked', 'implement', 'verify', 'polish', 'archive']
 const PHASE_RANK = { explore: 0, design: 1, blocked: 1, implement: 2, verify: 3, polish: 4, archive: 5 }
+const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/
 export const SMALL_CHANGE_EXEMPTION_CONSENT = '小改动豁免前必须先声明豁免依据并征得用户确认。'
 export const TEST_DISCIPLINE_RULE = '测试证据或明确例外理由'
 export const FRONTEND_TASTE_RULE = '界面质量与交互验收'
@@ -42,6 +54,112 @@ function requiredArtifacts(type, phase) {
   if (rank >= 2) req.push('02-SPEC.md', '03-PLAN.md')
   if (phase === 'polish') req.push('04-POLISH.md')
   return req
+}
+
+function isPlainObject(value) {
+  return value && typeof value === 'object' && !Array.isArray(value)
+}
+
+function isPresent(value) {
+  return value !== undefined && value !== null && value !== ''
+}
+
+function isFiniteNumber(value) {
+  return typeof value === 'number' && Number.isFinite(value)
+}
+
+function isDateOnly(value) {
+  if (value instanceof Date) return !Number.isNaN(value.getTime())
+  return DATE_ONLY.test(String(value))
+}
+
+function validateEnum(errors, workName, path, value, allowed) {
+  if (!isPresent(value)) {
+    errors.push(`works/${workName}: ${path} is required`)
+    return
+  }
+  if (!allowed.includes(String(value))) {
+    errors.push(`works/${workName}: invalid ${path} "${value}"`)
+  }
+}
+
+function hasDebtSnapshotValue(snapshot) {
+  if (!isPlainObject(snapshot)) return false
+  return ['incurred', 'repaid', 'net', 'scope', 'risk', 'confidence'].some((key) => isPresent(snapshot[key])) ||
+    (Array.isArray(snapshot.areas) && snapshot.areas.length > 0)
+}
+
+function validateDebtSnapshot(errors, workName, path, snapshot, options = {}) {
+  const required = Boolean(options.required)
+  if (!isPresent(snapshot)) {
+    if (required) errors.push(`works/${workName}: ${path} is required`)
+    return
+  }
+  if (!isPlainObject(snapshot)) {
+    errors.push(`works/${workName}: ${path} must be an object`)
+    return
+  }
+  if (!required && !hasDebtSnapshotValue(snapshot)) return
+
+  for (const key of ['incurred', 'repaid', 'net']) {
+    if (!isFiniteNumber(snapshot[key])) errors.push(`works/${workName}: ${path}.${key} must be a finite number`)
+  }
+  if (isFiniteNumber(snapshot.incurred) && isFiniteNumber(snapshot.repaid) && isFiniteNumber(snapshot.net)) {
+    const expected = snapshot.incurred - snapshot.repaid
+    if (snapshot.net !== expected) errors.push(`works/${workName}: ${path}.net must equal incurred - repaid (${expected})`)
+  }
+  validateEnum(errors, workName, `${path}.scope`, snapshot.scope, DEBT_SCOPES)
+  validateEnum(errors, workName, `${path}.risk`, snapshot.risk, DEBT_RISKS)
+  validateEnum(errors, workName, `${path}.confidence`, snapshot.confidence, DEBT_CONFIDENCES)
+  if (!Array.isArray(snapshot.areas) || snapshot.areas.length === 0) {
+    errors.push(`works/${workName}: ${path}.areas must be a non-empty array`)
+  } else {
+    for (const area of snapshot.areas) {
+      if (!DEBT_AREAS.includes(String(area))) errors.push(`works/${workName}: invalid ${path}.areas "${area}"`)
+    }
+  }
+}
+
+function validateTaskMetadata(errors, workName, fm) {
+  if (fm.type && !TASK_TYPES.includes(String(fm.type)))
+    errors.push(`works/${workName}: invalid type "${fm.type}"`)
+
+  if (fm.type === 'maintenance') {
+    if (!isPlainObject(fm.maintenance)) {
+      errors.push(`works/${workName}: maintenance.subtype is required when type=maintenance`)
+    } else {
+      validateEnum(errors, workName, 'maintenance.subtype', fm.maintenance.subtype, MAINTENANCE_SUBTYPES)
+    }
+  } else if (isPresent(fm.maintenance)) {
+    errors.push(`works/${workName}: maintenance block is only allowed when type=maintenance`)
+  }
+
+  if (isPresent(fm.priority) && !PRIORITIES.includes(String(fm.priority)))
+    errors.push(`works/${workName}: invalid priority "${fm.priority}"`)
+  if (isPresent(fm.target_date) && !isDateOnly(fm.target_date))
+    errors.push(`works/${workName}: target_date must use YYYY-MM-DD`)
+
+  const sourceRequired = fm.type === 'maintenance' || isPresent(fm.priority) || isPresent(fm.debt) || isPresent(fm.source)
+  if (sourceRequired) {
+    if (!isPlainObject(fm.source)) {
+      errors.push(`works/${workName}: source.kind is required`)
+    } else {
+      validateEnum(errors, workName, 'source.kind', fm.source.kind, SOURCE_KINDS)
+      if (isPresent(fm.source.refs) && !Array.isArray(fm.source.refs))
+        errors.push(`works/${workName}: source.refs must be an array`)
+    }
+  }
+
+  if (isPresent(fm.debt)) {
+    if (!isPlainObject(fm.debt)) {
+      errors.push(`works/${workName}: debt must be an object`)
+      return
+    }
+    validateDebtSnapshot(errors, workName, 'debt.estimate', fm.debt.estimate, { required: true })
+    validateDebtSnapshot(errors, workName, 'debt.final', fm.debt.final)
+    if (isPresent(fm.debt.revisions) && !Array.isArray(fm.debt.revisions))
+      errors.push(`works/${workName}: debt.revisions must be an array`)
+  }
 }
 
 export function checkWorks(root, options = {}) {
@@ -105,8 +223,7 @@ export function checkWorks(root, options = {}) {
     } else if (!PROJECT_ITEM_ID.test(projectItemId)) {
       errors.push(`works/${name}: gh_project.item_id must be a GitHub ProjectV2Item node id (PVTI_...), got "${projectItemId}"`)
     }
-    if (fm.type && !['feature', 'bug'].includes(fm.type))
-      errors.push(`works/${name}: invalid type "${fm.type}"`)
+    validateTaskMetadata(errors, name, fm)
     if (fm.phase && !PHASES.includes(fm.phase))
       errors.push(`works/${name}: invalid phase "${fm.phase}"`)
     if (fm.phase === 'archive')
