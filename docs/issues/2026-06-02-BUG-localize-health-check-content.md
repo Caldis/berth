@@ -1,6 +1,8 @@
 # 描述
 - 中文界面下, Overview 健康检查条目的标题、说明和建议仍显示英文。
 - 发现于 GH-55 视觉验收, 截图: `C:\Users\mail\AppData\Local\Temp\berth-gh55-overview-verify.png`。
+- GitHub Issue: https://github.com/Caldis/berth/issues/56
+- Work: `docs/works/2026-06-02-gh-56-localize-health-check-content`
 
 # 重现步骤
 - 将应用语言切到中文或使用中文环境启动。

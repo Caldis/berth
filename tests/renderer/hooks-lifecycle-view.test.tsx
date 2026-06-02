@@ -612,6 +612,44 @@ describe('HooksLifecycleView', () => {
     expect(container.querySelector('#hook-health-checks')).toBeNull()
   })
 
+  it('localizes visible hook health checks from sidebar status tag hover details in Chinese', async () => {
+    await i18n.changeLanguage('zh')
+    const checks: HealthCheck[] = [
+      {
+        id: 'codex:configuration:user-hook-windows-command',
+        severity: 'warning',
+        category: 'configuration',
+        agentId: 'codex',
+        agentName: 'Codex',
+        title: 'Codex hook has no Windows command override',
+        message: 'A command hook is configured without commandWindows on Windows.',
+        fix: {
+          label: 'Suggested fix',
+          description: 'Add commandWindows or command_windows when the command differs on Windows.'
+        },
+        path: 'C:\\Users\\test\\.codex\\hooks.json',
+        assetType: 'hook',
+        target: { route: '/configuration/capabilities?tab=hooks' }
+      }
+    ]
+    window.api.assets.healthCheck = vi.fn(async () => checks)
+
+    renderHooks('codex', [hookAsset('codex-stop', 'codex', 'Stop')])
+
+    const sidebar = screen.getByLabelText('生命周期')
+    expect(await within(sidebar).findByText('1 个 Hook 检查需要处理')).toBeInTheDocument()
+    const warningTag = within(sidebar).getByRole('button', { name: /1 个警告/ })
+
+    fireEvent.mouseEnter(warningTag)
+
+    expect(screen.getByText('Codex Hook 缺少 Windows 命令覆盖')).toBeInTheDocument()
+    expect(screen.getByText('这个命令 Hook 在 Windows 上没有配置 commandWindows。')).toBeInTheDocument()
+    expect(screen.getByText(/建议修复:/)).toBeInTheDocument()
+    expect(screen.getByText('如果 Windows 命令不同, 添加 commandWindows 或 command_windows。')).toBeInTheDocument()
+    expect(screen.queryByText('Codex hook has no Windows command override')).not.toBeInTheDocument()
+    expect(screen.queryByText('A command hook is configured without commandWindows on Windows.')).not.toBeInTheDocument()
+  })
+
   it('shows the recovery center and restores a recoverable Claude hook', async () => {
     window.api.hooks.recoveries = vi.fn(async () => ({
       points: [

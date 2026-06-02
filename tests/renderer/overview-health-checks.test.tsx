@@ -190,6 +190,38 @@ describe('overview health checks', () => {
         message: 'config.toml contains invalid TOML.',
         scope: 'user',
         assetType: 'mcp-server'
+      },
+      {
+        id: 'codex:structure:user-skill-system-missing-entrypoint',
+        severity: 'warning',
+        category: 'structure',
+        agentId: 'codex',
+        agentName: 'Codex',
+        title: 'Skill is missing SKILL.md',
+        message: '.system has no SKILL.md entrypoint.',
+        evidence: [{ label: 'Codex skills', url: 'https://developers.openai.com/codex/skills' }],
+        fix: {
+          label: 'Suggested fix',
+          description: 'Add SKILL.md or move non-skill files outside the skills directory.'
+        },
+        scope: 'user',
+        assetType: 'skill'
+      },
+      {
+        id: 'codex:configuration:user-config-schema-comment-missing',
+        severity: 'info',
+        category: 'configuration',
+        agentId: 'codex',
+        agentName: 'Codex',
+        title: 'Codex config schema comment is not declared',
+        message: 'config.toml does not include the official Codex TOML schema comment.',
+        evidence: [{ label: 'Codex config reference', url: 'https://developers.openai.com/codex/config-reference' }],
+        fix: {
+          label: 'Add Codex config schema',
+          description: 'Add the official Codex TOML schema comment near the top of config.toml.'
+        },
+        scope: 'user',
+        assetType: 'mcp-server'
       }
     ])
     window.api.shell.openPath = vi.fn(async () => {})
@@ -212,16 +244,29 @@ describe('overview health checks', () => {
     expect(screen.queryByText('Skills')).not.toBeInTheDocument()
     expect(screen.getByText('插件')).toBeInTheDocument()
     expect(screen.queryByText('Plugins')).not.toBeInTheDocument()
-    expect(screen.getByText('1 条信息')).toBeInTheDocument()
-    expect(screen.getByText('1 个警告')).toBeInTheDocument()
+    expect(screen.getAllByText('1 条信息').length).toBeGreaterThan(0)
+    expect(screen.getByText(/个警告/)).toBeInTheDocument()
     expect(screen.getByText('1 个错误')).toBeInTheDocument()
     expect(screen.queryByText('1 info')).not.toBeInTheDocument()
     expect(screen.queryByText('1 warning')).not.toBeInTheDocument()
     expect(screen.queryByText('1 error')).not.toBeInTheDocument()
-    expect(screen.getByTitle('忽略信息检查')).toBeInTheDocument()
+    expect(screen.getAllByTitle('忽略信息检查').length).toBeGreaterThan(0)
     expect(screen.getByTitle('复制修复片段')).toBeInTheDocument()
     expect(screen.queryByTitle('Ignore info check')).not.toBeInTheDocument()
     expect(screen.queryByTitle('Copy fix snippet')).not.toBeInTheDocument()
+    expect(screen.getByText('Skill 缺少 SKILL.md')).toBeInTheDocument()
+    expect(screen.getByText('.system 没有 SKILL.md 入口文件。')).toBeInTheDocument()
+    expect(screen.getAllByText(/建议修复:/).length).toBeGreaterThan(0)
+    expect(screen.getByText('添加 SKILL.md, 或将非 Skill 文件移出 skills 目录。')).toBeInTheDocument()
+    expect(screen.getByText('Codex Skills 文档')).toBeInTheDocument()
+    expect(screen.getByText('Codex 配置 schema 未声明')).toBeInTheDocument()
+    expect(screen.getByText('config.toml 没有包含官方 Codex TOML schema 注释。')).toBeInTheDocument()
+    expect(screen.getByText(/添加 Codex 配置 schema/)).toBeInTheDocument()
+    expect(screen.getByText('在 config.toml 顶部附近添加官方 Codex TOML schema 注释。')).toBeInTheDocument()
+    expect(screen.getByText('Codex 配置参考')).toBeInTheDocument()
+    expect(screen.queryByText('Skill is missing SKILL.md')).not.toBeInTheDocument()
+    expect(screen.queryByText('Suggested fix')).not.toBeInTheDocument()
+    expect(screen.queryByText('Codex config schema comment is not declared')).not.toBeInTheDocument()
   })
 })
 

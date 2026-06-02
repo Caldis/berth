@@ -86,6 +86,44 @@
       "copyFixSnippet": "Copy fix snippet"
     }
   },
+  "healthChecks": {
+    "text": {
+      "titles": {
+        "userClaudeMdNotFound": "User CLAUDE.md not found",
+        "codexHookNoWindowsCommand": "Codex hook has no Windows command override",
+        "claudeHookMissingCommand": "Claude Code hook is missing command",
+        "invalidCodexConfig": "Invalid Codex config.toml",
+        "skillMissingEntryPoint": "Skill is missing SKILL.md",
+        "codexConfigSchemaMissing": "Codex config schema comment is not declared"
+      },
+      "messages": {
+        "noUserClaudeMd": "No user-level CLAUDE.md found.",
+        "codexHookNoWindowsCommand": "A command hook is configured without commandWindows on Windows.",
+        "claudeHookMissingCommand": "PreToolUse contains a command hook without a command.",
+        "invalidCodexConfig": "config.toml contains invalid TOML.",
+        "skillMissingEntryPoint": "{{name}} has no SKILL.md entrypoint.",
+        "codexConfigSchemaMissing": "config.toml does not include the official Codex TOML schema comment."
+      },
+      "fixLabels": {
+        "suggestedFix": "Suggested fix",
+        "addCodexConfigSchema": "Add Codex config schema"
+      },
+      "fixDescriptions": {
+        "createUserClaudeMd": "Create ~/.claude/CLAUDE.md if you want shared Claude Code instructions.",
+        "addCodexWindowsCommand": "Add commandWindows or command_windows when the command differs on Windows.",
+        "addHookCommand": "Add a command value or remove the hook entry.",
+        "fixCodexToml": "Fix the TOML syntax in Codex config.toml.",
+        "addSkillEntryPoint": "Add SKILL.md or move non-skill files outside the skills directory.",
+        "addCodexConfigSchema": "Add the official Codex TOML schema comment near the top of config.toml."
+      },
+      "evidence": {
+        "codexSkills": "Codex skills",
+        "codexConfigReference": "Codex config reference",
+        "codexHooks": "Codex hooks",
+        "claudeHooks": "Claude Code hooks"
+      }
+    }
+  },
   "sessions": {
     "title": "Sessions",
     "fallbackTitle": "Session #{{id}}",

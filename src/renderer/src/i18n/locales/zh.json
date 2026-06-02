@@ -83,6 +83,44 @@
       "copyFixSnippet": "复制修复片段"
     }
   },
+  "healthChecks": {
+    "text": {
+      "titles": {
+        "userClaudeMdNotFound": "未找到用户级 CLAUDE.md",
+        "codexHookNoWindowsCommand": "Codex Hook 缺少 Windows 命令覆盖",
+        "claudeHookMissingCommand": "Claude Code Hook 缺少命令",
+        "invalidCodexConfig": "Codex config.toml 无效",
+        "skillMissingEntryPoint": "Skill 缺少 SKILL.md",
+        "codexConfigSchemaMissing": "Codex 配置 schema 未声明"
+      },
+      "messages": {
+        "noUserClaudeMd": "没有找到用户级 CLAUDE.md。",
+        "codexHookNoWindowsCommand": "这个命令 Hook 在 Windows 上没有配置 commandWindows。",
+        "claudeHookMissingCommand": "PreToolUse 中有一个 command Hook 没有 command。",
+        "invalidCodexConfig": "config.toml 包含无效 TOML。",
+        "skillMissingEntryPoint": "{{name}} 没有 SKILL.md 入口文件。",
+        "codexConfigSchemaMissing": "config.toml 没有包含官方 Codex TOML schema 注释。"
+      },
+      "fixLabels": {
+        "suggestedFix": "建议修复",
+        "addCodexConfigSchema": "添加 Codex 配置 schema"
+      },
+      "fixDescriptions": {
+        "createUserClaudeMd": "如果需要共享 Claude Code 指令, 创建 ~/.claude/CLAUDE.md。",
+        "addCodexWindowsCommand": "如果 Windows 命令不同, 添加 commandWindows 或 command_windows。",
+        "addHookCommand": "添加 command 值, 或移除这个 Hook 条目。",
+        "fixCodexToml": "修复 Codex config.toml 的 TOML 语法。",
+        "addSkillEntryPoint": "添加 SKILL.md, 或将非 Skill 文件移出 skills 目录。",
+        "addCodexConfigSchema": "在 config.toml 顶部附近添加官方 Codex TOML schema 注释。"
+      },
+      "evidence": {
+        "codexSkills": "Codex Skills 文档",
+        "codexConfigReference": "Codex 配置参考",
+        "codexHooks": "Codex Hooks 文档",
+        "claudeHooks": "Claude Code Hooks 文档"
+      }
+    }
+  },
   "sessions": {
     "title": "会话",
     "fallbackTitle": "会话 #{{id}}",

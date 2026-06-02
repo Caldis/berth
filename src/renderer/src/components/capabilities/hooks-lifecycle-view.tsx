@@ -30,6 +30,7 @@ import {
   type HookRiskHint,
   type HookStageGroup
 } from '@/lib/hook-lifecycle'
+import { localizeHealthCheck } from '@/lib/health-check-i18n'
 import type { AgentView, Asset, AssetScope } from '@shared/types/asset'
 import type {
   AgentCapabilityPlugin,
@@ -551,6 +552,7 @@ function HealthStatusTip({
 
 function HookHealthCheckTipRow({ check }: { check: HealthCheck }): React.ReactElement {
   const { t } = useTranslation()
+  const displayCheck = localizeHealthCheck(check, t)
   const targetPath = check.target?.path ?? check.path
 
   return (
@@ -559,7 +561,7 @@ function HookHealthCheckTipRow({ check }: { check: HealthCheck }): React.ReactEl
         <span className={cn('rounded-md px-1.5 py-0.5 text-[10px] font-medium', healthSeverityClass(check.severity))}>
           {t(`capabilities.hooks.health.severityLabel.${check.severity}`)}
         </span>
-        <span className="text-xs font-medium text-foreground">{check.title}</span>
+        <span className="text-xs font-medium text-foreground">{displayCheck.title}</span>
       </span>
       <span className="mt-1 flex flex-wrap gap-1.5">
         <span className="rounded-md border border-border px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
@@ -571,14 +573,14 @@ function HookHealthCheckTipRow({ check }: { check: HealthCheck }): React.ReactEl
           </span>
         )}
       </span>
-      <span className="mt-1 block text-xs leading-5 text-muted-foreground">{check.message}</span>
-      {check.fix ? (
+      <span className="mt-1 block text-xs leading-5 text-muted-foreground">{displayCheck.message}</span>
+      {displayCheck.fix ? (
         <span className="mt-1 block text-xs leading-5 text-muted-foreground">
-          <span className="font-medium text-foreground">{check.fix.label}: </span>
-          {check.fix.description}
+          <span className="font-medium text-foreground">{displayCheck.fix.label}: </span>
+          {displayCheck.fix.description}
         </span>
-      ) : check.suggestion ? (
-        <span className="mt-1 block text-xs leading-5 text-muted-foreground">{check.suggestion}</span>
+      ) : displayCheck.suggestion ? (
+        <span className="mt-1 block text-xs leading-5 text-muted-foreground">{displayCheck.suggestion}</span>
       ) : null}
       {targetPath && <span className="mt-1 block break-all font-mono text-[11px] text-muted-foreground">{targetPath}</span>}
       {targetPath && (

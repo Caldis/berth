@@ -23,6 +23,7 @@ import { formatCurrency, formatOptionalCurrency, formatOptionalRelativeTime, tru
 import { useSessions, useUsageSummary, useHealthChecks } from '@/hooks/use-ipc'
 import { useAppStore } from '@/stores/app'
 import { computeStatsForAssets, filterAssetsByAgentView } from '@/lib/agent-view'
+import { localizeHealthCheck } from '@/lib/health-check-i18n'
 import { StatCard } from '@/components/shared/stat-card'
 import { EmptyState } from '@/components/shared/empty-state'
 import type { HealthCheck } from '@shared/types/ipc'
@@ -243,6 +244,7 @@ export function Overview(): React.ReactElement {
                 </div>
                 <div className="divide-y divide-border">
                   {group.checks.map((check) => {
+                    const displayCheck = localizeHealthCheck(check, t)
                     const clickable = Boolean(check.target?.route || check.target?.path || check.path || check.assetId)
                     const activateCheck = (): void => {
                       if (check.target?.route) {
@@ -293,7 +295,7 @@ export function Overview(): React.ReactElement {
                         <div className="min-w-0 flex-1 space-y-1">
                           <div className="flex flex-wrap items-center gap-2">
                             <span className="text-sm font-medium text-card-foreground">
-                              {check.title}
+                              {displayCheck.title}
                             </span>
                             {check.scope && (
                               <span className="rounded border border-border px-1.5 py-0.5 text-[10px] uppercase text-muted-foreground">
@@ -316,14 +318,14 @@ export function Overview(): React.ReactElement {
                               </button>
                             )}
                           </div>
-                          <p className="text-sm text-muted-foreground">{check.message}</p>
-                          {check.fix ? (
+                          <p className="text-sm text-muted-foreground">{displayCheck.message}</p>
+                          {displayCheck.fix ? (
                             <p className="text-xs text-muted-foreground">
-                              <span className="font-medium text-card-foreground">{check.fix.label}: </span>
-                              {check.fix.description}
+                              <span className="font-medium text-card-foreground">{displayCheck.fix.label}: </span>
+                              {displayCheck.fix.description}
                             </p>
-                          ) : check.suggestion ? (
-                            <p className="text-xs text-muted-foreground">{check.suggestion}</p>
+                          ) : displayCheck.suggestion ? (
+                            <p className="text-xs text-muted-foreground">{displayCheck.suggestion}</p>
                           ) : null}
                           {check.fix?.snippet && (
                             <div className="flex items-start gap-2">
@@ -340,9 +342,9 @@ export function Overview(): React.ReactElement {
                               </button>
                             </div>
                           )}
-                          {check.evidence && check.evidence.length > 0 && (
+                          {displayCheck.evidence && displayCheck.evidence.length > 0 && (
                             <div className="flex flex-wrap gap-2">
-                              {check.evidence.map((evidence) => (
+                              {displayCheck.evidence.map((evidence) => (
                                 <span
                                   key={evidence.url}
                                   role="link"
