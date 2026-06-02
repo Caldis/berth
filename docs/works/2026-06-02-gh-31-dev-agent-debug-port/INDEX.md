@@ -2,7 +2,7 @@
 task: 2026-06-02-gh-31-dev-agent-debug-port
 task_id: GH-31
 type: feature
-phase: implement
+phase: verify
 created: 2026-06-02
 issue:
   number: 31
