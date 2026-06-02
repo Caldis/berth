@@ -8,6 +8,7 @@ import { SIDEBAR_COLLAPSED_WIDTH, useAppStore } from '@/stores/app'
 import { navSections } from './nav-config'
 import { isMacPlatform } from '@/lib/platform'
 import { SettingsDialog } from './settings-dialog'
+import { ProjectScopeSwitcher } from './project-scope-switcher'
 
 export function Sidebar(): React.ReactElement {
   const { t } = useTranslation()
@@ -168,33 +169,36 @@ export function Sidebar(): React.ReactElement {
         </nav>
 
         <div className="shrink-0 border-t border-sidebar-border p-3">
-          <div className={cn('flex gap-1', collapsed ? 'flex-col items-center' : 'items-center')}>
-            <button
-              ref={settingsButtonRef}
-              type="button"
-              onClick={() => setSettingsOpen(true)}
-              className={cn(
-                'titlebar-no-drag flex h-8 items-center gap-2 rounded-md text-muted-foreground transition-colors hover:bg-sidebar-accent/10 hover:text-sidebar-foreground',
-                collapsed ? 'w-8 justify-center' : 'flex-1 justify-start px-2.5'
-              )}
-              title={collapsed ? t('nav.settings') : undefined}
-              aria-label={t('nav.settings')}
-            >
-              <SettingsIcon className="h-3.5 w-3.5 shrink-0" />
-              {!collapsed && <span className="text-sm font-medium">{t('nav.settings')}</span>}
-            </button>
-            <button
-              type="button"
-              onClick={toggleSidebar}
-              className="titlebar-no-drag flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-sidebar-accent/10 hover:text-sidebar-foreground"
-              aria-label={collapsed ? t('nav.expandSidebar') : t('nav.collapseSidebar')}
-            >
-              {collapsed ? (
-                <ChevronRight className="h-3.5 w-3.5" />
-              ) : (
-                <ChevronLeft className="h-3.5 w-3.5" />
-              )}
-            </button>
+          <div className={cn('flex gap-1', collapsed ? 'flex-col items-center' : 'flex-col')}>
+            <ProjectScopeSwitcher collapsed={collapsed} />
+            <div className={cn('flex gap-1', collapsed ? 'flex-col items-center' : 'items-center')}>
+              <button
+                ref={settingsButtonRef}
+                type="button"
+                onClick={() => setSettingsOpen(true)}
+                className={cn(
+                  'titlebar-no-drag flex h-8 items-center gap-2 rounded-md text-muted-foreground transition-colors hover:bg-sidebar-accent/10 hover:text-sidebar-foreground',
+                  collapsed ? 'w-8 justify-center' : 'flex-1 justify-start px-2.5'
+                )}
+                title={collapsed ? t('nav.settings') : undefined}
+                aria-label={t('nav.settings')}
+              >
+                <SettingsIcon className="h-3.5 w-3.5 shrink-0" />
+                {!collapsed && <span className="text-sm font-medium">{t('nav.settings')}</span>}
+              </button>
+              <button
+                type="button"
+                onClick={toggleSidebar}
+                className="titlebar-no-drag flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-sidebar-accent/10 hover:text-sidebar-foreground"
+                aria-label={collapsed ? t('nav.expandSidebar') : t('nav.collapseSidebar')}
+              >
+                {collapsed ? (
+                  <ChevronRight className="h-3.5 w-3.5" />
+                ) : (
+                  <ChevronLeft className="h-3.5 w-3.5" />
+                )}
+              </button>
+            </div>
           </div>
         </div>
       </aside>

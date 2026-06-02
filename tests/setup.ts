@@ -47,6 +47,9 @@ const mockApi = {
   agentPlugins: {
     list: async () => ({ plugins: [] })
   },
+  projectScope: {
+    candidates: async () => []
+  },
   sessions: {
     list: async () => ({ sessions: [], totalCount: 0 }),
     get: async () => null

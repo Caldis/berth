@@ -18,7 +18,9 @@ describe('Sidebar agent view selector', () => {
     useAppStore.setState({
       sidebarCollapsed: false,
       sidebarWidth: SIDEBAR_DEFAULT_WIDTH,
-      agentView: 'all'
+      agentView: 'all',
+      scopeSelection: { mode: 'global' },
+      projectCandidates: []
     })
   })
 
@@ -103,5 +105,15 @@ describe('Sidebar agent view selector', () => {
       width: `${SIDEBAR_COLLAPSED_WIDTH}px`
     })
     expect(screen.queryByRole('separator', { name: 'Resize sidebar' })).not.toBeInTheDocument()
+  })
+
+  it('shows the project scope entry in the sidebar footer', () => {
+    render(
+      <MemoryRouter>
+        <Sidebar />
+      </MemoryRouter>
+    )
+
+    expect(screen.getByRole('button', { name: 'Project scope' })).toBeInTheDocument()
   })
 })

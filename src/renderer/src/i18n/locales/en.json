@@ -23,6 +23,24 @@
     "claude": "Claude",
     "codex": "Codex"
   },
+  "projectScope": {
+    "label": "Project scope",
+    "listLabel": "Project scope options",
+    "global": "Global",
+    "globalDesc": "All user and project data",
+    "user": "User",
+    "userDesc": "User-level configuration and assets",
+    "projects": "Projects",
+    "emptyProjects": "No project candidates yet.",
+    "loadError": "Could not refresh projects.",
+    "sessionCount_one": "{{count}} session",
+    "sessionCount_other": "{{count}} sessions",
+    "sources": {
+      "current": "Current",
+      "session": "Session",
+      "scan-source": "Source"
+    }
+  },
   "search": {
     "placeholder": "Search assets...",
     "shortcut": "⌘K",

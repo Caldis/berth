@@ -9,9 +9,9 @@
 - [x] 任务 2: 主进程生成项目候选, sessions/usage 接受精确 project path
   - tests: `pnpm test tests/unit/project-scope.test.ts tests/unit/usage-summary.test.ts tests/unit/engine-scanner.test.ts` (21 passed); `pnpm typecheck:node`; `pnpm typecheck:web`
   - verify: 非 UI; `projectScopeCandidatesFromAssets()` 从当前 projectDir 与历史 session 合并候选并去重; `sessions:list` / `usage:summary` 接受 `projectPath`, 精确匹配规范化路径, 不使用模糊项目名。
-- [ ] 任务 3: 侧边栏增加 Project Scope Switcher
-  - tests: `pnpm test src/renderer/src/components/layout/project-scope-switcher.test.tsx`
-  - verify: UI; expanded/collapsed sidebar 都有入口; 与 Agent selector 区分; 弹层有 global/user/project 分组、长路径截断、loading/empty/error/focus 状态。
+- [x] 任务 3: 侧边栏增加 Project Scope Switcher
+  - tests: `pnpm test tests/renderer/project-scope-switcher.test.tsx tests/renderer/sidebar-agent-view.test.tsx tests/renderer/app-store.test.ts` (13 passed); `pnpm typecheck:web`
+  - verify: UI; `pnpm dev:agent start --id gh77-project-scope-ui --debug-port 9336 --json`, Playwright CDP 打开 `项目范围` 弹层并选择 `用户域`; 截图 `C:/Users/mail/AppData/Local/Temp/berth-gh77-project-scope-open.png` 与 `C:/Users/mail/AppData/Local/Temp/berth-gh77-project-scope-collapsed-open.png` 覆盖 expanded/collapsed sidebar。入口位于侧边栏 footer, 与 Agent selector 区分; 弹层有 global/user/project 分组、长路径截断、loading/empty/error/focus 状态。
 - [ ] 任务 4: Overview / Sessions / Usage 消费应用级 scope
   - tests: `pnpm test <overview/session/usage-page-tests>`; `pnpm test:e2e tests/e2e/project-scope.e2e.ts`
   - verify: UI; 切换 project 后 recent sessions、sessions list、usage summary 同步变化; 切回 global 恢复全量。
