@@ -2,14 +2,14 @@
 task: 2026-06-02-gh-70-ci-wait-short-sha
 task_id: GH-70
 type: bug
-phase: implement
+phase: archive
 created: 2026-06-02
 issue:
   number: 70
   repo: Caldis/berth
   url: https://github.com/Caldis/berth/issues/70
   id: I_kwDOSpnDwc8AAAABEHtDvQ
-  state: OPEN
+  state: CLOSED
 artifacts:
   source: 00-BUG.md
   analysis: 01-ANALYSIS.md
@@ -21,7 +21,7 @@ gh_project:
   project_url: https://github.com/users/Caldis/projects/6
   project_id: PVT_kwHOADXbEs4BZHvQ
   item_id: PVTI_lAHOADXbEs4BZHvQzgufmo4
-  item_status: In Progress
+  item_status: Done
 ---
 
 # harness:ci:wait should accept short commit SHAs

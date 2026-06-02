@@ -10,9 +10,10 @@
   - tests: `pnpm vitest run tests/harness/ci-gate.test.ts` (pass, 12 tests); `pnpm typecheck:node` (pass)
   - verify: short SHA 和 full SHA 都能匹配, 非匹配前缀返回 null。第一次实现只改了本地 headSha 前缀匹配, 实测 `gh run list --commit <short-sha>` 仍拿不到 run; 已补 `git rev-parse <sha>` 先解析完整 SHA。
   - manual: `pnpm harness:ci:wait -- --sha 01e1fb2 --timeout 120 --poll 3` (pass, matched `CI#26820370676`)
-- [ ] 任务 3: 跑 harness 检查、prepush、推送并等待 CI, 然后归档。
-  - tests: `pnpm harness:check --work docs/works/2026-06-02-gh-70-ci-wait-short-sha`; `pnpm harness:prepush`
-  - verify: push 前检查 CI baseline; push 后用完整 SHA 等待 CI, 避免本任务提交本身再被短 SHA 问题影响。
+- [x] 任务 3: 跑 harness 检查、prepush、推送并等待 CI, 然后归档。
+  - tests: `pnpm harness:prepush` (pass, 64 files / 481 tests)
+  - verify: push 前检查 CI baseline; implementation commit `01e1fb2` CI `26820370676` pass, but short SHA wait still failed; final commit `bb92339` CI `26820782051` pass.
+  - manual: `pnpm harness:ci:wait -- --sha 01e1fb2 --timeout 120 --poll 3` (pass after final fix, matched `CI#26820370676`); `pnpm harness:ci:wait -- --sha bb92339 --timeout 120 --poll 3` (pass, matched `CI#26820782051`)
 
 ## verify 回写
 verify 不通过项作为新任务追加于此, phase 退回 implement。
