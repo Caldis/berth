@@ -1548,6 +1548,8 @@
     "allScopes": "All scopes"
   },
   "windowControls": {
+    "pin": "Pin window",
+    "unpin": "Unpin window",
     "minimize": "Minimize window",
     "maximize": "Maximize window",
     "restore": "Restore window",

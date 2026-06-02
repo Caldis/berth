@@ -18,6 +18,8 @@ const mockApi = {
     toggleMaximize: async () => {},
     close: async () => {},
     isMaximized: async () => false,
+    setAlwaysOnTop: async () => {},
+    isAlwaysOnTop: async () => false,
     onMaximizedChange: () => () => {}
   },
   platform: {

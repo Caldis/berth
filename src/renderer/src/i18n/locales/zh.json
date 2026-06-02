@@ -1541,6 +1541,8 @@
     "allScopes": "全部作用域"
   },
   "windowControls": {
+    "pin": "固定窗口",
+    "unpin": "取消固定窗口",
     "minimize": "最小化窗口",
     "maximize": "最大化窗口",
     "restore": "还原窗口",

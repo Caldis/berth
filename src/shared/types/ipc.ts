@@ -313,6 +313,8 @@ export interface IpcChannels {
   'window:toggle-maximize': { args: []; result: void }
   'window:close': { args: []; result: void }
   'window:is-maximized': { args: []; result: boolean }
+  'window:set-always-on-top': { args: [boolean]; result: void }
+  'window:is-always-on-top': { args: []; result: boolean }
   'platform:info': { args: []; result: PlatformInfo }
   'assets:scan-all': { args: []; result: ScanResult }
   'assets:scan-sources': { args: []; result: AgentScanSourceGroup[] }

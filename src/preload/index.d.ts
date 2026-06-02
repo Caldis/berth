@@ -32,6 +32,8 @@ interface BerthAPI {
     toggleMaximize: () => Promise<void>
     close: () => Promise<void>
     isMaximized: () => Promise<boolean>
+    setAlwaysOnTop: (flag: boolean) => Promise<void>
+    isAlwaysOnTop: () => Promise<boolean>
     onMaximizedChange: (callback: (maximized: boolean) => void) => () => void
   }
   platform: {

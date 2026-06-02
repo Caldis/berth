@@ -7,6 +7,8 @@ const api = {
     toggleMaximize: () => ipcRenderer.invoke('window:toggle-maximize'),
     close: () => ipcRenderer.invoke('window:close'),
     isMaximized: () => ipcRenderer.invoke('window:is-maximized'),
+    setAlwaysOnTop: (flag: boolean) => ipcRenderer.invoke('window:set-always-on-top', flag),
+    isAlwaysOnTop: () => ipcRenderer.invoke('window:is-always-on-top'),
     onMaximizedChange: (callback: (maximized: boolean) => void) => {
       const handler = (_event: unknown, maximized: boolean): void => callback(maximized)
       ipcRenderer.on('window:maximized-change', handler)

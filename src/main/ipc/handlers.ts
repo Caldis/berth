@@ -72,6 +72,14 @@ export function registerAssetHandlers(): void {
     return BrowserWindow.fromWebContents(event.sender)?.isMaximized() ?? false
   })
 
+  ipcMain.handle('window:set-always-on-top', (event: IpcMainInvokeEvent, flag: boolean): void => {
+    BrowserWindow.fromWebContents(event.sender)?.setAlwaysOnTop(Boolean(flag))
+  })
+
+  ipcMain.handle('window:is-always-on-top', (event: IpcMainInvokeEvent): boolean => {
+    return BrowserWindow.fromWebContents(event.sender)?.isAlwaysOnTop() ?? false
+  })
+
   ipcMain.handle('platform:info', (): PlatformInfo => ({
     platform: process.platform,
     arch: process.arch,

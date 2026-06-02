@@ -3,8 +3,8 @@
 从 02-SPEC 拆解。每任务可独立执行与验证, 顺序确定。implement 阶段维护此清单。
 每个实现项必须有测试证据或明确例外理由。
 
-- [ ] 任务 1: 扩展 window always-on-top IPC 与 pin 控制按钮。
-  - tests: `pnpm test tests/renderer/window-controls.test.tsx`
+- [x] 任务 1: 扩展 window always-on-top IPC 与 pin 控制按钮。
+  - tests: `pnpm test tests/renderer/window-controls.test.tsx`; `pnpm typecheck:web`; `pnpm typecheck:node`
   - verify: pin 按钮有 `aria-pressed`, en/zh label 正确, 点击调用 preload API。
 - [ ] 任务 2: 增加 sidebar width 状态、resize handle 与折叠后的主体宽度计算。
   - tests: `pnpm test tests/renderer/sidebar-agent-view.test.tsx`
