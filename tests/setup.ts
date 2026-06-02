@@ -140,8 +140,66 @@ Object.defineProperty(window, 'matchMedia', {
   })
 })
 
+const TEST_CHART_WIDTH = 800
+const TEST_CHART_HEIGHT = 400
+const RECHARTS_RESPONSIVE_CONTAINER_CLASS = 'recharts-responsive-container'
+
+const originalGetBoundingClientRect = HTMLElement.prototype.getBoundingClientRect
+
+function readCssPixelValue(value: string): number | null {
+  const match = /^(\d+(?:\.\d+)?)px$/.exec(value.trim())
+  if (!match) return null
+  const parsed = Number(match[1])
+  return Number.isFinite(parsed) ? parsed : null
+}
+
+function isRechartsResponsiveContainer(element: Element): element is HTMLElement {
+  return element instanceof HTMLElement && element.classList.contains(RECHARTS_RESPONSIVE_CONTAINER_CLASS)
+}
+
+function readElementSize(element: Element, axis: 'width' | 'height'): number {
+  if (!isRechartsResponsiveContainer(element)) return 0
+
+  const styleValue = axis === 'width' ? element.style.width : element.style.height
+  const cssValue = readCssPixelValue(styleValue)
+  if (cssValue && cssValue > 0) return cssValue
+
+  return axis === 'width' ? TEST_CHART_WIDTH : TEST_CHART_HEIGHT
+}
+
+function createRect(element: Element): DOMRect {
+  if (!(element instanceof HTMLElement)) return new DOMRect(0, 0, 0, 0)
+
+  const measured = originalGetBoundingClientRect.call(element)
+  const width = measured.width > 0 ? measured.width : readElementSize(element, 'width')
+  const height = measured.height > 0 ? measured.height : readElementSize(element, 'height')
+
+  return new DOMRect(measured.x, measured.y, width, height)
+}
+
+Object.defineProperty(HTMLElement.prototype, 'getBoundingClientRect', {
+  configurable: true,
+  value: function getBoundingClientRect(this: HTMLElement): DOMRect {
+    const measured = originalGetBoundingClientRect.call(this)
+    if (!isRechartsResponsiveContainer(this) || (measured.width > 0 && measured.height > 0)) {
+      return measured
+    }
+
+    return createRect(this)
+  }
+})
+
 class ResizeObserverMock {
-  observe(): void {}
+  private callback: ResizeObserverCallback
+
+  constructor(callback: ResizeObserverCallback) {
+    this.callback = callback
+  }
+
+  observe(target: Element): void {
+    this.callback([{ target, contentRect: createRect(target) } as ResizeObserverEntry], this as unknown as ResizeObserver)
+  }
+
   unobserve(): void {}
   disconnect(): void {}
 }
