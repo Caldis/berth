@@ -2,7 +2,7 @@
 task: 2026-06-02-gh-77-project-scope-switcher
 task_id: GH-77
 type: feature
-phase: implement
+phase: archive
 created: 2026-06-02
 priority: P2
 target_date: 
@@ -21,14 +21,16 @@ debt:
     confidence: low
     rationale: "0.0-new 初始估算; explore/design 后校准。"
   final:
-    incurred:
-    repaid:
-    net:
-    scope:
-    risk:
-    areas: []
-    confidence:
-    rationale:
+    incurred: 2
+    repaid: 1
+    net: 1
+    scope: module
+    risk: low
+    areas:
+      - architecture
+      - testability
+    confidence: medium
+    rationale: "新增应用级 project scope runtime 和 IPC, 但同步补齐 scanner/watch rebuild、项目 watcher 覆盖、renderer/e2e 测试与真实 Electron 验收。剩余净债主要是后续更多功能面继续接入项目域。"
   revisions: []
 issue:
   number: 77
@@ -40,7 +42,7 @@ gh_project:
   status: tracked
   project_number: 6
   project_url: https://github.com/users/Caldis/projects/6
-  item_status: In Progress
+  item_status: Done
   project_id: PVT_kwHOADXbEs4BZHvQ
   item_id: PVTI_lAHOADXbEs4BZHvQzgugxig
 artifacts:

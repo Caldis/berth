@@ -24,9 +24,9 @@
 - [x] 任务 7: 视觉和交互验收
   - tests: `pnpm test tests/renderer/project-scope-switcher.test.tsx` (5 passed); `pnpm build`; `pnpm test:e2e tests/e2e/project-scope.e2e.ts` (1 passed)
   - verify: UI; `tests/e2e/project-scope.e2e.ts` 使用临时 `CODEX_HOME` 和项目 skill fixture, 实测打开项目范围、键盘 Escape 关闭、选择项目后搜索索引能找到项目 skill, 切回用户域后项目 skill 从搜索结果消失。真实 Electron `dev:agent` 实例 `gh77-project-scope-final` 使用 CDP 打开弹层, `print-window` 截图 expanded/collapsed: `C:/Users/mail/AppData/Local/Temp/berth-gh77-project-scope-final-expanded.png`, `C:/Users/mail/AppData/Local/Temp/berth-gh77-project-scope-final-collapsed.png`; guard after 返回 `guard-ok`, 窗口控制区未被遮挡。
-- [ ] 任务 8: harness verify / archive
-  - tests: `pnpm harness:check --work docs/works/2026-06-02-gh-77-project-scope-switcher`; `node scripts/harness-projects.mjs check --strict`; `pnpm harness:prepush`
-  - verify: 非 UI; 所有实现测试和 UI 验收通过后, `harness-projects done`, 移动到 `_archive`, 推送并等待 CI。
+- [x] 任务 8: harness verify / archive
+  - tests: `pnpm harness:check`; `node scripts/harness-projects.mjs check --strict`; `pnpm harness:stats`; `pnpm harness:prepush`
+  - verify: 非 UI; `node scripts/harness-projects.mjs done docs/works/2026-06-02-gh-77-project-scope-switcher` 已将 GitHub Project item 置 Done 并回读确认。本地任务已移动到 `docs/works/_archive/2026-06-02-gh-77-project-scope-switcher`。归档后 `pnpm harness:check --work docs/works/_archive/...` 暴露工具摩擦并记录到 `docs/friction/20260603-5.0-archive-archived-work-target.md`; 全量 `pnpm harness:check` 通过。
 
 ## verify 回写
 verify 不通过项作为新任务追加于此, phase 退回 implement。
