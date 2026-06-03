@@ -1,12 +1,14 @@
-import { act, fireEvent, render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen, within } from '@testing-library/react'
 import React from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { MemoryRouter } from 'react-router-dom'
 import i18n from '../../src/renderer/src/i18n'
 import { MemoryView } from '../../src/renderer/src/components/memory/memory-view'
+import { InspectorDrawer } from '../../src/renderer/src/components/layout/inspector-drawer'
 import { TopNavigation } from '../../src/renderer/src/components/layout/top-navigation'
 import { PageChromeProvider } from '../../src/renderer/src/components/layout/page-chrome'
 import { SearchDialog } from '../../src/renderer/src/components/layout/search-dialog'
+import { useAppStore } from '../../src/renderer/src/stores/app'
 import type { MemoryListResult } from '../../src/shared/types/memory'
 
 const memoryState = vi.hoisted(() => ({
@@ -62,6 +64,7 @@ describe('MemoryView', () => {
     memoryState.loading = false
     memoryState.refreshing = false
     memoryState.refresh.mockClear()
+    useAppStore.getState().closeInspector()
   })
 
   afterEach(() => {
@@ -271,6 +274,92 @@ describe('MemoryView', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Clear filters' }))
     expect(screen.getByText('Core note')).toBeInTheDocument()
     expect(screen.getByText('Archive note')).toBeInTheDocument()
+  })
+
+  it('keeps tag filters to one row and shows all tags in a scrollable hover layer', () => {
+    memoryState.result = {
+      sources: [
+        {
+          id: 'united-memory',
+          label: 'United Memory',
+          available: true,
+          rootPath: 'C:\\Users\\test\\.united-memory',
+          noteCount: 1
+        }
+      ],
+      notes: [
+        {
+          id: 'united-memory:tag-heavy-note',
+          sourceId: 'united-memory',
+          sourceLabel: 'United Memory',
+          title: 'Tag heavy note',
+          summary: 'Many tags',
+          tags: Array.from({ length: 24 }, (_, index) => `tag-${index + 1}`),
+          importance: 'active',
+          path: 'C:\\Users\\test\\.united-memory\\mem\\tag-heavy-note.md',
+          links: [],
+          createdAt: null,
+          updatedAt: null,
+          body: 'Many tags'
+        }
+      ]
+    }
+
+    render(<MemoryView />)
+
+    const tagFilter = screen.getByTestId('memory-tags-filter')
+    expect(screen.getByTestId('memory-tags-filter-row')).toHaveClass('max-h-8')
+    expect(screen.queryByTestId('memory-tags-filter-popover')).not.toBeInTheDocument()
+
+    fireEvent.pointerEnter(tagFilter)
+
+    const popover = screen.getByTestId('memory-tags-filter-popover')
+    expect(popover).toHaveClass('overflow-y-auto')
+    expect(within(popover).getByRole('button', { name: 'tag-24 1' })).toBeInTheDocument()
+  })
+
+  it('opens memory note content through the shared file viewer', async () => {
+    memoryState.result = {
+      sources: [
+        {
+          id: 'united-memory',
+          label: 'United Memory',
+          available: true,
+          rootPath: 'C:\\Users\\test\\.united-memory',
+          noteCount: 1
+        }
+      ],
+      notes: [
+        {
+          id: 'united-memory:raw-note',
+          sourceId: 'united-memory',
+          sourceLabel: 'United Memory',
+          title: 'Raw note',
+          summary: 'Body',
+          tags: ['ops'],
+          importance: 'active',
+          path: 'C:\\Users\\test\\.united-memory\\mem\\raw-note.md',
+          links: [],
+          createdAt: null,
+          updatedAt: null,
+          body: 'Raw memory body'
+        }
+      ]
+    }
+
+    render(
+      <>
+        <MemoryView />
+        <InspectorDrawer />
+      </>
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: /Raw note/ }))
+    fireEvent.click(screen.getByRole('button', { name: 'View Raw' }))
+
+    const dialog = await screen.findByRole('dialog', { name: 'View Raw' })
+    expect(dialog).toBeInTheDocument()
+    expect(within(dialog).getByText('Raw memory body')).toBeInTheDocument()
   })
 
   it('moves memory search to top navigation and focuses it with the shortcut', () => {

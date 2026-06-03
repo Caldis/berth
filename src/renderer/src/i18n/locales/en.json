@@ -1670,7 +1670,8 @@
     "copy": "Copy to clipboard",
     "loadingRaw": "Loading raw...",
     "rawUnavailable": "Raw unavailable",
-    "rawUnavailableDetail": "Raw content is unavailable for this asset."
+    "rawUnavailableDetail": "Raw content is unavailable for this asset.",
+    "resize": "Resize file viewer"
   },
   "memory": {
     "allSources": "All sources",

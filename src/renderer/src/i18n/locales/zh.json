@@ -1661,7 +1661,8 @@
     "copy": "复制到剪贴板",
     "loadingRaw": "加载原文…",
     "rawUnavailable": "原文不可用",
-    "rawUnavailableDetail": "这个资产没有可读取的原文内容。"
+    "rawUnavailableDetail": "这个资产没有可读取的原文内容。",
+    "resize": "调整文件查看器宽度"
   },
   "memory": {
     "allSources": "全部来源",

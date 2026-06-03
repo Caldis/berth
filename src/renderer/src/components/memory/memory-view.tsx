@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useEffect, useRef } from 'react'
+import { useState, useMemo, useCallback, useEffect, useRef, type FocusEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import ReactMarkdown, { type Components } from 'react-markdown'
 import remarkGfm from 'remark-gfm'
@@ -12,7 +12,6 @@ import {
   Loader2,
   RefreshCw,
   Link2,
-  Eye,
   AlertTriangle
 } from 'lucide-react'
 import { cn, truncatePath, formatOptionalRelativeTime } from '@/lib/utils'
@@ -20,6 +19,7 @@ import { useMemory } from '@/hooks/use-memory'
 import { useAppStore } from '@/stores/app'
 import { EmptyState } from '@/components/shared/empty-state'
 import { usePageChrome, type PageChromeConfig } from '@/components/layout/page-chrome'
+import { FileViewerButton } from '@/components/shared/file-viewer-button'
 import { instructionGuideMap, type FeatureGuideEvidence } from '@/lib/feature-guidance'
 import type { MemoryNote, MemorySourceStatus, MemoryImportance } from '@shared/types/memory'
 
@@ -218,7 +218,6 @@ function NoteCard({
   const [loadingBody, setLoadingBody] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
   const collapseTimerRef = useRef<number | null>(null)
-  const openInspector = useAppStore((s) => s.openInspector)
 
   const ensureBody = useCallback(async (): Promise<string> => {
     if (note.missing) return ''
@@ -282,11 +281,6 @@ function NoteCard({
     if (note.missing) return
     if (note.path) window.api?.shell.openPath(note.path)
   }, [note.missing, note.path])
-
-  const viewRaw = useCallback(async () => {
-    const text = await ensureBody()
-    openInspector(note.path, text)
-  }, [ensureBody, note.path, openInspector])
 
   return (
     <div
@@ -366,10 +360,7 @@ function NoteCard({
                 <span title={note.path} className="truncate text-xs text-muted-foreground font-mono">{truncatePath(note.path)}</span>
                 <div className="flex shrink-0 gap-2">
                   {!note.missing && body !== '' && (
-                    <button onClick={viewRaw} className="flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-muted/70">
-                      <Eye className="h-3 w-3" />
-                      {t('common.viewRaw')}
-                    </button>
+                    <FileViewerButton path={note.path} loadContent={ensureBody} />
                   )}
                   {!note.missing && (
                     <button onClick={showInExplorer} className="flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-muted/70">
@@ -445,14 +436,19 @@ function FilterGroup({
   allLabel,
   active,
   options,
-  onChange
+  onChange,
+  collapsed = false,
+  testId
 }: {
   label: string
   allLabel: string
   active: string
   options: Array<{ id: string; label: string; count: number }>
   onChange: (id: string) => void
+  collapsed?: boolean
+  testId?: string
 }): React.ReactElement | null {
+  const [popoverOpen, setPopoverOpen] = useState(false)
   if (options.length === 0) return null
   const chip = (id: string, chipLabel: string, count?: number): React.ReactElement => (
     <button
@@ -469,12 +465,56 @@ function FilterGroup({
       {count != null && <span className={cn('rounded-full px-1.5 text-[10px]', active === id ? 'bg-background/15' : 'bg-muted')}>{count}</span>}
     </button>
   )
+  const renderChips = (): React.ReactElement[] => [
+    chip('all', allLabel),
+    ...options.map((option) => chip(option.id, option.label, option.count))
+  ]
+
+  const handleBlur = (event: FocusEvent<HTMLDivElement>): void => {
+    if (!(event.relatedTarget instanceof Node) || !event.currentTarget.contains(event.relatedTarget)) {
+      setPopoverOpen(false)
+    }
+  }
+
+  if (collapsed) {
+    return (
+      <div
+        data-testid={testId}
+        className="relative"
+        onPointerEnter={() => setPopoverOpen(true)}
+        onPointerLeave={() => setPopoverOpen(false)}
+        onFocus={() => setPopoverOpen(true)}
+        onBlur={handleBlur}
+      >
+        <div className="flex items-start gap-2">
+          <span className="w-16 shrink-0 pt-1.5 text-[11px] font-medium uppercase tracking-normal text-muted-foreground">{label}</span>
+          <div className="min-w-0 flex-1 overflow-hidden">
+            <div
+              data-testid={testId ? `${testId}-row` : undefined}
+              className="flex max-h-8 flex-wrap items-center gap-2 overflow-hidden pr-2"
+            >
+              {renderChips()}
+            </div>
+          </div>
+        </div>
+        {popoverOpen && (
+          <div
+            data-testid={testId ? `${testId}-popover` : undefined}
+            className="absolute left-16 right-0 top-full z-30 mt-2 max-h-[min(20rem,45vh)] overflow-y-auto rounded-lg border border-border bg-popover p-2 shadow-2xl"
+          >
+            <div className="flex flex-wrap gap-2">
+              {renderChips()}
+            </div>
+          </div>
+        )}
+      </div>
+    )
+  }
 
   return (
     <div className="flex flex-wrap items-center gap-2">
       <span className="w-16 text-[11px] font-medium uppercase tracking-normal text-muted-foreground">{label}</span>
-      {chip('all', allLabel)}
-      {options.map((option) => chip(option.id, option.label, option.count))}
+      {renderChips()}
     </div>
   )
 }
@@ -629,6 +669,8 @@ export function MemoryView(): React.ReactElement {
           active={tagFilter}
           options={tagOptions}
           onChange={setTagFilter}
+          collapsed
+          testId="memory-tags-filter"
         />
         {hasFilters && (
           <button

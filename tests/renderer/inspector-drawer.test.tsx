@@ -10,9 +10,38 @@ const RAW_CONTENT = '[hooks]\nenabled = true'
 
 describe('InspectorDrawer focus management', () => {
   const writeText = vi.fn<[(text: string) => Promise<void>]>()
+  const originalNavigatorDescriptors = {
+    platform: Object.getOwnPropertyDescriptor(window.navigator, 'platform'),
+    userAgent: Object.getOwnPropertyDescriptor(window.navigator, 'userAgent'),
+    userAgentData: Object.getOwnPropertyDescriptor(window.navigator, 'userAgentData')
+  }
+
+  function setNavigatorPlatform(value: string): void {
+    Object.defineProperty(window.navigator, 'platform', {
+      configurable: true,
+      value
+    })
+    Object.defineProperty(window.navigator, 'userAgent', {
+      configurable: true,
+      value: ''
+    })
+    Object.defineProperty(window.navigator, 'userAgentData', {
+      configurable: true,
+      value: { platform: value }
+    })
+  }
+
+  function restoreNavigatorProperty(key: string, descriptor?: PropertyDescriptor): void {
+    if (descriptor) {
+      Object.defineProperty(window.navigator, key, descriptor)
+      return
+    }
+    Reflect.deleteProperty(window.navigator, key)
+  }
 
   beforeEach(async () => {
     await i18n.changeLanguage('en')
+    setNavigatorPlatform('Win32')
     writeText.mockResolvedValue(undefined)
     Object.defineProperty(navigator, 'clipboard', {
       configurable: true,
@@ -29,6 +58,9 @@ describe('InspectorDrawer focus management', () => {
     act(() => {
       useAppStore.getState().closeInspector()
     })
+    restoreNavigatorProperty('platform', originalNavigatorDescriptors.platform)
+    restoreNavigatorProperty('userAgent', originalNavigatorDescriptors.userAgent)
+    restoreNavigatorProperty('userAgentData', originalNavigatorDescriptors.userAgentData)
     await i18n.changeLanguage('en')
   })
 
@@ -100,5 +132,37 @@ describe('InspectorDrawer focus management', () => {
     await waitFor(() => {
       expect(writeText).toHaveBeenCalledWith(RAW_CONTENT)
     })
+  })
+
+  it('keeps the drawer header clear of Windows titlebar controls', () => {
+    render(<InspectorDrawer />)
+
+    expect(screen.getByRole('dialog', { name: 'View Raw' })).toHaveClass('z-[9990]', 'top-0', 'h-full')
+    expect(screen.getByTestId('file-viewer-header')).toHaveClass('pr-48')
+  })
+
+  it('leaves the macOS traffic-light strip uncovered by the backdrop', () => {
+    setNavigatorPlatform('MacIntel')
+
+    render(<InspectorDrawer />)
+
+    expect(screen.getByTestId('file-viewer-backdrop')).toHaveClass('top-10')
+    expect(screen.getByRole('dialog', { name: 'View Raw' })).toHaveClass('top-10', 'h-[calc(100%-2.5rem)]')
+    expect(screen.getByTestId('file-viewer-header')).not.toHaveClass('pr-48')
+  })
+
+  it('resizes the file viewer from the left edge', () => {
+    render(<InspectorDrawer />)
+
+    const dialog = screen.getByRole('dialog', { name: 'View Raw' })
+    const resizeHandle = screen.getByRole('separator', { name: 'Resize file viewer' })
+
+    expect(dialog).toHaveStyle({ width: 'min(100vw, 672px)' })
+
+    fireEvent.mouseDown(resizeHandle, { clientX: 300 })
+    fireEvent.mouseMove(document, { clientX: 180 })
+    fireEvent.mouseUp(document)
+
+    expect(dialog).toHaveStyle({ width: 'min(100vw, 792px)' })
   })
 })
