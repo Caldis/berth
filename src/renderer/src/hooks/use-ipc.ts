@@ -192,9 +192,13 @@ export function useSessions(opts?: {
   limit?: number
   agentView?: AgentView
 }): { sessions: SessionSummary[]; loading: boolean; stale: boolean } {
+  const projectFilter = opts?.projectFilter
+  const projectPath = opts?.projectPath
+  const limit = opts?.limit
+  const agentView = opts?.agentView
   const request = useMemo(
-    () => createSessionListRequest(opts),
-    [opts?.projectFilter, opts?.projectPath, opts?.limit, opts?.agentView]
+    () => createSessionListRequest({ projectFilter, projectPath, limit, agentView }),
+    [projectFilter, projectPath, limit, agentView]
   )
   const cacheKey = useMemo(() => sessionListCacheKey(request), [request])
   const initialCache = sessionListCache.get(cacheKey)
