@@ -33,7 +33,7 @@ export function AppLayout({ children }: { children: ReactNode }): React.ReactEle
             data-testid="app-content-scroll"
             className="min-h-0 flex-1 overflow-auto"
           >
-            <div className={cn('px-6 pb-6', isOverviewRoute ? 'pt-0' : 'pt-5')}>
+            <div className={cn('px-6 pb-6', isOverviewRoute ? 'pt-6' : 'pt-5')}>
               {children}
             </div>
           </main>

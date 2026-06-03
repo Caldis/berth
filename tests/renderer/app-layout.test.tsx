@@ -38,9 +38,12 @@ describe('AppLayout navigation shell', () => {
   it('does not reserve a top navigation bar on the overview route', () => {
     renderLayout('/')
 
-    expect(screen.getByTestId('overview-page')).toBeInTheDocument()
+    const overviewPage = screen.getByTestId('overview-page')
+
+    expect(overviewPage).toBeInTheDocument()
     expect(screen.queryByTestId('top-navigation')).not.toBeInTheDocument()
     expect(screen.getByTestId('app-content-scroll')).toHaveClass('overflow-auto')
+    expect(overviewPage.parentElement).toHaveClass('pt-6')
   })
 
   it('keeps top navigation outside the independent content scroll region', () => {
@@ -52,6 +55,7 @@ describe('AppLayout navigation shell', () => {
     expect(navigation).toHaveClass('min-h-[72px]')
     expect(scrollRegion).toHaveClass('overflow-auto')
     expect(scrollRegion).not.toContainElement(navigation)
+    expect(screen.getByTestId('page-content').parentElement).toHaveClass('pt-5')
     expect(screen.getByRole('heading', { name: 'Sessions' })).toBeInTheDocument()
   })
 })

@@ -25,6 +25,9 @@
 - [x] 7. Electron 视觉验收:
   - tests: manual evidence - `pnpm dev`; `pnpm dev:agent screenshot gh90-sessions --mode print-window`; `pnpm dev:agent screenshot gh90-session-detail --mode print-window`
   - verify: agent-owned Electron `gh90-nav-verify` + CDP route/screenshot evidence in `/tmp/berth-gh90-verify/`; Sessions / Memories / Usage / Session detail 均确认 top nav 与内容滚动区分离, 页面级搜索上移且 `Ctrl+K` 聚焦顶部搜索。macOS `dev:agent screenshot` 与 `screencapture` 受工具/权限限制, 见 `docs/friction/20260603-4.0-verify-macos-dev-agent-screenshot.md`。
+- [x] 8. 修正总览无导航栏时的顶部留白:
+  - tests: `pnpm vitest run tests/renderer/app-layout.test.tsx` (pass, 2 tests); `pnpm typecheck:web` (pass); `pnpm harness:check` (pass)
+  - verify: 总览仍不渲染 `TopNavigation`, 内容外壳使用 `pt-6` 与 `px-6` 对齐; 功能页内容区仍保持 `pt-5`。
 
 ## verify 回写
 verify 不通过项作为新任务追加于此, phase 退回 implement。
