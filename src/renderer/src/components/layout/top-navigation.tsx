@@ -10,31 +10,26 @@ type BreadcrumbItem = {
   labelKey: string
 }
 
-function routeBreadcrumbs(pathname: string): BreadcrumbItem[] {
+function routeBreadcrumbs(pathname: string, search = ''): BreadcrumbItem[] {
   if (/^\/sessions\/[^/]+/.test(pathname)) {
-    return [
-      { key: 'sessions', labelKey: 'nav.sessions' },
-      { key: 'session-detail', labelKey: 'nav.sessionDetail' }
-    ]
+    return [{ key: 'sessions', labelKey: 'nav.sessions' }]
   }
 
-  const match = findNavMatch(pathname)
+  const match = findNavMatch(pathname, search)
   if (match) {
-    return match.section.labelKey
-      ? [
-          { key: match.section.id, labelKey: match.section.labelKey },
-          { key: match.item.id, labelKey: match.item.labelKey }
-        ]
-      : [{ key: match.item.id, labelKey: match.item.labelKey }]
+    return match.section.labelKey ? [{ key: match.section.id, labelKey: match.section.labelKey }] : []
   }
 
-  return [{ key: 'overview', labelKey: 'nav.overview' }]
+  return []
 }
 
 export function TopNavigation({ isWindows }: { isWindows: boolean }): React.ReactElement {
   const { t } = useTranslation()
   const location = useLocation()
-  const breadcrumbs = useMemo(() => routeBreadcrumbs(location.pathname), [location.pathname])
+  const breadcrumbs = useMemo(
+    () => routeBreadcrumbs(location.pathname, location.search),
+    [location.pathname, location.search]
+  )
 
   return (
     <header
@@ -44,26 +39,28 @@ export function TopNavigation({ isWindows }: { isWindows: boolean }): React.Reac
       )}
       data-testid="top-navigation"
     >
-      <nav
-        className="titlebar-no-drag flex min-w-0 items-center gap-1 text-sm"
-        aria-label={t('nav.breadcrumb')}
-      >
-        {breadcrumbs.map((item, index) => (
-          <span key={`${item.key}-${index}`} className="flex min-w-0 items-center gap-1">
-            {index > 0 && <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />}
-            <span
-              className={cn(
-                'truncate',
-                index === breadcrumbs.length - 1
-                  ? 'font-medium text-foreground'
-                  : 'text-muted-foreground'
-              )}
-            >
-              {t(item.labelKey)}
+      {breadcrumbs.length > 0 && (
+        <nav
+          className="titlebar-no-drag flex min-w-0 items-center gap-1 text-sm"
+          aria-label={t('nav.breadcrumb')}
+        >
+          {breadcrumbs.map((item, index) => (
+            <span key={`${item.key}-${index}`} className="flex min-w-0 items-center gap-1">
+              {index > 0 && <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />}
+              <span
+                className={cn(
+                  'truncate',
+                  index === breadcrumbs.length - 1
+                    ? 'font-medium text-foreground'
+                    : 'text-muted-foreground'
+                )}
+              >
+                {t(item.labelKey)}
+              </span>
             </span>
-          </span>
-        ))}
-      </nav>
+          ))}
+        </nav>
+      )}
     </header>
   )
 }
