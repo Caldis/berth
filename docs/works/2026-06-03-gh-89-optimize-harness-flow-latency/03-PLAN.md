@@ -4,12 +4,15 @@
 每个实现项必须有测试证据或明确例外理由。
 实现中若发现 debt 初估不准, 更新 INDEX.md `debt.estimate`, 并追加 `debt.revisions[]`。
 
-- [ ] 任务 1:
-  - tests:
-  - verify: 包含界面质量与交互验收项; 非 UI 任务写“不适用”
-- [ ] 任务 2:
-  - tests:
-  - verify: 包含界面质量与交互验收项; 非 UI 任务写“不适用”
+- [ ] 任务 1: 更新 harness 子代理门禁规则与自检
+  - tests: `pnpm test -- tests/harness/check.test.ts`; `pnpm harness:check`
+  - verify: 不适用 UI; 确认 CI wait / Project 同步可由子代理执行, 主 Agent 仍需消费成功结果。
+- [ ] 任务 2: 优化 Vitest 环境分配
+  - tests: `pnpm test`; `/usr/bin/time -p pnpm test`
+  - verify: 不适用 UI; renderer 测试仍使用 jsdom, unit/harness 测试不再承担 DOM 环境。
+- [ ] 任务 3: 采样 prepush 并更新任务证据
+  - tests: `/usr/bin/time -p pnpm harness:prepush`
+  - verify: 不适用 UI; 记录优化前后耗时与剩余主要成本。
 
 ## verify 回写
 verify 不通过项作为新任务追加于此, phase 退回 implement。
