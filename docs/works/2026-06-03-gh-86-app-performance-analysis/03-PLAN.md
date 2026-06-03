@@ -65,9 +65,10 @@ verify 不通过项作为新任务追加于此, phase 退回 implement。
   - tests: `pnpm test -- tests/unit/agent-plugin-manifest.test.ts tests/unit/agent-capability-plugins.test.ts`
   - evidence: 2026-06-03 运行通过, `tests/unit/agent-plugin-manifest.test.ts` + `tests/unit/agent-capability-plugins.test.ts` 共 32 tests passed; `pnpm typecheck:node` passed。
   - verify: manifest path + size + mtimeMs 未变时复用解析结果; 有效 metadata manifest 不影响 built-in plugin; 有效 manifest descriptor 可进入 registry 结果。
-- [ ] 任务 11: 引入 runtime adapter registry 与 read-only manifest adapter, `AssetScanner` 不再只硬编码内置 adapter。
+- [x] 任务 11: 引入 runtime adapter registry 与 read-only manifest adapter, `AssetScanner` 不再只硬编码内置 adapter。
   - source: 2026-06-03 用户要求执行优化项 1。
   - tests: `pnpm test -- tests/unit/agent-adapter-registry.test.ts tests/unit/engine-scanner.test.ts`
+  - evidence: 2026-06-03 运行通过, `tests/unit/agent-adapter-registry.test.ts` + `tests/unit/engine-scanner.test.ts` 共 9 tests passed; `pnpm typecheck:node` passed; `pnpm lint` passed。
   - verify: worker 内通过 registry 构造 adapters; activation-ready/read-only manifest 以非执行 adapter 参与 source coverage 与 plugin asset 扫描; 不执行第三方 entrypoint。
 - [ ] 任务 12: 让 built-in descriptor 成为 source coverage 的声明来源, 降低 registry 与 adapter scanner 漂移风险。
   - source: 2026-06-03 用户要求执行优化项 4。

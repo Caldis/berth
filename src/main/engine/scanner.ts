@@ -4,8 +4,7 @@ import type { AgentAdapter, Asset, AssetCategory, AssetStats } from '@shared/typ
 import type { ScanRoot } from '@shared/types/asset'
 import type { AgentScanSourceGroup, ScanResult } from '@shared/types/ipc'
 import type { ProjectScopeCandidate } from '@shared/scope'
-import { ClaudeCodeAdapter } from '../adapters/claude-code'
-import { CodexAdapter } from '../adapters/codex'
+import { createAgentAdapters, type AgentAdapterRegistryOptions } from '../agent-plugins/adapter-registry'
 import { projectScopeCandidatesFromAssets } from '../project-scope'
 import { AssetFileCache, type AssetFileCacheSnapshot } from './assets/file-cache'
 
@@ -21,6 +20,7 @@ interface HookEquivalentSource {
 
 interface AssetScannerOptions {
   sessionCache?: AssetFileCache<Asset>
+  adapterRegistry?: Omit<AgentAdapterRegistryOptions, 'sessionCache'>
 }
 
 export class AssetScanner {
@@ -36,10 +36,10 @@ export class AssetScanner {
   constructor(projectDir?: string, options: AssetScannerOptions = {}) {
     this.projectDir = projectDir
     this.sessionCache = options.sessionCache ?? new AssetFileCache<Asset>()
-    this.adapters = [
-      new ClaudeCodeAdapter(projectDir, { sessionCache: this.sessionCache }),
-      new CodexAdapter(projectDir, undefined, process.env, this.sessionCache)
-    ]
+    this.adapters = createAgentAdapters(projectDir, {
+      ...options.adapterRegistry,
+      sessionCache: this.sessionCache
+    })
   }
 
   async scanAll(): Promise<ScanResult> {

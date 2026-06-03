@@ -52,6 +52,11 @@ vi.mock('../../src/main/adapters/codex', () => ({
   }
 }))
 
+vi.mock('../../src/main/agent-plugins/manifest', async (importActual) => ({
+  ...(await importActual<typeof import('../../src/main/agent-plugins/manifest')>()),
+  loadAgentPluginManifests: vi.fn(() => [])
+}))
+
 import { AssetScanner } from '../../src/main/engine/scanner'
 
 describe('AssetScanner', () => {
