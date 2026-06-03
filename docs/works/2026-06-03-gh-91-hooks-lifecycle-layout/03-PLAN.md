@@ -23,3 +23,15 @@
 
 ## verify 回写
 verify 不通过项作为新任务追加于此, phase 退回 implement。
+
+## verify 证据
+
+- `pnpm lint` 通过。
+- `pnpm typecheck` 通过。
+- `pnpm test` 通过, 85 files / 615 tests passed; 仍有既有 React act warning, 测试结果通过。
+- `pnpm harness:check` 通过。
+- `pnpm harness:stats`: debt total=14, status=ok。
+- `pnpm exec node scripts/harness-projects.mjs ensure docs/works/2026-06-03-gh-91-hooks-lifecycle-layout` 通过, GH-91 Project 字段已同步。
+- `pnpm exec node scripts/harness-projects.mjs check --strict` 未通过, 仅剩无关 active work `2026-06-03-gh-90-nav-header-ux-redesign` 的 Project 字段漂移。
+- `pnpm harness:prepush` 未通过, 唯一失败项为 `harness:ci:baseline`: 当前分支最近 CI failure 是较早 SHA `38a132b` / run `26879287021`, 不是本任务 HEAD `b4ff154`。
+- Electron agent 实例 `hooks-layout` 视觉/交互验收通过: screenshot `/tmp/berth-hooks-layout-desktop.png`; desktop connector path count=9; 滚动到 `Before a tool runs` 后左侧 `03` 高亮; 760px 视口无横向溢出且 connector display=none。

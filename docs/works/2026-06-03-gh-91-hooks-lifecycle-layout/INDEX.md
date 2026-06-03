@@ -22,14 +22,15 @@ debt:
     confidence: medium
     rationale: "0.0-new 初始估算; Hooks 页面布局、滚动同步与连线视觉改造, explore/design 后校准。"
   final:
-    incurred:
-    repaid:
-    net:
-    scope:
-    risk:
-    areas: []
-    confidence:
-    rationale:
+    incurred: 3
+    repaid: 0
+    net: 3
+    scope: module
+    risk: medium
+    areas:
+      - ui-ux
+    confidence: medium
+    rationale: "Renderer 单组件布局与测试改造; 主进程、IPC 与数据契约未变。"
   revisions:
     - phase: explore
       date: 2026-06-03
