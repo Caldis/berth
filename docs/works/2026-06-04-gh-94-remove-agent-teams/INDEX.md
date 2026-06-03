@@ -2,7 +2,7 @@
 task: 2026-06-04-gh-94-remove-agent-teams
 task_id: GH-94
 type: bug
-phase: implement
+phase: verify
 created: 2026-06-04
 priority: P2
 target_date:
