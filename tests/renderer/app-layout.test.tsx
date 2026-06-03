@@ -35,17 +35,18 @@ describe('AppLayout navigation shell', () => {
     })
   })
 
-  it('does not reserve a top navigation bar on the overview route', () => {
+  it('reserves the top navigation bar on the overview route', () => {
     renderLayout('/')
 
     const overviewPage = screen.getByTestId('overview-page')
     const navigation = screen.getByTestId('top-navigation')
 
     expect(overviewPage).toBeInTheDocument()
-    expect(navigation).toHaveAttribute('data-state', 'hidden')
-    expect(navigation).toHaveAttribute('aria-hidden', 'true')
+    expect(navigation).toHaveAttribute('data-state', 'visible')
+    expect(navigation).toHaveAttribute('aria-hidden', 'false')
+    expect(screen.getByRole('heading', { name: 'Overview' })).toBeInTheDocument()
     expect(screen.getByTestId('app-content-scroll')).toHaveClass('overflow-auto')
-    expect(screen.getByTestId('app-content-scroll').style.getPropertyValue('--berth-page-top-offset')).toBe('var(--berth-page-gutter)')
+    expect(screen.getByTestId('app-content-scroll').style.getPropertyValue('--berth-page-top-offset')).toBe('calc(72px + var(--berth-page-gutter))')
     expect(screen.getByTestId('app-content-scroll').style.getPropertyValue('--berth-page-scrollbar-gutter')).toBe('0px')
     expect(overviewPage.parentElement).toHaveStyle({
       paddingBottom: 'var(--berth-page-gutter)',

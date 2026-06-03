@@ -51,6 +51,14 @@ describe('WindowControls', () => {
     expect(isAlwaysOnTop).toHaveBeenCalledTimes(1)
   })
 
+  it('centers the control group within the supplied navigation height', () => {
+    render(<WindowControls navigationHeight={96} />)
+
+    const controls = screen.getByTestId('window-controls')
+    expect(controls).toHaveClass('-translate-y-1/2')
+    expect(controls).toHaveStyle({ top: '48px' })
+  })
+
   it('toggles pin state and exposes pressed semantics', async () => {
     render(<WindowControls />)
 

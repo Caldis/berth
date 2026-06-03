@@ -19,8 +19,6 @@ interface RouteChrome {
 }
 
 function routeChrome(pathname: string, search = ''): RouteChrome | null {
-  if (pathname === '/') return null
-
   if (/^\/sessions\/[^/]+/.test(pathname)) {
     return { titleLabelKey: 'nav.sessionDetail' }
   }
@@ -118,7 +116,7 @@ export function TopNavigation({ isWindows, onHeightChange }: TopNavigationProps)
       className={cn(
         'titlebar-drag absolute inset-x-0 top-0 z-20 flex min-h-[72px] shrink-0 items-center border-b border-border bg-background/80 px-[var(--berth-page-gutter)] py-3 backdrop-blur-xl transition-[opacity,transform,background-color] duration-200 ease-out motion-reduce:transition-none',
         isVisible ? 'translate-y-0 opacity-100' : 'pointer-events-none -translate-y-3 opacity-0',
-        isWindows && 'pr-44'
+        isWindows && 'pr-52'
       )}
       data-testid="top-navigation"
       data-state={isVisible ? 'visible' : 'hidden'}

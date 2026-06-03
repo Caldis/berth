@@ -1,5 +1,4 @@
 import { useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
-import { useLocation } from 'react-router-dom'
 import { Sidebar } from './sidebar'
 import { SearchDialog } from './search-dialog'
 import { InspectorDrawer } from './inspector-drawer'
@@ -18,16 +17,12 @@ type ContentScrollStyle = CSSProperties & {
 export function AppLayout({ children }: { children: ReactNode }): React.ReactElement {
   const sidebarCollapsed = useAppStore((s) => s.sidebarCollapsed)
   const sidebarWidth = useAppStore((s) => s.sidebarWidth)
-  const location = useLocation()
   const isWindows = isWindowsPlatform()
   const effectiveSidebarWidth = sidebarCollapsed ? SIDEBAR_COLLAPSED_WIDTH : sidebarWidth
-  const isOverviewRoute = location.pathname === '/'
   const scrollRegionRef = useRef<HTMLElement | null>(null)
   const [topNavigationHeight, setTopNavigationHeight] = useState(72)
   const [scrollbarGutter, setScrollbarGutter] = useState(0)
-  const pageTopOffset = isOverviewRoute
-    ? 'var(--berth-page-gutter)'
-    : `calc(${topNavigationHeight}px + var(--berth-page-gutter))`
+  const pageTopOffset = `calc(${topNavigationHeight}px + var(--berth-page-gutter))`
   const scrollRegionStyle = useMemo<ContentScrollStyle>(
     () => ({
       scrollPaddingTop: 'var(--berth-page-top-offset)',
@@ -85,7 +80,7 @@ export function AppLayout({ children }: { children: ReactNode }): React.ReactEle
             </div>
           </main>
         </div>
-        {isWindows && <WindowControls />}
+        {isWindows && <WindowControls navigationHeight={topNavigationHeight} />}
         <SearchDialog />
         <InspectorDrawer />
       </PageChromeProvider>

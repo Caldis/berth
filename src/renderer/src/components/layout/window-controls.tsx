@@ -1,12 +1,21 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState, type CSSProperties } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Copy, Minus, Pin, Square, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-export function WindowControls(): React.ReactElement {
+const DEFAULT_NAVIGATION_HEIGHT = 72
+
+interface WindowControlsProps {
+  navigationHeight?: number
+}
+
+export function WindowControls({ navigationHeight = DEFAULT_NAVIGATION_HEIGHT }: WindowControlsProps): React.ReactElement {
   const { t } = useTranslation()
   const [maximized, setMaximized] = useState(false)
   const [alwaysOnTop, setAlwaysOnTop] = useState(false)
+  const containerStyle = useMemo<CSSProperties>(() => ({
+    top: Math.max(DEFAULT_NAVIGATION_HEIGHT, navigationHeight) / 2
+  }), [navigationHeight])
 
   useEffect(() => {
     let mounted = true
@@ -32,7 +41,8 @@ export function WindowControls(): React.ReactElement {
 
   return (
     <div
-      className="titlebar-no-drag pointer-events-auto fixed right-3 top-1.5 z-[10000] flex items-center gap-1"
+      className="titlebar-no-drag pointer-events-auto fixed right-3 z-[10000] flex -translate-y-1/2 items-center gap-1"
+      style={containerStyle}
       data-testid="window-controls"
     >
       <button

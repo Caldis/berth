@@ -81,11 +81,19 @@ describe('TopNavigation', () => {
     expect(screen.getByRole('heading', { name: 'Fix session metadata' })).toBeInTheDocument()
   })
 
-  it('keeps a persistent hidden navigation shell for overview', () => {
+  it('shows the navigation shell for overview', () => {
     renderTopNavigation('/')
 
-    expect(screen.getByTestId('top-navigation')).toHaveAttribute('data-state', 'hidden')
+    expect(screen.getByTestId('top-navigation')).toHaveAttribute('data-state', 'visible')
+    expect(screen.getByTestId('top-navigation')).toHaveAttribute('aria-hidden', 'false')
+    expect(screen.getByRole('heading', { name: 'Overview' })).toBeInTheDocument()
     expect(screen.queryByRole('navigation', { name: 'Breadcrumb' })).not.toBeInTheDocument()
+  })
+
+  it('reserves the Windows titlebar control area on the right', () => {
+    renderTopNavigation('/usage', { isWindows: true })
+
+    expect(screen.getByTestId('top-navigation')).toHaveClass('pr-52')
   })
 
   it('shows page search and keeps page guidance reachable while moving into the panel', () => {
