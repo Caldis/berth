@@ -206,7 +206,7 @@ interface HookConnectorLine {
   path: string
 }
 
-const HOOK_ACTIVE_STAGE_SCROLL_THROTTLE_MS = 500
+const HOOK_ACTIVE_STAGE_SCROLL_THROTTLE_MS = 100
 const HOOK_CONNECTOR_BEND_OFFSET_PX = -1
 
 function useHookStageScrollSpy(

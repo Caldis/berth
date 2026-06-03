@@ -818,7 +818,7 @@ describe('HooksLifecycleView', () => {
       expect(toolBeforeButton).not.toHaveAttribute('aria-current')
 
       act(() => {
-        vi.advanceTimersByTime(499)
+        vi.advanceTimersByTime(99)
       })
 
       expect(sessionStartButton).toHaveAttribute('aria-current', 'true')
