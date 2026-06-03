@@ -31,7 +31,7 @@ interface PageChromeConfig {
 - `PageChromeProvider` 放在 `AppLayout` 内部, 用 local state 保存当前页面 chrome。页面通过 `usePageChrome(config, deps)` 注册, unmount 时清空。
 - 静态 route 信息仍从 `nav-config.ts` 读取: section label 与 page label 用于普通功能页。
 - 页面动态信息由页面传入: session detail 标题、返回按钮、页面级搜索输入、页面级筛选控件、help guide evidence。
-- Overview 不注册 chrome, `AppLayout` 通过 pathname `/` 隐藏 `TopNavigation`。
+- Overview 不注册 chrome, `TopNavigation` 仍作为 `AppLayout` 顶层持久组件挂载, 通过 route/page chrome 状态进入 hidden 状态。
 - SearchDialog 仍由 `useAppStore().setSearchOpen(true)` 打开; 侧栏主搜索入口保留为全局搜索。顶部导航搜索由 `PageChromeConfig.search` 控制, 是页面级输入; `Ctrl/⌘K` 在页面搜索存在时聚焦该输入, 否则打开全局搜索。
 
 ## 任务分类与 debt
@@ -56,12 +56,15 @@ interface PageChromeConfig {
   - 新增 `PageChromeProvider`, `usePageChrome`, `useCurrentPageChrome`。
   - 只保存 renderer UI state, 不进入 Zustand。
 - `src/renderer/src/components/layout/app-layout.tsx`
-  - 由 `main.overflow-auto` 改为内容 shell: `flex flex-col overflow-hidden`。
-  - `TopNavigation` 在 scroll container 外层; 内容 scroll container 使用 `flex-1 overflow-auto`。
-  - `/` 隐藏 `TopNavigation`。
+  - 由 `main.overflow-auto` 改为内容 shell: `relative flex flex-col overflow-hidden`。
+  - `TopNavigation` 在 scroll container 外层并作为 absolute overlay; 内容 scroll container 使用 `flex-1 overflow-auto`。
+  - `TopNavigation` 实测高度回写给内容 shell; 内容使用 `paddingTop` 和 `scrollPaddingTop` 避免固定导航遮挡首屏和定位目标。
+  - `/` 保留持久导航外壳, 但进入 hidden 状态。
 - `src/renderer/src/components/layout/top-navigation.tsx`
   - 渲染固定顶部导航: 分类 breadcrumb、页面标题、页面级搜索输入、可选 help、可选 leading/action slot。
-  - Session detail 的 leading slot 放返回按钮; breadcrumb 展示“Sessions / 当前标题”。
+  - Session detail 的 leading slot 放返回按钮; breadcrumb 展示“Sessions / 当前标题”, 当前标题不再另起可见标题行, 只保留 `sr-only h1`。
+  - Overview hidden -> 功能页 visible 时用 transform/opacity 进入; 返回按钮和右侧 actions/search/help 分别使用轻量 CSS enter motion。
+  - 使用透明背景与 `backdrop-filter` blur, 让内容滚动层可从导航栏下方穿过。
   - Windows 保留 `pr-44`, titlebar drag/no-drag 区域覆盖所有按钮。
 - `src/renderer/src/components/layout/sidebar.tsx`
   - 保留侧栏主搜索按钮。侧栏仍承载品牌、导航、全局搜索、agent view、project scope、settings。
@@ -87,7 +90,7 @@ interface PageChromeConfig {
 
 | 项目 | 方案 | 验收方式 |
 |---|---|---|
-| 布局层级 / 信息密度 | Top nav `min-h-[72px]`, 两层结构: breadcrumb/title 与 actions。内容区不再放页面级标题、说明卡片、搜索条。 | Renderer tests 断言总览无 nav、功能页 nav 有 title/actions; Electron 截图检查列表首屏信息密度。 |
+| 布局层级 / 信息密度 | Top nav `min-h-[72px]`, 顶层持久挂载; 普通页为 breadcrumb/title + actions, session detail 为返回按钮 + 完整 breadcrumb。内容区不再放页面级标题、说明卡片、搜索条。 | Renderer tests 断言总览 nav hidden、功能页 nav visible、有 title/actions; Electron 截图检查列表首屏信息密度。 |
 | 组件选择 / 设计系统一致性 | 继续用 Lucide + Tailwind v3 + 现有 neutral tokens。卡片半径不增大, 不加渐变和外发光。 | CSS class review; 视觉截图不出现大面积紫蓝渐变或新字体依赖。 |
 | 交互反馈 / 状态切换 | 搜索、返回、help、segmented control 保留 hover/focus/active; help 可展开/收起; toolbar status `aria-live`。 | `@testing-library/react` 点击与 aria 断言。 |
 | loading / empty / error / disabled / focus | 页面原 loading/empty/error 保留。Usage load error 与 retry 保留; toolbar action 不吞掉页面状态。 | `sessions-pages.test.tsx`, `top-navigation.test.tsx`, usage 相关测试。 |

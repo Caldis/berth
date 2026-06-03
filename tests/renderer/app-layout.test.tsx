@@ -39,11 +39,13 @@ describe('AppLayout navigation shell', () => {
     renderLayout('/')
 
     const overviewPage = screen.getByTestId('overview-page')
+    const navigation = screen.getByTestId('top-navigation')
 
     expect(overviewPage).toBeInTheDocument()
-    expect(screen.queryByTestId('top-navigation')).not.toBeInTheDocument()
+    expect(navigation).toHaveAttribute('data-state', 'hidden')
+    expect(navigation).toHaveAttribute('aria-hidden', 'true')
     expect(screen.getByTestId('app-content-scroll')).toHaveClass('overflow-auto')
-    expect(overviewPage.parentElement).toHaveClass('pt-6')
+    expect(overviewPage.parentElement).toHaveStyle({ paddingTop: '24px' })
   })
 
   it('keeps top navigation outside the independent content scroll region', () => {
@@ -53,9 +55,13 @@ describe('AppLayout navigation shell', () => {
     const scrollRegion = screen.getByTestId('app-content-scroll')
 
     expect(navigation).toHaveClass('min-h-[72px]')
+    expect(navigation).toHaveClass('absolute')
+    expect(navigation).toHaveClass('backdrop-blur-xl')
+    expect(navigation).toHaveAttribute('data-state', 'visible')
     expect(scrollRegion).toHaveClass('overflow-auto')
+    expect(scrollRegion).toHaveClass('[scrollbar-gutter:stable]')
     expect(scrollRegion).not.toContainElement(navigation)
-    expect(screen.getByTestId('page-content').parentElement).toHaveClass('pt-5')
+    expect(screen.getByTestId('page-content').parentElement).toHaveStyle({ paddingTop: '92px' })
     expect(screen.getByRole('heading', { name: 'Sessions' })).toBeInTheDocument()
   })
 })

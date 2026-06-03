@@ -76,15 +76,15 @@ describe('TopNavigation', () => {
 
     const breadcrumb = screen.getByRole('navigation', { name: 'Breadcrumb' })
     expect(within(breadcrumb).getByText('Sessions')).toBeInTheDocument()
-    expect(within(breadcrumb).queryByText('Fix session metadata')).not.toBeInTheDocument()
+    expect(within(breadcrumb).getByText('Fix session metadata')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Back to sessions' })).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Fix session metadata' })).toBeInTheDocument()
   })
 
-  it('does not render an empty breadcrumb landmark for overview', () => {
+  it('keeps a persistent hidden navigation shell for overview', () => {
     renderTopNavigation('/')
 
-    expect(screen.queryByTestId('top-navigation')).not.toBeInTheDocument()
+    expect(screen.getByTestId('top-navigation')).toHaveAttribute('data-state', 'hidden')
     expect(screen.queryByRole('navigation', { name: 'Breadcrumb' })).not.toBeInTheDocument()
   })
 
@@ -157,7 +157,7 @@ describe('TopNavigation', () => {
 
     const breadcrumb = screen.getByRole('navigation', { name: '面包屑' })
     expect(within(breadcrumb).getByText('会话')).toBeInTheDocument()
-    expect(within(breadcrumb).queryByText('会话 #session-')).not.toBeInTheDocument()
+    expect(within(breadcrumb).getByText('会话 #session-')).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: '会话 #session-' })).toBeInTheDocument()
   })
 })

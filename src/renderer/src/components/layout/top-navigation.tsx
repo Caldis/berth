@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from 'react'
+import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { ChevronRight, HelpCircle, Search } from 'lucide-react'
@@ -36,12 +36,18 @@ function routeChrome(pathname: string, search = ''): RouteChrome | null {
   return null
 }
 
-export function TopNavigation({ isWindows }: { isWindows: boolean }): React.ReactElement {
+interface TopNavigationProps {
+  isWindows: boolean
+  onHeightChange?: (height: number) => void
+}
+
+export function TopNavigation({ isWindows, onHeightChange }: TopNavigationProps): React.ReactElement {
   const { t } = useTranslation()
   const location = useLocation()
   const pageChrome = useCurrentPageChrome()
   const [guideOpen, setGuideOpen] = useState(false)
   const searchInputRef = useRef<HTMLInputElement>(null)
+  const headerRef = useRef<HTMLElement>(null)
   const route = useMemo(
     () => routeChrome(location.pathname, location.search),
     [location.pathname, location.search]
@@ -50,47 +56,76 @@ export function TopNavigation({ isWindows }: { isWindows: boolean }): React.Reac
   const title = pageChrome.title ?? (route?.titleLabelKey ? t(route.titleLabelKey) : undefined)
   const sectionLabel = pageChrome.parentLabel ??
     (pageChrome.sectionLabelKey ? t(pageChrome.sectionLabelKey) : route?.sectionLabelKey ? t(route.sectionLabelKey) : undefined)
+  const isVisible = Boolean(route || title || pageChrome.leading || pageChrome.actions || pageChrome.guide || pageChrome.search)
+  const usesNestedBreadcrumb = Boolean(pageChrome.parentLabel && title)
   const breadcrumbs = useMemo(() => {
     const items: BreadcrumbItem[] = []
     if (sectionLabel) items.push({ key: 'section', label: sectionLabel })
+    if (usesNestedBreadcrumb && title) items.push({ key: 'title', label: title })
     return items
-  }, [sectionLabel])
+  }, [sectionLabel, title, usesNestedBreadcrumb])
   const focusPageSearch = useCallback(() => {
     searchInputRef.current?.focus()
     searchInputRef.current?.select()
   }, [])
   useRegisterPageSearchFocus(pageChrome.search ? focusPageSearch : null, [pageChrome.search, focusPageSearch])
 
-  if (!route && !title && !pageChrome.leading && !pageChrome.actions && !pageChrome.guide && !pageChrome.search) {
-    return <></>
-  }
+  useLayoutEffect(() => {
+    if (!onHeightChange) return undefined
+    const element = headerRef.current
+    if (!element) return undefined
+
+    const publishHeight = (): void => {
+      const measuredHeight = element.offsetHeight
+      if (measuredHeight > 0) onHeightChange(measuredHeight)
+    }
+
+    publishHeight()
+
+    if (typeof ResizeObserver === 'undefined') return undefined
+    const resizeObserver = new ResizeObserver(publishHeight)
+    resizeObserver.observe(element)
+    return () => resizeObserver.disconnect()
+  }, [onHeightChange, isVisible, title, pageChrome.subtitle, pageChrome.actions, pageChrome.search, pageChrome.guide])
 
   return (
     <header
+      ref={headerRef}
       className={cn(
-        'titlebar-drag relative flex min-h-[72px] shrink-0 items-center border-b border-border bg-background/95 px-6 py-3 shadow-[0_1px_0_hsl(var(--border))]',
+        'titlebar-drag absolute inset-x-0 top-0 z-20 flex min-h-[72px] shrink-0 items-center border-b border-border bg-background/80 px-6 py-3 shadow-[0_1px_0_hsl(var(--border))] backdrop-blur-xl transition-[opacity,transform,background-color] duration-200 ease-out motion-reduce:transition-none',
+        isVisible ? 'translate-y-0 opacity-100' : 'pointer-events-none -translate-y-3 opacity-0',
         isWindows && 'pr-44'
       )}
       data-testid="top-navigation"
+      data-state={isVisible ? 'visible' : 'hidden'}
+      aria-hidden={!isVisible}
     >
       <div className="grid w-full min-w-0 gap-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
         <div className="flex min-w-0 items-center gap-3">
           {pageChrome.leading && (
-            <div className="titlebar-no-drag shrink-0">
+            <div className="titlebar-no-drag shrink-0 motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-left-2 motion-safe:duration-200">
               {pageChrome.leading}
             </div>
           )}
           <div className="min-w-0">
             {breadcrumbs.length > 0 && (
               <nav
-                className="titlebar-no-drag flex min-w-0 items-center gap-1 text-xs"
+                className={cn(
+                  'titlebar-no-drag flex min-w-0 items-center gap-1 motion-safe:animate-in motion-safe:fade-in motion-safe:duration-150',
+                  usesNestedBreadcrumb ? 'text-sm' : 'text-xs'
+                )}
                 aria-label={t('nav.breadcrumb')}
               >
                 {breadcrumbs.map((item, index) => (
                   <span key={`${item.key}-${index}`} className="flex min-w-0 items-center gap-1">
                     {index > 0 && <ChevronRight className="h-3 w-3 shrink-0 text-muted-foreground" />}
                     <span
-                      className="truncate font-medium text-muted-foreground"
+                      className={cn(
+                        'truncate font-medium',
+                        usesNestedBreadcrumb && index === breadcrumbs.length - 1
+                          ? 'text-xl font-semibold tracking-tight text-foreground'
+                          : 'text-muted-foreground'
+                      )}
                     >
                       {item.label}
                     </span>
@@ -98,18 +133,22 @@ export function TopNavigation({ isWindows }: { isWindows: boolean }): React.Reac
                 ))}
               </nav>
             )}
-            {title && (
+            {title && usesNestedBreadcrumb && <h1 className="sr-only">{title}</h1>}
+            {title && !usesNestedBreadcrumb && (
               <h1 className="mt-0.5 truncate text-lg font-semibold tracking-tight text-foreground">
                 {title}
               </h1>
             )}
-            {pageChrome.subtitle && (
+            {pageChrome.subtitle && !usesNestedBreadcrumb && (
               <p className="mt-1 truncate text-xs text-muted-foreground">{pageChrome.subtitle}</p>
             )}
           </div>
         </div>
 
-        <div className="titlebar-no-drag flex min-w-0 flex-wrap items-center gap-2 lg:justify-end">
+        <div
+          key={`${location.pathname}${location.search}-chrome-actions`}
+          className="titlebar-no-drag flex min-w-0 flex-wrap items-center gap-2 motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-right-2 motion-safe:duration-150 lg:justify-end"
+        >
           {pageChrome.actions}
           {pageChrome.guide && (
             <div className="relative">
