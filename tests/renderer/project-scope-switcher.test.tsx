@@ -5,7 +5,7 @@ import i18n from '../../src/renderer/src/i18n'
 import { ProjectScopeSwitcher } from '../../src/renderer/src/components/layout/project-scope-switcher'
 import { DEFAULT_SCOPE_SELECTION, createProjectScopeCandidate } from '../../src/shared/scope'
 import { useAppStore } from '../../src/renderer/src/stores/app'
-import type { AgentScanSourceGroup, ProjectScopeActivationResult } from '../../src/shared/types/ipc'
+import type { AgentScanSourceGroup, AssetSnapshot, ProjectScopeActivationResult } from '../../src/shared/types/ipc'
 
 function activationResult(projectPath?: string): ProjectScopeActivationResult {
   const candidate = projectPath
@@ -24,6 +24,25 @@ function activationResult(projectPath?: string): ProjectScopeActivationResult {
       errors: []
     },
     candidates: candidate ? [candidate] : []
+  }
+}
+
+function assetSnapshot(projectPath?: string): AssetSnapshot {
+  const result = activationResult(projectPath)
+
+  return {
+    id: 'project-scope-snapshot',
+    projectDir: result.projectDir,
+    assets: result.scanResult.assets,
+    stats: result.scanResult.stats,
+    errors: result.scanResult.errors,
+    sources: scanSourceGroups,
+    projectCandidates: result.candidates,
+    status: {
+      state: 'ready',
+      stale: false,
+      projectDir: result.projectDir
+    }
   }
 }
 
@@ -100,7 +119,12 @@ describe('ProjectScopeSwitcher', () => {
         sessionCount: 2
       })!
     ])
-    window.api.projectScope.activate = vi.fn(async ({ projectPath }) => activationResult(projectPath))
+    let activeProjectPath: string | undefined
+    window.api.projectScope.activate = vi.fn(async ({ projectPath }) => {
+      activeProjectPath = projectPath
+      return activationResult(projectPath)
+    })
+    window.api.assets.snapshot = vi.fn(async () => assetSnapshot(activeProjectPath))
     window.api.assets.scanSources = vi.fn(async () => scanSourceGroups)
     window.api.shell.openPath = vi.fn(async () => {})
   })
@@ -121,6 +145,7 @@ describe('ProjectScopeSwitcher', () => {
         projectPathKey: 'd:/code/berth'
       })
     })
+    expect(window.api.assets.snapshot).toHaveBeenCalled()
     expect(useAppStore.getState().stats.skills).toBe(1)
   })
 
