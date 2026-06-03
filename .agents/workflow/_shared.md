@@ -146,6 +146,8 @@ gh_project:
 17. 默认流程是 harness workflow。只有用户明确要求使用 Superpowers 流程时, Superpowers 才能接管流程; 否则只把 Superpowers 当作方法库。
 18. 进入 harness 后, Superpowers 只能作为方法参考: 不创建 active `docs/superpowers/plans` 或 `docs/superpowers/specs`, 不要求 worktree, 不覆盖 INDEX.phase, 不把 `writing-plans` / `executing-plans` 的流程问答注入当前任务。所有 spec / plan 输出都写入当前 work 的 `02-SPEC.md` / `03-PLAN.md`。
 19. Agent 自主判断并行或顺序执行。文件不重叠、模块边界清楚、测试可独立运行时可并行; 同一批文件反复修改、测试强耦合、任务依赖前一步结果、或涉及全局迁移/状态机/脚本入口时顺序执行。不得把 subagent 并行或主 session 执行作为用户选择题。
+   - 非本地门禁可由子代理执行: GitHub Actions wait 和 GitHub Project 同步/check/done 属于远端等待任务。主 Agent 必须消费成功结果后才能推进阶段、archive 或声明完成; 子代理报告失败时, 主 Agent 停止完成声明并回到对应修复阶段。
+   - 子代理等待期间, 主 Agent 只能处理不依赖该结果的本地阅读、记录、准备或无副作用检查; 不得在 CI / Project 结果未成功前继续新 feature、polish、archive 移目录或最终汇报。
 20. Archive 后必须提醒本次产生或关联的 friction / issues, 并给出可选下一步: `harness-5.1-friction` 处理 friction, `harness-5.2-issues` 处理 docs/issues。提醒不等于自动执行, 未经用户要求不得进入这两个可选动作。
 21. 临时文件写系统临时目录 (`$env:TEMP` / `os.tmpdir()`) 或已约定的忽略目录, 不写项目目录, 也不在 Windows 上使用 `/tmp`。不把不可靠命令塞进大批量并行调用; 一个可能失败的命令应单独跑, 便于看清真实错误。
 22. 前端或 UI 相关任务必须有界面质量与交互验收。Explore 记录现有设计系统、页面密度、用户路径和状态问题; Design 写清布局层级、组件选择、交互反馈、加载/空/错误/禁用/focus 状态、响应式、可访问性、文案/i18n 与视觉一致性; Verify 按这些条目实测。Polish 只能加深检查, 不能替代 Design 阶段的界面方案。

@@ -30,8 +30,17 @@ export const FRONTEND_TASTE_RULE = '界面质量与交互验收'
 export const CI_BASELINE_COMMAND = 'pnpm harness:ci:baseline'
 export const CI_WAIT_COMMAND = 'pnpm harness:ci:wait'
 export const CI_PREPUSH_COMMAND = 'pnpm harness:prepush'
+export const NON_LOCAL_SUBAGENT_RULE = '非本地门禁可由子代理执行'
+export const MAIN_AGENT_RESULT_RULE = '主 Agent 必须消费成功结果'
 const SUPERPOWERS_FLOW_POLICY = ['默认流程是 harness workflow', 'Superpowers 只能作为方法参考', 'Agent 自主判断并行或顺序执行']
 const ARCHIVE_BACKLOG_REMINDER = ['5.1-friction', '5.2-issues', '本次产生或关联的 friction / issues']
+const SUBAGENT_GATE_FILES = [
+  '.agents/tools.md',
+  '.agents/workflow/_shared.md',
+  '.agents/workflow/0.0-new.md',
+  '.agents/workflow/4.0-verify.md',
+  '.agents/workflow/5.0-archive.md'
+]
 const ALLOWED_SUPERPOWERS_DOCS = new Set([
   'docs/superpowers/specs/2026-05-29-ai-native-workflow-harness-design.md',
   'docs/superpowers/plans/2026-05-29-ai-native-workflow-harness.md'
@@ -475,11 +484,31 @@ export function checkCiGateRules(root) {
   return errors
 }
 
+export function checkSubagentGateRules(root) {
+  const errors = []
+  for (const rel of SUBAGENT_GATE_FILES) {
+    const path = join(root, rel)
+    if (!existsSync(path)) {
+      errors.push(`subagent-gate: missing ${rel}`)
+      continue
+    }
+    const content = readFileSync(path, 'utf8')
+    for (const rule of [NON_LOCAL_SUBAGENT_RULE, MAIN_AGENT_RESULT_RULE]) {
+      if (!content.includes(rule)) {
+        errors.push(`subagent-gate: ${rel} missing ${rule}`)
+        break
+      }
+    }
+  }
+  return errors
+}
+
 export function checkAll(root, options = {}) {
   const errors = [
     ...checkWorkflowSources(root),
     ...checkEntryRules(root),
     ...checkCiGateRules(root),
+    ...checkSubagentGateRules(root),
     ...checkTemplates(root),
     ...checkWorks(root, options),
     ...checkFriction(root),

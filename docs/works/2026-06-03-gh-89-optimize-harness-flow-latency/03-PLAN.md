@@ -4,9 +4,9 @@
 每个实现项必须有测试证据或明确例外理由。
 实现中若发现 debt 初估不准, 更新 INDEX.md `debt.estimate`, 并追加 `debt.revisions[]`。
 
-- [ ] 任务 1: 更新 harness 子代理门禁规则与自检
-  - tests: `pnpm test -- tests/harness/check.test.ts`; `pnpm harness:check`
-  - verify: 不适用 UI; 确认 CI wait / Project 同步可由子代理执行, 主 Agent 仍需消费成功结果。
+- [x] 任务 1: 更新 harness 子代理门禁规则与自检
+  - tests: `pnpm test -- tests/harness/check.test.ts` (45 passed, 2026-06-03); `pnpm harness:check` (passed, 2026-06-03)
+  - verify: 不适用 UI; workflow/tools 已写明 CI wait / Project 同步可由子代理执行, 主 Agent 仍需消费成功结果。
 - [ ] 任务 2: 优化 Vitest 环境分配
   - tests: `pnpm test`; `/usr/bin/time -p pnpm test`
   - verify: 不适用 UI; renderer 测试仍使用 jsdom, unit/harness 测试不再承担 DOM 环境。

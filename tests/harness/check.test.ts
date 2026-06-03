@@ -9,9 +9,12 @@ import {
   CI_PREPUSH_COMMAND,
   CI_WAIT_COMMAND,
   FRONTEND_TASTE_RULE,
+  MAIN_AGENT_RESULT_RULE,
+  NON_LOCAL_SUBAGENT_RULE,
   SMALL_CHANGE_EXEMPTION_CONSENT,
   TEST_DISCIPLINE_RULE,
   checkCiGateRules,
+  checkSubagentGateRules,
   checkWorks,
   checkFriction,
   checkIssues,
@@ -551,5 +554,34 @@ describe('checkCiGateRules', () => {
     writeFileSync(join(root, '.agents/workflow/_shared.md'), CI_BASELINE_COMMAND)
     const errors = checkCiGateRules(root)
     expect(errors.some((e: string) => e.includes('.agents/workflow/_shared.md'))).toBe(true)
+  })
+})
+
+describe('checkSubagentGateRules', () => {
+  function writeSubagentGateFixtures(options: { missingFile?: string; missingRule?: string } = {}): void {
+    const files = [
+      '.agents/tools.md',
+      '.agents/workflow/_shared.md',
+      '.agents/workflow/0.0-new.md',
+      '.agents/workflow/4.0-verify.md',
+      '.agents/workflow/5.0-archive.md'
+    ]
+    for (const rel of files) {
+      if (rel === options.missingFile) continue
+      const path = join(root, rel)
+      mkdirSync(join(path, '..'), { recursive: true })
+      const rules = [NON_LOCAL_SUBAGENT_RULE, MAIN_AGENT_RESULT_RULE].filter((rule) => rule !== options.missingRule)
+      writeFileSync(path, rules.join('\n'))
+    }
+  }
+
+  it('要求非本地门禁子代理规则出现在工具索引和关键 workflow', () => {
+    writeSubagentGateFixtures()
+    expect(checkSubagentGateRules(root)).toEqual([])
+  })
+
+  it('缺少子代理门禁规则时报错', () => {
+    writeSubagentGateFixtures({ missingRule: MAIN_AGENT_RESULT_RULE })
+    expect(checkSubagentGateRules(root).some((e: string) => e.includes(MAIN_AGENT_RESULT_RULE))).toBe(true)
   })
 })
