@@ -2,7 +2,7 @@
 task: 2026-06-03-gh-90-nav-header-ux-redesign
 task_id: GH-90
 type: feature
-phase: implement
+phase: verify
 created: 2026-06-03
 priority: P2
 target_date: 
@@ -23,14 +23,17 @@ debt:
     confidence: low
     rationale: "0.0-new 初始估算; explore/design 后校准。"
   final:
-    incurred:
-    repaid:
-    net:
-    scope:
-    risk:
-    areas: []
-    confidence:
-    rationale:
+    incurred: 5
+    repaid: 1
+    net: 4
+    scope: global
+    risk: medium
+    areas:
+      - ui-ux
+      - architecture
+      - testability
+    confidence: medium
+    rationale: "PageChrome contract 新增全局导航行为, 但移除了页面内重复标题、搜索与说明结构, 并补充 renderer 与视觉验收证据; 未新增 IPC 或持久化数据契约。"
   revisions: []
 issue:
   number: 90
