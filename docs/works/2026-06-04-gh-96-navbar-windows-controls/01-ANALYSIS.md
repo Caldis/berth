@@ -38,7 +38,7 @@
 - revision: 无。
 
 ## 验收标准
-1. `/` 路由的 `TopNavigation` 为 visible, 显示 overview 标题, 语义上仍有 breadcrumb。
+1. `/` 路由的 `TopNavigation` 为 visible, 显示 overview 标题; 不为首页新增没有实际含义的上级分组。
 2. `/` 路由内容区使用与其他页面一致的顶部 offset, 不被导航栏遮住。
 3. Windows 下 `TopNavigation` 右侧 padding 为约 `13rem`, 使页面动作区避开窗口控制键。
 4. Windows `WindowControls` 的容器按 `72px` 导航栏高度垂直居中, 不再固定贴近顶部。
