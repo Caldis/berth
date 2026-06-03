@@ -185,10 +185,11 @@ export function registerAssetHandlers(): void {
         readNumber(asset.meta, 'fileHistoryCount') ||
         0
       const summary = toSessionSummary(asset)
+      const activityAsset = { ...asset, raw: readSessionRaw(asset.path) }
       return {
         summary,
         modelInfo: toSessionModelInfo(summary.model, asset.agentId),
-        activityMetrics: toSessionActivityMetrics(summary, asset),
+        activityMetrics: toSessionActivityMetrics(summary, activityAsset),
         skillsUsed: resolveSessionNamedAssets(asset, allAssets, 'skill', readStringArray(asset.meta, 'skillsUsed')),
         mcpServers: resolveSessionNamedAssets(
           asset,
@@ -273,6 +274,14 @@ export function registerAssetHandlers(): void {
   ipcMain.handle('shell:openExternal', (_event, url: string) => {
     shell.openExternal(url)
   })
+}
+
+function readSessionRaw(filePath: string): string | undefined {
+  try {
+    return fs.readFileSync(filePath, 'utf-8')
+  } catch {
+    return undefined
+  }
 }
 
 function toSessionSummary(asset: Asset): SessionSummary {

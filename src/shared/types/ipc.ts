@@ -181,7 +181,7 @@ export interface SessionModelInfo {
   pricing: SessionModelPricingInfo | null
 }
 
-export type SessionTokenRateSource = 'usage-events' | 'unavailable'
+export type SessionTokenRateSource = 'activity-window' | 'unavailable'
 
 export interface SessionActivityMetrics {
   tokenRatePerMinute: number | null
@@ -189,6 +189,9 @@ export interface SessionActivityMetrics {
   tokenRateSource: SessionTokenRateSource
   tokenRateStartedAt: string | null
   tokenRateEndedAt: string | null
+  tokenRateTokenCount: number | null
+  tokenRateSampleCount: number
+  tokenRateIdleGapSeconds: number
 }
 
 export interface SessionDetailResult {
