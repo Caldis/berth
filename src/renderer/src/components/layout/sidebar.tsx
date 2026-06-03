@@ -1,7 +1,7 @@
 import { useCallback, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { ChevronLeft, ChevronRight, Search, Settings as SettingsIcon } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Settings as SettingsIcon } from 'lucide-react'
 import type { AgentView } from '@shared/types/asset'
 import { cn } from '@/lib/utils'
 import { SIDEBAR_COLLAPSED_WIDTH, useAppStore } from '@/stores/app'
@@ -20,7 +20,6 @@ export function Sidebar(): React.ReactElement {
   const toggleSidebar = useAppStore((s) => s.toggleSidebar)
   const sidebarWidth = useAppStore((s) => s.sidebarWidth)
   const setSidebarWidth = useAppStore((s) => s.setSidebarWidth)
-  const setSearchOpen = useAppStore((s) => s.setSearchOpen)
 
   const isMac = isMacPlatform()
   const effectiveWidth = collapsed ? SIDEBAR_COLLAPSED_WIDTH : sidebarWidth
@@ -91,27 +90,6 @@ export function Sidebar(): React.ReactElement {
               </span>
             )}
           </div>
-        </div>
-
-        <div className="px-3 pb-2">
-          <button
-            type="button"
-            onClick={() => setSearchOpen(true)}
-            className={cn(
-              'titlebar-no-drag flex w-full items-center gap-2 rounded-md border border-sidebar-border px-2.5 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-sidebar-accent/10 hover:text-sidebar-foreground',
-              collapsed && 'justify-center px-0'
-            )}
-          >
-            <Search className="h-3.5 w-3.5 shrink-0" />
-            {!collapsed && (
-              <>
-                <span className="flex-1 text-left">{t('search.placeholder')}</span>
-                <kbd className="rounded border border-sidebar-border px-1 py-0.5 text-[10px] font-medium">
-                  {isMac ? '⌘' : 'Ctrl+'}K
-                </kbd>
-              </>
-            )}
-          </button>
         </div>
 
         <nav className="flex-1 overflow-y-auto px-3 py-1">

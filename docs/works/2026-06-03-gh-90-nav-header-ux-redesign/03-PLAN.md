@@ -4,11 +4,11 @@
 每个实现项必须有测试证据或明确例外理由。
 实现中若发现 debt 初估不准, 更新 INDEX.md `debt.estimate`, 并追加 `debt.revisions[]`。
 
-- [ ] 1. 新增/更新导航与布局 renderer tests, 先表达目标行为:
-  - tests: `pnpm vitest run tests/renderer/top-navigation.test.tsx tests/renderer/app-layout.test.tsx`
+- [x] 1. 新增/更新导航与布局 renderer tests, 先表达目标行为:
+  - tests: `pnpm vitest run tests/renderer/top-navigation.test.tsx tests/renderer/app-layout.test.tsx` (pass, 8 tests)
   - verify: 覆盖总览无 nav、功能页 section+title、search/help/back/action slot、scroll container 独立。
-- [ ] 2. 实现 `PageChromeProvider` + AppLayout 滚动分离 + TopNavigation 新结构:
-  - tests: `pnpm vitest run tests/renderer/top-navigation.test.tsx tests/renderer/app-layout.test.tsx`
+- [x] 2. 实现 `PageChromeProvider` + AppLayout 滚动分离 + TopNavigation 新结构:
+  - tests: `pnpm vitest run tests/renderer/top-navigation.test.tsx tests/renderer/app-layout.test.tsx` (pass, 8 tests); `pnpm typecheck:web` (pass)
   - verify: nav `min-h-[72px]`, 不位于内容 scroll container 内; search/help/back focus-visible 与 aria-label 完整。
 - [ ] 3. 迁移 Sessions 顶部标题、说明、筛选、分组和 toolbar status:
   - tests: `pnpm vitest run tests/renderer/sessions-pages.test.tsx tests/renderer/top-navigation.test.tsx`
