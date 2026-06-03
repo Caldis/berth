@@ -31,7 +31,7 @@ debt:
     areas:
       - ui-ux
     confidence: medium
-    rationale: "Renderer shell 统一内容 gutter、顶部偏移和 scrollbar gutter 变量, Hooks 生命周期左栏使用同一偏移计算 sticky top/max-height; 主进程、IPC 与数据契约未变。"
+    rationale: "Renderer shell 使用全局 page gutter、顶部偏移和 scrollbar gutter 变量, Hooks 生命周期左栏使用同一偏移计算 sticky top/max-height; 主进程、IPC 与数据契约未变。"
   revisions:
     - phase: explore
       date: 2026-06-03

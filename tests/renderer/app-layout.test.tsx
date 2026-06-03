@@ -45,10 +45,13 @@ describe('AppLayout navigation shell', () => {
     expect(navigation).toHaveAttribute('data-state', 'hidden')
     expect(navigation).toHaveAttribute('aria-hidden', 'true')
     expect(screen.getByTestId('app-content-scroll')).toHaveClass('overflow-auto')
-    expect(screen.getByTestId('app-content-scroll').style.getPropertyValue('--berth-content-gutter')).toBe('24px')
-    expect(screen.getByTestId('app-content-scroll').style.getPropertyValue('--berth-content-top-offset')).toBe('24px')
-    expect(screen.getByTestId('app-content-scroll').style.getPropertyValue('--berth-scrollbar-gutter')).toBe('0px')
-    expect(overviewPage.parentElement).toHaveStyle({ paddingTop: '24px' })
+    expect(screen.getByTestId('app-content-scroll').style.getPropertyValue('--berth-page-top-offset')).toBe('var(--berth-page-gutter)')
+    expect(screen.getByTestId('app-content-scroll').style.getPropertyValue('--berth-page-scrollbar-gutter')).toBe('0px')
+    expect(overviewPage.parentElement).toHaveStyle({
+      paddingBottom: 'var(--berth-page-gutter)',
+      paddingLeft: 'var(--berth-page-gutter)',
+      paddingTop: 'var(--berth-page-top-offset)'
+    })
   })
 
   it('keeps top navigation outside the independent content scroll region', () => {
@@ -64,12 +67,13 @@ describe('AppLayout navigation shell', () => {
     expect(scrollRegion).toHaveClass('overflow-auto')
     expect(scrollRegion).toHaveClass('[scrollbar-gutter:stable]')
     expect(scrollRegion).not.toContainElement(navigation)
-    expect(scrollRegion.style.getPropertyValue('--berth-content-gutter')).toBe('24px')
-    expect(scrollRegion.style.getPropertyValue('--berth-content-top-offset')).toBe('96px')
-    expect(scrollRegion.style.getPropertyValue('--berth-scrollbar-gutter')).toBe('0px')
+    expect(navigation).toHaveClass('px-[var(--berth-page-gutter)]')
+    expect(scrollRegion.style.getPropertyValue('--berth-page-top-offset')).toBe('calc(72px + var(--berth-page-gutter))')
+    expect(scrollRegion.style.getPropertyValue('--berth-page-scrollbar-gutter')).toBe('0px')
     expect(screen.getByTestId('page-content').parentElement).toHaveStyle({
-      paddingTop: '96px',
-      paddingRight: 'max(0px, calc(var(--berth-content-gutter, 24px) - var(--berth-scrollbar-gutter, 0px)))'
+      paddingLeft: 'var(--berth-page-gutter)',
+      paddingRight: 'max(0px, calc(var(--berth-page-gutter) - var(--berth-page-scrollbar-gutter, 0px)))',
+      paddingTop: 'var(--berth-page-top-offset)'
     })
     expect(screen.getByRole('heading', { name: 'Sessions' })).toBeInTheDocument()
   })

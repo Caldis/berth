@@ -114,7 +114,7 @@ export function HooksLifecycleView({
         <HookLifecycleConnectors lines={connectorLines} />
         <aside
           aria-label={t('capabilities.hooks.lifecycleIndex')}
-          className="relative z-10 space-y-3 lg:sticky lg:top-[var(--berth-content-top-offset,6rem)] lg:max-h-[calc(100dvh_-_var(--berth-content-top-offset,6rem)_-_var(--berth-content-gutter,1.5rem))] lg:self-start lg:overflow-y-auto lg:pr-1"
+          className="relative z-10 space-y-3 lg:sticky lg:top-[var(--berth-page-top-offset,6rem)] lg:max-h-[calc(100dvh_-_var(--berth-page-top-offset,6rem)_-_var(--berth-page-gutter,1.5rem))] lg:self-start lg:overflow-y-auto lg:pr-1"
         >
           <div className="rounded-lg border border-border bg-card p-2">
             <div className="px-2 pb-2 pt-1">

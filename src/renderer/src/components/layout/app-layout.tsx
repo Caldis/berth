@@ -11,12 +11,9 @@ import { TopNavigation } from './top-navigation'
 import { PageChromeProvider } from './page-chrome'
 
 type ContentScrollStyle = CSSProperties & {
-  '--berth-content-gutter': string
-  '--berth-content-top-offset': string
-  '--berth-scrollbar-gutter': string
+  '--berth-page-scrollbar-gutter': string
+  '--berth-page-top-offset': string
 }
-
-const CONTENT_GUTTER_PX = 24
 
 export function AppLayout({ children }: { children: ReactNode }): React.ReactElement {
   const sidebarCollapsed = useAppStore((s) => s.sidebarCollapsed)
@@ -28,22 +25,25 @@ export function AppLayout({ children }: { children: ReactNode }): React.ReactEle
   const scrollRegionRef = useRef<HTMLElement | null>(null)
   const [topNavigationHeight, setTopNavigationHeight] = useState(72)
   const [scrollbarGutter, setScrollbarGutter] = useState(0)
-  const contentTopOffset = isOverviewRoute ? CONTENT_GUTTER_PX : topNavigationHeight + CONTENT_GUTTER_PX
+  const pageTopOffset = isOverviewRoute
+    ? 'var(--berth-page-gutter)'
+    : `calc(${topNavigationHeight}px + var(--berth-page-gutter))`
   const scrollRegionStyle = useMemo<ContentScrollStyle>(
     () => ({
-      scrollPaddingTop: contentTopOffset,
-      '--berth-content-gutter': `${CONTENT_GUTTER_PX}px`,
-      '--berth-content-top-offset': `${contentTopOffset}px`,
-      '--berth-scrollbar-gutter': `${scrollbarGutter}px`
+      scrollPaddingTop: 'var(--berth-page-top-offset)',
+      '--berth-page-scrollbar-gutter': `${scrollbarGutter}px`,
+      '--berth-page-top-offset': pageTopOffset
     }),
-    [contentTopOffset, scrollbarGutter]
+    [pageTopOffset, scrollbarGutter]
   )
   const contentStyle = useMemo<CSSProperties>(
     () => ({
-      paddingTop: contentTopOffset,
-      paddingRight: 'max(0px, calc(var(--berth-content-gutter, 24px) - var(--berth-scrollbar-gutter, 0px)))'
+      paddingBottom: 'var(--berth-page-gutter)',
+      paddingLeft: 'var(--berth-page-gutter)',
+      paddingRight: 'max(0px, calc(var(--berth-page-gutter) - var(--berth-page-scrollbar-gutter, 0px)))',
+      paddingTop: 'var(--berth-page-top-offset)'
     }),
-    [contentTopOffset]
+    []
   )
 
   useLayoutEffect(() => {
@@ -80,7 +80,7 @@ export function AppLayout({ children }: { children: ReactNode }): React.ReactEle
             className="min-h-0 flex-1 overflow-auto [scrollbar-gutter:stable]"
             style={scrollRegionStyle}
           >
-            <div className="pl-6 pb-6" style={contentStyle}>
+            <div style={contentStyle}>
               {children}
             </div>
           </main>

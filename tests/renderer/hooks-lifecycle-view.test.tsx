@@ -695,8 +695,8 @@ describe('HooksLifecycleView', () => {
     const stageList = screen.getByTestId('hook-lifecycle-stage-list')
 
     expect(sidebar.className).toContain('lg:sticky')
-    expect(sidebar.className).toContain('lg:top-[var(--berth-content-top-offset,6rem)]')
-    expect(sidebar.className).toContain('lg:max-h-[calc(100dvh_-_var(--berth-content-top-offset,6rem)_-_var(--berth-content-gutter,1.5rem))]')
+    expect(sidebar.className).toContain('lg:top-[var(--berth-page-top-offset,6rem)]')
+    expect(sidebar.className).toContain('lg:max-h-[calc(100dvh_-_var(--berth-page-top-offset,6rem)_-_var(--berth-page-gutter,1.5rem))]')
     expect(sidebar.className).toContain('lg:overflow-y-auto')
     expect(stageList.className).toContain('lg:space-y-1')
   })

@@ -116,7 +116,7 @@ export function TopNavigation({ isWindows, onHeightChange }: TopNavigationProps)
     <header
       ref={headerRef}
       className={cn(
-        'titlebar-drag absolute inset-x-0 top-0 z-20 flex min-h-[72px] shrink-0 items-center border-b border-border bg-background/80 px-6 py-3 shadow-[0_1px_0_hsl(var(--border))] backdrop-blur-xl transition-[opacity,transform,background-color] duration-200 ease-out motion-reduce:transition-none',
+        'titlebar-drag absolute inset-x-0 top-0 z-20 flex min-h-[72px] shrink-0 items-center border-b border-border bg-background/80 px-[var(--berth-page-gutter)] py-3 shadow-[0_1px_0_hsl(var(--border))] backdrop-blur-xl transition-[opacity,transform,background-color] duration-200 ease-out motion-reduce:transition-none',
         isVisible ? 'translate-y-0 opacity-100' : 'pointer-events-none -translate-y-3 opacity-0',
         isWindows && 'pr-44'
       )}
