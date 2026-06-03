@@ -853,8 +853,9 @@ describe('HooksLifecycleView', () => {
         expect(connectorSvg.querySelectorAll('path').length).toBeGreaterThan(0)
       })
 
-      const path = connectorSvg.querySelector('path')
-      const inactivePath = connectorSvg.querySelectorAll('path')[1]
+      const paths = Array.from(connectorSvg.querySelectorAll('path'))
+      const path = connectorSvg.querySelector('[data-hook-connector-stage="session-start"]')
+      const inactivePath = connectorSvg.querySelector('[data-hook-connector-stage="user-input"]')
       expect(connectorSvg).toHaveAttribute('aria-hidden', 'true')
       expect(connectorSvg.getAttribute('class')).toContain('pointer-events-none')
       expect(path).toHaveAttribute('stroke-linecap', 'round')
@@ -863,9 +864,10 @@ describe('HooksLifecycleView', () => {
       expect(path).toHaveAttribute('stroke-width', '2.75')
       expect(path?.getAttribute('class')).toContain('text-foreground/70')
       expect(inactivePath).toHaveAttribute('stroke-width', '1')
+      expect(paths[paths.length - 1]).toBe(path)
       expect(path?.getAttribute('d')).toContain('Q')
-      expect(path?.getAttribute('d')).toContain('Q 370')
-      expect(path?.getAttribute('d')).toContain('H 438')
+      expect(path?.getAttribute('d')).toContain('Q 369')
+      expect(path?.getAttribute('d')).toContain('H 436')
     } finally {
       Object.defineProperty(HTMLElement.prototype, 'getBoundingClientRect', {
         configurable: true,
@@ -912,7 +914,7 @@ describe('HooksLifecycleView', () => {
         window.dispatchEvent(new Event('scroll'))
       })
 
-      const connectorTimers = setTimeoutSpy.mock.calls.filter((call) => call[1] === 96)
+      const connectorTimers = setTimeoutSpy.mock.calls.filter((call) => call[1] === 300)
       expect(connectorTimers).toHaveLength(1)
     } finally {
       setTimeoutSpy.mockRestore()

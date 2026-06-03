@@ -206,7 +206,8 @@ interface HookConnectorLine {
   path: string
 }
 
-const HOOK_CONNECTOR_SCROLL_THROTTLE_MS = 96
+const HOOK_CONNECTOR_SCROLL_THROTTLE_MS = 300
+const HOOK_CONNECTOR_BEND_OFFSET_PX = -1
 
 function useHookStageScrollSpy(
   groups: HookStageGroup[],
@@ -336,7 +337,12 @@ function HookLifecycleConnectors({
       aria-hidden="true"
       className="pointer-events-none absolute inset-0 z-0 hidden h-full w-full overflow-visible lg:block"
     >
-      {lines.map((line) => {
+      {[...lines].sort((first, second) => {
+        const firstActive = activeStageId === first.id
+        const secondActive = activeStageId === second.id
+        if (firstActive === secondActive) return 0
+        return firstActive ? 1 : -1
+      }).map((line) => {
         const active = activeStageId === line.id
         return (
           <path
@@ -382,7 +388,7 @@ function findConnectorGapCenterX(layer: HTMLElement, layerRect: DOMRect): number
 
   const railRect = rail.getBoundingClientRect()
   const stageColumnRect = stageColumn.getBoundingClientRect()
-  const gapCenterX = railRect.right + (stageColumnRect.left - railRect.right) / 2 - layerRect.left
+  const gapCenterX = railRect.right + (stageColumnRect.left - railRect.right) / 2 - layerRect.left + HOOK_CONNECTOR_BEND_OFFSET_PX
   return Number.isFinite(gapCenterX) ? gapCenterX : null
 }
 
