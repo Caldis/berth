@@ -584,7 +584,13 @@ interface SessionSignals {
   avgToolDurationMs: number | null
   slowestTool: { name: string; durationMs: number } | null
   tokenRatePerMinute: number | null
+  tokenRateDurationSeconds: number | null
   tokenRateSource: SessionDetailResult['activityMetrics']['tokenRateSource']
+  tokenRateStartedAt: string | null
+  tokenRateEndedAt: string | null
+  tokenRateTokenCount: number | null
+  tokenRateSampleCount: number
+  tokenRateIdleGapSeconds: number
   cacheReadShare: number | null
   costRatePerMinute: number | null
 }
@@ -900,6 +906,9 @@ function SessionSignalsPanel({ signals }: { signals: SessionSignals }): React.Re
           label={t('sessions.signals.tokenRate')}
           value={signals.tokenRatePerMinute == null ? '—' : `${formatRate(signals.tokenRatePerMinute)} tok/min`}
           detail={tokenRateSourceLabel(signals.tokenRateSource, t)}
+          explanation={<TokenConsumptionRateExplanation signals={signals} />}
+          explanationLabel={t('sessions.signals.tokenRateFormulaA11y')}
+          explanationTestId="token-consumption-rate-explanation"
         />
         <SignalMetric
           icon={Coins}
@@ -922,6 +931,9 @@ function SignalMetric({
   label,
   value,
   detail,
+  explanation,
+  explanationLabel,
+  explanationTestId,
   tone = 'default',
   className
 }: {
@@ -929,6 +941,9 @@ function SignalMetric({
   label: string
   value: string
   detail?: string
+  explanation?: React.ReactNode
+  explanationLabel?: string
+  explanationTestId?: string
   tone?: 'default' | 'danger'
   className?: string
 }): React.ReactElement {
@@ -937,6 +952,24 @@ function SignalMetric({
       <div className="flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
         <Icon className={cn('h-3.5 w-3.5', tone === 'danger' && 'text-destructive')} />
         <span className="truncate">{label}</span>
+        {explanation && (
+          <span className="group relative ml-auto shrink-0">
+            <button
+              type="button"
+              aria-label={explanationLabel}
+              className="flex h-5 w-5 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <Info className="h-3 w-3" />
+            </button>
+            <span
+              data-testid={explanationTestId}
+              role="tooltip"
+              className="pointer-events-none absolute right-0 top-6 z-20 hidden w-[min(22rem,calc(100vw-3rem))] rounded-lg border border-border bg-popover p-3 text-left text-xs normal-case tracking-normal text-popover-foreground shadow-lg group-hover:block group-focus-within:block"
+            >
+              {explanation}
+            </span>
+          </span>
+        )}
       </div>
       <div
         className={cn(
@@ -948,6 +981,81 @@ function SignalMetric({
       </div>
       {detail && <p className="mt-0.5 truncate text-xs text-muted-foreground">{detail}</p>}
     </div>
+  )
+}
+
+function TokenConsumptionRateExplanation({ signals }: { signals: SessionSignals }): React.ReactElement {
+  const { t } = useTranslation()
+  const ratePerMinute = signals.tokenRatePerMinute
+  const tokenCount = signals.tokenRateTokenCount
+  const durationSeconds = signals.tokenRateDurationSeconds
+  const hasFormula =
+    ratePerMinute != null &&
+    tokenCount != null &&
+    durationSeconds != null &&
+    durationSeconds > 0
+
+  if (!hasFormula) {
+    return (
+      <span className="block space-y-2">
+        <span className="block font-medium text-popover-foreground">
+          {t('sessions.signals.tokenRateFormulaUnavailable')}
+        </span>
+        <span className="block leading-5 text-muted-foreground">
+          {t('sessions.signals.tokenRateFormulaUnavailableDetail')}
+        </span>
+        <span className="block border-t border-border pt-2 leading-5 text-muted-foreground">
+          {t('sessions.signals.tokenRateIdleGapRule', {
+            minutes: formatFormulaMinutes(signals.tokenRateIdleGapSeconds)
+          })}
+        </span>
+      </span>
+    )
+  }
+
+  const minutes = formatFormulaMinutes(durationSeconds)
+  const idleGapMinutes = formatFormulaMinutes(signals.tokenRateIdleGapSeconds)
+  const tokenText = t('sessions.signals.tokenRateFormulaTokenValue', {
+    tokens: formatNumber(tokenCount)
+  })
+  const minuteText = t('sessions.signals.tokenRateFormulaMinuteValue', { minutes })
+  const rateText = `${formatRate(ratePerMinute)} tok/min`
+
+  return (
+    <span className="block space-y-2">
+      <span className="block font-medium text-popover-foreground">
+        {t('sessions.signals.tokenRateFormulaTitle')}
+      </span>
+      <span className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-1.5">
+        <FormulaPart label={t('sessions.signals.tokenRateFormulaTokens')} value={tokenText} />
+        <span className="text-center text-muted-foreground">/</span>
+        <FormulaPart label={t('sessions.signals.tokenRateFormulaMinutes')} value={minuteText} />
+        <span className="text-center text-muted-foreground">=</span>
+        <FormulaPart label={t('sessions.signals.tokenRateFormulaResult')} value={rateText} />
+      </span>
+      <span className="block border-t border-border pt-2 leading-5 text-muted-foreground">
+        {t('sessions.signals.tokenRateFormulaWindow', {
+          start: formatTooltipTimestamp(signals.tokenRateStartedAt),
+          end: formatTooltipTimestamp(signals.tokenRateEndedAt),
+          samples: signals.tokenRateSampleCount
+        })}
+      </span>
+      <span className="block leading-5 text-muted-foreground">
+        {t('sessions.signals.tokenRateIdleGapRule', { minutes: idleGapMinutes })}
+      </span>
+      <span className="block leading-5 text-muted-foreground">
+        {t('sessions.signals.tokenRateFormulaLocalEstimate')}
+      </span>
+    </span>
+  )
+}
+
+function FormulaPart({ label, value }: { label: string; value: string }): React.ReactElement {
+  return (
+    <span className="min-w-0 rounded-md border border-border bg-background px-2 py-1">
+      <span className="block truncate text-[10px] font-medium uppercase text-muted-foreground">{label}</span>
+      <span className="block truncate font-mono text-[11px] text-popover-foreground">{value}</span>
+    </span>
   )
 }
 
@@ -1314,7 +1422,13 @@ function buildSessionSignals(detail: SessionDetailResult): SessionSignals {
     avgToolDurationMs: durations.length > 0 ? durationTotal / durations.length : null,
     slowestTool: slowest ? { name: slowest.event.name, durationMs: slowest.durationMs } : null,
     tokenRatePerMinute: detail.activityMetrics.tokenRatePerMinute,
+    tokenRateDurationSeconds: detail.activityMetrics.tokenRateDurationSeconds,
     tokenRateSource: detail.activityMetrics.tokenRateSource,
+    tokenRateStartedAt: detail.activityMetrics.tokenRateStartedAt,
+    tokenRateEndedAt: detail.activityMetrics.tokenRateEndedAt,
+    tokenRateTokenCount: detail.activityMetrics.tokenRateTokenCount,
+    tokenRateSampleCount: detail.activityMetrics.tokenRateSampleCount,
+    tokenRateIdleGapSeconds: detail.activityMetrics.tokenRateIdleGapSeconds,
     cacheReadShare: inputSideTokens > 0
       ? (detail.summary.tokenUsage.cacheReadInputTokens / inputSideTokens) * 100
       : null,
@@ -1328,7 +1442,7 @@ function tokenRateSourceLabel(
   source: SessionDetailResult['activityMetrics']['tokenRateSource'],
   t: Translate
 ): string {
-  if (source === 'usage-events') return t('sessions.signals.tokenRateSourceUsageEvents')
+  if (source === 'activity-window') return t('sessions.signals.tokenRateSourceActivityWindow')
   return t('sessions.signals.tokenRateSourceUnavailable')
 }
 
@@ -1364,6 +1478,23 @@ function formatDurationThreshold(value: number, t: Translate): string {
 
 function formatRate(value: number): string {
   return Number.isInteger(value) ? formatNumber(value) : value.toFixed(1)
+}
+
+function formatFormulaMinutes(seconds: number): string {
+  const minutes = seconds / 60
+  return Number.isInteger(minutes) ? formatNumber(minutes) : minutes.toFixed(1)
+}
+
+function formatTooltipTimestamp(value: string | null): string {
+  if (!value) return '—'
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return '—'
+  return date.toLocaleString(undefined, {
+    month: 'short',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit'
+  })
 }
 
 function formatOptionalPercentage(value: number | null): string {
