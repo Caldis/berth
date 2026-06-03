@@ -10,6 +10,12 @@
 - [x] 任务 2: 让 `sessions:get` 使用新的纯函数, 保持 renderer 展示和 IPC 类型不变。
   - tests: `pnpm vitest run tests/renderer/sessions-pages.test.tsx` - passed, 24 tests; Session Detail unknown/rate 展示未退化。
   - verify: `pnpm typecheck:node`; `pnpm typecheck:web`; `pnpm harness:check --work docs/works/2026-06-04-gh-95-fix-session-token-rate`; 界面质量与交互验收项: 不新增页面结构, token rate 仍显示在 Session signals, 过短窗口显示 `—` 与现有短文案。
+- [ ] 任务 3: 将主进程 token rate 改为最近活动窗口的 token 消耗速率。
+  - tests: `pnpm vitest run tests/unit/session-activity.test.ts`; 覆盖 raw usage 样本、30 分钟 idle gap 分段、至少 2 样本、窗口 >= 60 秒、公式字段。
+  - verify: `pnpm typecheck:node`; 界面质量与交互验收项: 长期会话不把隔夜空闲时间算进分母, unavailable 状态不显示误导值。
+- [ ] 任务 4: Session Detail 改名为 token 消耗速率, hover/focus 展示公式和窗口来源。
+  - tests: `pnpm vitest run tests/renderer/sessions-pages.test.tsx`; 覆盖 label、source、formula popover 内容、unknown 状态文案。
+  - verify: `pnpm typecheck:web`; 界面质量与交互验收项: hover 层不常驻占空间, focus 可达, 文案中明确本地估算和 idle gap 切分规则。
 
 ## verify 回写
 

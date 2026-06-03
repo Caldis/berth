@@ -2,7 +2,7 @@
 task: 2026-06-04-gh-95-fix-session-token-rate
 task_id: GH-95
 type: bug
-phase: verify
+phase: implement
 created: 2026-06-04
 priority: P2
 target_date:
@@ -12,16 +12,16 @@ source:
     - https://github.com/Caldis/berth/issues/95
 debt:
   estimate:
-    incurred: 3
+    incurred: 4
     repaid: 0
-    net: 3
+    net: 4
     scope: module
     risk: medium
     areas:
       - ui-ux
       - testability
     confidence: medium
-    rationale: "explore/design 确认影响面集中在 sessions:get activity metrics 和测试; 不改 parser、IPC 类型或页面布局。"
+    rationale: "用户新增改名、长期会话分段和 hover 公式透明要求; 影响 sessions:get activity metrics、IPC 字段、Session Detail 展示和测试。"
   final:
     incurred: 2
     repaid: 1
@@ -41,6 +41,17 @@ debt:
       to:
         confidence: medium
       reason: "已定位异常来自主进程 token rate 生成逻辑, 不是跨 parser 或 renderer 布局问题。"
+    - phase: verify
+      date: 2026-06-04
+      from:
+        incurred: 3
+        net: 3
+        rationale: "explore/design 确认影响面集中在 sessions:get activity metrics 和测试; 不改 parser、IPC 类型或页面布局。"
+      to:
+        incurred: 4
+        net: 4
+        rationale: "新增 token 消耗速率命名、最近活动窗口和 hover 公式说明; 需要扩展 IPC 透明字段与 renderer 交互。"
+      reason: "用户要求改名策略并确保计算公式透明, hover 可视化呈现计算逻辑。"
 issue:
   number: 95
   repo: Caldis/berth
