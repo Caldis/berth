@@ -2,7 +2,7 @@
 task: 2026-06-03-gh-86-app-performance-analysis
 task_id: GH-86
 type: maintenance
-phase: implement
+phase: verify
 created: 2026-06-03
 priority: P2
 target_date: 
@@ -37,7 +37,7 @@ debt:
       - architecture
       - ui-ux
     confidence: high
-    rationale: "Implementation 完成中心 AssetRuntime、worker scan job、进程内 file fingerprint cache、runtime selectors 与 renderer 局部 loading; verify 反馈显示 Sessions 仍存在切页闪 loading、状态组件不统一与点击卡顿, 已退回 implement 追加修正。"
+    rationale: "Implementation 完成中心 AssetRuntime、worker scan job、进程内 file fingerprint cache、runtime selectors 与 renderer 局部 loading; 追加修正 Sessions stale-while-refresh、共享 loading/empty 状态与渐进渲染后, 远端和本地剩余风险主要是首次冷扫描仍需读取本机大文件。"
   revisions:
     - phase: explore
       date: 2026-06-03

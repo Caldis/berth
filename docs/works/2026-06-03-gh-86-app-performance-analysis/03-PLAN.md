@@ -34,9 +34,12 @@
   - performance: baseline `assets.scanAll=5333ms`, `firstWindowMs=1245`, `heroMs=14459`, `overviewDataMs=44479`; after build scanner `scan.first=7105.8ms`, `scan.second.cache-warm=65.0ms`; worker `worker.first=7252.6ms`, `worker.second.cache-warm=176.0ms`; E2E shell title visible test 728ms, Overview default page assertion 35ms。
   - harness: `pnpm harness:check --work docs/works/2026-06-03-gh-86-app-performance-analysis` 仍被本地既有 global drift 阻断 (`issues/` 根目录与 `.agents/skills/opsx-*` drift); 脚本级 `checkWorks(..., { work })` 返回 `[]`。
   - verify: 记录优化前后 `assets.scanAll`、首屏 shell、Overview hero、Overview 数据完成时间; `docs/ARCHITECTURE.md` 反映中心 runtime + worker 边界; 若正式 harness check 仍被全局 drift 阻断, 附脚本级局部 check 输出。
-- [ ] 任务 8: 修正 Sessions 验收缺口: 切页采用 stale-while-refresh, loading/empty 使用共享状态组件, 降低会话页点击后的同步渲染成本。
+- [x] 任务 8: 修正 Sessions 验收缺口: 切页采用 stale-while-refresh, loading/empty 使用共享状态组件, 降低会话页点击后的同步渲染成本。
   - source: 2026-06-03 用户验收反馈。
   - tests: `pnpm test -- tests/renderer/sessions-pages.test.tsx tests/renderer/use-sessions-swr.test.tsx`
+  - evidence: 2026-06-03 运行通过, 目标 renderer tests 25 tests passed; `pnpm test` 81 files / 589 tests passed; `pnpm typecheck` passed; `pnpm build` passed; `pnpm test:e2e tests/e2e/app.e2e.ts` 14 tests passed。
+  - visual: agent-owned Electron (`gh86-sessions-swr`) 验证 Sessions 路由 heading 约 331ms 出现, 800ms 后无全局 loading, 可见 822 个会话按钮; 截图 `/var/folders/v0/318dq8q959z29k7vx374rw400000gn/T/berth-gh86-sessions-swr.png`。
+  - harness: `pnpm harness:check --work docs/works/2026-06-03-gh-86-app-performance-analysis` 仍被既有 global drift 阻断 (`issues/` 根目录与 `.agents/skills/opsx-*` drift); 脚本级 `checkWorks(..., { work })` 返回 `[]`。
   - verify: 已有会话数据时切回 Sessions 不显示空白 loading; 后台刷新完成后列表更新; 首次加载与空结果使用统一状态组件; 点击会话行不会被重型同步渲染阻塞。
 
 执行边界:
