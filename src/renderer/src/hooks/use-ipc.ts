@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef } from 'react'
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import type { AgentView, Asset, AssetStats, SessionSummary, UsageSummary } from '@shared/types/asset'
 import type { AgentScanSourceGroup, SessionDetailResult, HealthCheck } from '@shared/types/ipc'
 import type {
@@ -17,6 +17,22 @@ interface HealthCheckCache {
 
 let healthCheckCache: HealthCheckCache | null = null
 let healthCheckInFlight: Promise<HealthCheckCache> | null = null
+
+interface SessionListRequest {
+  projectFilter?: string
+  projectPath?: string
+  limit?: number
+  agentView?: AgentView
+}
+
+interface SessionListCacheEntry {
+  sessions: SessionSummary[]
+  totalCount: number
+  updatedAtMs: number
+}
+
+const sessionListCache = new Map<string, SessionListCacheEntry>()
+const sessionListInFlight = new Map<string, Promise<SessionListCacheEntry>>()
 
 function isHealthCheckCacheFresh(cache: HealthCheckCache | null): cache is HealthCheckCache {
   return cache != null && Date.now() - cache.checkedAtMs < HEALTH_CHECK_CACHE_TTL_MS
@@ -46,6 +62,51 @@ function requestHealthChecks(refresh: boolean): Promise<HealthCheckCache> {
 export function resetHealthCheckCacheForTests(): void {
   healthCheckCache = null
   healthCheckInFlight = null
+}
+
+export function resetSessionsCacheForTests(): void {
+  sessionListCache.clear()
+  sessionListInFlight.clear()
+}
+
+function createSessionListRequest(opts?: SessionListRequest): SessionListRequest {
+  return {
+    projectFilter: opts?.projectFilter,
+    limit: opts?.limit,
+    agentView: opts?.agentView,
+    ...(opts?.projectPath ? { projectPath: opts.projectPath } : {})
+  }
+}
+
+function sessionListCacheKey(request: SessionListRequest): string {
+  return JSON.stringify({
+    projectFilter: request.projectFilter ?? null,
+    projectPath: request.projectPath ?? null,
+    limit: request.limit ?? null,
+    agentView: request.agentView ?? null
+  })
+}
+
+function requestSessionsList(key: string, request: SessionListRequest): Promise<SessionListCacheEntry> {
+  const pending = sessionListInFlight.get(key)
+  if (pending) return pending
+
+  const next = window.api.sessions
+    .list(request)
+    .then((result) => {
+      const entry = {
+        sessions: result?.sessions ?? [],
+        totalCount: result?.totalCount ?? 0,
+        updatedAtMs: Date.now()
+      }
+      sessionListCache.set(key, entry)
+      return entry
+    })
+    .finally(() => {
+      sessionListInFlight.delete(key)
+    })
+  sessionListInFlight.set(key, next)
+  return next
 }
 
 export function useAssetRuntime(): {
@@ -130,32 +191,55 @@ export function useSessions(opts?: {
   projectPath?: string
   limit?: number
   agentView?: AgentView
-}): { sessions: SessionSummary[]; loading: boolean } {
-  const [sessions, setSessions] = useState<SessionSummary[]>([])
-  const [loading, setLoading] = useState(true)
+}): { sessions: SessionSummary[]; loading: boolean; stale: boolean } {
+  const request = useMemo(
+    () => createSessionListRequest(opts),
+    [opts?.projectFilter, opts?.projectPath, opts?.limit, opts?.agentView]
+  )
+  const cacheKey = useMemo(() => sessionListCacheKey(request), [request])
+  const initialCache = sessionListCache.get(cacheKey)
+  const [sessions, setSessions] = useState<SessionSummary[]>(initialCache?.sessions ?? [])
+  const [loading, setLoading] = useState(initialCache == null)
+  const [stale, setStale] = useState(false)
 
   useEffect(() => {
     if (!window.api?.sessions?.list) {
       setLoading(false)
+      setStale(false)
       return
     }
-    setLoading(true)
-    const request = {
-      projectFilter: opts?.projectFilter,
-      limit: opts?.limit,
-      agentView: opts?.agentView,
-      ...(opts?.projectPath ? { projectPath: opts.projectPath } : {})
-    }
-    window.api.sessions
-      .list(request)
-      .then((result) => {
-        setSessions(result?.sessions ?? [])
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false))
-  }, [opts?.projectFilter, opts?.projectPath, opts?.limit, opts?.agentView])
 
-  return { sessions, loading }
+    let cancelled = false
+    const cached = sessionListCache.get(cacheKey)
+    if (cached) {
+      setSessions(cached.sessions)
+      setLoading(true)
+      setStale(true)
+    } else {
+      setSessions([])
+      setLoading(true)
+      setStale(false)
+    }
+
+    requestSessionsList(cacheKey, request)
+      .then((result) => {
+        if (cancelled) return
+        setSessions(result.sessions)
+        setStale(false)
+      })
+      .catch(() => {
+        if (!cancelled) setStale(false)
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [cacheKey, request])
+
+  return { sessions, loading, stale }
 }
 
 export function useSessionDetail(id: string): {
