@@ -7,9 +7,9 @@
 - [x] 任务 1: 更新 harness 子代理门禁规则与自检
   - tests: `pnpm test -- tests/harness/check.test.ts` (45 passed, 2026-06-03); `pnpm harness:check` (passed, 2026-06-03)
   - verify: 不适用 UI; workflow/tools 已写明 CI wait / Project 同步可由子代理执行, 主 Agent 仍需消费成功结果。
-- [ ] 任务 2: 优化 Vitest 环境分配
-  - tests: `pnpm test`; `/usr/bin/time -p pnpm test`
-  - verify: 不适用 UI; renderer 测试仍使用 jsdom, unit/harness 测试不再承担 DOM 环境。
+- [x] 任务 2: 优化 Vitest 环境分配
+  - tests: `/usr/bin/time -p pnpm test` (83 files / 599 tests passed, real 12.05s, duration 11.35s, 2026-06-03)
+  - verify: 不适用 UI; renderer 测试匹配 jsdom, unit/harness 默认 node; environment 累计为 26.62s。
 - [ ] 任务 3: 采样 prepush 并更新任务证据
   - tests: `/usr/bin/time -p pnpm harness:prepush`
   - verify: 不适用 UI; 记录优化前后耗时与剩余主要成本。
