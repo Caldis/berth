@@ -22,9 +22,9 @@
 - [x] 6. 局部与总门禁:
   - tests: `pnpm typecheck:web`; `pnpm harness:check`; `pnpm vitest run tests/renderer/top-navigation.test.tsx tests/renderer/app-layout.test.tsx tests/renderer/sessions-pages.test.tsx tests/renderer/instructions-guidance.test.tsx tests/renderer/capabilities-guidance.test.tsx`
   - verify: `pnpm harness:prepush` (pass, 85 files / 611 tests); UI 状态、i18n、路径/数字格式相关断言全通过。
-- [ ] 7. Electron 视觉验收:
+- [x] 7. Electron 视觉验收:
   - tests: manual evidence - `pnpm dev`; `pnpm dev:agent screenshot gh90-sessions --mode print-window`; `pnpm dev:agent screenshot gh90-session-detail --mode print-window`
-  - verify: 使用实测窗口坐标截图; sessions 与 session detail 顶部导航固定在内容区顶部, 滚动条只属于内容区, 搜索/help/actions 不遮挡标题。
+  - verify: agent-owned Electron `gh90-nav-verify` + CDP route/screenshot evidence in `/tmp/berth-gh90-verify/`; Sessions / Memories / Usage / Session detail 均确认 top nav 与内容滚动区分离, 页面级搜索上移且 `Ctrl+K` 聚焦顶部搜索。macOS `dev:agent screenshot` 与 `screencapture` 受工具/权限限制, 见 `docs/friction/20260603-4.0-verify-macos-dev-agent-screenshot.md`。
 
 ## verify 回写
 verify 不通过项作为新任务追加于此, phase 退回 implement。
