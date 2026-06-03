@@ -2,7 +2,7 @@
 task: 2026-06-03-gh-91-hooks-lifecycle-layout
 task_id: GH-91
 type: feature
-phase: implement
+phase: verify
 created: 2026-06-03
 priority: P2
 target_date: 

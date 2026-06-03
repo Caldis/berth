@@ -16,10 +16,10 @@
   - 内容: 实现 IntersectionObserver scroll spy、SVG 圆角连线、尺寸/滚动重算 helper, desktop 显示 connector, mobile 隐藏。
   - tests: `pnpm vitest run tests/renderer/hooks-lifecycle-view.test.tsx` 通过, 30 tests passed; `pnpm typecheck:web` 通过。
   - verify: 滚动同步 `aria-current`; connector `aria-hidden` / `pointer-events-none` / `strokeLinecap=round` / `strokeLinejoin=round`; 点击生命周期仍滚动。
-- [ ] 任务 4:
+- [x] 任务 4:
   - 内容: 完整门禁与 Electron 视觉/交互验收, 记录证据。
-  - tests: `pnpm harness:check --work docs/works/2026-06-03-gh-91-hooks-lifecycle-layout`; `pnpm typecheck:web`; `pnpm vitest run tests/renderer/hooks-lifecycle-view.test.tsx`
-  - verify: 真实 Hooks 页面截图; 右侧滚动时左侧高亮变化; 左右连线不遮挡内容; 窄视口不出现横向滚动。
+  - tests: `pnpm harness:check --work docs/works/2026-06-03-gh-91-hooks-lifecycle-layout` 通过; `pnpm typecheck:web` 通过; `pnpm vitest run tests/renderer/hooks-lifecycle-view.test.tsx` 通过, 30 tests passed。
+  - verify: Electron agent 实例 `hooks-layout` 已实测; 截图 `/tmp/berth-hooks-layout-desktop.png`; 右侧滚到 `Before a tool runs` 后左侧 `03` 高亮; desktop connector 9 条, `stroke-linecap=round`, `stroke-linejoin=round`; 760px 视口无横向溢出且 connector 隐藏。
 
 ## verify 回写
 verify 不通过项作为新任务追加于此, phase 退回 implement。

@@ -267,12 +267,12 @@ function useHookStageConnectors(
 
         const anchorRect = anchor.getBoundingClientRect()
         const targetRect = target.getBoundingClientRect()
-        const startX = anchorRect.right - layerRect.left + 8
+        const startX = anchorRect.right - layerRect.left + 2
         const startY = anchorRect.top + anchorRect.height / 2 - layerRect.top
-        const endX = targetRect.left - layerRect.left - 8
+        const endX = targetRect.left - layerRect.left - 2
         const endY = targetRect.top + Math.min(36, Math.max(24, targetRect.height / 2)) - layerRect.top
 
-        if (![startX, startY, endX, endY].every(Number.isFinite) || endX <= startX + 16) return []
+        if (![startX, startY, endX, endY].every(Number.isFinite) || endX <= startX + 4) return []
         return [{
           id,
           path: buildRoundedConnectorPath(startX, startY, endX, endY),
