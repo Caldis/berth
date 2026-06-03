@@ -1,11 +1,13 @@
-// Post-build generator: sitemap.xml, llms.txt, llms-full.txt.
+// Post-build generator: sitemap.xml, llms.txt, llms-full.txt, shared assets.
 // Reads the prerendered dist/ HTML so SEO/AI artifacts never drift from content.
-import { readFileSync, writeFileSync, readdirSync, statSync } from 'node:fs'
+import { cpSync, existsSync, readFileSync, writeFileSync, readdirSync, statSync } from 'node:fs'
 import { join, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const root = fileURLToPath(new URL('..', import.meta.url))
+const repoRoot = fileURLToPath(new URL('../..', import.meta.url))
 const dist = join(root, 'dist')
+const sharedAssets = join(repoRoot, 'assets')
 const SITE = 'https://berth.caldis.me'
 
 /** Recursively collect all index.html / *.html files under dist. */
@@ -103,6 +105,10 @@ const full = [
 ].join('\n')
 writeFileSync(join(dist, 'llms-full.txt'), full)
 
+if (existsSync(sharedAssets)) {
+  cpSync(sharedAssets, join(dist, 'assets'), { recursive: true })
+}
+
 console.log(
-  `[postbuild] sitemap.xml (${pages.length} urls), llms.txt, llms-full.txt (${(full.length / 1024).toFixed(1)} KB) written.`,
+  `[postbuild] sitemap.xml (${pages.length} urls), llms.txt, llms-full.txt (${(full.length / 1024).toFixed(1)} KB), shared assets written.`,
 )
