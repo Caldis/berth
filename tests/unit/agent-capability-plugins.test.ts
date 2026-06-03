@@ -2,6 +2,7 @@ import * as fs from 'fs'
 import * as os from 'os'
 import * as path from 'path'
 import { afterEach, describe, expect, it } from 'vitest'
+import { CLAUDE_SOURCE_DESCRIPTORS, CODEX_SOURCE_DESCRIPTORS } from '../../src/main/agent-plugins/descriptors'
 import { listAgentCapabilityPlugins } from '../../src/main/agent-plugins/registry'
 import type { AgentScanSourceGroup } from '../../src/shared/types/ipc'
 import type { HealthCheckCategory, HealthCheckSeverity } from '../../src/shared/types/ipc'
@@ -406,6 +407,11 @@ describe('agent capability plugin registry', () => {
         categories: ['capability'],
         pathPattern: '<project>/.codex/hooks.json'
       })
+  })
+
+  it('uses shared built-in source descriptor modules for registry and adapter coverage', () => {
+    expect(CLAUDE_SOURCE_DESCRIPTORS.map((descriptor) => descriptor.code)).toEqual(claudeDescriptorCodes)
+    expect(CODEX_SOURCE_DESCRIPTORS.map((descriptor) => descriptor.code)).toEqual(codexDescriptorCodes)
   })
 
   it('joins runtime source coverage with descriptors by source code', () => {

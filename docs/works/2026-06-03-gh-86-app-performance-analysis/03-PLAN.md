@@ -70,9 +70,10 @@ verify 不通过项作为新任务追加于此, phase 退回 implement。
   - tests: `pnpm test -- tests/unit/agent-adapter-registry.test.ts tests/unit/engine-scanner.test.ts`
   - evidence: 2026-06-03 运行通过, `tests/unit/agent-adapter-registry.test.ts` + `tests/unit/engine-scanner.test.ts` 共 9 tests passed; `pnpm typecheck:node` passed; `pnpm lint` passed。
   - verify: worker 内通过 registry 构造 adapters; activation-ready/read-only manifest 以非执行 adapter 参与 source coverage 与 plugin asset 扫描; 不执行第三方 entrypoint。
-- [ ] 任务 12: 让 built-in descriptor 成为 source coverage 的声明来源, 降低 registry 与 adapter scanner 漂移风险。
+- [x] 任务 12: 让 built-in descriptor 成为 source coverage 的声明来源, 降低 registry 与 adapter scanner 漂移风险。
   - source: 2026-06-03 用户要求执行优化项 4。
   - tests: `pnpm test -- tests/unit/agent-capability-plugins.test.ts tests/unit/engine-scanner.test.ts`
+  - evidence: 2026-06-03 运行通过, `tests/unit/agent-capability-plugins.test.ts` + `tests/unit/engine-scanner.test.ts` + `tests/unit/claude-code-adapter.test.ts` + `tests/unit/codex-adapter.test.ts` 共 33 tests passed; `pnpm typecheck:node` passed; `pnpm lint` passed。
   - verify: Claude/Codex source descriptor codes 与 adapter scan source codes 来自同一 descriptor 模块; 新增 drift 测试。
 - [ ] 任务 13: 为 `useAgentCapabilityPlugins()` 增加 stale-while-refresh 与 snapshot 变化刷新。
   - source: 2026-06-03 用户要求执行优化项 2。

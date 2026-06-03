@@ -26,6 +26,7 @@ import {
 } from '../../agent-homes'
 import { resolveProjectConfigRoots } from '../../project-config-roots'
 import type { AssetFileCache } from '../../engine/assets/file-cache'
+import { CODEX_SOURCE_DESCRIPTORS, scanRootFromDescriptor } from '../../agent-plugins/descriptors'
 
 export class CodexAdapter implements AgentAdapter {
   readonly id = 'codex'
@@ -64,113 +65,22 @@ export class CodexAdapter implements AgentAdapter {
   async scanSourceCoverage(): Promise<ScanRoot[]> {
     const roots: ScanRoot[] = []
     for (const codexDir of this.codexDirs) {
-      addRoot(
-        roots,
-        path.join(codexDir, 'config.toml'),
-        'user',
-        'file',
-        'codex.user.config',
-        ['capability']
-      )
-      addRoot(
-        roots,
-        path.join(codexDir, 'hooks.json'),
-        'user',
-        'file',
-        'codex.user.hooks',
-        ['capability']
-      )
-      addRoot(
-        roots,
-        path.join(codexDir, 'AGENTS.md'),
-        'user',
-        'file',
-        'codex.user.agents-md',
-        ['instruction']
-      )
-      addRoot(
-        roots,
-        path.join(codexDir, 'agents'),
-        'user',
-        'directory',
-        'codex.user.agents-directory',
-        ['instruction']
-      )
-      addRoot(
-        roots,
-        path.join(codexDir, 'skills'),
-        'user',
-        'directory',
-        'codex.user.codex-home-skills',
-        ['instruction']
-      )
-      addRoot(
-        roots,
-        path.join(codexDir, 'sessions'),
-        'user',
-        'directory',
-        'codex.user.sessions',
-        ['state']
-      )
-      addRoot(
-        roots,
-        path.join(codexDir, 'archived_sessions'),
-        'session',
-        'directory',
-        'codex.session.archived-sessions',
-        ['state']
-      )
+      addRoot(roots, path.join(codexDir, 'config.toml'), 'codex.user.config')
+      addRoot(roots, path.join(codexDir, 'hooks.json'), 'codex.user.hooks')
+      addRoot(roots, path.join(codexDir, 'AGENTS.md'), 'codex.user.agents-md')
+      addRoot(roots, path.join(codexDir, 'agents'), 'codex.user.agents-directory')
+      addRoot(roots, path.join(codexDir, 'skills'), 'codex.user.codex-home-skills')
+      addRoot(roots, path.join(codexDir, 'sessions'), 'codex.user.sessions')
+      addRoot(roots, path.join(codexDir, 'archived_sessions'), 'codex.session.archived-sessions')
     }
-    addRoot(
-      roots,
-      path.join(this.homeDir, '.agents', 'skills'),
-      'user',
-      'directory',
-      'codex.user.shared-skills',
-      ['instruction']
-    )
+    addRoot(roots, path.join(this.homeDir, '.agents', 'skills'), 'codex.user.shared-skills')
 
     for (const projectDir of this.projectDirs) {
-      addRoot(
-        roots,
-        path.join(projectDir, 'AGENTS.md'),
-        'project',
-        'file',
-        'codex.project.agents-md',
-        ['instruction']
-      )
-      addRoot(
-        roots,
-        path.join(projectDir, '.codex', 'config.toml'),
-        'project',
-        'file',
-        'codex.project.config',
-        ['capability']
-      )
-      addRoot(
-        roots,
-        path.join(projectDir, '.codex', 'hooks.json'),
-        'project',
-        'file',
-        'codex.project.hooks',
-        ['capability']
-      )
-      addRoot(
-        roots,
-        path.join(projectDir, '.codex', 'agents'),
-        'project',
-        'directory',
-        'codex.project.agents-directory',
-        ['instruction']
-      )
-      addRoot(
-        roots,
-        path.join(projectDir, '.agents', 'skills'),
-        'project',
-        'directory',
-        'codex.project.skills',
-        ['instruction']
-      )
+      addRoot(roots, path.join(projectDir, 'AGENTS.md'), 'codex.project.agents-md')
+      addRoot(roots, path.join(projectDir, '.codex', 'config.toml'), 'codex.project.config')
+      addRoot(roots, path.join(projectDir, '.codex', 'hooks.json'), 'codex.project.hooks')
+      addRoot(roots, path.join(projectDir, '.codex', 'agents'), 'codex.project.agents-directory')
+      addRoot(roots, path.join(projectDir, '.agents', 'skills'), 'codex.project.skills')
     }
 
     return roots
@@ -321,13 +231,10 @@ export function resolveCodexHomeDir(
 function addRoot(
   roots: ScanRoot[],
   rootPath: string,
-  scope: ScanRoot['scope'],
-  kind: NonNullable<ScanRoot['kind']>,
-  code: NonNullable<ScanRoot['code']>,
-  categories: ScanRoot['categories']
+  code: NonNullable<ScanRoot['code']>
 ): void {
   if (!fs.existsSync(rootPath)) return
-  roots.push({ path: rootPath, scope, code, categories, kind, status: 'scanned' })
+  roots.push(scanRootFromDescriptor(CODEX_SOURCE_DESCRIPTORS, code, rootPath))
 }
 
 function safeScan<T>(

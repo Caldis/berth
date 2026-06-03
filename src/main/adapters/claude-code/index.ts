@@ -23,6 +23,7 @@ import {
 import { resolveClaudeDirs } from '../../agent-homes'
 import { resolveProjectConfigRoots } from '../../project-config-roots'
 import type { AssetFileCache } from '../../engine/assets/file-cache'
+import { CLAUDE_SOURCE_DESCRIPTORS, scanRootFromDescriptor } from '../../agent-plugins/descriptors'
 
 interface ClaudeCodeAdapterOptions {
   managedDir?: string
@@ -84,74 +85,32 @@ export class ClaudeCodeAdapter implements AgentAdapter {
     for (const claudeDir of this.claudeDirs) {
       if (!fs.existsSync(claudeDir)) continue
       if (sources.some((source) => source.path === claudeDir)) continue
-      sources.push({
-        path: claudeDir,
-        scope: 'user',
-        code: 'claude.user.data-directory',
-        categories: ['instruction', 'capability', 'state', 'observability', 'integration'],
-        kind: 'directory',
-        status: 'scanned'
-      })
+      sources.push(scanRootFromDescriptor(CLAUDE_SOURCE_DESCRIPTORS, 'claude.user.data-directory', claudeDir))
     }
     // ~/.claude.json (MCP config)
     for (const claudeDir of this.claudeDirs) {
       const homeClaudeJson = path.resolve(claudeDir, '..', '.claude.json')
       if (fs.existsSync(homeClaudeJson)) {
-        sources.push({
-          path: homeClaudeJson,
-          scope: 'user',
-          code: 'claude.user.global-config',
-          categories: ['capability'],
-          kind: 'file',
-          status: 'scanned'
-        })
+        sources.push(scanRootFromDescriptor(CLAUDE_SOURCE_DESCRIPTORS, 'claude.user.global-config', homeClaudeJson))
       }
     }
     for (const projectDir of this.projectDirs) {
       const projectDotClaude = path.join(projectDir, '.claude')
       if (fs.existsSync(projectDotClaude)) {
-        sources.push({
-          path: projectDotClaude,
-          scope: 'project',
-          code: 'claude.project.directory',
-          categories: ['instruction', 'capability'],
-          kind: 'directory',
-          status: 'scanned'
-        })
+        sources.push(scanRootFromDescriptor(CLAUDE_SOURCE_DESCRIPTORS, 'claude.project.directory', projectDotClaude))
       }
       const projectMcp = path.join(projectDir, '.mcp.json')
       if (fs.existsSync(projectMcp)) {
-        sources.push({
-          path: projectMcp,
-          scope: 'project',
-          code: 'claude.project.mcp-config',
-          categories: ['capability'],
-          kind: 'file',
-          status: 'scanned'
-        })
+        sources.push(scanRootFromDescriptor(CLAUDE_SOURCE_DESCRIPTORS, 'claude.project.mcp-config', projectMcp))
       }
     }
     const managedSettings = path.join(this.managedDir, 'managed-settings.json')
     if (fs.existsSync(managedSettings)) {
-      sources.push({
-        path: managedSettings,
-        scope: 'enterprise',
-        code: 'claude.enterprise.managed-settings',
-        categories: ['capability'],
-        kind: 'file',
-        status: 'scanned'
-      })
+      sources.push(scanRootFromDescriptor(CLAUDE_SOURCE_DESCRIPTORS, 'claude.enterprise.managed-settings', managedSettings))
     }
     const managedMcp = path.join(this.managedDir, 'managed-mcp.json')
     if (fs.existsSync(managedMcp)) {
-      sources.push({
-        path: managedMcp,
-        scope: 'enterprise',
-        code: 'claude.enterprise.managed-mcp',
-        categories: ['capability'],
-        kind: 'file',
-        status: 'scanned'
-      })
+      sources.push(scanRootFromDescriptor(CLAUDE_SOURCE_DESCRIPTORS, 'claude.enterprise.managed-mcp', managedMcp))
     }
     return sources
   }
