@@ -16,7 +16,7 @@
 
 - `nav-config.ts` 是侧栏导航与顶部导航共同信息源。可在这里扩展 route metadata: section label, page label, active item, detail route 行为。
 - `TopNavigation` 依赖 `useLocation()` 与 i18n。详情页标题需要从页面数据产生, 不适合只靠 route 静态配置; 需要页面向布局层提供标题与动作。
-- `SearchDialog` 由 `useAppStore().setSearchOpen` 控制, 可迁移触发按钮到顶部导航, 侧栏可保留品牌与导航, 搜索入口从侧栏移除或降权。
+- `SearchDialog` 由 `useAppStore().setSearchOpen` 控制。侧栏主搜索入口保留为全局资产搜索; 顶部导航搜索是页面级受控输入, 随当前页面切换 placeholder/value/onChange。用户澄清的“搜索上移”指页面内部搜索/筛选控件迁移到顶部导航, 不包括移除侧栏搜索。
 - `FeatureGuidePanel` 目前含展开状态和证据标签。若“页面说明提示”移到顶部导航, 应复用同一信息模型, 使用顶部帮助弹出/内联摘要, 避免内容区继续展示大说明卡片。
 - `FilterBar` 是 Instructions/Capabilities 的页面内搜索+scope 控件。Sessions 使用自建筛选和分组控件。Usage 使用时间范围和 cost mode 控件。顶部导航需要支持页面级 actions slot, 不应把所有页面控件强行统一成同一个组件。
 - Overview 是 dashboard 首屏, 保留自身 hero 和状态摘要即可; 顶部导航应隐藏, 内容滚动区从页面顶部开始。
@@ -43,7 +43,7 @@
 1. `/` 总览页不渲染 `data-testid="top-navigation"`; 内容不被顶部空白导航占位。
 2. 功能页顶部导航高度高于现有 `h-11`, 固定在主内容区顶部, 内容滚动容器独立位于导航下方。
 3. 功能页顶部导航同时显示分类与页面名称, 例如“工作 / 会话”“指令 / Skills”“能力 / Hooks”“运行 / 用量”。
-4. 全局搜索触发入口位于顶部导航, 可打开现有 `SearchDialog`, 且侧栏不再承载主搜索入口。
+4. 侧栏主搜索入口保留并打开全局 `SearchDialog`; 顶部导航搜索为页面级输入, 例如 Memories 显示“Search memories...”; 页面内部搜索栏移除; `Ctrl/⌘K` 在有页面搜索时聚焦页面搜索, 否则打开全局搜索。
 5. Sessions 的筛选、分组、刷新/分批渲染状态迁移到顶部导航 action 区, loading/empty/list 状态仍保留。
 6. Instructions 与 Capabilities 的搜索与 scope 筛选迁移到顶部导航 action 区, 内容区不再重复显示页面标题、筛选条和说明卡片。
 7. 功能页说明提示通过顶部导航帮助入口展示, 复用原 `FeatureGuidePanel` 的 title、summary、evidence 与 details 信息。

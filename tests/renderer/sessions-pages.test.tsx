@@ -7,6 +7,9 @@ import { Overview } from '../../src/renderer/src/pages/overview'
 import { Sessions } from '../../src/renderer/src/pages/sessions'
 import { SessionDetail } from '../../src/renderer/src/pages/session-detail'
 import { Usage } from '../../src/renderer/src/pages/usage'
+import { TopNavigation } from '../../src/renderer/src/components/layout/top-navigation'
+import { PageChromeProvider } from '../../src/renderer/src/components/layout/page-chrome'
+import { SearchDialog } from '../../src/renderer/src/components/layout/search-dialog'
 import type { Asset, SessionSummary, UsageSummary } from '../../src/shared/types/asset'
 import type { SessionActivityMetrics } from '../../src/shared/types/ipc'
 import { normalizeTokenUsage } from '../../src/shared/token-usage'
@@ -165,6 +168,18 @@ function selectSessionDetailTab(label: RegExp): void {
   fireEvent.click(tab)
 }
 
+function renderSessionsPage(): ReturnType<typeof render> {
+  return render(
+    <MemoryRouter initialEntries={['/sessions']}>
+      <PageChromeProvider>
+        <TopNavigation isWindows={false} />
+        <Sessions />
+        <SearchDialog />
+      </PageChromeProvider>
+    </MemoryRouter>
+  )
+}
+
 describe('session pages', () => {
   it('renders overview recent sessions with readable path, tokens, and unknown cost', async () => {
     mockSessionApis()
@@ -225,12 +240,9 @@ describe('session pages', () => {
   it('renders sessions page without encoded project names or invalid date output', async () => {
     mockSessionApis()
 
-    render(
-      <MemoryRouter>
-        <Sessions />
-      </MemoryRouter>
-    )
+    renderSessionsPage()
 
+    fireEvent.click(await screen.findByRole('button', { name: 'Page guide' }))
     expect(screen.getByText('Local conversation history')).toBeInTheDocument()
     expect(await screen.findByText('Fix session metadata')).toBeInTheDocument()
     expect(screen.getAllByText('D:\\Code\\berth').length).toBeGreaterThan(0)
@@ -240,6 +252,34 @@ describe('session pages', () => {
     expect(screen.getByText('38 tok')).toBeInTheDocument()
     expect(screen.getByText(/I 10 \/ O 5/)).toBeInTheDocument()
     expect(screen.getAllByText('claude-sonnet-4-20250514').length).toBeGreaterThan(0)
+  })
+
+  it('filters sessions from the top navigation search field', async () => {
+    const sessions = [
+      summary,
+      {
+        ...summary,
+        id: 'session-other',
+        title: 'Archive cleanup',
+        transcriptPath: 'C:\\Users\\test\\.claude\\projects\\D--Code-berth\\session-other.jsonl'
+      }
+    ]
+    window.api.sessions.list = vi.fn(async () => ({ sessions, totalCount: sessions.length }))
+
+    renderSessionsPage()
+
+    expect(await screen.findByText('Fix session metadata')).toBeInTheDocument()
+    expect(screen.getByText('Archive cleanup')).toBeInTheDocument()
+
+    fireEvent.keyDown(window, { key: 'k', ctrlKey: true })
+    const pageSearch = screen.getByRole('textbox', { name: 'Filter sessions...' })
+    expect(pageSearch).toHaveFocus()
+
+    fireEvent.change(pageSearch, { target: { value: 'archive' } })
+
+    expect(screen.queryByText('Fix session metadata')).not.toBeInTheDocument()
+    expect(screen.getByText('Archive cleanup')).toBeInTheDocument()
+    expect(screen.queryByRole('dialog', { name: /Search assets/ })).not.toBeInTheDocument()
   })
 
   it('renders large session lists in batches', async () => {
@@ -253,11 +293,7 @@ describe('session pages', () => {
     window.api.sessions.list = vi.fn(async () => ({ sessions, totalCount: sessions.length }))
 
     try {
-      render(
-        <MemoryRouter>
-          <Sessions />
-        </MemoryRouter>
-      )
+      renderSessionsPage()
 
       await act(async () => {
         await Promise.resolve()
@@ -293,11 +329,7 @@ describe('session pages', () => {
       })
     })
 
-    const view = render(
-      <MemoryRouter>
-        <Sessions />
-      </MemoryRouter>
-    )
+    const view = renderSessionsPage()
 
     try {
       expect(await screen.findByText('Fix session metadata')).toBeInTheDocument()
@@ -331,11 +363,7 @@ describe('session pages', () => {
       expect(screen.queryByText('Session #session-')).not.toBeInTheDocument()
       overview.unmount()
 
-      const sessions = render(
-        <MemoryRouter>
-          <Sessions />
-        </MemoryRouter>
-      )
+      const sessions = renderSessionsPage()
 
       expect(await screen.findByText('会话 #session-')).toBeInTheDocument()
       expect(screen.queryByText('Session #session-')).not.toBeInTheDocument()
@@ -361,12 +389,9 @@ describe('session pages', () => {
   it('shows sessions guidance and an instructive empty state when no sessions are found', async () => {
     window.api.sessions.list = vi.fn(async () => ({ sessions: [], totalCount: 0 }))
 
-    render(
-      <MemoryRouter>
-        <Sessions />
-      </MemoryRouter>
-    )
+    renderSessionsPage()
 
+    fireEvent.click(await screen.findByRole('button', { name: 'Page guide' }))
     expect(await screen.findByText('Local conversation history')).toBeInTheDocument()
     expect(await screen.findByText('No sessions found')).toBeInTheDocument()
     expect(screen.getByText(/Berth scans local Claude Code and Codex session history/)).toBeInTheDocument()
@@ -375,11 +400,7 @@ describe('session pages', () => {
   it('shows the shared sessions loading state before the first list result', () => {
     window.api.sessions.list = vi.fn(() => new Promise(() => undefined))
 
-    render(
-      <MemoryRouter>
-        <Sessions />
-      </MemoryRouter>
-    )
+    renderSessionsPage()
 
     expect(screen.getByLabelText('Loading sessions')).toBeInTheDocument()
     expect(screen.getByText('Reading local transcript summaries for the current agent view.')).toBeInTheDocument()

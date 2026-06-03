@@ -23,11 +23,11 @@ export function AppLayout({ children }: { children: ReactNode }): React.ReactEle
   return (
     <div className="flex h-[100dvh] overflow-hidden bg-background text-foreground">
       <Sidebar />
-      <div
-        className="flex min-w-0 flex-1 flex-col overflow-hidden transition-[margin] duration-200"
-        style={{ marginLeft: effectiveSidebarWidth }}
-      >
-        <PageChromeProvider>
+      <PageChromeProvider>
+        <div
+          className="flex min-w-0 flex-1 flex-col overflow-hidden transition-[margin] duration-200"
+          style={{ marginLeft: effectiveSidebarWidth }}
+        >
           <TopNavigation isWindows={isWindows} />
           <main
             data-testid="app-content-scroll"
@@ -37,11 +37,11 @@ export function AppLayout({ children }: { children: ReactNode }): React.ReactEle
               {children}
             </div>
           </main>
-        </PageChromeProvider>
-      </div>
-      {isWindows && <WindowControls />}
-      <SearchDialog />
-      <InspectorDrawer />
+        </div>
+        {isWindows && <WindowControls />}
+        <SearchDialog />
+        <InspectorDrawer />
+      </PageChromeProvider>
     </div>
   )
 }

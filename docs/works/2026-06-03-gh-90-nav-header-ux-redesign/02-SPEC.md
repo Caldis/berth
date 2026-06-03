@@ -14,6 +14,12 @@ interface PageChromeConfig {
   parentLabel?: React.ReactNode
   leading?: React.ReactNode
   actions?: React.ReactNode
+  search?: {
+    value: string
+    onValueChange: (value: string) => void
+    placeholder: string
+    ariaLabel?: string
+  }
   guide?: {
     definition: FeatureGuideDefinition
     evidence?: FeatureGuideEvidence[]
@@ -24,9 +30,9 @@ interface PageChromeConfig {
 
 - `PageChromeProvider` 放在 `AppLayout` 内部, 用 local state 保存当前页面 chrome。页面通过 `usePageChrome(config, deps)` 注册, unmount 时清空。
 - 静态 route 信息仍从 `nav-config.ts` 读取: section label 与 page label 用于普通功能页。
-- 页面动态信息由页面传入: session detail 标题、返回按钮、页面级筛选控件、help guide evidence。
+- 页面动态信息由页面传入: session detail 标题、返回按钮、页面级搜索输入、页面级筛选控件、help guide evidence。
 - Overview 不注册 chrome, `AppLayout` 通过 pathname `/` 隐藏 `TopNavigation`。
-- SearchDialog 仍由 `useAppStore().setSearchOpen(true)` 打开; 只是触发入口迁移到顶部导航。
+- SearchDialog 仍由 `useAppStore().setSearchOpen(true)` 打开; 侧栏主搜索入口保留为全局搜索。顶部导航搜索由 `PageChromeConfig.search` 控制, 是页面级输入; `Ctrl/⌘K` 在页面搜索存在时聚焦该输入, 否则打开全局搜索。
 
 ## 任务分类与 debt
 - type / maintenance.subtype:
@@ -54,11 +60,11 @@ interface PageChromeConfig {
   - `TopNavigation` 在 scroll container 外层; 内容 scroll container 使用 `flex-1 overflow-auto`。
   - `/` 隐藏 `TopNavigation`。
 - `src/renderer/src/components/layout/top-navigation.tsx`
-  - 渲染固定顶部导航: 分类 breadcrumb、页面标题、全局搜索按钮、可选 help、可选 leading/action slot。
+  - 渲染固定顶部导航: 分类 breadcrumb、页面标题、页面级搜索输入、可选 help、可选 leading/action slot。
   - Session detail 的 leading slot 放返回按钮; breadcrumb 展示“Sessions / 当前标题”。
   - Windows 保留 `pr-44`, titlebar drag/no-drag 区域覆盖所有按钮。
 - `src/renderer/src/components/layout/sidebar.tsx`
-  - 移除侧栏主搜索按钮。侧栏仅保留品牌、导航、agent view、project scope、settings。
+  - 保留侧栏主搜索按钮。侧栏仍承载品牌、导航、全局搜索、agent view、project scope、settings。
 - `src/renderer/src/components/shared/feature-guide-panel.tsx`
   - 保持页面说明内容模型。若需要, 增加 className/compact 兼容顶部弹层使用。
 - `src/renderer/src/pages/sessions.tsx`
@@ -94,7 +100,7 @@ interface PageChromeConfig {
 
 | 变更/行为 | 测试类型 | 测试文件 | 命令 | 不写自动化测试的理由 |
 |---|---|---|---|---|
-| PageChrome contract 与 TopNavigation 分类+标题+搜索+help+返回 | renderer | `tests/renderer/top-navigation.test.tsx` | `pnpm vitest run tests/renderer/top-navigation.test.tsx` | 不适用 |
+| PageChrome contract 与 TopNavigation 分类+标题+页面搜索+help+返回 | renderer | `tests/renderer/top-navigation.test.tsx` | `pnpm vitest run tests/renderer/top-navigation.test.tsx` | 不适用 |
 | AppLayout 总览无 nav、功能页 nav 不在 scroll container 内 | renderer | 新增或扩展 `tests/renderer/app-layout.test.tsx` | `pnpm vitest run tests/renderer/app-layout.test.tsx` | 不适用 |
 | Sessions 筛选/分组/status 迁移到 top nav 后行为不变 | renderer | `tests/renderer/sessions-pages.test.tsx` | `pnpm vitest run tests/renderer/sessions-pages.test.tsx` | 不适用 |
 | Instructions/Capabilities filter/scope/help 迁移后行为不变 | renderer | `tests/renderer/instructions-guidance.test.tsx`, `tests/renderer/capabilities-guidance.test.tsx` | `pnpm vitest run tests/renderer/instructions-guidance.test.tsx tests/renderer/capabilities-guidance.test.tsx` | 不适用 |
@@ -109,7 +115,7 @@ interface PageChromeConfig {
 | Overview hides TopNavigation | 1 |
 | AppLayout separates top nav and scroll container | 2 |
 | Route/page chrome shows section + page title | 3 |
-| Search trigger in top nav | 4 |
+| Sidebar search retained + page search/filter in top nav | 4 |
 | Sessions actions in top nav | 5 |
 | Instructions/Capabilities actions and help in top nav | 6, 7 |
 | Session detail back + breadcrumb + dynamic title | 8 |

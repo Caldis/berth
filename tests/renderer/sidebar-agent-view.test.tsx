@@ -18,6 +18,7 @@ describe('Sidebar agent view selector', () => {
     useAppStore.setState({
       sidebarCollapsed: false,
       sidebarWidth: SIDEBAR_DEFAULT_WIDTH,
+      searchOpen: false,
       agentView: 'all',
       scopeSelection: { mode: 'global' },
       projectCandidates: []
@@ -65,6 +66,18 @@ describe('Sidebar agent view selector', () => {
     fireEvent.click(collapseButton)
 
     expect(screen.getByRole('button', { name: '展开侧边栏' })).toBeInTheDocument()
+  })
+
+  it('keeps the global search trigger in the sidebar', () => {
+    render(
+      <MemoryRouter>
+        <Sidebar />
+      </MemoryRouter>
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Search assets...' }))
+
+    expect(useAppStore.getState().searchOpen).toBe(true)
   })
 
   it('uses the stored sidebar width and clamps mouse resizing', () => {

@@ -3,7 +3,6 @@ import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import {
   MessageSquare,
-  Search,
   ChevronDown,
   ChevronRight,
   Clock,
@@ -21,11 +20,11 @@ import {
 import { useSessions } from '@/hooks/use-ipc'
 import { EmptyState } from '@/components/shared/empty-state'
 import { LoadingState } from '@/components/shared/loading-state'
-import { FeatureGuidePanel } from '@/components/shared/feature-guide-panel'
 import { useAppStore } from '@/stores/app'
 import { TokenUsageDisplay } from '@/components/shared/token-usage-display'
 import { sessionGuide, type FeatureGuideEvidence } from '@/lib/feature-guidance'
 import { projectPathForScope } from '@shared/scope'
+import { usePageChrome, type PageChromeConfig } from '@/components/layout/page-chrome'
 
 type GroupBy = 'project' | 'date'
 
@@ -124,6 +123,70 @@ export function Sessions(): React.ReactElement {
     }
     return null
   }, [filtered.length, isRenderingPartialList, loading, sessions.length, stale, t, visibleCount])
+  const pageChromeActions = useMemo<React.ReactNode>(() => (
+    <>
+      <div
+        data-testid="sessions-toolbar-status-slot"
+        className="hidden h-9 w-56 shrink-0 items-center justify-end md:flex"
+        aria-live="polite"
+      >
+        {toolbarStatus && (
+          <div
+            role="status"
+            aria-label={toolbarStatus.ariaLabel}
+            className="inline-flex max-w-full items-center gap-2 rounded-md border border-border bg-muted/40 px-2.5 py-1 text-xs text-muted-foreground"
+          >
+            <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-primary motion-safe:animate-pulse" aria-hidden="true" />
+            <span className="truncate">{toolbarStatus.label}</span>
+          </div>
+        )}
+      </div>
+      <div className="flex h-9 items-center gap-2">
+        <span className="text-xs text-muted-foreground">{t('sessions.groupBy')}</span>
+        <div className="flex rounded-md border border-input">
+          <button
+            onClick={() => setGroupBy('project')}
+            className={cn(
+              'px-2.5 py-1 text-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
+              groupBy === 'project'
+                ? 'bg-primary text-primary-foreground'
+                : 'text-muted-foreground hover:text-foreground'
+            )}
+          >
+            {t('sessions.project')}
+          </button>
+          <button
+            onClick={() => setGroupBy('date')}
+            className={cn(
+              'px-2.5 py-1 text-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
+              groupBy === 'date'
+                ? 'bg-primary text-primary-foreground'
+                : 'text-muted-foreground hover:text-foreground'
+            )}
+          >
+            {t('sessions.date')}
+          </button>
+        </div>
+      </div>
+    </>
+  ), [groupBy, t, toolbarStatus])
+  const pageChrome = useMemo<PageChromeConfig>(() => ({
+    title: t('sessions.title'),
+    sectionLabelKey: 'nav.sections.work',
+    search: {
+      value: filter,
+      onValueChange: setFilter,
+      placeholder: t('sessions.filter'),
+      ariaLabel: t('sessions.filter')
+    },
+    guide: {
+      definition: sessionGuide,
+      evidence,
+      agentView
+    },
+    actions: pageChromeActions
+  }), [agentView, evidence, filter, pageChromeActions, t])
+  usePageChrome(pageChrome, [pageChrome])
 
   const toggleGroup = (key: string): void => {
     setCollapsedGroups((prev) => {
@@ -136,67 +199,6 @@ export function Sessions(): React.ReactElement {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold tracking-tight">{t('sessions.title')}</h1>
-
-      <FeatureGuidePanel guide={sessionGuide} evidence={evidence} agentView={agentView} />
-
-      {/* Filter + group-by */}
-      <div className="flex items-center gap-3">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-          <input
-            value={filter}
-            onChange={(e) => setFilter(e.target.value)}
-            placeholder={t('sessions.filter')}
-            className="h-9 w-full rounded-md border border-input bg-background pl-9 pr-3 text-sm outline-none ring-ring focus:ring-1"
-          />
-        </div>
-        <div
-          data-testid="sessions-toolbar-status-slot"
-          className="hidden h-9 w-56 shrink-0 items-center justify-end md:flex"
-          aria-live="polite"
-        >
-          {toolbarStatus && (
-            <div
-              role="status"
-              aria-label={toolbarStatus.ariaLabel}
-              className="inline-flex max-w-full items-center gap-2 rounded-md border border-border bg-muted/40 px-2.5 py-1 text-xs text-muted-foreground"
-            >
-              <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-primary motion-safe:animate-pulse" aria-hidden="true" />
-              <span className="truncate">{toolbarStatus.label}</span>
-            </div>
-          )}
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-muted-foreground">{t('sessions.groupBy')}</span>
-          <div className="flex rounded-md border border-input">
-            <button
-              onClick={() => setGroupBy('project')}
-              className={cn(
-                'px-2.5 py-1 text-xs transition-colors',
-                groupBy === 'project'
-                  ? 'bg-primary text-primary-foreground'
-                  : 'text-muted-foreground hover:text-foreground'
-              )}
-            >
-              {t('sessions.project')}
-            </button>
-            <button
-              onClick={() => setGroupBy('date')}
-              className={cn(
-                'px-2.5 py-1 text-xs transition-colors',
-                groupBy === 'date'
-                  ? 'bg-primary text-primary-foreground'
-                  : 'text-muted-foreground hover:text-foreground'
-              )}
-            >
-              {t('sessions.date')}
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Session list */}
       {showInitialLoading ? (
         <LoadingState
           icon={MessageSquare}

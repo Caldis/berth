@@ -381,7 +381,9 @@ export function Instructions({ activeSection }: { activeSection?: string } = {})
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-semibold tracking-tight">{t(`instructions.tabs.${activeTab}`)}</h1>
+      {activeTab !== 'memories' && (
+        <h1 className="text-2xl font-semibold tracking-tight">{t(`instructions.tabs.${activeTab}`)}</h1>
+      )}
 
       {activeTab !== 'memories' && (
         <FilterBar
@@ -393,7 +395,9 @@ export function Instructions({ activeSection }: { activeSection?: string } = {})
         />
       )}
 
-      {activeGuide && <FeatureGuidePanel guide={activeGuide} evidence={activeEvidence} agentView={agentView} />}
+      {activeTab !== 'memories' && activeGuide && (
+        <FeatureGuidePanel guide={activeGuide} evidence={activeEvidence} agentView={agentView} />
+      )}
 
       {renderContent()}
     </div>

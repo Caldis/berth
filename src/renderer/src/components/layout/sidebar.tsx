@@ -1,7 +1,7 @@
 import { useCallback, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { ChevronLeft, ChevronRight, Settings as SettingsIcon } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Search, Settings as SettingsIcon } from 'lucide-react'
 import type { AgentView } from '@shared/types/asset'
 import { cn } from '@/lib/utils'
 import { SIDEBAR_COLLAPSED_WIDTH, useAppStore } from '@/stores/app'
@@ -20,6 +20,7 @@ export function Sidebar(): React.ReactElement {
   const toggleSidebar = useAppStore((s) => s.toggleSidebar)
   const sidebarWidth = useAppStore((s) => s.sidebarWidth)
   const setSidebarWidth = useAppStore((s) => s.setSidebarWidth)
+  const setSearchOpen = useAppStore((s) => s.setSearchOpen)
 
   const isMac = isMacPlatform()
   const effectiveWidth = collapsed ? SIDEBAR_COLLAPSED_WIDTH : sidebarWidth
@@ -90,6 +91,29 @@ export function Sidebar(): React.ReactElement {
               </span>
             )}
           </div>
+        </div>
+
+        <div className="px-3 pb-2">
+          <button
+            type="button"
+            onClick={() => setSearchOpen(true)}
+            aria-label={t('search.placeholder')}
+            title={collapsed ? t('search.placeholder') : undefined}
+            className={cn(
+              'titlebar-no-drag flex h-9 w-full items-center gap-2 rounded-md border border-sidebar-border bg-sidebar px-2.5 text-sm text-muted-foreground transition-colors hover:border-sidebar-accent/40 hover:bg-sidebar-accent/10 hover:text-sidebar-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
+              collapsed && 'justify-center px-0'
+            )}
+          >
+            <Search className="h-4 w-4 shrink-0" />
+            {!collapsed && (
+              <>
+                <span className="min-w-0 flex-1 truncate text-left">{t('search.placeholder')}</span>
+                <kbd className="rounded border border-sidebar-border bg-sidebar-accent/10 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+                  {isMac ? '⌘' : 'Ctrl+'}K
+                </kbd>
+              </>
+            )}
+          </button>
         </div>
 
         <nav className="flex-1 overflow-y-auto px-3 py-1">

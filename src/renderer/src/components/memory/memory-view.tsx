@@ -10,7 +10,6 @@ import {
   FolderOpen,
   Tag,
   Loader2,
-  Search,
   RefreshCw,
   Link2,
   Eye,
@@ -20,6 +19,8 @@ import { cn, truncatePath, formatOptionalRelativeTime } from '@/lib/utils'
 import { useMemory } from '@/hooks/use-memory'
 import { useAppStore } from '@/stores/app'
 import { EmptyState } from '@/components/shared/empty-state'
+import { usePageChrome, type PageChromeConfig } from '@/components/layout/page-chrome'
+import { instructionGuideMap, type FeatureGuideEvidence } from '@/lib/feature-guidance'
 import type { MemoryNote, MemorySourceStatus, MemoryImportance } from '@shared/types/memory'
 
 // Color marks the exception, not the rule: `core` gets an emphasis hue (amber,
@@ -487,6 +488,7 @@ function countBy<T extends string>(values: T[]): Map<T, number> {
 export function MemoryView(): React.ReactElement {
   const { t } = useTranslation()
   const { result, loading, refreshing, refresh } = useMemory()
+  const agentView = useAppStore((s) => s.agentView)
   const [activeSource, setActiveSource] = useState('all')
   const [search, setSearch] = useState('')
   const [importanceFilter, setImportanceFilter] = useState<string>('all')
@@ -535,6 +537,42 @@ export function MemoryView(): React.ReactElement {
       : result.notes.length === 0
         ? 'empty'
         : 'noResults'
+  const evidence = useMemo<FeatureGuideEvidence[]>(() => {
+    const availableSources = result.sources.filter((source) => source.available).length
+    return [
+      { labelKey: 'memory.evidence.notes', value: result.notes.length },
+      { labelKey: 'memory.evidence.sources', value: result.sources.length },
+      { labelKey: 'memory.evidence.availableSources', value: availableSources }
+    ]
+  }, [result.notes.length, result.sources])
+  const pageChromeActions = useMemo<React.ReactNode>(() => (
+    <button
+      onClick={refresh}
+      disabled={refreshing}
+      title={t('memory.refresh', 'Refresh')}
+      aria-label={t('memory.refresh', 'Refresh')}
+      className="flex h-9 items-center gap-1.5 rounded-md border border-input bg-background px-3 text-sm text-foreground transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-60"
+    >
+      <RefreshCw className={cn('h-3.5 w-3.5', refreshing && 'animate-spin')} />
+    </button>
+  ), [refresh, refreshing, t])
+  const pageChrome = useMemo<PageChromeConfig>(() => ({
+    title: t('instructions.tabs.memories'),
+    sectionLabelKey: 'nav.sections.instructions',
+    search: {
+      value: search,
+      onValueChange: setSearch,
+      placeholder: t('memory.searchPlaceholder', 'Search memories...'),
+      ariaLabel: t('memory.searchPlaceholder', 'Search memories...')
+    },
+    guide: {
+      definition: instructionGuideMap.memories,
+      evidence,
+      agentView
+    },
+    actions: pageChromeActions
+  }), [agentView, evidence, pageChromeActions, search, t])
+  usePageChrome(pageChrome, [pageChrome])
 
   const clearFilters = useCallback(() => {
     setSearch('')
@@ -576,27 +614,6 @@ export function MemoryView(): React.ReactElement {
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center gap-2">
-        <div className="relative flex-1">
-          <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder={t('memory.searchPlaceholder', 'Search memories...')}
-            className="h-9 w-full rounded-md border border-input bg-background pl-8 pr-3 text-sm outline-none ring-ring focus:ring-1"
-          />
-        </div>
-        <button
-          onClick={refresh}
-          disabled={refreshing}
-          title={t('memory.refresh', 'Refresh')}
-          aria-label={t('memory.refresh', 'Refresh')}
-          className="flex h-9 items-center gap-1.5 rounded-md border border-input bg-background px-3 text-sm text-foreground transition-colors hover:bg-accent disabled:opacity-60"
-        >
-          <RefreshCw className={cn('h-3.5 w-3.5', refreshing && 'animate-spin')} />
-        </button>
-      </div>
-
       <SourceFilter sources={result.sources} active={activeSource} total={result.notes.length} onChange={setActiveSource} />
       <div className="space-y-2">
         <FilterGroup

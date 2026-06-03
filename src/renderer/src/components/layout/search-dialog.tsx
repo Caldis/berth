@@ -11,6 +11,7 @@ import {
 } from 'lucide-react'
 import { useAppStore } from '@/stores/app'
 import { cn } from '@/lib/utils'
+import { useFocusPageSearch } from './page-chrome'
 import type { Asset } from '@shared/types/asset'
 import type { SearchResult } from '@shared/types/ipc'
 
@@ -59,6 +60,7 @@ export function SearchDialog(): React.ReactElement | null {
   const navigate = useNavigate()
   const open = useAppStore((s) => s.searchOpen)
   const setOpen = useAppStore((s) => s.setSearchOpen)
+  const focusPageSearch = useFocusPageSearch()
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<SearchResult[]>([])
   const [loading, setLoading] = useState(false)
@@ -73,6 +75,7 @@ export function SearchDialog(): React.ReactElement | null {
     const handler = (e: globalThis.KeyboardEvent): void => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault()
+        if (focusPageSearch()) return
         setOpen(!open)
         return
       }
@@ -116,7 +119,7 @@ export function SearchDialog(): React.ReactElement | null {
     }
 
     return () => window.removeEventListener('keydown', handler)
-  }, [open, setOpen])
+  }, [focusPageSearch, open, setOpen])
 
   useEffect(() => {
     if (open) return

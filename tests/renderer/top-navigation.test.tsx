@@ -5,6 +5,7 @@ import { MemoryRouter } from 'react-router-dom'
 import i18n from '../../src/renderer/src/i18n'
 import { TopNavigation } from '../../src/renderer/src/components/layout/top-navigation'
 import { PageChromeProvider, usePageChrome } from '../../src/renderer/src/components/layout/page-chrome'
+import { SearchDialog } from '../../src/renderer/src/components/layout/search-dialog'
 import { sessionGuide } from '../../src/renderer/src/lib/feature-guidance'
 import { useAppStore } from '../../src/renderer/src/stores/app'
 
@@ -87,11 +88,16 @@ describe('TopNavigation', () => {
     expect(screen.queryByRole('navigation', { name: 'Breadcrumb' })).not.toBeInTheDocument()
   })
 
-  it('moves global search and page guidance into the navigation bar', () => {
+  it('shows page search and page guidance in the navigation bar', () => {
     renderTopNavigation('/sessions', {
       config: {
         title: 'Sessions',
         sectionLabelKey: 'nav.sections.work',
+        search: {
+          value: '',
+          onValueChange: () => undefined,
+          placeholder: 'Filter sessions...'
+        },
         guide: {
           definition: sessionGuide,
           evidence: [{ labelKey: 'sessions.evidence.sessions', value: 816 }],
@@ -101,14 +107,42 @@ describe('TopNavigation', () => {
       }
     })
 
-    fireEvent.click(screen.getByRole('button', { name: 'Search assets...' }))
-    expect(useAppStore.getState().searchOpen).toBe(true)
+    expect(screen.getByRole('textbox', { name: 'Filter sessions...' })).toBeInTheDocument()
+    expect(useAppStore.getState().searchOpen).toBe(false)
     expect(screen.getByRole('button', { name: 'Page guide' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Project' })).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: 'Page guide' }))
     expect(screen.getByText('Local conversation history')).toBeInTheDocument()
     expect(screen.getByText('816')).toBeInTheDocument()
+  })
+
+  it('uses the keyboard shortcut for page search before global search', () => {
+    render(
+      <MemoryRouter initialEntries={['/sessions']}>
+        <PageChromeProvider>
+          <PageChromeSetter
+            config={{
+              title: 'Sessions',
+              sectionLabelKey: 'nav.sections.work',
+              search: {
+                value: '',
+                onValueChange: () => undefined,
+                placeholder: 'Filter sessions...'
+              }
+            }}
+          />
+          <TopNavigation isWindows={false} />
+          <SearchDialog />
+        </PageChromeProvider>
+      </MemoryRouter>
+    )
+
+    const pageSearch = screen.getByRole('textbox', { name: 'Filter sessions...' })
+    fireEvent.keyDown(window, { key: 'k', ctrlKey: true })
+
+    expect(pageSearch).toHaveFocus()
+    expect(useAppStore.getState().searchOpen).toBe(false)
   })
 
   it('localizes breadcrumb labels in Chinese', async () => {

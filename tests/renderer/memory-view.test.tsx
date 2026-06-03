@@ -1,8 +1,12 @@
 import { act, fireEvent, render, screen } from '@testing-library/react'
 import React from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { MemoryRouter } from 'react-router-dom'
 import i18n from '../../src/renderer/src/i18n'
 import { MemoryView } from '../../src/renderer/src/components/memory/memory-view'
+import { TopNavigation } from '../../src/renderer/src/components/layout/top-navigation'
+import { PageChromeProvider } from '../../src/renderer/src/components/layout/page-chrome'
+import { SearchDialog } from '../../src/renderer/src/components/layout/search-dialog'
 import type { MemoryListResult } from '../../src/shared/types/memory'
 
 const memoryState = vi.hoisted(() => ({
@@ -267,6 +271,72 @@ describe('MemoryView', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Clear filters' }))
     expect(screen.getByText('Core note')).toBeInTheDocument()
     expect(screen.getByText('Archive note')).toBeInTheDocument()
+  })
+
+  it('moves memory search to top navigation and focuses it with the shortcut', () => {
+    memoryState.result = {
+      sources: [
+        {
+          id: 'united-memory',
+          label: 'United Memory',
+          available: true,
+          rootPath: 'C:\\Users\\test\\.united-memory',
+          noteCount: 2
+        }
+      ],
+      notes: [
+        {
+          id: 'united-memory:core-note',
+          sourceId: 'united-memory',
+          sourceLabel: 'United Memory',
+          title: 'Core note',
+          summary: 'Important',
+          tags: ['ops'],
+          importance: 'core',
+          path: 'C:\\Users\\test\\.united-memory\\mem\\core-note.md',
+          links: [],
+          createdAt: null,
+          updatedAt: null,
+          body: 'Core'
+        },
+        {
+          id: 'united-memory:archive-note',
+          sourceId: 'united-memory',
+          sourceLabel: 'United Memory',
+          title: 'Archive note',
+          summary: 'Old',
+          tags: ['docs'],
+          importance: 'archive',
+          path: 'C:\\Users\\test\\.united-memory\\mem\\archive-note.md',
+          links: [],
+          createdAt: null,
+          updatedAt: null,
+          body: 'Archive'
+        }
+      ]
+    }
+
+    render(
+      <MemoryRouter initialEntries={['/instructions/memories']}>
+        <PageChromeProvider>
+          <TopNavigation isWindows={false} />
+          <MemoryView />
+          <SearchDialog />
+        </PageChromeProvider>
+      </MemoryRouter>
+    )
+
+    const pageSearch = screen.getByRole('textbox', { name: 'Search memories...' })
+    expect(screen.getAllByPlaceholderText('Search memories...')).toHaveLength(1)
+
+    fireEvent.keyDown(window, { key: 'k', ctrlKey: true })
+    expect(pageSearch).toHaveFocus()
+
+    fireEvent.change(pageSearch, { target: { value: 'core' } })
+
+    expect(screen.getByText('Core note')).toBeInTheDocument()
+    expect(screen.queryByText('Archive note')).not.toBeInTheDocument()
+    expect(screen.queryByRole('dialog', { name: /Search assets/ })).not.toBeInTheDocument()
   })
 
   it('uses Chinese copy for missing notes and memory filters', async () => {

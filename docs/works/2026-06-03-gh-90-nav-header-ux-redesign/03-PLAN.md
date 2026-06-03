@@ -5,17 +5,17 @@
 实现中若发现 debt 初估不准, 更新 INDEX.md `debt.estimate`, 并追加 `debt.revisions[]`。
 
 - [x] 1. 新增/更新导航与布局 renderer tests, 先表达目标行为:
-  - tests: `pnpm vitest run tests/renderer/top-navigation.test.tsx tests/renderer/app-layout.test.tsx` (pass, 8 tests)
+  - tests: `pnpm vitest run tests/renderer/top-navigation.test.tsx tests/renderer/app-layout.test.tsx` (pass, 9 tests)
   - verify: 覆盖总览无 nav、功能页 section+title、search/help/back/action slot、scroll container 独立。
 - [x] 2. 实现 `PageChromeProvider` + AppLayout 滚动分离 + TopNavigation 新结构:
-  - tests: `pnpm vitest run tests/renderer/top-navigation.test.tsx tests/renderer/app-layout.test.tsx` (pass, 8 tests); `pnpm typecheck:web` (pass)
-  - verify: nav `min-h-[72px]`, 不位于内容 scroll container 内; search/help/back focus-visible 与 aria-label 完整。
-- [ ] 3. 迁移 Sessions 顶部标题、说明、筛选、分组和 toolbar status:
-  - tests: `pnpm vitest run tests/renderer/sessions-pages.test.tsx tests/renderer/top-navigation.test.tsx`
-  - verify: 内容区无重复 `h1` / guide / filter; loading/empty/list/分批渲染状态保留; actions 可键盘访问。
+  - tests: `pnpm vitest run tests/renderer/top-navigation.test.tsx tests/renderer/app-layout.test.tsx` (pass, 9 tests); `pnpm typecheck:web` (pass)
+  - verify: nav `min-h-[72px]`, 不位于内容 scroll container 内; help/back focus-visible 与 aria-label 完整; 用户澄清后侧栏主搜索入口保留, 顶部搜索改为页面级输入。
+- [x] 3. 迁移 Sessions 顶部标题、说明、筛选、分组和 toolbar status:
+  - tests: `pnpm vitest run tests/renderer/sessions-pages.test.tsx tests/renderer/top-navigation.test.tsx tests/renderer/memory-view.test.tsx` (pass, 38 tests); `pnpm typecheck:web` (pass)
+  - verify: Sessions 内容区无重复 `h1` / guide / filter; loading/empty/list/分批渲染状态保留; actions 可键盘访问。用户澄清后 Memories 搜索输入迁移到顶部导航, 内容区搜索栏移除, `Ctrl/⌘K` 聚焦页面搜索。
 - [ ] 4. 迁移 Instructions 与 Capabilities 的 title、filter/scope 与 help:
   - tests: `pnpm vitest run tests/renderer/instructions-guidance.test.tsx tests/renderer/capabilities-guidance.test.tsx tests/renderer/top-navigation.test.tsx`
-  - verify: 各 tab title 位于 nav; filter/scope 行为不变; permissions tab 不显示 filter; help 证据标签与 details 可访问。
+  - verify: 除 Memories 以外的各 tab title 位于 nav; filter/scope 行为不变; permissions tab 不显示 filter; help 证据标签与 details 可访问。
 - [ ] 5. 迁移 Usage 与 Session detail 顶部 chrome:
   - tests: `pnpm vitest run tests/renderer/sessions-pages.test.tsx tests/renderer/top-navigation.test.tsx`
   - verify: Usage time range 请求参数不变; Session detail 返回按钮与 breadcrumb 在 nav; 内容区不重复顶部标题块。

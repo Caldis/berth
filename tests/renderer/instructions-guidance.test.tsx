@@ -1,8 +1,11 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import React from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { MemoryRouter } from 'react-router-dom'
 import '../../src/renderer/src/i18n'
 import { Instructions } from '../../src/renderer/src/pages/instructions'
+import { TopNavigation } from '../../src/renderer/src/components/layout/top-navigation'
+import { PageChromeProvider } from '../../src/renderer/src/components/layout/page-chrome'
 import { useAppStore } from '../../src/renderer/src/stores/app'
 import type { Asset } from '../../src/shared/types/asset'
 
@@ -31,8 +34,16 @@ describe('Instructions guidance surfaces', () => {
   })
 
   it('shows a feature guide for the Memories tab before the memory list', async () => {
-    render(<Instructions activeSection="memories" />)
+    render(
+      <MemoryRouter initialEntries={['/instructions/memories']}>
+        <PageChromeProvider>
+          <TopNavigation isWindows={false} />
+          <Instructions activeSection="memories" />
+        </PageChromeProvider>
+      </MemoryRouter>
+    )
 
+    fireEvent.click(await screen.findByRole('button', { name: 'Page guide' }))
     expect(await screen.findByText('Memory notes across sources')).toBeInTheDocument()
     expect(screen.getByText(/Berth groups native memory files and durable local notes/)).toBeInTheDocument()
     expect(screen.queryByText('Source types')).not.toBeInTheDocument()

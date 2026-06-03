@@ -1,13 +1,12 @@
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { ChevronRight, HelpCircle, Search } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { findNavMatch } from './nav-config'
-import { useAppStore } from '@/stores/app'
 import { isMacPlatform } from '@/lib/platform'
 import { FeatureGuidePanel } from '@/components/shared/feature-guide-panel'
-import { useCurrentPageChrome } from './page-chrome'
+import { useCurrentPageChrome, useRegisterPageSearchFocus } from './page-chrome'
 
 type BreadcrumbItem = {
   key: string
@@ -41,8 +40,8 @@ export function TopNavigation({ isWindows }: { isWindows: boolean }): React.Reac
   const { t } = useTranslation()
   const location = useLocation()
   const pageChrome = useCurrentPageChrome()
-  const setSearchOpen = useAppStore((s) => s.setSearchOpen)
   const [guideOpen, setGuideOpen] = useState(false)
+  const searchInputRef = useRef<HTMLInputElement>(null)
   const route = useMemo(
     () => routeChrome(location.pathname, location.search),
     [location.pathname, location.search]
@@ -57,8 +56,13 @@ export function TopNavigation({ isWindows }: { isWindows: boolean }): React.Reac
     if (title) items.push({ key: 'title', label: title })
     return items
   }, [sectionLabel, title])
+  const focusPageSearch = useCallback(() => {
+    searchInputRef.current?.focus()
+    searchInputRef.current?.select()
+  }, [])
+  useRegisterPageSearchFocus(pageChrome.search ? focusPageSearch : null, [pageChrome.search, focusPageSearch])
 
-  if (!route && !title && !pageChrome.leading && !pageChrome.actions && !pageChrome.guide) {
+  if (!route && !title && !pageChrome.leading && !pageChrome.actions && !pageChrome.guide && !pageChrome.search) {
     return <></>
   }
 
@@ -137,18 +141,22 @@ export function TopNavigation({ isWindows }: { isWindows: boolean }): React.Reac
               )}
             </div>
           )}
-          <button
-            type="button"
-            aria-label={t('search.placeholder')}
-            onClick={() => setSearchOpen(true)}
-            className="inline-flex h-9 min-w-0 items-center gap-2 rounded-md border border-border bg-background px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:translate-y-px"
-          >
-            <Search className="h-4 w-4 shrink-0" />
-            <span className="hidden max-w-[10rem] truncate sm:inline">{t('search.placeholder')}</span>
-            <kbd className="hidden rounded border border-border bg-muted px-1.5 py-0.5 text-[10px] font-semibold text-muted-foreground md:inline">
-              {isMac ? '⌘K' : 'Ctrl+K'}
-            </kbd>
-          </button>
+          {pageChrome.search && (
+            <div className="relative min-w-[14rem] flex-1 sm:w-72 sm:flex-none">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+              <input
+                ref={searchInputRef}
+                value={pageChrome.search.value}
+                onChange={(event) => pageChrome.search?.onValueChange(event.target.value)}
+                placeholder={pageChrome.search.placeholder}
+                aria-label={pageChrome.search.ariaLabel ?? pageChrome.search.placeholder}
+                className="h-9 w-full rounded-md border border-border bg-background pl-9 pr-16 text-sm outline-none ring-ring transition-colors placeholder:text-muted-foreground hover:bg-muted/40 focus:ring-2"
+              />
+              <kbd className="pointer-events-none absolute right-2 top-1/2 hidden -translate-y-1/2 rounded border border-border bg-muted px-1.5 py-0.5 text-[10px] font-semibold text-muted-foreground md:block">
+                {isMac ? '⌘K' : 'Ctrl+K'}
+              </kbd>
+            </div>
+          )}
         </div>
       </div>
     </header>
