@@ -139,6 +139,26 @@ describe('AgentAssetRuntime', () => {
     expect(derive).toHaveBeenCalledTimes(2)
   })
 
+  it('maps scanner progress into runtime status', async () => {
+    const scanner: AssetRuntimeScanner = {
+      scanAll: vi.fn(async (options) => {
+        options?.onProgress?.({ phase: 'parsing', current: 5, total: 10, label: 'sessions' })
+        return { assets: [], stats: emptyStats, errors: [] }
+      }),
+      getScanSourceGroups: vi.fn(async () => []),
+      getProjectScopeCandidates: vi.fn(() => []),
+      getProjectDir: () => '/repo/berth'
+    }
+    const runtime = createRuntime(scanner)
+    const refresh = runtime.refresh({ reason: 'startup', wait: true })
+
+    expect(runtime.getStatus()).toMatchObject({
+      state: 'scanning',
+      progress: { phase: 'parsing', current: 5, total: 10, label: 'sessions' }
+    })
+    await refresh
+  })
+
   it('keeps the last snapshot and marks it stale when a later scan fails', async () => {
     const scanner = createScanner({ assets: [sessionAsset('session-1')], stats: { ...emptyStats, sessions: 1 }, errors: [] })
     const runtime = createRuntime(scanner)

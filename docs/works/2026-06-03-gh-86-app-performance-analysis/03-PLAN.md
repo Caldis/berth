@@ -12,8 +12,9 @@
   - tests: `pnpm test -- tests/unit/agent-asset-runtime.test.ts`
   - evidence: 2026-06-03 运行通过, `tests/unit/agent-asset-runtime.test.ts` 4 tests passed; `pnpm typecheck:node` passed。
   - verify: 非 UI; `sessions:list`、`usage:summary`、`health`、`search` 后续只通过 runtime 读取 snapshot。
-- [ ] 任务 3: 实现 worker-host 与 worker scan job, 把大文件枚举、JSONL parse、adapter scan 移出 main event loop。
+- [x] 任务 3: 实现 worker-host 与 worker scan job, 把大文件枚举、JSONL parse、adapter scan 移出 main event loop。
   - tests: `pnpm test -- tests/unit/asset-worker-host.test.ts tests/unit/engine-scanner.test.ts`
+  - evidence: 2026-06-03 运行通过, `tests/unit/asset-worker-host.test.ts` + `tests/unit/agent-asset-runtime.test.ts` + `tests/unit/engine-scanner.test.ts` 共 15 tests passed; `pnpm typecheck:node` passed; `pnpm build` passed 且输出 `out/main/asset-worker.js`。
   - verify: 非 UI; main thread 只更新 job/status/snapshot, worker progress 能映射到 `AssetRuntimeStatus.progress`。
 - [ ] 任务 4: 实现进程内 file fingerprint cache, 覆盖 Claude session 与 Codex rollout 的命中、失效、删除和 parse error。
   - tests: `pnpm test -- tests/unit/asset-file-cache.test.ts tests/unit/codex-session-parser.test.ts tests/unit/session-meta-parser.test.ts`

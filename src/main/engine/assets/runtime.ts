@@ -1,16 +1,21 @@
 import type { AssetStats } from '@shared/types/asset'
 import type {
   AgentScanSourceGroup,
+  AssetScanProgress,
   AssetRuntimeStatus,
   AssetScanReason,
   AssetSnapshot,
   ScanResult
 } from '@shared/types/ipc'
 import type { ProjectScopeCandidate } from '@shared/scope'
-import { AssetScanner } from '../scanner'
+import { WorkerAssetScanner } from './worker-host'
+
+export interface AssetRuntimeScanOptions {
+  onProgress?: (progress: AssetScanProgress) => void
+}
 
 export interface AssetRuntimeScanner {
-  scanAll(): Promise<ScanResult>
+  scanAll(options?: AssetRuntimeScanOptions): Promise<ScanResult>
   getScanSourceGroups(): Promise<AgentScanSourceGroup[]>
   getProjectScopeCandidates(): ProjectScopeCandidate[]
   getProjectDir(): string | undefined
@@ -74,7 +79,7 @@ export class AgentAssetRuntime {
 
   constructor(options: AssetRuntimeOptions = {}) {
     this.projectDir = options.projectDir
-    this.createScanner = options.createScanner ?? ((projectDir) => new AssetScanner(projectDir))
+    this.createScanner = options.createScanner ?? ((projectDir) => new WorkerAssetScanner(projectDir))
     this.now = options.now ?? (() => new Date().toISOString())
     this.createSnapshotId = options.createSnapshotId ?? createDefaultSnapshotId
     this.scanner = this.createScanner(this.projectDir)
@@ -147,7 +152,9 @@ export class AgentAssetRuntime {
 
   private async runRefresh(reason: AssetScanReason): Promise<void> {
     try {
-      const scanResult = await this.scanner.scanAll()
+      const scanResult = await this.scanner.scanAll({
+        onProgress: (progress) => this.setProgress(progress)
+      })
       const sources = await this.scanner.getScanSourceGroups()
       const projectCandidates = this.scanner.getProjectScopeCandidates()
       const projectDir = this.scanner.getProjectDir() ?? this.projectDir
@@ -208,6 +215,17 @@ export class AgentAssetRuntime {
       errors: [],
       sources: [],
       projectCandidates: [],
+      status: this.status
+    }
+  }
+
+  private setProgress(progress: AssetScanProgress): void {
+    this.status = {
+      ...this.status,
+      progress
+    }
+    this.snapshot = {
+      ...this.snapshot,
       status: this.status
     }
   }
