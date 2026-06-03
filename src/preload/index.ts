@@ -23,6 +23,9 @@ const api = {
     set: (theme: string) => ipcRenderer.invoke('theme:set', theme)
   },
   assets: {
+    snapshot: () => ipcRenderer.invoke('assets:snapshot'),
+    status: () => ipcRenderer.invoke('assets:status'),
+    refresh: (opts?: { wait?: boolean }) => ipcRenderer.invoke('assets:refresh', opts),
     scan: (category?: string) => ipcRenderer.invoke('assets:scan', category),
     scanAll: () => ipcRenderer.invoke('assets:scan-all'),
     scanSources: () => ipcRenderer.invoke('assets:scan-sources'),

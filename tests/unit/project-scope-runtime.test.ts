@@ -29,15 +29,15 @@ function sessionAsset(projectPath: string): Asset {
 }
 
 class FakeScanner {
-  scanAll = vi.fn(async () => ({
-    assets: this.assets,
-    stats,
-    errors: []
-  }))
+  refresh = vi.fn(async () => {})
+  setProjectDir = vi.fn((projectDir?: string) => {
+    this.projectDir = projectDir
+    this.assets = [sessionAsset(projectDir ?? 'global')]
+  })
 
   constructor(
-    private readonly projectDir: string | undefined,
-    private readonly assets: Asset[] = []
+    private projectDir: string | undefined,
+    private assets: Asset[] = []
   ) {}
 
   getProjectDir(): string | undefined {
@@ -50,27 +50,31 @@ class FakeScanner {
       : null
     return candidate ? [candidate] : []
   }
+
+  async getProjectCandidates(): Promise<ProjectScopeCandidate[]> {
+    return this.getProjectScopeCandidates()
+  }
+
+  getScanResult() {
+    return {
+      assets: this.assets,
+      stats,
+      errors: []
+    }
+  }
 }
 
 function deps(current: FakeScanner): {
   deps: ProjectScopeRuntimeDeps
-  initScanner: ReturnType<typeof vi.fn>
-  buildIndex: ReturnType<typeof vi.fn>
   restart: ReturnType<typeof vi.fn>
 } {
-  const initScanner = vi.fn((projectDir?: string) => new FakeScanner(projectDir, [sessionAsset(projectDir ?? 'global')]))
-  const buildIndex = vi.fn()
   const restart = vi.fn(async () => {})
 
   return {
     deps: {
-      getScanner: () => current as never,
-      initScanner: initScanner as never,
-      getSearch: () => ({ buildIndex }),
+      getRuntime: () => current as never,
       getWatcher: () => ({ restart })
     },
-    initScanner,
-    buildIndex,
     restart
   }
 }
@@ -82,8 +86,8 @@ describe('activateProjectScope', () => {
 
     const result = await activateProjectScope('D:\\Code\\berth', runtime.deps)
 
-    expect(runtime.initScanner).toHaveBeenCalledWith('D:/Code/berth')
-    expect(runtime.buildIndex).toHaveBeenCalledWith(result.scanResult.assets)
+    expect(current.setProjectDir).toHaveBeenCalledWith('D:/Code/berth')
+    expect(current.refresh).toHaveBeenCalledWith({ reason: 'project-scope', wait: true })
     expect(runtime.restart).toHaveBeenCalledWith('D:/Code/berth')
     expect(result.projectDir).toBe('D:/Code/berth')
     expect(result.candidates[0]?.pathKey).toBe('d:/code/berth')
@@ -95,9 +99,8 @@ describe('activateProjectScope', () => {
 
     await activateProjectScope('d:/code/berth/', runtime.deps)
 
-    expect(runtime.initScanner).not.toHaveBeenCalled()
-    expect(current.scanAll).toHaveBeenCalledTimes(1)
-    expect(runtime.buildIndex).toHaveBeenCalledWith([sessionAsset('D:\\Code\\berth')])
+    expect(current.setProjectDir).not.toHaveBeenCalled()
+    expect(current.refresh).toHaveBeenCalledTimes(1)
     expect(runtime.restart).not.toHaveBeenCalled()
   })
 
@@ -107,7 +110,7 @@ describe('activateProjectScope', () => {
 
     const result = await activateProjectScope(undefined, runtime.deps)
 
-    expect(runtime.initScanner).toHaveBeenCalledWith(undefined)
+    expect(current.setProjectDir).toHaveBeenCalledWith(undefined)
     expect(runtime.restart).toHaveBeenCalledWith(undefined)
     expect(result.projectDir).toBeUndefined()
   })

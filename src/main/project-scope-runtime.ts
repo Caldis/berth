@@ -1,50 +1,48 @@
-import type { Asset } from '@shared/types/asset'
 import type { ProjectScopeActivationResult } from '@shared/types/ipc'
 import { normalizeProjectPath, sameProjectPath } from '@shared/scope'
-import type { AssetScanner } from './engine/scanner'
-import { getScanner, initScanner } from './engine/scanner'
-import { getSearch } from './engine/search'
+import { getAssetRuntime } from './engine/assets/runtime'
 import { getWatcher } from './engine/watcher'
-
-interface SearchIndex {
-  buildIndex: (assets: Asset[]) => void
-}
 
 interface WatcherRuntime {
   restart: (projectDir?: string) => Promise<void>
 }
 
+interface AssetRuntime {
+  getProjectDir: () => string | undefined
+  setProjectDir: (projectDir?: string) => void
+  refresh: (opts: { reason: 'project-scope'; wait: true }) => Promise<unknown>
+  getScanResult: () => ProjectScopeActivationResult['scanResult']
+  getProjectCandidates: () => Promise<ProjectScopeActivationResult['candidates']>
+}
+
 export interface ProjectScopeRuntimeDeps {
-  getScanner: () => AssetScanner
-  initScanner: (projectDir?: string) => AssetScanner
-  getSearch: () => SearchIndex
+  getRuntime: () => AssetRuntime
   getWatcher: () => WatcherRuntime
 }
 
 export async function activateProjectScope(
   projectPath?: string,
   deps: ProjectScopeRuntimeDeps = {
-    getScanner,
-    initScanner,
-    getSearch,
+    getRuntime: getAssetRuntime,
     getWatcher
   }
 ): Promise<ProjectScopeActivationResult> {
-  const currentScanner = deps.getScanner()
+  const runtime = deps.getRuntime()
   const nextProjectDir = normalizeActivatedProjectDir(projectPath)
-  const shouldReinitialize = !sameOptionalProjectPath(currentScanner.getProjectDir(), nextProjectDir)
-  const scanner = shouldReinitialize ? deps.initScanner(nextProjectDir) : currentScanner
-  const scanResult = await scanner.scanAll()
+  const shouldReinitialize = !sameOptionalProjectPath(runtime.getProjectDir(), nextProjectDir)
+  if (shouldReinitialize) {
+    runtime.setProjectDir(nextProjectDir)
+  }
+  await runtime.refresh({ reason: 'project-scope', wait: true })
 
-  deps.getSearch().buildIndex(scanResult.assets)
   if (shouldReinitialize) {
     await deps.getWatcher().restart(nextProjectDir)
   }
 
   return {
-    projectDir: scanner.getProjectDir(),
-    scanResult,
-    candidates: scanner.getProjectScopeCandidates()
+    projectDir: runtime.getProjectDir(),
+    scanResult: runtime.getScanResult(),
+    candidates: await runtime.getProjectCandidates()
   }
 }
 

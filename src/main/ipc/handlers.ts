@@ -7,6 +7,8 @@ import type { AgentView, Asset, AssetCategory, CostMode, Relation, SessionSummar
 import type {
   PlatformInfo,
   AgentScanSourceGroup,
+  AssetRuntimeStatus,
+  AssetSnapshot,
   ScanResult,
   SearchResult,
   HealthCheck,
@@ -31,10 +33,8 @@ import type {
 } from '@shared/types/ipc'
 import type { AgentCapabilityPluginListResult } from '@shared/types/agent-plugin'
 import { getScanner } from '../engine/scanner'
-import { getSearch } from '../engine/search'
-import { buildUsageSummary } from '../engine/usage'
+import { getAssetRuntime } from '../engine/assets/runtime'
 import { normalizeTokenUsage } from '../../shared/token-usage'
-import { runHealthChecks } from '../engine/health'
 import {
   clearHookRecovery,
   getAgentHooksStatus,
@@ -50,7 +50,6 @@ import { parseCodexSessionDetail } from '../adapters/codex/parsers'
 import { listMemory, readMemory } from '../memory'
 import { resolveModelPricing } from '../engine/pricing/catalog'
 import { listAgentCapabilityPlugins } from '../agent-plugins/registry'
-import { assetMatchesProjectPath } from '../project-scope'
 import { activateProjectScope } from '../project-scope-runtime'
 
 export function registerAssetHandlers(): void {
@@ -92,30 +91,39 @@ export function registerAssetHandlers(): void {
     claudeDir: path.join(os.homedir(), '.claude')
   }))
 
+  ipcMain.handle('assets:snapshot', async (): Promise<AssetSnapshot> => {
+    return getAssetRuntime().getSnapshot()
+  })
+
+  ipcMain.handle('assets:status', (): AssetRuntimeStatus => {
+    return getAssetRuntime().getStatus()
+  })
+
+  ipcMain.handle('assets:refresh', async (_event, opts: { wait?: boolean } = {}): Promise<AssetRuntimeStatus> => {
+    return getAssetRuntime().refresh({ reason: 'manual', wait: opts.wait })
+  })
+
   ipcMain.handle('assets:scan-all', async (): Promise<ScanResult> => {
-    const scanner = getScanner()
-    const result = await scanner.scanAll()
-    const search = getSearch()
-    search.buildIndex(result.assets)
-    return result
+    const runtime = getAssetRuntime()
+    await runtime.refresh({ reason: 'legacy-scan-all', wait: true })
+    return runtime.getScanResult()
   })
 
   ipcMain.handle('assets:scan-sources', async (): Promise<AgentScanSourceGroup[]> => {
-    return getScanner().getScanSourceGroups()
+    return getAssetRuntime().getScanSourceGroups()
   })
 
   ipcMain.handle('agent-plugins:list', async (): Promise<AgentCapabilityPluginListResult> => {
-    const scanner = getScanner()
-    return listAgentCapabilityPlugins(await scanner.getScanSourceGroups(), {
+    const snapshot = await getAssetRuntime().ensureReady({ reason: 'manual' })
+    return listAgentCapabilityPlugins(snapshot.sources, {
       homeDir: os.homedir(),
-      projectDir: scanner.getProjectDir(),
+      projectDir: snapshot.projectDir,
       env: process.env
     })
   })
 
   ipcMain.handle('project-scope:candidates', async () => {
-    const scanner = await ensureScanned()
-    return scanner.getProjectScopeCandidates()
+    return getAssetRuntime().getProjectCandidates()
   })
 
   ipcMain.handle('project-scope:activate', async (_event, opts: { projectPath?: string } = {}) => {
@@ -131,32 +139,22 @@ export function registerAssetHandlers(): void {
   )
 
   ipcMain.handle('assets:get', (_event, id: string): Asset | null => {
-    return getScanner().getAsset(id)
+    return getAssetRuntime().getAsset(id)
   })
 
   ipcMain.handle('assets:relations', (_event, id: string): Relation[] => {
-    const scanner = getScanner()
-    const asset = scanner.getAsset(id)
+    const runtime = getAssetRuntime()
+    const asset = runtime.getAsset(id)
     if (!asset) return []
-    return resolveRelations(asset, scanner.getAllAssets())
+    return resolveRelations(asset, runtime.getAssets())
   })
 
   ipcMain.handle('assets:search', async (_event, query: string): Promise<SearchResult[]> => {
-    const scanner = await ensureScanned()
-    const search = getSearch()
-    return search.search(query, scanner.getAllAssets())
+    return getAssetRuntime().search(query)
   })
 
   ipcMain.handle('assets:health-check', async (_event, opts: HealthCheckRequest = {}): Promise<HealthCheck[]> => {
-    const scanner = getScanner()
-    if (opts.refresh || !scanner.hasScanned()) {
-      await scanner.scanAll()
-    }
-    return runHealthChecks({
-      projectDir: scanner.getProjectDir(),
-      assets: scanner.getAllAssets(),
-      scanErrors: scanner.getScanErrors()
-    })
+    return getAssetRuntime().getHealthChecks(opts)
   })
 
   ipcMain.handle('assets:import-chain', (_event, filePath: string): ImportChainNode => {
@@ -169,40 +167,18 @@ export function registerAssetHandlers(): void {
       _event,
       opts: { projectFilter?: string; projectPath?: string; limit?: number; agentView?: AgentView }
     ): Promise<SessionListResult> => {
-      const scanner = await ensureScanned()
-      let sessions = scanner
-        .getAllAssets()
-        .filter((a) => a.type === 'session')
-        .filter((a) => sessionMatchesAgentView(a, opts.agentView))
-
-      if (opts.projectFilter) {
-        sessions = sessions.filter((s) => sessionMatchesProjectFilter(s, opts.projectFilter!))
-      }
-      if (opts.projectPath) {
-        sessions = sessions.filter((s) => assetMatchesProjectPath(s, opts.projectPath))
-      }
-
-      sessions.sort((a, b) => getSessionSortTime(b) - getSessionSortTime(a))
-
-      const totalCount = sessions.length
-      if (opts.limit && opts.limit > 0) {
-        sessions = sessions.slice(0, opts.limit)
-      }
-
-      return {
-        sessions: sessions.map(toSessionSummary),
-        totalCount
-      }
+      return getAssetRuntime().listSessions(opts)
     }
   )
 
   ipcMain.handle(
     'sessions:get',
     async (_event, id: string): Promise<SessionDetailResult | null> => {
-      const scanner = await ensureScanned()
-      const asset = scanner.getAsset(id)
+      const runtime = getAssetRuntime()
+      await runtime.ensureReady({ reason: 'manual' })
+      const asset = runtime.getAsset(id)
       if (!asset || asset.type !== 'session') return null
-      const allAssets = scanner.getAllAssets()
+      const allAssets = runtime.getAssets()
       const parsedDetail = parseSessionExecutionDetail(asset)
       const fileHistoryCount =
         parsedDetail.artifacts.checkpoints.length ||
@@ -233,11 +209,7 @@ export function registerAssetHandlers(): void {
   ipcMain.handle(
     'usage:summary',
     async (_event, opts: { days: number; agentView?: AgentView; costMode?: CostMode; projectPath?: string }): Promise<UsageSummary> => {
-      const scanner = await ensureScanned()
-      return buildUsageSummary(
-        scanner.getAllAssets().filter((asset) => sessionMatchesAgentView(asset, opts.agentView)),
-        { days: opts.days, costMode: opts.costMode, projectPath: opts.projectPath }
-      )
+      return getAssetRuntime().getUsageSummary(opts)
     }
   )
 
@@ -261,8 +233,7 @@ export function registerAssetHandlers(): void {
     'hooks:set-enabled',
     async (_event, request: SetHooksEnabledRequest): Promise<SetHooksEnabledResult> => {
       const result = setAgentHooksEnabled(request)
-      const scanResult = await getScanner().scanAll()
-      getSearch().buildIndex(scanResult.assets)
+      await getAssetRuntime().refresh({ reason: 'manual', wait: true })
       return result
     }
   )
@@ -271,8 +242,7 @@ export function registerAssetHandlers(): void {
     'hooks:set-hook-enabled',
     async (_event, request: SetHookEnabledRequest): Promise<SetHookEnabledResult> => {
       const result = setHookEnabled(request)
-      const scanResult = await getScanner().scanAll()
-      getSearch().buildIndex(scanResult.assets)
+      await getAssetRuntime().refresh({ reason: 'manual', wait: true })
       return result
     }
   )
@@ -285,8 +255,7 @@ export function registerAssetHandlers(): void {
     'hooks:clear-recovery',
     async (_event, request: ClearHookRecoveryRequest): Promise<ClearHookRecoveryResult> => {
       const result = clearHookRecovery(request)
-      const scanResult = await getScanner().scanAll()
-      getSearch().buildIndex(scanResult.assets)
+      await getAssetRuntime().refresh({ reason: 'manual', wait: true })
       return result
     }
   )
@@ -304,14 +273,6 @@ export function registerAssetHandlers(): void {
   ipcMain.handle('shell:openExternal', (_event, url: string) => {
     shell.openExternal(url)
   })
-}
-
-async function ensureScanned(): Promise<ReturnType<typeof getScanner>> {
-  const scanner = getScanner()
-  if (!scanner.hasScanned()) {
-    await scanner.scanAll()
-  }
-  return scanner
 }
 
 function toSessionSummary(asset: Asset): SessionSummary {
@@ -490,31 +451,6 @@ function normalizeDateParts(
 
 function toPerMillion(value: number | undefined): number | undefined {
   return value == null ? undefined : value * 1_000_000
-}
-
-function sessionMatchesAgentView(asset: Asset, view: AgentView | undefined): boolean {
-  if (!view || view === 'all') return true
-  if (view === 'claude') return asset.agentId === 'claude-code' || asset.agentId === 'claude'
-  return asset.agentId === 'codex'
-}
-
-function sessionMatchesProjectFilter(asset: Asset, filter: string): boolean {
-  const query = filter.toLowerCase()
-  return [
-    readString(asset.meta, 'project'),
-    readString(asset.meta, 'projectPath'),
-    readString(asset.meta, 'projectDirName')
-  ].some((value) => value?.toLowerCase().includes(query))
-}
-
-function getSessionSortTime(asset: Asset): number {
-  for (const key of ['endedAt', 'startedAt', 'modifiedAt']) {
-    const value = readString(asset.meta, key)
-    if (!value) continue
-    const time = new Date(value).getTime()
-    if (!Number.isNaN(time)) return time
-  }
-  return 0
 }
 
 function resolveSessionNamedAssets(

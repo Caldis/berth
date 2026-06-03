@@ -20,8 +20,9 @@
   - tests: `pnpm test -- tests/unit/asset-file-cache.test.ts tests/unit/codex-session-parser.test.ts tests/unit/session-meta-parser.test.ts`
   - evidence: 2026-06-03 运行通过, `tests/unit/asset-file-cache.test.ts` + `tests/unit/codex-session-parser.test.ts` + `tests/unit/session-meta-parser.test.ts` 共 12 tests passed; worker/scanner 回归 15 tests passed; `pnpm typecheck:node` passed; `pnpm build` passed。
   - verify: 非 UI; 不写磁盘缓存, 遵守只读边界。
-- [ ] 任务 5: 迁移 IPC、project scope、search、usage、health、sessions 到中心 runtime selectors。
+- [x] 任务 5: 迁移 IPC、project scope、search、usage、health、sessions 到中心 runtime selectors。
   - tests: `pnpm test -- tests/unit/project-scope-runtime.test.ts tests/unit/search.test.ts tests/unit/usage-summary.test.ts tests/unit/health-check.test.ts`
+  - evidence: 2026-06-03 运行通过, `tests/unit/project-scope-runtime.test.ts` + `tests/unit/search.test.ts` + `tests/unit/usage-summary.test.ts` + `tests/unit/health-check.test.ts` + `tests/unit/agent-asset-runtime.test.ts` 共 39 tests passed; `pnpm typecheck:node` passed; `pnpm typecheck:web` passed; `pnpm build` passed。
   - verify: 非 UI; snapshot 未变时 search index 不重复 build; scope 变化触发 runtime refresh 与 watcher restart。
 - [ ] 任务 6: 重构 renderer runtime hook 与局部 loading UI, 移除全局扫描阻断。
   - tests: `pnpm test -- tests/renderer/use-asset-runtime.test.tsx tests/renderer/overview-performance-loading.test.tsx tests/renderer/sessions-pages.test.tsx tests/renderer/use-health-checks.test.tsx`

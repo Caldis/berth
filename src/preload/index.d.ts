@@ -1,6 +1,8 @@
 import { ElectronAPI } from '@electron-toolkit/preload'
 import type {
   AgentScanSourceGroup,
+  AssetRuntimeStatus,
+  AssetSnapshot,
   ScanResult,
   SearchResult,
   SessionListResult,
@@ -47,6 +49,9 @@ interface BerthAPI {
     set: (theme: string) => Promise<void>
   }
   assets: {
+    snapshot: () => Promise<AssetSnapshot>
+    status: () => Promise<AssetRuntimeStatus>
+    refresh: (opts?: { wait?: boolean }) => Promise<AssetRuntimeStatus>
     scan: (category?: string) => Promise<Asset[]>
     scanAll: () => Promise<ScanResult>
     scanSources: () => Promise<AgentScanSourceGroup[]>
