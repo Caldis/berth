@@ -9,6 +9,8 @@ import type {
   AgentCapabilityPluginHookHandlerFieldDescriptor,
   AgentCapabilityPluginHookSchemaDescriptor,
   AgentCapabilityPluginListResult,
+  AgentCapabilityPluginManifestEntry,
+  AgentCapabilityPluginManifestPermission,
   AgentCapabilityPluginPermission,
   AgentCapabilityPluginSource,
   AgentCapabilityPluginSourceCoverage,
@@ -1031,16 +1033,18 @@ export function listAgentCapabilityPlugins(
   groups: AgentScanSourceGroup[] = [],
   options: AgentCapabilityPluginRegistryOptions = {}
 ): AgentCapabilityPluginListResult {
+  const manifests = loadAgentPluginManifests({
+    ...options,
+    agentVersions: toAgentVersions(groups),
+    reservedIds: BUILTIN_PLUGIN_IDS
+  })
   return {
     plugins: [
       buildClaudeCodePlugin(findGroup(groups, 'claude-code')),
-      buildCodexPlugin(findGroup(groups, 'codex'))
+      buildCodexPlugin(findGroup(groups, 'codex')),
+      ...buildManifestPlugins(manifests, groups)
     ],
-    manifests: loadAgentPluginManifests({
-      ...options,
-      agentVersions: toAgentVersions(groups),
-      reservedIds: BUILTIN_PLUGIN_IDS
-    })
+    manifests
   }
 }
 
@@ -1154,6 +1158,87 @@ function buildCodexPlugin(group: AgentScanSourceGroup | undefined): AgentCapabil
       }
     ]
   }
+}
+
+function buildManifestPlugins(
+  manifests: AgentCapabilityPluginManifestEntry[],
+  groups: AgentScanSourceGroup[]
+): AgentCapabilityPlugin[] {
+  return manifests
+    .filter((manifest) => manifest.status === 'valid' && Boolean(manifest.id))
+    .map((manifest) => buildManifestPlugin(manifest, groups))
+}
+
+function buildManifestPlugin(
+  manifest: AgentCapabilityPluginManifestEntry,
+  groups: AgentScanSourceGroup[]
+): AgentCapabilityPlugin {
+  const id = manifest.id ?? manifest.path
+  const agentId = manifest.agentCompatibility?.agentId ?? id
+  const group = findGroup(groups, id)
+  const sourceDescriptors = manifest.sourceDescriptors ?? []
+  const hookSchema = manifest.hookSchema ?? {
+    agentId,
+    events: [],
+    handlers: []
+  }
+
+  return {
+    id,
+    displayName: manifest.displayName ?? id,
+    version: manifest.version ?? '0.0.0',
+    schemaVersion: manifest.schemaVersion ?? PLUGIN_SCHEMA_VERSION,
+    builtin: false,
+    enabled: manifest.activationReadiness.status === 'metadata-only' ||
+      manifest.activationReadiness.status === 'activation-ready',
+    detected: group?.installed === true,
+    agentCompatibility: {
+      agentId,
+      name: manifest.agentCompatibility?.name ?? manifest.displayName ?? id,
+      versionRange: manifest.agentCompatibility?.versionRange
+    },
+    capabilities: manifestCapabilities(manifest),
+    permissions: manifestPermissions(manifest.permissions),
+    sourceDescriptors,
+    assetDescriptors: manifest.assetDescriptors ?? [],
+    hookSchema,
+    healthCheckDescriptors: manifest.healthCheckDescriptors ?? [],
+    sourceCoverage: buildSourceCoverage(group, sourceDescriptors),
+    references: manifest.references ?? []
+  }
+}
+
+function manifestCapabilities(
+  manifest: AgentCapabilityPluginManifestEntry
+): AgentCapabilityPluginCapability[] {
+  const result: AgentCapabilityPluginCapability[] = []
+  if ((manifest.sourceDescriptors?.length ?? 0) > 0) {
+    result.push(capability('sourceDiscovery', 'available'))
+  }
+  if ((manifest.assetDescriptors?.length ?? 0) > 0) {
+    result.push(capability('assetParsing', manifest.implementation ? 'partial' : 'planned', 'manifestAdapterMetadataOnly'))
+  }
+  if (manifest.hookSchema) {
+    result.push(capability('hookSchema', 'available'))
+  }
+  if ((manifest.healthCheckDescriptors?.length ?? 0) > 0) {
+    result.push(capability('healthChecks', 'partial', 'healthChecksNotPluginOwned'))
+  }
+  if (manifest.implementation) {
+    result.push(capability('uiGuidance', 'partial', 'thirdPartyCodeNotExecuted'))
+  }
+  return result.length > 0 ? result : [capability('sourceDiscovery', 'planned', 'manifestMetadataOnly')]
+}
+
+function manifestPermissions(
+  permissions: AgentCapabilityPluginManifestPermission[] | undefined
+): AgentCapabilityPluginPermission[] {
+  return (permissions ?? []).map((permission) => ({
+    kind: permission.kind,
+    scopes: permission.scopes,
+    pathPatterns: permission.pathPatterns,
+    reasonKey: permission.reason
+  }))
 }
 
 function findGroup(

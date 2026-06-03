@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 import {
   isVersionInRange,
   loadAgentPluginManifests,
+  resetAgentPluginManifestCacheForTests,
   validateAgentPluginManifest
 } from '../../src/main/agent-plugins/manifest'
 
@@ -12,6 +13,7 @@ const tempDirs: string[] = []
 
 describe('agent plugin manifest validator', () => {
   afterEach(() => {
+    resetAgentPluginManifestCacheForTests()
     for (const dir of tempDirs.splice(0)) {
       fs.rmSync(dir, { recursive: true, force: true })
     }
@@ -54,6 +56,31 @@ describe('agent plugin manifest validator', () => {
         reason: 'Read local Example Agent configuration.'
       }
     ])
+    expect(entry.sourceDescriptors?.[0]).toMatchObject({
+      code: 'example.user.config',
+      scope: 'user',
+      kind: 'file',
+      pathPattern: '~/.example/config.json',
+      labelKey: ''
+    })
+    expect(entry.assetDescriptors?.[0]).toMatchObject({
+      type: 'hook',
+      category: 'capability',
+      scopes: ['user'],
+      labelKey: 'settings.agentPluginAssets.hook.label'
+    })
+    expect(entry.healthCheckDescriptors?.[0]).toMatchObject({
+      id: 'example:source:config-missing',
+      agentId: 'example-agent',
+      labelKey: 'settings.agentPluginHealthChecks.example.source.config-missing.label'
+    })
+    expect(entry.hookSchema?.handlers[0]?.fields[0]).toMatchObject({
+      name: 'command',
+      kind: 'string',
+      required: true,
+      primary: true
+    })
+    expect(entry.references).toEqual([{ label: 'Official docs', url: 'https://example.com/docs' }])
   })
 
   it('marks manifests with adapter metadata as activation-ready', () => {
@@ -301,6 +328,46 @@ describe('agent plugin manifest validator', () => {
       },
       errors: [expect.objectContaining({ code: 'manifest-json-invalid' })]
     })
+  })
+
+  it('reuses cached manifest entries while file fingerprint is unchanged', () => {
+    const dir = makeTempDir()
+    const manifestPath = path.join(dir, 'cached.json')
+    writeJson(manifestPath, validManifest())
+
+    const first = loadAgentPluginManifests({ manifestPaths: [manifestPath] })[0]
+    expect(first?.id).toBe('example-agent')
+
+    const second = loadAgentPluginManifests({ manifestPaths: [manifestPath] })[0]
+    expect(second).toBe(first)
+  })
+
+  it('invalidates cached manifest entries when file fingerprint changes', () => {
+    const dir = makeTempDir()
+    const manifestPath = path.join(dir, 'cached.json')
+    writeJson(manifestPath, validManifest())
+
+    expect(loadAgentPluginManifests({ manifestPaths: [manifestPath] })[0]?.displayName)
+      .toBe('Example Agent')
+
+    writeJson(manifestPath, validManifest({
+      displayName: 'Updated Example Agent',
+      sourceDescriptors: [
+        {
+          code: 'example.user.config',
+          scope: 'user',
+          kind: 'file',
+          categories: ['capability'],
+          pathPattern: '~/.example/updated-config.json'
+        }
+      ]
+    }))
+    const future = new Date(Date.now() + 2000)
+    fs.utimesSync(manifestPath, future, future)
+
+    const entry = loadAgentPluginManifests({ manifestPaths: [manifestPath] })[0]
+    expect(entry?.displayName).toBe('Updated Example Agent')
+    expect(entry?.sourceDescriptors?.[0]?.pathPattern).toBe('~/.example/updated-config.json')
   })
 
   it('discovers manifests from configured home, project, and environment paths', () => {

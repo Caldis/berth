@@ -13,7 +13,7 @@ export type ScanSourceKind = 'directory' | 'file' | 'policy'
 
 export type ScanSourceStatus = 'scanned' | 'missing' | 'not-scanned'
 
-export type ScanSourceCode =
+export type BuiltInScanSourceCode =
   | 'claude.user.data-directory'
   | 'claude.user.global-config'
   | 'claude.project.directory'
@@ -35,6 +35,8 @@ export type ScanSourceCode =
   | 'codex.project.skills'
   | 'project.current-candidate'
   | 'project.session-derived-candidate'
+
+export type ScanSourceCode = BuiltInScanSourceCode | string
 
 export type AssetType =
   | 'claude-md'

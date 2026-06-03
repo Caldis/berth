@@ -257,7 +257,30 @@ describe('agent capability plugin registry', () => {
         agentId: 'claude-code',
         name: 'Claude Code',
         versionRange: '>=1.0.0 <2.0.0'
-      }
+      },
+      sourceDescriptors: [
+        {
+          code: 'claude-helper.user.config',
+          scope: 'user',
+          kind: 'file',
+          categories: ['capability'],
+          pathPattern: '~/.claude-helper/config.json'
+        }
+      ],
+      assetDescriptors: [
+        {
+          type: 'hook',
+          category: 'capability',
+          scopes: ['user'],
+          sourceCodes: ['claude-helper.user.config']
+        }
+      ],
+      references: [
+        {
+          label: 'Claude Helper docs',
+          url: 'https://example.com/claude-helper'
+        }
+      ]
     }))
     writeJson(invalidPath, pluginManifest({
       id: 'codex',
@@ -279,7 +302,30 @@ describe('agent capability plugin registry', () => {
       env: {}
     })
 
-    expect(result.plugins.map((plugin) => plugin.id)).toEqual(['claude-code', 'codex'])
+    expect(result.plugins.map((plugin) => plugin.id)).toEqual(['claude-code', 'codex', 'claude-helper'])
+    expect(result.plugins.find((plugin) => plugin.id === 'claude-helper')).toMatchObject({
+      displayName: 'Claude Helper',
+      builtin: false,
+      enabled: true,
+      detected: false,
+      agentCompatibility: {
+        agentId: 'claude-code',
+        versionRange: '>=1.0.0 <2.0.0'
+      },
+      sourceDescriptors: [
+        expect.objectContaining({
+          code: 'claude-helper.user.config',
+          pathPattern: '~/.claude-helper/config.json'
+        })
+      ],
+      assetDescriptors: [
+        expect.objectContaining({
+          type: 'hook',
+          sourceCodes: ['claude-helper.user.config']
+        })
+      ],
+      references: [{ label: 'Claude Helper docs', url: 'https://example.com/claude-helper' }]
+    })
     expect(result.manifests).toEqual([
       expect.objectContaining({
         path: validPath,

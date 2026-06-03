@@ -1579,6 +1579,9 @@
       "claudeHookActions": "Claude Code 用户级 Hook 启停使用软删除和 Berth sidecar 恢复点。项目级和 managed Hooks 仍保持只读。",
       "codexHookActions": "Codex 用户级 Hook 启停写入 config.toml 的 hooks.state。项目级和 managed Hooks 仍保持只读。",
       "healthChecksNotPluginOwned": "健康检查当前可用, 但规则仍在 health engine 中, 还没有迁入插件注册表。",
+      "manifestAdapterMetadataOnly": "Manifest 声明了资产描述信息。Runtime 只暴露元数据和 source coverage, 不执行第三方代码。",
+      "manifestMetadataOnly": "Manifest 会显示在注册表中, 但没有可执行 adapter 或明确 source descriptor。",
+      "thirdPartyCodeNotExecuted": "Manifest 声明了 adapter 入口。Berth 只记录该入口, 不 import 或执行第三方代码。",
       "uiGuidanceInProgress": "设置页已经使用这组插件元数据。其他页面仍有 Agent 专属展示代码。"
     },
     "agentPluginHookHandlers": {

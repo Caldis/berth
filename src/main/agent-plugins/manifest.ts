@@ -2,13 +2,28 @@ import * as fs from 'fs'
 import * as os from 'os'
 import * as path from 'path'
 import type {
+  AgentCapabilityPluginAssetDescriptor,
+  AgentCapabilityPluginHealthCheckDescriptor,
+  AgentCapabilityPluginHookEventDescriptor,
+  AgentCapabilityPluginHookHandlerDescriptor,
+  AgentCapabilityPluginHookHandlerFieldDescriptor,
+  AgentCapabilityPluginHookSchemaDescriptor,
   AgentCapabilityPluginManifestActivationReadiness,
   AgentCapabilityPluginManifestEntry,
   AgentCapabilityPluginManifestImplementation,
   AgentCapabilityPluginManifestPermission,
   AgentCapabilityPluginPermissionKind,
-  AgentCapabilityPluginManifestValidationError
+  AgentCapabilityPluginManifestValidationError,
+  AgentCapabilityPluginReference,
+  AgentCapabilityPluginSourceDescriptor
 } from '@shared/types/agent-plugin'
+import type {
+  AssetCategory,
+  AssetScope,
+  AssetType,
+  ScanSourceCode,
+  ScanSourceKind
+} from '@shared/types/asset'
 
 const SUPPORTED_SCHEMA_VERSION = 1
 const MANIFEST_ENV = 'BERTH_AGENT_PLUGIN_MANIFESTS'
@@ -56,6 +71,7 @@ const ASSET_TYPES = [
   'backup'
 ] as const
 const HEALTH_CHECK_SEVERITIES = ['info', 'warning', 'error'] as const
+const HEALTH_CHECK_CONFIDENCES = ['high', 'medium', 'low'] as const
 const HEALTH_CHECK_CATEGORIES = [
   'source',
   'syntax',
@@ -80,6 +96,7 @@ const HOOK_HANDLER_RUN_MODES = ['runnable', 'parsed-only', 'unsupported'] as con
 const HOOK_FIELD_KINDS = ['string', 'string-array', 'boolean', 'number', 'object'] as const
 const PERMISSION_KINDS = ['read', 'write', 'execute'] as const
 const BLOCKED_PERMISSION_KINDS = ['write', 'execute'] as const
+const manifestCache = new Map<string, { fingerprint: string; entry: AgentCapabilityPluginManifestEntry }>()
 
 export interface AgentCapabilityPluginManifestLoadOptions {
   homeDir?: string
@@ -109,8 +126,16 @@ export function loadAgentPluginManifests(
   const manifestPaths = discoverManifestPaths(options)
   const reservedIds = new Set(options.reservedIds ?? [])
   const seenManifestIds = new Set<string>()
+  const contextFingerprint = createValidationContextFingerprint(options, reservedIds)
 
   return manifestPaths.map((manifestPath) => {
+    const statFingerprint = readStatFingerprint(manifestPath)
+    const cacheKey = `${path.resolve(manifestPath)}::${contextFingerprint}`
+    const cached = statFingerprint ? manifestCache.get(cacheKey) : undefined
+    if (cached?.fingerprint === statFingerprint) {
+      return markDuplicateManifestId(cached.entry, seenManifestIds)
+    }
+
     let raw: string
     try {
       raw = fs.readFileSync(manifestPath, 'utf8')
@@ -137,19 +162,56 @@ export function loadAgentPluginManifests(
       reservedIds
     })
 
-    if (entry.id && entry.status !== 'invalid') {
-      if (seenManifestIds.has(entry.id)) {
-        return markEntryInvalid(entry, {
-          code: 'manifest-id-duplicate',
-          field: 'id',
-          message: `Manifest id "${entry.id}" is already used by another manifest.`
-        })
-      }
-      seenManifestIds.add(entry.id)
+    if (statFingerprint) {
+      manifestCache.set(cacheKey, { fingerprint: statFingerprint, entry })
     }
 
-    return entry
+    return markDuplicateManifestId(entry, seenManifestIds)
   })
+}
+
+export function resetAgentPluginManifestCacheForTests(): void {
+  manifestCache.clear()
+}
+
+function markDuplicateManifestId(
+  entry: AgentCapabilityPluginManifestEntry,
+  seenManifestIds: Set<string>
+): AgentCapabilityPluginManifestEntry {
+  if (!entry.id || entry.status === 'invalid') return entry
+  if (seenManifestIds.has(entry.id)) {
+    return markEntryInvalid(entry, {
+      code: 'manifest-id-duplicate',
+      field: 'id',
+      message: `Manifest id "${entry.id}" is already used by another manifest.`
+    })
+  }
+  seenManifestIds.add(entry.id)
+  return entry
+}
+
+function readStatFingerprint(manifestPath: string): string | null {
+  try {
+    const stat = fs.statSync(manifestPath)
+    if (!stat.isFile()) return null
+    return `${stat.size}:${stat.mtimeMs}`
+  } catch {
+    return null
+  }
+}
+
+function createValidationContextFingerprint(
+  options: AgentCapabilityPluginManifestLoadOptions,
+  reservedIds: Set<string>
+): string {
+  return JSON.stringify({
+    agentVersions: sortRecord(options.agentVersions ?? {}),
+    reservedIds: [...reservedIds].sort()
+  })
+}
+
+function sortRecord(record: Record<string, string | undefined>): Record<string, string | undefined> {
+  return Object.fromEntries(Object.entries(record).sort(([a], [b]) => a.localeCompare(b)))
 }
 
 export function validateAgentPluginManifest(
@@ -257,6 +319,15 @@ export function validateAgentPluginManifest(
     implementation,
     blockedPermissionKinds: collectBlockedPermissionKinds(permissions)
   })
+  const parsedDescriptors = status === 'invalid'
+    ? {}
+    : {
+        sourceDescriptors: readSourceDescriptors(value.sourceDescriptors),
+        assetDescriptors: readAssetDescriptors(value.assetDescriptors),
+        hookSchema: readHookSchema(value.hookSchema),
+        healthCheckDescriptors: readHealthCheckDescriptors(value.healthCheckDescriptors),
+        references: readReferences(value.references)
+      }
 
   return {
     path: context.path,
@@ -268,6 +339,7 @@ export function validateAgentPluginManifest(
     schemaVersion,
     implementation,
     permissions: status === 'invalid' ? undefined : permissions,
+    ...parsedDescriptors,
     activationReadiness,
     agentCompatibility: compatibility
       ? {
@@ -807,6 +879,220 @@ function validateReferences(
       })
     }
   })
+}
+
+function readSourceDescriptors(value: unknown): AgentCapabilityPluginSourceDescriptor[] | undefined {
+  if (!Array.isArray(value)) return undefined
+  const descriptors: AgentCapabilityPluginSourceDescriptor[] = []
+  for (const item of value) {
+    if (!isRecord(item)) continue
+    const code = readString(item, 'code')
+    const scope = readKnownString(item, 'scope', ASSET_SCOPES)
+    const kind = readKnownString(item, 'kind', SCAN_SOURCE_KINDS)
+    const categories = readKnownStringArray(item.categories, ASSET_CATEGORIES)
+    const pathPattern = readString(item, 'pathPattern')
+    if (!code || !scope || !kind || !categories || !pathPattern) continue
+    descriptors.push({
+      code: code as ScanSourceCode,
+      scope: scope as AssetScope,
+      kind: kind as ScanSourceKind,
+      categories: categories as AssetCategory[],
+      pathPattern,
+      labelKey: readString(item, 'labelKey') ?? '',
+      descriptionKey: readString(item, 'descriptionKey') ?? ''
+    })
+  }
+  return descriptors.length > 0 ? descriptors : undefined
+}
+
+function readAssetDescriptors(value: unknown): AgentCapabilityPluginAssetDescriptor[] | undefined {
+  if (!Array.isArray(value)) return undefined
+  const descriptors: AgentCapabilityPluginAssetDescriptor[] = []
+  for (const item of value) {
+    if (!isRecord(item)) continue
+    const type = readKnownString(item, 'type', ASSET_TYPES)
+    const category = readKnownString(item, 'category', ASSET_CATEGORIES)
+    const scopes = readKnownStringArray(item.scopes, ASSET_SCOPES)
+    const sourceCodes = readStringList(item.sourceCodes)?.map((code) => code as ScanSourceCode)
+    const sensitive = typeof item.sensitive === 'boolean' ? item.sensitive : undefined
+    if (!type || !category || !scopes) continue
+    descriptors.push({
+      type: type as AssetType,
+      category: category as AssetCategory,
+      scopes: scopes as AssetScope[],
+      sourceCodes,
+      sensitive,
+      labelKey: readString(item, 'labelKey') ?? `settings.agentPluginAssets.${type}.label`,
+      descriptionKey: readString(item, 'descriptionKey') ?? `settings.agentPluginAssets.${type}.description`
+    })
+  }
+  return descriptors.length > 0 ? descriptors : undefined
+}
+
+function readHealthCheckDescriptors(value: unknown): AgentCapabilityPluginHealthCheckDescriptor[] | undefined {
+  if (!Array.isArray(value)) return undefined
+  const descriptors: AgentCapabilityPluginHealthCheckDescriptor[] = []
+  for (const item of value) {
+    if (!isRecord(item)) continue
+    const id = readString(item, 'id')
+    const agentId = readString(item, 'agentId')
+    const severity = readKnownString(item, 'severity', HEALTH_CHECK_SEVERITIES)
+    const category = readKnownString(item, 'category', HEALTH_CHECK_CATEGORIES)
+    if (!id || !agentId || !severity || !category) continue
+    const translationKeyId = id.replace(/:/g, '.')
+    descriptors.push({
+      id,
+      agentId,
+      severity,
+      category,
+      assetTypes: readKnownStringArray(item.assetTypes, ASSET_TYPES) as AssetType[] | undefined,
+      scopes: readKnownStringArray(item.scopes, ASSET_SCOPES) as AssetScope[] | undefined,
+      sourceCodes: readStringList(item.sourceCodes)?.map((code) => code as ScanSourceCode),
+      confidence: readKnownString(item, 'confidence', HEALTH_CHECK_CONFIDENCES),
+      targetRoute: readString(item, 'targetRoute'),
+      evidenceUrls: readStringList(item.evidenceUrls),
+      labelKey: readString(item, 'labelKey') ?? `settings.agentPluginHealthChecks.${translationKeyId}.label`,
+      descriptionKey: readString(item, 'descriptionKey') ?? `settings.agentPluginHealthChecks.${translationKeyId}.description`,
+      suggestionKey: readString(item, 'suggestionKey') ?? `settings.agentPluginHealthChecks.${translationKeyId}.suggestion`
+    })
+  }
+  return descriptors.length > 0 ? descriptors : undefined
+}
+
+function readHookSchema(value: unknown): AgentCapabilityPluginHookSchemaDescriptor | undefined {
+  if (!isRecord(value)) return undefined
+  const agentId = readString(value, 'agentId')
+  const events = readHookEvents(value.events, agentId)
+  const handlers = readHookHandlers(value.handlers, agentId)
+  if (!agentId || !events || !handlers) return undefined
+  return { agentId, events, handlers }
+}
+
+function readHookEvents(value: unknown, agentId: string | undefined): AgentCapabilityPluginHookEventDescriptor[] | undefined {
+  if (!Array.isArray(value) || !agentId) return undefined
+  const events: AgentCapabilityPluginHookEventDescriptor[] = []
+  for (const item of value) {
+    if (!isRecord(item)) continue
+    const eventType = readString(item, 'eventType')
+    const stageId = readKnownString(item, 'stageId', HOOK_LIFECYCLE_STAGE_IDS)
+    const support = readKnownString(item, 'support', HOOK_SUPPORT_VALUES)
+    if (!eventType || !stageId || !support || typeof item.matcherSupported !== 'boolean') continue
+    const agentKey = toManifestTranslationKeyId(agentId)
+    const eventKey = toManifestTranslationKeyId(eventType)
+    events.push({
+      eventType,
+      stageId,
+      support,
+      matcherSupported: item.matcherSupported,
+      matcherField: readString(item, 'matcherField'),
+      labelKey: readString(item, 'labelKey') ?? `settings.agentPluginHookEvents.${agentKey}.${eventKey}.label`,
+      descriptionKey: readString(item, 'descriptionKey') ?? `settings.agentPluginHookEvents.${agentKey}.${eventKey}.description`,
+      evidenceUrls: readStringList(item.evidenceUrls)
+    })
+  }
+  return events
+}
+
+function readHookHandlers(value: unknown, agentId: string | undefined): AgentCapabilityPluginHookHandlerDescriptor[] | undefined {
+  if (!Array.isArray(value) || !agentId) return undefined
+  const handlers: AgentCapabilityPluginHookHandlerDescriptor[] = []
+  for (const item of value) {
+    if (!isRecord(item)) continue
+    const type = readString(item, 'type')
+    const runMode = readKnownString(item, 'runMode', HOOK_HANDLER_RUN_MODES)
+    const primaryFieldNames = readStringList(item.primaryFieldNames)
+    const fields = readHookHandlerFields(item.fields, agentId, type)
+    if (!type || !runMode || !primaryFieldNames || !fields) continue
+    const agentKey = toManifestTranslationKeyId(agentId)
+    const typeKey = toManifestTranslationKeyId(type)
+    handlers.push({
+      type,
+      runMode,
+      fields,
+      primaryFieldNames,
+      labelKey: readString(item, 'labelKey') ?? `settings.agentPluginHookHandlers.${agentKey}.${typeKey}.label`,
+      descriptionKey: readString(item, 'descriptionKey') ?? `settings.agentPluginHookHandlers.${agentKey}.${typeKey}.description`,
+      supportNoteKey: readString(item, 'supportNoteKey'),
+      evidenceUrls: readStringList(item.evidenceUrls)
+    })
+  }
+  return handlers
+}
+
+function readHookHandlerFields(
+  value: unknown,
+  agentId: string,
+  handlerType: string | undefined
+): AgentCapabilityPluginHookHandlerFieldDescriptor[] | undefined {
+  if (!Array.isArray(value) || !handlerType) return undefined
+  const fields: AgentCapabilityPluginHookHandlerFieldDescriptor[] = []
+  for (const item of value) {
+    if (!isRecord(item)) continue
+    const name = readString(item, 'name')
+    const kind = readKnownString(item, 'kind', HOOK_FIELD_KINDS)
+    if (!name || !kind) continue
+    const agentKey = toManifestTranslationKeyId(agentId)
+    const typeKey = toManifestTranslationKeyId(handlerType)
+    const fieldKey = toManifestTranslationKeyId(name)
+    fields.push({
+      name,
+      kind,
+      required: typeof item.required === 'boolean' ? item.required : undefined,
+      primary: typeof item.primary === 'boolean' ? item.primary : undefined,
+      labelKey: readString(item, 'labelKey') ?? `settings.agentPluginHookHandlers.${agentKey}.${typeKey}.fields.${fieldKey}.label`,
+      descriptionKey: readString(item, 'descriptionKey') ?? `settings.agentPluginHookHandlers.${agentKey}.${typeKey}.fields.${fieldKey}.description`
+    })
+  }
+  return fields
+}
+
+function readReferences(value: unknown): AgentCapabilityPluginReference[] | undefined {
+  if (!Array.isArray(value)) return undefined
+  const references: AgentCapabilityPluginReference[] = []
+  for (const item of value) {
+    if (!isRecord(item)) continue
+    const label = readString(item, 'label')
+    const url = readString(item, 'url')
+    if (!label || !url) continue
+    references.push({ label, url })
+  }
+  return references.length > 0 ? references : undefined
+}
+
+function readKnownString<T extends readonly string[]>(
+  record: Record<string, unknown>,
+  key: string,
+  allowedValues: T
+): T[number] | undefined {
+  const value = readString(record, key)
+  return value && includes(allowedValues, value) ? value : undefined
+}
+
+function readKnownStringArray<T extends readonly string[]>(
+  value: unknown,
+  allowedValues: T
+): T[number][] | undefined {
+  if (!Array.isArray(value) || value.length === 0) return undefined
+  const result: T[number][] = []
+  for (const item of value) {
+    if (typeof item !== 'string' || !includes(allowedValues, item)) return undefined
+    result.push(item)
+  }
+  return result
+}
+
+function readStringList(value: unknown): string[] | undefined {
+  if (!Array.isArray(value) || value.length === 0) return undefined
+  const result: string[] = []
+  for (const item of value) {
+    if (typeof item !== 'string' || item.trim().length === 0) return undefined
+    result.push(item.trim())
+  }
+  return result
+}
+
+function toManifestTranslationKeyId(value: string): string {
+  return value.replace(/[^A-Za-z0-9_.-]/g, '.')
 }
 
 function isRelativeLocalPath(value: string): boolean {

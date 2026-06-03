@@ -1587,6 +1587,9 @@
       "claudeHookActions": "Claude Code user hook toggles use soft removal plus a Berth sidecar restore point. Project and managed hooks stay read-only.",
       "codexHookActions": "Codex user hook toggles update hooks.state in config.toml. Project and managed hooks stay read-only.",
       "healthChecksNotPluginOwned": "Health checks are available today, but their rules still live in the health engine instead of the plugin registry.",
+      "manifestAdapterMetadataOnly": "The manifest declares asset descriptors. Runtime exposes metadata and source coverage without executing third-party code.",
+      "manifestMetadataOnly": "The manifest is visible in the registry, but it has no executable adapter or concrete source descriptors.",
+      "thirdPartyCodeNotExecuted": "The manifest declares an adapter entrypoint. Berth records it but does not import or execute third-party code.",
       "uiGuidanceInProgress": "Settings uses this plugin metadata now. Other pages still have Agent-specific presentation code."
     },
     "agentPluginHookHandlers": {

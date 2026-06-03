@@ -7,9 +7,9 @@ import type {
   ScanSourceStatus
 } from './asset'
 
-export type AgentCapabilityPluginId = 'claude-code' | 'codex'
+export type AgentCapabilityPluginId = string
 
-export type AgentPluginAgentId = 'claude-code' | 'codex'
+export type AgentPluginAgentId = string
 
 export type AgentCapabilityPluginPermissionKind = 'read' | 'write' | 'execute'
 
@@ -235,6 +235,11 @@ export interface AgentCapabilityPluginManifestEntry {
   schemaVersion?: number
   implementation?: AgentCapabilityPluginManifestImplementation
   permissions?: AgentCapabilityPluginManifestPermission[]
+  sourceDescriptors?: AgentCapabilityPluginSourceDescriptor[]
+  assetDescriptors?: AgentCapabilityPluginAssetDescriptor[]
+  hookSchema?: AgentCapabilityPluginHookSchemaDescriptor
+  healthCheckDescriptors?: AgentCapabilityPluginHealthCheckDescriptor[]
+  references?: AgentCapabilityPluginReference[]
   activationReadiness: AgentCapabilityPluginManifestActivationReadiness
   agentCompatibility?: {
     agentId: string

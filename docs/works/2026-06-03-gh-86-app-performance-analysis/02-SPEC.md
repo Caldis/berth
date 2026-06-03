@@ -111,6 +111,31 @@ Renderer 状态边界:
 - `useSessions`, `useUsageSummary`, `useHealthChecks`, `useScanSources` 只消费中心 snapshot 或中心 IPC selector, 不自行维护扫描流程。
 - 页面组件只接收 view model: `{ data, loading, stale, error }`, 不知道 scanAll、worker 或 adapter。
 
+## Plugin-runtime 集成追加方案
+
+用户追加优化项 1-4 后, plugin 机制从“只描述 runtime 结果”扩展为“可参与 runtime adapter 构造的只读声明源”。
+
+数据契约:
+- `AgentCapabilityPluginManifestEntry` 保留 `sourceDescriptors`, `assetDescriptors`, `healthCheckDescriptors`, `hookSchema`, `references` 的解析结果。
+- `AgentCapabilityPluginId` 与 `AgentPluginAgentId` 从内置 union 扩展为 string, built-in id 仍由 registry 保证。
+- manifest cache 使用 `path + size + mtimeMs` 指纹, 命中时复用已验证 entry; 文件变化、缺失或 JSON parse 错误重新计算。
+
+主进程模块:
+- `src/main/agent-plugins/descriptors.ts`: built-in source/asset/hook/health descriptor 单一声明源, registry 和 adapter source coverage 共用。
+- `src/main/agent-plugins/adapter-registry.ts`: worker 内构造 adapter 列表, 默认注册 Claude/Codex built-in adapter; 有效 read-only manifest 注册 `ManifestAgentAdapter`。
+- `ManifestAgentAdapter`: 只读取 manifest descriptor 和 manifest 文件本身, 产出 `plugin` asset 与 source coverage; 不 import 或执行第三方 `implementation.entrypoint`。
+- `AssetScanner` 通过 adapter registry 构造 adapters, 不直接硬编码所有 adapter。
+
+Registry:
+- `agent-plugins:list` 仍由 `AgentAssetRuntime.ensureReady()` 提供 `snapshot.sources` 和 agent version。
+- registry 把 built-in plugin 与 valid manifest plugin 合并返回; invalid/incompatible manifest 保留在 `manifests` 里供 Settings 展示。
+- built-in capabilities 中 `sourceDiscovery`、`assetParsing` 从 runtime source coverage 读 detected 状态; 第三方 manifest plugin 的 coverage 来自 runtime 的 manifest adapter source group。
+
+Renderer:
+- `useAgentCapabilityPlugins()` 使用进程内 cache + in-flight 去重。
+- 有缓存时立即返回旧数据并设置 `stale=true`; 后台刷新完成后替换。
+- 依赖 `assetSnapshotId` 触发刷新, 避免 project scope 或 runtime refresh 后 Settings/Capabilities 插件描述停留旧状态。
+
 ## 界面质量与交互验收
 前端或 UI 相关任务填写; 非 UI 任务写“不适用”。
 

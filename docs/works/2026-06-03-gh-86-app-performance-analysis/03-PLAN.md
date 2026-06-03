@@ -58,3 +58,22 @@ verify 不通过项作为新任务追加于此, phase 退回 implement。
 
 2026-06-03 verify 反馈: Sessions 切页仍闪 loading, loading/empty 视觉不统一, 点击 Sessions 仍有卡顿; 已追加任务 8 并回到 implement。
 2026-06-03 verify 反馈: Sessions 渐进渲染状态提示作为独立区块导致布局抖动; 已追加任务 9 并回到 implement。
+2026-06-03 verify 反馈: AgentAssetRuntime 与 plugin 机制仍是描述层连接, 用户要求执行 4 项优化; 已追加任务 10-13 并回到 implement。
+
+- [x] 任务 10: 将 plugin manifest descriptor 纳入类型契约, 为 manifest 读取加入进程内缓存, registry 可把有效 manifest 转为 capability plugin。
+  - source: 2026-06-03 用户要求执行优化项 1-4。
+  - tests: `pnpm test -- tests/unit/agent-plugin-manifest.test.ts tests/unit/agent-capability-plugins.test.ts`
+  - evidence: 2026-06-03 运行通过, `tests/unit/agent-plugin-manifest.test.ts` + `tests/unit/agent-capability-plugins.test.ts` 共 32 tests passed; `pnpm typecheck:node` passed。
+  - verify: manifest path + size + mtimeMs 未变时复用解析结果; 有效 metadata manifest 不影响 built-in plugin; 有效 manifest descriptor 可进入 registry 结果。
+- [ ] 任务 11: 引入 runtime adapter registry 与 read-only manifest adapter, `AssetScanner` 不再只硬编码内置 adapter。
+  - source: 2026-06-03 用户要求执行优化项 1。
+  - tests: `pnpm test -- tests/unit/agent-adapter-registry.test.ts tests/unit/engine-scanner.test.ts`
+  - verify: worker 内通过 registry 构造 adapters; activation-ready/read-only manifest 以非执行 adapter 参与 source coverage 与 plugin asset 扫描; 不执行第三方 entrypoint。
+- [ ] 任务 12: 让 built-in descriptor 成为 source coverage 的声明来源, 降低 registry 与 adapter scanner 漂移风险。
+  - source: 2026-06-03 用户要求执行优化项 4。
+  - tests: `pnpm test -- tests/unit/agent-capability-plugins.test.ts tests/unit/engine-scanner.test.ts`
+  - verify: Claude/Codex source descriptor codes 与 adapter scan source codes 来自同一 descriptor 模块; 新增 drift 测试。
+- [ ] 任务 13: 为 `useAgentCapabilityPlugins()` 增加 stale-while-refresh 与 snapshot 变化刷新。
+  - source: 2026-06-03 用户要求执行优化项 2。
+  - tests: `pnpm test -- tests/renderer/use-agent-capability-plugins-swr.test.tsx tests/renderer/settings-agent-plugins.test.tsx`
+  - verify: 已有 plugin registry 数据时重新 mount 立即显示旧数据并后台刷新; asset snapshot id 改变时刷新 registry; 不清空 Settings 中已显示列表。

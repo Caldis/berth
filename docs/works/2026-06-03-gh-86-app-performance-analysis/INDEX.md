@@ -2,7 +2,7 @@
 task: 2026-06-03-gh-86-app-performance-analysis
 task_id: GH-86
 type: maintenance
-phase: verify
+phase: implement
 created: 2026-06-03
 priority: P2
 target_date: 
@@ -14,8 +14,8 @@ source:
 debt:
   estimate:
     incurred: 4
-    repaid: 9
-    net: -5
+    repaid: 11
+    net: -7
     scope: global
     risk: high
     areas:
@@ -30,14 +30,14 @@ debt:
     repaid: 9
     net: -5
     scope: global
-    risk: medium
+    risk: high
     areas:
       - performance
       - testability
       - architecture
       - ui-ux
     confidence: high
-    rationale: "Implementation 完成中心 AssetRuntime、worker scan job、进程内 file fingerprint cache、runtime selectors 与 renderer 局部 loading; 追加修正 Sessions stale-while-refresh、共享 loading/empty 状态与渐进渲染后, 远端和本地剩余风险主要是首次冷扫描仍需读取本机大文件。"
+    rationale: "Implementation 已完成中心 AssetRuntime、worker scan job、进程内 file fingerprint cache、runtime selectors 与 renderer 局部 loading; 用户追加要求 plugin 成为 runtime 扩展入口、插件列表 SWR、manifest cache 与 descriptor/scan source 单一声明源, 当前回到 implement。"
   revisions:
     - phase: explore
       date: 2026-06-03
@@ -70,6 +70,17 @@ debt:
           - architecture
           - ui-ux
       reason: "Design 从局部性能优化扩展为中心资产运行时 + worker + renderer 局部 loading 架构调整。"
+    - phase: implement
+      date: 2026-06-03
+      from:
+        repaid: 9
+        net: -5
+        risk: medium
+      to:
+        repaid: 11
+        net: -7
+        risk: high
+      reason: "用户追加 plugin-runtime 集成优化: adapter registry、manifest cache、插件列表 SWR 与 descriptor 单一声明源会影响 main/worker/renderer/type contract。"
 issue:
   number: 86
   repo: Caldis/berth
