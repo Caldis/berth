@@ -27,6 +27,10 @@ const navNames = {
 const navButton = (name: RegExp): Locator => page.locator('aside').getByRole('button', { name })
 const settingsButton = (): Locator =>
   page.locator('aside').getByRole('button', { name: /^(Settings|设置)$/ })
+const topBreadcrumb = (): Locator =>
+  page.getByTestId('top-navigation').getByRole('navigation', {
+    name: /^(Breadcrumb|面包屑)$/
+  })
 
 test.beforeAll(async () => {
   const userDataDir = mkdtempSync(join(tmpdir(), 'berth-e2e-'))
@@ -123,28 +127,36 @@ test.describe('App Shell', () => {
     const heading = page.locator('h1')
     await expect(heading).toContainText(/Sessions|会话/)
 
-    const breadcrumb = page.getByTestId('top-navigation').getByRole('navigation', {
-      name: /^(Breadcrumb|面包屑)$/
-    })
-    await expect(breadcrumb).toContainText(/Sessions|会话/)
+    const breadcrumb = topBreadcrumb()
+    await expect(breadcrumb).toContainText(/WORK|工作/)
+    await expect(breadcrumb).not.toContainText(/Sessions|会话/)
   })
 
   test('can navigate to promoted instruction pages', async () => {
     await navButton(navNames.skills).click()
     const heading = page.locator('h1')
     await expect(heading).toContainText(/Skills/)
+    const breadcrumb = topBreadcrumb()
+    await expect(breadcrumb).toContainText(/INSTRUCTIONS|指令/)
+    await expect(breadcrumb).not.toContainText(/Skills/)
   })
 
   test('can navigate to promoted capability pages', async () => {
     await navButton(navNames.hooks).click()
     const heading = page.locator('h1')
     await expect(heading).toContainText(/Hooks/)
+    const breadcrumb = topBreadcrumb()
+    await expect(breadcrumb).toContainText(/CAPABILITIES|能力/)
+    await expect(breadcrumb).not.toContainText(/Hooks/)
   })
 
   test('can navigate to usage', async () => {
     await navButton(navNames.usage).click()
     const heading = page.locator('h1')
     await expect(heading).toContainText(/Usage|用量/)
+    const breadcrumb = topBreadcrumb()
+    await expect(breadcrumb).toContainText(/RUN|运行/)
+    await expect(breadcrumb).not.toContainText(/Usage|用量/)
   })
 
   test('settings is not a regular navigation item', async () => {

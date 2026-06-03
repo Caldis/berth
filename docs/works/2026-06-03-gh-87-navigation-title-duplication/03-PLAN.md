@@ -7,8 +7,8 @@
 - [x] 任务 1: 更新 `TopNavigation` 上下文计算与空 breadcrumb 渲染
   - tests: `pnpm test -- tests/renderer/top-navigation.test.tsx` (pass, 2026-06-03)
   - verify: 顶部栏不显示当前页标题; 无 crumb 时不渲染空 `nav`; `h1` 保留。
-- [ ] 任务 2: 更新 renderer 与 e2e 顶部栏断言
-  - tests: `pnpm test -- tests/renderer/top-navigation.test.tsx`; `pnpm build && pnpm test:e2e -- tests/e2e/app.e2e.ts`
+- [x] 任务 2: 更新 renderer 与 e2e 顶部栏断言
+  - tests: `pnpm test -- tests/renderer/top-navigation.test.tsx` (pass, 2026-06-03); `pnpm build` (pass, 2026-06-03); `pnpm test:e2e -- tests/e2e/app.e2e.ts` (14 passed, 2026-06-03)
   - verify: EN/ZH breadcrumb 文案正确; Sidebar 导航仍可切换; 页面标题不变。
 - [ ] 任务 3: 视觉与 harness 验证
   - tests: `pnpm harness:check --work docs/works/2026-06-03-gh-87-navigation-title-duplication`
