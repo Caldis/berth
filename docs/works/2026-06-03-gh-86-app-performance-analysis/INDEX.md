@@ -2,7 +2,7 @@
 task: 2026-06-03-gh-86-app-performance-analysis
 task_id: GH-86
 type: maintenance
-phase: implement
+phase: verify
 created: 2026-06-03
 priority: P2
 target_date: 
@@ -26,14 +26,18 @@ debt:
     confidence: medium
     rationale: "Design 校准: 用户要求中心资产运行时、worker 解耦、统一扫描维度与局部 loading; 影响 main/preload/renderer、IPC、project scope、search、usage、health、sessions 全链路。"
   final:
-    incurred:
-    repaid:
-    net:
-    scope:
-    risk:
-    areas: []
-    confidence:
-    rationale:
+    incurred: 4
+    repaid: 9
+    net: -5
+    scope: global
+    risk: medium
+    areas:
+      - performance
+      - testability
+      - architecture
+      - ui-ux
+    confidence: high
+    rationale: "Implementation 完成中心 AssetRuntime、worker scan job、进程内 file fingerprint cache、runtime selectors 与 renderer 局部 loading; 剩余风险主要是首次冷扫描仍需读取本机大文件, 本轮按 v0.1 只读边界不写持久化索引。"
   revisions:
     - phase: explore
       date: 2026-06-03

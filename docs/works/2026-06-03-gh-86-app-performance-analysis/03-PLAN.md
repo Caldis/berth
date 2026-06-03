@@ -28,8 +28,11 @@
   - tests: `pnpm test -- tests/renderer/use-asset-runtime.test.tsx tests/renderer/overview-performance-loading.test.tsx tests/renderer/sessions-pages.test.tsx tests/renderer/use-health-checks.test.tsx`
   - evidence: 2026-06-03 运行通过, `tests/renderer/use-asset-runtime.test.tsx` + `tests/renderer/overview-performance-loading.test.tsx` + `tests/renderer/use-assets.test.tsx` + `tests/renderer/sessions-pages.test.tsx` + `tests/renderer/use-health-checks.test.tsx` 共 27 tests passed; `pnpm typecheck:web` passed; `pnpm build` passed。
   - verify: Overview metrics、Recent sessions、Usage snapshot、Health worklist 独立 loading/stale/error; navigation/search 不被全局遮罩阻断; loading 文案有 en/zh。
-- [ ] 任务 7: 性能与集成验证, 更新架构文档。
+- [x] 任务 7: 性能与集成验证, 更新架构文档。
   - tests: `pnpm build`; `pnpm test:e2e tests/e2e/app.e2e.ts`; 目标 unit/renderer tests 全量运行; `pnpm harness:check --work docs/works/2026-06-03-gh-86-app-performance-analysis`
+  - evidence: 2026-06-03 运行通过, `pnpm typecheck` passed; `pnpm build` passed; 目标 unit/renderer tests 16 files / 94 tests passed; `pnpm test:e2e tests/e2e/app.e2e.ts` 14 tests passed。
+  - performance: baseline `assets.scanAll=5333ms`, `firstWindowMs=1245`, `heroMs=14459`, `overviewDataMs=44479`; after build scanner `scan.first=7105.8ms`, `scan.second.cache-warm=65.0ms`; worker `worker.first=7252.6ms`, `worker.second.cache-warm=176.0ms`; E2E shell title visible test 728ms, Overview default page assertion 35ms。
+  - harness: `pnpm harness:check --work docs/works/2026-06-03-gh-86-app-performance-analysis` 仍被本地既有 global drift 阻断 (`issues/` 根目录与 `.agents/skills/opsx-*` drift); 脚本级 `checkWorks(..., { work })` 返回 `[]`。
   - verify: 记录优化前后 `assets.scanAll`、首屏 shell、Overview hero、Overview 数据完成时间; `docs/ARCHITECTURE.md` 反映中心 runtime + worker 边界; 若正式 harness check 仍被全局 drift 阻断, 附脚本级局部 check 输出。
 
 执行边界:
