@@ -9,6 +9,13 @@
 - `src/renderer/src/` — React 19 应用 (UI)。无直接 Node 访问。
 - `src/shared/` — 跨进程共享类型 (Asset model, IPC 契约)。
 
+## 仓库布局
+
+- `assets/` — 仓库共享静态资产。README 直接引用; website 构建后由 `website/scripts/postbuild.mjs` 复制到 `website/dist/assets/`。
+- `docs/` — 冷文档与 harness 操作态: 架构、用户手册、PRD、issues、friction、works。这里不放官网入口 HTML 或共享图片资产。
+- `website/` — 官方网站源码, React SSG 多语言静态站。`website/index.html` 是官网入口; `website/public/` 放只属于官网发布的静态文件。
+- `.github/workflows/` — CI 与 GitHub Pages 部署。`deploy-website.yml` 监听 `website/**`、`assets/**` 和 workflow 自身, 构建并上传 `website/dist`。
+
 ## 主进程模块
 
 - `src/main/adapters/` — Agent 适配器, 经 `index.ts` 暴露, 类型见 `types.ts`。v0.1 覆盖 Claude Code 与 Codex:
@@ -66,7 +73,7 @@
 
 ## 技术栈
 
-Electron 33 (electron-vite 5) · React 19 + TS · Tailwind/shadcn · Zustand · react-router-dom 7 · Recharts · i18next · MiniSearch · better-sqlite3 · chokidar · Vitest · Playwright。
+Electron 33 (electron-vite 5) · React 19 + TS · Tailwind/shadcn · Zustand · react-router-dom 7 · Recharts · i18next · MiniSearch · better-sqlite3 · chokidar · Vitest · Playwright。Website 使用 Vite React SSG, 由 GitHub Pages 发布。
 
 ## 相关
 
