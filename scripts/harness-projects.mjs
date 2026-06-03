@@ -2,7 +2,7 @@
 // GitHub Projects 同步工具: archive 前置 Done, 以及只读漂移检查。
 import { execFileSync } from 'node:child_process'
 import { existsSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs'
-import { basename, join } from 'node:path'
+import { basename, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import {
   DEBT_CONFIDENCES,
@@ -521,7 +521,8 @@ export function auditTasks(root, itemsJson, options = {}) {
   const strict = Boolean(options.strict)
   const fieldsJson = options.fieldsJson
   if (strict && fieldsJson) errors.push(...auditProjectFieldDefinitions(fieldsJson))
-  for (const dir of listTaskDirs(join(root, 'docs/works'))) {
+  const activeDirs = options.workDir ? [resolve(root, options.workDir)] : listTaskDirs(join(root, 'docs/works'))
+  for (const dir of activeDirs) {
     const { frontmatter } = readTaskIndex(dir)
     const gh = frontmatter.gh_project || {}
     const issue = frontmatter.issue || {}
@@ -541,6 +542,7 @@ export function auditTasks(root, itemsJson, options = {}) {
     if (item && item.status === 'Done') errors.push(`${frontmatter.task}: active task has Done project status`)
     if (strict && fieldsJson && item) errors.push(...auditProjectFieldValues(frontmatter, item))
   }
+  if (options.workDir) return errors
   for (const dir of listTaskDirs(join(root, 'docs/works/_archive'))) {
     const { frontmatter } = readTaskIndex(dir)
     const gh = frontmatter.gh_project || {}
@@ -607,7 +609,7 @@ export function markDoneTask(taskDir, options = {}) {
   console.log(`harness-projects: ${frontmatter.task || basename(taskDir)} is Done`)
 }
 
-function checkProjects(root) {
+function checkProjects(root, options = {}) {
   const number = process.env.HARNESS_PROJECT_NUMBER || DEFAULT_PROJECT_NUMBER
   const owner = process.env.HARNESS_PROJECT_OWNER || DEFAULT_OWNER
   const items = ghJson([
@@ -621,9 +623,9 @@ function checkProjects(root) {
     '--limit',
     '200'
   ])
-  const strict = process.argv.includes('--strict')
+  const strict = Boolean(options.strict)
   const fields = strict ? ghJson(['project', 'field-list', String(number), '--owner', owner, '--format', 'json', '--limit', '100']) : undefined
-  const errors = auditTasks(root, items, { strict, fieldsJson: fields })
+  const errors = auditTasks(root, items, { strict, fieldsJson: fields, workDir: options.workDir })
   if (errors.length > 0) {
     console.error('harness-projects: FAILED\n' + errors.map((error) => `  - ${error}`).join('\n'))
     process.exit(1)
@@ -654,7 +656,11 @@ function main() {
     return
   }
   if (cmd === 'check' || !cmd) {
-    checkProjects(process.cwd())
+    const strict = process.argv.includes('--strict')
+    const workFlagIndex = process.argv.indexOf('--work')
+    const workDir = workFlagIndex >= 0 ? process.argv[workFlagIndex + 1] : undefined
+    if (workFlagIndex >= 0 && !workDir) throw new Error('usage: node scripts/harness-projects.mjs check [--strict] [--work <task-dir>]')
+    checkProjects(process.cwd(), { strict, workDir })
     return
   }
   throw new Error(`unknown command: ${cmd}`)

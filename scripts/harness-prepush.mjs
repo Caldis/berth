@@ -15,10 +15,21 @@ export function pnpmCommand(platform = process.platform) {
   return platform === 'win32' ? 'pnpm.cmd' : 'pnpm'
 }
 
+export function pnpmSpawnSpec(args, platform = process.platform, env = process.env) {
+  const command = pnpmCommand(platform)
+  if (platform !== 'win32') return { command, args }
+  return {
+    command: env.ComSpec || 'cmd.exe',
+    args: ['/d', '/s', '/c', command, ...args]
+  }
+}
+
 export function runTask(task, deps = {}) {
   const spawnProcess = deps.spawn || spawn
-  const command = deps.command || pnpmCommand(deps.platform)
-  const child = spawnProcess(command, task.args, {
+  const spec = deps.command
+    ? { command: deps.command, args: task.args }
+    : pnpmSpawnSpec(task.args, deps.platform, deps.env)
+  const child = spawnProcess(spec.command, spec.args, {
     cwd: deps.cwd || process.cwd(),
     env: deps.env || process.env,
     stdio: 'inherit'

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { EventEmitter } from 'node:events'
 // @ts-expect-error mjs sin tipos
-import { PREPUSH_TASKS, pnpmCommand, runPrepush } from '../../scripts/harness-prepush.mjs'
+import { PREPUSH_TASKS, pnpmCommand, pnpmSpawnSpec, runPrepush } from '../../scripts/harness-prepush.mjs'
 
 function spawnWithCodes(codes: number[]): (command: string, args: string[]) => EventEmitter {
   let index = 0
@@ -15,9 +15,25 @@ function spawnWithCodes(codes: number[]): (command: string, args: string[]) => E
 }
 
 describe('harness-prepush', () => {
-  it('uses pnpm.cmd on Windows', () => {
+  it('uses pnpm.cmd on Windows and direct pnpm on Unix-like platforms', () => {
     expect(pnpmCommand('win32')).toBe('pnpm.cmd')
     expect(pnpmCommand('darwin')).toBe('pnpm')
+    expect(pnpmCommand('linux')).toBe('pnpm')
+  })
+
+  it('wraps pnpm.cmd in cmd.exe only on Windows', () => {
+    expect(pnpmSpawnSpec(['lint'], 'win32', { ComSpec: 'C:\\Windows\\System32\\cmd.exe' })).toEqual({
+      command: 'C:\\Windows\\System32\\cmd.exe',
+      args: ['/d', '/s', '/c', 'pnpm.cmd', 'lint']
+    })
+    expect(pnpmSpawnSpec(['lint'], 'win32', {})).toEqual({
+      command: 'cmd.exe',
+      args: ['/d', '/s', '/c', 'pnpm.cmd', 'lint']
+    })
+    expect(pnpmSpawnSpec(['lint'], 'darwin', {})).toEqual({
+      command: 'pnpm',
+      args: ['lint']
+    })
   })
 
   it('runs all prepush tasks and resolves when they pass', async () => {

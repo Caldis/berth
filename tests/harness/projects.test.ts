@@ -308,6 +308,30 @@ describe('harness-projects helpers', () => {
     ])
   })
 
+  it('auditTasks 可只检查指定 active work, 不被其他 active work 漂移阻塞', () => {
+    const currentDir = join(root, 'docs/works/2026-06-01-gh-123-current')
+    writeIndex(
+      currentDir,
+      ['---', 'task: current', 'task_id: GH-123', 'type: feature', 'phase: verify', 'created: 2026-06-01', 'issue:', '  number: 123', 'gh_project:', '  item_id: PVTI_current', '---'].join('\n')
+    )
+    writeIndex(
+      join(root, 'docs/works/2026-06-01-gh-124-unrelated'),
+      ['---', 'task: unrelated', 'task_id: GH-124', 'type: feature', 'phase: verify', 'created: 2026-06-01', 'issue:', '  number: 124', 'gh_project:', '  item_id: PVTI_unrelated', '---'].join('\n')
+    )
+
+    const items = {
+      items: [
+        { id: 'PVTI_current', status: 'In Progress' },
+        { id: 'PVTI_unrelated', status: 'Done' }
+      ]
+    }
+
+    expect(auditTasks(root, items, { strict: true, workDir: currentDir })).toEqual([])
+    expect(auditTasks(root, items, { strict: true })).toEqual([
+      'unrelated: active task has Done project status'
+    ])
+  })
+
   it('auditTasks strict 拒绝 Project item 占位符, 但允许 pending-auth blocked 任务', () => {
     writeIndex(
       join(root, 'docs/works/2026-06-01-gh-123-placeholder'),
