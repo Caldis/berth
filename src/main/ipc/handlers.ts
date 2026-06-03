@@ -16,7 +16,6 @@ import type {
   ImportChainNode,
   SessionListResult,
   SessionDetailResult,
-  SessionActivityMetrics,
   SessionModelInfo,
   MCPMergeInfo,
   SessionArtifacts,
@@ -51,6 +50,7 @@ import { listMemory, readMemory } from '../memory'
 import { resolveModelPricing } from '../engine/pricing/catalog'
 import { listAgentCapabilityPlugins } from '../agent-plugins/registry'
 import { activateProjectScope } from '../project-scope-runtime'
+import { toSessionActivityMetrics } from './session-activity'
 
 export function registerAssetHandlers(): void {
   ipcMain.handle('window:minimize', (event: IpcMainInvokeEvent): void => {
@@ -330,31 +330,6 @@ function toSessionModelInfo(model: string, agentId: string): SessionModelInfo {
   }
 }
 
-function toSessionActivityMetrics(summary: SessionSummary, asset: Asset): SessionActivityMetrics {
-  const startedAt = readString(asset.meta, 'usageStartedAt') ?? null
-  const endedAt = readString(asset.meta, 'usageEndedAt') ?? null
-  const durationSeconds =
-    readNumber(asset.meta, 'usageDuration') ??
-    calculateDurationSeconds(startedAt, endedAt)
-  if (durationSeconds != null && durationSeconds > 0 && summary.tokenUsage.totalTokens > 0) {
-    return {
-      tokenRatePerMinute: summary.tokenUsage.totalTokens / (durationSeconds / 60),
-      tokenRateDurationSeconds: durationSeconds,
-      tokenRateSource: 'usage-events',
-      tokenRateStartedAt: startedAt,
-      tokenRateEndedAt: endedAt
-    }
-  }
-
-  return {
-    tokenRatePerMinute: null,
-    tokenRateDurationSeconds: durationSeconds,
-    tokenRateSource: 'unavailable',
-    tokenRateStartedAt: startedAt,
-    tokenRateEndedAt: endedAt
-  }
-}
-
 function resolvePreferredModelPricing(
   model: string,
   provider: string | null | undefined
@@ -533,17 +508,6 @@ function readStringArray(record: Record<string, unknown>, key: string): string[]
   const value = record[key]
   if (!Array.isArray(value)) return []
   return value.filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
-}
-
-function calculateDurationSeconds(
-  startedAt: string | null,
-  endedAt: string | null
-): number | null {
-  if (!startedAt || !endedAt) return null
-  const start = new Date(startedAt).getTime()
-  const end = new Date(endedAt).getTime()
-  if (Number.isNaN(start) || Number.isNaN(end)) return null
-  return Math.max(0, Math.round((end - start) / 1000))
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
