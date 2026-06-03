@@ -8,8 +8,9 @@
   - tests: `pnpm test -- tests/renderer/app-store.test.ts`
   - evidence: 2026-06-03 运行通过, `tests/renderer/app-store.test.ts` 6 tests passed。
   - verify: 类型只描述状态与 snapshot, 不暴露 worker/job 内部细节; UI 验收为状态字段可表达 idle/scanning/ready/stale/error。
-- [ ] 任务 2: 建立 `src/main/engine/assets/` 中心运行时骨架, 包含 snapshot、status、in-flight、selector 缓存接口。
+- [x] 任务 2: 建立 `src/main/engine/assets/` 中心运行时骨架, 包含 snapshot、status、in-flight、selector 缓存接口。
   - tests: `pnpm test -- tests/unit/agent-asset-runtime.test.ts`
+  - evidence: 2026-06-03 运行通过, `tests/unit/agent-asset-runtime.test.ts` 4 tests passed; `pnpm typecheck:node` passed。
   - verify: 非 UI; `sessions:list`、`usage:summary`、`health`、`search` 后续只通过 runtime 读取 snapshot。
 - [ ] 任务 3: 实现 worker-host 与 worker scan job, 把大文件枚举、JSONL parse、adapter scan 移出 main event loop。
   - tests: `pnpm test -- tests/unit/asset-worker-host.test.ts tests/unit/engine-scanner.test.ts`
