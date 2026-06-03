@@ -3,6 +3,7 @@ import * as path from 'path'
 import { glob } from 'glob'
 import type { Asset, AssetScope } from '../types'
 import type { ScanError } from '@shared/types/ipc'
+import type { AssetFileCache } from '../../engine/assets/file-cache'
 import {
   parseClaudeMd,
   parseAgentsMd,
@@ -33,6 +34,7 @@ export interface ScanContext {
   projectDirs?: string[] // project config roots from repository root to current cwd
   managedDir?: string // file-based managed settings directory
   errors: ScanError[]
+  sessionCache?: AssetFileCache<Asset>
 }
 
 function safeScan<T>(
@@ -289,7 +291,9 @@ export function scanState(ctx: ScanContext): Asset[] {
         const jsonlFiles = safeGlob('*.jsonl', projPath)
         for (const fp of jsonlFiles) {
           const a = safeScan(ctx, fp, 'session', () =>
-            parseSessionMeta(fp, projEntry.name)
+            ctx.sessionCache
+              ? ctx.sessionCache.getOrParse(fp, () => parseSessionMeta(fp, projEntry.name))
+              : parseSessionMeta(fp, projEntry.name)
           )
           if (a) assets.push(a)
         }

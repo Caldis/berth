@@ -16,8 +16,9 @@
   - tests: `pnpm test -- tests/unit/asset-worker-host.test.ts tests/unit/engine-scanner.test.ts`
   - evidence: 2026-06-03 运行通过, `tests/unit/asset-worker-host.test.ts` + `tests/unit/agent-asset-runtime.test.ts` + `tests/unit/engine-scanner.test.ts` 共 15 tests passed; `pnpm typecheck:node` passed; `pnpm build` passed 且输出 `out/main/asset-worker.js`。
   - verify: 非 UI; main thread 只更新 job/status/snapshot, worker progress 能映射到 `AssetRuntimeStatus.progress`。
-- [ ] 任务 4: 实现进程内 file fingerprint cache, 覆盖 Claude session 与 Codex rollout 的命中、失效、删除和 parse error。
+- [x] 任务 4: 实现进程内 file fingerprint cache, 覆盖 Claude session 与 Codex rollout 的命中、失效、删除和 parse error。
   - tests: `pnpm test -- tests/unit/asset-file-cache.test.ts tests/unit/codex-session-parser.test.ts tests/unit/session-meta-parser.test.ts`
+  - evidence: 2026-06-03 运行通过, `tests/unit/asset-file-cache.test.ts` + `tests/unit/codex-session-parser.test.ts` + `tests/unit/session-meta-parser.test.ts` 共 12 tests passed; worker/scanner 回归 15 tests passed; `pnpm typecheck:node` passed; `pnpm build` passed。
   - verify: 非 UI; 不写磁盘缓存, 遵守只读边界。
 - [ ] 任务 5: 迁移 IPC、project scope、search、usage、health、sessions 到中心 runtime selectors。
   - tests: `pnpm test -- tests/unit/project-scope-runtime.test.ts tests/unit/search.test.ts tests/unit/usage-summary.test.ts tests/unit/health-check.test.ts`

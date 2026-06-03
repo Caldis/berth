@@ -1,6 +1,7 @@
 import { parentPort, workerData } from 'worker_threads'
 import type { AssetWorkerData, AssetWorkerMessage } from './worker-host'
 import { AssetScanner } from '../scanner'
+import { AssetFileCache } from './file-cache'
 
 function post(message: AssetWorkerMessage): void {
   parentPort?.postMessage(message)
@@ -8,7 +9,9 @@ function post(message: AssetWorkerMessage): void {
 
 async function run(): Promise<void> {
   const data = workerData as AssetWorkerData
-  const scanner = new AssetScanner(data.projectDir)
+  const scanner = new AssetScanner(data.projectDir, {
+    sessionCache: AssetFileCache.fromSnapshot(data.sessionCache)
+  })
 
   post({
     type: 'progress',
@@ -34,7 +37,8 @@ async function run(): Promise<void> {
       projectDir: scanner.getProjectDir(),
       scanResult,
       sources,
-      projectCandidates
+      projectCandidates,
+      sessionCache: scanner.getSessionCacheSnapshot()
     }
   })
 }

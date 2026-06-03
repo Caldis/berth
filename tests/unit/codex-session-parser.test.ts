@@ -3,6 +3,8 @@ import * as os from 'os'
 import * as path from 'path'
 import { afterEach, describe, expect, it } from 'vitest'
 import { parseCodexSessionDetail, parseCodexSessionMeta } from '../../src/main/adapters/codex/parsers'
+import { AssetFileCache } from '../../src/main/engine/assets/file-cache'
+import type { Asset } from '../../src/shared/types/asset'
 
 let tempDir: string | null = null
 
@@ -87,6 +89,48 @@ describe('Codex session parser', () => {
     expect(asset.meta.mcpServers).toEqual(['browser'])
     expect(asset.meta.hooksFired).toBe(3)
     expect(asset.meta.hookEventCounts).toEqual({ PostToolUse: 3 })
+  })
+
+  it('reuses cached Codex rollout metadata until the file fingerprint changes', () => {
+    tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'berth-codex-session-cache-'))
+    const rolloutPath = path.join(tempDir, 'rollout-2026-06-03T01-00-00-codex-cache.jsonl')
+    fs.writeFileSync(
+      rolloutPath,
+      [
+        JSON.stringify({
+          type: 'session_meta',
+          timestamp: '2026-06-03T01:00:00.000Z',
+          payload: { id: 'codex-cache', cwd: 'D:\\Code\\berth' }
+        }),
+        JSON.stringify({
+          type: 'event_msg',
+          timestamp: '2026-06-03T01:00:10.000Z',
+          payload: { type: 'token_count', total_tokens: 10 }
+        })
+      ].join('\n')
+    )
+    const cache = new AssetFileCache<Asset>()
+
+    const first = cache.getOrParse(rolloutPath, () => parseCodexSessionMeta(rolloutPath))
+    const cached = cache.getOrParse(rolloutPath, () => {
+      throw new Error('should not parse unchanged rollout')
+    })
+
+    expect(cached).toEqual(first)
+
+    fs.appendFileSync(
+      rolloutPath,
+      `\n${JSON.stringify({
+        type: 'event_msg',
+        timestamp: '2026-06-03T01:00:20.000Z',
+        payload: { type: 'token_count', total_tokens: 30 }
+      })}`
+    )
+    fs.utimesSync(rolloutPath, new Date('2026-06-03T00:00:00.000Z'), new Date('2026-06-03T00:00:00.000Z'))
+
+    const updated = cache.getOrParse(rolloutPath, () => parseCodexSessionMeta(rolloutPath))
+
+    expect(updated.meta.totalTokens).toBe(30)
   })
 
   it('extracts metadata, tool timeline, and artifacts from rollout JSONL', () => {

@@ -22,11 +22,13 @@ import {
 } from './scanner'
 import { resolveClaudeDirs } from '../../agent-homes'
 import { resolveProjectConfigRoots } from '../../project-config-roots'
+import type { AssetFileCache } from '../../engine/assets/file-cache'
 
 interface ClaudeCodeAdapterOptions {
   managedDir?: string
   env?: NodeJS.ProcessEnv
   homeDir?: string
+  sessionCache?: AssetFileCache<Asset>
 }
 
 export class ClaudeCodeAdapter implements AgentAdapter {
@@ -38,6 +40,7 @@ export class ClaudeCodeAdapter implements AgentAdapter {
   private managedDir: string
   private projectDir: string | undefined
   private projectDirs: string[]
+  private sessionCache: AssetFileCache<Asset> | undefined
 
   constructor(projectDir?: string, options: ClaudeCodeAdapterOptions = {}) {
     const homeDir = options.homeDir ?? os.homedir()
@@ -46,6 +49,7 @@ export class ClaudeCodeAdapter implements AgentAdapter {
     this.managedDir = options.managedDir ?? resolveClaudeManagedDir()
     this.projectDir = projectDir
     this.projectDirs = resolveProjectConfigRoots(projectDir)
+    this.sessionCache = options.sessionCache
   }
 
   async detect(): Promise<DetectResult> {
@@ -224,7 +228,8 @@ export class ClaudeCodeAdapter implements AgentAdapter {
       projectDir: index === 0 ? this.projectDir : undefined,
       projectDirs: index === 0 ? this.projectDirs : undefined,
       managedDir: index === 0 ? this.managedDir : undefined,
-      errors
+      errors,
+      sessionCache: this.sessionCache
     }))
   }
 }

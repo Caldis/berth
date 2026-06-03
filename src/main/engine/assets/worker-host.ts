@@ -1,15 +1,18 @@
 import * as path from 'path'
 import { Worker } from 'worker_threads'
 import type { ProjectScopeCandidate } from '@shared/scope'
+import type { Asset } from '@shared/types/asset'
 import type {
   AgentScanSourceGroup,
   AssetScanProgress,
   ScanResult
 } from '@shared/types/ipc'
+import type { AssetFileCacheSnapshot } from './file-cache'
 import type { AssetRuntimeScanOptions, AssetRuntimeScanner } from './runtime'
 
 export interface AssetWorkerData {
   projectDir?: string
+  sessionCache?: AssetFileCacheSnapshot<Asset>
 }
 
 export interface AssetWorkerScanPayload {
@@ -17,6 +20,7 @@ export interface AssetWorkerScanPayload {
   scanResult: ScanResult
   sources: AgentScanSourceGroup[]
   projectCandidates: ProjectScopeCandidate[]
+  sessionCache: AssetFileCacheSnapshot<Asset>
 }
 
 export type AssetWorkerMessage =
@@ -92,6 +96,7 @@ export interface WorkerAssetScannerOptions {
 export class WorkerAssetScanner implements AssetRuntimeScanner {
   private sources: AgentScanSourceGroup[] = []
   private projectCandidates: ProjectScopeCandidate[] = []
+  private sessionCache: AssetFileCacheSnapshot<Asset> = { entries: [] }
   private resolvedProjectDir?: string
   private readonly host: Pick<AssetWorkerHost, 'runScan'>
 
@@ -104,11 +109,15 @@ export class WorkerAssetScanner implements AssetRuntimeScanner {
   }
 
   async scanAll(options: AssetRuntimeScanOptions = {}): Promise<ScanResult> {
-    const result = await this.host.runScan({ projectDir: this.projectDir }, {
+    const result = await this.host.runScan({
+      projectDir: this.projectDir,
+      sessionCache: this.sessionCache
+    }, {
       onProgress: options.onProgress
     })
     this.sources = result.sources
     this.projectCandidates = result.projectCandidates
+    this.sessionCache = result.sessionCache
     this.resolvedProjectDir = result.projectDir
     return result.scanResult
   }

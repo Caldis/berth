@@ -25,6 +25,7 @@ import {
   resolveCodexHomeDirs
 } from '../../agent-homes'
 import { resolveProjectConfigRoots } from '../../project-config-roots'
+import type { AssetFileCache } from '../../engine/assets/file-cache'
 
 export class CodexAdapter implements AgentAdapter {
   readonly id = 'codex'
@@ -33,11 +34,18 @@ export class CodexAdapter implements AgentAdapter {
   private codexDirs: string[]
   private homeDir: string
   private projectDirs: string[]
+  private sessionCache: AssetFileCache<Asset> | undefined
 
-  constructor(projectDir?: string, homeDir = os.homedir(), env = process.env) {
+  constructor(
+    projectDir?: string,
+    homeDir = os.homedir(),
+    env = process.env,
+    sessionCache?: AssetFileCache<Asset>
+  ) {
     this.homeDir = homeDir
     this.projectDirs = resolveProjectConfigRoots(projectDir)
     this.codexDirs = resolveCodexHomeDirs(homeDir, env)
+    this.sessionCache = sessionCache
   }
 
   async detect(): Promise<DetectResult> {
@@ -284,7 +292,9 @@ export class CodexAdapter implements AgentAdapter {
 
       for (const filePath of files) {
         try {
-          const asset = parseCodexSessionMeta(filePath)
+          const asset = this.sessionCache
+            ? this.sessionCache.getOrParse(filePath, () => parseCodexSessionMeta(filePath))
+            : parseCodexSessionMeta(filePath)
           if (sessionDir.archived) asset.meta.archived = true
           assets.push(asset)
         } catch (err) {

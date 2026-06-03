@@ -7,6 +7,7 @@ import type { ProjectScopeCandidate } from '@shared/scope'
 import { ClaudeCodeAdapter } from '../adapters/claude-code'
 import { CodexAdapter } from '../adapters/codex'
 import { projectScopeCandidatesFromAssets } from '../project-scope'
+import { AssetFileCache, type AssetFileCacheSnapshot } from './assets/file-cache'
 
 interface HookEquivalentSource {
   id: string
@@ -18,6 +19,10 @@ interface HookEquivalentSource {
   managed: boolean
 }
 
+interface AssetScannerOptions {
+  sessionCache?: AssetFileCache<Asset>
+}
+
 export class AssetScanner {
   private adapters: AgentAdapter[]
   private cachedAssets: Asset[] = []
@@ -26,10 +31,15 @@ export class AssetScanner {
   private scanned = false
   private scanPromise: Promise<ScanResult> | null = null
   private readonly projectDir?: string
+  private readonly sessionCache: AssetFileCache<Asset>
 
-  constructor(projectDir?: string) {
+  constructor(projectDir?: string, options: AssetScannerOptions = {}) {
     this.projectDir = projectDir
-    this.adapters = [new ClaudeCodeAdapter(projectDir), new CodexAdapter(projectDir)]
+    this.sessionCache = options.sessionCache ?? new AssetFileCache<Asset>()
+    this.adapters = [
+      new ClaudeCodeAdapter(projectDir, { sessionCache: this.sessionCache }),
+      new CodexAdapter(projectDir, undefined, process.env, this.sessionCache)
+    ]
   }
 
   async scanAll(): Promise<ScanResult> {
@@ -100,6 +110,10 @@ export class AssetScanner {
 
   getProjectScopeCandidates(): ProjectScopeCandidate[] {
     return projectScopeCandidatesFromAssets(this.cachedAssets, this.projectDir)
+  }
+
+  getSessionCacheSnapshot(): AssetFileCacheSnapshot<Asset> {
+    return this.sessionCache.toSnapshot()
   }
 
   hasScanned(): boolean {

@@ -4,6 +4,8 @@ import * as path from 'path'
 import { afterEach, describe, expect, it } from 'vitest'
 import { parseSessionMeta } from '../../src/main/adapters/claude-code/parsers'
 import { parseClaudeSessionDetail } from '../../src/main/adapters/claude-code/session-detail'
+import { AssetFileCache } from '../../src/main/engine/assets/file-cache'
+import type { Asset } from '../../src/shared/types/asset'
 
 let tempDir: string | null = null
 
@@ -106,6 +108,45 @@ describe('parseSessionMeta', () => {
     expect(asset.meta.hooksFired).toBe(2)
     expect(asset.meta.hookEventCounts).toEqual({ Stop: 2 })
     expect(asset.meta.fileHistoryCount).toBe(1)
+  })
+
+  it('reuses cached Claude session metadata until the transcript fingerprint changes', () => {
+    tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'berth-session-cache-'))
+    const transcriptPath = path.join(tempDir, 'cached-session.jsonl')
+    fs.writeFileSync(
+      transcriptPath,
+      JSON.stringify({
+        type: 'last-prompt',
+        timestamp: '2026-05-30T01:00:00.000Z',
+        sessionId: 'session-cache',
+        cwd: 'D:\\Code\\berth'
+      })
+    )
+    const cache = new AssetFileCache<Asset>()
+
+    const first = cache.getOrParse(transcriptPath, () => parseSessionMeta(transcriptPath, 'D--Code-berth'))
+    const cached = cache.getOrParse(transcriptPath, () => {
+      throw new Error('should not parse unchanged transcript')
+    })
+
+    expect(cached).toEqual(first)
+
+    fs.appendFileSync(
+      transcriptPath,
+      `\n${JSON.stringify({
+        type: 'assistant',
+        timestamp: '2026-05-30T01:02:00.000Z',
+        sessionId: 'session-cache',
+        message: {
+          usage: { input_tokens: 7, output_tokens: 5 }
+        }
+      })}`
+    )
+    fs.utimesSync(transcriptPath, new Date('2026-06-03T00:00:00.000Z'), new Date('2026-06-03T00:00:00.000Z'))
+
+    const updated = cache.getOrParse(transcriptPath, () => parseSessionMeta(transcriptPath, 'D--Code-berth'))
+
+    expect(updated.meta.totalTokens).toBe(12)
   })
 
   it('extracts Claude tool timeline and artifacts from transcript events', () => {

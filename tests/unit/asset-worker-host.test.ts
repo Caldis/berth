@@ -80,7 +80,8 @@ describe('AssetWorkerHost', () => {
         projectDir: '/repo/berth',
         scanResult,
         sources,
-        projectCandidates: []
+        projectCandidates: [],
+        sessionCache: { entries: [] }
       }
     })
 
@@ -88,7 +89,8 @@ describe('AssetWorkerHost', () => {
       projectDir: '/repo/berth',
       scanResult,
       sources,
-      projectCandidates: []
+      projectCandidates: [],
+      sessionCache: { entries: [] }
     })
     expect(progress).toEqual([
       { phase: 'parsing', current: 1, total: 3, label: 'sessions' }
@@ -134,7 +136,8 @@ describe('WorkerAssetScanner', () => {
           }],
           projectCandidates: [
             createProjectScopeCandidate({ path: '/repo/berth', source: 'current' })!
-          ]
+          ],
+          sessionCache: { entries: [] }
         }
       })
     }
