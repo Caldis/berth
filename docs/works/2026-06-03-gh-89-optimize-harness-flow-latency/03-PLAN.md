@@ -10,9 +10,9 @@
 - [x] 任务 2: 优化 Vitest 环境分配
   - tests: `/usr/bin/time -p pnpm test` (83 files / 599 tests passed, real 12.05s, duration 11.35s, 2026-06-03)
   - verify: 不适用 UI; renderer 测试匹配 jsdom, unit/harness 默认 node; environment 累计为 26.62s。
-- [ ] 任务 3: 采样 prepush 并更新任务证据
-  - tests: `/usr/bin/time -p pnpm harness:prepush`
-  - verify: 不适用 UI; 记录优化前后耗时与剩余主要成本。
+- [x] 任务 3: 并行化 prepush 并更新任务证据
+  - tests: `pnpm test -- tests/harness/prepush.test.ts` (3 passed, 2026-06-03); `/usr/bin/time -p pnpm harness:prepush` (84 files / 602 tests passed, real 24.01s, 2026-06-03)
+  - verify: 不适用 UI; 原有 lint/typecheck/test/harness:check/baseline 均执行, 任一失败会使脚本失败。
 
 ## verify 回写
 verify 不通过项作为新任务追加于此, phase 退回 implement。

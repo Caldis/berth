@@ -29,7 +29,7 @@
     "harness:stats": "node scripts/harness-stats.mjs",
     "harness:issues": "node scripts/harness-issues.mjs",
     "harness:projects:check": "node scripts/harness-projects.mjs check",
-    "harness:prepush": "pnpm lint && pnpm typecheck && pnpm test && pnpm harness:check && pnpm harness:ci:baseline",
+    "harness:prepush": "node scripts/harness-prepush.mjs",
     "pricing:update": "node scripts/update-pricing-catalog.mjs"
   },
   "dependencies": {

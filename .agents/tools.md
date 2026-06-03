@@ -21,7 +21,7 @@ berth 项目自用工具 (不含企业内部设施)。Agent 据此主动获取�
 - `pnpm harness:check` / `pnpm harness:check --work docs/works/{task}` / `pnpm harness:sync` — harness 自检与分发。并行任务影响全局检查时, 用 `--work` 只验证当前任务目录; 总验证仍跑全局 `pnpm harness:check`。
 - `pnpm harness:ci:baseline` — push 前检查当前分支最近 `CI` GitHub Actions run; 默认要求 completed/success。CI 修复提交可显式追加 `-- --allow-failed-baseline`。
 - `pnpm harness:ci:wait` — push 后等待当前 `HEAD` 对应的 `CI` run; 也可传 `-- --sha <sha>`。
-- `pnpm harness:prepush` — 代码类提交的 push 前本地门禁: lint / typecheck / test / harness:check / Actions baseline。
+- `pnpm harness:prepush` — 代码类提交的 push 前本地门禁: lint / typecheck / test / harness:check / Actions baseline 并行执行, 任一失败即失败。
 - 非本地门禁可由子代理执行: `pnpm harness:ci:wait` 和 GitHub Project 同步属于远端等待任务; 主 Agent 必须消费成功结果后才能声明阶段通过、archive 或完成。
 - `pnpm harness:stats` — 只读统计 works/friction/issues/debt pool/distribution; 达到维护阈值时输出 Agent 可直接使用的 `maintenance=<subtype>:<score>` 推荐。
 - `node scripts/harness-projects.mjs fields ensure` — 创建或确认 GitHub Project 自定义字段: Task Type / Priority / Start date / Target date / Archived at / debt / scope / risk / confidence / areas / maintenance subtype / source kind。

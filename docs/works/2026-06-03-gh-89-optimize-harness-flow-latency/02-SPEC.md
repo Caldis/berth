@@ -32,6 +32,8 @@
 - `.agents/tools.md`: 标注 CI wait 与 Project 同步可作为子代理任务。
 - `vitest.config.ts`: 配置默认 node + renderer jsdom。
 - `tests/setup.ts`: DOM 环境守卫。
+- `scripts/harness-prepush.mjs`: 并行执行本地 prepush 门禁, 保留全部原有检查。
+- `package.json`: `harness:prepush` 改为调用并行脚本。
 - `tests/harness/check.test.ts`: 让规则自检覆盖新增子代理门禁说明。
 
 ## 界面质量与交互验收
@@ -54,7 +56,7 @@
 |---|---|---|---|---|
 | 子代理门禁规则出现在共享 workflow 与 tools | harness | `tests/harness/check.test.ts` | `pnpm test -- tests/harness/check.test.ts` |  |
 | Vitest 默认 node, renderer 专用 jsdom, 覆盖范围不变 | test config | 全量测试 | `pnpm test`; 对比 JSON 报告 | 配置行为由全量测试验证 |
-| prepush 耗时重新采样 | manual | 不适用 | `/usr/bin/time -p pnpm harness:prepush` | 性能采样用命令证据 |
+| prepush 并行执行原有本地门禁 | harness | `tests/harness/prepush.test.ts` | `pnpm test -- tests/harness/prepush.test.ts`; `/usr/bin/time -p pnpm harness:prepush` |  |
 | Project/CI 子代理执行规则 | manual + harness docs | workflow 文档 | `pnpm harness:check` | 多代理调度是 Codex 运行时行为, 仓库内以规则自检约束 |
 
 ## 验收标准映射
