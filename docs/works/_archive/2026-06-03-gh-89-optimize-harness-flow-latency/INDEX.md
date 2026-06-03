@@ -2,7 +2,7 @@
 task: 2026-06-03-gh-89-optimize-harness-flow-latency
 task_id: GH-89
 type: maintenance
-phase: implement
+phase: archive
 created: 2026-06-03
 priority: P2
 target_date: 
@@ -24,14 +24,16 @@ debt:
     confidence: medium
     rationale: "用户要求降低 harness 主流程阻塞时间: 异步化 Project/CI 等非本地任务, 分析 prepush 与 Vitest 耗时。"
   final:
-    incurred:
-    repaid:
-    net:
-    scope:
-    risk:
-    areas: []
-    confidence:
-    rationale:
+    incurred: 2
+    repaid: 7
+    net: -5
+    scope: global
+    risk: medium
+    areas:
+      - tooling-ci
+      - testability
+    confidence: high
+    rationale: "已将非本地 Project/CI 门禁写入子代理执行规则并保留主 Agent 成功结果消费要求; Vitest 默认 node、renderer 专用 jsdom; harness:prepush 并行执行原有本地门禁。"
   revisions: []
 issue:
   number: 89
@@ -44,7 +46,7 @@ gh_project:
   project_number: 6
   project_url: https://github.com/users/Caldis/projects/6
   item_id: PVTI_lAHOADXbEs4BZHvQzguko20
-  item_status: In Progress
+  item_status: Done
   project_id: PVT_kwHOADXbEs4BZHvQ
 artifacts:
   source: 00-PRD.md
