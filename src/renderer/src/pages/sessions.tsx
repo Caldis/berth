@@ -20,6 +20,7 @@ import {
 } from '@/lib/utils'
 import { useSessions } from '@/hooks/use-ipc'
 import { EmptyState } from '@/components/shared/empty-state'
+import { LoadingState } from '@/components/shared/loading-state'
 import { FeatureGuidePanel } from '@/components/shared/feature-guide-panel'
 import { useAppStore } from '@/stores/app'
 import { TokenUsageDisplay } from '@/components/shared/token-usage-display'
@@ -41,7 +42,7 @@ export function Sessions(): React.ReactElement {
   const agentView = useAppStore((s) => s.agentView)
   const scopeSelection = useAppStore((s) => s.scopeSelection)
   const projectPath = projectPathForScope(scopeSelection)
-  const { sessions, loading } = useSessions({ agentView, projectPath })
+  const { sessions, loading, stale } = useSessions({ agentView, projectPath })
 
   const [filter, setFilter] = useState('')
   const [groupBy, setGroupBy] = useState<GroupBy>('project')
@@ -82,6 +83,7 @@ export function Sessions(): React.ReactElement {
   }, [sessions])
 
   const hasFilter = filter.trim().length > 0
+  const showInitialLoading = loading && sessions.length === 0
 
   const toggleGroup = (key: string): void => {
     setCollapsedGroups((prev) => {
@@ -137,10 +139,25 @@ export function Sessions(): React.ReactElement {
           </div>
         </div>
       </div>
+      {loading && stale && sessions.length > 0 && (
+        <div
+          role="status"
+          aria-label={t('sessions.refreshing')}
+          className="inline-flex w-fit items-center gap-2 rounded-md border border-border bg-muted/40 px-2.5 py-1 text-xs text-muted-foreground"
+        >
+          <span className="h-1.5 w-1.5 rounded-full bg-primary motion-safe:animate-pulse" aria-hidden="true" />
+          {t('sessions.refreshing')}
+        </div>
+      )}
 
       {/* Session list */}
-      {loading ? (
-        <p className="text-sm text-muted-foreground">{t('common.loading')}</p>
+      {showInitialLoading ? (
+        <LoadingState
+          icon={MessageSquare}
+          title={t('sessions.loadingList')}
+          description={t('sessions.loadingListDescription')}
+          rows={5}
+        />
       ) : filtered.length === 0 ? (
         <EmptyState
           icon={MessageSquare}

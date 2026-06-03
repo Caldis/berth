@@ -333,6 +333,20 @@ describe('session pages', () => {
     expect(screen.getByText(/Berth scans local Claude Code and Codex session history/)).toBeInTheDocument()
   })
 
+  it('shows the shared sessions loading state before the first list result', () => {
+    window.api.sessions.list = vi.fn(() => new Promise(() => undefined))
+
+    render(
+      <MemoryRouter>
+        <Sessions />
+      </MemoryRouter>
+    )
+
+    expect(screen.getByLabelText('Loading sessions')).toBeInTheDocument()
+    expect(screen.getByText('Reading local transcript summaries for the current agent view.')).toBeInTheDocument()
+    expect(screen.queryByText('Loading...')).not.toBeInTheDocument()
+  })
+
   it('renders session detail metadata and transcript-derived assets', async () => {
     mockSessionApis()
 
@@ -386,6 +400,23 @@ describe('session pages', () => {
     selectSessionDetailTab(/Artifacts/)
     expect(screen.getByText('Verify UI')).toBeInTheDocument()
     expect(screen.getAllByText('D:\\Code\\berth\\src\\main.ts').length).toBeGreaterThan(0)
+  })
+
+  it('shows the shared session detail loading state', () => {
+    window.api.sessions.get = vi.fn(() => new Promise(() => undefined))
+
+    render(
+      <MemoryRouter initialEntries={['/sessions/session-session-abc']}>
+        <Routes>
+          <Route path="/sessions/:id" element={<SessionDetail />} />
+        </Routes>
+      </MemoryRouter>
+    )
+
+    expect(screen.getByRole('heading', { name: 'Session #session-' })).toBeInTheDocument()
+    expect(screen.getByLabelText('Loading session detail')).toBeInTheDocument()
+    expect(screen.getByText('Reading transcript-derived tools, assets, and artifacts.')).toBeInTheDocument()
+    expect(screen.queryByText('Loading...')).not.toBeInTheDocument()
   })
 
   it('filters session detail tools by minimum duration', async () => {

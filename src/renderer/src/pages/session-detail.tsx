@@ -38,6 +38,7 @@ import {
 import { useSessionDetail } from '@/hooks/use-ipc'
 import { ScopeBadge } from '@/components/shared/scope-badge'
 import { EmptyState } from '@/components/shared/empty-state'
+import { LoadingState } from '@/components/shared/loading-state'
 import { TokenUsageDisplay } from '@/components/shared/token-usage-display'
 import type { SessionArtifacts, SessionDetailResult, SessionToolEvent } from '@shared/types/ipc'
 
@@ -99,17 +100,24 @@ export function SessionDetail(): React.ReactElement {
             {t('sessions.title')} / {fallbackTitle}
           </div>
           <h1 className="text-xl font-semibold tracking-tight">
-            {loading
-              ? t('common.loading')
-              : summary?.title || fallbackTitle}
+            {summary?.title || fallbackTitle}
           </h1>
         </div>
       </div>
 
       {loading ? (
-        <p className="text-sm text-muted-foreground">{t('common.loading')}</p>
+        <LoadingState
+          icon={FileText}
+          title={t('sessions.loadingDetail')}
+          description={t('sessions.loadingDetailDescription')}
+          rows={4}
+        />
       ) : !detail ? (
-        <EmptyState icon={FileText} message={t('common.empty')} />
+        <EmptyState
+          icon={FileText}
+          title={t('sessions.emptyDetailTitle')}
+          description={t('sessions.emptyDetailDescription')}
+        />
       ) : (
         <Tabs.Root
           value={activeTab}
