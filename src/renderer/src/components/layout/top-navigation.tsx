@@ -1,4 +1,4 @@
-import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useLayoutEffect, useMemo, useRef, useState, type FocusEvent } from 'react'
 import { useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { ChevronRight, HelpCircle, Search } from 'lucide-react'
@@ -67,6 +67,11 @@ export function TopNavigation({ isWindows, onHeightChange }: TopNavigationProps)
   const focusPageSearch = useCallback(() => {
     searchInputRef.current?.focus()
     searchInputRef.current?.select()
+  }, [])
+  const handleGuideBlur = useCallback((event: FocusEvent<HTMLDivElement>) => {
+    if (!(event.relatedTarget instanceof Node) || !event.currentTarget.contains(event.relatedTarget)) {
+      setGuideOpen(false)
+    }
   }, [])
   useRegisterPageSearchFocus(pageChrome.search ? focusPageSearch : null, [pageChrome.search, focusPageSearch])
 
@@ -151,19 +156,27 @@ export function TopNavigation({ isWindows, onHeightChange }: TopNavigationProps)
         >
           {pageChrome.actions}
           {pageChrome.guide && (
-            <div className="relative">
+            <div
+              className="relative"
+              data-testid="page-guide-hover-region"
+              onMouseEnter={() => setGuideOpen(true)}
+              onMouseLeave={() => setGuideOpen(false)}
+              onFocus={() => setGuideOpen(true)}
+              onBlur={handleGuideBlur}
+            >
               <button
                 type="button"
                 aria-expanded={guideOpen}
                 aria-label={t('nav.pageGuide')}
-                onClick={() => setGuideOpen((value) => !value)}
-                className="inline-flex h-9 items-center gap-2 rounded-md border border-border bg-background px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:translate-y-px"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-border bg-background text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:translate-y-px"
               >
-                <HelpCircle className="h-4 w-4" />
-                <span className="hidden sm:inline">{t('nav.pageGuide')}</span>
+                <HelpCircle className="h-4 w-4" aria-hidden="true" />
               </button>
               {guideOpen && (
-                <div className="absolute right-0 top-11 z-40 w-[min(42rem,calc(100vw-3rem))]">
+                <div
+                  className="absolute right-0 top-full z-40 w-[min(42rem,calc(100vw-3rem))] pt-2 motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-top-1 motion-safe:duration-150"
+                  data-testid="page-guide-panel"
+                >
                   <FeatureGuidePanel
                     guide={pageChrome.guide.definition}
                     evidence={pageChrome.guide.evidence}

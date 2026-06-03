@@ -109,12 +109,19 @@ describe('TopNavigation', () => {
 
     expect(screen.getByRole('textbox', { name: 'Filter sessions...' })).toBeInTheDocument()
     expect(useAppStore.getState().searchOpen).toBe(false)
-    expect(screen.getByRole('button', { name: 'Page guide' })).toBeInTheDocument()
+    const guideButton = screen.getByRole('button', { name: 'Page guide' })
+    expect(guideButton).toBeInTheDocument()
+    expect(guideButton).toHaveTextContent('')
+    expect(screen.queryByText('Local conversation history')).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Project' })).toBeInTheDocument()
 
-    fireEvent.click(screen.getByRole('button', { name: 'Page guide' }))
+    fireEvent.mouseEnter(screen.getByTestId('page-guide-hover-region'))
     expect(screen.getByText('Local conversation history')).toBeInTheDocument()
     expect(screen.getByText('816')).toBeInTheDocument()
+    fireEvent.mouseEnter(screen.getByTestId('page-guide-panel'))
+    expect(screen.getByText('Local conversation history')).toBeInTheDocument()
+    fireEvent.mouseLeave(screen.getByTestId('page-guide-hover-region'))
+    expect(screen.queryByText('Local conversation history')).not.toBeInTheDocument()
   })
 
   it('uses the keyboard shortcut for page search before global search', () => {

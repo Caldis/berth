@@ -266,7 +266,8 @@ describe('session pages', () => {
 
     renderSessionsPage()
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Page guide' }))
+    await screen.findByRole('button', { name: 'Page guide' })
+    fireEvent.mouseEnter(screen.getByTestId('page-guide-hover-region'))
     expect(screen.getByText('Local conversation history')).toBeInTheDocument()
     expect(await screen.findByText('Fix session metadata')).toBeInTheDocument()
     expect(screen.getAllByText('D:\\Code\\berth').length).toBeGreaterThan(0)
@@ -411,7 +412,8 @@ describe('session pages', () => {
 
     renderSessionsPage()
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Page guide' }))
+    await screen.findByRole('button', { name: 'Page guide' })
+    fireEvent.mouseEnter(screen.getByTestId('page-guide-hover-region'))
     expect(await screen.findByText('Local conversation history')).toBeInTheDocument()
     expect(await screen.findByText('No sessions found')).toBeInTheDocument()
     expect(screen.getByText(/Berth scans local Claude Code and Codex session history/)).toBeInTheDocument()

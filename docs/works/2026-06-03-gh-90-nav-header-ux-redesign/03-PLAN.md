@@ -34,6 +34,9 @@
 - [x] 10. 持久化导航栏、详情页完整 breadcrumb 与覆盖层滚动:
   - tests: `pnpm vitest run tests/renderer/app-layout.test.tsx tests/renderer/top-navigation.test.tsx tests/renderer/sessions-pages.test.tsx` (pass, 33 tests); `pnpm typecheck:web` (pass); `pnpm harness:check` (pass)
   - verify: `TopNavigation` 作为 `AppLayout` 顶层持久组件存在; 首页为隐藏态, 非首页从顶部进入; 详情页显示返回按钮与 `会话 / 当前会话` breadcrumb; 导航栏使用 `backdrop-blur-xl`; 内容滚动区独立并按导航栏测量高度保留顶部 scroll padding。agent-owned Electron `gh90-persistent-nav` CDP 证据确认 Sessions / detail / Overview 三态, 详情截图 `/tmp/berth-gh90-persistent-nav-detail.png`。
+- [x] 11. 将页面说明改为 hover 图标按钮:
+  - tests: `pnpm vitest run tests/renderer/top-navigation.test.tsx tests/renderer/sessions-pages.test.tsx tests/renderer/instructions-guidance.test.tsx tests/renderer/capabilities-guidance.test.tsx` (pass, 43 tests); `pnpm typecheck:web` (pass); `pnpm harness:check` (pass)
+  - verify: 导航栏只显示 `?` 图标按钮; hover/focus 打开说明叠层; 鼠标可从按钮移动到叠层内容且不关闭。agent-owned Electron `gh90-guide-hover` CDP 鼠标移动验证通过: button text empty, aria-label `Page guide`, hover 后 panel visible, 移入 panel 后仍 visible, 移出后关闭。
 
 ## verify 回写
 verify 不通过项作为新任务追加于此, phase 退回 implement。

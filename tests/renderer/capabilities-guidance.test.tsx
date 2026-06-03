@@ -154,7 +154,7 @@ describe('Capabilities guidance surfaces', () => {
 
     expect(await screen.findByRole('heading', { name: 'Hooks' })).toBeInTheDocument()
     expect(screen.queryByText('Trigger point')).not.toBeInTheDocument()
-    fireEvent.click(screen.getByRole('button', { name: 'Page guide' }))
+    fireEvent.mouseEnter(screen.getByTestId('page-guide-hover-region'))
     expect(screen.getByText('Lifecycle automation')).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: /Details/ }))
     expect(screen.getByText('Trigger point')).toBeInTheDocument()
@@ -170,7 +170,7 @@ describe('Capabilities guidance surfaces', () => {
     expect(await screen.findByRole('heading', { name: 'Status Line' })).toBeInTheDocument()
     expect(screen.queryByText('Claude Code command')).not.toBeInTheDocument()
     expect(screen.queryByText(/Reads \[tui\]\.status_line from config\.toml/)).not.toBeInTheDocument()
-    fireEvent.click(screen.getByRole('button', { name: 'Page guide' }))
+    fireEvent.mouseEnter(screen.getByTestId('page-guide-hover-region'))
     expect(screen.getByText('Runtime status surface')).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: /Details/ }))
     expect(screen.getAllByText('Claude Code command')).toHaveLength(1)
@@ -190,7 +190,7 @@ describe('Capabilities guidance surfaces', () => {
     renderCapabilities('unknown', '/capabilities/unknown')
 
     expect(await screen.findByRole('heading', { name: 'MCP' })).toBeInTheDocument()
-    fireEvent.click(screen.getByRole('button', { name: 'Page guide' }))
+    fireEvent.mouseEnter(screen.getByTestId('page-guide-hover-region'))
     expect(screen.getByText('External tools and data sources')).toBeInTheDocument()
   })
 

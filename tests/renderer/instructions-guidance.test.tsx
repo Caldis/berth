@@ -43,7 +43,8 @@ describe('Instructions guidance surfaces', () => {
       </MemoryRouter>
     )
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Page guide' }))
+    await screen.findByRole('button', { name: 'Page guide' })
+    fireEvent.mouseEnter(screen.getByTestId('page-guide-hover-region'))
     expect(await screen.findByText('Memory notes across sources')).toBeInTheDocument()
     expect(screen.getByText(/Berth groups native memory files and durable local notes/)).toBeInTheDocument()
     expect(screen.queryByText('Source types')).not.toBeInTheDocument()
