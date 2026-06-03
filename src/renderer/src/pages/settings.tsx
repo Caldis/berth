@@ -94,6 +94,7 @@ export function SettingsContent({
     plugins: agentPlugins,
     manifests: agentPluginManifests,
     loading: agentPluginsLoading,
+    stale: agentPluginsStale,
     error: agentPluginsError
   } = useAgentCapabilityPlugins()
   const [platformInfo, setPlatformInfo] = useState<{
@@ -244,6 +245,7 @@ export function SettingsContent({
         plugins={agentPlugins}
         manifests={agentPluginManifests}
         loading={agentPluginsLoading}
+        stale={agentPluginsStale}
         error={agentPluginsError}
       />
 

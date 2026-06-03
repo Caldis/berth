@@ -24,6 +24,11 @@
   - `watcher.ts` — chokidar 文件监听
   - `search.ts` — MiniSearch 全文索引
   - `relations.ts` — 资产关系解析
+- `src/main/agent-plugins/` — Agent 能力插件注册表:
+  - `registry.ts` — 内置 capability plugin 与有效 manifest plugin 的统一列表
+  - `manifest.ts` — plugin manifest 发现、校验与 `path + size + mtimeMs` 进程内缓存
+  - `adapter-registry.ts` — worker 扫描 adapter 构造入口, 当前只执行内置 adapter, 第三方 manifest adapter 只读元数据
+  - `descriptors.ts` — Claude/Codex built-in scan source descriptor 单一声明源, registry 与 adapter source coverage 共用
 - `src/main/project-scope-runtime.ts` — project scope 切换时更新中心 runtime 的 `projectDir`, 刷新 snapshot, 并重启 watcher。
 - `src/main/ipc/` — IPC handler: `handlers.ts` (实现) + `index.ts` (注册)。`sessions:list`、`usage:summary`、`assets:health-check`、`assets:search` 等从中心 runtime selectors 读取。
 
@@ -31,7 +36,7 @@
 
 `src/renderer/src/` 下: `components/{layout,shared,ui}`、`pages`、`stores` (Zustand)、`hooks`、`i18n` (en/zh)、`lib`、`styles`。
 
-- `hooks/use-ipc.ts` — `useAssetRuntime()` 负责启动 runtime refresh、同步 snapshot/status; 页面数据 hook 只读 selector IPC。
+- `hooks/use-ipc.ts` — `useAssetRuntime()` 负责启动 runtime refresh、同步 snapshot/status; 页面数据 hook 只读 selector IPC。`useSessions()` 与 `useAgentCapabilityPlugins()` 使用 stale-while-refresh 缓存, 本地已有数据时立即展示并后台刷新。
 - `stores/app.ts` — 保存 `assetRuntimeStatus`、`assetSnapshotId`、`assetErrors` 与旧 `assets/stats` 兼容字段。
 - Overview 使用局部 skeleton: metrics、recent sessions、usage、health worklist 独立 loading/stale/error, 不使用全屏扫描遮罩。
 

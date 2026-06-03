@@ -1,6 +1,10 @@
 import '@testing-library/jest-dom'
 import { beforeEach } from 'vitest'
-import { resetHealthCheckCacheForTests, resetSessionsCacheForTests } from '../src/renderer/src/hooks/use-ipc'
+import {
+  resetAgentCapabilityPluginCacheForTests,
+  resetHealthCheckCacheForTests,
+  resetSessionsCacheForTests
+} from '../src/renderer/src/hooks/use-ipc'
 
 const emptyTokenUsage = {
   inputTokens: 0,
@@ -74,7 +78,7 @@ const mockApi = {
     onChanged: () => () => {}
   },
   agentPlugins: {
-    list: async () => ({ plugins: [] })
+    list: async () => ({ plugins: [], manifests: [] })
   },
   projectScope: {
     candidates: async () => [],
@@ -168,6 +172,7 @@ const mockApi = {
 Object.defineProperty(window, 'api', { value: mockApi, writable: true })
 
 beforeEach(() => {
+  resetAgentCapabilityPluginCacheForTests()
   resetHealthCheckCacheForTests()
   resetSessionsCacheForTests()
 })

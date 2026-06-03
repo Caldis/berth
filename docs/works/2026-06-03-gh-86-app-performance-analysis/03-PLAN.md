@@ -75,7 +75,8 @@ verify 不通过项作为新任务追加于此, phase 退回 implement。
   - tests: `pnpm test -- tests/unit/agent-capability-plugins.test.ts tests/unit/engine-scanner.test.ts`
   - evidence: 2026-06-03 运行通过, `tests/unit/agent-capability-plugins.test.ts` + `tests/unit/engine-scanner.test.ts` + `tests/unit/claude-code-adapter.test.ts` + `tests/unit/codex-adapter.test.ts` 共 33 tests passed; `pnpm typecheck:node` passed; `pnpm lint` passed。
   - verify: Claude/Codex source descriptor codes 与 adapter scan source codes 来自同一 descriptor 模块; 新增 drift 测试。
-- [ ] 任务 13: 为 `useAgentCapabilityPlugins()` 增加 stale-while-refresh 与 snapshot 变化刷新。
+- [x] 任务 13: 为 `useAgentCapabilityPlugins()` 增加 stale-while-refresh 与 snapshot 变化刷新。
   - source: 2026-06-03 用户要求执行优化项 2。
   - tests: `pnpm test -- tests/renderer/use-agent-capability-plugins-swr.test.tsx tests/renderer/settings-agent-plugins.test.tsx`
-  - verify: 已有 plugin registry 数据时重新 mount 立即显示旧数据并后台刷新; asset snapshot id 改变时刷新 registry; 不清空 Settings 中已显示列表。
+  - evidence: 2026-06-03 运行通过, `tests/renderer/use-agent-capability-plugins-swr.test.tsx` + `tests/renderer/settings-agent-plugins.test.tsx` 共 12 tests passed; `pnpm typecheck` passed; `pnpm lint` passed。
+  - verify: 已有 plugin registry 数据时重新 mount 立即显示旧数据并后台刷新; asset snapshot id 改变时刷新 registry; Settings 中已显示列表在后台刷新期间保持可见。

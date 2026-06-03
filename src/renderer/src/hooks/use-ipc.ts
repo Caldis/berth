@@ -3,6 +3,7 @@ import type { AgentView, Asset, AssetStats, SessionSummary, UsageSummary } from 
 import type { AgentScanSourceGroup, SessionDetailResult, HealthCheck } from '@shared/types/ipc'
 import type {
   AgentCapabilityPlugin,
+  AgentCapabilityPluginListResult,
   AgentCapabilityPluginManifestEntry
 } from '@shared/types/agent-plugin'
 import { useAppStore } from '@/stores/app'
@@ -17,6 +18,8 @@ interface HealthCheckCache {
 
 let healthCheckCache: HealthCheckCache | null = null
 let healthCheckInFlight: Promise<HealthCheckCache> | null = null
+let agentCapabilityPluginCache: AgentCapabilityPluginListResult | null = null
+let agentCapabilityPluginInFlight: Promise<AgentCapabilityPluginListResult> | null = null
 
 interface SessionListRequest {
   projectFilter?: string
@@ -69,6 +72,11 @@ export function resetSessionsCacheForTests(): void {
   sessionListInFlight.clear()
 }
 
+export function resetAgentCapabilityPluginCacheForTests(): void {
+  agentCapabilityPluginCache = null
+  agentCapabilityPluginInFlight = null
+}
+
 function createSessionListRequest(opts?: SessionListRequest): SessionListRequest {
   return {
     projectFilter: opts?.projectFilter,
@@ -107,6 +115,26 @@ function requestSessionsList(key: string, request: SessionListRequest): Promise<
     })
   sessionListInFlight.set(key, next)
   return next
+}
+
+function requestAgentCapabilityPlugins(): Promise<AgentCapabilityPluginListResult> {
+  if (agentCapabilityPluginInFlight) return agentCapabilityPluginInFlight
+
+  agentCapabilityPluginInFlight = window.api.agentPlugins
+    .list()
+    .then((result) => {
+      const entry = {
+        plugins: result?.plugins ?? [],
+        manifests: result?.manifests ?? []
+      }
+      agentCapabilityPluginCache = entry
+      return entry
+    })
+    .finally(() => {
+      agentCapabilityPluginInFlight = null
+    })
+
+  return agentCapabilityPluginInFlight
 }
 
 export function useAssetRuntime(): {
@@ -394,34 +422,69 @@ export function useAgentCapabilityPlugins(): {
   plugins: AgentCapabilityPlugin[]
   manifests: AgentCapabilityPluginManifestEntry[]
   loading: boolean
+  stale: boolean
   error: string | null
 } {
-  const [plugins, setPlugins] = useState<AgentCapabilityPlugin[]>([])
-  const [manifests, setManifests] = useState<AgentCapabilityPluginManifestEntry[]>([])
+  const assetSnapshotId = useAppStore((s) => s.assetSnapshotId)
+  const initialCache = agentCapabilityPluginCache
+  const [plugins, setPlugins] = useState<AgentCapabilityPlugin[]>(initialCache?.plugins ?? [])
+  const [manifests, setManifests] = useState<AgentCapabilityPluginManifestEntry[]>(
+    initialCache?.manifests ?? []
+  )
   const [loading, setLoading] = useState(true)
+  const [stale, setStale] = useState(initialCache != null)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     if (!window.api?.agentPlugins?.list) {
       setLoading(false)
+      setStale(false)
       setError('agentPlugins.list is unavailable')
       return
     }
+
+    let cancelled = false
+    const cached = agentCapabilityPluginCache
+    if (cached) {
+      setPlugins(cached.plugins)
+      setManifests(cached.manifests)
+      setStale(true)
+    } else {
+      setPlugins([])
+      setManifests([])
+      setStale(false)
+    }
     setLoading(true)
     setError(null)
-    window.api.agentPlugins
-      .list()
+
+    requestAgentCapabilityPlugins()
       .then((result) => {
-        setPlugins(result?.plugins ?? [])
-        setManifests(result?.manifests ?? [])
+        if (cancelled) return
+        setPlugins(result.plugins)
+        setManifests(result.manifests)
+        setStale(false)
       })
       .catch((err) => {
+        if (cancelled) return
         setError(err instanceof Error ? err.message : String(err))
-        setPlugins([])
-        setManifests([])
+        const latestCache = agentCapabilityPluginCache
+        if (latestCache) {
+          setPlugins(latestCache.plugins)
+          setManifests(latestCache.manifests)
+        } else {
+          setPlugins([])
+          setManifests([])
+        }
+        setStale(false)
       })
-      .finally(() => setLoading(false))
-  }, [])
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
 
-  return { plugins, manifests, loading, error }
+    return () => {
+      cancelled = true
+    }
+  }, [assetSnapshotId])
+
+  return { plugins, manifests, loading, stale, error }
 }

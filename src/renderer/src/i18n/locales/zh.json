@@ -1347,6 +1347,7 @@
     "agentPlugins": "Agent 能力插件",
     "agentPluginsEmpty": "插件注册表当前不可用。",
     "agentPluginsLoadError": "插件注册表加载失败: {{error}}",
+    "agentPluginsRefreshing": "正在刷新插件注册表",
     "agentPluginBuiltIn": "内置",
     "agentPluginEnabled": "已启用",
     "agentPluginDisabled": "已禁用",

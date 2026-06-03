@@ -1352,6 +1352,7 @@
     "agentPlugins": "Agent Capability Plugins",
     "agentPluginsEmpty": "The plugin registry is not available.",
     "agentPluginsLoadError": "Plugin registry failed to load: {{error}}",
+    "agentPluginsRefreshing": "Refreshing plugin registry",
     "agentPluginBuiltIn": "Built-in",
     "agentPluginEnabled": "Enabled",
     "agentPluginDisabled": "Disabled",

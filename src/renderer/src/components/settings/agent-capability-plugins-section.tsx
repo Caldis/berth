@@ -5,10 +5,12 @@ import {
   ChevronRight,
   Database,
   ExternalLink,
+  Loader2,
   Puzzle,
   ShieldCheck
 } from 'lucide-react'
 import { EmptyState } from '@/components/shared/empty-state'
+import { LoadingState } from '@/components/shared/loading-state'
 import { cn } from '@/lib/utils'
 import type {
   AgentCapabilityPlugin,
@@ -28,6 +30,7 @@ interface AgentCapabilityPluginsSectionProps {
   plugins: AgentCapabilityPlugin[]
   manifests: AgentCapabilityPluginManifestEntry[]
   loading: boolean
+  stale: boolean
   error: string | null
 }
 
@@ -35,6 +38,7 @@ export function AgentCapabilityPluginsSection({
   plugins,
   manifests,
   loading,
+  stale,
   error
 }: AgentCapabilityPluginsSectionProps): ReactElement {
   const { t } = useTranslation()
@@ -55,21 +59,44 @@ export function AgentCapabilityPluginsSection({
     }))
   }
 
+  const hasRegistryData = plugins.length > 0 || manifests.length > 0
+  const showInitialLoading = loading && !hasRegistryData
+
   return (
     <section className="space-y-3">
-      <h2 className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
-        {t('settings.agentPlugins')}
-      </h2>
-      <div className="overflow-hidden rounded-lg border border-border bg-card">
-        {loading && (
-          <div className="p-4 text-sm text-muted-foreground">{t('common.loading')}</div>
+      <div className="flex h-5 items-center gap-2">
+        <h2 className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
+          {t('settings.agentPlugins')}
+        </h2>
+        {loading && stale && hasRegistryData && (
+          <Loader2
+            role="status"
+            aria-label={t('settings.agentPluginsRefreshing')}
+            className="h-3.5 w-3.5 text-muted-foreground motion-safe:animate-spin"
+          />
         )}
-        {!loading && error && (
+      </div>
+      <div className="overflow-hidden rounded-lg border border-border bg-card">
+        {showInitialLoading && (
+          <LoadingState
+            icon={Puzzle}
+            title={t('common.loading')}
+            rows={3}
+            compact
+            className="rounded-none border-0"
+          />
+        )}
+        {!showInitialLoading && error && !hasRegistryData && (
           <div className="p-4 text-sm text-muted-foreground">
             {t('settings.agentPluginsLoadError', { error })}
           </div>
         )}
-        {!loading && !error && plugins.length === 0 && manifests.length === 0 && (
+        {!showInitialLoading && error && hasRegistryData && (
+          <div className="border-b border-border px-4 py-2 text-xs text-muted-foreground">
+            {t('settings.agentPluginsLoadError', { error })}
+          </div>
+        )}
+        {!showInitialLoading && !error && !hasRegistryData && (
           <div className="p-4">
             <EmptyState
               icon={Puzzle}
@@ -78,7 +105,7 @@ export function AgentCapabilityPluginsSection({
             />
           </div>
         )}
-        {!loading && !error &&
+        {!showInitialLoading &&
           plugins.map((plugin, index) => {
             const expanded = expandedPlugins[plugin.id] === true
             return (
@@ -133,7 +160,7 @@ export function AgentCapabilityPluginsSection({
               </div>
             )
           })}
-        {!loading && !error &&
+        {!showInitialLoading &&
           manifests.map((manifest, index) => {
             const expanded = expandedManifests[manifest.path] === true
             const title = manifest.displayName ?? manifest.id ?? t('settings.agentPluginManifestUnknown')

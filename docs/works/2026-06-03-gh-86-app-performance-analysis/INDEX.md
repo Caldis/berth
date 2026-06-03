@@ -2,7 +2,7 @@
 task: 2026-06-03-gh-86-app-performance-analysis
 task_id: GH-86
 type: maintenance
-phase: implement
+phase: verify
 created: 2026-06-03
 priority: P2
 target_date: 
@@ -27,17 +27,17 @@ debt:
     rationale: "Design 校准: 用户要求中心资产运行时、worker 解耦、统一扫描维度与局部 loading; 影响 main/preload/renderer、IPC、project scope、search、usage、health、sessions 全链路。"
   final:
     incurred: 4
-    repaid: 9
-    net: -5
+    repaid: 11
+    net: -7
     scope: global
-    risk: high
+    risk: medium
     areas:
       - performance
       - testability
       - architecture
       - ui-ux
     confidence: high
-    rationale: "Implementation 已完成中心 AssetRuntime、worker scan job、进程内 file fingerprint cache、runtime selectors 与 renderer 局部 loading; 用户追加要求 plugin 成为 runtime 扩展入口、插件列表 SWR、manifest cache 与 descriptor/scan source 单一声明源, 当前回到 implement。"
+    rationale: "Implementation 已完成中心 AssetRuntime、worker scan job、进程内 file fingerprint cache、runtime selectors、renderer 局部 loading、plugin manifest cache、adapter registry、descriptor 单一声明源与 plugin registry SWR。"
   revisions:
     - phase: explore
       date: 2026-06-03
