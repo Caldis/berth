@@ -4,8 +4,9 @@
 每个实现项必须有测试证据或明确例外理由。
 实现中若发现 debt 初估不准, 更新 INDEX.md `debt.estimate`, 并追加 `debt.revisions[]`。
 
-- [ ] 任务 1: 新增共享 runtime 契约与 renderer store 状态字段。
+- [x] 任务 1: 新增共享 runtime 契约与 renderer store 状态字段。
   - tests: `pnpm test -- tests/renderer/app-store.test.ts`
+  - evidence: 2026-06-03 运行通过, `tests/renderer/app-store.test.ts` 6 tests passed。
   - verify: 类型只描述状态与 snapshot, 不暴露 worker/job 内部细节; UI 验收为状态字段可表达 idle/scanning/ready/stale/error。
 - [ ] 任务 2: 建立 `src/main/engine/assets/` 中心运行时骨架, 包含 snapshot、status、in-flight、selector 缓存接口。
   - tests: `pnpm test -- tests/unit/agent-asset-runtime.test.ts`

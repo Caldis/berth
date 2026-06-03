@@ -41,6 +41,44 @@ export interface ScanError {
   message: string
 }
 
+export type AssetRuntimeState = 'idle' | 'scanning' | 'ready' | 'stale' | 'error'
+
+export type AssetScanReason =
+  | 'startup'
+  | 'manual'
+  | 'watcher'
+  | 'project-scope'
+  | 'legacy-scan-all'
+
+export interface AssetScanProgress {
+  phase: 'discovering' | 'parsing' | 'indexing' | 'deriving'
+  current: number
+  total: number
+  label?: string
+}
+
+export interface AssetRuntimeStatus {
+  state: AssetRuntimeState
+  reason?: AssetScanReason
+  projectDir?: string
+  startedAt?: string
+  lastCompletedAt?: string
+  stale: boolean
+  progress?: AssetScanProgress
+  error?: string
+}
+
+export interface AssetSnapshot {
+  id: string
+  projectDir?: string
+  assets: Asset[]
+  stats: AssetStats
+  errors: ScanError[]
+  sources: AgentScanSourceGroup[]
+  projectCandidates: ProjectScopeCandidate[]
+  status: AssetRuntimeStatus
+}
+
 export interface AgentScanSourceGroup {
   agentId: string
   agentName: string
