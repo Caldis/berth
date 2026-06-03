@@ -16,3 +16,13 @@
 
 ## verify 回写
 verify 不通过项作为新任务追加于此, phase 退回 implement。
+
+## Verify 记录
+- `pnpm lint`: 通过。
+- `pnpm typecheck`: 通过。
+- `pnpm test`: 通过, 86 files / 624 tests。
+- `pnpm harness:check`: 通过。
+- `pnpm harness:stats`: total debt 21, status notice, 无需 override。
+- `node scripts/harness-projects.mjs ensure docs\works\2026-06-04-gh-96-navbar-windows-controls`: 通过, 当前任务为 In Progress。
+- `node scripts/harness-projects.mjs check --strict`: 当前任务无异常; 全局严格检查被无关 active work `2026-06-03-gh-90-nav-header-ux-redesign` 的 Project debt 字段不一致阻塞。
+- `gh run list --branch master --limit 5`: 最近 5 个远端 run 均为旧提交 failure, headSha 不属于本任务提交。
