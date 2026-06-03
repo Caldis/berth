@@ -7,6 +7,15 @@ import type { AgentView, Asset } from '../../src/shared/types/asset'
 import type { AgentCapabilityPlugin, AgentCapabilityPluginHookHandlerDescriptor } from '../../src/shared/types/agent-plugin'
 import type { HealthCheck, HooksAgentId } from '../../src/shared/types/ipc'
 
+interface MockIntersectionObserverInstance {
+  callback: IntersectionObserverCallback
+  observed: Element[]
+  options?: IntersectionObserverInit
+  trigger: (entries: Array<Partial<IntersectionObserverEntry> & { target: Element }>) => void
+}
+
+const intersectionObserverInstances: MockIntersectionObserverInstance[] = []
+
 function hookAsset(
   id: string,
   agentId: string,
@@ -112,9 +121,76 @@ async function waitForHookHealthIdle(): Promise<void> {
   })
 }
 
+function installIntersectionObserverMock(): void {
+  class IntersectionObserverMock implements IntersectionObserver {
+    readonly root: Element | Document | null
+    readonly rootMargin: string
+    readonly thresholds: ReadonlyArray<number>
+    readonly observed: Element[] = []
+    readonly callback: IntersectionObserverCallback
+    readonly options?: IntersectionObserverInit
+
+    constructor(callback: IntersectionObserverCallback, options?: IntersectionObserverInit) {
+      this.callback = callback
+      this.options = options
+      this.root = options?.root ?? null
+      this.rootMargin = options?.rootMargin ?? '0px'
+      this.thresholds = Array.isArray(options?.threshold)
+        ? options.threshold
+        : [options?.threshold ?? 0]
+      intersectionObserverInstances.push({
+        callback,
+        observed: this.observed,
+        options,
+        trigger: (entries) => {
+          callback(entries.map((entry) => ({
+            boundingClientRect: entry.boundingClientRect ?? new DOMRect(0, 0, 0, 0),
+            intersectionRatio: entry.intersectionRatio ?? 0,
+            intersectionRect: entry.intersectionRect ?? new DOMRect(0, 0, 0, 0),
+            isIntersecting: entry.isIntersecting ?? false,
+            rootBounds: entry.rootBounds ?? null,
+            target: entry.target,
+            time: entry.time ?? 0
+          } as IntersectionObserverEntry)), this)
+        }
+      })
+    }
+
+    disconnect(): void {
+      this.observed.splice(0)
+    }
+
+    observe(target: Element): void {
+      this.observed.push(target)
+    }
+
+    takeRecords(): IntersectionObserverEntry[] {
+      return []
+    }
+
+    unobserve(target: Element): void {
+      const index = this.observed.indexOf(target)
+      if (index >= 0) this.observed.splice(index, 1)
+    }
+  }
+
+  Object.defineProperty(window, 'IntersectionObserver', {
+    configurable: true,
+    writable: true,
+    value: IntersectionObserverMock
+  })
+  Object.defineProperty(globalThis, 'IntersectionObserver', {
+    configurable: true,
+    writable: true,
+    value: IntersectionObserverMock
+  })
+}
+
 describe('HooksLifecycleView', () => {
   beforeEach(async () => {
     await i18n.changeLanguage('en')
+    intersectionObserverInstances.length = 0
+    installIntersectionObserverMock()
     Object.defineProperty(navigator, 'clipboard', {
       configurable: true,
       value: { writeText: vi.fn(async () => undefined) }
@@ -620,9 +696,56 @@ describe('HooksLifecycleView', () => {
 
     expect(sidebar.className).toContain('lg:sticky')
     expect(sidebar.className).toContain('lg:top-4')
-    expect(sidebar.className).not.toContain('lg:overflow-y-auto')
-    expect(stageList.className).toContain('lg:max-h-[calc(100vh-10rem)]')
-    expect(stageList.className).toContain('lg:overflow-y-auto')
+    expect(sidebar.className).toContain('lg:max-h-[calc(100vh-2rem)]')
+    expect(sidebar.className).toContain('lg:overflow-y-auto')
+    expect(stageList.className).toContain('lg:space-y-1')
+  })
+
+  it('keeps hook checks and recovery center below the lifecycle list in the left rail', async () => {
+    renderHooks('all', [
+      hookAsset('claude-pre', 'claude-code', 'PreToolUse'),
+      hookAsset('codex-stop', 'codex', 'Stop')
+    ])
+    await waitForHookHealthIdle()
+
+    const sidebar = screen.getByLabelText('Lifecycle')
+    const stageList = within(sidebar).getByTestId('hook-lifecycle-stage-list')
+    const healthPanel = within(sidebar).getByTestId('hook-health-panel')
+    const recoveryCenter = within(sidebar).getByTestId('hook-recovery-center')
+
+    expect(healthPanel).toBeInTheDocument()
+    expect(recoveryCenter).toBeInTheDocument()
+    expect(stageList.compareDocumentPosition(healthPanel) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(healthPanel.compareDocumentPosition(recoveryCenter) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  })
+
+  it('uses a vertical hook check layout without wrapping status tags', async () => {
+    const checks: HealthCheck[] = [
+      {
+        id: 'codex:configuration:user-hook-windows-command',
+        severity: 'warning',
+        category: 'configuration',
+        agentId: 'codex',
+        agentName: 'Codex',
+        title: 'Codex hook has no Windows command override',
+        message: 'A command hook is configured without commandWindows on Windows.',
+        path: 'C:\\Users\\test\\.codex\\hooks.json',
+        assetType: 'hook',
+        target: { route: '/configuration/capabilities?tab=hooks' }
+      }
+    ]
+    window.api.assets.healthCheck = vi.fn(async () => checks)
+
+    renderHooks('codex', [hookAsset('codex-stop', 'codex', 'Stop')])
+
+    const sidebar = screen.getByLabelText('Lifecycle')
+    const healthPanel = await within(sidebar).findByTestId('hook-health-panel')
+    const summaryButton = within(healthPanel).getByRole('button', { name: /1 hook check needs attention/ })
+    const severityList = within(healthPanel).getByTestId('hook-health-severity-list')
+
+    expect(summaryButton.className).toContain('w-full')
+    expect(severityList.className).not.toContain('flex-wrap')
+    expect(severityList.className).toContain('space-y-1')
   })
 
   it('marks the current lifecycle stage in the sticky sidebar', async () => {
@@ -652,6 +775,86 @@ describe('HooksLifecycleView', () => {
     expect(toolBeforeButton.className).toContain('text-background')
     expect(sessionStartButton).not.toHaveAttribute('aria-current')
     expect(scrollIntoView).toHaveBeenCalledWith({ block: 'start', behavior: 'smooth' })
+  })
+
+  it('syncs the current lifecycle stage from right-side scrolling', async () => {
+    renderHooks('all', [
+      hookAsset('claude-pre', 'claude-code', 'PreToolUse'),
+      hookAsset('codex-stop', 'codex', 'Stop')
+    ])
+    await waitForHookHealthIdle()
+
+    const sidebar = screen.getByLabelText('Lifecycle')
+    const userInputButton = within(sidebar).getByRole('button', { name: /User input arrives/ })
+    const userInputSection = document.getElementById('hook-stage-user-input')
+    const observer = intersectionObserverInstances.at(-1)
+
+    expect(userInputSection).not.toBeNull()
+    expect(observer).toBeDefined()
+
+    act(() => {
+      observer?.trigger([{
+        target: userInputSection!,
+        isIntersecting: true,
+        intersectionRatio: 0.72,
+        boundingClientRect: new DOMRect(0, 120, 620, 180)
+      }])
+    })
+
+    await waitFor(() => {
+      expect(userInputButton).toHaveAttribute('aria-current', 'true')
+    })
+  })
+
+  it('renders rounded SVG connectors between lifecycle items and stage sections', async () => {
+    const originalGetBoundingClientRect = HTMLElement.prototype.getBoundingClientRect
+    const mockedGetBoundingClientRect = function getBoundingClientRect(this: HTMLElement): DOMRect {
+      const anchorStage = this.getAttribute('data-hook-stage-anchor')
+      const targetStage = this.getAttribute('data-hook-stage-target')
+      const stageOrder = ['session-start', 'user-input', 'tool-before', 'permission', 'tool-after', 'subagent', 'context-maintenance', 'session-stop', 'environment', 'unknown']
+      if (this.getAttribute('data-testid') === 'hook-lifecycle-connector-layer') {
+        return new DOMRect(0, 0, 960, 1200)
+      }
+      if (anchorStage) {
+        const index = Math.max(stageOrder.indexOf(anchorStage), 0)
+        return new DOMRect(20, 80 + index * 42, 260, 32)
+      }
+      if (targetStage) {
+        const index = Math.max(stageOrder.indexOf(targetStage), 0)
+        return new DOMRect(420, 84 + index * 118, 540, 92)
+      }
+      return originalGetBoundingClientRect.call(this)
+    }
+    Object.defineProperty(HTMLElement.prototype, 'getBoundingClientRect', {
+      configurable: true,
+      value: mockedGetBoundingClientRect
+    })
+
+    try {
+      renderHooks('all', [
+        hookAsset('claude-pre', 'claude-code', 'PreToolUse'),
+        hookAsset('codex-stop', 'codex', 'Stop')
+      ])
+      await waitForHookHealthIdle()
+
+      const connectorSvg = await screen.findByTestId('hook-lifecycle-connectors')
+
+      await waitFor(() => {
+        expect(connectorSvg.querySelectorAll('path').length).toBeGreaterThan(0)
+      })
+
+      const path = connectorSvg.querySelector('path')
+      expect(connectorSvg).toHaveAttribute('aria-hidden', 'true')
+      expect(connectorSvg.getAttribute('class')).toContain('pointer-events-none')
+      expect(path).toHaveAttribute('stroke-linecap', 'round')
+      expect(path).toHaveAttribute('stroke-linejoin', 'round')
+      expect(path?.getAttribute('d')).toContain('Q')
+    } finally {
+      Object.defineProperty(HTMLElement.prototype, 'getBoundingClientRect', {
+        configurable: true,
+        value: originalGetBoundingClientRect
+      })
+    }
   })
 
   it('shows sidebar stage summaries, numeric count tags, and structured recommendations', async () => {

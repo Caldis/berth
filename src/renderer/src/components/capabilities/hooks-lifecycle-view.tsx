@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { type RefObject, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   CheckCircle2,
@@ -83,6 +83,8 @@ export function HooksLifecycleView({
   const hasScopeFilter = scope !== 'all'
   const [activeStageId, setActiveStageId] = useState<string | null>(null)
   const currentStageId = activeStageId ?? groups[0]?.id ?? null
+  const connectorLayerRef = useRef<HTMLDivElement | null>(null)
+  const connectorLines = useHookStageConnectors(groups, currentStageId, connectorLayerRef)
 
   useEffect(() => {
     setActiveStageId((current) => {
@@ -90,6 +92,7 @@ export function HooksLifecycleView({
       return groups[0]?.id ?? null
     })
   }, [groups])
+  useHookStageScrollSpy(groups, setActiveStageId)
 
   const scrollToStage = (id: string): void => {
     setActiveStageId(id)
@@ -103,11 +106,15 @@ export function HooksLifecycleView({
           {t('capabilities.hooks.filteredHint')}
         </div>
       )}
-      <HookRecoveryCenter />
-      <div className="grid gap-4 lg:grid-cols-[280px_minmax(0,1fr)]">
+      <div
+        ref={connectorLayerRef}
+        data-testid="hook-lifecycle-connector-layer"
+        className="relative grid gap-4 lg:grid-cols-[300px_minmax(0,1fr)]"
+      >
+        <HookLifecycleConnectors lines={connectorLines} />
         <aside
           aria-label={t('capabilities.hooks.lifecycleIndex')}
-          className="lg:sticky lg:top-4 lg:self-start"
+          className="relative z-10 space-y-3 lg:sticky lg:top-4 lg:max-h-[calc(100vh-2rem)] lg:self-start lg:overflow-y-auto lg:pr-1"
         >
           <div className="rounded-lg border border-border bg-card p-2">
             <div className="px-2 pb-2 pt-1">
@@ -123,10 +130,9 @@ export function HooksLifecycleView({
                 {t('capabilities.hooks.lifecycleCount', { count: hookCount })}
               </p>
             </div>
-            <HookHealthSignal checks={hookHealthChecks} loading={healthLoading} stale={healthStale} />
             <div
               data-testid="hook-lifecycle-stage-list"
-              className="flex gap-2 overflow-x-auto pb-1 lg:block lg:max-h-[calc(100vh-10rem)] lg:space-y-1 lg:overflow-y-auto lg:pb-0 lg:pr-1"
+              className="flex gap-2 overflow-x-auto pb-1 lg:block lg:space-y-1 lg:overflow-visible lg:pb-0"
             >
               {groups.map((group, index) => {
                 const isCurrent = currentStageId === group.id
@@ -135,6 +141,7 @@ export function HooksLifecycleView({
                     key={group.id}
                     type="button"
                     aria-current={isCurrent ? 'true' : undefined}
+                    data-hook-stage-anchor={group.id}
                     onClick={() => scrollToStage(group.id)}
                     className={cn(
                       'flex min-w-[230px] items-center gap-2 rounded-md px-2 py-2 text-left transition-colors lg:w-full lg:min-w-0',
@@ -180,9 +187,11 @@ export function HooksLifecycleView({
               })}
             </div>
           </div>
+          <HookHealthSignal checks={hookHealthChecks} loading={healthLoading} stale={healthStale} />
+          <HookRecoveryCenter />
         </aside>
 
-        <div className="min-w-0 space-y-3">
+        <div className="relative z-10 min-w-0 space-y-3">
           {groups.map((group) => (
             <HookStageSection key={group.id} group={group} agentView={agentView} hookSchemas={hookSchemas} />
           ))}
@@ -190,6 +199,186 @@ export function HooksLifecycleView({
       </div>
     </div>
   )
+}
+
+interface HookConnectorLine {
+  id: string
+  path: string
+  active: boolean
+}
+
+function useHookStageScrollSpy(
+  groups: HookStageGroup[],
+  setActiveStageId: (stageId: string) => void
+): void {
+  const stageIds = useMemo(() => groups.map((group) => group.id), [groups])
+
+  useEffect(() => {
+    if (typeof IntersectionObserver === 'undefined') return undefined
+    const targets = stageIds
+      .map((id) => document.getElementById(`hook-stage-${id}`))
+      .filter((element): element is HTMLElement => element != null)
+    if (targets.length === 0) return undefined
+
+    const observer = new IntersectionObserver((entries) => {
+      const visible = entries
+        .filter((entry) => entry.isIntersecting)
+        .sort((a, b) => {
+          if (b.intersectionRatio !== a.intersectionRatio) return b.intersectionRatio - a.intersectionRatio
+          return a.boundingClientRect.top - b.boundingClientRect.top
+        })
+      const stageId = visible[0]?.target.getAttribute('data-hook-stage-target')
+      if (stageId) setActiveStageId(stageId)
+    }, {
+      root: findHookScrollRoot(targets[0]),
+      rootMargin: '-18% 0px -62% 0px',
+      threshold: [0, 0.1, 0.25, 0.5, 0.75, 1]
+    })
+
+    targets.forEach((target) => observer.observe(target))
+    return () => observer.disconnect()
+  }, [setActiveStageId, stageIds])
+}
+
+function useHookStageConnectors(
+  groups: HookStageGroup[],
+  activeStageId: string | null,
+  layerRef: RefObject<HTMLDivElement | null>
+): HookConnectorLine[] {
+  const [lines, setLines] = useState<HookConnectorLine[]>([])
+  const stageIds = useMemo(() => groups.map((group) => group.id), [groups])
+
+  useEffect(() => {
+    const layer = layerRef.current
+    if (!layer) return undefined
+
+    let frameId: number | null = null
+    const scrollRoot = findHookScrollRoot(layer)
+    const requestFrame = window.requestAnimationFrame ?? ((callback: FrameRequestCallback) => window.setTimeout(() => callback(performance.now()), 0))
+    const cancelFrame = window.cancelAnimationFrame ?? ((id: number) => window.clearTimeout(id))
+
+    const measure = (): void => {
+      frameId = null
+      const layerRect = layer.getBoundingClientRect()
+      const nextLines = stageIds.flatMap((id) => {
+        const anchor = findStageElement('data-hook-stage-anchor', id)
+        const target = findStageElement('data-hook-stage-target', id)
+        if (!anchor || !target) return []
+
+        const anchorRect = anchor.getBoundingClientRect()
+        const targetRect = target.getBoundingClientRect()
+        const startX = anchorRect.right - layerRect.left + 8
+        const startY = anchorRect.top + anchorRect.height / 2 - layerRect.top
+        const endX = targetRect.left - layerRect.left - 8
+        const endY = targetRect.top + Math.min(36, Math.max(24, targetRect.height / 2)) - layerRect.top
+
+        if (![startX, startY, endX, endY].every(Number.isFinite) || endX <= startX + 16) return []
+        return [{
+          id,
+          path: buildRoundedConnectorPath(startX, startY, endX, endY),
+          active: activeStageId === id
+        }]
+      })
+
+      setLines((current) => connectorLinesEqual(current, nextLines) ? current : nextLines)
+    }
+
+    const schedule = (): void => {
+      if (frameId != null) cancelFrame(frameId)
+      frameId = requestFrame(measure)
+    }
+
+    const resizeObserver = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(schedule)
+    resizeObserver?.observe(layer)
+    stageIds.forEach((id) => {
+      const anchor = findStageElement('data-hook-stage-anchor', id)
+      const target = findStageElement('data-hook-stage-target', id)
+      if (anchor) resizeObserver?.observe(anchor)
+      if (target) resizeObserver?.observe(target)
+    })
+
+    const scrollTarget = scrollRoot ?? window
+    scrollTarget.addEventListener('scroll', schedule, { passive: true })
+    window.addEventListener('resize', schedule)
+    schedule()
+
+    return () => {
+      if (frameId != null) cancelFrame(frameId)
+      resizeObserver?.disconnect()
+      scrollTarget.removeEventListener('scroll', schedule)
+      window.removeEventListener('resize', schedule)
+    }
+  }, [activeStageId, layerRef, stageIds])
+
+  return lines
+}
+
+function HookLifecycleConnectors({ lines }: { lines: HookConnectorLine[] }): React.ReactElement {
+  return (
+    <svg
+      data-testid="hook-lifecycle-connectors"
+      aria-hidden="true"
+      className="pointer-events-none absolute inset-0 z-0 hidden h-full w-full overflow-visible lg:block"
+    >
+      {lines.map((line) => (
+        <path
+          key={line.id}
+          d={line.path}
+          fill="none"
+          stroke="currentColor"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={line.active ? 1.5 : 1}
+          vectorEffect="non-scaling-stroke"
+          className={line.active ? 'text-foreground/35' : 'text-border'}
+        />
+      ))}
+    </svg>
+  )
+}
+
+function findHookScrollRoot(element: Element): Element | null {
+  const appScroll = document.querySelector<HTMLElement>('[data-testid="app-content-scroll"]')
+  if (appScroll?.contains(element)) return appScroll
+
+  let parent = element.parentElement
+  while (parent) {
+    const overflowY = window.getComputedStyle(parent).overflowY
+    if (overflowY === 'auto' || overflowY === 'scroll' || overflowY === 'overlay') return parent
+    parent = parent.parentElement
+  }
+  return null
+}
+
+function findStageElement(attribute: string, stageId: string): HTMLElement | null {
+  return Array.from(document.querySelectorAll<HTMLElement>(`[${attribute}]`))
+    .find((element) => element.getAttribute(attribute) === stageId) ?? null
+}
+
+function buildRoundedConnectorPath(startX: number, startY: number, endX: number, endY: number): string {
+  const midX = startX + (endX - startX) / 2
+  const deltaY = endY - startY
+  const direction = deltaY >= 0 ? 1 : -1
+  const radius = Math.min(14, Math.abs(endX - startX) / 4, Math.max(0, Math.abs(deltaY) / 2))
+
+  if (radius < 1) return `M ${startX} ${startY} H ${endX}`
+
+  return [
+    `M ${startX} ${startY}`,
+    `H ${midX - radius}`,
+    `Q ${midX} ${startY} ${midX} ${startY + direction * radius}`,
+    `V ${endY - direction * radius}`,
+    `Q ${midX} ${endY} ${midX + radius} ${endY}`,
+    `H ${endX}`
+  ].join(' ')
+}
+
+function connectorLinesEqual(current: HookConnectorLine[], next: HookConnectorLine[]): boolean {
+  if (current.length !== next.length) return false
+  return current.every((line, index) => {
+    const candidate = next[index]
+    return line.id === candidate.id && line.path === candidate.path && line.active === candidate.active
+  })
 }
 
 function HookRecoveryCenter(): React.ReactElement {
@@ -222,7 +411,7 @@ function HookRecoveryCenter(): React.ReactElement {
 
   return (
     <details className="rounded-lg border border-border bg-card" data-testid="hook-recovery-center">
-      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3">
+      <summary className="grid cursor-pointer list-none gap-2 px-3 py-3">
         <span className="min-w-0">
           <span className="block text-sm font-semibold text-foreground">{t('capabilities.hooks.recovery.title')}</span>
           <span className="mt-1 block text-xs text-muted-foreground">
@@ -231,18 +420,18 @@ function HookRecoveryCenter(): React.ReactElement {
               : t('capabilities.hooks.recovery.summary', { count: points.length, issues: issues.length })}
           </span>
         </span>
-        <span className="flex shrink-0 flex-wrap justify-end gap-1.5">
-          <span className="rounded-md border border-border bg-background px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+        <span className="grid gap-1.5">
+          <span className="w-fit rounded-md border border-border bg-background px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
             {t('capabilities.hooks.recovery.pointCount', { count: points.length })}
           </span>
           {issues.length > 0 && (
-            <span className="rounded-md bg-destructive/10 px-2 py-0.5 text-[11px] font-medium text-destructive">
+            <span className="w-fit rounded-md bg-destructive/10 px-2 py-0.5 text-[11px] font-medium text-destructive">
               {t('capabilities.hooks.recovery.issueCount', { count: issues.length })}
             </span>
           )}
         </span>
       </summary>
-      <div className="border-t border-border px-4 py-3">
+      <div className="border-t border-border px-3 py-3">
         {loading && <HookRecoverySkeleton />}
         {!loading && error && (
           <div className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-xs leading-5 text-destructive">
@@ -469,9 +658,11 @@ function HookHealthSignal({
   const overallTone = healthOverallTone(checks)
 
   return (
-    <div className="mx-2 mb-2 rounded-md border border-border/70 bg-muted/20 px-2 py-2">
-      <div className="flex flex-wrap items-center justify-between gap-2">
+    <div data-testid="hook-health-panel" className="rounded-lg border border-border bg-card p-3">
+      <div className="flex items-center justify-between gap-2">
         <span className="text-xs font-medium text-foreground">{t('capabilities.hooks.health.title')}</span>
+      </div>
+      <div className="mt-2">
         {loading && stale ? (
           <HealthStatusTip
             id="hook-health-refreshing"
@@ -479,6 +670,8 @@ function HookHealthSignal({
             label={t('capabilities.hooks.health.refreshing')}
             detail={t('capabilities.hooks.health.staleDetail')}
             checks={sortedChecks}
+            buttonClassName="w-full justify-start px-2 py-1.5 text-left"
+            labelClassName="min-w-0 truncate"
           />
         ) : loading ? (
           <HealthStatusTip
@@ -487,6 +680,8 @@ function HookHealthSignal({
             label={t('capabilities.hooks.health.loading')}
             detail={t('capabilities.hooks.health.loadingDetail')}
             checks={[]}
+            buttonClassName="w-full justify-start px-2 py-1.5 text-left"
+            labelClassName="min-w-0 truncate"
           />
         ) : hasChecks ? (
           <HealthStatusTip
@@ -495,6 +690,8 @@ function HookHealthSignal({
             label={t('capabilities.hooks.health.summary', { count: checks.length })}
             detail={t('capabilities.hooks.health.detailsBody')}
             checks={sortedChecks}
+            buttonClassName="w-full justify-start px-2 py-1.5 text-left"
+            labelClassName="min-w-0 truncate"
           />
         ) : (
           <HealthStatusTip
@@ -503,11 +700,13 @@ function HookHealthSignal({
             label={t('capabilities.hooks.health.ok')}
             detail={t('capabilities.hooks.health.okDetail')}
             checks={[]}
+            buttonClassName="w-full justify-start px-2 py-1.5 text-left"
+            labelClassName="min-w-0 truncate"
           />
         )}
       </div>
       {hasChecks && (
-        <div className="mt-2 flex flex-wrap gap-1.5">
+        <div data-testid="hook-health-severity-list" className="mt-2 space-y-1">
           {counts.error > 0 && <HealthSeverityTip severity="error" count={counts.error} checks={sortedChecks} />}
           {counts.warning > 0 && <HealthSeverityTip severity="warning" count={counts.warning} checks={sortedChecks} />}
           {counts.info > 0 && <HealthSeverityTip severity="info" count={counts.info} checks={sortedChecks} />}
@@ -536,6 +735,8 @@ function HealthSeverityTip({
       label={t(`capabilities.hooks.health.severity.${severity}`, { count })}
       detail={t(`capabilities.hooks.health.severityDetail.${severity}`)}
       checks={severityChecks}
+      buttonClassName="w-full justify-start px-2 py-1.5 text-left"
+      labelClassName="min-w-0 truncate"
     />
   )
 }
@@ -547,13 +748,17 @@ function HealthStatusTip({
   tone,
   label,
   detail,
-  checks
+  checks,
+  buttonClassName,
+  labelClassName
 }: {
   id: string
   tone: HealthTipTone
   label: string
   detail: string
   checks: HealthCheck[]
+  buttonClassName?: string
+  labelClassName?: string
 }): React.ReactElement {
   const [open, setOpen] = useState(false)
   const Icon = healthToneIcon(tone)
@@ -573,11 +778,12 @@ function HealthStatusTip({
         aria-describedby={open ? id : undefined}
         className={cn(
           'inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-[11px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-          healthToneClass(tone)
+          healthToneClass(tone),
+          buttonClassName
         )}
       >
         <Icon className="h-3.5 w-3.5" />
-        {label}
+        <span className={labelClassName}>{label}</span>
       </button>
       {open && (
         <span
@@ -664,7 +870,11 @@ function HookStageSection({
   const supports = getVisibleStageSupport(group.stage, agentView, { hookSchemas })
 
   return (
-    <section id={`hook-stage-${group.id}`} className="scroll-mt-4 rounded-lg border border-border bg-card">
+    <section
+      id={`hook-stage-${group.id}`}
+      data-hook-stage-target={group.id}
+      className="scroll-mt-4 rounded-lg border border-border bg-card"
+    >
       <div className="border-b border-border px-4 py-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
@@ -786,7 +996,11 @@ function UnknownHookSection({
   const { t } = useTranslation()
 
   return (
-    <section id={`hook-stage-${group.id}`} className="scroll-mt-4 rounded-lg border border-border bg-card">
+    <section
+      id={`hook-stage-${group.id}`}
+      data-hook-stage-target={group.id}
+      className="scroll-mt-4 rounded-lg border border-border bg-card"
+    >
       <div className="border-b border-border px-4 py-4">
         <h3 className="text-base font-semibold text-foreground">{t('capabilities.hooks.unknown.title')}</h3>
         <p className="mt-1 max-w-[72ch] text-sm leading-6 text-muted-foreground">{t('capabilities.hooks.unknown.body')}</p>
