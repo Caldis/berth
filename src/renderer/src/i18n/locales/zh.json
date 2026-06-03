@@ -362,8 +362,7 @@
       "avgToolTime": "平均工具耗时",
       "slowestTool": "最慢工具",
       "tokenRate": "Token 消耗速率",
-      "tokenRateSourceActivityWindow": "最近活动窗口",
-      "tokenRateSourceUnavailable": "时间数据不足",
+      "tokenRateSourceUnavailable": "暂不计算",
       "tokenRateFormulaA11y": "Token 消耗速率公式",
       "tokenRateFormulaTitle": "计算公式",
       "tokenRateFormulaTokens": "Token",
@@ -375,7 +374,7 @@
       "tokenRateIdleGapRule": "{{minutes}} min 空闲间隔会切分长期会话",
       "tokenRateFormulaLocalEstimate": "这是根据本地 transcript usage 事件计算的估算值, 可能与供应商遥测不同。",
       "tokenRateFormulaUnavailable": "公式不可用",
-      "tokenRateFormulaUnavailableDetail": "至少需要 2 个 usage 样本且跨度达到 1 min。",
+      "tokenRateFormulaUnavailableDetail": "Berth 暂不计算这个指标，因为本地 usage 事件包含重复输入和缓存上下文，容易产生误导性的 tok/min 数值。",
       "costRate": "费用速率",
       "cacheReadShare": "缓存读占比"
     },

@@ -61,14 +61,14 @@ const modelInfo = {
 }
 
 const activityMetrics: SessionActivityMetrics = {
-  tokenRatePerMinute: 19,
-  tokenRateDurationSeconds: 120,
-  tokenRateSource: 'activity-window',
-  tokenRateStartedAt: '2026-05-30T01:02:00.000Z',
-  tokenRateEndedAt: '2026-05-30T01:04:00.000Z',
-  tokenRateTokenCount: 38,
-  tokenRateSampleCount: 3,
-  tokenRateIdleGapSeconds: 1800
+  tokenRatePerMinute: null,
+  tokenRateDurationSeconds: null,
+  tokenRateSource: 'unavailable',
+  tokenRateStartedAt: null,
+  tokenRateEndedAt: null,
+  tokenRateTokenCount: null,
+  tokenRateSampleCount: 0,
+  tokenRateIdleGapSeconds: 0
 }
 
 function makeAsset(type: Asset['type'], name: string): Asset {
@@ -462,12 +462,11 @@ describe('session pages', () => {
     expect(screen.getByText('1 / 2')).toBeInTheDocument()
     expect(screen.getByText('50%')).toBeInTheDocument()
     expect(screen.getByText('Token consumption rate')).toBeInTheDocument()
-    expect(screen.getAllByText('19 tok/min').length).toBeGreaterThan(0)
-    expect(screen.getByText('Recent activity window')).toBeInTheDocument()
+    expect(screen.getByText('Not calculated')).toBeInTheDocument()
     expect(screen.getByLabelText('Token consumption rate formula')).toBeInTheDocument()
-    expect(screen.getByTestId('token-consumption-rate-explanation')).toHaveTextContent('38 tokens')
-    expect(screen.getByTestId('token-consumption-rate-explanation')).toHaveTextContent('2 min')
-    expect(screen.getByTestId('token-consumption-rate-explanation')).toHaveTextContent('30 min idle gap splits long sessions')
+    expect(screen.getByTestId('token-consumption-rate-explanation')).toHaveTextContent('Formula unavailable')
+    expect(screen.getByTestId('token-consumption-rate-explanation')).toHaveTextContent('misleading tok/min values')
+    expect(screen.queryByText('19 tok/min')).not.toBeInTheDocument()
     expect(screen.getByText('Cache read share')).toBeInTheDocument()
     expect(screen.getByText('60.6%')).toBeInTheDocument()
     expect(screen.getByText('frontend-design')).toBeInTheDocument()
@@ -598,13 +597,13 @@ describe('session pages', () => {
       summary,
       activityMetrics: {
         tokenRatePerMinute: null,
-        tokenRateDurationSeconds: 0,
+        tokenRateDurationSeconds: null,
         tokenRateSource: 'unavailable',
-        tokenRateStartedAt: '2026-05-30T01:02:00.000Z',
-        tokenRateEndedAt: '2026-05-30T01:02:00.000Z',
+        tokenRateStartedAt: null,
+        tokenRateEndedAt: null,
         tokenRateTokenCount: null,
-        tokenRateSampleCount: 1,
-        tokenRateIdleGapSeconds: 1800
+        tokenRateSampleCount: 0,
+        tokenRateIdleGapSeconds: 0
       },
       skillsUsed: [],
       mcpServers: [],
@@ -625,7 +624,7 @@ describe('session pages', () => {
 
     expect(await screen.findByText('No skills were loaded')).toBeInTheDocument()
     expect(screen.getByText('Token consumption rate')).toBeInTheDocument()
-    expect(screen.getByText('Not enough timing data')).toBeInTheDocument()
+    expect(screen.getByText('Not calculated')).toBeInTheDocument()
     expect(screen.getByTestId('token-consumption-rate-explanation')).toHaveTextContent('Formula unavailable')
     expect(screen.queryByText('7.6 tok/min')).not.toBeInTheDocument()
     selectSessionDetailTab(/Timeline/)

@@ -23,16 +23,16 @@ debt:
     confidence: medium
     rationale: "用户新增改名、长期会话分段和 hover 公式透明要求; 影响 sessions:get activity metrics、IPC 字段、Session Detail 展示和测试。"
   final:
-    incurred: 3
+    incurred: 2
     repaid: 2
-    net: 1
+    net: 0
     scope: module
     risk: low
     areas:
       - ui-ux
       - testability
     confidence: high
-    rationale: "修复集中在 sessions:get activity metrics 与 Session Detail: token 速率改名为本地 token 消耗速率, 按最近活动窗口计算, 长空闲自动分段, hover 展示公式。剩余 net=1 来自该指标仍是本地 transcript 估算, 不是官方 telemetry。"
+    rationale: "最终修复集中在 sessions:get activity metrics 与 Session Detail: token 消耗速率不再计算, 页面显示 placeholder, hover 解释本地 usage 事件包含重复输入和缓存上下文。"
   revisions:
     - phase: explore
       date: 2026-06-04
@@ -52,6 +52,21 @@ debt:
         net: 4
         rationale: "新增 token 消耗速率命名、最近活动窗口和 hover 公式说明; 需要扩展 IPC 透明字段与 renderer 交互。"
       reason: "用户要求改名策略并确保计算公式透明, hover 可视化呈现计算逻辑。"
+    - phase: verify
+      date: 2026-06-04
+      from:
+        final:
+          incurred: 3
+          repaid: 2
+          net: 1
+          rationale: "token 消耗速率按最近活动窗口计算并展示公式。"
+      to:
+        final:
+          incurred: 2
+          repaid: 2
+          net: 0
+          rationale: "token 消耗速率不再计算, 页面显示 placeholder 并解释原因。"
+      reason: "真实会话仍显示 884515.8 tok/min 这类误导值; 公式透明不能弥补指标语义不可靠。"
 issue:
   number: 95
   repo: Caldis/berth

@@ -16,12 +16,15 @@
 - [x] 任务 4: Session Detail 改名为 token 消耗速率, hover/focus 展示公式和窗口来源。
   - tests: `pnpm vitest run tests/renderer/sessions-pages.test.tsx` - passed, 24 tests; 覆盖 label、source、formula popover 内容、unknown 状态文案。
   - verify: `pnpm typecheck:web` - passed; 界面质量与交互验收项: hover 层不常驻占空间, focus 可达, 文案中明确本地估算和 idle gap 切分规则。
+- [x] 任务 5: 屏蔽 token 消耗速率计算, 只展示 placeholder 和暂不计算说明。
+  - tests: `pnpm vitest run tests/unit/session-activity.test.ts` - passed, 1 test; `pnpm vitest run tests/renderer/sessions-pages.test.tsx` - passed, 24 tests。
+  - verify: `pnpm typecheck:node` - passed; `pnpm typecheck:web` - passed; UI verify screenshot `C:\Users\mail\AppData\Local\Temp\berth-gh95-token-rate-placeholder.png`, no huge `tok/min`, shows `暂不计算`; 界面质量与交互验收项: 不再展示 `884515.8 tok/min` 这类误导性数值, hover 说明本地 usage 事件包含重复输入和缓存上下文。
 
 ## verify 回写
 
 verify 不通过项作为新任务追加于此, phase 退回 implement。
 
-- `pnpm vitest run tests/unit/session-activity.test.ts` - passed, 4 tests。
+- `pnpm vitest run tests/unit/session-activity.test.ts` - passed, 1 test。
 - `pnpm vitest run tests/renderer/sessions-pages.test.tsx` - passed, 24 tests。
 - `pnpm typecheck:node` - passed。
 - `pnpm typecheck:web` - passed。
@@ -29,5 +32,6 @@ verify 不通过项作为新任务追加于此, phase 退回 implement。
 - `pnpm harness:check` - passed。
 - `pnpm harness:stats` - passed, total debt=14, status=ok。
 - UI verify: `pnpm dev:agent guard before --id gh95-token-rate --json`; `pnpm dev:agent start --id gh95-token-rate --debug-port 9335 --json`; Playwright CDP opened first session detail and hovered `Token 消耗速率公式`; screenshot saved at `C:\Users\mail\AppData\Local\Temp\berth-gh95-token-rate-hover.png`; `pnpm dev:agent stop gh95-token-rate --json`; `pnpm dev:agent guard after --id gh95-token-rate --json` - passed, protected user dev process unchanged。
+- UI verify after placeholder: `pnpm dev:agent guard before --id gh95-token-rate-placeholder --json`; `pnpm dev:agent start --id gh95-token-rate-placeholder --debug-port 9336 --json`; Playwright CDP opened first session detail and hovered `Token 消耗速率公式`; screenshot saved at `C:\Users\mail\AppData\Local\Temp\berth-gh95-token-rate-placeholder.png`; no huge `tok/min`; `pnpm dev:agent stop gh95-token-rate-placeholder --json`; `pnpm dev:agent guard after --id gh95-token-rate-placeholder --json` - passed, protected user dev process unchanged。
 - `pnpm harness:prepush` - local lint/typecheck/test/harness checks passed, but command failed on `harness:ci:baseline` because latest remote CI run `8cfbda3` was still in progress.
 - `node scripts/harness-projects.mjs check --strict` - failed because unrelated `2026-06-03-gh-90-nav-header-ux-redesign` Project debt fields differ from its INDEX。

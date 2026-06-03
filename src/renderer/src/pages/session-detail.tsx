@@ -1004,11 +1004,6 @@ function TokenConsumptionRateExplanation({ signals }: { signals: SessionSignals 
         <span className="block leading-5 text-muted-foreground">
           {t('sessions.signals.tokenRateFormulaUnavailableDetail')}
         </span>
-        <span className="block border-t border-border pt-2 leading-5 text-muted-foreground">
-          {t('sessions.signals.tokenRateIdleGapRule', {
-            minutes: formatFormulaMinutes(signals.tokenRateIdleGapSeconds)
-          })}
-        </span>
       </span>
     )
   }
@@ -1439,10 +1434,9 @@ function buildSessionSignals(detail: SessionDetailResult): SessionSignals {
 }
 
 function tokenRateSourceLabel(
-  source: SessionDetailResult['activityMetrics']['tokenRateSource'],
+  _source: SessionDetailResult['activityMetrics']['tokenRateSource'],
   t: Translate
 ): string {
-  if (source === 'activity-window') return t('sessions.signals.tokenRateSourceActivityWindow')
   return t('sessions.signals.tokenRateSourceUnavailable')
 }
 

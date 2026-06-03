@@ -367,8 +367,7 @@
       "avgToolTime": "Avg tool time",
       "slowestTool": "Slowest tool",
       "tokenRate": "Token consumption rate",
-      "tokenRateSourceActivityWindow": "Recent activity window",
-      "tokenRateSourceUnavailable": "Not enough timing data",
+      "tokenRateSourceUnavailable": "Not calculated",
       "tokenRateFormulaA11y": "Token consumption rate formula",
       "tokenRateFormulaTitle": "Formula",
       "tokenRateFormulaTokens": "Tokens",
@@ -380,7 +379,7 @@
       "tokenRateIdleGapRule": "{{minutes}} min idle gap splits long sessions",
       "tokenRateFormulaLocalEstimate": "Local estimate from transcript usage events; provider telemetry may differ.",
       "tokenRateFormulaUnavailable": "Formula unavailable",
-      "tokenRateFormulaUnavailableDetail": "Needs at least 2 usage samples across 1 min.",
+      "tokenRateFormulaUnavailableDetail": "Berth does not calculate this metric because local usage events include repeated input and cache context, which can produce misleading tok/min values.",
       "costRate": "Cost rate",
       "cacheReadShare": "Cache read share"
     },
