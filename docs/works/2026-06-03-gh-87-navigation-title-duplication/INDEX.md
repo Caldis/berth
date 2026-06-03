@@ -22,14 +22,16 @@ debt:
     confidence: medium
     rationale: "Explore 确认重复集中在 renderer 顶部 breadcrumb 与页面 h1, 涉及 TopNavigation 与现有 renderer/e2e 测试。"
   final:
-    incurred:
-    repaid:
-    net:
-    scope:
-    risk:
-    areas: []
-    confidence:
-    rationale:
+    incurred: 2
+    repaid: 1
+    net: 1
+    scope: module
+    risk: low
+    areas:
+      - ui-ux
+      - testability
+    confidence: medium
+    rationale: "代码、renderer/e2e、lint/typecheck/full test/build 与 CDP 视觉检查通过; archive/push 仍受既有全局 harness drift 阻断, 见 docs/friction/20260603-1.0-explore-scoped-harness-check-global-drift.md。"
   revisions:
     - at: 2026-06-03
       phase: explore
@@ -49,6 +51,15 @@ debt:
           - testability
         confidence: medium
       rationale: "影响面收窄到 renderer 顶部导航展示与相关测试, 不涉及 IPC、主进程或数据契约。"
+    - at: 2026-06-03
+      phase: verify
+      from:
+        net: 2
+        confidence: medium
+      to:
+        net: 1
+        confidence: medium
+      rationale: "本任务行为已由 renderer/e2e/机械检查和视觉证据覆盖; 剩余风险来自非本任务的全局 harness drift, 暂不提高到 high confidence。"
 issue:
   number: 87
   repo: Caldis/berth

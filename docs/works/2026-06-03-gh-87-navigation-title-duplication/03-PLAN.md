@@ -16,3 +16,6 @@
 
 ## verify 回写
 verify 不通过项作为新任务追加于此, phase 退回 implement。
+
+- 2026-06-03: `pnpm harness:prepush` 中 `lint`、`typecheck`、`test` 通过, `pnpm harness:check` 失败于既有全局项: 5 个历史 active work 命名、根 `issues/` 目录、`.agents/skills/opsx-*` distribution drift。当前任务不修改这些范围, 暂停 archive/push。关联 friction: `docs/friction/20260603-1.0-explore-scoped-harness-check-global-drift.md`。
+- 2026-06-03: `node scripts/harness-projects.mjs check --strict` 失败于既有 `docs/works/2026-05-30-backend-data/INDEX.md` 缺失; 当前任务 `node scripts/harness-projects.mjs ensure docs/works/2026-06-03-gh-87-navigation-title-duplication` 已通过。
