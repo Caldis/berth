@@ -206,7 +206,7 @@ interface HookConnectorLine {
   path: string
 }
 
-const HOOK_CONNECTOR_SCROLL_THROTTLE_MS = 300
+const HOOK_ACTIVE_STAGE_SCROLL_THROTTLE_MS = 500
 const HOOK_CONNECTOR_BEND_OFFSET_PX = -1
 
 function useHookStageScrollSpy(
@@ -222,6 +222,19 @@ function useHookStageScrollSpy(
       .filter((element): element is HTMLElement => element != null)
     if (targets.length === 0) return undefined
 
+    let activeStageTimerId: number | null = null
+    let pendingStageId: string | null = null
+    const scheduleActiveStage = (stageId: string): void => {
+      pendingStageId = stageId
+      if (activeStageTimerId != null) return
+      activeStageTimerId = window.setTimeout(() => {
+        activeStageTimerId = null
+        const nextStageId = pendingStageId
+        pendingStageId = null
+        if (nextStageId) setActiveStageId(nextStageId)
+      }, HOOK_ACTIVE_STAGE_SCROLL_THROTTLE_MS)
+    }
+
     const observer = new IntersectionObserver((entries) => {
       const visible = entries
         .filter((entry) => entry.isIntersecting)
@@ -230,7 +243,7 @@ function useHookStageScrollSpy(
           return a.boundingClientRect.top - b.boundingClientRect.top
         })
       const stageId = visible[0]?.target.getAttribute('data-hook-stage-target')
-      if (stageId) setActiveStageId(stageId)
+      if (stageId) scheduleActiveStage(stageId)
     }, {
       root: findHookScrollRoot(targets[0]),
       rootMargin: '-18% 0px -62% 0px',
@@ -238,7 +251,10 @@ function useHookStageScrollSpy(
     })
 
     targets.forEach((target) => observer.observe(target))
-    return () => observer.disconnect()
+    return () => {
+      if (activeStageTimerId != null) window.clearTimeout(activeStageTimerId)
+      observer.disconnect()
+    }
   }, [setActiveStageId, stageIds])
 }
 
@@ -254,7 +270,6 @@ function useHookStageConnectors(
     if (!layer) return undefined
 
     let frameId: number | null = null
-    let scrollMeasureTimerId: number | null = null
     const scrollRoot = findHookScrollRoot(layer)
     const requestFrame = window.requestAnimationFrame ?? ((callback: FrameRequestCallback) => window.setTimeout(() => callback(performance.now()), 0))
     const cancelFrame = window.cancelAnimationFrame ?? ((id: number) => window.clearTimeout(id))
@@ -290,14 +305,6 @@ function useHookStageConnectors(
       frameId = requestFrame(measure)
     }
 
-    const scheduleScrollMeasure = (): void => {
-      if (scrollMeasureTimerId != null) return
-      scrollMeasureTimerId = window.setTimeout(() => {
-        scrollMeasureTimerId = null
-        schedule()
-      }, HOOK_CONNECTOR_SCROLL_THROTTLE_MS)
-    }
-
     const resizeObserver = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(schedule)
     resizeObserver?.observe(layer)
     stageIds.forEach((id) => {
@@ -308,15 +315,14 @@ function useHookStageConnectors(
     })
 
     const scrollTarget = scrollRoot ?? window
-    scrollTarget.addEventListener('scroll', scheduleScrollMeasure, { passive: true })
+    scrollTarget.addEventListener('scroll', schedule, { passive: true })
     window.addEventListener('resize', schedule)
     schedule()
 
     return () => {
       if (frameId != null) cancelFrame(frameId)
-      if (scrollMeasureTimerId != null) window.clearTimeout(scrollMeasureTimerId)
       resizeObserver?.disconnect()
-      scrollTarget.removeEventListener('scroll', scheduleScrollMeasure)
+      scrollTarget.removeEventListener('scroll', schedule)
       window.removeEventListener('resize', schedule)
     }
   }, [layerRef, stageIds])

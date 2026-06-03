@@ -777,7 +777,7 @@ describe('HooksLifecycleView', () => {
     expect(scrollIntoView).toHaveBeenCalledWith({ block: 'start', behavior: 'smooth' })
   })
 
-  it('syncs the current lifecycle stage from right-side scrolling', async () => {
+  it('delays active lifecycle stage changes from right-side scrolling', async () => {
     renderHooks('all', [
       hookAsset('claude-pre', 'claude-code', 'PreToolUse'),
       hookAsset('codex-stop', 'codex', 'Stop')
@@ -785,25 +785,54 @@ describe('HooksLifecycleView', () => {
     await waitForHookHealthIdle()
 
     const sidebar = screen.getByLabelText('Lifecycle')
+    const sessionStartButton = within(sidebar).getByRole('button', { name: /Session starts/ })
     const userInputButton = within(sidebar).getByRole('button', { name: /User input arrives/ })
+    const toolBeforeButton = within(sidebar).getByRole('button', { name: /Before a tool runs/ })
     const userInputSection = document.getElementById('hook-stage-user-input')
+    const toolBeforeSection = document.getElementById('hook-stage-tool-before')
     const observer = intersectionObserverInstances.at(-1)
 
     expect(userInputSection).not.toBeNull()
+    expect(toolBeforeSection).not.toBeNull()
     expect(observer).toBeDefined()
 
-    act(() => {
-      observer?.trigger([{
-        target: userInputSection!,
-        isIntersecting: true,
-        intersectionRatio: 0.72,
-        boundingClientRect: new DOMRect(0, 120, 620, 180)
-      }])
-    })
+    vi.useFakeTimers()
+    try {
+      act(() => {
+        observer?.trigger([{
+          target: userInputSection!,
+          isIntersecting: true,
+          intersectionRatio: 0.72,
+          boundingClientRect: new DOMRect(0, 120, 620, 180)
+        }])
+        observer?.trigger([{
+          target: toolBeforeSection!,
+          isIntersecting: true,
+          intersectionRatio: 0.82,
+          boundingClientRect: new DOMRect(0, 140, 620, 180)
+        }])
+      })
 
-    await waitFor(() => {
-      expect(userInputButton).toHaveAttribute('aria-current', 'true')
-    })
+      expect(sessionStartButton).toHaveAttribute('aria-current', 'true')
+      expect(userInputButton).not.toHaveAttribute('aria-current')
+      expect(toolBeforeButton).not.toHaveAttribute('aria-current')
+
+      act(() => {
+        vi.advanceTimersByTime(499)
+      })
+
+      expect(sessionStartButton).toHaveAttribute('aria-current', 'true')
+      expect(toolBeforeButton).not.toHaveAttribute('aria-current')
+
+      act(() => {
+        vi.advanceTimersByTime(1)
+      })
+
+      expect(toolBeforeButton).toHaveAttribute('aria-current', 'true')
+      expect(userInputButton).not.toHaveAttribute('aria-current')
+    } finally {
+      vi.useRealTimers()
+    }
   })
 
   it('renders rounded SVG connectors between lifecycle items and stage sections', async () => {
@@ -876,8 +905,10 @@ describe('HooksLifecycleView', () => {
     }
   })
 
-  it('throttles connector measurements during scroll events', async () => {
+  it('coalesces connector measurements with animation frames during scroll events', async () => {
     const originalGetBoundingClientRect = HTMLElement.prototype.getBoundingClientRect
+    const originalRequestAnimationFrame = window.requestAnimationFrame
+    const originalCancelAnimationFrame = window.cancelAnimationFrame
     const mockedGetBoundingClientRect = function getBoundingClientRect(this: HTMLElement): DOMRect {
       const anchorStage = this.getAttribute('data-hook-stage-anchor')
       const targetStage = this.getAttribute('data-hook-stage-target')
@@ -899,14 +930,39 @@ describe('HooksLifecycleView', () => {
       value: mockedGetBoundingClientRect
     })
 
-    const setTimeoutSpy = vi.spyOn(window, 'setTimeout')
+    const pendingFrames = new Map<number, FrameRequestCallback>()
+    let nextFrameId = 0
+    const requestAnimationFrameSpy = vi.fn((callback: FrameRequestCallback) => {
+      nextFrameId += 1
+      pendingFrames.set(nextFrameId, callback)
+      return nextFrameId
+    })
+    const cancelAnimationFrameSpy = vi.fn((id: number) => {
+      pendingFrames.delete(id)
+    })
+    Object.defineProperty(window, 'requestAnimationFrame', {
+      configurable: true,
+      writable: true,
+      value: requestAnimationFrameSpy
+    })
+    Object.defineProperty(window, 'cancelAnimationFrame', {
+      configurable: true,
+      writable: true,
+      value: cancelAnimationFrameSpy
+    })
 
     try {
       renderHooks('all', [hookAsset('claude-pre', 'claude-code', 'PreToolUse')])
       await waitForHookHealthIdle()
+
+      act(() => {
+        const initialFrame = pendingFrames.get(1)
+        pendingFrames.delete(1)
+        initialFrame?.(performance.now())
+      })
       await screen.findByTestId('hook-lifecycle-connectors')
 
-      setTimeoutSpy.mockClear()
+      requestAnimationFrameSpy.mockClear()
 
       act(() => {
         window.dispatchEvent(new Event('scroll'))
@@ -914,10 +970,18 @@ describe('HooksLifecycleView', () => {
         window.dispatchEvent(new Event('scroll'))
       })
 
-      const connectorTimers = setTimeoutSpy.mock.calls.filter((call) => call[1] === 300)
-      expect(connectorTimers).toHaveLength(1)
+      expect(requestAnimationFrameSpy).toHaveBeenCalledTimes(1)
     } finally {
-      setTimeoutSpy.mockRestore()
+      Object.defineProperty(window, 'requestAnimationFrame', {
+        configurable: true,
+        writable: true,
+        value: originalRequestAnimationFrame
+      })
+      Object.defineProperty(window, 'cancelAnimationFrame', {
+        configurable: true,
+        writable: true,
+        value: originalCancelAnimationFrame
+      })
       Object.defineProperty(HTMLElement.prototype, 'getBoundingClientRect', {
         configurable: true,
         value: originalGetBoundingClientRect
