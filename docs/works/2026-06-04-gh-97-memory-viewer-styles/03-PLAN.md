@@ -20,3 +20,12 @@
 
 ## verify 回写
 verify 不通过项作为新任务追加于此, phase 退回 implement。
+
+- `pnpm lint` 通过。
+- `pnpm typecheck` 通过。
+- `pnpm test` 通过: 86 files, 630 tests。首次全量测试遇到 GH-96 并行改动中间态导致 `window-controls.test.tsx` 失败; GH-96 文件更新完成后单测与全量测试均通过, 未改动 GH-96 文件。
+- `pnpm exec playwright test tests/e2e/window-controls.e2e.ts --project=electron` 通过: 3 tests, 包含 Windows 真实 OS 鼠标点击命中。
+- `pnpm harness:check` 与 `pnpm harness:check --work docs/works/2026-06-04-gh-97-memory-viewer-styles` 通过。
+- `node scripts/harness-projects.mjs check --strict --work docs/works/2026-06-04-gh-97-memory-viewer-styles` 通过。全局 `node scripts/harness-projects.mjs check --strict` 当前被 GH-90 的 Project debt 字段 mismatch 阻塞, 与 GH-97 无关。
+- `pnpm harness:ci:baseline` 未通过: 远端最新 CI run `CI#26897393226` 在 SHA `04ebf40` 为 failure, 当前不推送。
+- 视觉实测: agent-owned Electron `gh97-memory-viewer`, debug port 9337。标签默认行高 32px, `overflow:hidden`, hover 浮层 320px 高、`overflow-y:auto`, scrollHeight 641 > clientHeight 319。文件查看器 Windows header 带 `pr-48`; 抽屉关闭按钮 right=1088, window controls left=1105.6, 不重叠; 左侧 resize handle 拖曳后宽度从 672px 变为 796px。截图: `C:\Users\mail\AppData\Local\Temp\berth-agent-dev\gh97-memory-viewer\screenshot.png`。
