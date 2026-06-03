@@ -11,7 +11,6 @@ import {
   parseAgent,
   parseCommand,
   parseOutputMode,
-  parseTeam,
   parseMcpServers,
   parseHooks,
   parsePermissions,
@@ -148,22 +147,6 @@ export function scanInstructions(ctx: ScanContext): Asset[] {
   assets.push(
     ...scanDir(ctx, path.join(ctx.claudeDir, 'output-modes'), 'user', '**/*.md', parseOutputMode)
   )
-
-  // Teams
-  assets.push(
-    ...scanDir(ctx, path.join(ctx.claudeDir, 'teams'), 'user', '**/*.{yml,yaml}', parseTeam)
-  )
-  for (const projectDir of projectDirsFromContext(ctx)) {
-    assets.push(
-      ...scanDir(
-        ctx,
-        path.join(projectDir, '.claude', 'teams'),
-        'project',
-        '**/*.{yml,yaml}',
-        parseTeam
-      )
-    )
-  }
 
   return assets
 }

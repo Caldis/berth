@@ -59,8 +59,7 @@ const EMPTY_ASSET_STATS: AssetStats = {
   plugins: 0,
   hooks: 0,
   commands: 0,
-  subagents: 0,
-  teams: 0
+  subagents: 0
 }
 
 class SnapshotSelectorCache implements AssetSelectorCache {

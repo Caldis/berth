@@ -45,7 +45,6 @@ export type AssetType =
   | 'agent'
   | 'command'
   | 'output-mode'
-  | 'team'
   | 'mcp-server'
   | 'hook'
   | 'plugin'
@@ -138,7 +137,6 @@ export interface AssetStats {
   hooks: number
   commands: number
   subagents: number
-  teams: number
 }
 
 export interface SessionSummary {

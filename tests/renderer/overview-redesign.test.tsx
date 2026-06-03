@@ -15,7 +15,6 @@ const emptyStats = {
   hooks: 0,
   commands: 0,
   subagents: 0,
-  teams: 0
 }
 
 const emptyUsage = {

@@ -47,7 +47,6 @@ const ASSET_TYPES = [
   'agent',
   'command',
   'output-mode',
-  'team',
   'mcp-server',
   'hook',
   'plugin',

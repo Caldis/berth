@@ -24,6 +24,10 @@ export function LegacyCapabilitiesRedirect(): React.ReactElement {
   return <Navigate to={capabilityLegacyTabRoutes[tab] ?? '/capabilities/mcp'} replace />
 }
 
+export function RemovedAgentTeamsInstructionRedirect(): React.ReactElement {
+  return <Navigate to="/instructions/subagents" replace />
+}
+
 export default function App(): React.ReactElement {
   return (
     <ThemeProvider defaultTheme="system">
@@ -39,7 +43,7 @@ export default function App(): React.ReactElement {
           <Route path="/instructions/subagents" element={<Instructions activeSection="subagents" />} />
           <Route path="/instructions/commands" element={<Instructions activeSection="commands" />} />
           <Route path="/instructions/output-modes" element={<Instructions activeSection="outputModes" />} />
-          <Route path="/instructions/agent-teams" element={<Instructions activeSection="agentTeams" />} />
+          <Route path="/instructions/agent-teams" element={<RemovedAgentTeamsInstructionRedirect />} />
           <Route path="/instructions/*" element={<Navigate to="/instructions/skills" replace />} />
           <Route path="/capabilities" element={<Navigate to="/capabilities/mcp" replace />} />
           <Route path="/capabilities/mcp" element={<Capabilities activeSection="mcp" />} />

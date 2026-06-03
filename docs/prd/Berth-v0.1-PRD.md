@@ -128,7 +128,6 @@ Asset
 | | agents/ | `~/.claude/agents/` + `.claude/agents/` | global + project | YAML | 子代理定义 |
 | | commands/ | `~/.claude/commands/` + `.claude/commands/` | global + project | Markdown | 自定义斜杠命令 |
 | | output-modes/ | `~/.claude/output-modes/` | global | Markdown | 响应风格预设 |
-| | teams/ | `~/.claude/teams/` | global | YAML | Agent Teams (v2.1.32+) |
 | **Capability** | MCP servers | `~/.claude.json` + `.mcp.json` + managed | user / project / enterprise | JSON | 三层合并 |
 | | hooks | `settings.json` | global + project | JSON | 8 种事件 |
 | | plugins/ | `~/.claude/plugins/` | global | 目录树 | 含 marketplaces |
@@ -426,7 +425,7 @@ L4        Inspector             侧滑面板(可选)
 │ Configuration › Instructions                            │
 ├─────────────────────────────────────────────────────────┤
 │  [ Memories ] [ Skills ] [ Subagents ] [ Commands ]     │
-│  [ Output Modes ] [ Agent Teams ]                       │
+│  [ Output Modes ]                                       │
 │                                                         │
 │  🔍 Search instructions...     [Scope: all ▾]           │
 │                                                         │

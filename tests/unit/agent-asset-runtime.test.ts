@@ -12,7 +12,6 @@ const emptyStats: AssetStats = {
   hooks: 0,
   commands: 0,
   subagents: 0,
-  teams: 0
 }
 
 function sessionAsset(id: string): Asset {

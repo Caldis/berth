@@ -30,7 +30,6 @@
       "subagents": "专用 Agent 角色",
       "commands": "斜杠命令",
       "outputModes": "输出格式",
-      "agentTeams": "Agent 编排",
       "mcp": "外部工具连接",
       "hooks": "生命周期自动化",
       "plugins": "能力插件",
@@ -247,8 +246,7 @@
         "plugin": "插件",
         "session": "会话",
         "skill": "Skill",
-        "statusline": "状态栏",
-        "team": "Agent 团队"
+        "statusline": "状态栏"
       }
     }
   },
@@ -470,8 +468,7 @@
       "skills": "Skills",
       "subagents": "子代理",
       "commands": "命令",
-      "outputModes": "输出模式",
-      "agentTeams": "Agent Teams"
+      "outputModes": "输出模式"
     },
     "scope": "作用域",
     "path": "路径",
@@ -589,19 +586,6 @@
         "providers": {
           "claude": "Claude Code 输出样式会改变主 Agent 的回应方式。",
           "abstract": "Berth 把它视为回应行为策略，不视为工具或工作者。"
-        }
-      },
-      "agentTeams": {
-        "title": "多 Agent 组合",
-        "summary": "Agent Teams 描述多个 Agent 角色如何一起工作。Berth 把它视为编排资产，而不是单个提示或工具。",
-        "points": {
-          "role": "适合多个角色会反复一起出现、需要固定交接方式的工作流。",
-          "scope": "当前这类资产仍偏提供方特定，但抽象模型是可复用协作计划。",
-          "review": "信任组合流程前，检查每个成员角色和共享工具权限。"
-        },
-        "providers": {
-          "claude": "Claude Code 可以把多个 Agent 角色组合成可复用团队流程。",
-          "abstract": "Berth 把它建模为多个工作者定义之间的编排关系。"
         }
       }
     }
@@ -1461,7 +1445,7 @@
         "project": {
           "directory": {
             "label": "项目 .claude 目录",
-            "description": "项目级 Claude Code 指令、Hooks、权限和团队配置。"
+            "description": "项目级 Claude Code 指令、Hooks 和权限。"
           },
           "mcp-config": {
             "label": "项目 MCP 配置",

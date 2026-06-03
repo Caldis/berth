@@ -141,5 +141,6 @@ describe('Sidebar agent view selector', () => {
     expect(screen.getByRole('button', { name: 'Hooks - Lifecycle automation' })).toBeInTheDocument()
     expect(screen.getByText('Reusable workflows')).toBeInTheDocument()
     expect(screen.getByText('Permission boundaries')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Agent Teams|Agent orchestration/ })).not.toBeInTheDocument()
   })
 })

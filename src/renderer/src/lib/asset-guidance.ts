@@ -30,7 +30,6 @@ export type InstructionGuideId =
   | 'subagents'
   | 'commands'
   | 'outputModes'
-  | 'agentTeams'
 
 export type CapabilityGuideId =
   | 'mcp'
@@ -118,13 +117,6 @@ export const instructionGuideMap: Record<InstructionGuideId, AssetGuideDefinitio
   ], [
     provider('instructions.guidance.outputModes', 'Claude Code', 'output styles', CLAUDE_OUTPUT_STYLES_URL),
     provider('instructions.guidance.outputModes', 'Abstract', 'response style policy')
-  ]),
-  agentTeams: guide('instructions.guidance.agentTeams', [
-    { labelKey: 'instructions.guidance.docs.claudeSettings', url: CLAUDE_SETTINGS_URL },
-    { labelKey: 'instructions.guidance.docs.codexConfig', url: CODEX_CONFIG_URL }
-  ], [
-    provider('instructions.guidance.agentTeams', 'Claude Code', 'agent teams', CLAUDE_SETTINGS_URL),
-    provider('instructions.guidance.agentTeams', 'Abstract', 'multi-agent orchestration')
   ])
 }
 

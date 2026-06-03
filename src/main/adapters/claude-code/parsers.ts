@@ -170,30 +170,6 @@ export function parseOutputMode(filePath: string, scope: AssetScope): Asset {
 }
 
 // ---------------------------------------------------------------------------
-// Teams (YAML)
-// ---------------------------------------------------------------------------
-
-export function parseTeam(filePath: string, scope: AssetScope): Asset {
-  const raw = fs.readFileSync(filePath, 'utf-8')
-  let parsed: Record<string, unknown> = {}
-  try {
-    parsed = (yaml.load(raw) as Record<string, unknown>) ?? {}
-  } catch {
-    // malformed yaml
-  }
-  return {
-    id: makeId('team'),
-    agentId: 'claude-code',
-    category: 'instruction',
-    type: 'team',
-    scope,
-    name: (parsed.name as string) ?? path.basename(filePath, path.extname(filePath)),
-    path: filePath,
-    meta: parsed
-  }
-}
-
-// ---------------------------------------------------------------------------
 // MCP servers (from JSON configs)
 // ---------------------------------------------------------------------------
 

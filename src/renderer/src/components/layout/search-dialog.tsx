@@ -388,7 +388,6 @@ function routeForAsset(asset: Asset): string {
   if (asset.type === 'command') return '/instructions/commands'
   if (asset.type === 'agent') return '/instructions/subagents'
   if (asset.type === 'output-mode') return '/instructions/output-modes'
-  if (asset.type === 'team') return '/instructions/agent-teams'
   if (asset.type === 'claude-md' || asset.type === 'agents-md') return '/instructions/conventions'
   return '/'
 }

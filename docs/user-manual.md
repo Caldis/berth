@@ -131,7 +131,6 @@ View all the text files that shape your agent's behavior.
 | **Subagents** | Agent definitions from `agents/` directories |
 | **Commands** | Custom slash commands from `commands/` directories |
 | **Output Modes** | Response style presets from `output-modes/` |
-| **Agent Teams** | Team definitions from `teams/` |
 
 ### Actions
 - **Search**: Filter by name or description

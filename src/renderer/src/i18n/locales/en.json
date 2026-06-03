@@ -30,7 +30,6 @@
       "subagents": "Specialized agent roles",
       "commands": "Slash commands",
       "outputModes": "Output formats",
-      "agentTeams": "Agent orchestration",
       "mcp": "External tool connections",
       "hooks": "Lifecycle automation",
       "plugins": "Capability plugins",
@@ -252,8 +251,7 @@
         "plugin": "Plugin",
         "session": "Session",
         "skill": "Skill",
-        "statusline": "Status line",
-        "team": "Agent team"
+        "statusline": "Status line"
       }
     }
   },
@@ -475,8 +473,7 @@
       "skills": "Skills",
       "subagents": "Subagents",
       "commands": "Commands",
-      "outputModes": "Output Modes",
-      "agentTeams": "Agent Teams"
+      "outputModes": "Output Modes"
     },
     "scope": "Scope",
     "path": "Path",
@@ -594,19 +591,6 @@
         "providers": {
           "claude": "Claude Code output styles change how the primary agent responds.",
           "abstract": "Berth treats this as response behavior policy, not as a tool or worker."
-        }
-      },
-      "agentTeams": {
-        "title": "Multi-agent composition",
-        "summary": "Agent teams describe how several agent roles should work together. Berth treats them as orchestration assets rather than a single prompt or tool.",
-        "points": {
-          "role": "Use them for structured handoffs where multiple roles repeatedly appear together.",
-          "scope": "Team assets are provider-specific today, but the abstract model is a reusable collaboration plan.",
-          "review": "Check each member role and shared tool access before trusting the combined workflow."
-        },
-        "providers": {
-          "claude": "Claude Code can compose agent roles into repeatable team workflows.",
-          "abstract": "Berth models this as orchestration across worker definitions."
         }
       }
     }
@@ -1469,7 +1453,7 @@
         "project": {
           "directory": {
             "label": "Project .claude directory",
-            "description": "Project-level Claude Code instructions, hooks, permissions, and team configuration."
+            "description": "Project-level Claude Code instructions, hooks, and permissions."
           },
           "mcp-config": {
             "label": "Project MCP config",

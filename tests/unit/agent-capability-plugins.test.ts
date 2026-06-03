@@ -42,7 +42,6 @@ const claudeAssetTypes: AssetType[] = [
   'agent',
   'command',
   'output-mode',
-  'team',
   'mcp-server',
   'hook',
   'permission',

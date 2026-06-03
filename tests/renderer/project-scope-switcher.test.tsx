@@ -20,7 +20,7 @@ function activationResult(projectPath?: string): ProjectScopeActivationResult {
     projectDir: candidate?.path,
     scanResult: {
       assets: [],
-      stats: { skills: 1, mcpServers: 0, sessions: 0, plugins: 0, hooks: 0, commands: 0, subagents: 0, teams: 0 },
+      stats: { skills: 1, mcpServers: 0, sessions: 0, plugins: 0, hooks: 0, commands: 0, subagents: 0 },
       errors: []
     },
     candidates: candidate ? [candidate] : []

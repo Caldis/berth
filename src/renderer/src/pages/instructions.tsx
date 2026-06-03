@@ -6,7 +6,6 @@ import {
   Bot,
   Terminal,
   Palette,
-  Users,
   Brain,
   ChevronDown,
   ChevronRight,
@@ -41,8 +40,7 @@ const tabTypeMap: Record<string, string[]> = {
   skills: ['skill'],
   subagents: ['agent'],
   commands: ['command'],
-  outputModes: ['output-mode'],
-  agentTeams: ['team']
+  outputModes: ['output-mode']
 }
 
 /* ---------- Memory card ---------- */
@@ -200,7 +198,7 @@ function SkillCard({ asset }: { asset: Asset }): React.ReactElement {
   )
 }
 
-/* ---------- Generic asset card (subagents, commands, output modes, teams) ---------- */
+/* ---------- Generic asset card (subagents, commands, output modes) ---------- */
 function GenericAssetCard({ asset, icon: Icon }: { asset: Asset; icon: React.ComponentType<{ className?: string }> }): React.ReactElement {
   const { t } = useTranslation()
   const [expanded, setExpanded] = useState(false)
@@ -276,8 +274,7 @@ const tabIconMap: Record<string, React.ComponentType<{ className?: string }>> = 
   skills: Sparkles,
   subagents: Bot,
   commands: Terminal,
-  outputModes: Palette,
-  agentTeams: Users
+  outputModes: Palette
 }
 
 function normalizeInstructionSection(value: string | undefined): string {
@@ -412,12 +409,6 @@ export function Instructions({ activeSection }: { activeSection?: string } = {})
         return (
           <div className="space-y-2">
             {filteredAssets.map((a) => <GenericAssetCard key={a.id} asset={a} icon={Palette} />)}
-          </div>
-        )
-      case 'agentTeams':
-        return (
-          <div className="space-y-2">
-            {filteredAssets.map((a) => <GenericAssetCard key={a.id} asset={a} icon={Users} />)}
           </div>
         )
       default:

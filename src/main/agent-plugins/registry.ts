@@ -145,12 +145,6 @@ const CLAUDE_ASSET_DESCRIPTORS: AgentCapabilityPluginAssetDescriptor[] = [
     ['claude.user.data-directory']
   ),
   assetDescriptor(
-    'team',
-    'instruction',
-    ['user', 'project'],
-    ['claude.user.data-directory', 'claude.project.directory']
-  ),
-  assetDescriptor(
     'mcp-server',
     'capability',
     ['user', 'project', 'enterprise'],

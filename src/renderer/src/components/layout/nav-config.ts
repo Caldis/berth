@@ -10,7 +10,6 @@ import {
   Bot,
   Terminal,
   Palette,
-  Users,
   Webhook,
   Puzzle,
   Activity,
@@ -76,13 +75,6 @@ export const instructionNavItems = [
     descriptionKey: 'nav.descriptions.outputModes',
     icon: Palette,
     path: '/instructions/output-modes'
-  },
-  {
-    id: 'instruction-agent-teams',
-    labelKey: 'instructions.tabs.agentTeams',
-    descriptionKey: 'nav.descriptions.agentTeams',
-    icon: Users,
-    path: '/instructions/agent-teams'
   }
 ] as const satisfies readonly NavItem[]
 

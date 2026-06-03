@@ -177,8 +177,7 @@ export class AssetScanner {
       plugins: assets.filter((a) => a.type === 'plugin').length,
       hooks: assets.filter((a) => a.type === 'hook').length,
       commands: assets.filter((a) => a.type === 'command').length,
-      subagents: assets.filter((a) => a.type === 'agent').length,
-      teams: assets.filter((a) => a.type === 'team').length
+      subagents: assets.filter((a) => a.type === 'agent').length
     }
   }
 
