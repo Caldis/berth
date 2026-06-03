@@ -24,7 +24,7 @@ const FRICTION_NAME = new RegExp(`^\\d{8}-(${ACTION_IDS.map((id) => id.replace(/
 const PHASES = ['explore', 'design', 'blocked', 'implement', 'verify', 'polish', 'archive']
 const PHASE_RANK = { explore: 0, design: 1, blocked: 1, implement: 2, verify: 3, polish: 4, archive: 5 }
 const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/
-export const SMALL_CHANGE_EXEMPTION_CONSENT = '小改动豁免前必须先声明豁免依据并征得用户确认。'
+export const SMALL_CHANGE_EXEMPTION_RULES = ['用户已明确给出目的', '不再二次询问', '自行判断小改动豁免']
 export const TEST_DISCIPLINE_RULE = '测试证据或明确例外理由'
 export const FRONTEND_TASTE_RULE = '界面质量与交互验收'
 export const CI_BASELINE_COMMAND = 'pnpm harness:ci:baseline'
@@ -344,14 +344,15 @@ export function checkSuperpowers(root) {
 
 export function checkEntryRules(root) {
   const errors = []
-  for (const rel of ['AGENTS.md', '.agents/README.md']) {
+  for (const rel of ['AGENTS.md', '.agents/README.md', '.agents/workflow/_shared.md']) {
     const path = join(root, rel)
     if (!existsSync(path)) {
       errors.push(`entry-rules: missing ${rel}`)
       continue
     }
-    if (!readFileSync(path, 'utf8').includes(SMALL_CHANGE_EXEMPTION_CONSENT))
-      errors.push(`entry-rules: ${rel} missing small-change exemption consent rule`)
+    const content = readFileSync(path, 'utf8')
+    if (!SMALL_CHANGE_EXEMPTION_RULES.every((rule) => content.includes(rule)))
+      errors.push(`entry-rules: ${rel} missing small-change exemption routing rule`)
   }
   for (const rel of ['.agents/workflow/_shared.md', '.agents/workflow/3.0-implement.md', '.agents/workflow/4.0-verify.md', 'docs/issues/AGENTS.md']) {
     const path = join(root, rel)

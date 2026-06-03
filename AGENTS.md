@@ -116,7 +116,7 @@ Agent 工作流体系, 单一真源在 `.agents/`, 同时服务 Claude Code 与 
 
 ## 何时进入 (强制)
 - feature / bug 开发任务: 落代码前必须先用 `harness-0.0-new` 建任务态, 再按 1.0-explore → 2.0-design → 3.0-implement → 4.0-verify 推进; 禁止跳过 new 直接 Read/Edit 进实现或调试。
-- 小改动豁免: 单行/拼写/纯文案注释, 或满足"单一文件·单一关注点·标准门禁 (typecheck/lint/test) 即可验收·无需跨文件根因分析或人工意图澄清"的小改动 (如弃用 API 替换、局部重构), 可直接处理 + 跑门禁 (含可测试性), 不建任务态。小改动豁免前必须先声明豁免依据并征得用户确认。
+- 小改动豁免: 单行/拼写/纯文案注释, 或满足"单一文件·单一关注点·标准门禁 (typecheck/lint/test) 即可验收·无需跨文件根因分析或人工意图澄清"的小改动 (如数值调整、局部 UI 微调、弃用 API 替换、局部重构), 可直接处理 + 跑门禁 (含可测试性), 不建任务态。若用户已明确给出目的、范围或具体参数, 或明确要求"不走 harness / 直接调整", Agent 直接声明按小改动处理并执行, 不再二次询问。若是 Agent 自行判断小改动豁免, 必须先声明豁免依据并征得用户确认。实施中发现影响面超出声明范围时, 停下重新申请或切入 harness。
 - 边界存疑按非平凡处理, 默认走 harness; 进行中的任务用 `harness-0.1-continue` 续跑, 不重新 new。
 - 默认流程是 harness workflow。只有用户明确要求使用 Superpowers 流程时, 才允许 Superpowers 接管任务流程; 否则 feature / bug / harness 任务都按 harness 执行。
 - 走 harness 时, Superpowers 只能作为方法参考, 不得创建 active `docs/superpowers/plans` 或 `docs/superpowers/specs` 产物, 不得要求 worktree, 不得覆盖 INDEX.phase, 不得把 `writing-plans` / `executing-plans` 的流程问答注入当前任务。

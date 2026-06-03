@@ -11,7 +11,7 @@ import {
   FRONTEND_TASTE_RULE,
   MAIN_AGENT_RESULT_RULE,
   NON_LOCAL_SUBAGENT_RULE,
-  SMALL_CHANGE_EXEMPTION_CONSENT,
+  SMALL_CHANGE_EXEMPTION_RULES,
   TEST_DISCIPLINE_RULE,
   checkCiGateRules,
   checkSubagentGateRules,
@@ -394,22 +394,23 @@ describe('checkWorkflowSources', () => {
 
 describe('checkEntryRules', () => {
   function writeEntryRules(options: { agents?: boolean; readme?: boolean; sideIssue?: boolean; scopedCommit?: boolean; superpowersPolicy?: boolean }): void {
+    const smallChangeRule = SMALL_CHANGE_EXEMPTION_RULES.join('\n')
     const superpowersPolicy = options.superpowersPolicy === false
       ? ''
       : '\n默认流程是 harness workflow\nSuperpowers 只能作为方法参考\nAgent 自主判断并行或顺序执行'
     if (options.agents) {
       const scopedCommit = options.scopedCommit === false ? '' : '\n自己相关 git diff --cached'
-      writeFileSync(join(root, 'AGENTS.md'), SMALL_CHANGE_EXEMPTION_CONSENT + scopedCommit + superpowersPolicy)
+      writeFileSync(join(root, 'AGENTS.md'), smallChangeRule + scopedCommit + superpowersPolicy)
     }
     if (options.readme) {
       mkdirSync(join(root, '.agents'), { recursive: true })
-      writeFileSync(join(root, '.agents/README.md'), SMALL_CHANGE_EXEMPTION_CONSENT)
+      writeFileSync(join(root, '.agents/README.md'), smallChangeRule)
     }
     if (options.sideIssue !== false) {
       mkdirSync(join(root, '.agents/workflow'), { recursive: true })
       mkdirSync(join(root, 'docs/issues'), { recursive: true })
       const text = '发现不属于当前主线验收范围的问题时写入 docs/issues。'
-      writeFileSync(join(root, '.agents/workflow/_shared.md'), text)
+      writeFileSync(join(root, '.agents/workflow/_shared.md'), `${smallChangeRule}\n${text}`)
       writeFileSync(join(root, '.agents/workflow/3.0-implement.md'), text)
       writeFileSync(join(root, '.agents/workflow/4.0-verify.md'), text)
       writeFileSync(join(root, 'docs/issues/AGENTS.md'), text)
@@ -463,17 +464,17 @@ describe('checkEntryRules', () => {
     }
   }
 
-  it('根入口与 harness README 都声明小改动豁免确认规则时通过', () => {
+  it('入口文档都声明小改动两级路由规则时通过', () => {
     writeEntryRules({ agents: true, readme: true })
     expect(checkEntryRules(root)).toEqual([])
   })
 
-  it('根 AGENTS.md 缺少小改动豁免确认规则时报错', () => {
+  it('根 AGENTS.md 缺少小改动两级路由规则时报错', () => {
     writeEntryRules({ readme: true })
     expect(checkEntryRules(root).some((e: string) => e.includes('AGENTS.md'))).toBe(true)
   })
 
-  it('.agents README 缺少小改动豁免确认规则时报错', () => {
+  it('.agents README 缺少小改动两级路由规则时报错', () => {
     writeEntryRules({ agents: true })
     expect(checkEntryRules(root).some((e: string) => e.includes('.agents/README.md'))).toBe(true)
   })
