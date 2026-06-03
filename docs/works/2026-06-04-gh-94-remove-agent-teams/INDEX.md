@@ -24,15 +24,33 @@ debt:
     confidence: medium
     rationale: "0.0-new 初始估算; 需要移除跨扫描器、共享类型、导航、搜索、说明和测试中的 Agent Teams 静态资产入口。"
   final:
-    incurred:
-    repaid:
-    net:
-    scope:
-    risk:
-    areas: []
-    confidence:
-    rationale:
-  revisions: []
+    incurred: 3
+    repaid: 2
+    net: 1
+    scope: global
+    risk: low
+    areas:
+      - architecture
+      - ui-ux
+      - testability
+    confidence: high
+    rationale: "verify 最终校准; 实现以删除错误静态 asset 建模为主, 同步覆盖 scanner、共享类型、renderer 入口、文案和测试, 剩余风险低。"
+  revisions:
+    - stage: verify
+      date: 2026-06-04
+      from:
+        incurred: 4
+        repaid: 1
+        net: 3
+        risk: medium
+        confidence: medium
+      to:
+        incurred: 3
+        repaid: 2
+        net: 1
+        risk: low
+        confidence: high
+      reason: "实际 diff 以删除既有误分类为主, 测试和真实 UI 验证已覆盖主要路径。"
 issue:
   number: 94
   repo: Caldis/berth

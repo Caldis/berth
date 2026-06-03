@@ -19,3 +19,13 @@
 
 ## verify 回写
 verify 不通过项作为新任务追加于此, phase 退回 implement。
+
+2026-06-04 verify:
+- 测试覆盖审计: 任务 1/2/3 均有自动化测试或残留检查证据; `TeammateIdle` hook event 保留, 不属于静态 asset 删除范围。
+- 机械检查: `pnpm lint` 通过; `pnpm typecheck` 通过; `pnpm test` 通过, 85 test files / 619 tests passed。`pnpm test` 有既有 React `act(...)` warning, 但无失败用例。
+- harness: `pnpm harness:check` 通过; `pnpm harness:stats` 返回 `debt total=17 status=ok`。
+- Project: `node scripts/harness-projects.mjs ensure docs/works/2026-06-04-gh-94-remove-agent-teams` 返回 `is In Progress`。`node scripts/harness-projects.mjs check --strict` 失败项来自 GH-90 和未跟踪 GH-95, 不涉及 GH-94。
+- CI baseline: `gh run list --branch master --limit 5` 显示 master 最新 5 个 CI 均为既有 failure, 最近失败提交不是本任务本地提交。
+- UI 实测: `pnpm dev:agent guard before --id gh94-agent-teams-removal --json`; `pnpm dev:agent start --id gh94-agent-teams-removal --debug-port 9344 --json`; CDP 检查侧边栏前后无 Agent Teams, 点击子代理页后正文无 Agent Teams 且有子代理内容。
+- 截图: `pnpm dev:agent screenshot gh94-agent-teams-removal --mode print-window --json` 生成 `C:\Users\mail\AppData\Local\Temp\berth-agent-dev\gh94-agent-teams-removal\screenshot.png`, 视觉确认侧边栏无 Agent Teams, 子代理页布局正常。
+- 清理: `pnpm dev:agent stop gh94-agent-teams-removal --json` 成功; `pnpm dev:agent guard after --id gh94-agent-teams-removal --json` 返回 `guard-ok`, 用户 dev server 保持运行; 用户 Electron 子进程同一 dev server 父进程下发生 watch 重启, 按 verify workflow 视为正常 restart 记录。
