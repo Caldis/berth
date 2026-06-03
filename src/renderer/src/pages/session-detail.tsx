@@ -40,6 +40,7 @@ import { ScopeBadge } from '@/components/shared/scope-badge'
 import { EmptyState } from '@/components/shared/empty-state'
 import { LoadingState } from '@/components/shared/loading-state'
 import { TokenUsageDisplay } from '@/components/shared/token-usage-display'
+import { usePageChrome, type PageChromeConfig } from '@/components/layout/page-chrome'
 import type { SessionArtifacts, SessionDetailResult, SessionToolEvent } from '@shared/types/ipc'
 
 type Translate = ReturnType<typeof useTranslation>['t']
@@ -68,6 +69,22 @@ export function SessionDetail(): React.ReactElement {
 
   const summary = detail?.summary
   const fallbackTitle = t('sessions.fallbackTitle', { id: id?.slice(0, 8) ?? '' })
+  const pageTitle = summary?.title || fallbackTitle
+  const pageChrome = useMemo<PageChromeConfig>(() => ({
+    title: pageTitle,
+    parentLabel: t('sessions.title'),
+    leading: (
+      <button
+        type="button"
+        onClick={() => navigate('/sessions')}
+        aria-label={`${t('common.back')} ${t('sessions.title')}`}
+        className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-border bg-background text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:translate-y-px"
+      >
+        <ArrowLeft className="h-4 w-4" />
+      </button>
+    )
+  }), [navigate, pageTitle, t])
+  usePageChrome(pageChrome, [pageChrome])
 
   // Group hooks by event
   const hooksByEvent = detail?.hooksFired ?? []
@@ -87,24 +104,6 @@ export function SessionDetail(): React.ReactElement {
 
   return (
     <div className="space-y-6">
-      {/* Breadcrumb */}
-      <div className="flex items-center gap-3">
-        <button
-          onClick={() => navigate('/sessions')}
-          className="flex h-8 w-8 items-center justify-center rounded-md transition-colors hover:bg-accent/10"
-        >
-          <ArrowLeft className="h-4 w-4" />
-        </button>
-        <div>
-          <div className="text-xs text-muted-foreground">
-            {t('sessions.title')} / {fallbackTitle}
-          </div>
-          <h1 className="text-xl font-semibold tracking-tight">
-            {summary?.title || fallbackTitle}
-          </h1>
-        </div>
-      </div>
-
       {loading ? (
         <LoadingState
           icon={FileText}

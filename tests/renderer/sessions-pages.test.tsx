@@ -180,6 +180,30 @@ function renderSessionsPage(): ReturnType<typeof render> {
   )
 }
 
+function renderSessionDetailPage(path = '/sessions/session-session-abc'): ReturnType<typeof render> {
+  return render(
+    <MemoryRouter initialEntries={[path]}>
+      <PageChromeProvider>
+        <TopNavigation isWindows={false} />
+        <Routes>
+          <Route path="/sessions/:id" element={<SessionDetail />} />
+        </Routes>
+      </PageChromeProvider>
+    </MemoryRouter>
+  )
+}
+
+function renderUsagePage(): ReturnType<typeof render> {
+  return render(
+    <MemoryRouter initialEntries={['/usage']}>
+      <PageChromeProvider>
+        <TopNavigation isWindows={false} />
+        <Usage />
+      </PageChromeProvider>
+    </MemoryRouter>
+  )
+}
+
 describe('session pages', () => {
   it('renders overview recent sessions with readable path, tokens, and unknown cost', async () => {
     mockSessionApis()
@@ -369,15 +393,11 @@ describe('session pages', () => {
       expect(screen.queryByText('Session #session-')).not.toBeInTheDocument()
       sessions.unmount()
 
-      const detail = render(
-        <MemoryRouter initialEntries={['/sessions/session-session-abc']}>
-          <Routes>
-            <Route path="/sessions/:id" element={<SessionDetail />} />
-          </Routes>
-        </MemoryRouter>
-      )
+      const detail = renderSessionDetailPage()
 
-      expect(await screen.findByText('会话 / 会话 #session-')).toBeInTheDocument()
+      const breadcrumb = await screen.findByRole('navigation', { name: '面包屑' })
+      expect(within(breadcrumb).getByText('会话')).toBeInTheDocument()
+      expect(within(breadcrumb).getByText('会话 #session-')).toBeInTheDocument()
       expect(screen.getByRole('heading', { name: '会话 #session-' })).toBeInTheDocument()
       expect(screen.queryByText('Session #session-')).not.toBeInTheDocument()
       detail.unmount()
@@ -410,15 +430,13 @@ describe('session pages', () => {
   it('renders session detail metadata and transcript-derived assets', async () => {
     mockSessionApis()
 
-    render(
-      <MemoryRouter initialEntries={['/sessions/session-session-abc']}>
-        <Routes>
-          <Route path="/sessions/:id" element={<SessionDetail />} />
-        </Routes>
-      </MemoryRouter>
-    )
+    renderSessionDetailPage()
 
-    expect(await screen.findByText('Fix session metadata')).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Fix session metadata' })).toBeInTheDocument()
+    const breadcrumb = screen.getByRole('navigation', { name: 'Breadcrumb' })
+    expect(within(breadcrumb).getByText('Sessions')).toBeInTheDocument()
+    expect(within(breadcrumb).getByText('Fix session metadata')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Back Sessions' })).toBeInTheDocument()
     expect(screen.getAllByText('D:\\Code\\berth').length).toBeGreaterThan(0)
     expect(screen.getAllByText('claude-sonnet-4-20250514').length).toBeGreaterThan(0)
     expect(screen.getByText(/2026-05-30/)).toBeInTheDocument()
@@ -465,13 +483,7 @@ describe('session pages', () => {
   it('shows the shared session detail loading state', () => {
     window.api.sessions.get = vi.fn(() => new Promise(() => undefined))
 
-    render(
-      <MemoryRouter initialEntries={['/sessions/session-session-abc']}>
-        <Routes>
-          <Route path="/sessions/:id" element={<SessionDetail />} />
-        </Routes>
-      </MemoryRouter>
-    )
+    renderSessionDetailPage()
 
     expect(screen.getByRole('heading', { name: 'Session #session-' })).toBeInTheDocument()
     expect(screen.getByLabelText('Loading session detail')).toBeInTheDocument()
@@ -482,15 +494,9 @@ describe('session pages', () => {
   it('filters session detail tools by minimum duration', async () => {
     mockSessionApis()
 
-    render(
-      <MemoryRouter initialEntries={['/sessions/session-session-abc']}>
-        <Routes>
-          <Route path="/sessions/:id" element={<SessionDetail />} />
-        </Routes>
-      </MemoryRouter>
-    )
+    renderSessionDetailPage()
 
-    expect(await screen.findByText('Fix session metadata')).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Fix session metadata' })).toBeInTheDocument()
     selectSessionDetailTab(/Timeline/)
     expect(screen.getByText('Edit')).toBeInTheDocument()
     const timelineTab = screen.getByTestId('session-timeline-tab')
@@ -564,15 +570,9 @@ describe('session pages', () => {
       fileHistoryCount: 3
     }))
 
-    render(
-      <MemoryRouter initialEntries={['/sessions/session-session-abc']}>
-        <Routes>
-          <Route path="/sessions/:id" element={<SessionDetail />} />
-        </Routes>
-      </MemoryRouter>
-    )
+    renderSessionDetailPage()
 
-    expect(await screen.findByText('Fix session metadata')).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Fix session metadata' })).toBeInTheDocument()
     selectSessionDetailTab(/Artifacts/)
     expect(screen.getByText('3 checkpoints recorded')).toBeInTheDocument()
     expect(screen.getByText(/Checkpoints are file-history snapshots/)).toBeInTheDocument()
@@ -609,13 +609,7 @@ describe('session pages', () => {
       fileHistoryCount: 0
     }))
 
-    render(
-      <MemoryRouter initialEntries={['/sessions/session-session-abc']}>
-        <Routes>
-          <Route path="/sessions/:id" element={<SessionDetail />} />
-        </Routes>
-      </MemoryRouter>
-    )
+    renderSessionDetailPage()
 
     expect(await screen.findByText('No skills were loaded')).toBeInTheDocument()
     expect(screen.getByText('Token rate')).toBeInTheDocument()
@@ -631,12 +625,13 @@ describe('session pages', () => {
   it('renders usage token totals and model token counts', async () => {
     mockSessionApis()
 
-    render(
-      <MemoryRouter>
-        <Usage />
-      </MemoryRouter>
-    )
+    renderUsagePage()
 
+    expect(await screen.findByRole('heading', { name: 'Usage' })).toBeInTheDocument()
+    const breadcrumb = screen.getByRole('navigation', { name: 'Breadcrumb' })
+    expect(within(breadcrumb).getByText('RUN')).toBeInTheDocument()
+    expect(within(breadcrumb).getByText('Usage')).toBeInTheDocument()
+    expect(screen.getByText('Local token and cost data from scanned Claude Code and Codex sessions.')).toBeInTheDocument()
     expect(await screen.findByText('Input: 10')).toBeInTheDocument()
     expect(screen.getByText('Output: 5')).toBeInTheDocument()
     expect(screen.getByText('Cache: 23 (read 20 / write 3)')).toBeInTheDocument()
@@ -662,11 +657,7 @@ describe('session pages', () => {
       })
     })
 
-    const view = render(
-      <MemoryRouter>
-        <Usage />
-      </MemoryRouter>
-    )
+    const view = renderUsagePage()
 
     try {
       expect(await screen.findByText('Input: 10')).toBeInTheDocument()
@@ -687,11 +678,7 @@ describe('session pages', () => {
   it('shows usage placeholders while the first summary request is loading', () => {
     window.api.usage.summary = vi.fn(() => new Promise<UsageSummary>(() => undefined))
 
-    render(
-      <MemoryRouter>
-        <Usage />
-      </MemoryRouter>
-    )
+    renderUsagePage()
 
     expect(screen.getByLabelText('Loading usage summary')).toBeInTheDocument()
     expect(screen.queryByText('0 tok')).not.toBeInTheDocument()
@@ -718,11 +705,7 @@ describe('session pages', () => {
       rateLimits: []
     }))
 
-    const { unmount } = render(
-      <MemoryRouter>
-        <Usage />
-      </MemoryRouter>
-    )
+    const { unmount } = renderUsagePage()
 
     expect(await screen.findByText('Input: 10')).toBeInTheDocument()
     expect(screen.getByText('Unknown: 5')).toBeInTheDocument()
@@ -740,11 +723,7 @@ describe('session pages', () => {
   it('passes selected cost mode to usage summary', async () => {
     mockSessionApis()
 
-    render(
-      <MemoryRouter>
-        <Usage />
-      </MemoryRouter>
-    )
+    renderUsagePage()
 
     expect(await screen.findByText('Input: 10')).toBeInTheDocument()
     expect(screen.queryByRole('radiogroup', { name: 'Cost mode' })).not.toBeInTheDocument()
@@ -767,11 +746,7 @@ describe('session pages', () => {
   it('uses all-time usage by default and preserves explicit rolling ranges', async () => {
     mockSessionApis()
 
-    render(
-      <MemoryRouter>
-        <Usage />
-      </MemoryRouter>
-    )
+    renderUsagePage()
 
     expect(await screen.findByText('Input: 10')).toBeInTheDocument()
     expect(window.api.usage.summary).toHaveBeenCalledWith({
@@ -822,11 +797,7 @@ describe('session pages', () => {
         rateLimits: []
       })
 
-    render(
-      <MemoryRouter>
-        <Usage />
-      </MemoryRouter>
-    )
+    renderUsagePage()
 
     expect(await screen.findByText('Usage data could not be loaded')).toBeInTheDocument()
 
@@ -861,11 +832,7 @@ describe('session pages', () => {
       })
       .mockRejectedValueOnce(new Error('boom'))
 
-    render(
-      <MemoryRouter>
-        <Usage />
-      </MemoryRouter>
-    )
+    renderUsagePage()
 
     expect(await screen.findByText('Input: 4')).toBeInTheDocument()
 
@@ -905,11 +872,7 @@ describe('session pages', () => {
       rateLimits: []
     } as unknown as UsageSummary))
 
-    render(
-      <MemoryRouter>
-        <Usage />
-      </MemoryRouter>
-    )
+    renderUsagePage()
 
     expect(await screen.findByText('Unknown cost')).toBeInTheDocument()
     expect(screen.getByText('legacy-model')).toBeInTheDocument()
@@ -985,11 +948,7 @@ describe('session pages', () => {
       rateLimits: []
     }))
 
-    render(
-      <MemoryRouter>
-        <Usage />
-      </MemoryRouter>
-    )
+    renderUsagePage()
 
     expect(await screen.findByText('Pricing gaps')).toBeInTheDocument()
     const byModel = screen.getByRole('region', { name: 'By Model' })

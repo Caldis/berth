@@ -16,8 +16,8 @@
 - [x] 4. 迁移 Instructions 与 Capabilities 的 title、filter/scope 与 help:
   - tests: `pnpm vitest run tests/renderer/instructions-guidance.test.tsx tests/renderer/capabilities-guidance.test.tsx tests/renderer/top-navigation.test.tsx` (pass, 19 tests); `pnpm typecheck:web` (pass)
   - verify: 除 Memories 以外的各 tab title 位于 nav; filter/scope 行为不变; permissions tab 不显示 filter; help 证据标签与 details 可访问。
-- [ ] 5. 迁移 Usage 与 Session detail 顶部 chrome:
-  - tests: `pnpm vitest run tests/renderer/sessions-pages.test.tsx tests/renderer/top-navigation.test.tsx`
+- [x] 5. 迁移 Usage 与 Session detail 顶部 chrome:
+  - tests: `pnpm vitest run tests/renderer/sessions-pages.test.tsx tests/renderer/top-navigation.test.tsx tests/renderer/usage-tooltip-label.test.tsx` (pass, 32 tests); `pnpm typecheck:web` (pass)
   - verify: Usage time range 请求参数不变; Session detail 返回按钮与 breadcrumb 在 nav; 内容区不重复顶部标题块。
 - [ ] 6. 局部与总门禁:
   - tests: `pnpm typecheck:web`; `pnpm harness:check`; `pnpm vitest run tests/renderer/top-navigation.test.tsx tests/renderer/app-layout.test.tsx tests/renderer/sessions-pages.test.tsx tests/renderer/instructions-guidance.test.tsx tests/renderer/capabilities-guidance.test.tsx`

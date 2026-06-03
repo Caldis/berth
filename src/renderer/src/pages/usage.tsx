@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   BarChart,
@@ -27,6 +27,7 @@ import { useAppStore } from '@/stores/app'
 import { CostSourceBadge } from '@/components/shared/cost-source-badge'
 import { NoticePanel } from '@/components/shared/notice-panel'
 import { projectPathForScope } from '@shared/scope'
+import { usePageChrome, type PageChromeConfig } from '@/components/layout/page-chrome'
 
 const CHART_COLORS = [
   'hsl(var(--chart-1))',
@@ -354,6 +355,35 @@ export function Usage(): React.ReactElement {
   const pricingOverrideJson = pricingOverrideMiss ? pricingOverrideExample(pricingOverrideMiss) : ''
   const isInitialLoading = !hasLoadedUsage && !usage && !loadError
 
+  const pageChromeActions = useMemo<React.ReactNode>(() => (
+    <div className="flex gap-1 rounded-lg border border-border bg-muted/50 p-1">
+      {TIME_RANGES.map((range) => (
+        <button
+          key={range.value}
+          type="button"
+          onClick={() => setDays(range.value)}
+          aria-pressed={days === range.value}
+          className={cn(
+            'rounded-md px-3 py-1 text-xs font-medium transition-colors',
+            days === range.value
+              ? 'bg-background text-foreground shadow-sm'
+              : 'text-muted-foreground hover:text-foreground'
+          )}
+        >
+          {t(range.labelKey)}
+        </button>
+      ))}
+    </div>
+  ), [days, t])
+
+  const pageChrome = useMemo<PageChromeConfig>(() => ({
+    title: t('usage.title'),
+    subtitle: t('usage.subtitle'),
+    sectionLabelKey: 'nav.sections.operations',
+    actions: pageChromeActions
+  }), [pageChromeActions, t])
+  usePageChrome(pageChrome, [pageChrome])
+
   async function copyPricingOverride(): Promise<void> {
     if (!pricingOverrideJson || !navigator.clipboard) return
     await navigator.clipboard.writeText(pricingOverrideJson)
@@ -362,31 +392,6 @@ export function Usage(): React.ReactElement {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div className="max-w-2xl">
-          <h1 className="text-2xl font-semibold tracking-tight">{t('usage.title')}</h1>
-          <p className="mt-1 text-sm text-muted-foreground">{t('usage.subtitle')}</p>
-        </div>
-        <div className="flex flex-wrap items-center justify-end gap-2">
-          <div className="flex gap-1 rounded-lg border border-border bg-muted/50 p-1">
-            {TIME_RANGES.map((range) => (
-              <button
-                key={range.value}
-                onClick={() => setDays(range.value)}
-                className={cn(
-                  'rounded-md px-3 py-1 text-xs font-medium transition-colors',
-                  days === range.value
-                    ? 'bg-background text-foreground shadow-sm'
-                    : 'text-muted-foreground hover:text-foreground'
-                )}
-              >
-                {t(range.labelKey)}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-
       {isInitialLoading ? (
         <UsageLoadingSkeleton />
       ) : (
