@@ -1,6 +1,6 @@
 import '@testing-library/jest-dom'
 import { beforeEach } from 'vitest'
-import { resetHealthCheckCacheForTests } from '../src/renderer/src/hooks/use-ipc'
+import { resetHealthCheckCacheForTests, resetSessionsCacheForTests } from '../src/renderer/src/hooks/use-ipc'
 
 const emptyTokenUsage = {
   inputTokens: 0,
@@ -169,6 +169,7 @@ Object.defineProperty(window, 'api', { value: mockApi, writable: true })
 
 beforeEach(() => {
   resetHealthCheckCacheForTests()
+  resetSessionsCacheForTests()
 })
 
 // Mock matchMedia

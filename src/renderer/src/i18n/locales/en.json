@@ -263,6 +263,7 @@
     "loadingList": "Loading sessions",
     "loadingListDescription": "Reading local transcript summaries for the current agent view.",
     "refreshing": "Updating sessions...",
+    "renderingRows": "Showing {{shown}} of {{total}} sessions",
     "loadingDetail": "Loading session detail",
     "loadingDetailDescription": "Reading transcript-derived tools, assets, and artifacts.",
     "emptyDetailTitle": "Session not found",

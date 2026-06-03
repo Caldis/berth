@@ -258,6 +258,7 @@
     "loadingList": "正在加载会话",
     "loadingListDescription": "正在读取当前 Agent 视角下的本地 transcript 摘要。",
     "refreshing": "正在更新会话…",
+    "renderingRows": "正在显示 {{shown}} / {{total}} 个会话",
     "loadingDetail": "正在加载会话详情",
     "loadingDetailDescription": "正在读取 transcript 推导出的工具、资产和产物。",
     "emptyDetailTitle": "未找到会话",

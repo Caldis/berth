@@ -242,6 +242,43 @@ describe('session pages', () => {
     expect(screen.getAllByText('claude-sonnet-4-20250514').length).toBeGreaterThan(0)
   })
 
+  it('renders large session lists in batches', async () => {
+    vi.useFakeTimers()
+    const sessions = Array.from({ length: 130 }, (_, index) => ({
+      ...summary,
+      id: `session-${index}`,
+      title: `Session ${index}`,
+      transcriptPath: `C:\\Users\\test\\.claude\\projects\\D--Code-berth\\session-${index}.jsonl`
+    }))
+    window.api.sessions.list = vi.fn(async () => ({ sessions, totalCount: sessions.length }))
+
+    try {
+      render(
+        <MemoryRouter>
+          <Sessions />
+        </MemoryRouter>
+      )
+
+      await act(async () => {
+        await Promise.resolve()
+        await Promise.resolve()
+      })
+
+      expect(screen.getByText('Session 0')).toBeInTheDocument()
+      expect(screen.queryByText('Session 129')).not.toBeInTheDocument()
+      expect(screen.getByText('Showing 80 of 130 sessions')).toBeInTheDocument()
+
+      await act(async () => {
+        vi.runOnlyPendingTimers()
+      })
+
+      expect(screen.getByText('Session 129')).toBeInTheDocument()
+      expect(screen.queryByText('Showing 80 of 130 sessions')).not.toBeInTheDocument()
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
   it('passes selected project scope to the sessions list', async () => {
     mockSessionApis()
     act(() => {

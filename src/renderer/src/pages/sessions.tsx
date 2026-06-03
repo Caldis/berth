@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useDeferredValue, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import {
@@ -29,6 +29,9 @@ import { projectPathForScope } from '@shared/scope'
 
 type GroupBy = 'project' | 'date'
 
+const INITIAL_VISIBLE_SESSIONS = 80
+const SESSION_RENDER_BATCH_SIZE = 120
+
 function getDateGroupKey(dateStr: string | null, unknownLabel: string): string {
   if (!dateStr) return unknownLabel
   const d = new Date(dateStr)
@@ -45,12 +48,13 @@ export function Sessions(): React.ReactElement {
   const { sessions, loading, stale } = useSessions({ agentView, projectPath })
 
   const [filter, setFilter] = useState('')
+  const deferredFilter = useDeferredValue(filter)
   const [groupBy, setGroupBy] = useState<GroupBy>('project')
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set())
 
   const filtered = useMemo(() => {
-    if (!filter.trim()) return sessions
-    const q = filter.toLowerCase()
+    if (!deferredFilter.trim()) return sessions
+    const q = deferredFilter.toLowerCase()
     return sessions.filter(
       (s) =>
         s.title.toLowerCase().includes(q) ||
@@ -58,11 +62,19 @@ export function Sessions(): React.ReactElement {
         s.projectPath.toLowerCase().includes(q) ||
         s.model.toLowerCase().includes(q)
     )
-  }, [sessions, filter])
+  }, [sessions, deferredFilter])
+  const visibleCount = useProgressiveVisibleCount(
+    filtered.length,
+    `${groupBy}:${deferredFilter}:${sessions.length}:${sessions[0]?.id ?? ''}`
+  )
+  const visibleSessions = useMemo(
+    () => filtered.slice(0, visibleCount),
+    [filtered, visibleCount]
+  )
 
   const grouped = useMemo(() => {
-    const result: Record<string, typeof filtered> = {}
-    for (const s of filtered) {
+    const result: Record<string, typeof visibleSessions> = {}
+    for (const s of visibleSessions) {
       const key =
         groupBy === 'project'
           ? truncatePath(s.projectPath || s.project || t('common.unknown'), 72)
@@ -70,6 +82,17 @@ export function Sessions(): React.ReactElement {
       ;(result[key] ??= []).push(s)
     }
     return result
+  }, [visibleSessions, groupBy, t])
+  const groupCounts = useMemo(() => {
+    const counts: Record<string, number> = {}
+    for (const s of filtered) {
+      const key =
+        groupBy === 'project'
+          ? truncatePath(s.projectPath || s.project || t('common.unknown'), 72)
+          : getDateGroupKey(s.startedAt, t('common.unknown'))
+      counts[key] = (counts[key] ?? 0) + 1
+    }
+    return counts
   }, [filtered, groupBy, t])
 
   const evidence = useMemo<FeatureGuideEvidence[]>(() => {
@@ -84,6 +107,7 @@ export function Sessions(): React.ReactElement {
 
   const hasFilter = filter.trim().length > 0
   const showInitialLoading = loading && sessions.length === 0
+  const isRenderingPartialList = visibleCount < filtered.length
 
   const toggleGroup = (key: string): void => {
     setCollapsedGroups((prev) => {
@@ -149,6 +173,16 @@ export function Sessions(): React.ReactElement {
           {t('sessions.refreshing')}
         </div>
       )}
+      {isRenderingPartialList && (
+        <div
+          role="status"
+          aria-label={t('sessions.renderingRows', { shown: visibleCount, total: filtered.length })}
+          className="inline-flex w-fit items-center gap-2 rounded-md border border-border bg-muted/40 px-2.5 py-1 text-xs text-muted-foreground"
+        >
+          <span className="h-1.5 w-1.5 rounded-full bg-primary motion-safe:animate-pulse" aria-hidden="true" />
+          {t('sessions.renderingRows', { shown: visibleCount, total: filtered.length })}
+        </div>
+      )}
 
       {/* Session list */}
       {showInitialLoading ? (
@@ -183,7 +217,7 @@ export function Sessions(): React.ReactElement {
                   <FolderOpen className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
                   <span className="text-sm font-medium text-card-foreground">{groupKey}</span>
                   <span className="ml-auto text-xs text-muted-foreground">
-                    {groupSessions.length}
+                    {groupCounts[groupKey] ?? groupSessions.length}
                   </span>
                 </button>
 
@@ -237,4 +271,45 @@ export function Sessions(): React.ReactElement {
       )}
     </div>
   )
+}
+
+function useProgressiveVisibleCount(total: number, resetKey: string): number {
+  const [visibleCount, setVisibleCount] = useState(() => Math.min(INITIAL_VISIBLE_SESSIONS, total))
+
+  useEffect(() => {
+    let cancelled = false
+    let timeoutId: ReturnType<typeof globalThis.setTimeout> | null = null
+    let idleId: number | null = null
+
+    const initialCount = Math.min(INITIAL_VISIBLE_SESSIONS, total)
+    setVisibleCount(initialCount)
+    if (total <= initialCount) return undefined
+
+    const scheduleNextBatch = (): void => {
+      const addBatch = (): void => {
+        if (cancelled) return
+        setVisibleCount((current) => {
+          const next = Math.min(current + SESSION_RENDER_BATCH_SIZE, total)
+          if (next < total) scheduleNextBatch()
+          return next
+        })
+      }
+
+      if ('requestIdleCallback' in window) {
+        idleId = window.requestIdleCallback(addBatch, { timeout: 120 })
+      } else {
+        timeoutId = globalThis.setTimeout(addBatch, 16)
+      }
+    }
+
+    scheduleNextBatch()
+
+    return () => {
+      cancelled = true
+      if (idleId != null && 'cancelIdleCallback' in window) window.cancelIdleCallback(idleId)
+      if (timeoutId != null) globalThis.clearTimeout(timeoutId)
+    }
+  }, [total, resetKey])
+
+  return visibleCount
 }
