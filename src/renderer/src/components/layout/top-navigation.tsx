@@ -53,9 +53,8 @@ export function TopNavigation({ isWindows }: { isWindows: boolean }): React.Reac
   const breadcrumbs = useMemo(() => {
     const items: BreadcrumbItem[] = []
     if (sectionLabel) items.push({ key: 'section', label: sectionLabel })
-    if (title) items.push({ key: 'title', label: title })
     return items
-  }, [sectionLabel, title])
+  }, [sectionLabel])
   const focusPageSearch = useCallback(() => {
     searchInputRef.current?.focus()
     searchInputRef.current?.select()
@@ -91,12 +90,7 @@ export function TopNavigation({ isWindows }: { isWindows: boolean }): React.Reac
                   <span key={`${item.key}-${index}`} className="flex min-w-0 items-center gap-1">
                     {index > 0 && <ChevronRight className="h-3 w-3 shrink-0 text-muted-foreground" />}
                     <span
-                      className={cn(
-                        'truncate',
-                        index === breadcrumbs.length - 1
-                          ? 'font-medium text-foreground'
-                          : 'text-muted-foreground'
-                      )}
+                      className="truncate font-medium text-muted-foreground"
                     >
                       {item.label}
                     </span>

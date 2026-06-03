@@ -28,6 +28,9 @@
 - [x] 8. 修正总览无导航栏时的顶部留白:
   - tests: `pnpm vitest run tests/renderer/app-layout.test.tsx` (pass, 2 tests); `pnpm typecheck:web` (pass); `pnpm harness:check` (pass)
   - verify: 总览仍不渲染 `TopNavigation`, 内容外壳使用 `pt-6` 与 `px-6` 对齐; 功能页内容区仍保持 `pt-5`。
+- [x] 9. 去除导航栏 breadcrumb 与页面标题重复:
+  - tests: `pnpm vitest run tests/renderer/top-navigation.test.tsx tests/renderer/sessions-pages.test.tsx` (pass, 31 tests); `pnpm typecheck:web` (pass); `pnpm harness:check` (pass)
+  - verify: breadcrumb 只显示上级上下文; 当前页面名称只在导航栏标题行显示。
 
 ## verify 回写
 verify 不通过项作为新任务追加于此, phase 退回 implement。

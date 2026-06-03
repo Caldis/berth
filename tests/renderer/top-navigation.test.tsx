@@ -48,7 +48,7 @@ describe('TopNavigation', () => {
 
     const breadcrumb = screen.getByRole('navigation', { name: 'Breadcrumb' })
     expect(within(breadcrumb).getByText('RUN')).toBeInTheDocument()
-    expect(within(breadcrumb).getByText('Usage')).toBeInTheDocument()
+    expect(within(breadcrumb).queryByText('Usage')).not.toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Usage' })).toBeInTheDocument()
   })
 
@@ -57,7 +57,7 @@ describe('TopNavigation', () => {
 
     const breadcrumb = screen.getByRole('navigation', { name: 'Breadcrumb' })
     expect(within(breadcrumb).getByText('CAPABILITIES')).toBeInTheDocument()
-    expect(within(breadcrumb).getByText('Hooks')).toBeInTheDocument()
+    expect(within(breadcrumb).queryByText('Hooks')).not.toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Hooks' })).toBeInTheDocument()
   })
 
@@ -76,7 +76,7 @@ describe('TopNavigation', () => {
 
     const breadcrumb = screen.getByRole('navigation', { name: 'Breadcrumb' })
     expect(within(breadcrumb).getByText('Sessions')).toBeInTheDocument()
-    expect(within(breadcrumb).getByText('Fix session metadata')).toBeInTheDocument()
+    expect(within(breadcrumb).queryByText('Fix session metadata')).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Back to sessions' })).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Fix session metadata' })).toBeInTheDocument()
   })
@@ -157,6 +157,7 @@ describe('TopNavigation', () => {
 
     const breadcrumb = screen.getByRole('navigation', { name: '面包屑' })
     expect(within(breadcrumb).getByText('会话')).toBeInTheDocument()
-    expect(within(breadcrumb).getByText('会话 #session-')).toBeInTheDocument()
+    expect(within(breadcrumb).queryByText('会话 #session-')).not.toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: '会话 #session-' })).toBeInTheDocument()
   })
 })
