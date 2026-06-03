@@ -10,6 +10,7 @@ source:
   kind: user-request
   refs:
     - https://github.com/Caldis/berth/issues/91
+    - https://github.com/Caldis/berth/issues/92
 debt:
   estimate:
     incurred: 3
@@ -30,7 +31,7 @@ debt:
     areas:
       - ui-ux
     confidence: medium
-    rationale: "Renderer 单组件布局与测试改造; 主进程、IPC 与数据契约未变。"
+    rationale: "Renderer shell 统一内容 gutter、顶部偏移和 scrollbar gutter 变量, Hooks 生命周期左栏使用同一偏移计算 sticky top/max-height; 主进程、IPC 与数据契约未变。"
   revisions:
     - phase: explore
       date: 2026-06-03

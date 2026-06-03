@@ -45,6 +45,9 @@ describe('AppLayout navigation shell', () => {
     expect(navigation).toHaveAttribute('data-state', 'hidden')
     expect(navigation).toHaveAttribute('aria-hidden', 'true')
     expect(screen.getByTestId('app-content-scroll')).toHaveClass('overflow-auto')
+    expect(screen.getByTestId('app-content-scroll').style.getPropertyValue('--berth-content-gutter')).toBe('24px')
+    expect(screen.getByTestId('app-content-scroll').style.getPropertyValue('--berth-content-top-offset')).toBe('24px')
+    expect(screen.getByTestId('app-content-scroll').style.getPropertyValue('--berth-scrollbar-gutter')).toBe('0px')
     expect(overviewPage.parentElement).toHaveStyle({ paddingTop: '24px' })
   })
 
@@ -61,7 +64,13 @@ describe('AppLayout navigation shell', () => {
     expect(scrollRegion).toHaveClass('overflow-auto')
     expect(scrollRegion).toHaveClass('[scrollbar-gutter:stable]')
     expect(scrollRegion).not.toContainElement(navigation)
-    expect(screen.getByTestId('page-content').parentElement).toHaveStyle({ paddingTop: '92px' })
+    expect(scrollRegion.style.getPropertyValue('--berth-content-gutter')).toBe('24px')
+    expect(scrollRegion.style.getPropertyValue('--berth-content-top-offset')).toBe('96px')
+    expect(scrollRegion.style.getPropertyValue('--berth-scrollbar-gutter')).toBe('0px')
+    expect(screen.getByTestId('page-content').parentElement).toHaveStyle({
+      paddingTop: '96px',
+      paddingRight: 'max(0px, calc(var(--berth-content-gutter, 24px) - var(--berth-scrollbar-gutter, 0px)))'
+    })
     expect(screen.getByRole('heading', { name: 'Sessions' })).toBeInTheDocument()
   })
 })

@@ -1,4 +1,4 @@
-import { useMemo, useState, type CSSProperties, type ReactNode } from 'react'
+import { useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { useLocation } from 'react-router-dom'
 import { Sidebar } from './sidebar'
 import { SearchDialog } from './search-dialog'
@@ -10,6 +10,14 @@ import { useAssets } from '@/hooks/use-ipc'
 import { TopNavigation } from './top-navigation'
 import { PageChromeProvider } from './page-chrome'
 
+type ContentScrollStyle = CSSProperties & {
+  '--berth-content-gutter': string
+  '--berth-content-top-offset': string
+  '--berth-scrollbar-gutter': string
+}
+
+const CONTENT_GUTTER_PX = 24
+
 export function AppLayout({ children }: { children: ReactNode }): React.ReactElement {
   const sidebarCollapsed = useAppStore((s) => s.sidebarCollapsed)
   const sidebarWidth = useAppStore((s) => s.sidebarWidth)
@@ -17,16 +25,44 @@ export function AppLayout({ children }: { children: ReactNode }): React.ReactEle
   const isWindows = isWindowsPlatform()
   const effectiveSidebarWidth = sidebarCollapsed ? SIDEBAR_COLLAPSED_WIDTH : sidebarWidth
   const isOverviewRoute = location.pathname === '/'
+  const scrollRegionRef = useRef<HTMLElement | null>(null)
   const [topNavigationHeight, setTopNavigationHeight] = useState(72)
-  const contentTopOffset = isOverviewRoute ? 24 : topNavigationHeight + 20
-  const scrollRegionStyle = useMemo<CSSProperties>(
-    () => ({ scrollPaddingTop: contentTopOffset }),
-    [contentTopOffset]
+  const [scrollbarGutter, setScrollbarGutter] = useState(0)
+  const contentTopOffset = isOverviewRoute ? CONTENT_GUTTER_PX : topNavigationHeight + CONTENT_GUTTER_PX
+  const scrollRegionStyle = useMemo<ContentScrollStyle>(
+    () => ({
+      scrollPaddingTop: contentTopOffset,
+      '--berth-content-gutter': `${CONTENT_GUTTER_PX}px`,
+      '--berth-content-top-offset': `${contentTopOffset}px`,
+      '--berth-scrollbar-gutter': `${scrollbarGutter}px`
+    }),
+    [contentTopOffset, scrollbarGutter]
   )
   const contentStyle = useMemo<CSSProperties>(
-    () => ({ paddingTop: contentTopOffset }),
+    () => ({
+      paddingTop: contentTopOffset,
+      paddingRight: 'max(0px, calc(var(--berth-content-gutter, 24px) - var(--berth-scrollbar-gutter, 0px)))'
+    }),
     [contentTopOffset]
   )
+
+  useLayoutEffect(() => {
+    const element = scrollRegionRef.current
+    if (!element) return undefined
+
+    const publishScrollbarGutter = (): void => {
+      const nextGutter = Math.max(0, element.offsetWidth - element.clientWidth)
+      setScrollbarGutter((current) => current === nextGutter ? current : nextGutter)
+    }
+
+    publishScrollbarGutter()
+
+    if (typeof ResizeObserver === 'undefined') return undefined
+    const resizeObserver = new ResizeObserver(publishScrollbarGutter)
+    resizeObserver.observe(element)
+    return () => resizeObserver.disconnect()
+  }, [])
+
   useAssets()
 
   return (
@@ -39,11 +75,12 @@ export function AppLayout({ children }: { children: ReactNode }): React.ReactEle
         >
           <TopNavigation isWindows={isWindows} onHeightChange={setTopNavigationHeight} />
           <main
+            ref={scrollRegionRef}
             data-testid="app-content-scroll"
             className="min-h-0 flex-1 overflow-auto [scrollbar-gutter:stable]"
             style={scrollRegionStyle}
           >
-            <div className="px-6 pb-6" style={contentStyle}>
+            <div className="pl-6 pb-6" style={contentStyle}>
               {children}
             </div>
           </main>

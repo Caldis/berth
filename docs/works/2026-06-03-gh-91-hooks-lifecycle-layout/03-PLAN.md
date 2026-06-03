@@ -20,9 +20,16 @@
   - 内容: 完整门禁与 Electron 视觉/交互验收, 记录证据。
   - tests: `pnpm harness:check --work docs/works/2026-06-03-gh-91-hooks-lifecycle-layout` 通过; `pnpm typecheck:web` 通过; `pnpm vitest run tests/renderer/hooks-lifecycle-view.test.tsx` 通过, 30 tests passed。
   - verify: Electron agent 实例 `hooks-layout` 已实测; 截图 `/tmp/berth-hooks-layout-desktop.png`; 右侧滚到 `Before a tool runs` 后左侧 `03` 高亮; desktop connector 9 条, `stroke-linecap=round`, `stroke-linejoin=round`; 760px 视口无横向溢出且 connector 隐藏。
+- [x] 任务 5:
+  - 内容: 修正左侧生命周期 rail 的 sticky 顶部偏移和最大高度, 为绝对定位 header 预留空间; 来源为重复问题 #92。
+  - tests: `pnpm vitest run tests/renderer/hooks-lifecycle-view.test.tsx tests/renderer/app-layout.test.tsx` 通过, 32 tests passed; `pnpm typecheck:web` 通过; `pnpm harness:check --work docs/works/2026-06-03-gh-91-hooks-lifecycle-layout` 通过。目标测试仍打印既有 React `act(...)` warning, 结果通过。
+  - verify: Electron agent 实例 `gh91-gutter-align` 实测通过; header bottom=72, content offset=96px, scrollbar gutter=10px; 左栏左侧=24px, 左栏到 header=24px, 右栏到 header=24px, 右栏到可见 scrollbar=24px; lifecycle rail sticky top=96px, max-height=740px; 截图 `C:\Users\mail\AppData\Local\Temp\berth-agent-dev\gh91-gutter-align\screenshot.png`; guard after 返回 `guard-ok`。
 
 ## verify 回写
 verify 不通过项作为新任务追加于此, phase 退回 implement。
+
+- 2026-06-03: 用户反馈 hooks 页面左侧“生命周期”sticky/fixed 高度没有正确为 header 预留空间。该问题属于 GH-91 布局验收缺口, 已退回 implement 并追加任务 5。
+- 2026-06-03: 用户进一步要求左栏左侧、左栏到 header、右栏到 header、右栏到 scrollbar 四个距离完全一致。已将 shell 内容 gutter 统一为 24px, 并按实际 scrollbar gutter 调整右侧 padding; 任务 5 通过目标测试、web typecheck、当前 work harness 检查和 Electron 实测。phase 切回 verify。
 
 ## verify 证据
 
