@@ -2,7 +2,7 @@
 task: 2026-06-03-gh-91-hooks-lifecycle-layout
 task_id: GH-91
 type: feature
-phase: explore
+phase: design
 created: 2026-06-03
 priority: P2
 target_date: 
@@ -19,7 +19,7 @@ debt:
     risk: medium
     areas:
       - ui-ux
-    confidence: low
+    confidence: medium
     rationale: "0.0-new 初始估算; Hooks 页面布局、滚动同步与连线视觉改造, explore/design 后校准。"
   final:
     incurred:
@@ -30,7 +30,14 @@ debt:
     areas: []
     confidence:
     rationale:
-  revisions: []
+  revisions:
+    - phase: explore
+      date: 2026-06-03
+      from:
+        confidence: low
+      to:
+        confidence: medium
+      reason: "Explore 已定位到单一 renderer 组件与现有测试文件, 风险仍为 module/medium。"
 issue:
   number: 91
   repo: Caldis/berth
@@ -57,8 +64,8 @@ artifacts:
 任务索引与交接锚。phase 字段为唯一状态源, `harness-0.1-continue` 据此续跑。
 
 ## 产物
-- [ ] 00-PRD.md / 00-BUG.md — 原始输入快照
-- [ ] 01-ANALYSIS.md — Explore 产物
+- [x] 00-PRD.md / 00-BUG.md — 原始输入快照
+- [x] 01-ANALYSIS.md — Explore 产物
 - [ ] 02-SPEC.md — Design 产物
 - [ ] 03-PLAN.md — 活任务清单
 - [ ] 04-POLISH.md — 可选抛光记录
