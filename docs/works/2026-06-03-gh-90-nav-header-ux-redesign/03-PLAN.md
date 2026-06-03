@@ -37,6 +37,9 @@
 - [x] 11. 将页面说明改为 hover 图标按钮:
   - tests: `pnpm vitest run tests/renderer/top-navigation.test.tsx tests/renderer/sessions-pages.test.tsx tests/renderer/instructions-guidance.test.tsx tests/renderer/capabilities-guidance.test.tsx` (pass, 43 tests); `pnpm typecheck:web` (pass); `pnpm harness:check` (pass)
   - verify: 导航栏只显示 `?` 图标按钮; hover/focus 打开说明叠层; 鼠标可从按钮移动到叠层内容且不关闭。agent-owned Electron `gh90-guide-hover` CDP 鼠标移动验证通过: button text empty, aria-label `Page guide`, hover 后 panel visible, 移入 panel 后仍 visible, 移出后关闭。
+- [x] 12. 修正页面说明叠层移入时过早关闭:
+  - tests: `pnpm vitest run tests/renderer/top-navigation.test.tsx tests/renderer/sessions-pages.test.tsx tests/renderer/instructions-guidance.test.tsx tests/renderer/capabilities-guidance.test.tsx` (pass, 43 tests); `pnpm typecheck:web` (pass); `pnpm harness:check` (pass)
+  - verify: 离开按钮区后不会立即关闭; 鼠标进入说明叠层会取消关闭计时; 移出叠层后再关闭。agent-owned Electron `gh90-guide-hover-fix` CDP 鼠标路径验证通过: 离开 36px 按钮区域后 panel 仍 visible, 进入 panel 后仍 visible, `Details` 按钮存在, 移到外部后关闭。
 
 ## verify 回写
 verify 不通过项作为新任务追加于此, phase 退回 implement。

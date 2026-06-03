@@ -1,6 +1,6 @@
 import { act, fireEvent, render, screen, within } from '@testing-library/react'
 import React from 'react'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { MemoryRouter } from 'react-router-dom'
 import i18n from '../../src/renderer/src/i18n'
 import { TopNavigation } from '../../src/renderer/src/components/layout/top-navigation'
@@ -88,40 +88,53 @@ describe('TopNavigation', () => {
     expect(screen.queryByRole('navigation', { name: 'Breadcrumb' })).not.toBeInTheDocument()
   })
 
-  it('shows page search and page guidance in the navigation bar', () => {
-    renderTopNavigation('/sessions', {
-      config: {
-        title: 'Sessions',
-        sectionLabelKey: 'nav.sections.work',
-        search: {
-          value: '',
-          onValueChange: () => undefined,
-          placeholder: 'Filter sessions...'
-        },
-        guide: {
-          definition: sessionGuide,
-          evidence: [{ labelKey: 'sessions.evidence.sessions', value: 816 }],
-          agentView: 'all'
-        },
-        actions: <button type="button">Project</button>
-      }
-    })
+  it('shows page search and keeps page guidance reachable while moving into the panel', () => {
+    vi.useFakeTimers()
+    try {
+      renderTopNavigation('/sessions', {
+        config: {
+          title: 'Sessions',
+          sectionLabelKey: 'nav.sections.work',
+          search: {
+            value: '',
+            onValueChange: () => undefined,
+            placeholder: 'Filter sessions...'
+          },
+          guide: {
+            definition: sessionGuide,
+            evidence: [{ labelKey: 'sessions.evidence.sessions', value: 816 }],
+            agentView: 'all'
+          },
+          actions: <button type="button">Project</button>
+        }
+      })
 
-    expect(screen.getByRole('textbox', { name: 'Filter sessions...' })).toBeInTheDocument()
-    expect(useAppStore.getState().searchOpen).toBe(false)
-    const guideButton = screen.getByRole('button', { name: 'Page guide' })
-    expect(guideButton).toBeInTheDocument()
-    expect(guideButton).toHaveTextContent('')
-    expect(screen.queryByText('Local conversation history')).not.toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Project' })).toBeInTheDocument()
+      expect(screen.getByRole('textbox', { name: 'Filter sessions...' })).toBeInTheDocument()
+      expect(useAppStore.getState().searchOpen).toBe(false)
+      const guideButton = screen.getByRole('button', { name: 'Page guide' })
+      expect(guideButton).toBeInTheDocument()
+      expect(guideButton).toHaveTextContent('')
+      expect(screen.queryByText('Local conversation history')).not.toBeInTheDocument()
+      expect(screen.getByRole('button', { name: 'Project' })).toBeInTheDocument()
 
-    fireEvent.mouseEnter(screen.getByTestId('page-guide-hover-region'))
-    expect(screen.getByText('Local conversation history')).toBeInTheDocument()
-    expect(screen.getByText('816')).toBeInTheDocument()
-    fireEvent.mouseEnter(screen.getByTestId('page-guide-panel'))
-    expect(screen.getByText('Local conversation history')).toBeInTheDocument()
-    fireEvent.mouseLeave(screen.getByTestId('page-guide-hover-region'))
-    expect(screen.queryByText('Local conversation history')).not.toBeInTheDocument()
+      const hoverRegion = screen.getByTestId('page-guide-hover-region')
+      fireEvent.pointerEnter(hoverRegion)
+      expect(screen.getByText('Local conversation history')).toBeInTheDocument()
+      expect(screen.getByText('816')).toBeInTheDocument()
+
+      fireEvent.pointerLeave(hoverRegion)
+      expect(screen.getByText('Local conversation history')).toBeInTheDocument()
+
+      fireEvent.pointerEnter(screen.getByTestId('page-guide-panel'))
+      act(() => vi.advanceTimersByTime(220))
+      expect(screen.getByText('Local conversation history')).toBeInTheDocument()
+
+      fireEvent.pointerLeave(screen.getByTestId('page-guide-panel'))
+      act(() => vi.advanceTimersByTime(220))
+      expect(screen.queryByText('Local conversation history')).not.toBeInTheDocument()
+    } finally {
+      vi.useRealTimers()
+    }
   })
 
   it('uses the keyboard shortcut for page search before global search', () => {

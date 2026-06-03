@@ -1,4 +1,4 @@
-import { useCallback, useLayoutEffect, useMemo, useRef, useState, type FocusEvent } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type FocusEvent } from 'react'
 import { useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { ChevronRight, HelpCircle, Search } from 'lucide-react'
@@ -48,6 +48,7 @@ export function TopNavigation({ isWindows, onHeightChange }: TopNavigationProps)
   const [guideOpen, setGuideOpen] = useState(false)
   const searchInputRef = useRef<HTMLInputElement>(null)
   const headerRef = useRef<HTMLElement>(null)
+  const guideCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const route = useMemo(
     () => routeChrome(location.pathname, location.search),
     [location.pathname, location.search]
@@ -68,12 +69,30 @@ export function TopNavigation({ isWindows, onHeightChange }: TopNavigationProps)
     searchInputRef.current?.focus()
     searchInputRef.current?.select()
   }, [])
+  const clearGuideCloseTimer = useCallback(() => {
+    if (!guideCloseTimerRef.current) return
+    clearTimeout(guideCloseTimerRef.current)
+    guideCloseTimerRef.current = null
+  }, [])
+  const openGuide = useCallback(() => {
+    clearGuideCloseTimer()
+    setGuideOpen(true)
+  }, [clearGuideCloseTimer])
+  const scheduleGuideClose = useCallback(() => {
+    clearGuideCloseTimer()
+    guideCloseTimerRef.current = setTimeout(() => {
+      setGuideOpen(false)
+      guideCloseTimerRef.current = null
+    }, 180)
+  }, [clearGuideCloseTimer])
   const handleGuideBlur = useCallback((event: FocusEvent<HTMLDivElement>) => {
     if (!(event.relatedTarget instanceof Node) || !event.currentTarget.contains(event.relatedTarget)) {
-      setGuideOpen(false)
+      scheduleGuideClose()
     }
-  }, [])
+  }, [scheduleGuideClose])
   useRegisterPageSearchFocus(pageChrome.search ? focusPageSearch : null, [pageChrome.search, focusPageSearch])
+
+  useEffect(() => clearGuideCloseTimer, [clearGuideCloseTimer])
 
   useLayoutEffect(() => {
     if (!onHeightChange) return undefined
@@ -159,9 +178,9 @@ export function TopNavigation({ isWindows, onHeightChange }: TopNavigationProps)
             <div
               className="relative"
               data-testid="page-guide-hover-region"
-              onMouseEnter={() => setGuideOpen(true)}
-              onMouseLeave={() => setGuideOpen(false)}
-              onFocus={() => setGuideOpen(true)}
+              onPointerEnter={openGuide}
+              onPointerLeave={scheduleGuideClose}
+              onFocus={openGuide}
               onBlur={handleGuideBlur}
             >
               <button
@@ -176,6 +195,8 @@ export function TopNavigation({ isWindows, onHeightChange }: TopNavigationProps)
                 <div
                   className="absolute right-0 top-full z-40 w-[min(42rem,calc(100vw-3rem))] pt-2 motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-top-1 motion-safe:duration-150"
                   data-testid="page-guide-panel"
+                  onPointerEnter={openGuide}
+                  onPointerLeave={scheduleGuideClose}
                 >
                   <FeatureGuidePanel
                     guide={pageChrome.guide.definition}
