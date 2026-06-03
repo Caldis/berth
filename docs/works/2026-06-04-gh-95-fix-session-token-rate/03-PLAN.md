@@ -21,10 +21,13 @@
 
 verify 不通过项作为新任务追加于此, phase 退回 implement。
 
-- `pnpm vitest run tests/unit/session-activity.test.ts` - passed, 3 tests。
+- `pnpm vitest run tests/unit/session-activity.test.ts` - passed, 4 tests。
 - `pnpm vitest run tests/renderer/sessions-pages.test.tsx` - passed, 24 tests。
 - `pnpm typecheck:node` - passed。
 - `pnpm typecheck:web` - passed。
 - `pnpm harness:check --work docs/works/2026-06-04-gh-95-fix-session-token-rate` - passed。
-- `pnpm harness:prepush` - local lint/typecheck/test/harness checks passed, but command failed on `harness:ci:baseline` because latest remote CI run for `04ebf40` was already failing before this task.
-- `node scripts/harness-projects.mjs check --strict` - failed because unrelated `2026-06-03-gh-90-nav-header-ux-redesign` Project debt fields differ from its INDEX; this task's Project fields were resynced with `node scripts/harness-projects.mjs ensure docs/works/2026-06-04-gh-95-fix-session-token-rate`.
+- `pnpm harness:check` - passed。
+- `pnpm harness:stats` - passed, total debt=14, status=ok。
+- UI verify: `pnpm dev:agent guard before --id gh95-token-rate --json`; `pnpm dev:agent start --id gh95-token-rate --debug-port 9335 --json`; Playwright CDP opened first session detail and hovered `Token 消耗速率公式`; screenshot saved at `C:\Users\mail\AppData\Local\Temp\berth-gh95-token-rate-hover.png`; `pnpm dev:agent stop gh95-token-rate --json`; `pnpm dev:agent guard after --id gh95-token-rate --json` - passed, protected user dev process unchanged。
+- `pnpm harness:prepush` - local lint/typecheck/test/harness checks passed, but command failed on `harness:ci:baseline` because latest remote CI run `8cfbda3` was still in progress.
+- `node scripts/harness-projects.mjs check --strict` - failed because unrelated `2026-06-03-gh-90-nav-header-ux-redesign` Project debt fields differ from its INDEX。

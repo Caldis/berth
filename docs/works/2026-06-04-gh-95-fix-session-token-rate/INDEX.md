@@ -2,7 +2,7 @@
 task: 2026-06-04-gh-95-fix-session-token-rate
 task_id: GH-95
 type: bug
-phase: implement
+phase: verify
 created: 2026-06-04
 priority: P2
 target_date:
@@ -23,8 +23,8 @@ debt:
     confidence: medium
     rationale: "用户新增改名、长期会话分段和 hover 公式透明要求; 影响 sessions:get activity metrics、IPC 字段、Session Detail 展示和测试。"
   final:
-    incurred: 2
-    repaid: 1
+    incurred: 3
+    repaid: 2
     net: 1
     scope: module
     risk: low
@@ -32,7 +32,7 @@ debt:
       - ui-ux
       - testability
     confidence: high
-    rationale: "修复集中在 sessions:get activity metrics: 新增纯函数与单测, 对小于 60 秒的 usage 窗口返回 unavailable, renderer 和 IPC 字段不变。剩余 net=1 来自 60 秒阈值仍是基于日志时间语义的保守规则。"
+    rationale: "修复集中在 sessions:get activity metrics 与 Session Detail: token 速率改名为本地 token 消耗速率, 按最近活动窗口计算, 长空闲自动分段, hover 展示公式。剩余 net=1 来自该指标仍是本地 transcript 估算, 不是官方 telemetry。"
   revisions:
     - phase: explore
       date: 2026-06-04
