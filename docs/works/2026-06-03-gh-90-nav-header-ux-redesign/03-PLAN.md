@@ -13,8 +13,8 @@
 - [x] 3. 迁移 Sessions 顶部标题、说明、筛选、分组和 toolbar status:
   - tests: `pnpm vitest run tests/renderer/sessions-pages.test.tsx tests/renderer/top-navigation.test.tsx tests/renderer/memory-view.test.tsx` (pass, 38 tests); `pnpm typecheck:web` (pass)
   - verify: Sessions 内容区无重复 `h1` / guide / filter; loading/empty/list/分批渲染状态保留; actions 可键盘访问。用户澄清后 Memories 搜索输入迁移到顶部导航, 内容区搜索栏移除, `Ctrl/⌘K` 聚焦页面搜索。
-- [ ] 4. 迁移 Instructions 与 Capabilities 的 title、filter/scope 与 help:
-  - tests: `pnpm vitest run tests/renderer/instructions-guidance.test.tsx tests/renderer/capabilities-guidance.test.tsx tests/renderer/top-navigation.test.tsx`
+- [x] 4. 迁移 Instructions 与 Capabilities 的 title、filter/scope 与 help:
+  - tests: `pnpm vitest run tests/renderer/instructions-guidance.test.tsx tests/renderer/capabilities-guidance.test.tsx tests/renderer/top-navigation.test.tsx` (pass, 19 tests); `pnpm typecheck:web` (pass)
   - verify: 除 Memories 以外的各 tab title 位于 nav; filter/scope 行为不变; permissions tab 不显示 filter; help 证据标签与 details 可访问。
 - [ ] 5. 迁移 Usage 与 Session detail 顶部 chrome:
   - tests: `pnpm vitest run tests/renderer/sessions-pages.test.tsx tests/renderer/top-navigation.test.tsx`

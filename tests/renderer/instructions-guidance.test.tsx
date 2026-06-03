@@ -80,4 +80,38 @@ describe('Instructions guidance surfaces', () => {
     expect(screen.getByText('User skill')).toBeInTheDocument()
     expect(screen.queryByText('Other project skill')).not.toBeInTheDocument()
   })
+
+  it('moves instruction search and scope filters into the top navigation', async () => {
+    useAppStore.setState({
+      assets: [
+        skillAsset('User skill', 'user', 'C:/Users/mail/.codex/skills/user/SKILL.md'),
+        skillAsset('Project skill', 'project', 'D:/Code/berth/.agents/skills/project/SKILL.md')
+      ],
+      agentView: 'all',
+      scopeSelection: { mode: 'global' }
+    })
+
+    render(
+      <MemoryRouter initialEntries={['/instructions/skills']}>
+        <PageChromeProvider>
+          <TopNavigation isWindows={false} />
+          <Instructions activeSection="skills" />
+        </PageChromeProvider>
+      </MemoryRouter>
+    )
+
+    expect(await screen.findByRole('heading', { name: 'Skills' })).toBeInTheDocument()
+    const pageSearch = screen.getByRole('textbox', { name: 'Search assets... Skills' })
+    expect(screen.getAllByPlaceholderText('Search assets... Skills')).toHaveLength(1)
+
+    fireEvent.change(pageSearch, { target: { value: 'Project' } })
+
+    expect(screen.queryByText('User skill')).not.toBeInTheDocument()
+    expect(screen.getByText('Project skill')).toBeInTheDocument()
+
+    fireEvent.change(screen.getByRole('combobox', { name: 'Scope' }), { target: { value: 'user' } })
+
+    expect(screen.getByText('Nothing here yet')).toBeInTheDocument()
+    expect(screen.queryByText('Project skill')).not.toBeInTheDocument()
+  })
 })

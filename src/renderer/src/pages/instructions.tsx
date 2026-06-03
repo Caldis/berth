@@ -18,24 +18,23 @@ import {
 import { truncatePath } from '@/lib/utils'
 import { filterAssetsByAgentView } from '@/lib/agent-view'
 import { useAppStore } from '@/stores/app'
-import { FilterBar } from '@/components/shared/filter-bar'
+import { ScopeSelect, type ScopeFilter } from '@/components/shared/filter-bar'
 import { DetailRow } from '@/components/shared/detail-row'
 import { EmptyState } from '@/components/shared/empty-state'
 import { ScopeBadge } from '@/components/shared/scope-badge'
 import { ViewRawButton } from '@/components/shared/view-raw-button'
-import { FeatureGuidePanel } from '@/components/shared/feature-guide-panel'
 import {
   buildFeatureGuideEvidence,
   instructionGuideMap,
+  type FeatureGuideDefinition,
   type FeatureGuideEvidence,
   type InstructionGuideId
 } from '@/lib/feature-guidance'
-import type { Asset, AssetScope } from '@shared/types/asset'
+import type { AgentView, Asset } from '@shared/types/asset'
 import { filterAssetsByAppScope } from '@shared/scope'
 import { MemoryView } from '@/components/memory/memory-view'
 import { useMemory } from '@/hooks/use-memory'
-
-type ScopeFilter = 'all' | AssetScope
+import { usePageChrome, type PageChromeConfig } from '@/components/layout/page-chrome'
 
 const tabTypeMap: Record<string, string[]> = {
   conventions: ['claude-md', 'agents-md'],
@@ -285,6 +284,53 @@ function normalizeInstructionSection(value: string | undefined): string {
   return value && Object.prototype.hasOwnProperty.call(tabIconMap, value) ? value : 'skills'
 }
 
+function InstructionPageChrome({
+  activeTab,
+  agentView,
+  evidence,
+  guide,
+  scope,
+  search,
+  setScope,
+  setSearch
+}: {
+  activeTab: string
+  agentView: AgentView
+  evidence: FeatureGuideEvidence[]
+  guide?: FeatureGuideDefinition
+  scope: ScopeFilter
+  search: string
+  setScope: (scope: ScopeFilter) => void
+  setSearch: (value: string) => void
+}): null {
+  const { t } = useTranslation()
+  const actions = useMemo<React.ReactNode>(() => (
+    <ScopeSelect value={scope} onChange={setScope} className="w-36" />
+  ), [scope, setScope])
+  const title = t(`instructions.tabs.${activeTab}`)
+  const pageChrome = useMemo<PageChromeConfig>(() => ({
+    title,
+    sectionLabelKey: 'nav.sections.instructions',
+    search: {
+      value: search,
+      onValueChange: setSearch,
+      placeholder: `${t('search.placeholder')} ${title}`,
+      ariaLabel: `${t('search.placeholder')} ${title}`
+    },
+    guide: guide
+      ? {
+          definition: guide,
+          evidence,
+          agentView
+        }
+      : undefined,
+    actions
+  }), [actions, agentView, evidence, guide, search, setSearch, t, title])
+  usePageChrome(pageChrome, [pageChrome])
+
+  return null
+}
+
 /* ---------- Main page ---------- */
 export function Instructions({ activeSection }: { activeSection?: string } = {}): React.ReactElement {
   const { t } = useTranslation()
@@ -382,21 +428,16 @@ export function Instructions({ activeSection }: { activeSection?: string } = {})
   return (
     <div className="space-y-4">
       {activeTab !== 'memories' && (
-        <h1 className="text-2xl font-semibold tracking-tight">{t(`instructions.tabs.${activeTab}`)}</h1>
-      )}
-
-      {activeTab !== 'memories' && (
-        <FilterBar
+        <InstructionPageChrome
+          activeTab={activeTab}
+          agentView={agentView}
+          evidence={activeEvidence}
+          guide={activeGuide}
           search={search}
-          onSearchChange={setSearch}
           scope={scope}
-          onScopeChange={setScope}
-          placeholder={`${t('search.placeholder')} ${t(`instructions.tabs.${activeTab}`)}`}
+          setSearch={setSearch}
+          setScope={setScope}
         />
-      )}
-
-      {activeTab !== 'memories' && activeGuide && (
-        <FeatureGuidePanel guide={activeGuide} evidence={activeEvidence} agentView={agentView} />
       )}
 
       {renderContent()}

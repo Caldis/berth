@@ -4,6 +4,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { MemoryRouter, useLocation } from 'react-router-dom'
 import '../../src/renderer/src/i18n'
 import { Capabilities } from '../../src/renderer/src/pages/capabilities'
+import { TopNavigation } from '../../src/renderer/src/components/layout/top-navigation'
+import { PageChromeProvider } from '../../src/renderer/src/components/layout/page-chrome'
 import { useAppStore } from '../../src/renderer/src/stores/app'
 import type { Asset } from '../../src/shared/types/asset'
 import type { AgentCapabilityPlugin } from '../../src/shared/types/agent-plugin'
@@ -132,8 +134,11 @@ function LocationProbe(): React.ReactElement {
 function renderCapabilities(activeSection = 'mcp', initialEntry = `/capabilities/${activeSection}`): void {
   render(
     <MemoryRouter initialEntries={[initialEntry]}>
-      <Capabilities activeSection={activeSection} />
-      <LocationProbe />
+      <PageChromeProvider>
+        <TopNavigation isWindows={false} />
+        <Capabilities activeSection={activeSection} />
+        <LocationProbe />
+      </PageChromeProvider>
     </MemoryRouter>
   )
 }
@@ -147,8 +152,10 @@ describe('Capabilities guidance surfaces', () => {
   it('keeps hook concept guidance in the page guide instead of the lifecycle tool', async () => {
     renderCapabilities('hooks', '/capabilities/hooks')
 
-    expect(await screen.findByText('Lifecycle automation')).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Hooks' })).toBeInTheDocument()
     expect(screen.queryByText('Trigger point')).not.toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Page guide' }))
+    expect(screen.getByText('Lifecycle automation')).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: /Details/ }))
     expect(screen.getByText('Trigger point')).toBeInTheDocument()
     expect(screen.getByText('Agent differences')).toBeInTheDocument()
@@ -160,9 +167,11 @@ describe('Capabilities guidance surfaces', () => {
     useAppStore.setState({ assets: [statusLineAsset()], agentView: 'all' })
     renderCapabilities('statusLine', '/capabilities/status-line')
 
-    expect(await screen.findByText('Runtime status surface')).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Status Line' })).toBeInTheDocument()
     expect(screen.queryByText('Claude Code command')).not.toBeInTheDocument()
     expect(screen.queryByText(/Reads \[tui\]\.status_line from config\.toml/)).not.toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Page guide' }))
+    expect(screen.getByText('Runtime status surface')).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: /Details/ }))
     expect(screen.getAllByText('Claude Code command')).toHaveLength(1)
     expect(screen.getAllByText(/Reads \[tui\]\.status_line from config\.toml/)).toHaveLength(1)
@@ -173,22 +182,32 @@ describe('Capabilities guidance surfaces', () => {
   it('renders the section requested by the route', async () => {
     renderCapabilities('hooks', '/capabilities/hooks')
 
-    expect(await screen.findByText('Lifecycle automation')).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Hooks' })).toBeInTheDocument()
     expect(screen.getByTestId('location')).toHaveTextContent('/capabilities/hooks')
   })
 
   it('falls back to MCP when the section is unknown', async () => {
     renderCapabilities('unknown', '/capabilities/unknown')
 
-    expect(await screen.findByText('External tools and data sources')).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'MCP' })).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Page guide' }))
+    expect(screen.getByText('External tools and data sources')).toBeInTheDocument()
   })
 
   it('does not render the old capability tab switcher', async () => {
     useAppStore.setState({ assets: [statusLineAsset()], agentView: 'all' })
     renderCapabilities('statusLine', '/capabilities/status-line')
 
-    expect(await screen.findByText('Runtime status surface')).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Status Line' })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /Hooks/ })).not.toBeInTheDocument()
+  })
+
+  it('omits page search on the Permissions tab', async () => {
+    renderCapabilities('permissions', '/capabilities/permissions')
+
+    expect(await screen.findByRole('heading', { name: 'Permissions' })).toBeInTheDocument()
+    expect(screen.queryByRole('textbox', { name: /Search assets/ })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Page guide' })).toBeInTheDocument()
   })
 
   it('passes agent plugin hook schema into the Hooks tab', async () => {

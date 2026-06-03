@@ -3,7 +3,7 @@ import { Search, ChevronDown } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { AssetScope } from '@shared/types/asset'
 
-type ScopeFilter = 'all' | AssetScope
+export type ScopeFilter = 'all' | AssetScope
 
 interface FilterBarProps {
   search: string
@@ -20,6 +20,39 @@ const scopeOptions: { value: ScopeFilter; labelKey: string }[] = [
   { value: 'project', labelKey: 'common.scope.project' },
   { value: 'enterprise', labelKey: 'common.scope.enterprise' }
 ]
+
+export function ScopeSelect({
+  value,
+  onChange,
+  className
+}: {
+  value: ScopeFilter
+  onChange: (scope: ScopeFilter) => void
+  className?: string
+}): React.ReactElement {
+  const { t } = useTranslation()
+
+  return (
+    <div className={cn('relative', className)}>
+      <select
+        value={value}
+        aria-label={t('filter.scope', 'Scope')}
+        onChange={(e) => onChange(e.target.value as ScopeFilter)}
+        className={cn(
+          'h-9 w-full appearance-none rounded-md border border-input bg-background pl-3 pr-8 text-sm outline-none ring-ring focus:ring-1',
+          'cursor-pointer'
+        )}
+      >
+        {scopeOptions.map((opt) => (
+          <option key={opt.value} value={opt.value}>
+            {t(opt.labelKey)}
+          </option>
+        ))}
+      </select>
+      <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+    </div>
+  )
+}
 
 export function FilterBar({
   search,
@@ -43,23 +76,7 @@ export function FilterBar({
         />
       </div>
       {showScope && (
-        <div className="relative">
-          <select
-            value={scope}
-            onChange={(e) => onScopeChange(e.target.value as ScopeFilter)}
-            className={cn(
-              'h-9 appearance-none rounded-md border border-input bg-background pl-3 pr-8 text-sm outline-none ring-ring focus:ring-1',
-              'cursor-pointer'
-            )}
-          >
-            {scopeOptions.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {t(opt.labelKey)}
-              </option>
-            ))}
-          </select>
-          <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-        </div>
+        <ScopeSelect value={scope} onChange={onScopeChange} />
       )}
     </div>
   )

@@ -18,14 +18,19 @@ import { cn } from '@/lib/utils'
 import { filterAssetsByAgentView } from '@/lib/agent-view'
 import { useAppStore } from '@/stores/app'
 import { useAgentCapabilityPlugins } from '@/hooks/use-ipc'
-import { FilterBar } from '@/components/shared/filter-bar'
+import { ScopeSelect, type ScopeFilter } from '@/components/shared/filter-bar'
 import { DetailRow } from '@/components/shared/detail-row'
 import { WarningBanner } from '@/components/shared/warning-banner'
 import { ScopeBadge } from '@/components/shared/scope-badge'
 import { ViewRawButton } from '@/components/shared/view-raw-button'
 import { HooksLifecycleView } from '@/components/capabilities/hooks-lifecycle-view'
-import { FeatureGuidePanel } from '@/components/shared/feature-guide-panel'
-import { buildFeatureGuideEvidence, capabilityGuideMap, type CapabilityGuideId } from '@/lib/feature-guidance'
+import {
+  buildFeatureGuideEvidence,
+  capabilityGuideMap,
+  type CapabilityGuideId,
+  type FeatureGuideDefinition,
+  type FeatureGuideEvidence
+} from '@/lib/feature-guidance'
 import {
   groupEnvVars,
   normalizeEnvVars,
@@ -37,8 +42,7 @@ import {
 } from '@/lib/capability-assets'
 import type { AgentView, Asset, AssetScope } from '@shared/types/asset'
 import { filterAssetsByAppScope } from '@shared/scope'
-
-type ScopeFilter = 'all' | AssetScope
+import { usePageChrome, type PageChromeConfig } from '@/components/layout/page-chrome'
 
 const DEFAULT_CAPABILITY_TAB = 'mcp'
 
@@ -765,6 +769,57 @@ const tabIconMap: Record<string, React.ComponentType<{ className?: string }>> = 
   env: Variable
 }
 
+function CapabilityPageChrome({
+  activeTab,
+  agentView,
+  evidence,
+  guide,
+  scope,
+  search,
+  setScope,
+  setSearch,
+  showSearch
+}: {
+  activeTab: string
+  agentView: AgentView
+  evidence: FeatureGuideEvidence[]
+  guide?: FeatureGuideDefinition
+  scope: ScopeFilter
+  search: string
+  setScope: (scope: ScopeFilter) => void
+  setSearch: (value: string) => void
+  showSearch: boolean
+}): null {
+  const { t } = useTranslation()
+  const actions = useMemo<React.ReactNode>(() => (
+    showSearch ? <ScopeSelect value={scope} onChange={setScope} className="w-36" /> : null
+  ), [scope, setScope, showSearch])
+  const title = t(`capabilities.tabs.${activeTab}`)
+  const pageChrome = useMemo<PageChromeConfig>(() => ({
+    title,
+    sectionLabelKey: 'nav.sections.capabilities',
+    search: showSearch
+      ? {
+          value: search,
+          onValueChange: setSearch,
+          placeholder: `${t('search.placeholder')} ${title}`,
+          ariaLabel: `${t('search.placeholder')} ${title}`
+        }
+      : undefined,
+    guide: guide
+      ? {
+          definition: guide,
+          evidence,
+          agentView
+        }
+      : undefined,
+    actions
+  }), [actions, agentView, evidence, guide, search, setSearch, showSearch, t, title])
+  usePageChrome(pageChrome, [pageChrome])
+
+  return null
+}
+
 /* ---------- Main page ---------- */
 export function Capabilities({ activeSection }: { activeSection?: string } = {}): React.ReactElement {
   const { t } = useTranslation()
@@ -851,19 +906,17 @@ export function Capabilities({ activeSection }: { activeSection?: string } = {})
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-semibold tracking-tight">{t(`capabilities.tabs.${activeTab}`)}</h1>
-
-      {showFilter && (
-        <FilterBar
-          search={search}
-          onSearchChange={setSearch}
-          scope={scope}
-          onScopeChange={setScope}
-          placeholder={`${t('search.placeholder')} ${t(`capabilities.tabs.${activeTab}`)}`}
-        />
-      )}
-
-      <FeatureGuidePanel guide={activeGuide} evidence={activeEvidence} agentView={agentView} />
+      <CapabilityPageChrome
+        activeTab={activeTab}
+        agentView={agentView}
+        evidence={activeEvidence}
+        guide={activeGuide}
+        search={search}
+        scope={scope}
+        setSearch={setSearch}
+        setScope={setScope}
+        showSearch={showFilter}
+      />
 
       {renderContent()}
     </div>
