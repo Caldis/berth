@@ -2,7 +2,7 @@
 task: 2026-06-03-gh-87-navigation-title-duplication
 task_id: GH-87
 type: bug
-phase: implement
+phase: verify
 created: 2026-06-03
 priority: P2
 target_date:

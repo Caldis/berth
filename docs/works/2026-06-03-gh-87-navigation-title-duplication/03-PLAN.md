@@ -10,9 +10,9 @@
 - [x] 任务 2: 更新 renderer 与 e2e 顶部栏断言
   - tests: `pnpm test -- tests/renderer/top-navigation.test.tsx` (pass, 2026-06-03); `pnpm build` (pass, 2026-06-03); `pnpm test:e2e -- tests/e2e/app.e2e.ts` (14 passed, 2026-06-03)
   - verify: EN/ZH breadcrumb 文案正确; Sidebar 导航仍可切换; 页面标题不变。
-- [ ] 任务 3: 视觉与 harness 验证
-  - tests: `pnpm harness:check --work docs/works/2026-06-03-gh-87-navigation-title-duplication`
-  - verify: agent-owned Electron 实例截图确认顶部栏与内容区不重复当前页名; 记录任何既有全局 harness 失败。
+- [x] 任务 3: 视觉与 harness 验证
+  - tests: `pnpm harness:check --work docs/works/2026-06-03-gh-87-navigation-title-duplication` (failed, 2026-06-03: only existing global `issues/` and `.agents/skills/opsx-*` drift listed; no `GH-87` work error)
+  - verify: `pnpm dev:agent start --id gh87-nav-title --debug-port 9337 --json` + CDP DOM check confirmed `overview="" / Overview`, `sessions="WORK" / Sessions`, `skills="INSTRUCTIONS" / Skills`, `hooks="CAPABILITIES" / Hooks`, `usage="RUN" / Usage`; screenshot `/var/folders/v0/318dq8q959z29k7vx374rw400000gn/T/berth-agent-dev/gh87-nav-title/cdp-usage.png`; macOS System Events window-coordinate query was blocked, so actual-window crop could not be produced; `pnpm dev:agent stop gh87-nav-title --json` and guard after passed.
 
 ## verify 回写
 verify 不通过项作为新任务追加于此, phase 退回 implement。
