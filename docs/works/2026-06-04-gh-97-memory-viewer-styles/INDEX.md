@@ -2,7 +2,7 @@
 task: 2026-06-04-gh-97-memory-viewer-styles
 task_id: GH-97
 type: bug
-phase: explore
+phase: implement
 created: 2026-06-04
 priority: P1
 target_date: 
