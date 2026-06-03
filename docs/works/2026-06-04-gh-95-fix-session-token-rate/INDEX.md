@@ -23,14 +23,16 @@ debt:
     confidence: medium
     rationale: "explore/design 确认影响面集中在 sessions:get activity metrics 和测试; 不改 parser、IPC 类型或页面布局。"
   final:
-    incurred:
-    repaid:
-    net:
-    scope:
-    risk:
-    areas: []
-    confidence:
-    rationale:
+    incurred: 2
+    repaid: 1
+    net: 1
+    scope: module
+    risk: low
+    areas:
+      - ui-ux
+      - testability
+    confidence: high
+    rationale: "修复集中在 sessions:get activity metrics: 新增纯函数与单测, 对小于 60 秒的 usage 窗口返回 unavailable, renderer 和 IPC 字段不变。剩余 net=1 来自 60 秒阈值仍是基于日志时间语义的保守规则。"
   revisions:
     - phase: explore
       date: 2026-06-04
