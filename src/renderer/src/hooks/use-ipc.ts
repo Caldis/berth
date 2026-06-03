@@ -7,17 +7,6 @@ import type {
 } from '@shared/types/agent-plugin'
 import { useAppStore } from '@/stores/app'
 
-const emptyStats: AssetStats = {
-  skills: 0,
-  mcpServers: 0,
-  sessions: 0,
-  plugins: 0,
-  hooks: 0,
-  commands: 0,
-  subagents: 0,
-  teams: 0
-}
-
 const HEALTH_CHECK_CACHE_TTL_MS = 60_000
 
 interface HealthCheckCache {
@@ -59,6 +48,70 @@ export function resetHealthCheckCacheForTests(): void {
   healthCheckInFlight = null
 }
 
+export function useAssetRuntime(): {
+  loading: boolean
+  refresh: () => void
+} {
+  const status = useAppStore((s) => s.assetRuntimeStatus)
+  const setAssetRuntimeStatus = useAppStore((s) => s.setAssetRuntimeStatus)
+  const setAssetSnapshot = useAppStore((s) => s.setAssetSnapshot)
+  const mountedRef = useRef(false)
+
+  const syncSnapshot = useCallback(async () => {
+    if (!window.api?.assets?.snapshot) return
+    const snapshot = await window.api.assets.snapshot()
+    if (!mountedRef.current) return
+    setAssetSnapshot(snapshot)
+  }, [setAssetSnapshot])
+
+  const refresh = useCallback(() => {
+    if (!window.api?.assets?.refresh) return
+    void window.api.assets
+      .refresh({ wait: false })
+      .then((nextStatus) => {
+        if (!mountedRef.current) return
+        setAssetRuntimeStatus(nextStatus)
+        return window.api.assets.refresh({ wait: true })
+      })
+      .then((nextStatus) => {
+        if (!mountedRef.current || !nextStatus) return
+        setAssetRuntimeStatus(nextStatus)
+        return syncSnapshot()
+      })
+      .catch(() => {})
+  }, [setAssetRuntimeStatus, syncSnapshot])
+
+  useEffect(() => {
+    mountedRef.current = true
+    void Promise.resolve()
+      .then(async () => {
+        if (window.api?.assets?.status) {
+          setAssetRuntimeStatus(await window.api.assets.status())
+        }
+        await syncSnapshot()
+      })
+      .then(() => {
+        const current = useAppStore.getState().assetRuntimeStatus
+        if (current.state === 'idle' || current.state === 'stale' || current.state === 'error') {
+          refresh()
+        }
+      })
+      .catch(() => {})
+    const unsubscribe = window.api?.assets?.onChanged?.(() => {
+      void syncSnapshot()
+    })
+    return () => {
+      mountedRef.current = false
+      if (unsubscribe) unsubscribe()
+    }
+  }, [refresh, setAssetRuntimeStatus, syncSnapshot])
+
+  return {
+    loading: status.state === 'scanning',
+    refresh
+  }
+}
+
 export function useAssets(): {
   assets: Asset[]
   stats: AssetStats
@@ -67,34 +120,9 @@ export function useAssets(): {
 } {
   const assets = useAppStore((s) => s.assets)
   const stats = useAppStore((s) => s.stats)
-  const loading = useAppStore((s) => s.scanning)
-  const setAssets = useAppStore((s) => s.setAssets)
-  const setStats = useAppStore((s) => s.setStats)
-  const setScanning = useAppStore((s) => s.setScanning)
+  const runtime = useAssetRuntime()
 
-  const refresh = useCallback(() => {
-    if (!window.api?.assets?.scanAll) {
-      setScanning(false)
-      return
-    }
-    setScanning(true)
-    window.api.assets
-      .scanAll()
-      .then((result) => {
-        if (result) {
-          setAssets(result.assets ?? [])
-          setStats(result.stats ?? emptyStats)
-        }
-      })
-      .catch(() => {})
-      .finally(() => setScanning(false))
-  }, [setAssets, setScanning, setStats])
-
-  useEffect(() => {
-    refresh()
-  }, [refresh])
-
-  return { assets, stats, loading, refresh }
+  return { assets, stats, loading: runtime.loading, refresh: runtime.refresh }
 }
 
 export function useSessions(opts?: {

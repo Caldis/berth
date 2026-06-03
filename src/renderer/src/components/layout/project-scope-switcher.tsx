@@ -43,7 +43,7 @@ export function ProjectScopeSwitcher({ collapsed }: ProjectScopeSwitcherProps): 
   const setProjectCandidates = useAppStore((s) => s.setProjectCandidates)
   const setAssets = useAppStore((s) => s.setAssets)
   const setStats = useAppStore((s) => s.setStats)
-  const setScanning = useAppStore((s) => s.setScanning)
+  const setAssetSnapshot = useAppStore((s) => s.setAssetSnapshot)
   const currentProject = useMemo(
     () => currentProjectCandidate(scopeSelection, candidates),
     [candidates, scopeSelection]
@@ -100,20 +100,21 @@ export function ProjectScopeSwitcher({ collapsed }: ProjectScopeSwitcherProps): 
   const selectScope = async (selection: Partial<AppScopeSelection>): Promise<void> => {
     setLoading(true)
     setError(null)
-    setScanning(true)
     try {
       const projectPath = selection.mode === 'project' ? selection.projectPath : undefined
       const result = await window.api.projectScope.activate({ projectPath })
       setAssets(result.scanResult.assets ?? [])
       setStats(result.scanResult.stats)
       setProjectCandidates(result.candidates ?? [])
+      if (window.api?.assets?.snapshot) {
+        setAssetSnapshot(await window.api.assets.snapshot())
+      }
       setScopeSelection(selection)
       setOpen(false)
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err))
     } finally {
       setLoading(false)
-      setScanning(false)
     }
   }
 

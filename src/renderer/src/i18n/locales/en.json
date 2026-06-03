@@ -132,6 +132,7 @@
     "rateLimits": "Rate Limits",
     "healthChecks": "Health Checks",
     "noIssues": "All systems operational",
+    "loadingAssets": "Loading asset metrics",
     "loadingUsage": "Loading usage chart",
     "started": "Started",
     "scope": {

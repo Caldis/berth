@@ -13,6 +13,22 @@ const emptyTokenUsage = {
   hasBreakdown: false
 }
 
+const emptyStats = {
+  skills: 0,
+  mcpServers: 0,
+  sessions: 0,
+  plugins: 0,
+  hooks: 0,
+  commands: 0,
+  subagents: 0,
+  teams: 0
+}
+
+const idleAssetRuntimeStatus = {
+  state: 'ready' as const,
+  stale: false
+}
+
 // Mock window.api for renderer tests
 const mockApi = {
   window: {
@@ -38,8 +54,19 @@ const mockApi = {
     set: async () => {}
   },
   assets: {
+    snapshot: async () => ({
+      id: 'test-snapshot',
+      assets: [],
+      stats: emptyStats,
+      errors: [],
+      sources: [],
+      projectCandidates: [],
+      status: idleAssetRuntimeStatus
+    }),
+    status: async () => idleAssetRuntimeStatus,
+    refresh: async () => idleAssetRuntimeStatus,
     scan: async () => [],
-    scanAll: async () => ({ assets: [], stats: { skills: 0, mcpServers: 0, sessions: 0, plugins: 0, hooks: 0, commands: 0, subagents: 0, teams: 0 }, errors: [] }),
+    scanAll: async () => ({ assets: [], stats: emptyStats, errors: [] }),
     scanSources: async () => [],
     get: async () => null,
     search: async () => [],

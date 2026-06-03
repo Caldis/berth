@@ -50,6 +50,7 @@ export function Overview(): React.ReactElement {
   const navigate = useNavigate()
   const allStats = useAppStore((s) => s.stats)
   const assets = useAppStore((s) => s.assets)
+  const assetRuntimeStatus = useAppStore((s) => s.assetRuntimeStatus)
   const agentView = useAppStore((s) => s.agentView)
   const scopeSelection = useAppStore((s) => s.scopeSelection)
   const projectPath = projectPathForScope(scopeSelection)
@@ -79,6 +80,7 @@ export function Overview(): React.ReactElement {
   const overviewCostSource = usage?.costSource ?? 'unknown'
   const agentLabel = t(`agentView.${agentView}`)
   const scopeLabel = scopeLabelForSelection(scopeSelection, t)
+  const metricsLoading = assetRuntimeStatus.state === 'scanning' && assets.length === 0
 
   const metricCards = [
     {
@@ -175,6 +177,7 @@ export function Overview(): React.ReactElement {
             value={metric.value}
             description={metric.description}
             icon={metric.icon}
+            loading={metricsLoading}
             onClick={() => navigate(metric.path)}
           />
         ))}
@@ -219,14 +222,18 @@ function OverviewMetricButton({
   value,
   description,
   icon: Icon,
+  loading,
   onClick
 }: {
   label: string
   value: number
   description: string
   icon: React.ComponentType<{ className?: string }>
+  loading?: boolean
   onClick: () => void
 }): React.ReactElement {
+  const { t } = useTranslation()
+
   return (
     <button
       type="button"
@@ -239,7 +246,15 @@ function OverviewMetricButton({
       <span className="min-w-0 flex-1">
         <span className="flex items-center justify-between gap-3">
           <span className="truncate text-sm font-medium text-card-foreground">{label}</span>
-          <span className="text-xl font-semibold tabular-nums tracking-tight text-card-foreground">{value}</span>
+          {loading ? (
+            <span
+              role="status"
+              aria-label={t('overview.loadingAssets')}
+              className="h-6 w-10 animate-pulse rounded bg-muted"
+            />
+          ) : (
+            <span className="text-xl font-semibold tabular-nums tracking-tight text-card-foreground">{value}</span>
+          )}
         </span>
         <span className="mt-1 block text-xs leading-5 text-muted-foreground">{description}</span>
       </span>

@@ -130,6 +130,7 @@
     "rateLimits": "速率限制",
     "healthChecks": "健康检查",
     "noIssues": "所有系统运行正常",
+    "loadingAssets": "正在加载资产指标",
     "loadingUsage": "正在加载用量图表",
     "started": "开始时间",
     "scope": {

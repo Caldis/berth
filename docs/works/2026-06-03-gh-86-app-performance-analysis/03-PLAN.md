@@ -24,8 +24,9 @@
   - tests: `pnpm test -- tests/unit/project-scope-runtime.test.ts tests/unit/search.test.ts tests/unit/usage-summary.test.ts tests/unit/health-check.test.ts`
   - evidence: 2026-06-03 运行通过, `tests/unit/project-scope-runtime.test.ts` + `tests/unit/search.test.ts` + `tests/unit/usage-summary.test.ts` + `tests/unit/health-check.test.ts` + `tests/unit/agent-asset-runtime.test.ts` 共 39 tests passed; `pnpm typecheck:node` passed; `pnpm typecheck:web` passed; `pnpm build` passed。
   - verify: 非 UI; snapshot 未变时 search index 不重复 build; scope 变化触发 runtime refresh 与 watcher restart。
-- [ ] 任务 6: 重构 renderer runtime hook 与局部 loading UI, 移除全局扫描阻断。
+- [x] 任务 6: 重构 renderer runtime hook 与局部 loading UI, 移除全局扫描阻断。
   - tests: `pnpm test -- tests/renderer/use-asset-runtime.test.tsx tests/renderer/overview-performance-loading.test.tsx tests/renderer/sessions-pages.test.tsx tests/renderer/use-health-checks.test.tsx`
+  - evidence: 2026-06-03 运行通过, `tests/renderer/use-asset-runtime.test.tsx` + `tests/renderer/overview-performance-loading.test.tsx` + `tests/renderer/use-assets.test.tsx` + `tests/renderer/sessions-pages.test.tsx` + `tests/renderer/use-health-checks.test.tsx` 共 27 tests passed; `pnpm typecheck:web` passed; `pnpm build` passed。
   - verify: Overview metrics、Recent sessions、Usage snapshot、Health worklist 独立 loading/stale/error; navigation/search 不被全局遮罩阻断; loading 文案有 en/zh。
 - [ ] 任务 7: 性能与集成验证, 更新架构文档。
   - tests: `pnpm build`; `pnpm test:e2e tests/e2e/app.e2e.ts`; 目标 unit/renderer tests 全量运行; `pnpm harness:check --work docs/works/2026-06-03-gh-86-app-performance-analysis`
