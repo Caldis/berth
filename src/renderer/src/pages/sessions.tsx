@@ -108,6 +108,22 @@ export function Sessions(): React.ReactElement {
   const hasFilter = filter.trim().length > 0
   const showInitialLoading = loading && sessions.length === 0
   const isRenderingPartialList = visibleCount < filtered.length
+  const toolbarStatus = useMemo(() => {
+    if (loading && stale && sessions.length > 0) {
+      return {
+        ariaLabel: t('sessions.refreshing'),
+        label: t('sessions.refreshing')
+      }
+    }
+    if (isRenderingPartialList) {
+      const label = t('sessions.renderingRows', { shown: visibleCount, total: filtered.length })
+      return {
+        ariaLabel: label,
+        label
+      }
+    }
+    return null
+  }, [filtered.length, isRenderingPartialList, loading, sessions.length, stale, t, visibleCount])
 
   const toggleGroup = (key: string): void => {
     setCollapsedGroups((prev) => {
@@ -134,6 +150,22 @@ export function Sessions(): React.ReactElement {
             placeholder={t('sessions.filter')}
             className="h-9 w-full rounded-md border border-input bg-background pl-9 pr-3 text-sm outline-none ring-ring focus:ring-1"
           />
+        </div>
+        <div
+          data-testid="sessions-toolbar-status-slot"
+          className="hidden h-9 w-56 shrink-0 items-center justify-end md:flex"
+          aria-live="polite"
+        >
+          {toolbarStatus && (
+            <div
+              role="status"
+              aria-label={toolbarStatus.ariaLabel}
+              className="inline-flex max-w-full items-center gap-2 rounded-md border border-border bg-muted/40 px-2.5 py-1 text-xs text-muted-foreground"
+            >
+              <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-primary motion-safe:animate-pulse" aria-hidden="true" />
+              <span className="truncate">{toolbarStatus.label}</span>
+            </div>
+          )}
         </div>
         <div className="flex items-center gap-2">
           <span className="text-xs text-muted-foreground">{t('sessions.groupBy')}</span>
@@ -163,26 +195,6 @@ export function Sessions(): React.ReactElement {
           </div>
         </div>
       </div>
-      {loading && stale && sessions.length > 0 && (
-        <div
-          role="status"
-          aria-label={t('sessions.refreshing')}
-          className="inline-flex w-fit items-center gap-2 rounded-md border border-border bg-muted/40 px-2.5 py-1 text-xs text-muted-foreground"
-        >
-          <span className="h-1.5 w-1.5 rounded-full bg-primary motion-safe:animate-pulse" aria-hidden="true" />
-          {t('sessions.refreshing')}
-        </div>
-      )}
-      {isRenderingPartialList && (
-        <div
-          role="status"
-          aria-label={t('sessions.renderingRows', { shown: visibleCount, total: filtered.length })}
-          className="inline-flex w-fit items-center gap-2 rounded-md border border-border bg-muted/40 px-2.5 py-1 text-xs text-muted-foreground"
-        >
-          <span className="h-1.5 w-1.5 rounded-full bg-primary motion-safe:animate-pulse" aria-hidden="true" />
-          {t('sessions.renderingRows', { shown: visibleCount, total: filtered.length })}
-        </div>
-      )}
 
       {/* Session list */}
       {showInitialLoading ? (

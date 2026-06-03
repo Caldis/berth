@@ -41,6 +41,12 @@
   - visual: agent-owned Electron (`gh86-sessions-swr`) 验证 Sessions 路由 heading 约 331ms 出现, 800ms 后无全局 loading, 可见 822 个会话按钮; 截图 `/var/folders/v0/318dq8q959z29k7vx374rw400000gn/T/berth-gh86-sessions-swr.png`。
   - harness: `pnpm harness:check --work docs/works/2026-06-03-gh-86-app-performance-analysis` 仍被既有 global drift 阻断 (`issues/` 根目录与 `.agents/skills/opsx-*` drift); 脚本级 `checkWorks(..., { work })` 返回 `[]`。
   - verify: 已有会话数据时切回 Sessions 不显示空白 loading; 后台刷新完成后列表更新; 首次加载与空结果使用统一状态组件; 点击会话行不会被重型同步渲染阻塞。
+- [x] 任务 9: 修正 Sessions 渐进渲染状态提示造成的布局抖动。
+  - source: 2026-06-03 用户验收反馈; `docs/issues/resolved/2026-06-03-BUG-sessions-progress-layout-shift.md`。
+  - tests: `pnpm test -- tests/renderer/sessions-pages.test.tsx`
+  - evidence: 2026-06-03 运行通过, `tests/renderer/sessions-pages.test.tsx` 23 tests passed; `pnpm typecheck:web` passed; `pnpm lint` passed; `pnpm harness:issues` active=0 resolved=38。
+  - visual: agent-owned Electron (`gh86-layout-shift`) 暂停 idle batch 后验证状态提示可见; 状态槽与筛选框同 top=260/bottom=296/height=36, 列表首组 top=321, toolbarGap=25; 截图 `/var/folders/v0/318dq8q959z29k7vx374rw400000gn/T/berth-gh86-sessions-status-slot.png`。
+  - verify: 渐进渲染与后台刷新提示位于筛选工具栏固定状态槽内, 出现或隐藏时不改变筛选栏与列表之间的文档流高度。
 
 执行边界:
 - 任务 1-5 触碰同一主进程数据链路, 按编号执行。
@@ -51,3 +57,4 @@
 verify 不通过项作为新任务追加于此, phase 退回 implement。
 
 2026-06-03 verify 反馈: Sessions 切页仍闪 loading, loading/empty 视觉不统一, 点击 Sessions 仍有卡顿; 已追加任务 8 并回到 implement。
+2026-06-03 verify 反馈: Sessions 渐进渲染状态提示作为独立区块导致布局抖动; 已追加任务 9 并回到 implement。

@@ -266,7 +266,9 @@ describe('session pages', () => {
 
       expect(screen.getByText('Session 0')).toBeInTheDocument()
       expect(screen.queryByText('Session 129')).not.toBeInTheDocument()
-      expect(screen.getByText('Showing 80 of 130 sessions')).toBeInTheDocument()
+      expect(
+        within(screen.getByTestId('sessions-toolbar-status-slot')).getByText('Showing 80 of 130 sessions')
+      ).toBeInTheDocument()
 
       await act(async () => {
         vi.runOnlyPendingTimers()
