@@ -19,9 +19,9 @@
 - [x] 5. 迁移 Usage 与 Session detail 顶部 chrome:
   - tests: `pnpm vitest run tests/renderer/sessions-pages.test.tsx tests/renderer/top-navigation.test.tsx tests/renderer/usage-tooltip-label.test.tsx` (pass, 32 tests); `pnpm typecheck:web` (pass)
   - verify: Usage time range 请求参数不变; Session detail 返回按钮与 breadcrumb 在 nav; 内容区不重复顶部标题块。
-- [ ] 6. 局部与总门禁:
+- [x] 6. 局部与总门禁:
   - tests: `pnpm typecheck:web`; `pnpm harness:check`; `pnpm vitest run tests/renderer/top-navigation.test.tsx tests/renderer/app-layout.test.tsx tests/renderer/sessions-pages.test.tsx tests/renderer/instructions-guidance.test.tsx tests/renderer/capabilities-guidance.test.tsx`
-  - verify: UI 状态、i18n、路径/数字格式相关断言全通过。
+  - verify: `pnpm harness:prepush` (pass, 85 files / 611 tests); UI 状态、i18n、路径/数字格式相关断言全通过。
 - [ ] 7. Electron 视觉验收:
   - tests: manual evidence - `pnpm dev`; `pnpm dev:agent screenshot gh90-sessions --mode print-window`; `pnpm dev:agent screenshot gh90-session-detail --mode print-window`
   - verify: 使用实测窗口坐标截图; sessions 与 session detail 顶部导航固定在内容区顶部, 滚动条只属于内容区, 搜索/help/actions 不遮挡标题。
