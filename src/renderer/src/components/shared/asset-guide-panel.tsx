@@ -39,7 +39,7 @@ export function AssetGuidePanel({ guide, evidence = [] }: AssetGuidePanelProps):
             <button
               type="button"
               onClick={() => setExpanded((value) => !value)}
-              className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background"
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-muted/70 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background"
             >
               {expanded ? t('assetGuide.hideDetails') : t('assetGuide.showDetails')}
               <ChevronDown className={cn('h-3 w-3 text-muted-foreground transition-transform', expanded && 'rotate-180')} />
@@ -113,7 +113,7 @@ export function AssetGuidePanel({ guide, evidence = [] }: AssetGuidePanelProps):
                       key={doc.url}
                       type="button"
                       onClick={() => openDoc(doc.url)}
-                      className="inline-flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background"
+                      className="inline-flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-muted/70 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background"
                     >
                       <BookOpen className="h-3 w-3 text-muted-foreground" />
                       <span>{t(doc.labelKey)}</span>

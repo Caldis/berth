@@ -179,7 +179,7 @@ function MarkdownBody({
           <button
             type="button"
             onClick={() => onNavigate(`${sourceId}:${target}`)}
-            className="rounded border border-border bg-background px-1.5 py-0.5 font-mono text-[11px] text-primary transition-colors hover:bg-accent"
+            className="rounded border border-border bg-background px-1.5 py-0.5 font-mono text-[11px] text-primary transition-colors hover:bg-muted/70"
           >
             {children}
           </button>
@@ -341,7 +341,7 @@ function NoteCard({
                     <button
                       key={link}
                       onClick={() => onNavigate(`${note.sourceId}:${link}`)}
-                      className="rounded-md border border-border px-2 py-0.5 text-xs font-mono text-primary transition-colors hover:bg-accent"
+                      className="rounded-md border border-border px-2 py-0.5 text-xs font-mono text-primary transition-colors hover:bg-muted/70"
                     >
                       {link}
                     </button>
@@ -366,13 +366,13 @@ function NoteCard({
                 <span title={note.path} className="truncate text-xs text-muted-foreground font-mono">{truncatePath(note.path)}</span>
                 <div className="flex shrink-0 gap-2">
                   {!note.missing && body !== '' && (
-                    <button onClick={viewRaw} className="flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-accent">
+                    <button onClick={viewRaw} className="flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-muted/70">
                       <Eye className="h-3 w-3" />
                       {t('common.viewRaw')}
                     </button>
                   )}
                   {!note.missing && (
-                    <button onClick={showInExplorer} className="flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-accent">
+                    <button onClick={showInExplorer} className="flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-muted/70">
                       <FolderOpen className="h-3 w-3" />
                       {t('instructions.showInExplorer')}
                     </button>
@@ -413,7 +413,7 @@ function SourceFilter({
       title={hint}
       className={cn(
         'inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors',
-        active === id ? 'border-primary bg-primary/10 text-primary' : 'border-border text-muted-foreground hover:bg-accent',
+        active === id ? 'border-primary bg-primary/10 text-primary' : 'border-border text-muted-foreground hover:bg-muted/70',
         !available && id !== 'all' && 'cursor-not-allowed opacity-50'
       )}
     >
@@ -462,7 +462,7 @@ function FilterGroup({
       onClick={() => onChange(id)}
       className={cn(
         'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium transition-colors',
-        active === id ? 'border-foreground bg-foreground text-background' : 'border-border text-muted-foreground hover:bg-accent'
+        active === id ? 'border-foreground bg-foreground text-background' : 'border-border text-muted-foreground hover:bg-muted/70'
       )}
     >
       {chipLabel}
@@ -551,7 +551,7 @@ export function MemoryView(): React.ReactElement {
       disabled={refreshing}
       title={t('memory.refresh', 'Refresh')}
       aria-label={t('memory.refresh', 'Refresh')}
-      className="flex h-9 items-center gap-1.5 rounded-md border border-input bg-background px-3 text-sm text-foreground transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-60"
+      className="flex h-9 items-center gap-1.5 rounded-md border border-input bg-background px-3 text-sm text-foreground transition-colors hover:bg-muted/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-60"
     >
       <RefreshCw className={cn('h-3.5 w-3.5', refreshing && 'animate-spin')} />
     </button>
@@ -634,7 +634,7 @@ export function MemoryView(): React.ReactElement {
           <button
             type="button"
             onClick={clearFilters}
-            className="rounded-md border border-border px-3 py-1 text-xs font-medium text-foreground transition-colors hover:bg-accent"
+            className="rounded-md border border-border px-3 py-1 text-xs font-medium text-foreground transition-colors hover:bg-muted/70"
           >
             {t('memory.clearFilters', 'Clear filters')}
           </button>

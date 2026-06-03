@@ -640,13 +640,16 @@ describe('HooksLifecycleView', () => {
     const toolBeforeButton = within(sidebar).getByRole('button', { name: /Before a tool runs/ })
 
     expect(sessionStartButton).toHaveAttribute('aria-current', 'true')
-    expect(sessionStartButton.className).toContain('bg-accent')
+    expect(sessionStartButton.className).toContain('bg-foreground')
+    expect(sessionStartButton.className).toContain('text-background')
     expect(toolBeforeButton).not.toHaveAttribute('aria-current')
+    expect(toolBeforeButton.className).toContain('hover:bg-muted/70')
 
     fireEvent.click(toolBeforeButton)
 
     expect(toolBeforeButton).toHaveAttribute('aria-current', 'true')
-    expect(toolBeforeButton.className).toContain('bg-accent')
+    expect(toolBeforeButton.className).toContain('bg-foreground')
+    expect(toolBeforeButton.className).toContain('text-background')
     expect(sessionStartButton).not.toHaveAttribute('aria-current')
     expect(scrollIntoView).toHaveBeenCalledWith({ block: 'start', behavior: 'smooth' })
   })

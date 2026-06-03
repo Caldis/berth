@@ -92,7 +92,7 @@ interface PageChromeConfig {
 |---|---|---|
 | 布局层级 / 信息密度 | Top nav `min-h-[72px]`, 顶层持久挂载; 普通页为 breadcrumb/title + actions, session detail 为返回按钮 + 完整 breadcrumb。内容区不再放页面级标题、说明卡片、搜索条。 | Renderer tests 断言总览 nav hidden、功能页 nav visible、有 title/actions; Electron 截图检查列表首屏信息密度。 |
 | 组件选择 / 设计系统一致性 | 继续用 Lucide + Tailwind v3 + 现有 neutral tokens。卡片半径不增大, 不加渐变和外发光。 | CSS class review; 视觉截图不出现大面积紫蓝渐变或新字体依赖。 |
-| 交互反馈 / 状态切换 | 搜索、返回、help、segmented control 保留 hover/focus/active; help 使用图标按钮, hover/focus 打开说明叠层; toolbar status `aria-live`。 | `@testing-library/react` hover/focus 与 aria 断言。 |
+| 交互反馈 / 状态切换 | 搜索、返回、help、segmented control 保留 hover/focus/active; help 使用图标按钮, hover/focus 打开说明叠层; 普通按钮 hover 使用 muted 浅背景, 不直接使用深色 accent; toolbar status `aria-live`。 | `@testing-library/react` hover/focus 与 aria 断言; class scan 与 Electron CDP 计算样式抽查。 |
 | loading / empty / error / disabled / focus | 页面原 loading/empty/error 保留。Usage load error 与 retry 保留; toolbar action 不吞掉页面状态。 | `sessions-pages.test.tsx`, `top-navigation.test.tsx`, usage 相关测试。 |
 | 响应式 / 可访问性 / 键盘可达 | title truncate; actions `flex-wrap`; narrow width 下工具条换行。breadcrumb 有 aria label; back/search/help 有 aria-label; input/select 有 label 或 aria-label。 | Renderer tests + Electron 窗口截图; manual tab order。 |
 | 文案 / i18n / 数字和路径格式 | 所有新增 label 写 en/zh。保留现有 token、path、date、cost 格式函数。 | i18n tests 与现有 session/usage tests。 |

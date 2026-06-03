@@ -552,7 +552,7 @@ function HealthCheckRow({
               aria-label={t('overview.healthCheckActions.ignoreInfo')}
               title={t('overview.healthCheckActions.ignoreInfo')}
               onClick={(event) => onIgnore(event, check)}
-              className="rounded border border-border p-0.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              className="rounded border border-border p-0.5 text-muted-foreground transition-colors hover:bg-muted/70 hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
             >
               <X className="h-3 w-3" />
             </button>
@@ -577,7 +577,7 @@ function HealthCheckRow({
               aria-label={t('overview.healthCheckActions.copyFixSnippet')}
               title={t('overview.healthCheckActions.copyFixSnippet')}
               onClick={(event) => onCopyFixSnippet(event, check, check.fix!.snippet!)}
-              className="shrink-0 rounded border border-border p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              className="shrink-0 rounded border border-border p-1 text-muted-foreground transition-colors hover:bg-muted/70 hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
             >
               {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
             </button>

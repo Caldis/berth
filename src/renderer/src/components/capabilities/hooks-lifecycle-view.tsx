@@ -139,24 +139,33 @@ export function HooksLifecycleView({
                     className={cn(
                       'flex min-w-[230px] items-center gap-2 rounded-md px-2 py-2 text-left transition-colors lg:w-full lg:min-w-0',
                       isCurrent
-                        ? 'bg-accent text-foreground shadow-sm ring-1 ring-border/70'
-                        : 'hover:bg-accent'
+                        ? 'bg-foreground text-background shadow-sm ring-1 ring-border/70'
+                        : 'hover:bg-muted/70'
                     )}
                   >
-                    <span className={cn(
-                      'flex h-5 w-5 shrink-0 items-center justify-center rounded text-[10px] font-semibold',
-                      isCurrent ? 'bg-background text-foreground' : 'bg-muted text-muted-foreground'
-                    )}>
+                    <span
+                      className={cn(
+                        'flex h-5 w-5 shrink-0 items-center justify-center rounded text-[10px] font-semibold',
+                        isCurrent ? 'bg-background text-foreground' : 'bg-muted text-muted-foreground'
+                      )}
+                    >
                       {String(index + 1).padStart(2, '0')}
                     </span>
                     <span className="min-w-0 flex-1">
-                      <span className="block truncate text-xs font-medium text-foreground">
+                      <span
+                        className={cn(
+                          'block truncate text-xs font-medium',
+                          isCurrent ? 'text-background' : 'text-foreground'
+                        )}
+                      >
                         {group.stage ? t(group.stage.titleKey) : t('capabilities.hooks.unknown.title')}
                       </span>
-                      <span className={cn(
-                        'block truncate text-[11px]',
-                        isCurrent ? 'text-foreground/70' : 'text-muted-foreground'
-                      )}>
+                      <span
+                        className={cn(
+                          'block truncate text-[11px]',
+                          isCurrent ? 'text-background/70' : 'text-muted-foreground'
+                        )}
+                      >
                         {group.stage ? t(group.stage.summaryKey) : t('capabilities.hooks.unknown.body')}
                       </span>
                     </span>
@@ -296,7 +305,7 @@ function HookRecoveryIssueRow({ issue }: { issue: HookRecoveryIssue }): React.Re
         <button
           type="button"
           onClick={() => void window.api.shell.openPath(issue.sourcePath)}
-          className="rounded-md border border-border px-2 py-0.5 text-[11px] font-medium text-foreground transition-colors hover:bg-accent"
+          className="rounded-md border border-border px-2 py-0.5 text-[11px] font-medium text-foreground transition-colors hover:bg-muted/70"
         >
           {t('capabilities.hooks.recovery.openSource')}
         </button>
@@ -400,7 +409,7 @@ function HookRecoveryPointRow({
           type="button"
           disabled={!canRestore || busy}
           onClick={() => void restore()}
-          className="inline-flex items-center gap-1.5 rounded-md border border-border px-2 py-1 text-xs font-medium text-foreground transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:text-muted-foreground/50 disabled:hover:bg-transparent"
+          className="inline-flex items-center gap-1.5 rounded-md border border-border px-2 py-1 text-xs font-medium text-foreground transition-colors hover:bg-muted/70 disabled:cursor-not-allowed disabled:text-muted-foreground/50 disabled:hover:bg-transparent"
         >
           <RotateCcw className="h-3.5 w-3.5" />
           {busy ? t('capabilities.hooks.recovery.working') : t('capabilities.hooks.recovery.restore')}
@@ -409,7 +418,7 @@ function HookRecoveryPointRow({
           type="button"
           disabled={busy}
           onClick={() => void clear()}
-          className="inline-flex items-center gap-1.5 rounded-md border border-border px-2 py-1 text-xs font-medium text-foreground transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:text-muted-foreground/50"
+          className="inline-flex items-center gap-1.5 rounded-md border border-border px-2 py-1 text-xs font-medium text-foreground transition-colors hover:bg-muted/70 disabled:cursor-not-allowed disabled:text-muted-foreground/50"
         >
           <Trash2 className="h-3.5 w-3.5" />
           {t('capabilities.hooks.recovery.clear')}
@@ -417,7 +426,7 @@ function HookRecoveryPointRow({
         <button
           type="button"
           onClick={() => void window.api.shell.openPath(point.sourcePath)}
-          className="inline-flex items-center gap-1.5 rounded-md border border-border px-2 py-1 text-xs font-medium text-foreground transition-colors hover:bg-accent"
+          className="inline-flex items-center gap-1.5 rounded-md border border-border px-2 py-1 text-xs font-medium text-foreground transition-colors hover:bg-muted/70"
         >
           <ExternalLink className="h-3.5 w-3.5" />
           {t('capabilities.hooks.recovery.openSource')}
@@ -628,7 +637,7 @@ function HookHealthCheckTipRow({ check }: { check: HealthCheck }): React.ReactEl
         <button
           type="button"
           onClick={() => void window.api?.shell.openPath(targetPath)}
-          className="mt-2 rounded-md border border-border px-2 py-1 text-[11px] font-medium text-foreground transition-colors hover:bg-accent active:translate-y-px"
+          className="mt-2 rounded-md border border-border px-2 py-1 text-[11px] font-medium text-foreground transition-colors hover:bg-muted/70 active:translate-y-px"
         >
           {t('capabilities.hooks.health.openSource')}
         </button>
@@ -724,7 +733,7 @@ function AgentSupportTip({ stageId, support }: { stageId: string; support: HookA
         aria-describedby={open ? tooltipId : undefined}
         onFocus={() => setOpen(true)}
         onBlur={() => setOpen(false)}
-        className="rounded-md border border-border bg-background px-2 py-0.5 text-xs font-medium text-foreground transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className="rounded-md border border-border bg-background px-2 py-0.5 text-xs font-medium text-foreground transition-colors hover:bg-muted/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
         {agentName}
       </button>
@@ -967,7 +976,7 @@ function HookAssetRow({
           {rawHookJson && (
             <div className="mt-2 flex items-start gap-2">
               <details className="min-w-0 flex-1">
-                <summary className="inline-flex cursor-pointer select-none items-center rounded-md border border-border px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground">
+                <summary className="inline-flex cursor-pointer select-none items-center rounded-md border border-border px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted/70 hover:text-foreground">
                   {t('capabilities.hooks.management.rawJson')}
                 </summary>
                 <pre className="mt-2 max-h-64 overflow-auto rounded-md border border-border/70 bg-muted/40 p-3 text-[11px] leading-5 text-foreground">
@@ -979,7 +988,7 @@ function HookAssetRow({
                 aria-label={rawCopied ? t('capabilities.hooks.management.copiedRawJson') : t('capabilities.hooks.management.copyRawJson')}
                 title={rawCopied ? t('capabilities.hooks.management.copiedRawJson') : t('capabilities.hooks.management.copyRawJson')}
                 onClick={() => void copyRawHookJson()}
-                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:bg-muted/70 hover:text-foreground"
               >
                 {rawCopied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
               </button>
@@ -1003,7 +1012,7 @@ function HookAssetRow({
             type="button"
             disabled={toggleBusy}
             onClick={() => void toggleHook()}
-            className="shrink-0 rounded-md border border-border px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:text-muted-foreground/60 disabled:hover:bg-transparent"
+            className="shrink-0 rounded-md border border-border px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-muted/70 disabled:cursor-not-allowed disabled:text-muted-foreground/60 disabled:hover:bg-transparent"
           >
             {hookEnabled ? t('capabilities.hooks.management.disableHook') : t('capabilities.hooks.management.enableHook')}
           </button>
@@ -1382,7 +1391,7 @@ function HookActions({ states }: { states: HookManagementState[] }): React.React
 
   return (
     <details className="relative shrink-0">
-      <summary className="flex cursor-pointer list-none items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-accent">
+      <summary className="flex cursor-pointer list-none items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-muted/70">
         <MoreHorizontal className="h-3.5 w-3.5" />
         {t('capabilities.hooks.actions.menu')}
       </summary>
@@ -1393,7 +1402,7 @@ function HookActions({ states }: { states: HookManagementState[] }): React.React
             type="button"
             disabled={state.availability !== 'available'}
             onClick={() => void openPath(state)}
-            className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs text-foreground transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:text-muted-foreground/60 disabled:hover:bg-transparent"
+            className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs text-foreground transition-colors hover:bg-muted/70 disabled:cursor-not-allowed disabled:text-muted-foreground/60 disabled:hover:bg-transparent"
           >
             {iconForAction(state.action)}
             <span className="min-w-0 flex-1">{t(`capabilities.hooks.actions.${state.action}`)}</span>

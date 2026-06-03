@@ -102,7 +102,7 @@ function MemoryCard({ asset }: { asset: Asset }): React.ReactElement {
             <ViewRawButton asset={asset} label={t('instructions.viewFile')} />
             <button
               onClick={handleShowInExplorer}
-              className="flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-accent"
+              className="flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-muted/70"
             >
               <FolderOpen className="h-3 w-3" />
               {t('instructions.showInExplorer')}
@@ -188,7 +188,7 @@ function SkillCard({ asset }: { asset: Asset }): React.ReactElement {
             <ViewRawButton asset={asset} label={t('instructions.viewFile')} />
             <button
               onClick={handleShowInExplorer}
-              className="flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-accent"
+              className="flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-muted/70"
             >
               <FolderOpen className="h-3 w-3" />
               {t('instructions.showInExplorer')}
@@ -257,7 +257,7 @@ function GenericAssetCard({ asset, icon: Icon }: { asset: Asset; icon: React.Com
             <ViewRawButton asset={asset} label={t('instructions.viewFile')} />
             <button
               onClick={handleShowInExplorer}
-              className="flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-accent"
+              className="flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-muted/70"
             >
               <FolderOpen className="h-3 w-3" />
               {t('instructions.showInExplorer')}

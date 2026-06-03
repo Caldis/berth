@@ -40,6 +40,9 @@
 - [x] 12. 修正页面说明叠层移入时过早关闭:
   - tests: `pnpm vitest run tests/renderer/top-navigation.test.tsx tests/renderer/sessions-pages.test.tsx tests/renderer/instructions-guidance.test.tsx tests/renderer/capabilities-guidance.test.tsx` (pass, 43 tests); `pnpm typecheck:web` (pass); `pnpm harness:check` (pass)
   - verify: 离开按钮区后不会立即关闭; 鼠标进入说明叠层会取消关闭计时; 移出叠层后再关闭。agent-owned Electron `gh90-guide-hover-fix` CDP 鼠标路径验证通过: 离开 36px 按钮区域后 panel 仍 visible, 进入 panel 后仍 visible, `Details` 按钮存在, 移到外部后关闭。
+- [x] 13. 修正普通按钮 hover 使用深色 accent 导致背景/文字对比错误:
+  - tests: `pnpm vitest run tests/renderer/hooks-lifecycle-view.test.tsx tests/renderer/instructions-guidance.test.tsx tests/renderer/capabilities-guidance.test.tsx tests/renderer/memory-view.test.tsx tests/renderer/top-navigation.test.tsx` (pass, 52 tests); `pnpm typecheck:web` (pass)
+  - verify: 普通按钮和次级操作统一改为 `hover:bg-muted/70`; Hooks 生命周期当前项使用 `bg-foreground text-background`, 标题和描述配套反色。`rg "hover:bg-accent(\\s|\"|')|bg-accent text-foreground"` 只剩搜索弹窗中同时带 `hover:text-accent-foreground` 的深色交互。agent-owned Electron `gh90-button-hover` CDP 抽查通过: Hooks 当前项标题 `rgb(255,255,255)`, 描述 `rgba(255,255,255,0.7)`, 非当前项 hover 背景 `rgba(244,244,245,0.7)`。
 
 ## verify 回写
 verify 不通过项作为新任务追加于此, phase 退回 implement。

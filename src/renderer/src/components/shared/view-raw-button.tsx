@@ -13,7 +13,7 @@ interface ViewRawButtonProps {
   className?: string
 }
 
-const DEFAULT_BUTTON_CLASS = 'flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-transparent'
+const DEFAULT_BUTTON_CLASS = 'flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-muted/70 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-transparent'
 
 export function ViewRawButton({ asset, label, className }: ViewRawButtonProps): React.ReactElement {
   const { t } = useTranslation()

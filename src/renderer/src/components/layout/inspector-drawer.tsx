@@ -118,7 +118,7 @@ export function InspectorDrawer(): React.ReactElement | null {
             type="button"
             aria-label={t('inspector.copy')}
             onClick={handleCopy}
-            className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+            className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted/70 hover:text-foreground"
             title={t('inspector.copy')}
           >
             {copied ? (
@@ -132,7 +132,7 @@ export function InspectorDrawer(): React.ReactElement | null {
             type="button"
             aria-label={t('common.close')}
             onClick={closeInspector}
-            className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+            className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted/70 hover:text-foreground"
             title={t('common.close')}
           >
             <X aria-hidden="true" className="h-3.5 w-3.5" />
