@@ -815,9 +815,19 @@ describe('HooksLifecycleView', () => {
       if (this.getAttribute('data-testid') === 'hook-lifecycle-connector-layer') {
         return new DOMRect(0, 0, 960, 1200)
       }
+      if (this.getAttribute('aria-label') === 'Lifecycle') {
+        return new DOMRect(20, 60, 300, 900)
+      }
+      if (
+        this.parentElement?.getAttribute('data-testid') === 'hook-lifecycle-connector-layer' &&
+        typeof this.className === 'string' &&
+        this.className.includes('min-w-0')
+      ) {
+        return new DOMRect(420, 60, 540, 1000)
+      }
       if (anchorStage) {
         const index = Math.max(stageOrder.indexOf(anchorStage), 0)
-        return new DOMRect(20, 80 + index * 42, 260, 32)
+        return new DOMRect(40, 80 + index * 42, 260, 32)
       }
       if (targetStage) {
         const index = Math.max(stageOrder.indexOf(targetStage), 0)
@@ -844,12 +854,68 @@ describe('HooksLifecycleView', () => {
       })
 
       const path = connectorSvg.querySelector('path')
+      const inactivePath = connectorSvg.querySelectorAll('path')[1]
       expect(connectorSvg).toHaveAttribute('aria-hidden', 'true')
       expect(connectorSvg.getAttribute('class')).toContain('pointer-events-none')
       expect(path).toHaveAttribute('stroke-linecap', 'round')
       expect(path).toHaveAttribute('stroke-linejoin', 'round')
+      expect(path).toHaveAttribute('data-hook-connector-stage', 'session-start')
+      expect(path).toHaveAttribute('stroke-width', '2.75')
+      expect(path?.getAttribute('class')).toContain('text-foreground/70')
+      expect(inactivePath).toHaveAttribute('stroke-width', '1')
       expect(path?.getAttribute('d')).toContain('Q')
+      expect(path?.getAttribute('d')).toContain('Q 370')
+      expect(path?.getAttribute('d')).toContain('H 438')
     } finally {
+      Object.defineProperty(HTMLElement.prototype, 'getBoundingClientRect', {
+        configurable: true,
+        value: originalGetBoundingClientRect
+      })
+    }
+  })
+
+  it('throttles connector measurements during scroll events', async () => {
+    const originalGetBoundingClientRect = HTMLElement.prototype.getBoundingClientRect
+    const mockedGetBoundingClientRect = function getBoundingClientRect(this: HTMLElement): DOMRect {
+      const anchorStage = this.getAttribute('data-hook-stage-anchor')
+      const targetStage = this.getAttribute('data-hook-stage-target')
+      if (this.getAttribute('data-testid') === 'hook-lifecycle-connector-layer') return new DOMRect(0, 0, 960, 1200)
+      if (this.getAttribute('aria-label') === 'Lifecycle') return new DOMRect(20, 60, 300, 900)
+      if (
+        this.parentElement?.getAttribute('data-testid') === 'hook-lifecycle-connector-layer' &&
+        typeof this.className === 'string' &&
+        this.className.includes('min-w-0')
+      ) {
+        return new DOMRect(420, 60, 540, 1000)
+      }
+      if (anchorStage) return new DOMRect(40, 80, 260, 32)
+      if (targetStage) return new DOMRect(420, 84, 540, 92)
+      return originalGetBoundingClientRect.call(this)
+    }
+    Object.defineProperty(HTMLElement.prototype, 'getBoundingClientRect', {
+      configurable: true,
+      value: mockedGetBoundingClientRect
+    })
+
+    const setTimeoutSpy = vi.spyOn(window, 'setTimeout')
+
+    try {
+      renderHooks('all', [hookAsset('claude-pre', 'claude-code', 'PreToolUse')])
+      await waitForHookHealthIdle()
+      await screen.findByTestId('hook-lifecycle-connectors')
+
+      setTimeoutSpy.mockClear()
+
+      act(() => {
+        window.dispatchEvent(new Event('scroll'))
+        window.dispatchEvent(new Event('scroll'))
+        window.dispatchEvent(new Event('scroll'))
+      })
+
+      const connectorTimers = setTimeoutSpy.mock.calls.filter((call) => call[1] === 96)
+      expect(connectorTimers).toHaveLength(1)
+    } finally {
+      setTimeoutSpy.mockRestore()
       Object.defineProperty(HTMLElement.prototype, 'getBoundingClientRect', {
         configurable: true,
         value: originalGetBoundingClientRect

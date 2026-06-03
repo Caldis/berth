@@ -84,7 +84,7 @@ export function HooksLifecycleView({
   const [activeStageId, setActiveStageId] = useState<string | null>(null)
   const currentStageId = activeStageId ?? groups[0]?.id ?? null
   const connectorLayerRef = useRef<HTMLDivElement | null>(null)
-  const connectorLines = useHookStageConnectors(groups, currentStageId, connectorLayerRef)
+  const connectorLines = useHookStageConnectors(groups, connectorLayerRef)
 
   useEffect(() => {
     setActiveStageId((current) => {
@@ -111,7 +111,7 @@ export function HooksLifecycleView({
         data-testid="hook-lifecycle-connector-layer"
         className="relative grid gap-4 lg:grid-cols-[300px_minmax(0,1fr)]"
       >
-        <HookLifecycleConnectors lines={connectorLines} />
+        <HookLifecycleConnectors lines={connectorLines} activeStageId={currentStageId} />
         <aside
           aria-label={t('capabilities.hooks.lifecycleIndex')}
           className="relative z-10 space-y-3 lg:sticky lg:top-[var(--berth-page-top-offset,6rem)] lg:max-h-[calc(100dvh_-_var(--berth-page-top-offset,6rem)_-_var(--berth-page-gutter,1.5rem))] lg:self-start lg:overflow-y-auto lg:pr-1"
@@ -204,8 +204,9 @@ export function HooksLifecycleView({
 interface HookConnectorLine {
   id: string
   path: string
-  active: boolean
 }
+
+const HOOK_CONNECTOR_SCROLL_THROTTLE_MS = 96
 
 function useHookStageScrollSpy(
   groups: HookStageGroup[],
@@ -242,7 +243,6 @@ function useHookStageScrollSpy(
 
 function useHookStageConnectors(
   groups: HookStageGroup[],
-  activeStageId: string | null,
   layerRef: RefObject<HTMLDivElement | null>
 ): HookConnectorLine[] {
   const [lines, setLines] = useState<HookConnectorLine[]>([])
@@ -253,6 +253,7 @@ function useHookStageConnectors(
     if (!layer) return undefined
 
     let frameId: number | null = null
+    let scrollMeasureTimerId: number | null = null
     const scrollRoot = findHookScrollRoot(layer)
     const requestFrame = window.requestAnimationFrame ?? ((callback: FrameRequestCallback) => window.setTimeout(() => callback(performance.now()), 0))
     const cancelFrame = window.cancelAnimationFrame ?? ((id: number) => window.clearTimeout(id))
@@ -260,6 +261,7 @@ function useHookStageConnectors(
     const measure = (): void => {
       frameId = null
       const layerRect = layer.getBoundingClientRect()
+      const bendX = findConnectorGapCenterX(layer, layerRect)
       const nextLines = stageIds.flatMap((id) => {
         const anchor = findStageElement('data-hook-stage-anchor', id)
         const target = findStageElement('data-hook-stage-target', id)
@@ -275,8 +277,7 @@ function useHookStageConnectors(
         if (![startX, startY, endX, endY].every(Number.isFinite) || endX <= startX + 4) return []
         return [{
           id,
-          path: buildRoundedConnectorPath(startX, startY, endX, endY),
-          active: activeStageId === id
+          path: buildRoundedConnectorPath(startX, startY, endX, endY, bendX)
         }]
       })
 
@@ -284,8 +285,16 @@ function useHookStageConnectors(
     }
 
     const schedule = (): void => {
-      if (frameId != null) cancelFrame(frameId)
+      if (frameId != null) return
       frameId = requestFrame(measure)
+    }
+
+    const scheduleScrollMeasure = (): void => {
+      if (scrollMeasureTimerId != null) return
+      scrollMeasureTimerId = window.setTimeout(() => {
+        scrollMeasureTimerId = null
+        schedule()
+      }, HOOK_CONNECTOR_SCROLL_THROTTLE_MS)
     }
 
     const resizeObserver = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(schedule)
@@ -298,41 +307,52 @@ function useHookStageConnectors(
     })
 
     const scrollTarget = scrollRoot ?? window
-    scrollTarget.addEventListener('scroll', schedule, { passive: true })
+    scrollTarget.addEventListener('scroll', scheduleScrollMeasure, { passive: true })
     window.addEventListener('resize', schedule)
     schedule()
 
     return () => {
       if (frameId != null) cancelFrame(frameId)
+      if (scrollMeasureTimerId != null) window.clearTimeout(scrollMeasureTimerId)
       resizeObserver?.disconnect()
-      scrollTarget.removeEventListener('scroll', schedule)
+      scrollTarget.removeEventListener('scroll', scheduleScrollMeasure)
       window.removeEventListener('resize', schedule)
     }
-  }, [activeStageId, layerRef, stageIds])
+  }, [layerRef, stageIds])
 
   return lines
 }
 
-function HookLifecycleConnectors({ lines }: { lines: HookConnectorLine[] }): React.ReactElement {
+function HookLifecycleConnectors({
+  lines,
+  activeStageId
+}: {
+  lines: HookConnectorLine[]
+  activeStageId: string | null
+}): React.ReactElement {
   return (
     <svg
       data-testid="hook-lifecycle-connectors"
       aria-hidden="true"
       className="pointer-events-none absolute inset-0 z-0 hidden h-full w-full overflow-visible lg:block"
     >
-      {lines.map((line) => (
-        <path
-          key={line.id}
-          d={line.path}
-          fill="none"
-          stroke="currentColor"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={line.active ? 1.5 : 1}
-          vectorEffect="non-scaling-stroke"
-          className={line.active ? 'text-foreground/35' : 'text-border'}
-        />
-      ))}
+      {lines.map((line) => {
+        const active = activeStageId === line.id
+        return (
+          <path
+            key={line.id}
+            data-hook-connector-stage={line.id}
+            d={line.path}
+            fill="none"
+            stroke="currentColor"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={active ? 2.75 : 1}
+            vectorEffect="non-scaling-stroke"
+            className={active ? 'text-foreground/70' : 'text-border/80'}
+          />
+        )
+      })}
     </svg>
   )
 }
@@ -355,13 +375,30 @@ function findStageElement(attribute: string, stageId: string): HTMLElement | nul
     .find((element) => element.getAttribute(attribute) === stageId) ?? null
 }
 
-function buildRoundedConnectorPath(startX: number, startY: number, endX: number, endY: number): string {
-  const midX = startX + (endX - startX) / 2
+function findConnectorGapCenterX(layer: HTMLElement, layerRect: DOMRect): number | null {
+  const rail = layer.querySelector<HTMLElement>('aside[aria-label]')
+  const stageColumn = rail?.nextElementSibling instanceof HTMLElement ? rail.nextElementSibling : null
+  if (!rail || !stageColumn) return null
+
+  const railRect = rail.getBoundingClientRect()
+  const stageColumnRect = stageColumn.getBoundingClientRect()
+  const gapCenterX = railRect.right + (stageColumnRect.left - railRect.right) / 2 - layerRect.left
+  return Number.isFinite(gapCenterX) ? gapCenterX : null
+}
+
+function buildRoundedConnectorPath(startX: number, startY: number, endX: number, endY: number, bendX?: number | null): string {
+  const midX = Number.isFinite(bendX) ? Number(bendX) : startX + (endX - startX) / 2
+  const balancedEndX = Math.max(endX, midX + Math.abs(midX - startX))
   const deltaY = endY - startY
   const direction = deltaY >= 0 ? 1 : -1
-  const radius = Math.min(14, Math.abs(endX - startX) / 4, Math.max(0, Math.abs(deltaY) / 2))
+  const radius = Math.min(
+    14,
+    Math.abs(midX - startX) / 2,
+    Math.abs(balancedEndX - midX) / 2,
+    Math.max(0, Math.abs(deltaY) / 2)
+  )
 
-  if (radius < 1) return `M ${startX} ${startY} H ${endX}`
+  if (radius < 1) return `M ${startX} ${startY} H ${midX} V ${endY} H ${balancedEndX}`
 
   return [
     `M ${startX} ${startY}`,
@@ -369,7 +406,7 @@ function buildRoundedConnectorPath(startX: number, startY: number, endX: number,
     `Q ${midX} ${startY} ${midX} ${startY + direction * radius}`,
     `V ${endY - direction * radius}`,
     `Q ${midX} ${endY} ${midX + radius} ${endY}`,
-    `H ${endX}`
+    `H ${balancedEndX}`
   ].join(' ')
 }
 
@@ -377,7 +414,7 @@ function connectorLinesEqual(current: HookConnectorLine[], next: HookConnectorLi
   if (current.length !== next.length) return false
   return current.every((line, index) => {
     const candidate = next[index]
-    return line.id === candidate.id && line.path === candidate.path && line.active === candidate.active
+    return line.id === candidate.id && line.path === candidate.path
   })
 }
 
