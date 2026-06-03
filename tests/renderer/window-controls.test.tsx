@@ -59,6 +59,29 @@ describe('WindowControls', () => {
     expect(controls).toHaveStyle({ top: '48px' })
   })
 
+  it('uses navigation-scaled hit targets and quiet icon styling', async () => {
+    render(<WindowControls />)
+
+    const buttons = [
+      screen.getByRole('button', { name: 'Pin window' }),
+      screen.getByRole('button', { name: 'Minimize window' }),
+      screen.getByRole('button', { name: 'Maximize window' }),
+      screen.getByRole('button', { name: 'Close window' })
+    ]
+
+    for (const button of buttons) {
+      expect(button).toHaveClass('h-9')
+      expect(button).toHaveClass('w-9')
+      expect(button).not.toHaveClass('w-10')
+      expect(button.querySelector('svg')).toHaveAttribute('stroke-width', '1.8')
+    }
+
+    expect(screen.getByRole('button', { name: 'Close window' })).toHaveClass('hover:bg-destructive/10')
+    expect(screen.getByRole('button', { name: 'Close window' })).not.toHaveClass('hover:bg-destructive')
+
+    await waitFor(() => expect(isAlwaysOnTop).toHaveBeenCalledTimes(1))
+  })
+
   it('toggles pin state and exposes pressed semantics', async () => {
     render(<WindowControls />)
 

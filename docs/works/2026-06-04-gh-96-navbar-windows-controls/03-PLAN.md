@@ -13,6 +13,9 @@
 - [x] 任务 3: 收口检查与视觉验收
   - tests: `pnpm typecheck:web` 通过; `pnpm harness:check --work docs/works/2026-06-04-gh-96-navbar-windows-controls` 通过; `pnpm build` 通过; `pnpm test:e2e -- tests/e2e/window-controls.e2e.ts` 通过, 3 tests。
   - verify: Electron/Playwright 截图 `C:\Users\mail\AppData\Local\Temp\berth-gh96-navbar-overview.png`; 坐标为 topNavigation centerY=36, windowControls centerY=36, overviewHero y=96; 右侧 class 含 `pr-52`。
+- [x] 任务 4: 按用户截图反馈调整 Windows 控制键按钮尺寸与图标样式
+  - tests: 更新 `tests/renderer/window-controls.test.tsx`, 固定按钮命中区为导航栏内常用 `h-9 w-9`, 图标为 16px 左右的 1.8px 笔触样式, close hover 使用低强度危险色; `pnpm test -- tests/renderer/window-controls.test.tsx` 通过, 7 tests。
+  - verify: `pnpm typecheck:web` 通过; `pnpm build` 通过; `pnpm test:e2e -- tests/e2e/window-controls.e2e.ts` 通过, 3 tests; 截图 `C:\Users\mail\AppData\Local\Temp\berth-gh96-window-controls-sized.png`; 坐标为 nav centerY=36, controls centerY=36, 四个按钮均为 36x36, icon stroke=1.8。
 
 ## verify 回写
 verify 不通过项作为新任务追加于此, phase 退回 implement。
@@ -26,3 +29,4 @@ verify 不通过项作为新任务追加于此, phase 退回 implement。
 - `node scripts/harness-projects.mjs ensure docs\works\2026-06-04-gh-96-navbar-windows-controls`: 通过, 当前任务为 In Progress。
 - `node scripts/harness-projects.mjs check --strict`: 当前任务无异常; 全局严格检查被无关 active work `2026-06-03-gh-90-nav-header-ux-redesign` 的 Project debt 字段不一致阻塞。
 - `gh run list --branch master --limit 5`: 最近 5 个远端 run 均为旧提交 failure, headSha 不属于本任务提交。
+- 用户反馈后补充视觉调整: Windows 控制键按钮改为 `h-9 w-9`, 图标 stroke=1.8, close hover 改为 `destructive/10`; 目标测试、typecheck、build、Windows e2e 与截图坐标均通过。

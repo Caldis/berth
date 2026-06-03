@@ -4,6 +4,7 @@ import { Copy, Minus, Pin, Square, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const DEFAULT_NAVIGATION_HEIGHT = 72
+const ICON_STROKE_WIDTH = 1.8
 
 interface WindowControlsProps {
   navigationHeight?: number
@@ -35,8 +36,9 @@ export function WindowControls({ navigationHeight = DEFAULT_NAVIGATION_HEIGHT }:
   }, [])
 
   const buttonClass = cn(
-    'titlebar-no-drag pointer-events-auto flex h-7 w-10 items-center justify-center rounded-md text-muted-foreground',
-    'transition-colors duration-150 hover:bg-muted hover:text-foreground active:bg-muted/80'
+    'titlebar-no-drag pointer-events-auto flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground/80',
+    'transition-[background-color,color,transform] duration-150 hover:bg-muted/70 hover:text-foreground',
+    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:translate-y-px active:bg-muted/80'
   )
 
   return (
@@ -48,7 +50,7 @@ export function WindowControls({ navigationHeight = DEFAULT_NAVIGATION_HEIGHT }:
       <button
         aria-label={alwaysOnTop ? t('windowControls.unpin') : t('windowControls.pin')}
         aria-pressed={alwaysOnTop}
-        className={cn(buttonClass, alwaysOnTop && 'bg-muted text-foreground')}
+        className={cn(buttonClass, alwaysOnTop && 'bg-muted/70 text-foreground')}
         type="button"
         onClick={() => {
           const next = !alwaysOnTop
@@ -56,7 +58,10 @@ export function WindowControls({ navigationHeight = DEFAULT_NAVIGATION_HEIGHT }:
           void window.api.window.setAlwaysOnTop(next)
         }}
       >
-        <Pin className={cn('h-3.5 w-3.5', !alwaysOnTop && 'rotate-45')} />
+        <Pin
+          className={cn('h-4 w-4', !alwaysOnTop && 'rotate-45')}
+          strokeWidth={ICON_STROKE_WIDTH}
+        />
       </button>
       <button
         aria-label={t('windowControls.minimize')}
@@ -64,7 +69,7 @@ export function WindowControls({ navigationHeight = DEFAULT_NAVIGATION_HEIGHT }:
         type="button"
         onClick={() => void window.api.window.minimize()}
       >
-        <Minus className="h-3.5 w-3.5" />
+        <Minus className="h-4 w-4" strokeWidth={ICON_STROKE_WIDTH} />
       </button>
       <button
         aria-label={maximized ? t('windowControls.restore') : t('windowControls.maximize')}
@@ -72,18 +77,22 @@ export function WindowControls({ navigationHeight = DEFAULT_NAVIGATION_HEIGHT }:
         type="button"
         onClick={() => void window.api.window.toggleMaximize()}
       >
-        {maximized ? <Copy className="h-3.5 w-3.5" /> : <Square className="h-3 w-3" />}
+        {maximized ? (
+          <Copy className="h-3.5 w-3.5" strokeWidth={ICON_STROKE_WIDTH} />
+        ) : (
+          <Square className="h-3.5 w-3.5" strokeWidth={ICON_STROKE_WIDTH} />
+        )}
       </button>
       <button
         aria-label={t('windowControls.close')}
         className={cn(
           buttonClass,
-          'hover:bg-destructive hover:text-destructive-foreground active:bg-destructive/80'
+          'hover:bg-destructive/10 hover:text-destructive active:bg-destructive/20'
         )}
         type="button"
         onClick={() => void window.api.window.close()}
       >
-        <X className="h-3.5 w-3.5" />
+        <X className="h-4 w-4" strokeWidth={ICON_STROKE_WIDTH} />
       </button>
     </div>
   )
