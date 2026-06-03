@@ -56,6 +56,7 @@ describe('WindowControls', () => {
 
     const controls = screen.getByTestId('window-controls')
     expect(controls).toHaveClass('-translate-y-1/2')
+    expect(controls).toHaveClass('right-[1.15rem]')
     expect(controls).toHaveStyle({ top: '48px' })
   })
 

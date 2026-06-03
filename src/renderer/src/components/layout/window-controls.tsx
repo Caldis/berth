@@ -43,7 +43,7 @@ export function WindowControls({ navigationHeight = DEFAULT_NAVIGATION_HEIGHT }:
 
   return (
     <div
-      className="titlebar-no-drag pointer-events-auto fixed right-3 z-[10000] flex -translate-y-1/2 items-center gap-1"
+      className="titlebar-no-drag pointer-events-auto fixed right-[1.15rem] z-[10000] flex -translate-y-1/2 items-center gap-1"
       style={containerStyle}
       data-testid="window-controls"
     >
