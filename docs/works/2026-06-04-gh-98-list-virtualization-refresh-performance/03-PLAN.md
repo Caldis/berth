@@ -4,12 +4,40 @@
 每个实现项必须有测试证据或明确例外理由。
 实现中若发现 debt 初估不准, 更新 INDEX.md `debt.estimate`, 并追加 `debt.revisions[]`。
 
-- [ ] 任务 1:
-  - tests:
-  - verify: 包含界面质量与交互验收项; 非 UI 任务写“不适用”
-- [ ] 任务 2:
-  - tests:
-  - verify: 包含界面质量与交互验收项; 非 UI 任务写“不适用”
+- [ ] 1. 添加第三方依赖与测试基线
+  - scope: `package.json`, `pnpm-lock.yaml`, 必要的 test mock/setup。
+  - tests: `pnpm typecheck:web`; 若 lockfile 变动导致安装脚本触发, 用 `pnpm install --lockfile-only` 或等效 pnpm 9 命令生成锁文件。
+  - verify: 依赖只包含 `react-virtuoso` 与 `@radix-ui/react-navigation-menu`; `@tanstack/react-virtual` 不进入 lockfile。
+
+- [ ] 2. 建 shared virtual list 与 category jump nav
+  - scope: `src/renderer/src/components/shared/virtual-grouped-list.tsx`, `src/renderer/src/components/shared/category-jump-nav.tsx`, `src/renderer/src/hooks/use-app-scroll-parent.ts`, `src/renderer/src/lib/virtual-list-model.ts`。
+  - tests: `tests/renderer/virtual-grouped-list.test.tsx`, `tests/renderer/category-jump-nav.test.tsx`; 命令 `pnpm test -- tests/renderer/virtual-grouped-list.test.tsx tests/renderer/category-jump-nav.test.tsx`。
+  - verify: stable key、groupCounts、active group、scrollToGroup、aria-current、desktop narrow nav 与 mobile sticky nav 均有测试或 DOM 断言。
+
+- [ ] 3. 改造 Sessions 列表
+  - scope: `src/renderer/src/pages/sessions.tsx`, 必要 i18n key。
+  - tests: 更新 `tests/renderer/sessions-pages.test.tsx`; 命令 `pnpm test -- tests/renderer/sessions-pages.test.tsx`。
+  - verify: 800+ sessions 下 renderer test 或 e2e 断言 DOM row 数量小于总数; 搜索输入、project/date 跳转、loading/empty/stale 字段保留; 页面布局保持现有信息密度。
+
+- [ ] 4. 加强 Sessions / Memory refresh cache
+  - scope: `src/renderer/src/hooks/use-ipc.ts`, `src/renderer/src/hooks/use-memory.ts`, `src/renderer/src/lib/result-signature.ts`。
+  - tests: `tests/renderer/use-sessions-swr.test.tsx`, `tests/renderer/use-memory-cache.test.tsx`; 命令 `pnpm test -- tests/renderer/use-sessions-swr.test.tsx tests/renderer/use-memory-cache.test.tsx`。
+  - verify: TTL、in-flight、request throttle、unchanged-result diff 均被断言; same-result refresh 不触发额外 state 更新。
+
+- [ ] 5. 改造 Memories 列表
+  - scope: `src/renderer/src/components/memory/memory-view.tsx`, 必要 i18n key。
+  - tests: 更新 `tests/renderer/memory-view.test.tsx`; 命令 `pnpm test -- tests/renderer/memory-view.test.tsx`。
+  - verify: source/importance/tag/search 使用 shared virtual list; note detail lazy load 与 focus target 保留; source unavailable、missing、tags、links、path、loading/empty/error 状态保留。
+
+- [ ] 6. 改造 Instructions 中 skills/conventions 列表
+  - scope: `src/renderer/src/pages/instructions.tsx` 与共享 view model 复用。
+  - tests: 更新 `tests/renderer/instructions-guidance.test.tsx` 或新增 focused renderer test; 命令 `pnpm test -- tests/renderer/instructions-guidance.test.tsx`。
+  - verify: 至少 skills/conventions 使用 shared virtual list; 若同结构 tabs 同批迁移, tests 覆盖一个代表路径; 未迁移路径在 verify 回写说明。
+
+- [ ] 7. 全量门禁与真实 Electron 验证
+  - scope: 代码、任务态文档、可选 e2e。
+  - tests: `pnpm typecheck:web`, `pnpm test`, `pnpm harness:check --work docs/works/2026-06-04-gh-98-list-virtualization-refresh-performance`, `pnpm test:e2e -- --grep "large list|sessions"` 或相关现有 e2e。
+  - verify: 真实 Electron desktop/mobile 视口确认 DOM 数量、scroll/jump、search、refresh 状态与截图/DOM 证据; 若 e2e 环境不可用, 记录具体阻断命令和替代证据。
 
 ## verify 回写
 verify 不通过项作为新任务追加于此, phase 退回 implement。

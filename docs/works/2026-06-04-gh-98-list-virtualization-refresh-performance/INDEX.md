@@ -2,7 +2,7 @@
 task: 2026-06-04-gh-98-list-virtualization-refresh-performance
 task_id: GH-98
 type: maintenance
-phase: design
+phase: implement
 created: 2026-06-04
 priority: P2
 target_date: 
@@ -26,7 +26,7 @@ debt:
       - architecture
       - testability
     confidence: medium
-    rationale: "0.0-new 初始估算: 跨 Sessions、Memories、Instructions 列表基础设施、第三方依赖、刷新限流和搜索性能; explore/design 后校准。"
+    rationale: "0.0-new 初始估算: 跨 Sessions、Memories、Instructions 列表基础设施、第三方依赖、刷新限流和搜索性能; design 后维持估算。"
   final:
     incurred:
     repaid:
@@ -65,8 +65,8 @@ artifacts:
 ## 产物
 - [x] 00-PRD.md — 原始输入快照
 - [x] 01-ANALYSIS.md — Explore 产物
-- [ ] 02-SPEC.md — Design 产物
-- [ ] 03-PLAN.md — 活任务清单
+- [x] 02-SPEC.md — Design 产物
+- [x] 03-PLAN.md — 活任务清单
 - [ ] 04-POLISH.md — 可选抛光记录
 
 ## 待澄清 (blocked 时填)
