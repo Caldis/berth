@@ -2,7 +2,7 @@
 task: 2026-06-04-gh-102-fix-clipped-app-popovers
 task_id: GH-102
 type: bug
-phase: verify
+phase: archive
 created: 2026-06-04
 priority: P2
 target_date: 
@@ -43,7 +43,7 @@ gh_project:
   project_url: https://github.com/users/Caldis/projects/6
   project_id: PVT_kwHOADXbEs4BZHvQ
   item_id: PVTI_lAHOADXbEs4BZHvQzguvNn8
-  item_status: In Progress
+  item_status: Done
 artifacts:
   source: 00-BUG.md
   analysis: 01-ANALYSIS.md
