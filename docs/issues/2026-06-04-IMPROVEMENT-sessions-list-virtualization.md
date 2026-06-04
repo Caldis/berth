@@ -35,6 +35,6 @@
 - Sessions 项目跳转菜单采用父级标题 + 项目项结构: 父级标题不绑定 `onSelect`, 项目项按完整路径滚动到对应虚拟 group。
 - 父级标题使用更轻的文字层级和分隔线; 项目项保持按钮形态、较深文字、缩进和选中态边框。
 - 桌面左侧类目缩进只使用内部 padding, 不使用会扩展布局宽度的外边距; Sessions 右侧列表移除整块外层边框, 改由每个 group header 与 row 共同形成分组容器。
-- 桌面左侧类目导航同时设置 `height` 与 `max-height` 为 `100dvh - --berth-page-top-offset - --berth-page-gutter`, 并使用 `self-start` 避免 flex 拉伸影响内部滚动区域。
+- 桌面左侧类目导航同时设置 `height` 与 `max-height` 为 `100dvh - --berth-page-top-offset`, 作为侧栏延伸到窗口底部; 使用 `self-start` 避免 flex 拉伸影响内部滚动区域。
 - 给 `useSessions`、`useMemory` 和资产 runtime 刷新增加限流、同结果 diff 与 fresh cache 判断, 避免后台刷新触发整页重渲染。
 - 扫描引擎后续继续使用 main 侧 `worker_threads`; Service Worker 不直接承载本地文件扫描, 检索索引可单独评估迁移到 renderer Web Worker 或 main worker。

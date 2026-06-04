@@ -47,7 +47,7 @@ describe('CategoryJumpNav', () => {
     expect(screen.getByTestId('jump-nav')).toHaveClass('lg:overflow-x-hidden')
     expect(screen.getByTestId('jump-nav')).toHaveClass('lg:sticky')
     expect(screen.getByTestId('jump-nav')).toHaveClass('lg:self-start')
-    expect(screen.getByTestId('jump-nav')).toHaveClass('lg:h-[calc(100dvh_-_var(--berth-page-top-offset,6rem)_-_var(--berth-page-gutter,1.5rem))]')
+    expect(screen.getByTestId('jump-nav')).toHaveClass('lg:h-[calc(100dvh_-_var(--berth-page-top-offset,6rem))]')
     expect(screen.getByTestId('jump-nav-list')).toHaveClass('lg:w-full')
     expect(screen.getByTestId('jump-nav-list')).toHaveClass('lg:flex-col')
   })
