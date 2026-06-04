@@ -49,5 +49,15 @@
   - 推送前: `pnpm harness:prepush` + CI baseline + `harness:ci:wait`。
   - verify: 全绿。
 
+## Polish 追加 (用户勾选 C1+C2, 详见 04-POLISH.md)
+- [x] 任务 P1 (C1): top-navigation.tsx header `transition-[opacity,background-color]` → `transition-opacity` (清理失效过渡孤儿)
+  - tests: 现有 top-navigation/app-layout 测试 (不断言 transition 类); `pnpm test top-navigation app-layout` 保持绿。
+  - verify: 无视觉变化; header opacity 过渡仍生效 (实测已确认块布局正常)。
+- [x] 任务 P2 (C2): app-layout.tsx 内容 wrapper 删除 `relative` (清理旧 absolute header 定位父级孤儿)
+  - 已 grep 确认无 absolute 后代依赖该 wrapper (scope-switcher/sidebar/搜索图标均相对各自祖先); WindowControls 为 fixed 且在 wrapper 外。
+  - tests: `pnpm test app-layout`; 全量回归。
+  - verify: 布局无变化 (已实测各路由)。
+- C3/C4/C5: 未选, 跳过。C4 (滚动阴影) 如后续想要可单列 docs/issues IMPROVEMENT。
+
 ## verify 回写
 verify 不通过项作为新任务追加于此, phase 退回 implement。

@@ -69,7 +69,7 @@ export function TopNavigation({ isWindows }: TopNavigationProps): React.ReactEle
   return (
     <header
       className={cn(
-        'titlebar-drag flex min-h-[72px] shrink-0 items-center border-b border-border bg-background px-[var(--berth-page-gutter)] py-3 transition-[opacity,background-color] duration-200 ease-out motion-reduce:transition-none',
+        'titlebar-drag flex min-h-[72px] shrink-0 items-center border-b border-border bg-background px-[var(--berth-page-gutter)] py-3 transition-opacity duration-200 ease-out motion-reduce:transition-none',
         isVisible ? 'opacity-100' : 'pointer-events-none opacity-0',
         isWindows && 'pr-52'
       )}

@@ -25,14 +25,14 @@ debt:
     rationale: "悬浮 header 测高/偏移补偿机制集中在布局外壳 (app-layout/top-navigation) + 两个 sticky 消费者 (category-jump-nav/hooks-lifecycle-view) + 对应测试; 改块布局可移除 ResizeObserver 测高、--berth-page-top-offset 间接层、paddingTop/scrollPaddingTop 补偿, 净偿还。风险 medium: 全局布局所有页面依赖, 但改动机械。explore/design 后校准。"
   final:
     incurred: 1
-    repaid: 5
-    net: -4
+    repaid: 7
+    net: -6
     scope: module
     risk: low
     areas:
       - ui-ux
     confidence: high
-    rationale: "最终 diff 净 -4 行 (53+/57-), 纯删减为主: 移除 ResizeObserver 测高 effect、onHeightChange 回调、topNavigationHeight state、运行时 --berth-page-top-offset 注入; --berth-page-top-offset 降为静态常量; 两个 sticky rail 各只改 top。6 路由页零改动。typecheck/lint/全量测试 (90 文件/652) 全绿; 风险 medium->low (改动机械、面小、测试全覆盖)。"
+    rationale: "核心 diff 净 -4 行, 纯删减: 移除 ResizeObserver 测高 effect、onHeightChange 回调、topNavigationHeight state、运行时 --berth-page-top-offset 注入; --berth-page-top-offset 降为静态常量; 两个 sticky rail 各只改 top。6 路由页零改动。Polish C1+C2 再清理两处重构孤儿 (失效 transition background-color、冗余 relative), repaid 5->7。typecheck/lint/全量测试 (90 文件/652)/全局 harness:check 全绿; 实测 6 类路由 + sticky 滚动钉附通过。"
   revisions:
     - phase: explore
       date: 2026-06-04
@@ -44,6 +44,11 @@ debt:
       from: { net: -3, risk: medium, confidence: medium }
       to: { net: -4, risk: low, confidence: high }
       reason: "实现完成后校准 final: 实际为纯删减 (净 -4 行), 全量门禁绿; 风险 medium->low, confidence medium->high。"
+    - phase: polish
+      date: 2026-06-04
+      from: { net: -4 }
+      to: { net: -6 }
+      reason: "用户勾选 polish C1+C2 (清理 transition background-color 孤儿 + 移除冗余 relative), 各偿还 1; phase 临时回 implement 执行, 完成后 final 校准 repaid 5->7。"
 issue:
   number: 99
   repo: Caldis/berth
@@ -74,6 +79,6 @@ artifacts:
 - [x] 01-ANALYSIS.md — Explore 产物
 - [x] 02-SPEC.md — Design 产物
 - [x] 03-PLAN.md — 活任务清单
-- [ ] 04-POLISH.md — 可选抛光记录
+- [x] 04-POLISH.md — 可选抛光记录
 
 ## 待澄清 (blocked 时填)

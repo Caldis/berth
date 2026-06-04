@@ -61,7 +61,7 @@ export function AppLayout({ children }: { children: ReactNode }): React.ReactEle
       <Sidebar />
       <PageChromeProvider>
         <div
-          className="relative flex min-w-0 flex-1 flex-col overflow-hidden transition-[margin] duration-200"
+          className="flex min-w-0 flex-1 flex-col overflow-hidden transition-[margin] duration-200"
           style={{ marginLeft: effectiveSidebarWidth }}
         >
           <TopNavigation isWindows={isWindows} />
