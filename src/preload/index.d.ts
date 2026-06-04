@@ -8,9 +8,6 @@ import type {
   SessionListResult,
   SessionDetailResult,
   HealthCheck,
-  ClearHookRecoveryRequest,
-  ClearHookRecoveryResult,
-  HookRecoveryListResult,
   HooksAgentId,
   HooksEnablementStatus,
   ProjectScopeActivationResult,
@@ -83,8 +80,6 @@ interface BerthAPI {
     statuses: (agentId: HooksAgentId) => Promise<HooksEnablementStatus[]>
     setEnabled: (request: SetHooksEnabledRequest) => Promise<SetHooksEnabledResult>
     setHookEnabled: (request: SetHookEnabledRequest) => Promise<SetHookEnabledResult>
-    recoveries: () => Promise<HookRecoveryListResult>
-    clearRecovery: (request: ClearHookRecoveryRequest) => Promise<ClearHookRecoveryResult>
   }
   shell: {
     openPath: (path: string) => Promise<void>

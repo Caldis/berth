@@ -217,12 +217,6 @@ describe('HooksLifecycleView', () => {
       changed: true,
       sourcePath: 'C:\\Users\\test\\.codex\\config.toml'
     }))
-    window.api.hooks.recoveries = vi.fn(async () => ({ points: [], issues: [] }))
-    window.api.hooks.clearRecovery = vi.fn(async (request) => ({
-      hookKey: request.hookKey,
-      sourcePath: request.sourcePath,
-      changed: true
-    }))
     window.confirm = vi.fn(() => true)
   })
 
@@ -715,7 +709,6 @@ describe('HooksLifecycleView', () => {
     expect(healthPanel).toBeInTheDocument()
     expect(within(sidebar).queryByTestId('hook-recovery-center')).not.toBeInTheDocument()
     expect(stageList.compareDocumentPosition(healthPanel) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
-    expect(window.api.hooks.recoveries).not.toHaveBeenCalled()
   })
 
   it('uses a vertical hook check layout without wrapping status tags', async () => {
@@ -1254,7 +1247,6 @@ describe('HooksLifecycleView', () => {
         managed: false
       })
     })
-    expect(window.api.hooks.recoveries).not.toHaveBeenCalled()
     expect(screen.getByText('Enabled')).toBeInTheDocument()
   })
 })

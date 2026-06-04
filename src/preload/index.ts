@@ -64,10 +64,7 @@ const api = {
     setEnabled: (request: { agentId: string; scope: string; enabled: boolean }) =>
       ipcRenderer.invoke('hooks:set-enabled', request),
     setHookEnabled: (request: { agentId: string; scope: string; hookKey: string; sourcePath: string; enabled: boolean; managed?: boolean }) =>
-      ipcRenderer.invoke('hooks:set-hook-enabled', request),
-    recoveries: () => ipcRenderer.invoke('hooks:recoveries'),
-    clearRecovery: (request: { agentId: string; hookKey: string; sourcePath: string }) =>
-      ipcRenderer.invoke('hooks:clear-recovery', request)
+      ipcRenderer.invoke('hooks:set-hook-enabled', request)
   },
   shell: {
     openPath: (path: string) => ipcRenderer.invoke('shell:openPath', path),

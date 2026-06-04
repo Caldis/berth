@@ -149,12 +149,6 @@ const mockApi = {
       enabled: request.enabled,
       changed: true,
       sourcePath: 'C:\\Users\\test\\.codex\\config.toml'
-    }),
-    recoveries: async () => ({ points: [], issues: [] }),
-    clearRecovery: async (request: { hookKey: string; sourcePath: string }) => ({
-      hookKey: request.hookKey,
-      sourcePath: request.sourcePath,
-      changed: true
     })
   },
   shell: {

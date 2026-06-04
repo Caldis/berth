@@ -12,8 +12,8 @@
   - tests: `pnpm vitest run tests/renderer/hooks-lifecycle-view.test.tsx` — 29 passed
   - verify: 左侧 rail 不再渲染 `hook-recovery-center`; 不调用 `window.api.hooks.recoveries`; Claude disabled Hook 仍在右侧显示 Disabled tag 和 Enable 按钮并通过原行恢复; Codex 行内启停不退化; 响应式/focus 使用现有行内按钮。
 
-- [ ] 任务 3: 删除恢复中心 IPC/preload/shared type/main manager surface 与无用 i18n/mock。
-  - tests: `pnpm typecheck:node`; `pnpm typecheck:web`; `pnpm vitest run tests/unit/hooks-manager.test.ts tests/unit/claude-scanner.test.ts tests/renderer/hooks-lifecycle-view.test.tsx`
+- [x] 任务 3: 删除恢复中心 IPC/preload/shared type/main manager surface 与无用 i18n/mock。
+  - tests: `pnpm typecheck:node` — passed; `pnpm typecheck:web` — passed; `pnpm vitest run tests/unit/hooks-manager.test.ts tests/unit/claude-scanner.test.ts tests/renderer/hooks-lifecycle-view.test.tsx` — 52 passed
   - verify: `rg "HookRecovery|hooks:recoveries|clearRecovery|capabilities\\.hooks\\.recovery" src tests` 不再命中运行时代码或测试 mock; sidecar disable/restore 测试仍通过。
 
 - [ ] 任务 4: 收口验证与真实 UI 检查。

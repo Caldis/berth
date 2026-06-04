@@ -318,48 +318,6 @@ export interface SetHookEnabledResult {
   sourcePath: string
 }
 
-export type HookRecoveryStatus = 'recoverable' | 'source-missing' | 'already-restored' | 'invalid'
-
-export interface HookRecoveryPoint {
-  hookKey: string
-  agentId: 'claude-code'
-  agentName: string
-  sourcePath: string
-  scope: 'user'
-  event: string
-  matcher?: string
-  hookType: string
-  command?: string
-  summary: string
-  createdAt?: string
-  status: HookRecoveryStatus
-  message?: string
-}
-
-export interface HookRecoveryIssue {
-  agentId: HooksAgentId
-  sourcePath: string
-  severity: 'warning' | 'error'
-  message: string
-}
-
-export interface HookRecoveryListResult {
-  points: HookRecoveryPoint[]
-  issues: HookRecoveryIssue[]
-}
-
-export interface ClearHookRecoveryRequest {
-  agentId: 'claude-code'
-  hookKey: string
-  sourcePath: string
-}
-
-export interface ClearHookRecoveryResult {
-  hookKey: string
-  sourcePath: string
-  changed: boolean
-}
-
 export interface ImportChainNode {
   path: string
   content?: string
@@ -400,8 +358,6 @@ export interface IpcChannels {
   'hooks:statuses': { args: [HooksAgentId]; result: HooksEnablementStatus[] }
   'hooks:set-enabled': { args: [SetHooksEnabledRequest]; result: SetHooksEnabledResult }
   'hooks:set-hook-enabled': { args: [SetHookEnabledRequest]; result: SetHookEnabledResult }
-  'hooks:recoveries': { args: []; result: HookRecoveryListResult }
-  'hooks:clear-recovery': { args: [ClearHookRecoveryRequest]; result: ClearHookRecoveryResult }
   'theme:get': { args: []; result: string }
   'theme:set': { args: ['light' | 'dark' | 'system']; result: void }
   'shell:openPath': { args: [string]; result: void }

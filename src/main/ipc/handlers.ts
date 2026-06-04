@@ -20,9 +20,6 @@ import type {
   MCPMergeInfo,
   SessionArtifacts,
   SessionToolEvent,
-  ClearHookRecoveryRequest,
-  ClearHookRecoveryResult,
-  HookRecoveryListResult,
   HooksAgentId,
   HooksEnablementStatus,
   SetHookEnabledRequest,
@@ -35,10 +32,8 @@ import { getScanner } from '../engine/scanner'
 import { getAssetRuntime } from '../engine/assets/runtime'
 import { normalizeTokenUsage } from '../../shared/token-usage'
 import {
-  clearHookRecovery,
   getAgentHooksStatus,
   getAgentHooksStatuses,
-  getHookRecoveries,
   setAgentHooksEnabled,
   setHookEnabled
 } from '../engine/hooks-manager'
@@ -242,19 +237,6 @@ export function registerAssetHandlers(): void {
     'hooks:set-hook-enabled',
     async (_event, request: SetHookEnabledRequest): Promise<SetHookEnabledResult> => {
       const result = setHookEnabled(request)
-      await getAssetRuntime().refresh({ reason: 'manual', wait: true })
-      return result
-    }
-  )
-
-  ipcMain.handle('hooks:recoveries', (): HookRecoveryListResult => {
-    return getHookRecoveries()
-  })
-
-  ipcMain.handle(
-    'hooks:clear-recovery',
-    async (_event, request: ClearHookRecoveryRequest): Promise<ClearHookRecoveryResult> => {
-      const result = clearHookRecovery(request)
       await getAssetRuntime().refresh({ reason: 'manual', wait: true })
       return result
     }
