@@ -180,6 +180,10 @@ test.describe('Theme', () => {
       await expect(html).toHaveClass(/dark/)
     }
     await page.keyboard.press('Escape')
+    // Wait for the modal to fully close so HeroUI/React Aria focus restoration
+    // settles before the next test (otherwise it can steal focus from the
+    // search dialog opened by the following Ctrl+K test).
+    await expect(dialog).toBeHidden()
   })
 })
 
