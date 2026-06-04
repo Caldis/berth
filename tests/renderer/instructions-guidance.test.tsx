@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import React from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { MemoryRouter } from 'react-router-dom'
@@ -123,7 +123,7 @@ describe('Instructions guidance surfaces', () => {
     expect(await screen.findByText('Memory notes across sources')).toBeInTheDocument()
     expect(screen.getByText(/Berth groups native memory files and durable local notes/)).toBeInTheDocument()
     expect(screen.queryByText('Source types')).not.toBeInTheDocument()
-    fireEvent.click(screen.getByRole('button', { name: /Details/ }))
+    fireEvent.click(within(screen.getByTestId('page-guide-panel')).getByText('Details'))
     expect(screen.getByText('Source types')).toBeInTheDocument()
     expect(screen.queryByText('instructions.guidance.memories.insights.sources.title')).not.toBeInTheDocument()
   })

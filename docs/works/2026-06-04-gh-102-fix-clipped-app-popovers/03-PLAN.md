@@ -5,7 +5,7 @@
   - verify: 组件使用 Portal, 支持 hover/focus/click, 统一 z-index/collision padding, 不包含业务文案。
 
 - [x] 任务 2: Header 指南浮层接入 `FloatingPopover`。
-  - tests: `pnpm exec vitest run tests/renderer/capabilities-guidance.test.tsx` — 8 passed
+  - tests: `pnpm exec vitest run tests/renderer/capabilities-guidance.test.tsx` — 8 passed; `pnpm exec vitest run tests/renderer/instructions-guidance.test.tsx` — 5 passed
   - verify: hover/click 后 `page-guide-panel` 可见, 不在 `top-navigation` DOM 内, 指南 Details 仍可展开。
 
 - [x] 任务 3: Hooks Hook 检查状态 tag 接入 `FloatingPopover`。
