@@ -7,8 +7,10 @@ import type {
   AgentCapabilityPluginManifestEntry
 } from '@shared/types/agent-plugin'
 import { useAppStore } from '@/stores/app'
+import { sessionListSignature } from '@/lib/result-signature'
 
 const HEALTH_CHECK_CACHE_TTL_MS = 60_000
+export const SESSION_LIST_CACHE_TTL_MS = 30_000
 
 interface HealthCheckCache {
   checks: HealthCheck[]
@@ -31,6 +33,7 @@ interface SessionListRequest {
 interface SessionListCacheEntry {
   sessions: SessionSummary[]
   totalCount: number
+  signature: string
   updatedAtMs: number
 }
 
@@ -95,6 +98,34 @@ function sessionListCacheKey(request: SessionListRequest): string {
   })
 }
 
+function isSessionListCacheFresh(cache: SessionListCacheEntry | undefined): cache is SessionListCacheEntry {
+  return cache != null && Date.now() - cache.updatedAtMs < SESSION_LIST_CACHE_TTL_MS
+}
+
+function createSessionListCacheEntry(
+  key: string,
+  sessions: SessionSummary[],
+  totalCount: number
+): SessionListCacheEntry {
+  const signature = sessionListSignature(sessions, totalCount)
+  const previous = sessionListCache.get(key)
+  const entry =
+    previous?.signature === signature
+      ? {
+          ...previous,
+          totalCount,
+          updatedAtMs: Date.now()
+        }
+      : {
+          sessions,
+          totalCount,
+          signature,
+          updatedAtMs: Date.now()
+        }
+  sessionListCache.set(key, entry)
+  return entry
+}
+
 function requestSessionsList(key: string, request: SessionListRequest): Promise<SessionListCacheEntry> {
   const pending = sessionListInFlight.get(key)
   if (pending) return pending
@@ -102,13 +133,7 @@ function requestSessionsList(key: string, request: SessionListRequest): Promise<
   const next = window.api.sessions
     .list(request)
     .then((result) => {
-      const entry = {
-        sessions: result?.sessions ?? [],
-        totalCount: result?.totalCount ?? 0,
-        updatedAtMs: Date.now()
-      }
-      sessionListCache.set(key, entry)
-      return entry
+      return createSessionListCacheEntry(key, result?.sessions ?? [], result?.totalCount ?? 0)
     })
     .finally(() => {
       sessionListInFlight.delete(key)
@@ -244,7 +269,12 @@ export function useSessions(opts?: {
     let cancelled = false
     const cached = sessionListCache.get(cacheKey)
     if (cached) {
-      setSessions(cached.sessions)
+      setSessions((current) => (current === cached.sessions ? current : cached.sessions))
+      if (isSessionListCacheFresh(cached)) {
+        setLoading(false)
+        setStale(false)
+        return
+      }
       setLoading(true)
       setStale(true)
     } else {
@@ -256,7 +286,7 @@ export function useSessions(opts?: {
     requestSessionsList(cacheKey, request)
       .then((result) => {
         if (cancelled) return
-        setSessions(result.sessions)
+        setSessions((current) => (current === result.sessions ? current : result.sessions))
         setStale(false)
       })
       .catch(() => {

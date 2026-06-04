@@ -19,10 +19,10 @@
   - tests: `pnpm test -- tests/renderer/sessions-pages.test.tsx` passed; `pnpm typecheck:web` passed。
   - verify: renderer test mock 130 sessions 只挂载 30 个 row, 尾部 `Session 129` 不在 DOM; project jump nav 调用 `scrollToIndex({ groupIndex: 1, align: 'start' })`; 搜索输入、loading/empty/stale 与原 session 字段保留。
 
-- [ ] 4. 加强 Sessions / Memory refresh cache
+- [x] 4. 加强 Sessions / Memory refresh cache
   - scope: `src/renderer/src/hooks/use-ipc.ts`, `src/renderer/src/hooks/use-memory.ts`, `src/renderer/src/lib/result-signature.ts`。
-  - tests: `tests/renderer/use-sessions-swr.test.tsx`, `tests/renderer/use-memory-cache.test.tsx`; 命令 `pnpm test -- tests/renderer/use-sessions-swr.test.tsx tests/renderer/use-memory-cache.test.tsx`。
-  - verify: TTL、in-flight、request throttle、unchanged-result diff 均被断言; same-result refresh 不触发额外 state 更新。
+  - tests: `pnpm test -- tests/renderer/use-sessions-swr.test.tsx tests/renderer/use-memory-cache.test.tsx` passed; `pnpm test -- tests/renderer/instructions-guidance.test.tsx` passed; `pnpm typecheck:web` passed。
+  - verify: Sessions 与 Memory 均覆盖 fresh cache 不重拉、stale cache 保持旧数据并刷新、same-result refresh 复用旧数组/结果引用; in-flight 继续由模块级 promise 去重。
 
 - [ ] 5. 改造 Memories 列表
   - scope: `src/renderer/src/components/memory/memory-view.tsx`, 必要 i18n key。

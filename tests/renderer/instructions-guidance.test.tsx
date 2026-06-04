@@ -8,6 +8,7 @@ import { TopNavigation } from '../../src/renderer/src/components/layout/top-navi
 import { PageChromeProvider } from '../../src/renderer/src/components/layout/page-chrome'
 import { useAppStore } from '../../src/renderer/src/stores/app'
 import type { Asset } from '../../src/shared/types/asset'
+import { resetMemoryCacheForTests } from '../../src/renderer/src/hooks/use-memory'
 
 function skillAsset(id: string, scope: Asset['scope'], path: string): Asset {
   return {
@@ -26,6 +27,7 @@ function skillAsset(id: string, scope: Asset['scope'], path: string): Asset {
 
 describe('Instructions guidance surfaces', () => {
   beforeEach(() => {
+    resetMemoryCacheForTests()
     useAppStore.setState({ assets: [], agentView: 'all', scopeSelection: { mode: 'global' } })
     window.api.memory = {
       list: vi.fn(async () => ({ notes: [], sources: [] })),
