@@ -16,6 +16,7 @@
 - 背景刷新不应导致同一批 session 全量重新渲染。
 - Sessions、Memories、Instructions 等列表共享同一套虚拟列表基础设施, 而不是每个页面各自实现滚动策略。
 - 类目跳转侧边菜单可快速定位项目、日期、来源、重要性、标签等分组, 且不破坏键盘可达性。
+- 2026-06-04 新增产品约束: Sessions 项目类目的可选项应从最后一级项目目录开始; n-1 父级目录只作为不可点击小标题, 例如 `Desktop/Code` 是标题, `berth` / `agentic` 才是可点击项。
 
 # 实际结果
 - 热态 IPC 查询不是主要瓶颈, renderer 仍需要挂载全部 session 行。
@@ -28,5 +29,6 @@
 - 提取共享 `VirtualGroupedList` 基础组件: group header 与 item row 合并为稳定 row 模型, 使用稳定 item id 作为 key, 只渲染视口内 row 加 overscan。
 - 搜索和筛选只更新 row id 列表, 复用原始 item 对象; 使用 deferred / transition 降低输入期间重渲染成本。
 - 引入基于类目的跳转侧边菜单, 优先使用现有 Radix 体系的 `@radix-ui/react-navigation-menu`, 与虚拟列表的 `scrollToIndex` / group navigation 联动。
+- Sessions 项目跳转菜单采用父级标题 + 项目项结构: 父级标题不绑定 `onSelect`, 项目项按完整路径滚动到对应虚拟 group。
 - 给 `useSessions`、`useMemory` 和资产 runtime 刷新增加限流、同结果 diff 与 fresh cache 判断, 避免后台刷新触发整页重渲染。
 - 扫描引擎后续继续使用 main 侧 `worker_threads`; Service Worker 不直接承载本地文件扫描, 检索索引可单独评估迁移到 renderer Web Worker 或 main worker。
