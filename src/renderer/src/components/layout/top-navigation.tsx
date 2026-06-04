@@ -1,4 +1,4 @@
-import { useCallback, useLayoutEffect, useMemo, useRef } from 'react'
+import { useCallback, useMemo, useRef } from 'react'
 import { useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { ChevronRight, HelpCircle, Search } from 'lucide-react'
@@ -37,15 +37,13 @@ function routeChrome(pathname: string, search = ''): RouteChrome | null {
 
 interface TopNavigationProps {
   isWindows: boolean
-  onHeightChange?: (height: number) => void
 }
 
-export function TopNavigation({ isWindows, onHeightChange }: TopNavigationProps): React.ReactElement {
+export function TopNavigation({ isWindows }: TopNavigationProps): React.ReactElement {
   const { t } = useTranslation()
   const location = useLocation()
   const pageChrome = useCurrentPageChrome()
   const searchInputRef = useRef<HTMLInputElement>(null)
-  const headerRef = useRef<HTMLElement>(null)
   const route = useMemo(
     () => routeChrome(location.pathname, location.search),
     [location.pathname, location.search]
@@ -68,30 +66,11 @@ export function TopNavigation({ isWindows, onHeightChange }: TopNavigationProps)
   }, [])
   useRegisterPageSearchFocus(pageChrome.search ? focusPageSearch : null, [pageChrome.search, focusPageSearch])
 
-  useLayoutEffect(() => {
-    if (!onHeightChange) return undefined
-    const element = headerRef.current
-    if (!element) return undefined
-
-    const publishHeight = (): void => {
-      const measuredHeight = element.offsetHeight
-      if (measuredHeight > 0) onHeightChange(measuredHeight)
-    }
-
-    publishHeight()
-
-    if (typeof ResizeObserver === 'undefined') return undefined
-    const resizeObserver = new ResizeObserver(publishHeight)
-    resizeObserver.observe(element)
-    return () => resizeObserver.disconnect()
-  }, [onHeightChange, isVisible, title, pageChrome.subtitle, pageChrome.actions, pageChrome.search, pageChrome.guide])
-
   return (
     <header
-      ref={headerRef}
       className={cn(
-        'titlebar-drag absolute inset-x-0 top-0 z-20 flex min-h-[72px] shrink-0 items-center border-b border-border bg-background/80 px-[var(--berth-page-gutter)] py-3 backdrop-blur-xl transition-[opacity,transform,background-color] duration-200 ease-out motion-reduce:transition-none',
-        isVisible ? 'translate-y-0 opacity-100' : 'pointer-events-none -translate-y-3 opacity-0',
+        'titlebar-drag flex min-h-[72px] shrink-0 items-center border-b border-border bg-background px-[var(--berth-page-gutter)] py-3 transition-[opacity,background-color] duration-200 ease-out motion-reduce:transition-none',
+        isVisible ? 'opacity-100' : 'pointer-events-none opacity-0',
         isWindows && 'pr-52'
       )}
       data-testid="top-navigation"

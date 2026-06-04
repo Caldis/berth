@@ -11,7 +11,6 @@ import { PageChromeProvider } from './page-chrome'
 
 type ContentScrollStyle = CSSProperties & {
   '--berth-page-scrollbar-gutter': string
-  '--berth-page-top-offset': string
 }
 
 export function AppLayout({ children }: { children: ReactNode }): React.ReactElement {
@@ -20,23 +19,20 @@ export function AppLayout({ children }: { children: ReactNode }): React.ReactEle
   const isWindows = isWindowsPlatform()
   const effectiveSidebarWidth = sidebarCollapsed ? SIDEBAR_COLLAPSED_WIDTH : sidebarWidth
   const scrollRegionRef = useRef<HTMLElement | null>(null)
-  const [topNavigationHeight, setTopNavigationHeight] = useState(72)
   const [scrollbarGutter, setScrollbarGutter] = useState(0)
-  const pageTopOffset = `calc(${topNavigationHeight}px + var(--berth-page-gutter))`
   const scrollRegionStyle = useMemo<ContentScrollStyle>(
     () => ({
-      scrollPaddingTop: 'var(--berth-page-top-offset)',
-      '--berth-page-scrollbar-gutter': `${scrollbarGutter}px`,
-      '--berth-page-top-offset': pageTopOffset
+      scrollPaddingTop: 'var(--berth-page-gutter)',
+      '--berth-page-scrollbar-gutter': `${scrollbarGutter}px`
     }),
-    [pageTopOffset, scrollbarGutter]
+    [scrollbarGutter]
   )
   const contentStyle = useMemo<CSSProperties>(
     () => ({
       paddingBottom: 'var(--berth-page-gutter)',
       paddingLeft: 'var(--berth-page-gutter)',
       paddingRight: 'max(0px, calc(var(--berth-page-gutter) - var(--berth-page-scrollbar-gutter, 0px)))',
-      paddingTop: 'var(--berth-page-top-offset)'
+      paddingTop: 'var(--berth-page-gutter)'
     }),
     []
   )
@@ -68,7 +64,7 @@ export function AppLayout({ children }: { children: ReactNode }): React.ReactEle
           className="relative flex min-w-0 flex-1 flex-col overflow-hidden transition-[margin] duration-200"
           style={{ marginLeft: effectiveSidebarWidth }}
         >
-          <TopNavigation isWindows={isWindows} onHeightChange={setTopNavigationHeight} />
+          <TopNavigation isWindows={isWindows} />
           <main
             ref={scrollRegionRef}
             data-testid="app-content-scroll"
@@ -80,7 +76,7 @@ export function AppLayout({ children }: { children: ReactNode }): React.ReactEle
             </div>
           </main>
         </div>
-        {isWindows && <WindowControls navigationHeight={topNavigationHeight} />}
+        {isWindows && <WindowControls />}
         <SearchDialog />
         <InspectorDrawer />
       </PageChromeProvider>

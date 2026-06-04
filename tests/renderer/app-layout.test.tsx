@@ -46,12 +46,14 @@ describe('AppLayout navigation shell', () => {
     expect(navigation).toHaveAttribute('aria-hidden', 'false')
     expect(screen.getByRole('heading', { name: 'Overview' })).toBeInTheDocument()
     expect(screen.getByTestId('app-content-scroll')).toHaveClass('overflow-auto')
-    expect(screen.getByTestId('app-content-scroll').style.getPropertyValue('--berth-page-top-offset')).toBe('calc(72px + var(--berth-page-gutter))')
+    // Block layout: the header occupies flow space, so the content no longer
+    // compensates with a measured top offset; AppLayout stops injecting it.
+    expect(screen.getByTestId('app-content-scroll').style.getPropertyValue('--berth-page-top-offset')).toBe('')
     expect(screen.getByTestId('app-content-scroll').style.getPropertyValue('--berth-page-scrollbar-gutter')).toBe('0px')
     expect(overviewPage.parentElement).toHaveStyle({
       paddingBottom: 'var(--berth-page-gutter)',
       paddingLeft: 'var(--berth-page-gutter)',
-      paddingTop: 'var(--berth-page-top-offset)'
+      paddingTop: 'var(--berth-page-gutter)'
     })
   })
 
@@ -62,19 +64,21 @@ describe('AppLayout navigation shell', () => {
     const scrollRegion = screen.getByTestId('app-content-scroll')
 
     expect(navigation).toHaveClass('min-h-[72px]')
-    expect(navigation).toHaveClass('absolute')
-    expect(navigation).toHaveClass('backdrop-blur-xl')
+    // Block layout: header is a normal flex child, not a floating overlay.
+    expect(navigation).not.toHaveClass('absolute')
+    expect(navigation).not.toHaveClass('backdrop-blur-xl')
+    expect(navigation).toHaveClass('border-b')
     expect(navigation).toHaveAttribute('data-state', 'visible')
     expect(scrollRegion).toHaveClass('overflow-auto')
     expect(scrollRegion).toHaveClass('[scrollbar-gutter:stable]')
     expect(scrollRegion).not.toContainElement(navigation)
     expect(navigation).toHaveClass('px-[var(--berth-page-gutter)]')
-    expect(scrollRegion.style.getPropertyValue('--berth-page-top-offset')).toBe('calc(72px + var(--berth-page-gutter))')
+    expect(scrollRegion.style.getPropertyValue('--berth-page-top-offset')).toBe('')
     expect(scrollRegion.style.getPropertyValue('--berth-page-scrollbar-gutter')).toBe('0px')
     expect(screen.getByTestId('page-content').parentElement).toHaveStyle({
       paddingLeft: 'var(--berth-page-gutter)',
       paddingRight: 'max(0px, calc(var(--berth-page-gutter) - var(--berth-page-scrollbar-gutter, 0px)))',
-      paddingTop: 'var(--berth-page-top-offset)'
+      paddingTop: 'var(--berth-page-gutter)'
     })
     expect(screen.getByRole('heading', { name: 'Sessions' })).toBeInTheDocument()
   })

@@ -47,6 +47,9 @@ describe('CategoryJumpNav', () => {
     expect(screen.getByTestId('jump-nav')).toHaveClass('lg:overflow-x-hidden')
     expect(screen.getByTestId('jump-nav')).toHaveClass('lg:sticky')
     expect(screen.getByTestId('jump-nav')).toHaveClass('lg:self-start')
+    // Block-layout header: rail sticks below the content gutter (top relative to
+    // the scroll container), while its height still spans the viewport minus the offset.
+    expect(screen.getByTestId('jump-nav')).toHaveClass('lg:top-[var(--berth-page-gutter,1.5rem)]')
     expect(screen.getByTestId('jump-nav')).toHaveClass('lg:h-[calc(100dvh_-_var(--berth-page-top-offset,6rem))]')
     expect(screen.getByTestId('jump-nav')).toHaveClass('lg:w-48')
     expect(screen.getByTestId('jump-nav')).toHaveClass('lg:px-2')

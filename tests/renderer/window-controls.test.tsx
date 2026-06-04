@@ -60,6 +60,14 @@ describe('WindowControls', () => {
     expect(controls).toHaveStyle({ top: '48px' })
   })
 
+  it('centers within the default block-layout header height when no prop is supplied', () => {
+    render(<WindowControls />)
+
+    const controls = screen.getByTestId('window-controls')
+    expect(controls).toHaveClass('-translate-y-1/2')
+    expect(controls).toHaveStyle({ top: '36px' })
+  })
+
   it('uses navigation-scaled hit targets and quiet icon styling', async () => {
     render(<WindowControls />)
 
