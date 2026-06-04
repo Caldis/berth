@@ -7,8 +7,8 @@
 **执行顺序**: 任务 1 (真源) → 2 (globals) → 3/4/5 (消费点) → 6 (收口)。
 **顺序执行理由**: 任务 3/4 与任务 2 共改 `tests/renderer/theme-palette.test.ts` (测试文件耦合); 任务 3/4/5 均 import 任务 1 的真源 (依赖前置)。共享工作区下单线顺序最稳, 不并行。
 
-- [ ] 任务 1: 新建配色真源 `src/renderer/src/lib/chart-colors.ts` (CHART_SERIES_FILL / CHART_CATEGORICAL / TOKEN_SEGMENT_COLOR_VAR)
-  - tests: 先写 `tests/renderer/chart-colors.test.ts` (red): 断言 `CHART_SERIES_FILL==='hsl(var(--primary))'`; `CHART_CATEGORICAL` 长度 5 且依次引用 `--chart-1..5`; `TOKEN_SEGMENT_COLOR_VAR.input==='--chart-1'` … `unknown==='--muted-foreground'`。建文件转 green。`pnpm test chart-colors`
+- [x] 任务 1: 新建配色真源 `src/renderer/src/lib/chart-colors.ts` (CHART_SERIES_FILL / CHART_CATEGORICAL / TOKEN_SEGMENT_COLOR_VAR)
+  - tests: `tests/renderer/chart-colors.test.ts` ✓ 3 passed (red→green: 模块不存在→建文件)。断言 series=primary、categorical 5 色依次 --chart-1..5、token 段语义映射。
   - verify: 单测通过; 验收标准 1 (单一真源)。非视觉项, 无截图。
 
 - [ ] 任务 2: `styles/globals.css` 将 `--chart-1~5` (light L41-45 / dark L76-80) 改为统一语义色板 + 注释
