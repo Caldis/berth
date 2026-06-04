@@ -16,7 +16,7 @@ type MockGroupedVirtuosoHandle = {
 
 type MockGroupedVirtuosoProps = {
   groupCounts: number[]
-  data: unknown[]
+  data?: unknown[]
   context?: unknown
   computeItemKey: (index: number, item: unknown, context: unknown) => React.Key
   groupContent: (groupIndex: number, context: unknown) => React.ReactNode
@@ -41,6 +41,7 @@ vi.mock('react-virtuoso', async () => {
 
     const nodes: React.ReactNode[] = []
     let itemIndex = 0
+    let listIndex = 0
     let renderedRows = 0
 
     for (let groupIndex = 0; groupIndex < props.groupCounts.length; groupIndex += 1) {
@@ -51,10 +52,11 @@ vi.mock('react-virtuoso', async () => {
           props.groupContent(groupIndex, props.context)
         )
       )
+      listIndex += 1
 
       for (let offset = 0; offset < props.groupCounts[groupIndex]; offset += 1) {
-        const item = props.data[itemIndex]
-        const key = props.computeItemKey(itemIndex, item, props.context)
+        const item = props.data?.[listIndex]
+        const key = props.computeItemKey(listIndex, item, props.context)
         if (renderedRows < instructionsVirtuosoMock.visibleLimit) {
           nodes.push(
             ReactModule.createElement(
@@ -66,6 +68,7 @@ vi.mock('react-virtuoso', async () => {
           renderedRows += 1
         }
         itemIndex += 1
+        listIndex += 1
       }
     }
 

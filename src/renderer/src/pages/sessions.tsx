@@ -223,14 +223,13 @@ export function Sessions(): React.ReactElement {
               )
             }}
             renderItem={(session, context) => {
-              const isLastInGroup = context.group.items.at(-1)?.id === session.id
               return (
                 <SessionRow
                   session={session}
                   agentView={agentView}
                   unknownLabel={t('common.unknown')}
                   fallbackTitle={t('sessions.fallbackTitle', { id: session.id.slice(0, 8) })}
-                  isLastInGroup={isLastInGroup}
+                  isLastInGroup={context.isLastInGroup}
                   onOpen={() => navigate(`/sessions/${session.id}`)}
                 />
               )

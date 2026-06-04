@@ -9,7 +9,7 @@ type MockGroupedVirtuosoHandle = {
 
 type MockGroupedVirtuosoProps = {
   groupCounts: number[]
-  data: unknown[]
+  data?: unknown[]
   context?: unknown
   computeItemKey: (index: number, item: unknown, context: unknown) => React.Key
   groupContent: (groupIndex: number, context: unknown) => React.ReactNode
@@ -33,6 +33,7 @@ vi.mock('react-virtuoso', async () => {
 
     const nodes: React.ReactNode[] = []
     let itemIndex = 0
+    let listIndex = 0
 
     for (let groupIndex = 0; groupIndex < props.groupCounts.length; groupIndex += 1) {
       nodes.push(
@@ -42,10 +43,11 @@ vi.mock('react-virtuoso', async () => {
           props.groupContent(groupIndex, props.context)
         )
       )
+      listIndex += 1
 
       for (let offset = 0; offset < props.groupCounts[groupIndex]; offset += 1) {
-        const item = props.data[itemIndex]
-        const key = props.computeItemKey(itemIndex, item, props.context)
+        const item = props.data?.[listIndex]
+        const key = props.computeItemKey(listIndex, item, props.context)
         nodes.push(
           ReactModule.createElement(
             'div',
@@ -54,6 +56,7 @@ vi.mock('react-virtuoso', async () => {
           )
         )
         itemIndex += 1
+        listIndex += 1
       }
     }
 
@@ -102,17 +105,34 @@ describe('VirtualGroupedList', () => {
         groups={groups}
         getItemKey={(item) => item.id}
         renderGroup={(group) => <h2>{group.label}</h2>}
-        renderItem={(item) => <article>{item.title}</article>}
+        renderItem={(item, context) => (
+          <article
+            data-testid={`article-${item.id}`}
+            data-group-index={context.groupIndex}
+            data-group-item-index={context.groupItemIndex}
+            data-first={context.isFirstInGroup ? 'true' : 'false'}
+            data-last={context.isLastInGroup ? 'true' : 'false'}
+          >
+            {item.title}
+          </article>
+        )}
         testId="test-list"
       />
     )
 
     expect(virtuosoMock.props.groupCounts).toEqual([2, 1])
+    expect(virtuosoMock.props.data).toBeUndefined()
     expect(screen.getByTestId('group-0')).toHaveTextContent('Alpha')
     expect(screen.getByTestId('group-1')).toHaveTextContent('Beta')
     expect(screen.getByTestId('row-a-1')).toHaveTextContent('Alpha one')
     expect(screen.getByTestId('row-a-2')).toHaveTextContent('Alpha two')
     expect(screen.getByTestId('row-b-1')).toHaveTextContent('Beta one')
+    expect(screen.getByTestId('article-a-1')).toHaveAttribute('data-first', 'true')
+    expect(screen.getByTestId('article-a-1')).toHaveAttribute('data-last', 'false')
+    expect(screen.getByTestId('article-a-2')).toHaveAttribute('data-group-item-index', '1')
+    expect(screen.getByTestId('article-a-2')).toHaveAttribute('data-last', 'true')
+    expect(screen.getByTestId('article-b-1')).toHaveAttribute('data-group-index', '1')
+    expect(screen.getByTestId('article-b-1')).toHaveAttribute('data-last', 'true')
   })
 
   it('reports the active group from visible item range', () => {

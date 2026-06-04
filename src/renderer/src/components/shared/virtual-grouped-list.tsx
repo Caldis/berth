@@ -30,6 +30,9 @@ interface RenderItemContext<TItem> {
   index: number
   group: VirtualListGroup<TItem>
   groupIndex: number
+  groupItemIndex: number
+  isFirstInGroup: boolean
+  isLastInGroup: boolean
 }
 
 interface VirtualGroupedListProps<TItem> {
@@ -46,6 +49,41 @@ interface VirtualGroupedListProps<TItem> {
   className?: string
   listClassName?: string
   testId?: string
+}
+
+type GroupedListPosition =
+  | { type: 'group'; groupIndex: number }
+  | { type: 'item'; groupIndex: number; itemIndex: number }
+
+function resolveGroupedListIndex(
+  groupCounts: readonly number[],
+  listIndex: number
+): GroupedListPosition {
+  let listOffset = 0
+  let itemOffset = 0
+
+  for (let groupIndex = 0; groupIndex < groupCounts.length; groupIndex += 1) {
+    const count = groupCounts[groupIndex]
+    if (listIndex === listOffset) return { type: 'group', groupIndex }
+
+    const groupEndIndex = listOffset + count
+    if (listIndex <= groupEndIndex) {
+      return {
+        type: 'item',
+        groupIndex,
+        itemIndex: itemOffset + listIndex - listOffset - 1
+      }
+    }
+
+    listOffset += count + 1
+    itemOffset += count
+  }
+
+  return {
+    type: 'item',
+    groupIndex: groupCounts.length - 1,
+    itemIndex: itemOffset - 1
+  }
 }
 
 function VirtualGroupedListInner<TItem>(
@@ -74,6 +112,14 @@ function VirtualGroupedListInner<TItem>(
   const visibleGroups = useMemo(() => visibleVirtualGroups(groups), [groups])
   const groupCounts = useMemo(() => virtualGroupCounts(visibleGroups), [visibleGroups])
   const flatItems = useMemo(() => flattenVirtualGroups(visibleGroups), [visibleGroups])
+  const groupStartItemIndexes = useMemo(() => {
+    let offset = 0
+    return groupCounts.map((count) => {
+      const startIndex = offset
+      offset += count
+      return startIndex
+    })
+  }, [groupCounts])
   const itemIndexByKey = useMemo(() => {
     const indexByKey = new Map<string, number>()
     flatItems.forEach((item, index) => {
@@ -89,6 +135,21 @@ function VirtualGroupedListInner<TItem>(
     })
     return indexById
   }, [visibleGroups])
+
+  const computeGroupedItemKey = useCallback(
+    (listIndex: number) => {
+      const position = resolveGroupedListIndex(groupCounts, listIndex)
+
+      if (position.type === 'group') {
+        return `group:${visibleGroups[position.groupIndex]?.id ?? listIndex}`
+      }
+
+      const item = flatItems[position.itemIndex]
+      if (item == null) return `item:${listIndex}`
+      return getItemKey(item)
+    },
+    [flatItems, getItemKey, groupCounts, visibleGroups]
+  )
 
   useImperativeHandle(
     ref,
@@ -140,14 +201,23 @@ function VirtualGroupedListInner<TItem>(
     <div data-testid={testId} className={cn('min-h-0', className)}>
       <GroupedVirtuoso<TItem>
         ref={virtuosoRef}
-        data={flatItems}
         groupCounts={groupCounts}
         customScrollParent={effectiveScrollParent ?? undefined}
-        computeItemKey={(_index, item) => getItemKey(item)}
+        computeItemKey={computeGroupedItemKey}
         groupContent={(groupIndex) => renderGroup(visibleGroups[groupIndex], groupIndex)}
-        itemContent={(index, groupIndex, item) => {
+        itemContent={(index, groupIndex) => {
           const group = visibleGroups[groupIndex]
-          return renderItem(item, { index, group, groupIndex })
+          if (!group || index < 0 || index >= flatItems.length) return null
+
+          const groupItemIndex = index - (groupStartItemIndexes[groupIndex] ?? 0)
+          return renderItem(flatItems[index], {
+            index,
+            group,
+            groupIndex,
+            groupItemIndex,
+            isFirstInGroup: groupItemIndex === 0,
+            isLastInGroup: groupItemIndex === group.items.length - 1
+          })
         }}
         rangeChanged={emitRange}
         overscan={overscan}
