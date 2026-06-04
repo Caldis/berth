@@ -1,9 +1,14 @@
 import type { Config } from 'tailwindcss'
 import tailwindAnimate from 'tailwindcss-animate'
+import { heroui } from '@heroui/theme'
 
 const config: Config = {
   darkMode: 'class',
-  content: ['./src/renderer/index.html', './src/renderer/src/**/*.{ts,tsx}'],
+  content: [
+    './src/renderer/index.html',
+    './src/renderer/src/**/*.{ts,tsx}',
+    './node_modules/@heroui/theme/dist/**/*.{js,ts,jsx,tsx}'
+  ],
   theme: {
     extend: {
       colors: {
@@ -82,7 +87,7 @@ const config: Config = {
       }
     }
   },
-  plugins: [tailwindAnimate]
+  plugins: [tailwindAnimate, heroui()]
 }
 
 export default config

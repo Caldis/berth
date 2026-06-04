@@ -6,23 +6,23 @@
 
 ---
 
-## P1 — 基建 gate (顺序, 触及 package.json/tailwind/.npmrc/App, 必须先过)
-- [ ] **P1.1 安装 HeroUI v2 + framer-motion + pnpm hoisting**
-  - 装 `@heroui/react`(钉 v2.x) + `framer-motion`; `.npmrc` 加 `public-hoist-pattern[]=*@heroui*`; `pnpm install`。
-  - tests: `pnpm install` 成功 + `node -e "require('@heroui/react')"` 解析。
-  - verify: 依赖入 package.json; 不破坏 better-sqlite3/electron 构建 (pnpm 9.x)。
-- [ ] **P1.2 Tailwind 插件 + content glob**
-  - `tailwind.config.ts` 加 `heroui()` plugin + content `./node_modules/@heroui/theme/dist/**/*.{js,ts,jsx,tsx}`; 保留 `darkMode:'class'` 与既有 token。
-  - tests: 不适用 (配置); 由 P1.4 烟测覆盖。
-  - verify: `pnpm build` 成功。
-- [ ] **P1.3 HeroUIProvider 接线**
-  - `App.tsx` 在 Router 内、ThemeProvider 内包 `<HeroUIProvider navigate useHref locale reducedMotion="user">`。
-  - tests: `tests/renderer/heroui-provider.test.tsx` — 渲染不报错。
-  - verify: 应用启动正常, 路由可用。
-- [ ] **P1.4 烟测组件 (TW3 有样式 gate)**
-  - 临时放一个 HeroUI `<Button color="primary">` 烟测点; Electron 截图确认**有样式** (非 unstyled)。失败 → 回退钉 `@heroui/react@2.6.x` 重试。
-  - tests: render 测试; verify: Electron 截图 dark+light。
-  - **此项通过前不进 P3+。**
+## P1 — 基建 gate (顺序, 触及 package.json/tailwind/App, 必须先过) ✅ 完成
+- [x] **P1.1 安装 HeroUI v2 + framer-motion**
+  - 装 `@heroui/react@2.8.10` + `framer-motion` + `@heroui/theme@2.4.26`(直接 devDep, 使顶层可解析, 免 .npmrc hoist 全量重建)。
+  - tests: `pnpm install` 成功 + `require('@heroui/theme').heroui` 为 function。✅
+  - verify: 依赖入 package.json; 未触发 node_modules 全量重建 (保护共享工作区)。
+  - 注: `latest`=v3(3.1.0/TW4), 故显式钉 2.8.10; 改用 `.pnpm`-aware 直接 devDep 替代 `.npmrc` hoist (更低 blast radius)。
+- [x] **P1.2 Tailwind 插件 + content glob**
+  - `tailwind.config.ts` 加 `import { heroui } from '@heroui/theme'` + content `./node_modules/@heroui/theme/dist/**/*.{js,ts,jsx,tsx}` + `plugins:[tailwindAnimate, heroui()]`; 保留 `darkMode:'class'` 与既有 token。
+  - tests: 由 P1.4 build 烟测覆盖。✅
+  - verify: `pnpm build` 成功, CSS 含 115 个 `--heroui-*` 变量 + `bg-content1`。
+- [x] **P1.3 HeroUIProvider 接线**
+  - `App.tsx` 在 MemoryRouter 内、ThemeProvider 内包 `<HeroUIProvider navigate={useNavigate()} locale={i18n.language} reducedMotion="user">`。
+  - tests: `tests/renderer/heroui-provider.test.tsx` ✅; app-routing/app-layout 回归通过。
+  - verify: typecheck:web+node 通过。
+- [x] **P1.4 烟测 (TW3 有样式 gate) — 通过, 无需回退 v2.6.x**
+  - 证据: build CSS 含 `--heroui-primary: 212 100% 47%`(HeroUI 蓝) + 测试渲染 `<Button color="primary">` 带 `bg-primary` class。
+  - **GATE 通过 → 进 P2。** 尽管 @heroui/theme 声明 TW4 peer, 插件在 TW3.4.19 下实测正常。
 
 ## P2 — Token / 主题 / accent (顺序, 触及 globals.css/tailwind/theme-provider, 全局)
 - [ ] **P2.1 globals.css 视觉地基**
