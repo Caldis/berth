@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, within } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import React from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { MemoryRouter } from 'react-router-dom'
@@ -96,53 +96,60 @@ describe('TopNavigation', () => {
     expect(screen.getByTestId('top-navigation')).toHaveClass('pr-52')
   })
 
-  it('shows page search and keeps page guidance reachable while moving into the panel', () => {
-    vi.useFakeTimers()
-    try {
-      renderTopNavigation('/sessions', {
-        config: {
-          title: 'Sessions',
-          sectionLabelKey: 'nav.sections.work',
-          search: {
-            value: '',
-            onValueChange: () => undefined,
-            placeholder: 'Filter sessions...'
-          },
-          guide: {
-            definition: sessionGuide,
-            evidence: [{ labelKey: 'sessions.evidence.sessions', value: 816 }],
-            agentView: 'all'
-          },
-          actions: <button type="button">Project</button>
-        }
-      })
+  it('shows page search and keeps page guidance reachable only while hovering the trigger or panel', async () => {
+    renderTopNavigation('/sessions', {
+      config: {
+        title: 'Sessions',
+        sectionLabelKey: 'nav.sections.work',
+        search: {
+          value: '',
+          onValueChange: () => undefined,
+          placeholder: 'Filter sessions...'
+        },
+        guide: {
+          definition: sessionGuide,
+          evidence: [{ labelKey: 'sessions.evidence.sessions', value: 816 }],
+          agentView: 'all'
+        },
+        actions: <button type="button">Project</button>
+      }
+    })
 
-      expect(screen.getByRole('textbox', { name: 'Filter sessions...' })).toBeInTheDocument()
-      expect(useAppStore.getState().searchOpen).toBe(false)
-      const guideButton = screen.getByRole('button', { name: 'Page guide' })
-      expect(guideButton).toBeInTheDocument()
-      expect(guideButton).toHaveTextContent('')
+    expect(screen.getByRole('textbox', { name: 'Filter sessions...' })).toBeInTheDocument()
+    expect(useAppStore.getState().searchOpen).toBe(false)
+    const guideButton = screen.getByRole('button', { name: 'Page guide' })
+    expect(guideButton).toBeInTheDocument()
+    expect(guideButton).toHaveTextContent('')
+    expect(screen.queryByText('Local conversation history')).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Project' })).toBeInTheDocument()
+
+    const hoverRegion = screen.getByTestId('page-guide-hover-region')
+    fireEvent.mouseEnter(hoverRegion, { clientX: 760, clientY: 36 })
+    expect(await screen.findByText('Local conversation history')).toBeInTheDocument()
+    const panel = screen.getByTestId('page-guide-panel')
+    expect(panel).not.toHaveClass('motion-safe:animate-in')
+    expect(panel.firstElementChild).toHaveClass('motion-safe:animate-in')
+    expect(screen.getByText('816')).toBeInTheDocument()
+
+    fireEvent.mouseLeave(hoverRegion, { clientX: 700, clientY: 36 })
+    fireEvent.mouseMove(document.body, { clientX: 120, clientY: 120 })
+    await waitFor(() => {
       expect(screen.queryByText('Local conversation history')).not.toBeInTheDocument()
-      expect(screen.getByRole('button', { name: 'Project' })).toBeInTheDocument()
+    })
 
-      const hoverRegion = screen.getByTestId('page-guide-hover-region')
-      fireEvent.pointerEnter(hoverRegion)
-      expect(screen.getByText('Local conversation history')).toBeInTheDocument()
-      expect(screen.getByText('816')).toBeInTheDocument()
+    fireEvent.mouseEnter(hoverRegion, { clientX: 760, clientY: 36 })
+    expect(await screen.findByText('Local conversation history')).toBeInTheDocument()
 
-      fireEvent.pointerLeave(hoverRegion)
-      expect(screen.getByText('Local conversation history')).toBeInTheDocument()
+    fireEvent.mouseLeave(hoverRegion, { clientX: 740, clientY: 66 })
+    fireEvent.mouseEnter(screen.getByTestId('page-guide-panel'), { clientX: 700, clientY: 92 })
+    fireEvent.mouseMove(screen.getByTestId('page-guide-panel'), { clientX: 700, clientY: 92 })
+    expect(screen.getByText('Local conversation history')).toBeInTheDocument()
 
-      fireEvent.pointerEnter(screen.getByTestId('page-guide-panel'))
-      act(() => vi.advanceTimersByTime(220))
-      expect(screen.getByText('Local conversation history')).toBeInTheDocument()
-
-      fireEvent.pointerLeave(screen.getByTestId('page-guide-panel'))
-      act(() => vi.advanceTimersByTime(220))
+    fireEvent.mouseLeave(screen.getByTestId('page-guide-panel'), { clientX: 110, clientY: 110 })
+    fireEvent.mouseMove(document.body, { clientX: 110, clientY: 110 })
+    await waitFor(() => {
       expect(screen.queryByText('Local conversation history')).not.toBeInTheDocument()
-    } finally {
-      vi.useRealTimers()
-    }
+    })
   })
 
   it('uses the keyboard shortcut for page search before global search', () => {

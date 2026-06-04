@@ -1,20 +1,36 @@
-import * as Popover from '@radix-ui/react-popover'
+import {
+  autoUpdate,
+  flip,
+  FloatingPortal,
+  offset,
+  hide,
+  safePolygon,
+  shift,
+  useClick,
+  useDismiss,
+  useFloating,
+  useFocus,
+  useHover,
+  useInteractions,
+  useRole,
+  type Padding,
+  type Placement
+} from '@floating-ui/react'
 import {
   cloneElement,
   isValidElement,
-  useCallback,
-  useEffect,
   useId,
-  useRef,
+  useMemo,
   useState,
-  type ComponentPropsWithoutRef,
-  type FocusEvent,
+  type HTMLProps,
   type ReactElement,
   type ReactNode
 } from 'react'
 import { cn } from '@/lib/utils'
 
-type PopoverContentProps = ComponentPropsWithoutRef<typeof Popover.Content>
+type FloatingSide = 'top' | 'right' | 'bottom' | 'left'
+type FloatingAlign = 'start' | 'center' | 'end'
+type FloatingRole = 'tooltip' | 'dialog' | 'alertdialog' | 'menu' | 'listbox' | 'grid' | 'tree'
 
 interface FloatingPopoverProps {
   trigger: ReactElement
@@ -24,16 +40,21 @@ interface FloatingPopoverProps {
   contentTestId?: string
   triggerClassName?: string
   contentClassName?: string
-  side?: PopoverContentProps['side']
-  align?: PopoverContentProps['align']
+  side?: FloatingSide
+  align?: FloatingAlign
   sideOffset?: number
   alignOffset?: number
-  collisionPadding?: PopoverContentProps['collisionPadding']
+  collisionPadding?: Padding
   closeDelay?: number
-  role?: PopoverContentProps['role']
+  role?: FloatingRole
 }
 
-const DEFAULT_CLOSE_DELAY_MS = 180
+function floatingPlacement(side: FloatingSide, align: FloatingAlign): Placement {
+  return align === 'center' ? side : `${side}-${align}`
+}
+
+const DEFAULT_CLOSE_DELAY_MS = 80
+const DEFAULT_HOVER_BRIDGE_BUFFER_PX = 8
 
 export function FloatingPopover({
   trigger,
@@ -54,92 +75,92 @@ export function FloatingPopover({
   const generatedId = useId()
   const contentId = id ?? `floating-popover-${generatedId}`
   const [open, setOpen] = useState(false)
-  const triggerRef = useRef<HTMLSpanElement | null>(null)
-  const contentRef = useRef<HTMLDivElement | null>(null)
-  const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-
-  const clearCloseTimer = useCallback(() => {
-    if (!closeTimerRef.current) return
-    clearTimeout(closeTimerRef.current)
-    closeTimerRef.current = null
-  }, [])
-
-  const openPopover = useCallback(() => {
-    clearCloseTimer()
-    setOpen(true)
-  }, [clearCloseTimer])
-
-  const scheduleClose = useCallback(() => {
-    clearCloseTimer()
-    closeTimerRef.current = setTimeout(() => {
-      setOpen(false)
-      closeTimerRef.current = null
-    }, closeDelay)
-  }, [clearCloseTimer, closeDelay])
-
-  const handleBlur = useCallback((event: FocusEvent<HTMLElement>) => {
-    const nextTarget = event.relatedTarget
-    if (
-      nextTarget instanceof Node &&
-      (triggerRef.current?.contains(nextTarget) || contentRef.current?.contains(nextTarget))
-    ) {
-      return
-    }
-    scheduleClose()
-  }, [scheduleClose])
-
-  useEffect(() => clearCloseTimer, [clearCloseTimer])
+  const { refs, floatingStyles, context, middlewareData, isPositioned, placement } = useFloating({
+    open,
+    onOpenChange: setOpen,
+    placement: floatingPlacement(side, align),
+    strategy: 'fixed',
+    whileElementsMounted: autoUpdate,
+    middleware: [
+      offset({ mainAxis: sideOffset, alignmentAxis: alignOffset }),
+      flip({ padding: collisionPadding }),
+      shift({ padding: collisionPadding }),
+      hide({ padding: collisionPadding })
+    ]
+  })
+  const hoverBridgeBuffer = Math.max(DEFAULT_HOVER_BRIDGE_BUFFER_PX, sideOffset)
+  const hoverBridge = useMemo(
+    () => safePolygon({ buffer: hoverBridgeBuffer, requireIntent: false }),
+    [hoverBridgeBuffer]
+  )
+  const hover = useHover(context, {
+    mouseOnly: true,
+    delay: { open: 0, close: closeDelay },
+    handleClose: hoverBridge
+  })
+  const focus = useFocus(context)
+  const click = useClick(context)
+  const dismiss = useDismiss(context)
+  const floatingRole = useRole(context, { enabled: Boolean(role), role })
+  const { getReferenceProps, getFloatingProps } = useInteractions([
+    hover,
+    focus,
+    click,
+    dismiss,
+    floatingRole
+  ])
 
   if (!isValidElement(trigger)) {
     throw new Error('FloatingPopover trigger must be a valid React element')
   }
 
-  const triggerWithAria = cloneElement(trigger, {
+  const triggerProps = trigger.props as { className?: string }
+  const triggerWithAria = cloneElement(trigger, getReferenceProps({
+    ...triggerProps,
+    ref: refs.setReference,
+    'data-testid': triggerTestId,
     'aria-describedby': open ? contentId : undefined,
-    'aria-expanded': open
-  } as Partial<unknown>)
+    'aria-expanded': open,
+    className: cn(triggerProps.className, triggerClassName)
+  } as HTMLProps<Element>) as Partial<unknown>)
+  const referenceHidden = middlewareData.hide?.referenceHidden === true
 
   return (
-    <Popover.Root open={open} onOpenChange={setOpen} modal={false}>
-      <span
-        ref={triggerRef}
-        data-testid={triggerTestId}
-        className={cn('inline-flex', triggerClassName)}
-        onPointerEnter={openPopover}
-        onPointerLeave={scheduleClose}
-        onMouseEnter={openPopover}
-        onMouseLeave={scheduleClose}
-        onFocus={openPopover}
-        onBlur={handleBlur}
-      >
-        <Popover.Trigger asChild>{triggerWithAria}</Popover.Trigger>
-      </span>
-      <Popover.Portal>
-        <Popover.Content
-          ref={contentRef}
-          id={contentId}
-          role={role}
-          data-testid={contentTestId}
-          side={side}
-          align={align}
-          sideOffset={sideOffset}
-          alignOffset={alignOffset}
-          collisionPadding={collisionPadding}
-          hideWhenDetached
-          onPointerEnter={openPopover}
-          onPointerLeave={scheduleClose}
-          onMouseEnter={openPopover}
-          onMouseLeave={scheduleClose}
-          onFocus={openPopover}
-          onBlur={handleBlur}
-          className={cn(
-            'z-50 max-w-[calc(100vw-2rem)] outline-none motion-safe:animate-in motion-safe:fade-in motion-safe:zoom-in-95 motion-safe:duration-150',
-            contentClassName ?? 'rounded-md border border-border bg-popover text-popover-foreground shadow-lg'
-          )}
-        >
-          {children}
-        </Popover.Content>
-      </Popover.Portal>
-    </Popover.Root>
+    <>
+      {triggerWithAria}
+      {open && (
+        <FloatingPortal>
+          <div
+            ref={refs.setFloating}
+            {...getFloatingProps({
+              id: contentId,
+              role,
+              'data-testid': contentTestId,
+              'data-placement': placement,
+              style: {
+                ...floatingStyles,
+                visibility: referenceHidden ? 'hidden' : undefined,
+                opacity: isPositioned ? undefined : 0,
+                pointerEvents: isPositioned ? undefined : 'none'
+              }
+            } as HTMLProps<HTMLElement>)}
+            id={contentId}
+            role={role}
+            data-testid={contentTestId}
+            data-placement={placement}
+            className="z-50 w-max max-w-[calc(100vw-2rem)] outline-none"
+          >
+            <div
+              className={cn(
+                'max-w-[calc(100vw-2rem)] outline-none motion-safe:animate-in motion-safe:fade-in motion-safe:zoom-in-95 motion-safe:duration-150',
+                contentClassName ?? 'rounded-md border border-border bg-popover text-popover-foreground shadow-lg'
+              )}
+            >
+              {children}
+            </div>
+          </div>
+        </FloatingPortal>
+      )}
+    </>
   )
 }

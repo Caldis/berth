@@ -19,17 +19,17 @@
 
 ## 关联与依赖
 
-项目已有多项 Radix primitive 依赖, 例如 Dialog、Dropdown Menu、Select、Tooltip、Tabs 等。当前没有 `@radix-ui/react-popover`。Radix Popover 官方文档说明它支持 `Portal`、受控 / 非受控打开状态、side/align/collision 参数和 focus 自定义; 官方 release note 也说明 z-index 由应用自行控制。因此它适合作为本任务的浮层定位 primitive。
+项目已有多项 Radix primitive 依赖, 例如 Dialog、Dropdown Menu、Select、Tooltip、Tabs 等。第一版实现曾考虑使用 Radix Popover, 但 verify 后用户补充 hover 转移要求: 鼠标离开 trigger 后, 若正在穿过 trigger 与 popover 之间的空隙走向 popover, popover 必须保持显示。Floating UI 官方 `useHover` 提供 `safePolygon()` 处理这类 hover intent; `useFloating` 支持 Portal、fixed strategy、offset/flip/shift/hide middleware; `useTransition` 文档也明确说明定位层使用 transform 时, transform 动画应放在内层内容节点, 避免定位 transform 冲突。因此本任务改用 `@floating-ui/react` 作为共享浮层 primitive。
 
 官方来源:
-- Radix Popover: https://www.radix-ui.com/primitives/docs/components/popover
-- Radix Tooltip: https://www.radix-ui.com/primitives/docs/components/tooltip
-- Radix release note 关于 z-index: https://www.radix-ui.com/primitives/docs/overview/releases
+- Floating UI `useFloating`: https://floating-ui.com/docs/usefloating
+- Floating UI `useHover` / `safePolygon`: https://floating-ui.com/docs/usehover
+- Floating UI `useTransition`: https://floating-ui.com/docs/usetransition
 
-选择 Popover 而不是 Tooltip 的原因:
+选择 Floating UI 而不是单独 Tooltip 组件的原因:
 - Header 指南面板包含可点击的 Details 和外部文档按钮, 属于可交互富内容, 不适合 tooltip 语义。
-- Hook 检查当前虽然是说明型 hover 内容, 但用户要求统一 popover 组件, 且内容可能包含多条检查、路径和建议。统一用 Popover 可避免两套定位策略。
-- Radix Popover 通过 Portal 离开当前 DOM 裁剪上下文, 再由公共组件统一 `z-index`、`collisionPadding`、动画和触发策略。
+- Hook 检查当前虽然是说明型 hover 内容, 但用户要求统一 popover 组件, 且内容可能包含多条检查、路径和建议。统一用 `FloatingPopover` 可避免两套定位策略。
+- Floating UI 通过 Portal 离开当前 DOM 裁剪上下文, 再由公共组件统一 `z-index`、`collisionPadding`、动画层、hover intent 和触发策略。
 
 既有测试:
 - `tests/renderer/capabilities-guidance.test.tsx` 已通过 hover header 指南区域验证指南内容。

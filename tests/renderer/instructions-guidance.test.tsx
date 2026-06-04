@@ -119,7 +119,7 @@ describe('Instructions guidance surfaces', () => {
     )
 
     await screen.findByRole('button', { name: 'Page guide' })
-    fireEvent.pointerEnter(screen.getByTestId('page-guide-hover-region'))
+    fireEvent.mouseEnter(screen.getByTestId('page-guide-hover-region'))
     expect(await screen.findByText('Memory notes across sources')).toBeInTheDocument()
     expect(screen.getByText(/Berth groups native memory files and durable local notes/)).toBeInTheDocument()
     expect(screen.queryByText('Source types')).not.toBeInTheDocument()

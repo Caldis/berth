@@ -19,7 +19,7 @@ debt:
     areas:
       - ui-ux
     confidence: medium
-    rationale: "0.0-new 初始估算; 影响 renderer header 与 Hooks lifecycle sidebar 的浮层组件, 预期以共享 Radix-backed 组件修复裁剪问题。"
+    rationale: "0.0-new 初始估算; 影响 renderer header 与 Hooks lifecycle sidebar 的浮层组件, 预期以共享成熟浮层 primitive 修复裁剪问题。"
   final:
     incurred: 2
     repaid: 0
@@ -29,7 +29,7 @@ debt:
     areas:
       - ui-ux
     confidence: high
-    rationale: "最终 diff 限定在 renderer 共享浮层组件、两处调用点、对应 renderer 测试和依赖锁; prepush 与 Electron 真实窗口截图通过。剩余风险是其他未点名浮层若也有裁剪问题, 需后续单独收敛。"
+    rationale: "最终 diff 限定在 renderer 共享浮层组件、两处调用关联测试、依赖锁和 GH-102 任务产物; 公共组件改用 Floating UI, 通过 Portal/fixed 定位脱离裁剪上下文, 并用外层定位/内层动画避免 transform 冲突, 用 safePolygon 覆盖 trigger 到浮层的空隙 hover 路径。目标 renderer 测试、typecheck:web 与 Electron 坐标实测通过。"
   revisions: []
 issue:
   number: 102
