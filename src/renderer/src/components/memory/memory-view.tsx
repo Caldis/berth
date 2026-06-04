@@ -25,8 +25,7 @@ import { FileViewerButton } from '@/components/shared/file-viewer-button'
 import { instructionGuideMap, type FeatureGuideEvidence } from '@/lib/feature-guidance'
 import type { MemoryNote, MemorySourceStatus, MemoryImportance } from '@shared/types/memory'
 import { VirtualGroupedList, type VirtualGroupedListHandle } from '@/components/shared/virtual-grouped-list'
-import { CategoryJumpNav } from '@/components/shared/category-jump-nav'
-import { buildJumpNavItems, type VirtualListGroup } from '@/lib/virtual-list-model'
+import { type VirtualListGroup } from '@/lib/virtual-list-model'
 
 // Color marks the exception, not the rule: `core` gets an emphasis hue (amber,
 // not red — these are important, not errors), archive/unknown fade into neutral.
@@ -661,7 +660,6 @@ export function MemoryView(): React.ReactElement {
   const [importanceFilter, setImportanceFilter] = useState<string>('all')
   const [tagFilter, setTagFilter] = useState<string[]>([])
   const [focusId, setFocusId] = useState<string | null>(null)
-  const [activeGroupId, setActiveGroupId] = useState<string | undefined>(undefined)
   const deferredSearch = useDeferredValue(search)
   const focusTimerRef = useRef<number | null>(null)
   const listRef = useRef<VirtualGroupedListHandle | null>(null)
@@ -699,19 +697,6 @@ export function MemoryView(): React.ReactElement {
   }, [result.notes, activeSource, importanceFilter, tagFilter, deferredSearch])
 
   const memoryGroups = useMemo(() => buildMemoryGroups(notes), [notes])
-  const jumpItems = useMemo(() => buildJumpNavItems(memoryGroups), [memoryGroups])
-
-  useEffect(() => {
-    setActiveGroupId((current) => {
-      if (current && memoryGroups.some((group) => group.id === current)) return current
-      return memoryGroups[0]?.id
-    })
-  }, [memoryGroups])
-
-  const handleJumpSelect = useCallback((groupId: string) => {
-    setActiveGroupId(groupId)
-    listRef.current?.scrollToGroup(groupId)
-  }, [])
 
   // Distinguish the three "nothing to show" states so the empty copy is honest:
   // no sources at all / sources exist but hold no notes / this query filtered all out.
@@ -847,19 +832,11 @@ export function MemoryView(): React.ReactElement {
           />
         </div>
       ) : (
-        <div className="flex min-h-[520px] gap-4 max-lg:flex-col">
-          <CategoryJumpNav
-            items={jumpItems}
-            activeId={activeGroupId}
-            onSelect={handleJumpSelect}
-            label={t('memory.groupNavigation', 'Memory groups')}
-            testId="memory-category-jump-nav"
-          />
+        <div className="min-h-[520px]">
           <VirtualGroupedList<MemoryNote>
             ref={listRef}
             groups={memoryGroups}
             getItemKey={(note) => note.id}
-            onActiveGroupChange={(groupId) => setActiveGroupId(groupId)}
             renderGroup={(group) => {
               const sourceId = typeof group.meta?.sourceId === 'string' ? group.meta.sourceId : ''
               const Icon = sourceIcon(sourceId)
@@ -880,7 +857,7 @@ export function MemoryView(): React.ReactElement {
                 />
               </div>
             )}
-            className="min-w-0 flex-1"
+            className="min-w-0"
             listClassName="min-h-[520px]"
             defaultItemHeight={96}
             testId="memory-virtual-list"

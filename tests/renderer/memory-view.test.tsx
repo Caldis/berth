@@ -569,7 +569,7 @@ describe('MemoryView', () => {
     expect(within(panel).queryByRole('button', { name: 'ops 1' })).not.toBeInTheDocument()
   })
 
-  it('virtualizes large memory lists and exposes source jump navigation', () => {
+  it('virtualizes large memory lists without a redundant source jump rail', () => {
     memoryState.result = {
       sources: [
         {
@@ -608,14 +608,11 @@ describe('MemoryView', () => {
     expect(screen.getByText('Memory note 79')).toBeInTheDocument()
     expect(screen.queryByText('Memory note 0')).not.toBeInTheDocument()
     expect(screen.getAllByTestId(/memory-note-card-/)).toHaveLength(memoryVirtuosoMock.visibleLimit)
-    expect(screen.getByRole('navigation', { name: 'Memory groups' })).toBeInTheDocument()
 
-    fireEvent.click(screen.getByRole('button', { name: 'United Memory, 40 items' }))
-
-    expect(memoryVirtuosoMock.scrollToIndex).toHaveBeenCalledWith({
-      groupIndex: 1,
-      align: 'start'
-    })
+    // The left source jump rail is removed — the top source filter already
+    // covers per-source navigation, so the rail was pure redundancy.
+    expect(screen.queryByTestId('memory-category-jump-nav')).not.toBeInTheDocument()
+    expect(screen.queryByRole('navigation', { name: 'Memory groups' })).not.toBeInTheDocument()
   })
 
   it('opens memory note content through the shared file viewer', async () => {
