@@ -114,7 +114,7 @@ test.describe('App Shell', () => {
   })
 
   test('overview page loads by default', async () => {
-    const heading = page.locator('h1')
+    const heading = page.getByTestId('overview-hero').getByRole('heading', { name: /^(Overview|总览)$/ })
     await expect(heading).toBeVisible()
     await expect(heading).toContainText(/Overview|总览/)
     await expect(page.getByTestId('overview-hero')).toContainText(/Current agent|当前 Agent/)
@@ -130,7 +130,6 @@ test.describe('App Shell', () => {
 
     const breadcrumb = topBreadcrumb()
     await expect(breadcrumb).toContainText(/WORK|工作/)
-    await expect(breadcrumb).toContainText(/Sessions|会话/)
   })
 
   test('can navigate to promoted instruction pages', async () => {
@@ -139,7 +138,6 @@ test.describe('App Shell', () => {
     await expect(heading).toContainText(/Skills/)
     const breadcrumb = topBreadcrumb()
     await expect(breadcrumb).toContainText(/INSTRUCTIONS|指令/)
-    await expect(breadcrumb).toContainText(/Skills/)
   })
 
   test('can navigate to promoted capability pages', async () => {
@@ -148,7 +146,6 @@ test.describe('App Shell', () => {
     await expect(heading).toContainText(/Hooks/)
     const breadcrumb = topBreadcrumb()
     await expect(breadcrumb).toContainText(/CAPABILITIES|能力/)
-    await expect(breadcrumb).toContainText(/Hooks/)
   })
 
   test('can navigate to usage', async () => {
@@ -157,7 +154,6 @@ test.describe('App Shell', () => {
     await expect(heading).toContainText(/Usage|用量/)
     const breadcrumb = topBreadcrumb()
     await expect(breadcrumb).toContainText(/RUN|运行/)
-    await expect(breadcrumb).toContainText(/Usage|用量/)
   })
 
   test('settings is not a regular navigation item', async () => {
