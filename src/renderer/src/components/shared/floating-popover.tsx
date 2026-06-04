@@ -46,6 +46,7 @@ interface FloatingPopoverProps {
   alignOffset?: number
   collisionPadding?: Padding
   closeDelay?: number
+  safePolygonBuffer?: number
   role?: FloatingRole
 }
 
@@ -54,7 +55,7 @@ function floatingPlacement(side: FloatingSide, align: FloatingAlign): Placement 
 }
 
 const DEFAULT_CLOSE_DELAY_MS = 80
-const DEFAULT_HOVER_BRIDGE_BUFFER_PX = 8
+const DEFAULT_SAFE_POLYGON_BUFFER_PX = 8
 
 export function FloatingPopover({
   trigger,
@@ -70,6 +71,7 @@ export function FloatingPopover({
   alignOffset = 0,
   collisionPadding = 16,
   closeDelay = DEFAULT_CLOSE_DELAY_MS,
+  safePolygonBuffer: safePolygonBufferProp,
   role
 }: FloatingPopoverProps): React.ReactElement {
   const generatedId = useId()
@@ -88,10 +90,10 @@ export function FloatingPopover({
       hide({ padding: collisionPadding })
     ]
   })
-  const hoverBridgeBuffer = Math.max(DEFAULT_HOVER_BRIDGE_BUFFER_PX, sideOffset)
+  const safePolygonBuffer = safePolygonBufferProp ?? Math.max(DEFAULT_SAFE_POLYGON_BUFFER_PX, sideOffset)
   const hoverBridge = useMemo(
-    () => safePolygon({ buffer: hoverBridgeBuffer, requireIntent: false }),
-    [hoverBridgeBuffer]
+    () => safePolygon({ buffer: safePolygonBuffer, requireIntent: false }),
+    [safePolygonBuffer]
   )
   const hover = useHover(context, {
     mouseOnly: true,

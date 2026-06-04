@@ -134,6 +134,8 @@ export function TopNavigation({ isWindows }: TopNavigationProps): React.ReactEle
               side="bottom"
               align="end"
               sideOffset={8}
+              closeDelay={220}
+              safePolygonBuffer={32}
               contentClassName="w-[min(42rem,calc(100vw-3rem))] rounded-lg bg-transparent p-0 shadow-none"
               trigger={(
                 <button

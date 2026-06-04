@@ -19,3 +19,7 @@
 - [x] 任务 5: 优化公共浮层 hover 转移检测。
   - tests: `pnpm exec vitest run tests/renderer/top-navigation.test.tsx tests/renderer/hooks-lifecycle-view.test.tsx tests/renderer/capabilities-guidance.test.tsx tests/renderer/instructions-guidance.test.tsx tests/renderer/sessions-pages.test.tsx` — 5 files / 77 passed; `pnpm typecheck:web` — passed.
   - verify: 查阅 Floating UI 官方 `useHover` / `safePolygon`、`useFloating`、`useTransition` 文档; 公共组件改为外层 fixed 定位、内层动画, 避免定位 transform 与 `zoom-in-95` 动画冲突; `safePolygon({ buffer: max(8, sideOffset), requireIntent: false })` 覆盖 trigger 到浮层的空隙路径。Electron agent 实例 `gh102-hover-verify` 实测通过: header guide 直接离开关闭, 沿 trigger 到 panel 中心路径穿过空隙保持显示, 离开 panel 关闭; Hook 检查 tooltip 同样通过。真实窗口截图: `C:\Users\mail\AppData\Local\Temp\berth-gh102-hover-header-guide.png`; `C:\Users\mail\AppData\Local\Temp\berth-gh102-hover-hook-health.png`; `pnpm dev:agent guard after --id gh102-hover-verify --json` 返回 `guard-ok`。
+
+- [x] 任务 6: 修复 header 指南宽面板横向进入时过早关闭。
+  - tests: `pnpm exec vitest run tests/renderer/top-navigation.test.tsx tests/renderer/hooks-lifecycle-view.test.tsx` — 2 files / 37 passed; `pnpm typecheck:web` — passed.
+  - verify: Electron agent 实例 `gh102-header-hover-gap` 实测通过: header 指南在 1280 / 1424 / 1680 宽度下, 鼠标从触发按钮先横向移动到面板中心 x 坐标、等待 120ms、再下移进入面板时保持显示; 在 1280 / 1424 宽度下直接离开触发区且不进入面板时关闭; Hook 检查 `正常` tag 移动到 popover 后保持显示。
