@@ -4,10 +4,10 @@
 每个实现项必须有测试证据或明确例外理由。
 实现中若发现 debt 初估不准, 更新 INDEX.md `debt.estimate`, 并追加 `debt.revisions[]`。
 
-- [ ] 1. 添加第三方依赖与测试基线
+- [x] 1. 添加第三方依赖与测试基线
   - scope: `package.json`, `pnpm-lock.yaml`, 必要的 test mock/setup。
-  - tests: `pnpm typecheck:web`; 若 lockfile 变动导致安装脚本触发, 用 `pnpm install --lockfile-only` 或等效 pnpm 9 命令生成锁文件。
-  - verify: 依赖只包含 `react-virtuoso` 与 `@radix-ui/react-navigation-menu`; `@tanstack/react-virtual` 不进入 lockfile。
+  - tests: `pnpm typecheck:web` passed。
+  - verify: `package.json` 与 `pnpm-lock.yaml` 只新增 `react-virtuoso@4.18.7`、`@radix-ui/react-navigation-menu@1.2.14`; `rg` 确认 `@tanstack/react-virtual` 未进入 lockfile。
 
 - [ ] 2. 建 shared virtual list 与 category jump nav
   - scope: `src/renderer/src/components/shared/virtual-grouped-list.tsx`, `src/renderer/src/components/shared/category-jump-nav.tsx`, `src/renderer/src/hooks/use-app-scroll-parent.ts`, `src/renderer/src/lib/virtual-list-model.ts`。
