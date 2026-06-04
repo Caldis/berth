@@ -1,0 +1,19 @@
+# 描述
+- macOS release 打包配置引用 `build/entitlements.mac.plist`, 但仓库没有 `build/` 目录和 entitlement 文件。
+- 2026-06-04 发布 `v0.1.1` 时, 默认 `pnpm package:mac` 进入签名阶段后失败。
+
+# 重现步骤
+- 在 macOS 环境执行 `PATH="$HOME/.nvm/versions/node/v24.3.0/bin:$PATH" pnpm package:mac`。
+- electron-builder 读取 `electron-builder.yml` 中 `mac.entitlementsInherit: build/entitlements.mac.plist`。
+
+# 预期结果
+- 默认 macOS 打包命令可以生成可发布资产。
+- 如果项目暂不做签名, 打包命令应明确禁用签名自动发现。
+- 如果项目需要签名, 仓库应提供有效 entitlement 配置。
+
+# 实际结果
+- codesign 读取 `build/entitlements.mac.plist` 失败: `cannot read entitlement data`。
+- 通过 `CSC_IDENTITY_AUTO_DISCOVERY=false pnpm package:mac` 可以生成未签名的 dmg 和 zip。
+
+# 解决方案
+- 明确 macOS 发布策略: 未签名发布时将打包脚本固定为禁用签名自动发现; 签名发布时补齐 `build/entitlements.mac.plist` 和证书配置说明。

@@ -15,6 +15,78 @@ import type { SessionActivityMetrics } from '../../src/shared/types/ipc'
 import { normalizeTokenUsage } from '../../src/shared/token-usage'
 import { useAppStore } from '../../src/renderer/src/stores/app'
 
+type MockGroupedVirtuosoHandle = {
+  scrollToIndex: (location: unknown) => void
+}
+
+type MockGroupedVirtuosoProps = {
+  groupCounts: number[]
+  data?: unknown[]
+  context?: unknown
+  computeItemKey: (index: number, item: unknown, context: unknown) => React.Key
+  groupContent: (groupIndex: number, context: unknown) => React.ReactNode
+  itemContent: (index: number, groupIndex: number, item: unknown, context: unknown) => React.ReactNode
+  'data-testid'?: string
+}
+
+const sessionsVirtuosoMock = vi.hoisted(() => ({
+  visibleLimit: 30,
+  props: undefined as MockGroupedVirtuosoProps | undefined,
+  scrollToIndex: vi.fn()
+}))
+
+vi.mock('react-virtuoso', async () => {
+  const ReactModule = await import('react')
+
+  const GroupedVirtuoso = ReactModule.forwardRef<MockGroupedVirtuosoHandle, MockGroupedVirtuosoProps>(function MockGroupedVirtuoso(props, ref) {
+    sessionsVirtuosoMock.props = props
+    ReactModule.useImperativeHandle(ref, () => ({
+      scrollToIndex: sessionsVirtuosoMock.scrollToIndex
+    }))
+
+    const nodes: React.ReactNode[] = []
+    let itemIndex = 0
+    let listIndex = 0
+    let renderedRows = 0
+
+    for (let groupIndex = 0; groupIndex < props.groupCounts.length; groupIndex += 1) {
+      nodes.push(
+        ReactModule.createElement(
+          'div',
+          { key: `group-${groupIndex}`, 'data-testid': `sessions-virtual-group-${groupIndex}` },
+          props.groupContent(groupIndex, props.context)
+        )
+      )
+      listIndex += 1
+
+      for (let offset = 0; offset < props.groupCounts[groupIndex]; offset += 1) {
+        const item = props.data?.[listIndex]
+        const key = props.computeItemKey(listIndex, item, props.context)
+        if (renderedRows < sessionsVirtuosoMock.visibleLimit) {
+          nodes.push(
+            ReactModule.createElement(
+              'div',
+              { key, 'data-testid': `sessions-virtual-row-${key}` },
+              props.itemContent(itemIndex, groupIndex, item, props.context)
+            )
+          )
+          renderedRows += 1
+        }
+        itemIndex += 1
+        listIndex += 1
+      }
+    }
+
+    return ReactModule.createElement(
+      'div',
+      { 'data-testid': props['data-testid'] ?? 'sessions-mock-virtuoso' },
+      nodes
+    )
+  })
+
+  return { GroupedVirtuoso }
+})
+
 const summary: SessionSummary = {
   id: 'session-session-abc',
   agentId: 'claude-code',
@@ -273,7 +345,10 @@ describe('session pages', () => {
     fireEvent.pointerEnter(screen.getByTestId('page-guide-hover-region'))
     expect(screen.getByText('Local conversation history')).toBeInTheDocument()
     expect(await screen.findByText('Fix session metadata')).toBeInTheDocument()
-    expect(screen.getAllByText('D:\\Code\\berth').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('D:/Code').length).toBeGreaterThan(0)
+    expect(screen.getByRole('button', { name: 'berth, 1 items' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'D:/Code, 1 items' })).not.toBeInTheDocument()
+    expect(screen.queryByText('D:\\Code\\berth')).not.toBeInTheDocument()
     expect(screen.queryByText('D--Code-berth')).not.toBeInTheDocument()
     expect(screen.queryByText(/Invalid Date/i)).not.toBeInTheDocument()
     expect(screen.getByText('5m')).toBeInTheDocument()
@@ -310,39 +385,77 @@ describe('session pages', () => {
     expect(screen.queryByRole('dialog', { name: /Search assets/ })).not.toBeInTheDocument()
   })
 
-  it('renders large session lists in batches', async () => {
-    vi.useFakeTimers()
-    const sessions = Array.from({ length: 130 }, (_, index) => ({
+  it('virtualizes large session lists and exposes project jump navigation', async () => {
+    const sessions = Array.from({ length: 131 }, (_, index) => ({
       ...summary,
       id: `session-${index}`,
       title: `Session ${index}`,
+      project: index === 0 ? 'root' : index <= 65 ? 'berth' : 'archive',
+      projectPath: index === 0
+        ? '/'
+        : index <= 65
+          ? '/Users/caldis/Desktop/Code/berth'
+          : '/Users/caldis/Desktop/Archive/archive',
+      startedAt: index === 0
+        ? '2026-05-01T10:00:00.000Z'
+        : index <= 65
+          ? '2026-06-04T10:00:00.000Z'
+          : '2026-06-03T10:00:00.000Z',
       transcriptPath: `C:\\Users\\test\\.claude\\projects\\D--Code-berth\\session-${index}.jsonl`
     }))
     window.api.sessions.list = vi.fn(async () => ({ sessions, totalCount: sessions.length }))
+    sessionsVirtuosoMock.scrollToIndex.mockClear()
 
-    try {
-      renderSessionsPage()
+    renderSessionsPage()
 
-      await act(async () => {
-        await Promise.resolve()
-        await Promise.resolve()
-      })
+    expect(await screen.findByText('Session 0')).toBeInTheDocument()
+    expect(screen.queryByText('Session 129')).not.toBeInTheDocument()
+    expect(screen.getAllByTestId(/session-row-/)).toHaveLength(sessionsVirtuosoMock.visibleLimit)
+    expect(screen.queryByText('Showing 80 of 130 sessions')).not.toBeInTheDocument()
+    expect(screen.getByRole('navigation', { name: 'Session groups' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Root /, 1 items' })).toHaveAttribute('title', '/')
+    const jumpNav = screen.getByTestId('sessions-category-jump-nav')
+    expect(within(jumpNav).getByText('Desktop/Code').closest('div')).toHaveAttribute('title', '/Users/caldis/Desktop/Code')
+    expect(screen.queryByRole('button', { name: 'Desktop/Code, 65 items' })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'berth, 65 items' })).toHaveAttribute('title', '/Users/caldis/Desktop/Code/berth')
+    expect(screen.getByTestId('sessions-virtual-group-1').firstChild).toHaveClass('mt-4')
 
-      expect(screen.getByText('Session 0')).toBeInTheDocument()
-      expect(screen.queryByText('Session 129')).not.toBeInTheDocument()
-      expect(
-        within(screen.getByTestId('sessions-toolbar-status-slot')).getByText('Showing 80 of 130 sessions')
-      ).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'archive, 65 items' }))
 
-      await act(async () => {
-        vi.runOnlyPendingTimers()
-      })
+    expect(sessionsVirtuosoMock.scrollToIndex).toHaveBeenCalledWith({
+      groupIndex: 2,
+      align: 'start'
+    })
+  })
 
-      expect(screen.getByText('Session 129')).toBeInTheDocument()
-      expect(screen.queryByText('Showing 80 of 130 sessions')).not.toBeInTheDocument()
-    } finally {
-      vi.useRealTimers()
-    }
+  it('rounds only the final row inside each session group', async () => {
+    const sessions = [
+      ...Array.from({ length: 4 }, (_, index) => ({
+        ...summary,
+        id: `root-${index}`,
+        title: `Root ${index}`,
+        project: 'root',
+        projectPath: '/',
+        transcriptPath: `C:\\Users\\test\\.codex\\sessions\\root-${index}.jsonl`
+      })),
+      {
+        ...summary,
+        id: 'berth-0',
+        title: 'Berth 0',
+        project: 'berth',
+        projectPath: '/Users/caldis/Desktop/Code/berth',
+        transcriptPath: 'C:\\Users\\test\\.claude\\projects\\D--Code-berth\\berth-0.jsonl'
+      }
+    ]
+    window.api.sessions.list = vi.fn(async () => ({ sessions, totalCount: sessions.length }))
+
+    renderSessionsPage()
+
+    expect(await screen.findByTestId('session-row-root-0')).not.toHaveClass('rounded-b-lg')
+    expect(screen.getByTestId('session-row-root-1')).not.toHaveClass('rounded-b-lg')
+    expect(screen.getByTestId('session-row-root-2')).not.toHaveClass('rounded-b-lg')
+    expect(screen.getByTestId('session-row-root-3')).toHaveClass('rounded-b-lg')
+    expect(screen.getByTestId('session-row-berth-0')).toHaveClass('rounded-b-lg')
   })
 
   it('passes selected project scope to the sessions list', async () => {

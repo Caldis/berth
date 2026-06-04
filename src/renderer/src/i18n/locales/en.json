@@ -268,6 +268,10 @@
     "emptyDetailTitle": "Session not found",
     "emptyDetailDescription": "This session is no longer available in the current local scan.",
     "groupBy": "Group by",
+    "groupNavigation": "Session groups",
+    "location": {
+      "root": "Root /"
+    },
     "project": "Project",
     "date": "Date",
     "noSessions": "No sessions found.",
@@ -486,6 +490,7 @@
       "commands": "Commands",
       "outputModes": "Output Modes"
     },
+    "groupNavigation": "Instruction groups",
     "scope": "Scope",
     "path": "Path",
     "trigger": "Trigger",
@@ -1687,6 +1692,7 @@
   "memory": {
     "allSources": "All sources",
     "searchPlaceholder": "Search memories...",
+    "groupNavigation": "Memory groups",
     "refresh": "Refresh",
     "relations": "Related",
     "clearFilters": "Clear filters",

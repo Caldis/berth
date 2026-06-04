@@ -1,6 +1,10 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { resetSessionsCacheForTests, useSessions } from '../../src/renderer/src/hooks/use-ipc'
+import {
+  SESSION_LIST_CACHE_TTL_MS,
+  resetSessionsCacheForTests,
+  useSessions
+} from '../../src/renderer/src/hooks/use-ipc'
 import type { SessionSummary } from '../../src/shared/types/asset'
 import { normalizeTokenUsage } from '../../src/shared/token-usage'
 
@@ -36,12 +40,35 @@ function deferred<T>(): {
 describe('useSessions stale refresh', () => {
   beforeEach(() => {
     resetSessionsCacheForTests()
+    vi.restoreAllMocks()
   })
 
-  it('keeps cached sessions visible while refreshing the same query', async () => {
+  it('reuses fresh cached sessions without requesting the same query again', async () => {
+    const cachedSession = sessionSummary('cached-session', 'Cached session')
+    window.api.sessions.list = vi.fn(async () => ({ sessions: [cachedSession], totalCount: 1 }))
+
+    const first = renderHook(() => useSessions({ agentView: 'all' }))
+
+    await waitFor(() => {
+      expect(first.result.current.sessions).toEqual([cachedSession])
+      expect(first.result.current.loading).toBe(false)
+      expect(first.result.current.stale).toBe(false)
+    })
+    first.unmount()
+
+    const second = renderHook(() => useSessions({ agentView: 'all' }))
+
+    expect(second.result.current.sessions).toEqual([cachedSession])
+    expect(second.result.current.loading).toBe(false)
+    expect(second.result.current.stale).toBe(false)
+    expect(window.api.sessions.list).toHaveBeenCalledTimes(1)
+  })
+
+  it('keeps stale cached sessions visible while refreshing the same query', async () => {
     const cachedSession = sessionSummary('cached-session', 'Cached session')
     const refreshedSession = sessionSummary('refreshed-session', 'Refreshed session')
     const refresh = deferred<{ sessions: SessionSummary[]; totalCount: number }>()
+    const now = vi.spyOn(Date, 'now').mockReturnValue(1_000)
     window.api.sessions.list = vi
       .fn()
       .mockResolvedValueOnce({ sessions: [cachedSession], totalCount: 1 })
@@ -56,6 +83,7 @@ describe('useSessions stale refresh', () => {
     })
     first.unmount()
 
+    now.mockReturnValue(1_000 + SESSION_LIST_CACHE_TTL_MS + 1)
     const second = renderHook(() => useSessions({ agentView: 'all' }))
 
     expect(second.result.current.sessions).toEqual([cachedSession])
@@ -74,6 +102,33 @@ describe('useSessions stale refresh', () => {
       expect(second.result.current.loading).toBe(false)
       expect(second.result.current.stale).toBe(false)
     })
+    expect(window.api.sessions.list).toHaveBeenCalledTimes(2)
+  })
+
+  it('keeps the cached array reference when refresh returns the same session signature', async () => {
+    const cachedSession = sessionSummary('cached-session', 'Cached session')
+    const now = vi.spyOn(Date, 'now').mockReturnValue(1_000)
+    window.api.sessions.list = vi
+      .fn()
+      .mockResolvedValueOnce({ sessions: [cachedSession], totalCount: 1 })
+      .mockResolvedValueOnce({ sessions: [{ ...cachedSession }], totalCount: 1 })
+
+    const first = renderHook(() => useSessions({ agentView: 'all' }))
+
+    await waitFor(() => {
+      expect(first.result.current.sessions).toEqual([cachedSession])
+    })
+    const cachedArray = first.result.current.sessions
+    first.unmount()
+
+    now.mockReturnValue(1_000 + SESSION_LIST_CACHE_TTL_MS + 1)
+    const second = renderHook(() => useSessions({ agentView: 'all' }))
+
+    await waitFor(() => {
+      expect(second.result.current.loading).toBe(false)
+      expect(second.result.current.stale).toBe(false)
+    })
+    expect(second.result.current.sessions).toBe(cachedArray)
     expect(window.api.sessions.list).toHaveBeenCalledTimes(2)
   })
 

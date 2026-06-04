@@ -8,6 +8,79 @@ import { TopNavigation } from '../../src/renderer/src/components/layout/top-navi
 import { PageChromeProvider } from '../../src/renderer/src/components/layout/page-chrome'
 import { useAppStore } from '../../src/renderer/src/stores/app'
 import type { Asset } from '../../src/shared/types/asset'
+import { resetMemoryCacheForTests } from '../../src/renderer/src/hooks/use-memory'
+
+type MockGroupedVirtuosoHandle = {
+  scrollToIndex: (location: unknown) => void
+}
+
+type MockGroupedVirtuosoProps = {
+  groupCounts: number[]
+  data?: unknown[]
+  context?: unknown
+  computeItemKey: (index: number, item: unknown, context: unknown) => React.Key
+  groupContent: (groupIndex: number, context: unknown) => React.ReactNode
+  itemContent: (index: number, groupIndex: number, item: unknown, context: unknown) => React.ReactNode
+  'data-testid'?: string
+}
+
+const instructionsVirtuosoMock = vi.hoisted(() => ({
+  visibleLimit: 25,
+  props: undefined as MockGroupedVirtuosoProps | undefined,
+  scrollToIndex: vi.fn()
+}))
+
+vi.mock('react-virtuoso', async () => {
+  const ReactModule = await import('react')
+
+  const GroupedVirtuoso = ReactModule.forwardRef<MockGroupedVirtuosoHandle, MockGroupedVirtuosoProps>(function MockGroupedVirtuoso(props, ref) {
+    instructionsVirtuosoMock.props = props
+    ReactModule.useImperativeHandle(ref, () => ({
+      scrollToIndex: instructionsVirtuosoMock.scrollToIndex
+    }))
+
+    const nodes: React.ReactNode[] = []
+    let itemIndex = 0
+    let listIndex = 0
+    let renderedRows = 0
+
+    for (let groupIndex = 0; groupIndex < props.groupCounts.length; groupIndex += 1) {
+      nodes.push(
+        ReactModule.createElement(
+          'div',
+          { key: `group-${groupIndex}`, 'data-testid': `instructions-virtual-group-${groupIndex}` },
+          props.groupContent(groupIndex, props.context)
+        )
+      )
+      listIndex += 1
+
+      for (let offset = 0; offset < props.groupCounts[groupIndex]; offset += 1) {
+        const item = props.data?.[listIndex]
+        const key = props.computeItemKey(listIndex, item, props.context)
+        if (renderedRows < instructionsVirtuosoMock.visibleLimit) {
+          nodes.push(
+            ReactModule.createElement(
+              'div',
+              { key, 'data-testid': `instructions-virtual-row-${key}` },
+              props.itemContent(itemIndex, groupIndex, item, props.context)
+            )
+          )
+          renderedRows += 1
+        }
+        itemIndex += 1
+        listIndex += 1
+      }
+    }
+
+    return ReactModule.createElement(
+      'div',
+      { 'data-testid': props['data-testid'] ?? 'instructions-mock-virtuoso' },
+      nodes
+    )
+  })
+
+  return { GroupedVirtuoso }
+})
 
 function skillAsset(id: string, scope: Asset['scope'], path: string): Asset {
   return {
@@ -26,11 +99,13 @@ function skillAsset(id: string, scope: Asset['scope'], path: string): Asset {
 
 describe('Instructions guidance surfaces', () => {
   beforeEach(() => {
+    resetMemoryCacheForTests()
     useAppStore.setState({ assets: [], agentView: 'all', scopeSelection: { mode: 'global' } })
     window.api.memory = {
       list: vi.fn(async () => ({ notes: [], sources: [] })),
       get: vi.fn(async () => null)
     }
+    instructionsVirtuosoMock.scrollToIndex.mockClear()
   })
 
   it('shows a feature guide for the Memories tab before the memory list', async () => {
@@ -114,5 +189,42 @@ describe('Instructions guidance surfaces', () => {
 
     expect(screen.getByText('Nothing here yet')).toBeInTheDocument()
     expect(screen.queryByText('Project skill')).not.toBeInTheDocument()
+  })
+
+  it('virtualizes large skill lists and exposes scope jump navigation', async () => {
+    useAppStore.setState({
+      assets: Array.from({ length: 80 }, (_, index) =>
+        skillAsset(
+          `Skill ${index}`,
+          index < 40 ? 'user' : 'project',
+          index < 40
+            ? `C:/Users/mail/.codex/skills/skill-${index}/SKILL.md`
+            : `D:/Code/berth/.agents/skills/skill-${index}/SKILL.md`
+        )
+      ),
+      agentView: 'all',
+      scopeSelection: { mode: 'global' }
+    })
+
+    render(
+      <MemoryRouter initialEntries={['/instructions/skills']}>
+        <PageChromeProvider>
+          <TopNavigation isWindows={false} />
+          <Instructions activeSection="skills" />
+        </PageChromeProvider>
+      </MemoryRouter>
+    )
+
+    expect(await screen.findByText('Skill 0')).toBeInTheDocument()
+    expect(screen.queryByText('Skill 79')).not.toBeInTheDocument()
+    expect(screen.getAllByTestId(/instruction-asset-card-/)).toHaveLength(instructionsVirtuosoMock.visibleLimit)
+    expect(screen.getByRole('navigation', { name: 'Instruction groups' })).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Project, 40 items' }))
+
+    expect(instructionsVirtuosoMock.scrollToIndex).toHaveBeenCalledWith({
+      groupIndex: 1,
+      align: 'start'
+    })
   })
 })
