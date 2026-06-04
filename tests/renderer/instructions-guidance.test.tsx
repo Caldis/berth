@@ -157,7 +157,7 @@ describe('Instructions guidance surfaces', () => {
     expect(screen.queryByText('Other project skill')).not.toBeInTheDocument()
   })
 
-  it('moves instruction search and scope filters into the top navigation', async () => {
+  it('moves instruction search into the top navigation and filters scope via top chips', async () => {
     useAppStore.setState({
       assets: [
         skillAsset('User skill', 'user', 'C:/Users/mail/.codex/skills/user/SKILL.md'),
@@ -185,13 +185,14 @@ describe('Instructions guidance surfaces', () => {
     expect(screen.queryByText('User skill')).not.toBeInTheDocument()
     expect(screen.getByText('Project skill')).toBeInTheDocument()
 
-    fireEvent.change(screen.getByRole('combobox', { name: 'Scope' }), { target: { value: 'user' } })
+    const scopeFilter = screen.getByTestId('instructions-scope-filter')
+    fireEvent.click(within(scopeFilter).getByRole('button', { name: 'User 1' }))
 
     expect(screen.getByText('Nothing here yet')).toBeInTheDocument()
     expect(screen.queryByText('Project skill')).not.toBeInTheDocument()
   })
 
-  it('virtualizes large skill lists and exposes scope jump navigation', async () => {
+  it('virtualizes large skill lists without a redundant scope jump rail', async () => {
     useAppStore.setState({
       assets: Array.from({ length: 80 }, (_, index) =>
         skillAsset(
@@ -218,13 +219,10 @@ describe('Instructions guidance surfaces', () => {
     expect(await screen.findByText('Skill 0')).toBeInTheDocument()
     expect(screen.queryByText('Skill 79')).not.toBeInTheDocument()
     expect(screen.getAllByTestId(/instruction-asset-card-/)).toHaveLength(instructionsVirtuosoMock.visibleLimit)
-    expect(screen.getByRole('navigation', { name: 'Instruction groups' })).toBeInTheDocument()
 
-    fireEvent.click(screen.getByRole('button', { name: 'Project, 40 items' }))
-
-    expect(instructionsVirtuosoMock.scrollToIndex).toHaveBeenCalledWith({
-      groupIndex: 1,
-      align: 'start'
-    })
+    // The left scope jump rail is removed — top scope chips already cover it.
+    expect(screen.queryByTestId('instructions-category-jump-nav')).not.toBeInTheDocument()
+    expect(screen.queryByRole('navigation', { name: 'Instruction groups' })).not.toBeInTheDocument()
+    expect(screen.getByTestId('instructions-scope-filter')).toBeInTheDocument()
   })
 })

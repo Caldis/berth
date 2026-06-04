@@ -1,4 +1,4 @@
-import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useDeferredValue, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   FileText,
@@ -14,10 +14,10 @@ import {
   FileCode,
   Hash
 } from 'lucide-react'
-import { truncatePath } from '@/lib/utils'
+import { truncatePath, cn } from '@/lib/utils'
 import { filterAssetsByAgentView } from '@/lib/agent-view'
 import { useAppStore } from '@/stores/app'
-import { ScopeSelect, type ScopeFilter } from '@/components/shared/filter-bar'
+import { type ScopeFilter } from '@/components/shared/filter-bar'
 import { DetailRow } from '@/components/shared/detail-row'
 import { EmptyState, PAGE_EMPTY_FILL } from '@/components/shared/empty-state'
 import { ScopeBadge } from '@/components/shared/scope-badge'
@@ -34,9 +34,8 @@ import { filterAssetsByAppScope } from '@shared/scope'
 import { MemoryView } from '@/components/memory/memory-view'
 import { useMemory } from '@/hooks/use-memory'
 import { usePageChrome, type PageChromeConfig } from '@/components/layout/page-chrome'
-import { VirtualGroupedList, type VirtualGroupedListHandle } from '@/components/shared/virtual-grouped-list'
-import { CategoryJumpNav } from '@/components/shared/category-jump-nav'
-import { buildJumpNavItems, type VirtualListGroup } from '@/lib/virtual-list-model'
+import { VirtualGroupedList } from '@/components/shared/virtual-grouped-list'
+import { type VirtualListGroup } from '@/lib/virtual-list-model'
 
 const tabTypeMap: Record<string, string[]> = {
   conventions: ['claude-md', 'agents-md'],
@@ -315,24 +314,17 @@ function InstructionPageChrome({
   agentView,
   evidence,
   guide,
-  scope,
   search,
-  setScope,
   setSearch
 }: {
   activeTab: string
   agentView: AgentView
   evidence: FeatureGuideEvidence[]
   guide?: FeatureGuideDefinition
-  scope: ScopeFilter
   search: string
-  setScope: (scope: ScopeFilter) => void
   setSearch: (value: string) => void
 }): null {
   const { t } = useTranslation()
-  const actions = useMemo<React.ReactNode>(() => (
-    <ScopeSelect value={scope} onChange={setScope} className="w-36" />
-  ), [scope, setScope])
   const title = t(`instructions.tabs.${activeTab}`)
   const pageChrome = useMemo<PageChromeConfig>(() => ({
     title,
@@ -349,12 +341,54 @@ function InstructionPageChrome({
           evidence,
           agentView
         }
-      : undefined,
-    actions
-  }), [actions, agentView, evidence, guide, search, setSearch, t, title])
+      : undefined
+  }), [agentView, evidence, guide, search, setSearch, t, title])
   usePageChrome(pageChrome, [pageChrome])
 
   return null
+}
+
+const SCOPE_CHIP_ORDER = ['user', 'project', 'enterprise']
+
+// Scope sits at the top as chips (mirroring the memory page's source chips)
+// instead of a left jump rail + a dropdown — one surface, one source of truth.
+function ScopeFilterChips({
+  scope,
+  options,
+  total,
+  allLabel,
+  onChange,
+  testId
+}: {
+  scope: ScopeFilter
+  options: Array<{ id: string; label: string; count: number }>
+  total: number
+  allLabel: string
+  onChange: (scope: ScopeFilter) => void
+  testId?: string
+}): React.ReactElement | null {
+  if (options.length === 0) return null
+  const chip = (id: ScopeFilter, label: string, count: number): React.ReactElement => (
+    <button
+      key={id}
+      type="button"
+      aria-pressed={scope === id}
+      onClick={() => onChange(id)}
+      className={cn(
+        'inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors',
+        scope === id ? 'border-primary bg-primary/10 text-primary' : 'border-border text-muted-foreground hover:bg-muted/70'
+      )}
+    >
+      {label}
+      <span className="rounded-full bg-muted px-1.5 text-[10px]">{count}</span>
+    </button>
+  )
+  return (
+    <div data-testid={testId} className="flex flex-wrap gap-2">
+      {chip('all', allLabel, total)}
+      {options.map((option) => chip(option.id as ScopeFilter, option.label, option.count))}
+    </div>
+  )
 }
 
 /* ---------- Main page ---------- */
@@ -367,19 +401,34 @@ export function Instructions({ activeSection }: { activeSection?: string } = {})
   const activeTab = normalizeInstructionSection(activeSection)
   const [search, setSearch] = useState('')
   const [scope, setScope] = useState<ScopeFilter>('all')
-  const [activeGroupId, setActiveGroupId] = useState<string | undefined>(undefined)
   const deferredSearch = useDeferredValue(search)
-  const listRef = useRef<VirtualGroupedListHandle | null>(null)
   const visibleAssets = useMemo(
     () => filterAssetsByAppScope(filterAssetsByAgentView(assets, agentView), scopeSelection),
     [assets, agentView, scopeSelection]
   )
 
+  // Type-filtered assets feed the scope chips; their counts stay stable across
+  // search / scope so the chips never disappear while you are filtering.
+  const scopeAssets = useMemo(() => {
+    const types = tabTypeMap[activeTab] ?? []
+    return visibleAssets.filter((a) => types.includes(a.type))
+  }, [visibleAssets, activeTab])
+
+  const scopeOptions = useMemo(() => {
+    const counts = new Map<string, number>()
+    for (const asset of scopeAssets) counts.set(asset.scope, (counts.get(asset.scope) ?? 0) + 1)
+    return [...counts.entries()]
+      .sort((a, b) => {
+        const ia = SCOPE_CHIP_ORDER.indexOf(a[0])
+        const ib = SCOPE_CHIP_ORDER.indexOf(b[0])
+        return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib)
+      })
+      .map(([id, count]) => ({ id, label: t(`common.scope.${id}`), count }))
+  }, [scopeAssets, t])
+
   // Filter assets for active tab
   const filteredAssets = useMemo(() => {
-    const types = tabTypeMap[activeTab] ?? []
-    return visibleAssets.filter((a) => {
-      if (!types.includes(a.type)) return false
+    return scopeAssets.filter((a) => {
       if (scope !== 'all' && a.scope !== scope) return false
       if (deferredSearch) {
         const q = deferredSearch.toLowerCase()
@@ -389,21 +438,9 @@ export function Instructions({ activeSection }: { activeSection?: string } = {})
       }
       return true
     })
-  }, [visibleAssets, activeTab, deferredSearch, scope])
+  }, [scopeAssets, deferredSearch, scope])
   const assetGroups = useMemo(() => buildInstructionGroups(filteredAssets, t), [filteredAssets, t])
-  const jumpItems = useMemo(() => buildJumpNavItems(assetGroups), [assetGroups])
 
-  useEffect(() => {
-    setActiveGroupId((current) => {
-      if (current && assetGroups.some((group) => group.id === current)) return current
-      return assetGroups[0]?.id
-    })
-  }, [assetGroups])
-
-  const handleJumpSelect = useCallback((groupId: string) => {
-    setActiveGroupId(groupId)
-    listRef.current?.scrollToGroup(groupId)
-  }, [])
   const activeGuide = instructionGuideMap[activeTab as InstructionGuideId]
   const activeEvidence = useMemo<FeatureGuideEvidence[]>(() => {
     if (activeTab !== 'memories') return buildFeatureGuideEvidence(filteredAssets)
@@ -419,19 +456,10 @@ export function Instructions({ activeSection }: { activeSection?: string } = {})
   const renderVirtualAssetList = (
     renderAsset: (asset: Asset) => React.ReactNode
   ): React.ReactElement => (
-    <div className="flex min-h-[520px] gap-4 max-lg:flex-col">
-      <CategoryJumpNav
-        items={jumpItems}
-        activeId={activeGroupId}
-        onSelect={handleJumpSelect}
-        label={t('instructions.groupNavigation')}
-        testId="instructions-category-jump-nav"
-      />
+    <div className="min-h-[520px]">
       <VirtualGroupedList<Asset>
-        ref={listRef}
         groups={assetGroups}
         getItemKey={(asset) => asset.id}
-        onActiveGroupChange={(groupId) => setActiveGroupId(groupId)}
         renderGroup={(group) => {
           const scopeValue = typeof group.meta?.scope === 'string' ? group.meta.scope as Asset['scope'] : 'user'
           return (
@@ -447,7 +475,7 @@ export function Instructions({ activeSection }: { activeSection?: string } = {})
             {renderAsset(asset)}
           </div>
         )}
-        className="min-w-0 flex-1"
+        className="min-w-0"
         listClassName="min-h-[520px]"
         defaultItemHeight={86}
         testId="instructions-virtual-list"
@@ -490,9 +518,18 @@ export function Instructions({ activeSection }: { activeSection?: string } = {})
           evidence={activeEvidence}
           guide={activeGuide}
           search={search}
-          scope={scope}
           setSearch={setSearch}
-          setScope={setScope}
+        />
+      )}
+
+      {activeTab !== 'memories' && (
+        <ScopeFilterChips
+          scope={scope}
+          options={scopeOptions}
+          total={scopeAssets.length}
+          allLabel={t('filter.allScopes', 'All scopes')}
+          onChange={setScope}
+          testId="instructions-scope-filter"
         />
       )}
 
