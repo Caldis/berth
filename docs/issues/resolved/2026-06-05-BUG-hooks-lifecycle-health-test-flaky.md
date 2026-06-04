@@ -1,3 +1,8 @@
+# 解决 (RESOLVED 2026-06-05)
+- 由 GH-99 Agent 在 `61fe128 test(hooks): wait for health check summary` 修复: 将 `getByRole('button', {name:/1 hook check needs attention/})` 与 `getByTestId('hook-health-severity-list')` 改为 `await findByRole(...)` / `await findByTestId(...)`, 消除 panel 渲染与按钮渲染间的异步竞态 (与本 issue「解决方案」建议一致)。
+- 修复已落 origin/master, CI 在 tip `921ab39` (run 26965603497) 稳定 success。
+- 发现并提出修复方向于 GH-100 记忆/指令页迭代过程; 关联 friction `docs/friction/20260604-4.0-verify-shared-branch-ci-red-foreign-commit.md`。
+
 # 描述
 - `tests/renderer/hooks-lifecycle-view.test.tsx` 的 hook 健康面板用例存在非确定性 (flaky), 在**字节相同的代码**下 CI 时绿时红, 反复拖红共享分支 master。
 - 失败断言: 用例内 `await within(sidebar).findByTestId('hook-health-panel')` 之后**紧跟同步** `within(healthPanel).getByRole('button', { name: /1 hook check needs attention/ })` (约 `:735`)。若汇总按钮在 panel 出现后再异步渲染, 同步 `getByRole` 会偶发拿不到 → 抛 `getElementError`。
