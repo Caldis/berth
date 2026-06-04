@@ -342,7 +342,8 @@ describe('session pages', () => {
     fireEvent.pointerEnter(screen.getByTestId('page-guide-hover-region'))
     expect(screen.getByText('Local conversation history')).toBeInTheDocument()
     expect(await screen.findByText('Fix session metadata')).toBeInTheDocument()
-    expect(screen.getAllByText('D:\\Code\\berth').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('D:/Code').length).toBeGreaterThan(0)
+    expect(screen.queryByText('D:\\Code\\berth')).not.toBeInTheDocument()
     expect(screen.queryByText('D--Code-berth')).not.toBeInTheDocument()
     expect(screen.queryByText(/Invalid Date/i)).not.toBeInTheDocument()
     expect(screen.getByText('5m')).toBeInTheDocument()
@@ -380,12 +381,21 @@ describe('session pages', () => {
   })
 
   it('virtualizes large session lists and exposes project jump navigation', async () => {
-    const sessions = Array.from({ length: 130 }, (_, index) => ({
+    const sessions = Array.from({ length: 131 }, (_, index) => ({
       ...summary,
       id: `session-${index}`,
       title: `Session ${index}`,
-      project: index < 65 ? 'berth' : 'archive',
-      projectPath: index < 65 ? 'D:\\Code\\berth' : 'D:\\Code\\archive',
+      project: index === 0 ? 'root' : index <= 65 ? 'berth' : 'archive',
+      projectPath: index === 0
+        ? '/'
+        : index <= 65
+          ? '/Users/caldis/Desktop/Code/berth'
+          : '/Users/caldis/Desktop/Archive/archive',
+      startedAt: index === 0
+        ? '2026-05-01T10:00:00.000Z'
+        : index <= 65
+          ? '2026-06-04T10:00:00.000Z'
+          : '2026-06-03T10:00:00.000Z',
       transcriptPath: `C:\\Users\\test\\.claude\\projects\\D--Code-berth\\session-${index}.jsonl`
     }))
     window.api.sessions.list = vi.fn(async () => ({ sessions, totalCount: sessions.length }))
@@ -398,11 +408,13 @@ describe('session pages', () => {
     expect(screen.getAllByTestId(/session-row-/)).toHaveLength(sessionsVirtuosoMock.visibleLimit)
     expect(screen.queryByText('Showing 80 of 130 sessions')).not.toBeInTheDocument()
     expect(screen.getByRole('navigation', { name: 'Session groups' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Root /, 1 items' })).toHaveAttribute('title', '/')
+    expect(screen.getByRole('button', { name: 'Desktop/Code, 65 items' })).toHaveAttribute('title', '/Users/caldis/Desktop/Code')
 
-    fireEvent.click(screen.getByRole('button', { name: 'D:\\Code\\archive, 65 items' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Desktop/Archive, 65 items' }))
 
     expect(sessionsVirtuosoMock.scrollToIndex).toHaveBeenCalledWith({
-      groupIndex: 1,
+      groupIndex: 2,
       align: 'start'
     })
   })

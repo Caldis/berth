@@ -47,6 +47,7 @@ export function CategoryJumpNav({
                 type="button"
                 aria-label={formatItemLabel(item)}
                 aria-current={active ? 'page' : undefined}
+                title={item.title}
                 onClick={() => onSelect(item.id)}
                 className={cn(
                   'flex h-8 w-full min-w-28 items-center justify-between gap-2 rounded-md border px-2.5 text-left text-xs font-medium outline-none transition-colors',

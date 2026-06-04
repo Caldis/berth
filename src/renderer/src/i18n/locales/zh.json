@@ -264,6 +264,9 @@
     "emptyDetailDescription": "当前本地扫描结果里已经没有这个会话。",
     "groupBy": "分组",
     "groupNavigation": "会话分组",
+    "location": {
+      "root": "根目录 /"
+    },
     "project": "项目",
     "date": "日期",
     "noSessions": "未找到会话。",

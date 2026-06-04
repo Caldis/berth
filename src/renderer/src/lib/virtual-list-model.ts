@@ -13,6 +13,7 @@ export interface JumpNavItem {
   label: string
   count: number
   targetIndex: number
+  title?: string
   tone?: 'default' | 'muted' | 'warning'
 }
 
@@ -60,7 +61,8 @@ export function buildJumpNavItems<TItem>(
       id: group.id,
       label: group.label,
       count: group.items.length,
-      targetIndex
+      targetIndex,
+      title: typeof group.meta?.pathTitle === 'string' ? group.meta.pathTitle : undefined
     }
 
     targetIndex += group.items.length

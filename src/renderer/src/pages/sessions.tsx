@@ -12,8 +12,7 @@ import { cn } from '@/lib/utils'
 import {
   formatOptionalCurrency,
   formatOptionalDuration,
-  formatOptionalRelativeTime,
-  truncatePath
+  formatOptionalRelativeTime
 } from '@/lib/utils'
 import { useSessions } from '@/hooks/use-ipc'
 import { EmptyState } from '@/components/shared/empty-state'
@@ -26,6 +25,7 @@ import { usePageChrome, type PageChromeConfig } from '@/components/layout/page-c
 import { VirtualGroupedList, type VirtualGroupedListHandle } from '@/components/shared/virtual-grouped-list'
 import { CategoryJumpNav } from '@/components/shared/category-jump-nav'
 import { buildJumpNavItems, type VirtualListGroup } from '@/lib/virtual-list-model'
+import { buildSessionProjectGroups } from '@/lib/session-location-groups'
 import type { SessionSummary } from '@shared/types/asset'
 
 type GroupBy = 'project' | 'date'
@@ -63,8 +63,13 @@ export function Sessions(): React.ReactElement {
     )
   }, [sessions, deferredFilter])
   const sessionGroups = useMemo(
-    () => buildSessionGroups(filtered, groupBy, t('common.unknown')),
-    [filtered, groupBy, t]
+    () => buildSessionGroups(
+      filtered,
+      groupBy,
+      { root: t('sessions.location.root'), unknown: t('common.unknown') },
+      projectPath
+    ),
+    [filtered, groupBy, projectPath, t]
   )
   const jumpItems = useMemo(() => buildJumpNavItems(sessionGroups), [sessionGroups])
 
@@ -195,13 +200,19 @@ export function Sessions(): React.ReactElement {
             groups={sessionGroups}
             getItemKey={(session) => session.id}
             onActiveGroupChange={setActiveGroupId}
-            renderGroup={(group) => (
-              <div className="flex items-center gap-2 rounded-t-lg border border-border bg-card px-4 py-2.5">
-                <FolderOpen className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                <span className="min-w-0 truncate text-sm font-medium text-card-foreground">{group.label}</span>
-                <span className="ml-auto text-xs text-muted-foreground">{group.count}</span>
-              </div>
-            )}
+            renderGroup={(group) => {
+              const groupTitle = typeof group.meta?.pathTitle === 'string' ? group.meta.pathTitle : group.label
+              return (
+                <div
+                  title={groupTitle}
+                  className="flex items-center gap-2 rounded-t-lg border border-border bg-card px-4 py-2.5"
+                >
+                  <FolderOpen className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                  <span className="min-w-0 truncate text-sm font-medium text-card-foreground">{group.label}</span>
+                  <span className="ml-auto text-xs text-muted-foreground">{group.count}</span>
+                </div>
+              )
+            }}
             renderItem={(session) => (
               <SessionRow
                 session={session}
@@ -225,17 +236,21 @@ export function Sessions(): React.ReactElement {
 function buildSessionGroups(
   sessions: readonly SessionSummary[],
   groupBy: GroupBy,
-  unknownLabel: string
+  labels: { root: string; unknown: string },
+  currentProjectPath?: string | null
 ): VirtualListGroup<SessionSummary>[] {
+  if (groupBy === 'project') {
+    return buildSessionProjectGroups(sessions, {
+      labels,
+      currentProjectPath
+    })
+  }
+
   const groups = new Map<string, VirtualListGroup<SessionSummary>>()
 
   for (const session of sessions) {
-    const rawGroup =
-      groupBy === 'project'
-        ? session.projectPath || session.project || unknownLabel
-        : getDateGroupKey(session.startedAt, unknownLabel)
+    const rawGroup = getDateGroupKey(session.startedAt, labels.unknown)
     const groupId = `${groupBy}:${rawGroup}`
-    const label = groupBy === 'project' ? truncatePath(rawGroup, 72) : rawGroup
     const existing = groups.get(groupId)
 
     if (existing) {
@@ -244,7 +259,7 @@ function buildSessionGroups(
     } else {
       groups.set(groupId, {
         id: groupId,
-        label,
+        label: rawGroup,
         count: 1,
         items: [session]
       })
