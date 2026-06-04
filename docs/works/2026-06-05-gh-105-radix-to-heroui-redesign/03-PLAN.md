@@ -57,9 +57,9 @@
   - `pnpm remove` 10 个 @radix-ui + cmdk; src 内 `@radix-ui`/`cmdk` 引用归零; package.json count=0; build 通过。
 
 ## P5 — 重复收敛 (顺序, 触及多个共享/页面文件)
-- [ ] **P5.1 3 处 focus-trap modal/drawer → ui/modal+drawer** (settings-dialog, search-dialog, file-viewer-drawer)
-  - tests: 各自现有测试 + 焦点陷阱/Escape/backdrop; search-dialog 保留键盘 nav 与防抖搜索。
-  - verify: 三处行为一致; 截图。
+- [~] **P5.1 focus-trap modal/drawer → ui/modal+drawer**
+  - [x] settings-dialog → HeroUI Modal: 删 ~50 行手搓 focus-trap/Escape/return-focus; hideCloseButton + 本地化 close; `returnFocusRef` 保留接口(HeroUI 自动归还焦点)。tests: settings-dialog 改写为结果断言(open/close/Escape/焦点归还) 4 例通过。
+  - [ ] search-dialog / file-viewer-drawer → 记 issue 跟进 (复杂键盘 nav / drag-resize, 现状可用, 收敛期不冒回归风险)。
 - [ ] **P5.2 4 处 chevron 折叠 → ui/accordion** (local-sources, agent-plugins, session-detail CollapsibleSection, memory NoteCard)
   - tests: 展开/折叠/aria; 虚拟化页 (memory) 高度 re-measure 不抖。
   - verify: 动画一致; 截图。

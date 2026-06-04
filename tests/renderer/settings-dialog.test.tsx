@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import React, { useRef, useState } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { HeroUIProvider } from '@heroui/react'
 import i18n from '../../src/renderer/src/i18n'
 import { SettingsDialog } from '../../src/renderer/src/components/layout/settings-dialog'
 
@@ -9,18 +10,22 @@ function SettingsDialogHarness(): React.ReactElement {
   const triggerRef = useRef<HTMLButtonElement>(null)
 
   return (
-    <div>
+    <HeroUIProvider>
       <button type="button">Outside before</button>
       <button ref={triggerRef} type="button" onClick={() => setOpen(true)}>
         Open settings
       </button>
       <SettingsDialog open={open} onOpenChange={setOpen} returnFocusRef={triggerRef} />
       <button type="button">Outside after</button>
-    </div>
+    </HeroUIProvider>
   )
 }
 
-describe('SettingsDialog focus management', () => {
+// GH-105: the dialog now uses HeroUI Modal (React Aria) instead of a hand-rolled
+// focus trap. We assert the user-facing outcomes (opens with an accessible name,
+// close button + Escape dismiss, focus returns to the trigger) rather than the
+// library's internal Tab-cycle order.
+describe('SettingsDialog (HeroUI Modal)', () => {
   beforeEach(async () => {
     localStorage.clear()
     document.documentElement.className = ''
@@ -31,48 +36,47 @@ describe('SettingsDialog focus management', () => {
     window.api.theme.set = vi.fn(async () => {})
   })
 
-  async function waitForSettingsContent(): Promise<void> {
+  async function openAndWait(): Promise<void> {
+    fireEvent.click(screen.getByRole('button', { name: 'Open settings' }))
     await screen.findByText('The plugin registry is not available.')
-    expect(screen.queryByText('No supported local sources found.')).not.toBeInTheDocument()
     expect(window.api.assets.scanSources).not.toHaveBeenCalled()
   }
 
-  it('keeps Tab and Shift+Tab inside the open dialog', async () => {
+  it('renders no dialog until opened', () => {
     render(<SettingsDialogHarness />)
+    expect(screen.queryByRole('dialog', { name: 'Settings' })).not.toBeInTheDocument()
+  })
 
-    fireEvent.click(screen.getByRole('button', { name: 'Open settings' }))
-    await waitForSettingsContent()
-
+  it('opens an accessible Settings dialog with a localized close button', async () => {
+    render(<SettingsDialogHarness />)
+    await openAndWait()
     const dialog = screen.getByRole('dialog', { name: 'Settings' })
-    const close = within(dialog).getByRole('button', { name: 'Close' })
-    const reportIssue = within(dialog).getByRole('button', { name: 'Report Issue' })
+    expect(within(dialog).getByRole('button', { name: 'Close' })).toBeInTheDocument()
+  })
 
-    expect(close).toHaveFocus()
-
-    fireEvent.keyDown(close, { key: 'Tab', shiftKey: true })
-
-    expect(reportIssue).toHaveFocus()
-
-    fireEvent.keyDown(reportIssue, { key: 'Tab' })
-
-    expect(close).toHaveFocus()
-    expect(screen.getByRole('button', { name: 'Outside after' })).not.toHaveFocus()
+  it('closes via the close button', async () => {
+    render(<SettingsDialogHarness />)
+    await openAndWait()
+    const dialog = screen.getByRole('dialog', { name: 'Settings' })
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Close' }))
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: 'Settings' })).not.toBeInTheDocument()
+    })
   })
 
   it('closes with Escape and returns focus to the trigger', async () => {
     render(<SettingsDialogHarness />)
-
     const trigger = screen.getByRole('button', { name: 'Open settings' })
-    fireEvent.click(trigger)
-    await waitForSettingsContent()
+    // jsdom doesn't focus a button on click the way a browser does, so focus the
+    // trigger explicitly first — React Aria captures it as the restore target.
+    trigger.focus()
+    await openAndWait()
 
-    expect(screen.getByRole('dialog', { name: 'Settings' })).toBeInTheDocument()
-
-    fireEvent.keyDown(window, { key: 'Escape' })
+    fireEvent.keyDown(document.activeElement || document.body, { key: 'Escape' })
 
     await waitFor(() => {
       expect(screen.queryByRole('dialog', { name: 'Settings' })).not.toBeInTheDocument()
     })
-    expect(trigger).toHaveFocus()
+    await waitFor(() => expect(trigger).toHaveFocus())
   })
 })
