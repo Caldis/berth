@@ -1,26 +1,21 @@
 import { useTranslation } from 'react-i18next'
-import { cn } from '@/lib/utils'
+import { Chip } from '@/components/ui'
 import type { AssetScope } from '@shared/types/asset'
-
-const scopeColor = 'bg-zinc-500/10 text-zinc-700 dark:text-zinc-300'
 
 interface ScopeBadgeProps {
   scope: AssetScope
   className?: string
 }
 
+// Neutral scope pill, now built on the shared semantic Chip (GH-105). Scopes
+// stay deliberately neutral (no category hues) — tone="neutral" maps to the
+// theme's default color so it follows dark/light without hardcoded values.
 export function ScopeBadge({ scope, className }: ScopeBadgeProps): React.ReactElement {
   const { t } = useTranslation()
 
   return (
-    <span
-      className={cn(
-        'inline-flex items-center rounded-md px-1.5 py-0.5 text-[10px] font-medium',
-        scopeColor,
-        className
-      )}
-    >
+    <Chip tone="neutral" variant="flat" size="sm" className={className}>
       {t(`common.scope.${scope}`)}
-    </span>
+    </Chip>
   )
 }

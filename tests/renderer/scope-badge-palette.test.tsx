@@ -3,6 +3,7 @@ import * as path from 'path'
 import { render, screen } from '@testing-library/react'
 import React from 'react'
 import { beforeEach, describe, expect, it } from 'vitest'
+import { HeroUIProvider } from '@heroui/react'
 import i18n from '../../src/renderer/src/i18n'
 import { ScopeBadge } from '../../src/renderer/src/components/shared/scope-badge'
 
@@ -22,21 +23,21 @@ describe('ScopeBadge palette', () => {
     await i18n.changeLanguage('en')
   })
 
-  it('renders all scopes with neutral category colors', () => {
+  it('renders all scopes neutrally (no category colors) on the shared Chip', () => {
     render(
-      <>
+      <HeroUIProvider>
         {Object.keys(scopeLabels).map((scope) => (
           <ScopeBadge key={scope} scope={scope as keyof typeof scopeLabels} />
         ))}
-      </>
+      </HeroUIProvider>
     )
 
     for (const label of Object.values(scopeLabels)) {
       const badge = screen.getByText(label)
-      expect(badge.className).toContain('bg-zinc-500/10')
-      expect(badge.className).toContain('text-zinc-700')
-      expect(badge.className).toContain('dark:text-zinc-300')
+      // GH-105: scope pills are built on the shared neutral Chip — no category
+      // hues, and no per-scope semantic color (success/danger/etc.) leaks in.
       expect(badge.className).not.toMatch(categoryColorPattern)
+      expect(badge.className).not.toMatch(/(?:bg|text)-(?:success|danger|warning|primary)/)
     }
   })
 

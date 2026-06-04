@@ -63,9 +63,9 @@
 - [ ] **P5.2 4 处 chevron 折叠 → ui/accordion** (local-sources, agent-plugins, session-detail CollapsibleSection, memory NoteCard)
   - tests: 展开/折叠/aria; 虚拟化页 (memory) 高度 re-measure 不抖。
   - verify: 动画一致; 截图。
-- [ ] **P5.3 badge/pill → ui/chip** (scope-badge, cost-source-badge, 本地 Badge, 各路 pill)
-  - tests: 语义色映射; 调用点不回归。
-  - verify: chip 词汇统一; 截图。
+- [~] **P5.3 badge/pill → ui/chip** (进行中)
+  - [x] scope-badge → Chip(tone=neutral); cost-source-badge → Chip(actual=success/estimated=primary/mixed=warning/unknown=neutral), 去掉硬编码 emerald/sky/amber。tests: scope-badge-palette(中性/无类别色) + cost-source-badge(label/title/aria) 通过。
+  - [ ] 本地 Badge / 各路内联 pill (agent-plugins、project-scope-switcher、session-detail tags 等) → 随 P6 各页迁移。
 
 ## P6 — 逐页消费 + 视觉重构 (主 session 顺序, 每页一提交)
 > 每页: 改用 ui/ 组件 + 应用 dashboard 语言 (分层/radius/elevation/chip/icon/排版/5 态); 保留 testid/虚拟化/chrome/i18n。
