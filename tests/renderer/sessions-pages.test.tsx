@@ -15,16 +15,30 @@ import type { SessionActivityMetrics } from '../../src/shared/types/ipc'
 import { normalizeTokenUsage } from '../../src/shared/token-usage'
 import { useAppStore } from '../../src/renderer/src/stores/app'
 
+type MockGroupedVirtuosoHandle = {
+  scrollToIndex: (location: unknown) => void
+}
+
+type MockGroupedVirtuosoProps = {
+  groupCounts: number[]
+  data: unknown[]
+  context?: unknown
+  computeItemKey: (index: number, item: unknown, context: unknown) => React.Key
+  groupContent: (groupIndex: number, context: unknown) => React.ReactNode
+  itemContent: (index: number, groupIndex: number, item: unknown, context: unknown) => React.ReactNode
+  'data-testid'?: string
+}
+
 const sessionsVirtuosoMock = vi.hoisted(() => ({
   visibleLimit: 30,
-  props: undefined as any,
+  props: undefined as MockGroupedVirtuosoProps | undefined,
   scrollToIndex: vi.fn()
 }))
 
 vi.mock('react-virtuoso', async () => {
   const ReactModule = await import('react')
 
-  const GroupedVirtuoso = ReactModule.forwardRef(function MockGroupedVirtuoso(props: any, ref) {
+  const GroupedVirtuoso = ReactModule.forwardRef<MockGroupedVirtuosoHandle, MockGroupedVirtuosoProps>(function MockGroupedVirtuoso(props, ref) {
     sessionsVirtuosoMock.props = props
     ReactModule.useImperativeHandle(ref, () => ({
       scrollToIndex: sessionsVirtuosoMock.scrollToIndex
