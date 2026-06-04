@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import React from 'react'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { MemoryRouter } from 'react-router-dom'
@@ -12,7 +12,7 @@ import {
   useAppStore
 } from '../../src/renderer/src/stores/app'
 
-describe('Sidebar agent view selector', () => {
+describe('Sidebar', () => {
   beforeEach(async () => {
     await i18n.changeLanguage('en')
     useAppStore.setState({
@@ -25,32 +25,15 @@ describe('Sidebar agent view selector', () => {
     })
   })
 
-  it('updates the global agent view from the footer switcher', () => {
+  it('does not render the footer agent view switcher', () => {
     render(
       <MemoryRouter>
         <Sidebar />
       </MemoryRouter>
     )
 
-    fireEvent.click(within(screen.getByRole('group', { name: 'Agent view' })).getByRole('button', { name: 'Codex' }))
-
-    expect(useAppStore.getState().agentView).toBe('codex')
-  })
-
-  it('localizes the all-agents switcher in Chinese', async () => {
-    await i18n.changeLanguage('zh')
-
-    render(
-      <MemoryRouter>
-        <Sidebar />
-      </MemoryRouter>
-    )
-
-    const switcher = screen.getByRole('group', { name: 'Agent 视角' })
-    expect(within(switcher).getByRole('button', { name: '全部' })).toHaveAttribute('aria-pressed', 'true')
-    expect(within(switcher).queryByRole('button', { name: 'All' })).not.toBeInTheDocument()
-    expect(within(switcher).getByRole('button', { name: 'Claude' })).toBeInTheDocument()
-    expect(within(switcher).getByRole('button', { name: 'Codex' })).toBeInTheDocument()
+    expect(screen.queryByRole('group', { name: 'Agent view' })).not.toBeInTheDocument()
+    expect(useAppStore.getState().agentView).toBe('all')
   })
 
   it('localizes the sidebar collapse toggle label in Chinese', async () => {

@@ -2,7 +2,6 @@ import { useCallback, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { ChevronLeft, ChevronRight, Search, Settings as SettingsIcon } from 'lucide-react'
-import type { AgentView } from '@shared/types/asset'
 import { cn } from '@/lib/utils'
 import { SIDEBAR_COLLAPSED_WIDTH, useAppStore } from '@/stores/app'
 import { navItemMatchesLocation, navSections } from './nav-config'
@@ -171,7 +170,6 @@ export function Sidebar(): React.ReactElement {
 
         <div className="shrink-0 border-t border-sidebar-border p-3">
           <div className={cn('flex gap-1', collapsed ? 'flex-col items-center' : 'flex-col')}>
-            <AgentViewSwitcher collapsed={collapsed} />
             <ProjectScopeSwitcher collapsed={collapsed} />
             <div className={cn('flex gap-1', collapsed ? 'flex-col items-center' : 'items-center')}>
               <button
@@ -210,43 +208,5 @@ export function Sidebar(): React.ReactElement {
         returnFocusRef={settingsButtonRef}
       />
     </>
-  )
-}
-
-function AgentViewSwitcher({ collapsed }: { collapsed: boolean }): React.ReactElement | null {
-  const { t } = useTranslation()
-  const agentView = useAppStore((s) => s.agentView)
-  const setAgentView = useAppStore((s) => s.setAgentView)
-  const options: AgentView[] = ['all', 'claude', 'codex']
-
-  if (collapsed) return null
-
-  return (
-    <div className="titlebar-no-drag rounded-md border border-sidebar-border bg-sidebar p-1.5">
-      <div className="mb-1 px-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-        {t('agentView.label')}
-      </div>
-      <div className="grid grid-cols-3 gap-1" role="group" aria-label={t('agentView.label')}>
-        {options.map((option) => {
-          const active = agentView === option
-          return (
-            <button
-              key={option}
-              type="button"
-              aria-pressed={active}
-              onClick={() => setAgentView(option)}
-              className={cn(
-                'h-7 rounded text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
-                active
-                  ? 'bg-accent text-accent-foreground'
-                  : 'text-muted-foreground hover:bg-sidebar-accent/10 hover:text-sidebar-foreground'
-              )}
-            >
-              {t(`agentView.${option}`)}
-            </button>
-          )
-        })}
-      </div>
-    </div>
   )
 }
