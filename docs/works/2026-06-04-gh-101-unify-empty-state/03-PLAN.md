@@ -18,7 +18,8 @@
   - tests: 复用并确保现有 `tests/renderer/sessions-pages.test.tsx` 等不破; 视高度撑满为 manual。
   - verify: 现有 renderer 测试通过; 截图: sessions/session-detail/memory 空态填满内容区且居中。
 
-- [ ] **T3: instructions 接 flex 高度链** (S3 / 验收 2,3)
+- [x] **T3: instructions 接 flex 高度链** (S3 / 验收 2,3)
+  - 证据: typecheck:web 通过; instructions-guidance 5 测试中 4 通过 (1 个 Memories 守卫失败为他人 in-flight 既有失败, stash 比对确认非本改动)
   - 文件: `src/renderer/src/pages/instructions.tsx`
   - 改: 根 `space-y-4` → `cn('flex flex-col gap-4', PAGE_EMPTY_FILL)`; renderContent 两处空态 (465/480) 加 `fullHeight`。
   - tests: 确保现有 `tests/renderer/instructions-guidance.test.tsx` 不破。

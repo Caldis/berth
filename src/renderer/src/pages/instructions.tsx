@@ -19,7 +19,7 @@ import { filterAssetsByAgentView } from '@/lib/agent-view'
 import { useAppStore } from '@/stores/app'
 import { ScopeSelect, type ScopeFilter } from '@/components/shared/filter-bar'
 import { DetailRow } from '@/components/shared/detail-row'
-import { EmptyState } from '@/components/shared/empty-state'
+import { EmptyState, PAGE_EMPTY_FILL } from '@/components/shared/empty-state'
 import { ScopeBadge } from '@/components/shared/scope-badge'
 import { ViewRawButton } from '@/components/shared/view-raw-button'
 import {
@@ -462,7 +462,7 @@ export function Instructions({ activeSection }: { activeSection?: string } = {})
 
     if (filteredAssets.length === 0) {
       const Icon = tabIconMap[activeTab] ?? FileText
-      return <EmptyState icon={Icon} message={t('common.empty')} />
+      return <EmptyState fullHeight icon={Icon} message={t('common.empty')} />
     }
 
     switch (activeTab) {
@@ -477,12 +477,12 @@ export function Instructions({ activeSection }: { activeSection?: string } = {})
       case 'outputModes':
         return renderVirtualAssetList((asset) => <GenericAssetCard asset={asset} icon={Palette} />)
       default:
-        return <EmptyState icon={FileText} message={t('common.empty')} />
+        return <EmptyState fullHeight icon={FileText} message={t('common.empty')} />
     }
   }
 
   return (
-    <div className="space-y-4">
+    <div className={`flex flex-col gap-4 ${PAGE_EMPTY_FILL}`}>
       {activeTab !== 'memories' && (
         <InstructionPageChrome
           activeTab={activeTab}
