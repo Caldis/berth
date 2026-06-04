@@ -187,10 +187,12 @@ export function scanCapabilities(ctx: ScanContext): Asset[] {
     settingsSources.push([path.join(projectDir, '.claude', 'settings.json'), 'project'])
   }
   for (const [fp, scope] of settingsSources) {
-    if (fs.existsSync(fp)) {
-      const sidecarPath = scope === 'user'
-        ? path.join(ctx.claudeDir, '.berth', 'hooks-state.json')
-        : undefined
+    const settingsExists = fs.existsSync(fp)
+    const sidecarPath = scope === 'user'
+      ? path.join(ctx.claudeDir, '.berth', 'hooks-state.json')
+      : undefined
+    const sidecarExists = sidecarPath ? fs.existsSync(sidecarPath) : false
+    if (settingsExists || sidecarExists) {
       const hooks = safeScan(ctx, fp, 'hook', () =>
         parseHooks(fp, scope, {
           sidecarPath,
@@ -204,7 +206,9 @@ export function scanCapabilities(ctx: ScanContext): Asset[] {
         })
       )
       if (hooks) assets.push(...hooks)
+    }
 
+    if (settingsExists) {
       const perms = safeScan(ctx, fp, 'permission', () => parsePermissions(fp, scope))
       if (perms) assets.push(...perms)
 

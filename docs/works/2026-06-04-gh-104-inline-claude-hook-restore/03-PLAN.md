@@ -4,9 +4,9 @@
 每个实现项必须有测试证据或明确例外理由。
 实现中若发现 debt 初估不准, 更新 INDEX.md `debt.estimate`, 并追加 `debt.revisions[]`。
 
-- [ ] 任务 1: 补 Claude scanner 在 settings 缺失但 sidecar 存在时的 disabled Hook 行。
-  - tests: `pnpm vitest run tests/unit/claude-scanner.test.ts`
-  - verify: source-missing 不再依赖恢复中心; user sidecar 能生成 disabled Hook asset, permissions/env 不从缺失 settings 派生。
+- [x] 任务 1: 补 Claude scanner 在 settings 缺失但 sidecar 存在时的 disabled Hook 行。
+  - tests: `pnpm vitest run tests/unit/claude-scanner.test.ts` — 12 passed
+  - verify: 先新增失败测试证明 settings 缺失时 hooks 为空; 修复后 user sidecar 能生成 disabled Hook asset, permissions/env 仍不从缺失 settings 派生。
 
 - [ ] 任务 2: 删除恢复中心 UI 与 renderer 侧专用 API 使用。
   - tests: `pnpm vitest run tests/renderer/hooks-lifecycle-view.test.tsx`

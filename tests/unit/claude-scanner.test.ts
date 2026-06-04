@@ -209,6 +209,57 @@ describe('Claude Code scanner', () => {
     expect(hooks[0].meta.hookKey).toEqual(expect.stringMatching(/^claude-code:/))
   })
 
+  it('scans disabled Claude hook sidecar entries even when settings.json is missing', () => {
+    root = mkdtempSync(join(tmpdir(), 'berth-claude-missing-settings-sidecar-'))
+    const claudeDir = join(root, '.claude')
+    const settingsPath = join(claudeDir, 'settings.json')
+    const sidecarDir = join(claudeDir, '.berth')
+    const sidecarPath = join(sidecarDir, 'hooks-state.json')
+    const hook = { type: 'command', command: 'python hook.py' }
+    mkdirSync(sidecarDir, { recursive: true })
+    writeFileSync(
+      sidecarPath,
+      JSON.stringify({
+        version: 1,
+        disabled: {
+          disabledHook: {
+            agentId: 'claude-code',
+            sourcePath: settingsPath,
+            scope: 'user',
+            event: 'SessionStart',
+            mode: 'nested',
+            matcher: 'startup',
+            scenarioHash: buildHookScenarioHash('SessionStart', 'startup'),
+            containerTemplate: { matcher: 'startup' },
+            hook,
+            hookHash: buildHookHash(hook),
+            removedCount: 1,
+            disabledAt: '2026-06-01T00:00:00.000Z'
+          }
+        }
+      })
+    )
+    const errors: { path: string; type: string; message: string }[] = []
+
+    const assets = scanCapabilities({ claudeDir, errors })
+    const hooks = assets.filter((asset) => asset.type === 'hook')
+
+    expect(errors).toEqual([])
+    expect(hooks).toHaveLength(1)
+    expect(hooks[0].path).toBe(settingsPath)
+    expect(hooks[0].meta).toMatchObject({
+      eventType: 'SessionStart',
+      matcher: 'startup',
+      command: 'python hook.py',
+      enabled: false,
+      effectiveEnabled: false,
+      canToggleHook: true,
+      toggleStrategy: 'soft-remove',
+      stateSourcePath: sidecarPath,
+      disabledByBerth: true
+    })
+  })
+
   it('hides disabled Claude sidecar entries when the same hook is active again', () => {
     root = mkdtempSync(join(tmpdir(), 'berth-claude-hook-active-sidecar-'))
     const settingsPath = join(root, 'settings.json')
