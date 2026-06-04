@@ -488,6 +488,7 @@
       "commands": "Commands",
       "outputModes": "Output Modes"
     },
+    "groupNavigation": "Instruction groups",
     "scope": "Scope",
     "path": "Path",
     "trigger": "Trigger",

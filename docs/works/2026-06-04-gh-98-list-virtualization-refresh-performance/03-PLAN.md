@@ -29,10 +29,10 @@
   - tests: `pnpm test -- tests/renderer/memory-view.test.tsx` passed; `pnpm test -- tests/renderer/instructions-guidance.test.tsx` passed; `pnpm typecheck:web` passed。
   - verify: 80 notes renderer test 只挂载 20 个 note card, source jump nav 调用 `scrollToIndex({ groupIndex: 1, align: 'start' })`; source/importance/tag/search、note detail lazy load、focus target、missing、tags、links、path、loading/empty 状态保留。
 
-- [ ] 6. 改造 Instructions 中 skills/conventions 列表
+- [x] 6. 改造 Instructions 中 skills/conventions 列表
   - scope: `src/renderer/src/pages/instructions.tsx` 与共享 view model 复用。
-  - tests: 更新 `tests/renderer/instructions-guidance.test.tsx` 或新增 focused renderer test; 命令 `pnpm test -- tests/renderer/instructions-guidance.test.tsx`。
-  - verify: 至少 skills/conventions 使用 shared virtual list; 若同结构 tabs 同批迁移, tests 覆盖一个代表路径; 未迁移路径在 verify 回写说明。
+  - tests: `pnpm test -- tests/renderer/instructions-guidance.test.tsx` passed; `pnpm typecheck:web` passed。
+  - verify: skills/conventions/subagents/commands/outputModes 共用 `VirtualGroupedList`; 80 skills renderer test 只挂载 25 个 asset card, scope jump nav 调用 `scrollToIndex({ groupIndex: 1, align: 'start' })`。
 
 - [ ] 7. 全量门禁与真实 Electron 验证
   - scope: 代码、任务态文档、可选 e2e。

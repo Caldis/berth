@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   FileText,
@@ -34,6 +34,9 @@ import { filterAssetsByAppScope } from '@shared/scope'
 import { MemoryView } from '@/components/memory/memory-view'
 import { useMemory } from '@/hooks/use-memory'
 import { usePageChrome, type PageChromeConfig } from '@/components/layout/page-chrome'
+import { VirtualGroupedList, type VirtualGroupedListHandle } from '@/components/shared/virtual-grouped-list'
+import { CategoryJumpNav } from '@/components/shared/category-jump-nav'
+import { buildJumpNavItems, type VirtualListGroup } from '@/lib/virtual-list-model'
 
 const tabTypeMap: Record<string, string[]> = {
   conventions: ['claude-md', 'agents-md'],
@@ -56,7 +59,7 @@ function MemoryCard({ asset }: { asset: Asset }): React.ReactElement {
   }, [asset.path])
 
   return (
-    <div className="rounded-lg border border-border bg-card transition-colors hover:bg-accent/5">
+    <div data-testid={`instruction-asset-card-${asset.id}`} className="rounded-lg border border-border bg-card transition-colors hover:bg-accent/5">
       <button
         onClick={() => setExpanded(!expanded)}
         className="flex w-full items-center gap-3 px-4 py-3 text-left"
@@ -128,7 +131,7 @@ function SkillCard({ asset }: { asset: Asset }): React.ReactElement {
   }, [asset.path])
 
   return (
-    <div className="rounded-lg border border-border bg-card transition-colors hover:bg-accent/5">
+    <div data-testid={`instruction-asset-card-${asset.id}`} className="rounded-lg border border-border bg-card transition-colors hover:bg-accent/5">
       <button
         onClick={() => setExpanded(!expanded)}
         className="flex w-full items-center gap-3 px-4 py-3 text-left"
@@ -213,7 +216,7 @@ function GenericAssetCard({ asset, icon: Icon }: { asset: Asset; icon: React.Com
   }, [asset.path])
 
   return (
-    <div className="rounded-lg border border-border bg-card transition-colors hover:bg-accent/5">
+    <div data-testid={`instruction-asset-card-${asset.id}`} className="rounded-lg border border-border bg-card transition-colors hover:bg-accent/5">
       <button
         onClick={() => setExpanded(!expanded)}
         className="flex w-full items-center gap-3 px-4 py-3 text-left"
@@ -281,6 +284,32 @@ function normalizeInstructionSection(value: string | undefined): string {
   return value && Object.prototype.hasOwnProperty.call(tabIconMap, value) ? value : 'skills'
 }
 
+function buildInstructionGroups(
+  assets: readonly Asset[],
+  t: ReturnType<typeof useTranslation>['t']
+): VirtualListGroup<Asset>[] {
+  const groups = new Map<string, VirtualListGroup<Asset>>()
+
+  for (const asset of assets) {
+    const groupId = `scope:${asset.scope}`
+    const existing = groups.get(groupId)
+    if (existing) {
+      existing.items = [...existing.items, asset]
+      existing.count = existing.items.length
+    } else {
+      groups.set(groupId, {
+        id: groupId,
+        label: t(`common.scope.${asset.scope}`),
+        count: 1,
+        items: [asset],
+        meta: { scope: asset.scope }
+      })
+    }
+  }
+
+  return [...groups.values()]
+}
+
 function InstructionPageChrome({
   activeTab,
   agentView,
@@ -338,6 +367,9 @@ export function Instructions({ activeSection }: { activeSection?: string } = {})
   const activeTab = normalizeInstructionSection(activeSection)
   const [search, setSearch] = useState('')
   const [scope, setScope] = useState<ScopeFilter>('all')
+  const [activeGroupId, setActiveGroupId] = useState<string | undefined>(undefined)
+  const deferredSearch = useDeferredValue(search)
+  const listRef = useRef<VirtualGroupedListHandle | null>(null)
   const visibleAssets = useMemo(
     () => filterAssetsByAppScope(filterAssetsByAgentView(assets, agentView), scopeSelection),
     [assets, agentView, scopeSelection]
@@ -349,15 +381,29 @@ export function Instructions({ activeSection }: { activeSection?: string } = {})
     return visibleAssets.filter((a) => {
       if (!types.includes(a.type)) return false
       if (scope !== 'all' && a.scope !== scope) return false
-      if (search) {
-        const q = search.toLowerCase()
+      if (deferredSearch) {
+        const q = deferredSearch.toLowerCase()
         const name = a.name.toLowerCase()
         const desc = ((a.meta.description as string) ?? '').toLowerCase()
         if (!name.includes(q) && !desc.includes(q)) return false
       }
       return true
     })
-  }, [visibleAssets, activeTab, search, scope])
+  }, [visibleAssets, activeTab, deferredSearch, scope])
+  const assetGroups = useMemo(() => buildInstructionGroups(filteredAssets, t), [filteredAssets, t])
+  const jumpItems = useMemo(() => buildJumpNavItems(assetGroups), [assetGroups])
+
+  useEffect(() => {
+    setActiveGroupId((current) => {
+      if (current && assetGroups.some((group) => group.id === current)) return current
+      return assetGroups[0]?.id
+    })
+  }, [assetGroups])
+
+  const handleJumpSelect = useCallback((groupId: string) => {
+    setActiveGroupId(groupId)
+    listRef.current?.scrollToGroup(groupId)
+  }, [])
   const activeGuide = instructionGuideMap[activeTab as InstructionGuideId]
   const activeEvidence = useMemo<FeatureGuideEvidence[]>(() => {
     if (activeTab !== 'memories') return buildFeatureGuideEvidence(filteredAssets)
@@ -369,6 +415,45 @@ export function Instructions({ activeSection }: { activeSection?: string } = {})
       { labelKey: 'memory.evidence.availableSources', value: availableSources }
     ]
   }, [activeTab, filteredAssets, memoryResult.notes.length, memoryResult.sources])
+
+  const renderVirtualAssetList = (
+    renderAsset: (asset: Asset) => React.ReactNode
+  ): React.ReactElement => (
+    <div className="flex min-h-[520px] gap-4 max-lg:flex-col">
+      <CategoryJumpNav
+        items={jumpItems}
+        activeId={activeGroupId}
+        onSelect={handleJumpSelect}
+        label={t('instructions.groupNavigation')}
+        testId="instructions-category-jump-nav"
+      />
+      <VirtualGroupedList<Asset>
+        ref={listRef}
+        groups={assetGroups}
+        getItemKey={(asset) => asset.id}
+        onActiveGroupChange={(groupId) => setActiveGroupId(groupId)}
+        renderGroup={(group) => {
+          const scopeValue = typeof group.meta?.scope === 'string' ? group.meta.scope as Asset['scope'] : 'user'
+          return (
+            <div className="flex items-center gap-2 px-1 py-2">
+              <ScopeBadge scope={scopeValue} className="rounded-full px-2 font-semibold" />
+              <span className="min-w-0 truncate text-sm font-medium text-foreground">{group.label}</span>
+              <span className="ml-auto text-xs text-muted-foreground">{group.count}</span>
+            </div>
+          )
+        }}
+        renderItem={(asset) => (
+          <div className="pb-2">
+            {renderAsset(asset)}
+          </div>
+        )}
+        className="min-w-0 flex-1"
+        listClassName="min-h-[520px]"
+        defaultItemHeight={86}
+        testId="instructions-virtual-list"
+      />
+    </div>
+  )
 
   const renderContent = (): React.ReactElement => {
     if (activeTab === 'memories') {
@@ -382,35 +467,15 @@ export function Instructions({ activeSection }: { activeSection?: string } = {})
 
     switch (activeTab) {
       case 'conventions':
-        return (
-          <div className="space-y-2">
-            {filteredAssets.map((a) => <MemoryCard key={a.id} asset={a} />)}
-          </div>
-        )
+        return renderVirtualAssetList((asset) => <MemoryCard asset={asset} />)
       case 'skills':
-        return (
-          <div className="space-y-2">
-            {filteredAssets.map((a) => <SkillCard key={a.id} asset={a} />)}
-          </div>
-        )
+        return renderVirtualAssetList((asset) => <SkillCard asset={asset} />)
       case 'subagents':
-        return (
-          <div className="space-y-2">
-            {filteredAssets.map((a) => <GenericAssetCard key={a.id} asset={a} icon={Bot} />)}
-          </div>
-        )
+        return renderVirtualAssetList((asset) => <GenericAssetCard asset={asset} icon={Bot} />)
       case 'commands':
-        return (
-          <div className="space-y-2">
-            {filteredAssets.map((a) => <GenericAssetCard key={a.id} asset={a} icon={Terminal} />)}
-          </div>
-        )
+        return renderVirtualAssetList((asset) => <GenericAssetCard asset={asset} icon={Terminal} />)
       case 'outputModes':
-        return (
-          <div className="space-y-2">
-            {filteredAssets.map((a) => <GenericAssetCard key={a.id} asset={a} icon={Palette} />)}
-          </div>
-        )
+        return renderVirtualAssetList((asset) => <GenericAssetCard asset={asset} icon={Palette} />)
       default:
         return <EmptyState icon={FileText} message={t('common.empty')} />
     }

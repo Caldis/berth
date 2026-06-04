@@ -483,6 +483,7 @@
       "commands": "命令",
       "outputModes": "输出模式"
     },
+    "groupNavigation": "指令分组",
     "scope": "作用域",
     "path": "路径",
     "trigger": "触发条件",
