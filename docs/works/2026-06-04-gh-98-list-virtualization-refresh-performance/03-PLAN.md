@@ -44,5 +44,10 @@
   - tests: `pnpm test -- tests/renderer/session-location-groups.test.ts tests/renderer/category-jump-nav.test.tsx tests/renderer/sessions-pages.test.tsx` passed (32 tests); `pnpm typecheck:web` passed。
   - verify: `/` 类目固定在顶部; 同一父目录下的多个项目合并为一个类目; 左侧主标签不再显示大段原始路径; 搜索后的分组与条目 key 稳定; 跳转导航保留第三方 Radix Navigation Menu 实现; 完整路径通过 group/nav `title` 保留。
 
+- [x] 9. 分组优化后的全量门禁
+  - scope: 当前 GH-98 代码与任务态文档。
+  - tests: `pnpm lint` passed; `pnpm typecheck` passed; `pnpm test` passed (90 files / 650 tests); `pnpm harness:check --work docs/works/2026-06-04-gh-98-list-virtualization-refresh-performance` passed。
+  - verify: 工作区在提交后保持 clean; 全量 vitest 仍有既有 React act warning 输出, 但测试结果通过。
+
 ## verify 回写
 verify 不通过项作为新任务追加于此, phase 退回 implement。
