@@ -31,7 +31,7 @@ export function CategoryJumpNav({
       orientation="vertical"
       data-testid={testId}
       className={cn(
-        'overflow-x-auto pb-2 lg:sticky lg:top-[var(--berth-page-top-offset)] lg:max-h-[calc(100vh-var(--berth-page-top-offset)-24px)] lg:w-44 lg:shrink-0 lg:overflow-x-hidden lg:overflow-y-auto lg:pb-0',
+        'overflow-x-auto pb-2 lg:sticky lg:top-[var(--berth-page-top-offset,6rem)] lg:h-[calc(100dvh_-_var(--berth-page-top-offset,6rem)_-_var(--berth-page-gutter,1.5rem))] lg:max-h-[calc(100dvh_-_var(--berth-page-top-offset,6rem)_-_var(--berth-page-gutter,1.5rem))] lg:w-44 lg:shrink-0 lg:self-start lg:overflow-x-hidden lg:overflow-y-auto lg:pb-0',
         className
       )}
     >
