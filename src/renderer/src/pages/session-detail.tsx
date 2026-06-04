@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import * as Tabs from '@radix-ui/react-tabs'
+import { Tabs, Tab } from '@/components/ui'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import {
@@ -121,16 +121,22 @@ export function SessionDetail(): React.ReactElement {
           />
         </div>
       ) : (
-        <Tabs.Root
-          value={activeTab}
-          onValueChange={(value) => setActiveTab(value as SessionDetailTab)}
-          className="space-y-4"
+        <Tabs
+          aria-label={t('sessions.tabs.label', { defaultValue: 'Session detail sections' })}
+          selectedKey={activeTab}
+          onSelectionChange={(key) => setActiveTab(key as SessionDetailTab)}
+          variant="light"
+          classNames={{
+            base: 'w-full',
+            tabList:
+              'grid w-full gap-2 rounded-xl border border-border bg-card/80 p-2 shadow-sm sm:grid-cols-3',
+            tab: 'group h-auto justify-start rounded-lg border border-transparent px-3 py-3 data-[selected=true]:border-border data-[selected=true]:bg-background data-[selected=true]:shadow-sm',
+            tabContent: 'w-full',
+            cursor: 'hidden',
+            panel: 'pt-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
+          }}
         >
-          <SessionDetailTabs counts={tabCounts} />
-          <Tabs.Content
-            value="overview"
-            className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          >
+          <Tab key="overview" title={<SessionTabTitle item={sessionTabMeta(t, tabCounts).overview} />}>
             <SessionOverviewTab
               detail={detail}
               signals={signals}
@@ -139,17 +145,11 @@ export function SessionDetail(): React.ReactElement {
               expandedSections={expandedSections}
               onToggleSection={toggleSection}
             />
-          </Tabs.Content>
-          <Tabs.Content
-            value="timeline"
-            className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          >
+          </Tab>
+          <Tab key="timeline" title={<SessionTabTitle item={sessionTabMeta(t, tabCounts).timeline} />}>
             <SessionTimelineTab events={toolTimeline} />
-          </Tabs.Content>
-          <Tabs.Content
-            value="artifacts"
-            className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          >
+          </Tab>
+          <Tab key="artifacts" title={<SessionTabTitle item={sessionTabMeta(t, tabCounts).artifacts} />}>
             <SessionArtifactsTab
               artifacts={artifacts}
               artifactCount={artifactCount}
@@ -157,8 +157,8 @@ export function SessionDetail(): React.ReactElement {
               expandedSections={expandedSections}
               onToggleSection={toggleSection}
             />
-          </Tabs.Content>
-        </Tabs.Root>
+          </Tab>
+        </Tabs>
       )}
     </div>
   )
@@ -175,77 +175,65 @@ function emptyArtifacts(): SessionArtifacts {
   }
 }
 
-function SessionDetailTabs({ counts }: { counts: SessionTabCounts }): React.ReactElement {
-  const { t } = useTranslation()
-  const items: Array<{
-    value: SessionDetailTab
-    label: string
-    description: string
-    count: number
-    icon: React.ComponentType<{ className?: string }>
-  }> = [
-    {
+interface SessionTabMetaItem {
+  value: SessionDetailTab
+  label: string
+  description: string
+  count: number
+  icon: React.ComponentType<{ className?: string }>
+}
+
+function sessionTabMeta(
+  t: (key: string, opts?: { defaultValue?: string }) => string,
+  counts: SessionTabCounts
+): Record<SessionDetailTab, SessionTabMetaItem> {
+  return {
+    overview: {
       value: 'overview',
       label: t('sessions.tabs.overview', { defaultValue: 'Overview' }),
       description: t('sessions.tabs.overviewDescription', { defaultValue: 'Run metrics and session signals' }),
       count: counts.overview,
       icon: Activity
     },
-    {
+    timeline: {
       value: 'timeline',
       label: t('sessions.tabs.timeline', { defaultValue: 'Timeline' }),
       description: t('sessions.tabs.timelineDescription', { defaultValue: 'Tool calls, filters, and latency' }),
       count: counts.timeline,
       icon: Wrench
     },
-    {
+    artifacts: {
       value: 'artifacts',
       label: t('sessions.tabs.artifacts', { defaultValue: 'Artifacts' }),
       description: t('sessions.tabs.artifactsDescription', { defaultValue: 'Plans, todos, files, checkpoints' }),
       count: counts.artifacts,
       icon: FileText
     }
-  ]
+  }
+}
 
+// Rich tab-button content for the HeroUI Tab `title` slot. The enclosing Tab
+// carries `group` + `data-selected`, so active styling keys off
+// group-data-[selected=true] (replaces the former Radix data-[state=active]).
+function SessionTabTitle({ item }: { item: SessionTabMetaItem }): React.ReactElement {
+  const Icon = item.icon
   return (
-    <Tabs.List
-      aria-label={t('sessions.tabs.label', { defaultValue: 'Session detail sections' })}
-      className="grid gap-2 rounded-xl border border-border bg-card/80 p-2 shadow-sm sm:grid-cols-3"
-    >
-      {items.map((item) => {
-        const Icon = item.icon
-        return (
-          <Tabs.Trigger
-            key={item.value}
-            value={item.value}
-            className={cn(
-              'group min-w-0 rounded-lg border border-transparent px-3 py-3 text-left transition-colors',
-              'hover:bg-accent/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-              'data-[state=active]:border-border data-[state=active]:bg-background data-[state=active]:shadow-sm'
-            )}
-          >
-            <span className="flex min-w-0 items-center gap-3">
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground transition-colors group-data-[state=active]:bg-primary/10 group-data-[state=active]:text-primary">
-                <Icon className="h-4 w-4" />
-              </span>
-              <span className="min-w-0 flex-1">
-                <span className="flex min-w-0 items-center justify-between gap-2">
-                  <span className="truncate text-sm font-semibold text-card-foreground">
-                    {item.label}
-                  </span>
-                  <span className="shrink-0 rounded-md bg-muted px-1.5 py-0.5 text-[11px] font-medium tabular-nums text-muted-foreground group-data-[state=active]:bg-primary/10 group-data-[state=active]:text-primary">
-                    {formatNumber(item.count)}
-                  </span>
-                </span>
-                <span className="mt-0.5 hidden truncate text-xs text-muted-foreground md:block">
-                  {item.description}
-                </span>
-              </span>
-            </span>
-          </Tabs.Trigger>
-        )
-      })}
-    </Tabs.List>
+    <span className="flex min-w-0 items-center gap-3 text-left">
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground transition-colors group-data-[selected=true]:bg-primary/10 group-data-[selected=true]:text-primary">
+        <Icon className="h-4 w-4" />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="flex min-w-0 items-center justify-between gap-2">
+          <span className="truncate text-sm font-semibold text-card-foreground">{item.label}</span>
+          <span className="shrink-0 rounded-md bg-muted px-1.5 py-0.5 text-[11px] font-medium tabular-nums text-muted-foreground group-data-[selected=true]:bg-primary/10 group-data-[selected=true]:text-primary">
+            {formatNumber(item.count)}
+          </span>
+        </span>
+        <span className="mt-0.5 hidden truncate text-xs text-muted-foreground md:block">
+          {item.description}
+        </span>
+      </span>
+    </span>
   )
 }
 

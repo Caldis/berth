@@ -1,4 +1,3 @@
-import * as NavigationMenu from '@radix-ui/react-navigation-menu'
 import { cn } from '@/lib/utils'
 import type { JumpNavItem } from '@/lib/virtual-list-model'
 
@@ -26,36 +25,35 @@ export function CategoryJumpNav({
   if (items.length === 0) return null
 
   return (
-    <NavigationMenu.Root
+    <nav
       aria-label={label}
-      orientation="vertical"
       data-testid={testId}
       className={cn(
         'overflow-x-auto pb-2 lg:sticky lg:top-[var(--berth-page-gutter,1.5rem)] lg:h-[calc(100dvh_-_var(--berth-page-top-offset,6rem))] lg:max-h-[calc(100dvh_-_var(--berth-page-top-offset,6rem))] lg:w-48 lg:shrink-0 lg:self-start lg:overflow-x-hidden lg:overflow-y-auto lg:px-2 lg:py-1',
         className
       )}
     >
-      <NavigationMenu.List
+      <ul
         data-testid={`${testId}-list`}
         className="flex min-w-max gap-1 lg:w-full lg:min-w-0 lg:flex-col"
       >
         {items.map((item) => {
           if (item.kind === 'heading') {
             return (
-              <NavigationMenu.Item key={item.id}>
+              <li key={item.id}>
                 <div
                   title={item.title}
                   className="flex h-6 min-w-24 items-center border-border/70 px-2.5 text-[10px] font-semibold tracking-wide text-muted-foreground/55 lg:mt-3 lg:h-auto lg:min-w-0 lg:border-t lg:px-2.5 lg:pb-1 lg:pt-2 first:lg:mt-0 first:lg:border-t-0"
                 >
                   <span className="truncate">{item.label}</span>
                 </div>
-              </NavigationMenu.Item>
+              </li>
             )
           }
 
           const active = item.id === activeId
           return (
-            <NavigationMenu.Item key={item.id}>
+            <li key={item.id}>
               <button
                 type="button"
                 aria-label={formatItemLabel(item)}
@@ -82,10 +80,10 @@ export function CategoryJumpNav({
                   {item.count}
                 </span>
               </button>
-            </NavigationMenu.Item>
+            </li>
           )
         })}
-      </NavigationMenu.List>
-    </NavigationMenu.Root>
+      </ul>
+    </nav>
   )
 }

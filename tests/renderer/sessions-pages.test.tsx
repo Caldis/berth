@@ -586,7 +586,7 @@ describe('session pages', () => {
     expect(screen.getByText('plugin_playwright_playwright')).toBeInTheDocument()
     expect(screen.getByText('Stop')).toBeInTheDocument()
     expect(screen.getByText('2x')).toBeInTheDocument()
-    expect(screen.getByRole('tab', { name: /Overview/ })).toHaveAttribute('data-state', 'active')
+    expect(screen.getByRole('tab', { name: /Overview/ })).toHaveAttribute('aria-selected', 'true')
     expect(screen.getByRole('tab', { name: /Timeline/ })).toHaveTextContent('2')
     expect(screen.getByRole('tab', { name: /Artifacts/ })).toHaveTextContent('3')
     expect(screen.queryByText('Edit')).not.toBeInTheDocument()

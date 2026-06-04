@@ -45,16 +45,16 @@
   - tests: `tests/renderer/ui/barrel.test.tsx` (导出齐全 + render) ✅ + `ui/chip.test.tsx` (tone 映射/默认/onClose) ✅。
 - [~] **P3.2 后续 composite (随 P5/P6 落地)**: SectionCard(面板)、StatCard(KPI+delta)、EmptyState/LoadingState 重建、Modal/Drawer/Accordion 收敛 — 见 P5/P6。
 
-## P4 — 迁移 2 处真实 Radix (顺序, 各自文件)
-- [ ] **P4.1 session-detail Tabs → ui/tabs**
-  - tests: 现有 + 更新 — 三 tab 切换、active 样式、`data-testid` 保留。
-  - verify: Tabs 键盘/ARIA 不回归; 截图。
-- [ ] **P4.2 category-jump-nav → ui/listbox (或薄 nav)**
-  - tests: `tests/renderer/category-jump-nav.test.tsx` — active/onSelect/aria-current/count。
-  - verify: 垂直 jump 导航键盘可达; 截图。
-- [ ] **P4.3 移除 `@radix-ui/react-tabs` + `react-navigation-menu`**
-  - tests: grep `@radix-ui` 在 src 归零; `pnpm test`。
-  - verify: build 通过。
+## P4 — 迁移 2 处真实 Radix (顺序) ✅ 完成
+- [x] **P4.1 session-detail Tabs → HeroUI Tabs**
+  - Radix `Tabs.Root/List/Trigger/Content` → `<Tabs><Tab title=...>panel</Tab>`; 卡片网格外观经 classNames(tabList grid / tab data-[selected=true] / cursor hidden)保留; `data-[state=active]`→`group-data-[selected=true]`。`SessionDetailTabs` 重构为 `sessionTabMeta`(数据)+ `SessionTabTitle`(标题节点)。
+  - tests: sessions-pages.test.tsx 断言 `data-state=active`→`aria-selected=true`; 25 测试通过 (tab 切换/计数/面板)。
+  - verify (P10 截图): 卡片网格 tab + 键盘/ARIA。
+- [x] **P4.2 category-jump-nav → 原生 `<nav><ul><li>`**
+  - NavigationMenu 仅作语义包裹(无 menu 行为)→ 原生 nav/ul/li, 保留 aria-label/aria-current/testid/类/行为; Tailwind preflight 重置 ul 样式。
+  - tests: category-jump-nav.test.tsx 3 测试通过 (role=navigation/onSelect/aria-current/count/sticky 类)。
+- [x] **P4.3 移除全部 10 Radix 包 + cmdk (含 P8 死依赖)**
+  - `pnpm remove` 10 个 @radix-ui + cmdk; src 内 `@radix-ui`/`cmdk` 引用归零; package.json count=0; build 通过。
 
 ## P5 — 重复收敛 (顺序, 触及多个共享/页面文件)
 - [ ] **P5.1 3 处 focus-trap modal/drawer → ui/modal+drawer** (settings-dialog, search-dialog, file-viewer-drawer)
