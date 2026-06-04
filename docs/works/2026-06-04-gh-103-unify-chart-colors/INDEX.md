@@ -2,7 +2,7 @@
 task: 2026-06-04-gh-103-unify-chart-colors
 task_id: GH-103
 type: maintenance
-phase: explore
+phase: design
 created: 2026-06-04
 priority: P2
 target_date:
@@ -14,15 +14,15 @@ source:
     - GH-103
 debt:
   estimate:
-    incurred: 2
+    incurred: 3
     repaid: 2
-    net: 0
+    net: 1
     scope: module
     risk: low
     areas:
       - ui-ux
-    confidence: low
-    rationale: "0.0-new 初估; 统一 4 处图表配色到单一主题色板, 重点替换首页近7天费用柱状图丑配色, 消除分散硬编码 (repay), 引入主题 token (incurred)。explore/design 后校准。"
+    confidence: medium
+    rationale: "explore 校准: 新增集中配色真源 + 改 5 处使用点 (近7天费用/每日花费/token条/byModel/byProject) + 暗色模式校准 (incurred 3); 消除分散硬编码与两套并存色板 (repaid 2)。纯视觉无数据/IPC 变更, risk low。"
   final:
     incurred:
     repaid:
@@ -32,7 +32,12 @@ debt:
     areas: []
     confidence:
     rationale:
-  revisions: []
+  revisions:
+    - phase: explore
+      date: 2026-06-04
+      from: { incurred: 2, repaid: 2, net: 0, confidence: low }
+      to: { incurred: 3, repaid: 2, net: 1, confidence: medium }
+      reason: "explore 定位到 5 处图表使用点 (而非 4) 与 3 处分散配色真源; 需新建集中真源并校准暗色模式, incurred/confidence 上调。"
 issue:
   number: 103
   repo: Caldis/berth
@@ -60,7 +65,7 @@ artifacts:
 
 ## 产物
 - [x] 00-PRD.md — 原始输入快照
-- [ ] 01-ANALYSIS.md — Explore 产物
+- [x] 01-ANALYSIS.md — Explore 产物
 - [ ] 02-SPEC.md — Design 产物
 - [ ] 03-PLAN.md — 活任务清单
 - [ ] 04-POLISH.md — 可选抛光记录
