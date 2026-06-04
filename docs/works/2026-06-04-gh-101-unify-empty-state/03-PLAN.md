@@ -25,7 +25,8 @@
   - tests: 确保现有 `tests/renderer/instructions-guidance.test.tsx` 不破。
   - verify: 测试通过; 截图: instructions 各 tab 空态填满工具条下方、居中、无溢出。
 
-- [ ] **T4: capabilities 删本地 EmptyState + 接 flex 高度链** (S3 / 验收 1,2,3)
+- [x] **T4: capabilities 删本地 EmptyState + 接 flex 高度链** (S3 / 验收 1,2,3)
+  - 证据: 新增 `tests/renderer/capabilities-empty-state.test.tsx` (2) + 既有 status-line-section (8) 全过; typecheck:web + eslint 干净。PermissionsSection 无顶层 EmptyState (空态为 RuleList 内联文本), 无需改; HooksLifecycleView 不使用 EmptyState, 不在统一范围。
   - 文件: `src/renderer/src/pages/capabilities.tsx`
   - 改: 删除本地 `EmptyState` (62-69), import 共享 `{ EmptyState, PAGE_EMPTY_FILL }`; 根 → `cn('flex flex-col gap-4', PAGE_EMPTY_FILL)`; mcp/plugins/default 空态加 `fullHeight`; EnvSection / PermissionsSection 空分支加 `fullHeight`; StatusLineSection 根 → `flex flex-1 flex-col gap-3` + 空态 `fullHeight`。
   - tests: 新增 `tests/renderer/capabilities-empty-state.test.tsx` — 空 tab 渲染共享空态 (堆叠卡片占位图存在, 无单图标本地结构)。

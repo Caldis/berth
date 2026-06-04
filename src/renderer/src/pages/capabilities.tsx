@@ -19,6 +19,7 @@ import { filterAssetsByAgentView } from '@/lib/agent-view'
 import { useAppStore } from '@/stores/app'
 import { useAgentCapabilityPlugins } from '@/hooks/use-ipc'
 import { ScopeSelect, type ScopeFilter } from '@/components/shared/filter-bar'
+import { EmptyState, PAGE_EMPTY_FILL } from '@/components/shared/empty-state'
 import { DetailRow } from '@/components/shared/detail-row'
 import { WarningBanner } from '@/components/shared/warning-banner'
 import { ScopeBadge } from '@/components/shared/scope-badge'
@@ -57,15 +58,6 @@ const tabTypeMap: Record<string, string[]> = {
 
 function normalizeCapabilityTab(value: string | undefined): string {
   return value && tabTypeMap[value] ? value : DEFAULT_CAPABILITY_TAB
-}
-
-function EmptyState({ icon: Icon, message }: { icon: React.ComponentType<{ className?: string }>; message: string }): React.ReactElement {
-  return (
-    <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border py-16">
-      <Icon className="mb-3 h-10 w-10 text-muted-foreground/40" />
-      <p className="text-sm text-muted-foreground">{message}</p>
-    </div>
-  )
 }
 
 /* ---------- MCP Server card ---------- */
@@ -567,10 +559,10 @@ export function StatusLineSection({ assets, agentView }: { assets: Asset[]; agen
   const showCodexDefault = agentView !== 'claude' && !hasCodexAsset
 
   return (
-    <div className="space-y-3">
+    <div className="flex flex-1 flex-col gap-3">
       {assets.length === 0 ? (
         <>
-          <EmptyState icon={Activity} message={t(`capabilities.statusLine.empty.${agentView}`)} />
+          <EmptyState fullHeight icon={Activity} message={t(`capabilities.statusLine.empty.${agentView}`)} />
           {showCodexDefault && <CodexDefaultStatusLine />}
         </>
       ) : (
@@ -749,7 +741,7 @@ function EnvSection({ assets }: { assets: Asset[] }): React.ReactElement {
   const sections = groupEnvVars(rows)
 
   if (rows.length === 0) {
-    return <EmptyState icon={Variable} message={t('common.empty')} />
+    return <EmptyState fullHeight icon={Variable} message={t('common.empty')} />
   }
 
   return (
@@ -866,7 +858,7 @@ export function Capabilities({ activeSection }: { activeSection?: string } = {})
   const renderContent = (): React.ReactElement => {
     switch (activeTab) {
       case 'mcp':
-        if (filteredAssets.length === 0) return <EmptyState icon={Plug} message={t('common.empty')} />
+        if (filteredAssets.length === 0) return <EmptyState fullHeight icon={Plug} message={t('common.empty')} />
         return (
           <div className="space-y-3">
             <McpSummary assets={filteredAssets} />
@@ -881,7 +873,7 @@ export function Capabilities({ activeSection }: { activeSection?: string } = {})
       }
 
       case 'plugins':
-        if (filteredAssets.length === 0) return <EmptyState icon={Puzzle} message={t('common.empty')} />
+        if (filteredAssets.length === 0) return <EmptyState fullHeight icon={Puzzle} message={t('common.empty')} />
         return (
           <div className="space-y-2">
             {filteredAssets.map((a) => <PluginCard key={a.id} asset={a} />)}
@@ -899,13 +891,13 @@ export function Capabilities({ activeSection }: { activeSection?: string } = {})
 
       default: {
         const Icon = tabIconMap[activeTab] ?? Plug
-        return <EmptyState icon={Icon} message={t('common.empty')} />
+        return <EmptyState fullHeight icon={Icon} message={t('common.empty')} />
       }
     }
   }
 
   return (
-    <div className="space-y-4">
+    <div className={cn('flex flex-col gap-4', PAGE_EMPTY_FILL)}>
       <CapabilityPageChrome
         activeTab={activeTab}
         agentView={agentView}
