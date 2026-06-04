@@ -11,8 +11,8 @@
   - tests: `tests/renderer/chart-colors.test.ts` ✓ 3 passed (red→green: 模块不存在→建文件)。断言 series=primary、categorical 5 色依次 --chart-1..5、token 段语义映射。
   - verify: 单测通过; 验收标准 1 (单一真源)。非视觉项, 无截图。
 
-- [ ] 任务 2: `styles/globals.css` 将 `--chart-1~5` (light L41-45 / dark L76-80) 改为统一语义色板 + 注释
-  - tests: 更新 `tests/renderer/theme-palette.test.ts`: 断言 globals 含 `--chart-1: 217 91% 60%;` (light) 与 `--chart-1: 213 94% 68%;` (dark) 等新值; 保留 `not.toMatch` 旧橙 `24.6 95% 53.1%`。`pnpm test theme-palette`
+- [x] 任务 2: `styles/globals.css` 将 `--chart-1~5` (light / dark) 改为统一语义色板 + 注释
+  - tests: `theme-palette.test.ts` ✓ 3 passed (新增 "unified categorical semantic chart palette" 断言 light/dark 新值并排除旧混搭色相)。
   - verify: 单测通过; 截图(亮+暗)确认 breakdown 与 token 条呈蓝绿橙紫; 界面质量: 设计系统一致性(颜色走变量)、暗色对比充足。验收标准 1/3/4/5。
 
 - [ ] 任务 3: `pages/overview.tsx` 近 7 天费用柱状图单色化 (去 Cell 循环多色 → `fill={CHART_SERIES_FILL}` 单色, 去 opacity)

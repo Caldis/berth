@@ -21,6 +21,24 @@ describe('renderer theme palette', () => {
     expect(globalsCss).not.toMatch(/--(?:accent|sidebar-accent|chart-2):\s*24\.6 95% 53\.1%;/)
   })
 
+  it('uses a unified categorical semantic chart palette (blue/green/amber/violet/pink)', () => {
+    // light
+    expect(globalsCss).toContain('--chart-1: 217 91% 60%;')
+    expect(globalsCss).toContain('--chart-2: 160 84% 39%;')
+    expect(globalsCss).toContain('--chart-3: 38 92% 50%;')
+    expect(globalsCss).toContain('--chart-4: 258 90% 66%;')
+    expect(globalsCss).toContain('--chart-5: 330 81% 60%;')
+    // dark (brightened one step for contrast)
+    expect(globalsCss).toContain('--chart-1: 213 94% 68%;')
+    expect(globalsCss).toContain('--chart-2: 160 65% 52%;')
+    expect(globalsCss).toContain('--chart-3: 43 96% 56%;')
+    expect(globalsCss).toContain('--chart-4: 255 92% 76%;')
+    expect(globalsCss).toContain('--chart-5: 329 87% 70%;')
+    // old shadcn contrast palette (mixed unrelated hues) is gone
+    expect(globalsCss).not.toContain('--chart-3: 215 16% 47%;')
+    expect(globalsCss).not.toContain('--chart-5: 339 45% 50%;')
+  })
+
   it('keeps Usage chart colors tied to shared chart tokens', () => {
     for (const index of [1, 2, 3, 4, 5]) {
       expect(usagePage).toContain(`'hsl(var(--chart-${index}))'`)
