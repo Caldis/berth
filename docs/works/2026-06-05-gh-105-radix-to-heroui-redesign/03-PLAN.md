@@ -84,7 +84,9 @@
   - tests: `hook-lifecycle-*` testid + 现有; verify: 截图 + connector 几何不破。
 - [ ] **P6.7 usage** — 卡片统一; 时间段→ui/tabs; cost-mode→ui/select; NoticePanel→ui/alert; recharts 主题对齐蓝 (不碰 chart-colors.ts)。
   - tests: 现有; verify: 截图。
-- [ ] **P6.8 settings** — 面板 ui/card; toggle→ui/switch; badge→chip; 折叠→accordion; About avatar 蓝。
+- [~] **P6.8 settings** — 面板 ui/card; toggle→ui/switch; badge→chip; 折叠→accordion; About avatar 蓝。
+  - [x] accent 选择器: Appearance 区加 5 色板 radiogroup → setAccent, 使 AC4 用户可达。tests: settings-accent(5 板/默认 blue/切换 emerald→data-accent+localStorage) ✅; CDP 实测切 rose → --primary+--heroui-primary 双变 + logo 变 rose 截图。
+  - [ ] 其余 settings 面板/toggle/折叠 ui 化 (随后)。
   - tests: 现有 settings 测试; verify: 截图。
 
 ## P7 — 动画补全 (顺序, 收口)

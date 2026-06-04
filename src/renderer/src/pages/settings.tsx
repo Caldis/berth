@@ -1,6 +1,6 @@
 import { useState, useEffect, type KeyboardEvent } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useTheme } from '@/components/theme-provider'
+import { useTheme, type Accent } from '@/components/theme-provider'
 import {
   Sun,
   Moon,
@@ -88,7 +88,7 @@ export function SettingsContent({
   className
 }: SettingsContentProps): React.ReactElement {
   const { t, i18n } = useTranslation()
-  const { theme, setTheme } = useTheme()
+  const { theme, setTheme, accent, setAccent } = useTheme()
   const [advancedMode, setAdvancedMode] = useState(false)
   const {
     plugins: agentPlugins,
@@ -127,6 +127,15 @@ export function SettingsContent({
   const languages = [
     { id: 'en', label: 'English' },
     { id: 'zh', label: '中文' }
+  ]
+
+  // Swatch hues mirror the html[data-accent] blocks in globals.css.
+  const accents: Array<{ id: Accent; label: string; color: string }> = [
+    { id: 'blue', label: 'Blue', color: 'hsl(212 100% 47%)' },
+    { id: 'violet', label: 'Violet', color: 'hsl(262 83% 58%)' },
+    { id: 'emerald', label: 'Emerald', color: 'hsl(160 84% 39%)' },
+    { id: 'amber', label: 'Amber', color: 'hsl(38 92% 50%)' },
+    { id: 'rose', label: 'Rose', color: 'hsl(350 89% 60%)' }
   ]
 
   return (
@@ -204,6 +213,52 @@ export function SettingsContent({
                     {isSelected && (
                       <Check className="h-3.5 w-3.5 text-accent" aria-hidden="true" />
                     )}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+          <div className="border-t border-border pt-3">
+            <label className="text-sm font-medium">
+              {t('settings.accentColor', { defaultValue: 'Accent color' })}
+            </label>
+            <div
+              className="mt-2 flex gap-2.5"
+              role="radiogroup"
+              aria-label={t('settings.accentColor', { defaultValue: 'Accent color' })}
+            >
+              {accents.map((accentOption, index) => {
+                const isSelected = accent === accentOption.id
+
+                return (
+                  <button
+                    key={accentOption.id}
+                    type="button"
+                    role="radio"
+                    aria-checked={isSelected}
+                    aria-label={t(`settings.accent.${accentOption.id}`, {
+                      defaultValue: accentOption.label
+                    })}
+                    tabIndex={isSelected ? 0 : -1}
+                    onClick={() => setAccent(accentOption.id)}
+                    onKeyDown={(event) => {
+                      handleRadioKeyDown(event, index, accents.length, (nextIndex) => {
+                        setAccent(accents[nextIndex].id)
+                      })
+                    }}
+                    className={cn(
+                      'flex h-9 w-9 items-center justify-center rounded-full border-2 transition-all hover:scale-105',
+                      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+                      isSelected ? 'border-foreground' : 'border-transparent'
+                    )}
+                  >
+                    <span
+                      className="flex h-5 w-5 items-center justify-center rounded-full text-white"
+                      style={{ backgroundColor: accentOption.color }}
+                    >
+                      {isSelected && <Check className="h-3 w-3" aria-hidden="true" />}
+                    </span>
                   </button>
                 )
               })}
