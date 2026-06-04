@@ -18,8 +18,9 @@ import {
   X,
   Activity
 } from 'lucide-react'
-import { Bar, BarChart, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts'
+import { Bar, BarChart, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import { cn } from '@/lib/utils'
+import { CHART_SERIES_FILL } from '@/lib/chart-colors'
 import { formatCurrency, formatOptionalCurrency, formatOptionalRelativeTime, truncatePath } from '@/lib/utils'
 import { useSessions, useUsageSummary, useHealthChecks } from '@/hooks/use-ipc'
 import { useAppStore } from '@/stores/app'
@@ -410,11 +411,7 @@ function UsageSnapshotPanel({
                 labelFormatter={(v: string) => new Date(v).toLocaleDateString()}
                 formatter={(v: number) => [formatCurrency(v), t('sessions.cost')]}
               />
-              <Bar dataKey="cost" radius={[4, 4, 0, 0]}>
-                {dailyCosts.map((_entry, index) => (
-                  <Cell key={index} fill={`hsl(var(--chart-${(index % 5) + 1}))`} opacity={0.85} />
-                ))}
-              </Bar>
+              <Bar dataKey="cost" fill={CHART_SERIES_FILL} radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>

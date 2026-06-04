@@ -15,8 +15,8 @@
   - tests: `theme-palette.test.ts` ✓ 3 passed (新增 "unified categorical semantic chart palette" 断言 light/dark 新值并排除旧混搭色相)。
   - verify: 单测通过; 截图(亮+暗)确认 breakdown 与 token 条呈蓝绿橙紫; 界面质量: 设计系统一致性(颜色走变量)、暗色对比充足。验收标准 1/3/4/5。
 
-- [ ] 任务 3: `pages/overview.tsx` 近 7 天费用柱状图单色化 (去 Cell 循环多色 → `fill={CHART_SERIES_FILL}` 单色, 去 opacity)
-  - tests: 更新 `theme-palette.test.ts`: 断言 `overview.tsx` 含 `CHART_SERIES_FILL` 且不再含 `--chart-${` 动态循环。`pnpm test theme-palette`
+- [x] 任务 3: `pages/overview.tsx` 近 7 天费用柱状图单色化 (去 Cell 循环多色 → 单色 CHART_SERIES_FILL, 去 opacity; 清理 Cell import)
+  - tests: `theme-palette.test.ts` ✓ 4 passed (断言 overview 用 CHART_SERIES_FILL、不再动态循环 chart 变量); `pnpm typecheck` ✓ (dailyCosts 仍用于 BarChart data, 无 unused)。
   - verify: 截图首页「近 7 天费用」全部柱子为中性 primary 单色, 不再黑/灰/蓝灰/青绿/玫红混搭; 界面质量: 布局/barSize 无位移、与「每日花费」观感一致。验收标准 2。
 
 - [ ] 任务 4: `pages/usage.tsx` 真源迁移 (删本地 CHART_COLORS→import; 每日花费 fill→CHART_SERIES_FILL; breakdown→CHART_CATEGORICAL 循环)

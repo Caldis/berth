@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest'
 const root = process.cwd()
 const globalsCss = fs.readFileSync(path.join(root, 'src/renderer/src/styles/globals.css'), 'utf8')
 const usagePage = fs.readFileSync(path.join(root, 'src/renderer/src/pages/usage.tsx'), 'utf8')
+const overviewPage = fs.readFileSync(path.join(root, 'src/renderer/src/pages/overview.tsx'), 'utf8')
 
 describe('renderer theme palette', () => {
   it('uses neutral brand accent tokens instead of the old orange theme accent', () => {
@@ -37,6 +38,12 @@ describe('renderer theme palette', () => {
     // old shadcn contrast palette (mixed unrelated hues) is gone
     expect(globalsCss).not.toContain('--chart-3: 215 16% 47%;')
     expect(globalsCss).not.toContain('--chart-5: 339 45% 50%;')
+  })
+
+  it('renders homogeneous series charts with the neutral primary single color', () => {
+    // 首页「近 7 天费用」用单色 CHART_SERIES_FILL, 不再按索引循环 --chart-${...}
+    expect(overviewPage).toContain('CHART_SERIES_FILL')
+    expect(overviewPage).not.toMatch(/--chart-\$\{/)
   })
 
   it('keeps Usage chart colors tied to shared chart tokens', () => {
