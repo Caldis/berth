@@ -2,7 +2,7 @@
 task: 2026-06-04-gh-102-fix-clipped-app-popovers
 task_id: GH-102
 type: bug
-phase: implement
+phase: verify
 created: 2026-06-04
 priority: P2
 target_date: 
@@ -21,14 +21,15 @@ debt:
     confidence: medium
     rationale: "0.0-new 初始估算; 影响 renderer header 与 Hooks lifecycle sidebar 的浮层组件, 预期以共享 Radix-backed 组件修复裁剪问题。"
   final:
-    incurred:
-    repaid:
-    net:
-    scope:
-    risk:
-    areas: []
-    confidence:
-    rationale:
+    incurred: 2
+    repaid: 0
+    net: 2
+    scope: module
+    risk: low
+    areas:
+      - ui-ux
+    confidence: high
+    rationale: "最终 diff 限定在 renderer 共享浮层组件、两处调用点、对应 renderer 测试和依赖锁; prepush 与 Electron 真实窗口截图通过。剩余风险是其他未点名浮层若也有裁剪问题, 需后续单独收敛。"
   revisions: []
 issue:
   number: 102
