@@ -26,6 +26,7 @@ berth 项目自用工具 (不含企业内部设施)。Agent 据此主动获取�
 - `pnpm harness:stats` — 只读统计 works/friction/issues/debt pool/distribution; 达到维护阈值时输出 Agent 可直接使用的 `maintenance=<subtype>:<score>` 推荐。
 - `node scripts/harness-projects.mjs fields ensure` — 创建或确认 GitHub Project 自定义字段: Task Type / Priority / Start date / Target date / Archived at / debt / scope / risk / confidence / areas / maintenance subtype / source kind。
 - `pnpm harness:projects:check` — 只读审计 GitHub Project 状态; `node scripts/harness-projects.mjs check --strict` 额外检查字段定义和可读字段值; archive 阶段用 `node scripts/harness-projects.mjs done <task-dir>` 强制置 Done 并回读确认。
+- `harness-projects` 的 `done` / `ensure` / `fields ensure` 是多字段顺序 GraphQL 写入且非幂等续传 (失败从头重写整组)。GitHub API 抖动时常见 `unexpected EOF` / `net/http: TLS handshake timeout`, 且失败字段会漂移; 这是可重试网络错误, 不是缺 scope / 字段非法, 也不等于 archive 阻塞。处置: 有界退避重试 (可后台执行, 主 Agent 消费成功结果后再推进), 不手敲反复重试; archive 必须回读确认远端 Done 后才移动目录。
 
 ## 网络与临时文件
 - 常规网络检索用 WebSearch/WebFetch; 除非用户明确要求浏览器实测、截图或交互验证, 不打开 GUI 浏览器抓网页。
