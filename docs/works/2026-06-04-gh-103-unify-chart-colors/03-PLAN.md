@@ -19,8 +19,8 @@
   - tests: `theme-palette.test.ts` ✓ 4 passed (断言 overview 用 CHART_SERIES_FILL、不再动态循环 chart 变量); `pnpm typecheck` ✓ (dailyCosts 仍用于 BarChart data, 无 unused)。
   - verify: 截图首页「近 7 天费用」全部柱子为中性 primary 单色, 不再黑/灰/蓝灰/青绿/玫红混搭; 界面质量: 布局/barSize 无位移、与「每日花费」观感一致。验收标准 2。
 
-- [ ] 任务 4: `pages/usage.tsx` 真源迁移 (删本地 CHART_COLORS→import; 每日花费 fill→CHART_SERIES_FILL; breakdown→CHART_CATEGORICAL 循环)
-  - tests: 更新 `theme-palette.test.ts` test2: 改为断言 `usage.tsx` 引用 `CHART_CATEGORICAL` 与 `CHART_SERIES_FILL` (真源迁移后不再内联 `hsl(var(--chart-n))` 数组; --chart-1~5 引用由 chart-colors.test 锁定)。`pnpm test theme-palette`
+- [x] 任务 4: `pages/usage.tsx` 真源迁移 (删本地 CHART_COLORS→import; 每日花费 fill→CHART_SERIES_FILL; breakdown→CHART_CATEGORICAL 循环)
+  - tests: `theme-palette.test.ts` ✓ 4 passed (test2 改为断言引用 CHART_CATEGORICAL/CHART_SERIES_FILL); CHART_COLORS 零残留; `pnpm typecheck` ✓。
   - verify: 截图用量页「每日花费」为中性 primary 单色; 「按模型/按项目」色标为蓝绿橙紫语义色板; 界面质量: breakdown 行保留文字标签不靠纯色。验收标准 2/4。
 
 - [ ] 任务 5: `components/shared/token-usage-display.tsx` 接入 CSS 变量真源 (SEGMENT_CLASS Tailwind 硬编码 → TOKEN_SEGMENT_COLOR_VAR + inline style)

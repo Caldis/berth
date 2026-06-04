@@ -28,14 +28,7 @@ import { CostSourceBadge } from '@/components/shared/cost-source-badge'
 import { NoticePanel } from '@/components/shared/notice-panel'
 import { projectPathForScope } from '@shared/scope'
 import { usePageChrome, type PageChromeConfig } from '@/components/layout/page-chrome'
-
-const CHART_COLORS = [
-  'hsl(var(--chart-1))',
-  'hsl(var(--chart-2))',
-  'hsl(var(--chart-3))',
-  'hsl(var(--chart-4))',
-  'hsl(var(--chart-5))'
-]
+import { CHART_CATEGORICAL, CHART_SERIES_FILL } from '@/lib/chart-colors'
 
 const TIME_RANGES = [
   { value: 7, labelKey: 'overview.timeRange.7d' },
@@ -680,7 +673,7 @@ export function Usage(): React.ReactElement {
                           formatter={(value: number) => [`$${value.toFixed(2)}`, t('usage.cost')]}
                           labelFormatter={(label: string) => new Date(label).toLocaleDateString()}
                         />
-                        <Bar dataKey="cost" fill="hsl(var(--chart-1))" radius={[4, 4, 0, 0]} />
+                        <Bar dataKey="cost" fill={CHART_SERIES_FILL} radius={[4, 4, 0, 0]} />
                       </BarChart>
                     </ResponsiveContainer>
                   ) : (
@@ -709,7 +702,7 @@ export function Usage(): React.ReactElement {
                           <UsageModelRow
                             key={item.model}
                             item={item}
-                            color={CHART_COLORS[i % CHART_COLORS.length]}
+                            color={CHART_CATEGORICAL[i % CHART_CATEGORICAL.length]}
                           />
                         ))}
                       </div>
@@ -738,7 +731,7 @@ export function Usage(): React.ReactElement {
                           <UsageProjectRow
                             key={item.project}
                             item={item}
-                            color={CHART_COLORS[i % CHART_COLORS.length]}
+                            color={CHART_CATEGORICAL[i % CHART_CATEGORICAL.length]}
                           />
                         ))}
                       </div>

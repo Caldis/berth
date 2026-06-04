@@ -47,9 +47,8 @@ describe('renderer theme palette', () => {
   })
 
   it('keeps Usage chart colors tied to shared chart tokens', () => {
-    for (const index of [1, 2, 3, 4, 5]) {
-      expect(usagePage).toContain(`'hsl(var(--chart-${index}))'`)
-    }
+    expect(usagePage).toContain('CHART_CATEGORICAL')
+    expect(usagePage).toContain('CHART_SERIES_FILL')
 
     expect(usagePage).not.toMatch(/hsl\(24\.6,\s*95%,\s*53\.1%\)/)
   })
