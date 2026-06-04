@@ -10,8 +10,11 @@
     --card-foreground: 240 10% 3.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 240 10% 3.9%;
-    --primary: 240 5.9% 10%;
-    --primary-foreground: 0 0% 98%;
+    /* Brand accent = blue (HeroUI primary #006FEE). Drives CTAs / chart series /
+       focus ring. Switchable accent overrides live in the [data-accent] blocks.
+       Nav selection stays neutral (--accent), per the dashboard reference. */
+    --primary: 212 100% 47%;
+    --primary-foreground: 0 0% 100%;
     --secondary: 240 4.8% 95.9%;
     --secondary-foreground: 240 5.9% 10%;
     --muted: 240 4.8% 95.9%;
@@ -22,8 +25,8 @@
     --destructive-foreground: 0 0% 98%;
     --border: 240 5.9% 90%;
     --input: 240 5.9% 90%;
-    --ring: 240 5.9% 10%;
-    --radius: 0.5rem;
+    --ring: 212 100% 47%;
+    --radius: 0.875rem;
     --berth-page-gutter: 1.5rem;
     /* Offset from the viewport top to where scrollable content begins:
        block-layout header min-height (72px) + page gutter (24px) = 6rem.
@@ -47,14 +50,16 @@
   }
 
   .dark {
-    --background: 240 10% 3.9%;
+    /* Layered near-black surfaces (background < sidebar < card) for the HeroUI
+       dashboard depth; L steps widened from ~1.6% to ~5% so layers read apart. */
+    --background: 240 10% 4%;
     --foreground: 0 0% 98%;
-    --card: 240 10% 5.5%;
+    --card: 240 8% 9%;
     --card-foreground: 0 0% 98%;
-    --popover: 240 10% 5.5%;
+    --popover: 240 8% 10%;
     --popover-foreground: 0 0% 98%;
-    --primary: 0 0% 98%;
-    --primary-foreground: 240 10% 3.9%;
+    --primary: 212 100% 50%;
+    --primary-foreground: 0 0% 100%;
     --secondary: 240 3.7% 15.9%;
     --secondary-foreground: 0 0% 98%;
     --muted: 240 3.7% 15.9%;
@@ -63,16 +68,16 @@
     --accent-foreground: 240 10% 3.9%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
-    --ring: 0 0% 82%;
+    --border: 240 4% 14%;
+    --input: 240 4% 14%;
+    --ring: 212 100% 60%;
 
-    --sidebar: 240 10% 5%;
+    --sidebar: 240 10% 6.5%;
     --sidebar-foreground: 0 0% 90%;
     --sidebar-accent: 0 0% 98%;
     --sidebar-accent-foreground: 240 10% 3.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 0 0% 82%;
+    --sidebar-border: 240 4% 14%;
+    --sidebar-ring: 212 100% 60%;
 
     /* Categorical palette (dark, brightened one step for contrast) */
     --chart-1: 213 94% 68%;
@@ -93,6 +98,48 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
+}
+
+/* Switchable accent (GH-105). Set by ThemeProvider via html[data-accent].
+   Unlayered selectors so they win over HeroUI's @layer base token injection.
+   Each accent drives BOTH berth's --primary and HeroUI's --heroui-primary so
+   whichever the .bg-primary/.text-primary utility resolves to, it switches.
+   Default (no attribute) = blue, defined in :root above. */
+html[data-accent='violet'] {
+  --primary: 262 83% 58%;
+  --primary-foreground: 0 0% 100%;
+  --ring: 262 83% 62%;
+  --heroui-primary: 262 83% 58%;
+  --heroui-primary-500: 262 83% 58%;
+  --heroui-primary-foreground: 0 0% 100%;
+  --heroui-focus: 262 83% 58%;
+}
+html[data-accent='emerald'] {
+  --primary: 160 84% 39%;
+  --primary-foreground: 0 0% 100%;
+  --ring: 160 84% 44%;
+  --heroui-primary: 160 84% 39%;
+  --heroui-primary-500: 160 84% 39%;
+  --heroui-primary-foreground: 0 0% 100%;
+  --heroui-focus: 160 84% 39%;
+}
+html[data-accent='amber'] {
+  --primary: 38 92% 50%;
+  --primary-foreground: 240 10% 4%;
+  --ring: 38 92% 50%;
+  --heroui-primary: 38 92% 50%;
+  --heroui-primary-500: 38 92% 50%;
+  --heroui-primary-foreground: 240 10% 4%;
+  --heroui-focus: 38 92% 50%;
+}
+html[data-accent='rose'] {
+  --primary: 350 89% 60%;
+  --primary-foreground: 0 0% 100%;
+  --ring: 350 89% 64%;
+  --heroui-primary: 350 89% 60%;
+  --heroui-primary-500: 350 89% 60%;
+  --heroui-primary-foreground: 0 0% 100%;
+  --heroui-focus: 350 89% 60%;
 }
 
 /* Custom scrollbar */

@@ -24,19 +24,18 @@
   - 证据: build CSS 含 `--heroui-primary: 212 100% 47%`(HeroUI 蓝) + 测试渲染 `<Button color="primary">` 带 `bg-primary` class。
   - **GATE 通过 → 进 P2。** 尽管 @heroui/theme 声明 TW4 peer, 插件在 TW3.4.19 下实测正常。
 
-## P2 — Token / 主题 / accent (顺序, 触及 globals.css/tailwind/theme-provider, 全局)
-- [ ] **P2.1 globals.css 视觉地基**
-  - 蓝 `--primary`(+foreground+ring); `--radius`→0.875rem; 加深 dark 分层; 加 `--shadow-*`; **不动 `--chart-*`**; 导航选中态保持中性。
-  - tests: `tests/renderer/theme-tokens.test.tsx` — 关键 var 存在/取值 (smoke)。
-  - verify: 现有页面无改动即视觉提升 (Electron 截图前后比对)。
-- [ ] **P2.2 heroui() 主题对齐 + accent 机制定稿**
-  - `heroui({themes})` 配 light/dark 与 globals.css 同值; 烟测候选 A/B, 定稿 accent 切换机制 (默认 B: `[data-accent]` 覆盖 `--primary*`+`--heroui-primary-*`)。
-  - tests: 由 P2.3 覆盖。
-  - verify: HeroUI 组件与现有组件同蓝同 radius (截图)。
-- [ ] **P2.3 ThemeProvider accent 扩展**
-  - 增 `accent`/`setAccent`, 持久化 `berth-accent`, 设 `data-accent`; ≥4 accent。
-  - tests: `tests/renderer/theme-accent.test.tsx` — set→localStorage+data-accent+默认值。
-  - verify: 切 accent 后 CTA/chart/focus 变色, dark/light×accent 正确 (截图 ≥1 非默认 accent)。
+## P2 — Token / 主题 / accent (顺序, 触及 globals.css/tailwind/theme-provider, 全局) ✅ 完成
+- [x] **P2.1 globals.css 视觉地基**
+  - 蓝 `--primary`(212 100% 47/50%)+ `--primary-foreground` 白 + `--ring`→蓝; `--radius`→0.875rem; dark 分层加深 (bg 4% / sidebar 6.5% / card 9%); **未动 `--chart-*`**; `--accent` 保持中性 (导航选中不变蓝)。tailwind 加 `boxShadow.card`/`card-dark` 软阴影。
+  - tests: 由 build 验证 (CSS 含 `--radius:0.875rem` + 4 accent 块); jsdom 不应用 Tailwind CSS 故不做 var 单测。
+  - verify (P10 截图): 现有页面无改动即视觉提升。
+- [x] **P2.2 accent 机制定稿 = 候选 B**
+  - `html[data-accent]` unlayered 选择器覆盖 `--primary*` + `--heroui-primary*` + `--heroui-focus` (whichever utility 解析皆切换); 无需 named heroui themes。heroui() 默认主题已是蓝+近黑, 与 globals.css 同向, 暂不额外配 themes (P6/P10 视觉差异再补)。
+  - tests: 由 P2.3 + build 覆盖。
+- [x] **P2.3 ThemeProvider accent 扩展**
+  - 增 `accent`/`setAccent`/`ACCENTS`, 持久化 `berth-accent`, useEffect 设 `data-accent`; 5 accent (blue/violet/emerald/amber/rose)。
+  - tests: `tests/renderer/theme-accent.test.tsx` ✅ (默认 blue/切换持久化/恢复/非法回退 4 例)。
+  - verify (P10 截图): 切 accent 后 CTA/focus 变色。
 
 ## P3 — 共享 ui/ 层 (主 session 分批; 文件互不重叠, barrel 串行汇总)
 > 先由主 Agent 写 2 个范例 wrapper (button, chip) 定约定, 其余按范例补齐。每个含测试。

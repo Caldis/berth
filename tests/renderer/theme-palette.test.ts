@@ -8,17 +8,27 @@ const usagePage = fs.readFileSync(path.join(root, 'src/renderer/src/pages/usage.
 const overviewPage = fs.readFileSync(path.join(root, 'src/renderer/src/pages/overview.tsx'), 'utf8')
 
 describe('renderer theme palette', () => {
-  it('uses neutral brand accent tokens instead of the old orange theme accent', () => {
-    expect(globalsCss).toContain('--primary: 240 5.9% 10%;')
+  it('uses a blue brand primary (CTA/focus) with neutral nav accent (GH-105 HeroUI)', () => {
+    // GH-105: brand primary is now blue (HeroUI #006FEE family), used for CTAs,
+    // chart series and the focus ring. Nav selection (--accent / --sidebar-accent)
+    // stays neutral by design — blue is reserved for CTAs/data, not nav highlights.
+    expect(globalsCss).toContain('--primary: 212 100% 47%;') // light
+    expect(globalsCss).toContain('--primary: 212 100% 50%;') // dark
+    expect(globalsCss).toContain('--primary-foreground: 0 0% 100%;')
+    expect(globalsCss).toContain('--ring: 212 100% 47%;') // unified blue focus ring
+
+    // nav/selection accent remains neutral (near-black on light, near-white on dark)
     expect(globalsCss).toContain('--accent: 240 5.9% 10%;')
     expect(globalsCss).toContain('--sidebar-accent: 240 5.9% 10%;')
-
-    expect(globalsCss).toContain('--primary: 0 0% 98%;')
     expect(globalsCss).toContain('--accent: 0 0% 98%;')
     expect(globalsCss).toContain('--accent-foreground: 240 10% 3.9%;')
     expect(globalsCss).toContain('--sidebar-accent: 0 0% 98%;')
     expect(globalsCss).toContain('--sidebar-accent-foreground: 240 10% 3.9%;')
 
+    // switchable accent dimension exists (GH-105)
+    expect(globalsCss).toMatch(/html\[data-accent='violet'\]/)
+
+    // the old orange theme accent is still gone
     expect(globalsCss).not.toMatch(/--(?:accent|sidebar-accent|chart-2):\s*24\.6 95% 53\.1%;/)
   })
 
