@@ -2,7 +2,7 @@
 task: 2026-06-04-gh-99-header-block-layout
 task_id: GH-99
 type: maintenance
-phase: explore
+phase: design
 created: 2026-06-04
 priority: P2
 target_date:
@@ -32,7 +32,12 @@ debt:
     areas: []
     confidence:
     rationale:
-  revisions: []
+  revisions:
+    - phase: explore
+      date: 2026-06-04
+      from: { net: -3, confidence: low }
+      to: { net: -3, confidence: medium }
+      reason: "并行逐页审计确认 6 个路由页本体零改动, 改动面收敛到 6 文件 + ~6 测试; net 不变, confidence low->medium。"
 issue:
   number: 99
   repo: Caldis/berth
@@ -60,7 +65,7 @@ artifacts:
 
 ## 产物
 - [x] 00-PRD.md — 原始输入快照
-- [ ] 01-ANALYSIS.md — Explore 产物
+- [x] 01-ANALYSIS.md — Explore 产物
 - [ ] 02-SPEC.md — Design 产物
 - [ ] 03-PLAN.md — 活任务清单
 - [ ] 04-POLISH.md — 可选抛光记录
