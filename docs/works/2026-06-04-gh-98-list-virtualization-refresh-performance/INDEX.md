@@ -28,15 +28,34 @@ debt:
     confidence: medium
     rationale: "0.0-new 初始估算: 跨 Sessions、Memories、Instructions 列表基础设施、第三方依赖、刷新限流和搜索性能; design 后维持估算。"
   final:
-    incurred:
-    repaid:
-    net:
-    scope:
-    risk:
-    areas: []
-    confidence:
-    rationale:
-  revisions: []
+    incurred: 6
+    repaid: 16
+    net: -10
+    scope: global
+    risk: medium
+    areas:
+      - performance
+      - ui-ux
+      - architecture
+      - testability
+    confidence: high
+    rationale: "引入成熟虚拟列表与类目导航依赖, 建 shared virtual list 基础设施并迁移 Sessions/Memories/Instructions; 增加 TTL/in-flight/diff 刷新策略与覆盖测试。剩余风险主要是真实 Electron 800-row fixture 未在本阶段新增。"
+  revisions:
+    - phase: verify
+      date: 2026-06-04
+      from:
+        incurred: 5
+        repaid: 12
+        net: -7
+        risk: high
+        confidence: medium
+      to:
+        incurred: 6
+        repaid: 16
+        net: -10
+        risk: medium
+        confidence: high
+      reason: "实现后新增测试与依赖成本略高, 但 Sessions/Memories/Instructions 共享基础设施、刷新限流与大列表测试覆盖降低了后续性能与测试风险。"
 issue:
   number: 98
   repo: Caldis/berth

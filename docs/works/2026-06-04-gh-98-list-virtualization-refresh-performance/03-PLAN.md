@@ -36,8 +36,8 @@
 
 - [x] 7. 全量门禁与真实 Electron 验证
   - scope: 代码、任务态文档、可选 e2e。
-  - tests: `pnpm typecheck` passed; `pnpm test` passed (89 files / 645 tests); `pnpm harness:check --work docs/works/2026-06-04-gh-98-list-virtualization-refresh-performance` passed; `pnpm exec playwright test --grep "can navigate to sessions|can navigate to promoted instruction pages"` passed (2 Electron tests).
-  - verify: renderer tests cover Sessions 130 rows -> 30 mounted, Memory 80 notes -> 20 mounted, Instructions 80 skills -> 25 mounted, plus jump nav calls. Electron e2e covers real Sessions / Instructions route DOM navigation. Remaining verify risk: no dedicated real Electron 800-row fixture or screenshot in implementation stage; carry to 4.0-verify if visual evidence is required.
+  - tests: `pnpm lint` passed; `pnpm typecheck` passed; `pnpm test` passed (89 files / 645 tests); `pnpm harness:check --work docs/works/2026-06-04-gh-98-list-virtualization-refresh-performance` passed; `node scripts/harness-projects.mjs check --strict --work docs/works/2026-06-04-gh-98-list-virtualization-refresh-performance` passed; `pnpm exec playwright test --grep "can navigate to sessions|can navigate to promoted instruction pages"` passed (2 Electron tests).
+  - verify: renderer tests cover Sessions 130 rows -> 30 mounted, Memory 80 notes -> 20 mounted, Instructions 80 skills -> 25 mounted, plus jump nav calls. Agent-owned Electron instance `gh98-verify` confirmed Sessions heading, category nav count 1, visible row count 15, screenshot `/tmp/berth-gh98-sessions-1780540690611.png`; Skills empty-state screenshot `/tmp/berth-gh98-verify-1780540671569.png`. Full-project strict check has unrelated GH-90/GH-95 Project field mismatches; current task strict check passed. Remaining risk: no dedicated real Electron 800-row fixture in this stage.
 
 ## verify 回写
 verify 不通过项作为新任务追加于此, phase 退回 implement。
