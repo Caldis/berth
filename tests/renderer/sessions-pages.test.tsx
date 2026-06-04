@@ -15,6 +15,61 @@ import type { SessionActivityMetrics } from '../../src/shared/types/ipc'
 import { normalizeTokenUsage } from '../../src/shared/token-usage'
 import { useAppStore } from '../../src/renderer/src/stores/app'
 
+const sessionsVirtuosoMock = vi.hoisted(() => ({
+  visibleLimit: 30,
+  props: undefined as any,
+  scrollToIndex: vi.fn()
+}))
+
+vi.mock('react-virtuoso', async () => {
+  const ReactModule = await import('react')
+
+  const GroupedVirtuoso = ReactModule.forwardRef(function MockGroupedVirtuoso(props: any, ref) {
+    sessionsVirtuosoMock.props = props
+    ReactModule.useImperativeHandle(ref, () => ({
+      scrollToIndex: sessionsVirtuosoMock.scrollToIndex
+    }))
+
+    const nodes: React.ReactNode[] = []
+    let itemIndex = 0
+    let renderedRows = 0
+
+    for (let groupIndex = 0; groupIndex < props.groupCounts.length; groupIndex += 1) {
+      nodes.push(
+        ReactModule.createElement(
+          'div',
+          { key: `group-${groupIndex}`, 'data-testid': `sessions-virtual-group-${groupIndex}` },
+          props.groupContent(groupIndex, props.context)
+        )
+      )
+
+      for (let offset = 0; offset < props.groupCounts[groupIndex]; offset += 1) {
+        const item = props.data[itemIndex]
+        const key = props.computeItemKey(itemIndex, item, props.context)
+        if (renderedRows < sessionsVirtuosoMock.visibleLimit) {
+          nodes.push(
+            ReactModule.createElement(
+              'div',
+              { key, 'data-testid': `sessions-virtual-row-${key}` },
+              props.itemContent(itemIndex, groupIndex, item, props.context)
+            )
+          )
+          renderedRows += 1
+        }
+        itemIndex += 1
+      }
+    }
+
+    return ReactModule.createElement(
+      'div',
+      { 'data-testid': props['data-testid'] ?? 'sessions-mock-virtuoso' },
+      nodes
+    )
+  })
+
+  return { GroupedVirtuoso }
+})
+
 const summary: SessionSummary = {
   id: 'session-session-abc',
   agentId: 'claude-code',
@@ -310,39 +365,32 @@ describe('session pages', () => {
     expect(screen.queryByRole('dialog', { name: /Search assets/ })).not.toBeInTheDocument()
   })
 
-  it('renders large session lists in batches', async () => {
-    vi.useFakeTimers()
+  it('virtualizes large session lists and exposes project jump navigation', async () => {
     const sessions = Array.from({ length: 130 }, (_, index) => ({
       ...summary,
       id: `session-${index}`,
       title: `Session ${index}`,
+      project: index < 65 ? 'berth' : 'archive',
+      projectPath: index < 65 ? 'D:\\Code\\berth' : 'D:\\Code\\archive',
       transcriptPath: `C:\\Users\\test\\.claude\\projects\\D--Code-berth\\session-${index}.jsonl`
     }))
     window.api.sessions.list = vi.fn(async () => ({ sessions, totalCount: sessions.length }))
+    sessionsVirtuosoMock.scrollToIndex.mockClear()
 
-    try {
-      renderSessionsPage()
+    renderSessionsPage()
 
-      await act(async () => {
-        await Promise.resolve()
-        await Promise.resolve()
-      })
+    expect(await screen.findByText('Session 0')).toBeInTheDocument()
+    expect(screen.queryByText('Session 129')).not.toBeInTheDocument()
+    expect(screen.getAllByTestId(/session-row-/)).toHaveLength(sessionsVirtuosoMock.visibleLimit)
+    expect(screen.queryByText('Showing 80 of 130 sessions')).not.toBeInTheDocument()
+    expect(screen.getByRole('navigation', { name: 'Session groups' })).toBeInTheDocument()
 
-      expect(screen.getByText('Session 0')).toBeInTheDocument()
-      expect(screen.queryByText('Session 129')).not.toBeInTheDocument()
-      expect(
-        within(screen.getByTestId('sessions-toolbar-status-slot')).getByText('Showing 80 of 130 sessions')
-      ).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'D:\\Code\\archive, 65 items' }))
 
-      await act(async () => {
-        vi.runOnlyPendingTimers()
-      })
-
-      expect(screen.getByText('Session 129')).toBeInTheDocument()
-      expect(screen.queryByText('Showing 80 of 130 sessions')).not.toBeInTheDocument()
-    } finally {
-      vi.useRealTimers()
-    }
+    expect(sessionsVirtuosoMock.scrollToIndex).toHaveBeenCalledWith({
+      groupIndex: 1,
+      align: 'start'
+    })
   })
 
   it('passes selected project scope to the sessions list', async () => {

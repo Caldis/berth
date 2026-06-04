@@ -1,10 +1,8 @@
-import { useDeferredValue, useEffect, useMemo, useState } from 'react'
+import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import {
   MessageSquare,
-  ChevronDown,
-  ChevronRight,
   Clock,
   Coins,
   Hash,
@@ -25,11 +23,12 @@ import { TokenUsageDisplay } from '@/components/shared/token-usage-display'
 import { sessionGuide, type FeatureGuideEvidence } from '@/lib/feature-guidance'
 import { projectPathForScope } from '@shared/scope'
 import { usePageChrome, type PageChromeConfig } from '@/components/layout/page-chrome'
+import { VirtualGroupedList, type VirtualGroupedListHandle } from '@/components/shared/virtual-grouped-list'
+import { CategoryJumpNav } from '@/components/shared/category-jump-nav'
+import { buildJumpNavItems, type VirtualListGroup } from '@/lib/virtual-list-model'
+import type { SessionSummary } from '@shared/types/asset'
 
 type GroupBy = 'project' | 'date'
-
-const INITIAL_VISIBLE_SESSIONS = 80
-const SESSION_RENDER_BATCH_SIZE = 120
 
 function getDateGroupKey(dateStr: string | null, unknownLabel: string): string {
   if (!dateStr) return unknownLabel
@@ -49,7 +48,8 @@ export function Sessions(): React.ReactElement {
   const [filter, setFilter] = useState('')
   const deferredFilter = useDeferredValue(filter)
   const [groupBy, setGroupBy] = useState<GroupBy>('project')
-  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set())
+  const [activeGroupId, setActiveGroupId] = useState<string | undefined>(undefined)
+  const listRef = useRef<VirtualGroupedListHandle | null>(null)
 
   const filtered = useMemo(() => {
     if (!deferredFilter.trim()) return sessions
@@ -62,37 +62,23 @@ export function Sessions(): React.ReactElement {
         s.model.toLowerCase().includes(q)
     )
   }, [sessions, deferredFilter])
-  const visibleCount = useProgressiveVisibleCount(
-    filtered.length,
-    `${groupBy}:${deferredFilter}:${sessions.length}:${sessions[0]?.id ?? ''}`
+  const sessionGroups = useMemo(
+    () => buildSessionGroups(filtered, groupBy, t('common.unknown')),
+    [filtered, groupBy, t]
   )
-  const visibleSessions = useMemo(
-    () => filtered.slice(0, visibleCount),
-    [filtered, visibleCount]
-  )
+  const jumpItems = useMemo(() => buildJumpNavItems(sessionGroups), [sessionGroups])
 
-  const grouped = useMemo(() => {
-    const result: Record<string, typeof visibleSessions> = {}
-    for (const s of visibleSessions) {
-      const key =
-        groupBy === 'project'
-          ? truncatePath(s.projectPath || s.project || t('common.unknown'), 72)
-          : getDateGroupKey(s.startedAt, t('common.unknown'))
-      ;(result[key] ??= []).push(s)
-    }
-    return result
-  }, [visibleSessions, groupBy, t])
-  const groupCounts = useMemo(() => {
-    const counts: Record<string, number> = {}
-    for (const s of filtered) {
-      const key =
-        groupBy === 'project'
-          ? truncatePath(s.projectPath || s.project || t('common.unknown'), 72)
-          : getDateGroupKey(s.startedAt, t('common.unknown'))
-      counts[key] = (counts[key] ?? 0) + 1
-    }
-    return counts
-  }, [filtered, groupBy, t])
+  useEffect(() => {
+    setActiveGroupId((current) => {
+      if (current && sessionGroups.some((group) => group.id === current)) return current
+      return sessionGroups[0]?.id
+    })
+  }, [sessionGroups])
+
+  const handleJumpSelect = useCallback((groupId: string) => {
+    setActiveGroupId(groupId)
+    listRef.current?.scrollToGroup(groupId)
+  }, [])
 
   const evidence = useMemo<FeatureGuideEvidence[]>(() => {
     const projects = new Set(sessions.map((session) => session.projectPath || session.project).filter(Boolean))
@@ -106,7 +92,6 @@ export function Sessions(): React.ReactElement {
 
   const hasFilter = filter.trim().length > 0
   const showInitialLoading = loading && sessions.length === 0
-  const isRenderingPartialList = visibleCount < filtered.length
   const toolbarStatus = useMemo(() => {
     if (loading && stale && sessions.length > 0) {
       return {
@@ -114,15 +99,8 @@ export function Sessions(): React.ReactElement {
         label: t('sessions.refreshing')
       }
     }
-    if (isRenderingPartialList) {
-      const label = t('sessions.renderingRows', { shown: visibleCount, total: filtered.length })
-      return {
-        ariaLabel: label,
-        label
-      }
-    }
     return null
-  }, [filtered.length, isRenderingPartialList, loading, sessions.length, stale, t, visibleCount])
+  }, [loading, sessions.length, stale, t])
   const pageChromeActions = useMemo<React.ReactNode>(() => (
     <>
       <div
@@ -188,15 +166,6 @@ export function Sessions(): React.ReactElement {
   }), [agentView, evidence, filter, pageChromeActions, t])
   usePageChrome(pageChrome, [pageChrome])
 
-  const toggleGroup = (key: string): void => {
-    setCollapsedGroups((prev) => {
-      const next = new Set(prev)
-      if (next.has(key)) next.delete(key)
-      else next.add(key)
-      return next
-    })
-  }
-
   return (
     <div className="space-y-6">
       {showInitialLoading ? (
@@ -213,117 +182,130 @@ export function Sessions(): React.ReactElement {
           description={t(hasFilter ? 'sessions.empty.noResultsDescription' : 'sessions.empty.description')}
         />
       ) : (
-        <div className="space-y-2">
-          {Object.entries(grouped).map(([groupKey, groupSessions]) => {
-            const collapsed = collapsedGroups.has(groupKey)
-            return (
-              <div key={groupKey} className="overflow-hidden rounded-xl border border-border bg-card">
-                {/* Group header */}
-                <button
-                  onClick={() => toggleGroup(groupKey)}
-                  className="flex w-full items-center gap-2 px-4 py-2.5 text-left transition-colors hover:bg-accent/5"
-                >
-                  {collapsed ? (
-                    <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                  ) : (
-                    <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                  )}
-                  <FolderOpen className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                  <span className="text-sm font-medium text-card-foreground">{groupKey}</span>
-                  <span className="ml-auto text-xs text-muted-foreground">
-                    {groupCounts[groupKey] ?? groupSessions.length}
-                  </span>
-                </button>
-
-                {/* Session rows */}
-                {!collapsed && (
-                  <div className="divide-y divide-border border-t border-border">
-                    {groupSessions.map((session) => (
-                      <button
-                        key={session.id}
-                        onClick={() => navigate(`/sessions/${session.id}`)}
-                        className="flex w-full items-center gap-4 px-4 py-3 text-left transition-colors hover:bg-accent/5"
-                      >
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-medium text-card-foreground">
-                            {session.title || t('sessions.fallbackTitle', { id: session.id.slice(0, 8) })}
-                          </p>
-                          <div className="mt-0.5 flex items-center gap-3 text-xs text-muted-foreground">
-                            <span className="flex items-center gap-1">
-                              <Clock className="h-3 w-3" />
-                              {formatOptionalRelativeTime(session.startedAt)}
-                            </span>
-                            <span>{formatOptionalDuration(session.duration)}</span>
-                          </div>
-                        </div>
-                        <div className="flex shrink-0 items-center gap-4 text-xs text-muted-foreground">
-                          {agentView === 'all' && (
-                            <span className="inline-flex items-center rounded-md border border-border px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
-                              {session.agentId === 'codex' ? 'Codex' : 'Claude'}
-                            </span>
-                          )}
-                          <span className="flex items-center gap-1">
-                            <Coins className="h-3 w-3" />
-                            {formatOptionalCurrency(session.cost)}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <Hash className="h-3 w-3" />
-                            <TokenUsageDisplay usage={session.tokenUsage} />
-                          </span>
-                          <span className="inline-flex items-center rounded-md bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
-                            {session.model || t('common.unknown')}
-                          </span>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                )}
+        <div className="flex min-h-[520px] gap-4 max-lg:flex-col">
+          <CategoryJumpNav
+            items={jumpItems}
+            activeId={activeGroupId}
+            onSelect={handleJumpSelect}
+            label={t('sessions.groupNavigation')}
+            testId="sessions-category-jump-nav"
+          />
+          <VirtualGroupedList<SessionSummary>
+            ref={listRef}
+            groups={sessionGroups}
+            getItemKey={(session) => session.id}
+            onActiveGroupChange={setActiveGroupId}
+            renderGroup={(group) => (
+              <div className="flex items-center gap-2 rounded-t-lg border border-border bg-card px-4 py-2.5">
+                <FolderOpen className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                <span className="min-w-0 truncate text-sm font-medium text-card-foreground">{group.label}</span>
+                <span className="ml-auto text-xs text-muted-foreground">{group.count}</span>
               </div>
-            )
-          })}
+            )}
+            renderItem={(session) => (
+              <SessionRow
+                session={session}
+                agentView={agentView}
+                unknownLabel={t('common.unknown')}
+                fallbackTitle={t('sessions.fallbackTitle', { id: session.id.slice(0, 8) })}
+                onOpen={() => navigate(`/sessions/${session.id}`)}
+              />
+            )}
+            className="min-w-0 flex-1"
+            listClassName="rounded-lg border border-border bg-card"
+            defaultItemHeight={72}
+            testId="sessions-virtual-list"
+          />
         </div>
       )}
     </div>
   )
 }
 
-function useProgressiveVisibleCount(total: number, resetKey: string): number {
-  const [visibleCount, setVisibleCount] = useState(() => Math.min(INITIAL_VISIBLE_SESSIONS, total))
+function buildSessionGroups(
+  sessions: readonly SessionSummary[],
+  groupBy: GroupBy,
+  unknownLabel: string
+): VirtualListGroup<SessionSummary>[] {
+  const groups = new Map<string, VirtualListGroup<SessionSummary>>()
 
-  useEffect(() => {
-    let cancelled = false
-    let timeoutId: ReturnType<typeof globalThis.setTimeout> | null = null
-    let idleId: number | null = null
+  for (const session of sessions) {
+    const rawGroup =
+      groupBy === 'project'
+        ? session.projectPath || session.project || unknownLabel
+        : getDateGroupKey(session.startedAt, unknownLabel)
+    const groupId = `${groupBy}:${rawGroup}`
+    const label = groupBy === 'project' ? truncatePath(rawGroup, 72) : rawGroup
+    const existing = groups.get(groupId)
 
-    const initialCount = Math.min(INITIAL_VISIBLE_SESSIONS, total)
-    setVisibleCount(initialCount)
-    if (total <= initialCount) return undefined
-
-    const scheduleNextBatch = (): void => {
-      const addBatch = (): void => {
-        if (cancelled) return
-        setVisibleCount((current) => {
-          const next = Math.min(current + SESSION_RENDER_BATCH_SIZE, total)
-          if (next < total) scheduleNextBatch()
-          return next
-        })
-      }
-
-      if ('requestIdleCallback' in window) {
-        idleId = window.requestIdleCallback(addBatch, { timeout: 120 })
-      } else {
-        timeoutId = globalThis.setTimeout(addBatch, 16)
-      }
+    if (existing) {
+      existing.items = [...existing.items, session]
+      existing.count = existing.items.length
+    } else {
+      groups.set(groupId, {
+        id: groupId,
+        label,
+        count: 1,
+        items: [session]
+      })
     }
+  }
 
-    scheduleNextBatch()
+  return [...groups.values()]
+}
 
-    return () => {
-      cancelled = true
-      if (idleId != null && 'cancelIdleCallback' in window) window.cancelIdleCallback(idleId)
-      if (timeoutId != null) globalThis.clearTimeout(timeoutId)
-    }
-  }, [total, resetKey])
+interface SessionRowProps {
+  session: SessionSummary
+  agentView: 'all' | SessionSummary['agentId']
+  unknownLabel: string
+  fallbackTitle: string
+  onOpen: () => void
+}
 
-  return visibleCount
+function SessionRow({
+  session,
+  agentView,
+  unknownLabel,
+  fallbackTitle,
+  onOpen
+}: SessionRowProps): React.ReactElement {
+  return (
+    <button
+      type="button"
+      data-testid={`session-row-${session.id}`}
+      onClick={onOpen}
+      className="flex w-full items-center gap-4 border-b border-border px-4 py-3 text-left transition-colors last:border-b-0 hover:bg-accent/5"
+    >
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-medium text-card-foreground">
+          {session.title || fallbackTitle}
+        </p>
+        <div className="mt-0.5 flex items-center gap-3 text-xs text-muted-foreground">
+          <span className="flex items-center gap-1">
+            <Clock className="h-3 w-3" />
+            {formatOptionalRelativeTime(session.startedAt)}
+          </span>
+          <span>{formatOptionalDuration(session.duration)}</span>
+        </div>
+      </div>
+      <div className="flex shrink-0 items-center gap-4 text-xs text-muted-foreground">
+        {agentView === 'all' && (
+          <span className="inline-flex items-center rounded-md border border-border px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+            {session.agentId === 'codex' ? 'Codex' : 'Claude'}
+          </span>
+        )}
+        <span className="flex items-center gap-1">
+          <Coins className="h-3 w-3" />
+          {formatOptionalCurrency(session.cost)}
+        </span>
+        <span className="flex items-center gap-1">
+          <Hash className="h-3 w-3" />
+          <TokenUsageDisplay usage={session.tokenUsage} />
+        </span>
+        <span className="inline-flex items-center rounded-md bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+          {session.model || unknownLabel}
+        </span>
+      </div>
+    </button>
+  )
 }

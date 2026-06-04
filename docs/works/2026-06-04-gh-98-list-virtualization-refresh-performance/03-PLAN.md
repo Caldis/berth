@@ -14,10 +14,10 @@
   - tests: `pnpm test -- tests/renderer/virtual-grouped-list.test.tsx tests/renderer/category-jump-nav.test.tsx` passed; `pnpm typecheck:web` passed。
   - verify: stable key、groupCounts、active group、scrollToGroup、scrollToItem、aria-current、desktop narrow nav 与 mobile sticky nav 均有测试或 DOM 断言。
 
-- [ ] 3. 改造 Sessions 列表
+- [x] 3. 改造 Sessions 列表
   - scope: `src/renderer/src/pages/sessions.tsx`, 必要 i18n key。
-  - tests: 更新 `tests/renderer/sessions-pages.test.tsx`; 命令 `pnpm test -- tests/renderer/sessions-pages.test.tsx`。
-  - verify: 800+ sessions 下 renderer test 或 e2e 断言 DOM row 数量小于总数; 搜索输入、project/date 跳转、loading/empty/stale 字段保留; 页面布局保持现有信息密度。
+  - tests: `pnpm test -- tests/renderer/sessions-pages.test.tsx` passed; `pnpm typecheck:web` passed。
+  - verify: renderer test mock 130 sessions 只挂载 30 个 row, 尾部 `Session 129` 不在 DOM; project jump nav 调用 `scrollToIndex({ groupIndex: 1, align: 'start' })`; 搜索输入、loading/empty/stale 与原 session 字段保留。
 
 - [ ] 4. 加强 Sessions / Memory refresh cache
   - scope: `src/renderer/src/hooks/use-ipc.ts`, `src/renderer/src/hooks/use-memory.ts`, `src/renderer/src/lib/result-signature.ts`。
