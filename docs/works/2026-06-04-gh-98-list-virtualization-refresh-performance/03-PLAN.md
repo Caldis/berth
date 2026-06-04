@@ -46,7 +46,7 @@
 
 - [x] 9. 分组优化后的全量门禁
   - scope: 当前 GH-98 代码与任务态文档。
-  - tests: `pnpm lint` passed; `pnpm typecheck` passed; `pnpm test` passed (90 files / 650 tests); `pnpm harness:check --work docs/works/2026-06-04-gh-98-list-virtualization-refresh-performance` passed。
+  - tests: `pnpm lint` passed; `pnpm typecheck` passed; `pnpm test` passed (90 files / 650 tests); `pnpm harness:check --work docs/works/2026-06-04-gh-98-list-virtualization-refresh-performance` passed; `pnpm exec playwright test --grep "can navigate to sessions"` passed (1 Electron test)。
   - verify: 工作区在提交后保持 clean; 全量 vitest 仍有既有 React act warning 输出, 但测试结果通过。
 
 ## verify 回写
