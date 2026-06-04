@@ -19,7 +19,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.1.0-blue" alt="Version" />
+  <img src="https://img.shields.io/badge/version-0.1.1-blue" alt="Version" />
   <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows-lightgrey" alt="Platform" />
   <img src="https://img.shields.io/badge/license-MIT-green" alt="License" />
 </p>
