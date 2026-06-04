@@ -16,9 +16,9 @@
   - tests: `pnpm typecheck:node` — passed; `pnpm typecheck:web` — passed; `pnpm vitest run tests/unit/hooks-manager.test.ts tests/unit/claude-scanner.test.ts tests/renderer/hooks-lifecycle-view.test.tsx` — 52 passed
   - verify: `rg "HookRecovery|hooks:recoveries|clearRecovery|capabilities\\.hooks\\.recovery" src tests` 不再命中运行时代码或测试 mock; sidecar disable/restore 测试仍通过。
 
-- [ ] 任务 4: 收口验证与真实 UI 检查。
-  - tests: `pnpm harness:check --work docs/works/2026-06-04-gh-104-inline-claude-hook-restore`; `pnpm typecheck`; 目标测试全量重跑; 视情况跑 `pnpm harness:prepush`
-  - verify: Electron Hooks 页实测左侧无恢复中心, Claude disabled Hook 可在右侧行内恢复; 记录截图或实测证据。
+- [x] 任务 4: 收口验证与真实 UI 检查。
+  - tests: `pnpm harness:check --work docs/works/2026-06-04-gh-104-inline-claude-hook-restore` — passed; `pnpm typecheck` — passed; `pnpm test` — 658 passed
+  - verify: Electron agent-owned 实例 `gh104-inline-hooks` 实测左侧无恢复中心; 临时 `BERTH_EXTRA_CLAUDE_DIRS` sidecar disabled Hook 在原 Hook 行显示 `已禁用` 与 `启用`; 截图: `C:\Users\mail\AppData\Local\Temp\berth-gh104-hooks-inline.png`。
 
 ## verify 回写
 verify 不通过项作为新任务追加于此, phase 退回 implement。

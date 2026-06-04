@@ -2,7 +2,7 @@
 task: 2026-06-04-gh-104-inline-claude-hook-restore
 task_id: GH-104
 type: feature
-phase: implement
+phase: verify
 created: 2026-06-04
 priority: P1
 target_date:
