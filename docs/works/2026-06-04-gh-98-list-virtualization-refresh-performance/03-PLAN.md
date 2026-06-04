@@ -9,10 +9,10 @@
   - tests: `pnpm typecheck:web` passed。
   - verify: `package.json` 与 `pnpm-lock.yaml` 只新增 `react-virtuoso@4.18.7`、`@radix-ui/react-navigation-menu@1.2.14`; `rg` 确认 `@tanstack/react-virtual` 未进入 lockfile。
 
-- [ ] 2. 建 shared virtual list 与 category jump nav
+- [x] 2. 建 shared virtual list 与 category jump nav
   - scope: `src/renderer/src/components/shared/virtual-grouped-list.tsx`, `src/renderer/src/components/shared/category-jump-nav.tsx`, `src/renderer/src/hooks/use-app-scroll-parent.ts`, `src/renderer/src/lib/virtual-list-model.ts`。
-  - tests: `tests/renderer/virtual-grouped-list.test.tsx`, `tests/renderer/category-jump-nav.test.tsx`; 命令 `pnpm test -- tests/renderer/virtual-grouped-list.test.tsx tests/renderer/category-jump-nav.test.tsx`。
-  - verify: stable key、groupCounts、active group、scrollToGroup、aria-current、desktop narrow nav 与 mobile sticky nav 均有测试或 DOM 断言。
+  - tests: `pnpm test -- tests/renderer/virtual-grouped-list.test.tsx tests/renderer/category-jump-nav.test.tsx` passed; `pnpm typecheck:web` passed。
+  - verify: stable key、groupCounts、active group、scrollToGroup、scrollToItem、aria-current、desktop narrow nav 与 mobile sticky nav 均有测试或 DOM 断言。
 
 - [ ] 3. 改造 Sessions 列表
   - scope: `src/renderer/src/pages/sessions.tsx`, 必要 i18n key。
