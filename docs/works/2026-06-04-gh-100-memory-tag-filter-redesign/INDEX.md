@@ -2,7 +2,7 @@
 task: 2026-06-04-gh-100-memory-tag-filter-redesign
 task_id: GH-100
 type: feature
-phase: implement
+phase: verify
 created: 2026-06-04
 priority: P2
 target_date: 
@@ -22,14 +22,15 @@ debt:
     confidence: medium
     rationale: "explore 校准: 改动完全落在 renderer 单文件 memory-view.tsx (+ 测试 + i18n), 无 main/preload/IPC; 重设计同时移除 FilterGroup collapsed 死分支与 renderChips 重复渲染, 故计 repaid 1。risk 由 medium 降 low (隔离、测试充分、无跨进程)。"
   final:
-    incurred:
-    repaid:
-    net:
-    scope:
-    risk:
-    areas: []
-    confidence:
-    rationale:
+    incurred: 2
+    repaid: 1
+    net: 1
+    scope: module
+    risk: low
+    areas:
+      - ui-ux
+    confidence: high
+    rationale: "落地仅 renderer: 新增 TagFilter (搜索+有界滚动+多选 AND, 选中置顶且不被搜索过滤), tagFilter string->string[]; 同时移除 FilterGroup collapsed 死分支 + renderChips 重复渲染 + hover 状态机 (repaid 1)。13 renderer 测试覆盖结构/搜索/求交/复位/空态/a11y/中英文; typecheck+lint 绿。无 main/preload/IPC 改动。"
   revisions:
     - phase: explore
       date: 2026-06-04
