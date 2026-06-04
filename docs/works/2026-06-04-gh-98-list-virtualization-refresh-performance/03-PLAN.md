@@ -34,10 +34,10 @@
   - tests: `pnpm test -- tests/renderer/instructions-guidance.test.tsx` passed; `pnpm typecheck:web` passed。
   - verify: skills/conventions/subagents/commands/outputModes 共用 `VirtualGroupedList`; 80 skills renderer test 只挂载 25 个 asset card, scope jump nav 调用 `scrollToIndex({ groupIndex: 1, align: 'start' })`。
 
-- [ ] 7. 全量门禁与真实 Electron 验证
+- [x] 7. 全量门禁与真实 Electron 验证
   - scope: 代码、任务态文档、可选 e2e。
-  - tests: `pnpm typecheck:web`, `pnpm test`, `pnpm harness:check --work docs/works/2026-06-04-gh-98-list-virtualization-refresh-performance`, `pnpm test:e2e -- --grep "large list|sessions"` 或相关现有 e2e。
-  - verify: 真实 Electron desktop/mobile 视口确认 DOM 数量、scroll/jump、search、refresh 状态与截图/DOM 证据; 若 e2e 环境不可用, 记录具体阻断命令和替代证据。
+  - tests: `pnpm typecheck` passed; `pnpm test` passed (89 files / 645 tests); `pnpm harness:check --work docs/works/2026-06-04-gh-98-list-virtualization-refresh-performance` passed; `pnpm exec playwright test --grep "can navigate to sessions|can navigate to promoted instruction pages"` passed (2 Electron tests).
+  - verify: renderer tests cover Sessions 130 rows -> 30 mounted, Memory 80 notes -> 20 mounted, Instructions 80 skills -> 25 mounted, plus jump nav calls. Electron e2e covers real Sessions / Instructions route DOM navigation. Remaining verify risk: no dedicated real Electron 800-row fixture or screenshot in implementation stage; carry to 4.0-verify if visual evidence is required.
 
 ## verify 回写
 verify 不通过项作为新任务追加于此, phase 退回 implement。
