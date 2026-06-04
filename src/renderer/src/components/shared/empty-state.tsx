@@ -1,11 +1,22 @@
 import { cn } from '@/lib/utils'
 
+/**
+ * Min-height of the page content area below the (floating) top navigation.
+ * CSS vars are resolved lazily at the using node: `--berth-page-top-offset`
+ * is inherited from <main>, `--berth-page-gutter` from :root (globals.css).
+ * Use on a page-root flex wrapper so a `fullHeight` EmptyState can fill it.
+ */
+export const PAGE_EMPTY_FILL =
+  'min-h-[calc(100dvh-var(--berth-page-top-offset)-var(--berth-page-gutter))]'
+
 interface EmptyStateProps {
   icon: React.ComponentType<{ className?: string }>
   message?: string
   title?: string
   description?: string
   action?: React.ReactNode
+  /** Fill the parent flex column / definite-height box and center the placeholder. */
+  fullHeight?: boolean
   className?: string
 }
 
@@ -15,6 +26,7 @@ export function EmptyState({
   title,
   description,
   action,
+  fullHeight = false,
   className
 }: EmptyStateProps): React.ReactElement {
   const heading = title ?? message
@@ -23,6 +35,7 @@ export function EmptyState({
     <div
       className={cn(
         'flex flex-col items-center justify-center rounded-xl border border-dashed border-border bg-card/60 px-6 py-14 text-center',
+        fullHeight && 'h-full w-full flex-1',
         className
       )}
     >

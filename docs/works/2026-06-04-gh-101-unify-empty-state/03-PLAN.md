@@ -4,7 +4,8 @@
 每个实现项必须有测试证据或明确例外理由。
 实现中若发现 debt 初估不准, 更新 INDEX.md `debt.estimate`, 并追加 `debt.revisions[]`。
 
-- [ ] **T1: 共享 EmptyState 加 fullHeight + PAGE_EMPTY_FILL** (S1 / 验收 1,3)
+- [x] **T1: 共享 EmptyState 加 fullHeight + PAGE_EMPTY_FILL** (S1 / 验收 1,3)
+  - 证据: `pnpm test -- tests/renderer/empty-state.test.tsx` → 4 passed
   - 文件: `src/renderer/src/components/shared/empty-state.tsx`
   - 改: 导出 `PAGE_EMPTY_FILL` 常量; 加 `fullHeight?: boolean`; cn 中 fullHeight 追加 `h-full w-full flex-1`; 占位图结构不变。
   - tests: 新增 `tests/renderer/empty-state.test.tsx` — fullHeight 时容器含 `flex-1`/`h-full`; 默认不含; 占位图与 heading 渲染正常。
