@@ -2,7 +2,7 @@
 task: 2026-06-04-gh-100-memory-tag-filter-redesign
 task_id: GH-100
 type: feature
-phase: explore
+phase: design
 created: 2026-06-04
 priority: P2
 target_date: 
@@ -13,14 +13,14 @@ source:
 debt:
   estimate:
     incurred: 3
-    repaid: 0
-    net: 3
+    repaid: 1
+    net: 2
     scope: module
-    risk: medium
+    risk: low
     areas:
       - ui-ux
-    confidence: low
-    rationale: "0.0-new 初始估算; 集中在 renderer 记忆页标签筛选组件 (FilterGroup 折叠态), 取代 GH-97 引入的 hover 浮层交互; explore/design 后校准。"
+    confidence: medium
+    rationale: "explore 校准: 改动完全落在 renderer 单文件 memory-view.tsx (+ 测试 + i18n), 无 main/preload/IPC; 重设计同时移除 FilterGroup collapsed 死分支与 renderChips 重复渲染, 故计 repaid 1。risk 由 medium 降 low (隔离、测试充分、无跨进程)。"
   final:
     incurred:
     repaid:
@@ -30,7 +30,20 @@ debt:
     areas: []
     confidence:
     rationale:
-  revisions: []
+  revisions:
+    - phase: explore
+      date: 2026-06-04
+      from:
+        net: 3
+        scope: module
+        risk: medium
+        confidence: low
+      to:
+        net: 2
+        scope: module
+        risk: low
+        confidence: medium
+      reason: "explore 确认改动仅限 renderer memory-view.tsx (+测试+i18n), 无跨进程; 重设计移除 collapsed 死分支与重复渲染计 repaid 1, risk 降 low, confidence 升 medium。"
 issue:
   number: 100
   repo: Caldis/berth
@@ -58,7 +71,7 @@ artifacts:
 
 ## 产物
 - [x] 00-PRD.md / 00-BUG.md — 原始输入快照
-- [ ] 01-ANALYSIS.md — Explore 产物
+- [x] 01-ANALYSIS.md — Explore 产物
 - [ ] 02-SPEC.md — Design 产物
 - [ ] 03-PLAN.md — 活任务清单
 - [ ] 04-POLISH.md — 可选抛光记录
