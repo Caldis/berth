@@ -7,6 +7,7 @@ import {
   type TokenUsageSegmentId
 } from '@shared/token-usage'
 import { formatNumber, cn } from '@/lib/utils'
+import { TOKEN_SEGMENT_COLOR_VAR } from '@/lib/chart-colors'
 
 interface TokenUsageDisplayProps {
   usage: TokenUsageBreakdown
@@ -16,12 +17,9 @@ interface TokenUsageDisplayProps {
   legendDensity?: 'normal' | 'compact'
 }
 
-const SEGMENT_CLASS: Record<TokenUsageSegmentId, string> = {
-  input: 'bg-blue-500',
-  output: 'bg-emerald-500',
-  cache: 'bg-amber-500',
-  reasoning: 'bg-violet-500',
-  unknown: 'bg-muted-foreground/50'
+function segmentColor(id: TokenUsageSegmentId): string {
+  const variable = TOKEN_SEGMENT_COLOR_VAR[id]
+  return id === 'unknown' ? `hsl(var(${variable}) / 0.5)` : `hsl(var(${variable}))`
 }
 
 const SEGMENT_LABEL_KEYS: Record<TokenUsageSegmentId, string> = {
@@ -99,8 +97,7 @@ export function TokenUsageDisplay({
               {segments.map((segment) => (
                 <div
                   key={segment.id}
-                  className={SEGMENT_CLASS[segment.id]}
-                  style={{ width: `${segment.percentage}%` }}
+                  style={{ backgroundColor: segmentColor(segment.id), width: `${segment.percentage}%` }}
                   title={`${segment.id === 'cache' ? cacheLabel : `${t(SEGMENT_LABEL_KEYS[segment.id])}: ${formatNumber(segment.tokens)}`} (${formatPercentage(segment.percentage)})`}
                 />
               ))}
@@ -113,7 +110,7 @@ export function TokenUsageDisplay({
             >
               {segments.map((segment) => (
                 <span key={segment.id} className="inline-flex items-center gap-1.5">
-                  <span className={cn('h-2 w-2 rounded-full', SEGMENT_CLASS[segment.id])} />
+                  <span className="h-2 w-2 rounded-full" style={{ backgroundColor: segmentColor(segment.id) }} />
                   <span>
                     {t(SEGMENT_LABEL_KEYS[segment.id])} {formatNumber(segment.tokens)}
                   </span>

@@ -23,8 +23,8 @@
   - tests: `theme-palette.test.ts` ✓ 4 passed (test2 改为断言引用 CHART_CATEGORICAL/CHART_SERIES_FILL); CHART_COLORS 零残留; `pnpm typecheck` ✓。
   - verify: 截图用量页「每日花费」为中性 primary 单色; 「按模型/按项目」色标为蓝绿橙紫语义色板; 界面质量: breakdown 行保留文字标签不靠纯色。验收标准 2/4。
 
-- [ ] 任务 5: `components/shared/token-usage-display.tsx` 接入 CSS 变量真源 (SEGMENT_CLASS Tailwind 硬编码 → TOKEN_SEGMENT_COLOR_VAR + inline style)
-  - tests: 新建 `tests/renderer/token-usage-display.test.tsx`: 渲染 detail 模式, 断言不含 `bg-blue-500/bg-emerald-500/bg-amber-500/bg-violet-500`; 分段与图例点 style 含 `var(--chart-1)` 等。`pnpm test token-usage-display`
+- [x] 任务 5: `components/shared/token-usage-display.tsx` 接入 CSS 变量真源 (SEGMENT_CLASS Tailwind 硬编码 → segmentColor + TOKEN_SEGMENT_COLOR_VAR inline style; unknown 用 muted/0.5)
+  - tests: `tests/renderer/token-usage-display.test.ts` ✓ 2 passed (源码文本断言: 不含 bg-blue/emerald/amber/violet-500、引用 chart-colors 真源)。jsdom 对 hsl(var()) 颜色不可靠故用文本断言, 与 theme-palette 同模式。`pnpm typecheck` ✓。
   - verify: 截图会话详情页 + 用量页 token 条颜色(亮)与现状一致、暗色自适应变亮; 分段与图例点同色; unknown 段仍中性半透。验收标准 1/3。
 
 - [ ] 任务 6: 全局门禁 + 视觉收口
