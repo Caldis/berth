@@ -22,3 +22,7 @@
 
 ## verify 回写
 verify 不通过项作为新任务追加于此, phase 退回 implement。
+
+- [x] 任务 5: 修复 Linux CI 中 Hooks 健康检查 renderer 测试异步等待。
+  - tests: `pnpm vitest run tests/renderer/hooks-lifecycle-view.test.tsx` — 29 passed
+  - verify: 将健康检查摘要按钮断言从同步 `getByRole` 改为异步 `findByRole`, 避免在 `Checking` 状态尚未完成时误判。

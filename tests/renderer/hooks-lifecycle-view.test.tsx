@@ -732,8 +732,8 @@ describe('HooksLifecycleView', () => {
 
     const sidebar = screen.getByLabelText('Lifecycle')
     const healthPanel = await within(sidebar).findByTestId('hook-health-panel')
-    const summaryButton = within(healthPanel).getByRole('button', { name: /1 hook check needs attention/ })
-    const severityList = within(healthPanel).getByTestId('hook-health-severity-list')
+    const summaryButton = await within(healthPanel).findByRole('button', { name: /1 hook check needs attention/ })
+    const severityList = await within(healthPanel).findByTestId('hook-health-severity-list')
 
     expect(summaryButton.className).toContain('w-full')
     expect(severityList.className).not.toContain('flex-wrap')
