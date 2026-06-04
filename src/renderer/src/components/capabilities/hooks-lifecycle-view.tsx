@@ -16,6 +16,7 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { ScopeBadge } from '@/components/shared/scope-badge'
+import { FloatingPopover } from '@/components/shared/floating-popover'
 import { useHealthChecks } from '@/hooks/use-ipc'
 import {
   getHookManagementState,
@@ -809,49 +810,39 @@ function HealthStatusTip({
   buttonClassName?: string
   labelClassName?: string
 }): React.ReactElement {
-  const [open, setOpen] = useState(false)
   const Icon = healthToneIcon(tone)
 
   return (
-    <span
-      className="relative inline-flex"
-      onMouseEnter={() => setOpen(true)}
-      onMouseLeave={() => setOpen(false)}
-      onFocus={() => setOpen(true)}
-      onBlur={(event) => {
-        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setOpen(false)
-      }}
-    >
-      <button
-        type="button"
-        aria-describedby={open ? id : undefined}
-        className={cn(
-          'inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-[11px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-          healthToneClass(tone),
-          buttonClassName
-        )}
-      >
-        <Icon className="h-3.5 w-3.5" />
-        <span className={labelClassName}>{label}</span>
-      </button>
-      {open && (
-        <span
-          id={id}
-          role="tooltip"
-          className="absolute left-0 top-full z-40 mt-2 w-80 max-w-[calc(100vw-2rem)] rounded-md border border-border bg-popover p-3 text-popover-foreground shadow-lg"
-        >
-          <span className="block text-xs font-semibold text-foreground">{label}</span>
-          <span className="mt-1 block text-xs leading-5 text-muted-foreground">{detail}</span>
-          {checks.length > 0 && (
-            <span className="mt-3 block space-y-2">
-              {checks.map((check) => (
-                <HookHealthCheckTipRow key={check.id} check={check} />
-              ))}
-            </span>
+    <FloatingPopover
+      id={id}
+      role="tooltip"
+      side="bottom"
+      align="start"
+      contentClassName="w-80 rounded-md border border-border bg-popover p-3 text-popover-foreground shadow-lg"
+      trigger={(
+        <button
+          type="button"
+          className={cn(
+            'inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-[11px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+            healthToneClass(tone),
+            buttonClassName
           )}
+        >
+          <Icon className="h-3.5 w-3.5" />
+          <span className={labelClassName}>{label}</span>
+        </button>
+      )}
+    >
+      <span className="block text-xs font-semibold text-foreground">{label}</span>
+      <span className="mt-1 block text-xs leading-5 text-muted-foreground">{detail}</span>
+      {checks.length > 0 && (
+        <span className="mt-3 block space-y-2">
+          {checks.map((check) => (
+            <HookHealthCheckTipRow key={check.id} check={check} />
+          ))}
         </span>
       )}
-    </span>
+    </FloatingPopover>
   )
 }
 

@@ -1081,6 +1081,7 @@ describe('HooksLifecycleView', () => {
 
     fireEvent.mouseEnter(warningTag)
 
+    expect(sidebar).not.toContainElement(screen.getByRole('tooltip'))
     expect(screen.getByText('Codex hook has no Windows command override')).toBeInTheDocument()
     expect(screen.getByText('A command hook is configured without commandWindows on Windows.')).toBeInTheDocument()
     expect(container.querySelector('#hook-health-checks')).toBeNull()

@@ -155,6 +155,7 @@ describe('Capabilities guidance surfaces', () => {
     expect(await screen.findByRole('heading', { name: 'Hooks' })).toBeInTheDocument()
     expect(screen.queryByText('Trigger point')).not.toBeInTheDocument()
     fireEvent.pointerEnter(screen.getByTestId('page-guide-hover-region'))
+    expect(screen.getByTestId('top-navigation')).not.toContainElement(screen.getByTestId('page-guide-panel'))
     expect(screen.getByText('Lifecycle automation')).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: /Details/ }))
     expect(screen.getByText('Trigger point')).toBeInTheDocument()
