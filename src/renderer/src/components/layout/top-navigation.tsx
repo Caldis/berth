@@ -136,6 +136,7 @@ export function TopNavigation({ isWindows }: TopNavigationProps): React.ReactEle
               sideOffset={8}
               closeDelay={220}
               safePolygonBuffer={32}
+              hoverBridge
               contentClassName="w-[min(42rem,calc(100vw-3rem))] rounded-lg bg-transparent p-0 shadow-none"
               trigger={(
                 <button

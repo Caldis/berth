@@ -29,7 +29,7 @@ debt:
     areas:
       - ui-ux
     confidence: high
-    rationale: "最终 diff 限定在 renderer 共享浮层组件、两处调用关联测试、依赖锁和 GH-102 任务产物; 公共组件改用 Floating UI, 通过 Portal/fixed 定位脱离裁剪上下文, 并用外层定位/内层动画避免 transform 冲突, 用 safePolygon 覆盖 trigger 到浮层的空隙 hover 路径。header 指南宽面板额外设置 safePolygon buffer 与 closeDelay, 修复横向经过空隙再进入面板时过早关闭的问题。目标 renderer 测试、typecheck:web 与 Electron 坐标实测通过。"
+    rationale: "最终 diff 限定在 renderer 共享浮层组件、两处调用关联测试、依赖锁和 GH-102 任务产物; 公共组件改用 Floating UI, 通过 Portal/fixed 定位脱离裁剪上下文, 并用外层定位/内层动画避免 transform 冲突, 用 safePolygon 覆盖 trigger 到浮层的空隙 hover 路径。header 指南宽面板额外设置 safePolygon buffer、closeDelay 和公共 hoverBridge, 修复真实鼠标从 `[?]` 慢速经过 header 空隙再进入面板时过早关闭的问题。目标 renderer 测试、typecheck:web 与 Electron 坐标实测通过。"
   revisions: []
 issue:
   number: 102

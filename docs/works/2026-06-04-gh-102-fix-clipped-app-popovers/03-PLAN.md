@@ -23,3 +23,7 @@
 - [x] 任务 6: 修复 header 指南宽面板横向进入时过早关闭。
   - tests: `pnpm exec vitest run tests/renderer/top-navigation.test.tsx tests/renderer/hooks-lifecycle-view.test.tsx` — 2 files / 37 passed; `pnpm typecheck:web` — passed.
   - verify: Electron agent 实例 `gh102-header-hover-gap` 实测通过: header 指南在 1280 / 1424 / 1680 宽度下, 鼠标从触发按钮先横向移动到面板中心 x 坐标、等待 120ms、再下移进入面板时保持显示; 在 1280 / 1424 宽度下直接离开触发区且不进入面板时关闭; Hook 检查 `正常` tag 移动到 popover 后保持显示。
+
+- [x] 任务 7: 为 header 指南补真实 hover bridge, 覆盖手动慢速移入路径。
+  - tests: `pnpm exec vitest run tests/renderer/top-navigation.test.tsx tests/renderer/hooks-lifecycle-view.test.tsx` — 2 files / 37 passed; `pnpm exec vitest run tests/renderer/capabilities-guidance.test.tsx tests/renderer/instructions-guidance.test.tsx tests/renderer/sessions-pages.test.tsx` — 3 files / 38 passed; `pnpm typecheck:web` — passed.
+  - verify: Electron agent 实例 `gh102-header-real-path` 在“记忆”页实测通过: 从 `[?]` 到面板中心慢速 900ms、到 Details 区域慢速 900ms、到面板左侧内容慢速 1100ms 均保持显示; 路径前段命中 `page-guide-panel-hover-bridge`; 直接离开 `[?]` 且不进入面板时关闭。截图: `C:\Users\mail\AppData\Local\Temp\berth-gh102-header-hover-bridge.png`。

@@ -139,8 +139,12 @@ describe('TopNavigation', () => {
 
     fireEvent.mouseEnter(hoverRegion, { clientX: 760, clientY: 36 })
     expect(await screen.findByText('Local conversation history')).toBeInTheDocument()
+    expect(await screen.findByTestId('page-guide-panel-hover-bridge')).toHaveClass('titlebar-no-drag')
 
     fireEvent.mouseLeave(hoverRegion, { clientX: 740, clientY: 66 })
+    fireEvent.mouseEnter(screen.getByTestId('page-guide-panel-hover-bridge'), { clientX: 720, clientY: 58 })
+    fireEvent.mouseMove(screen.getByTestId('page-guide-panel-hover-bridge'), { clientX: 720, clientY: 58 })
+    expect(screen.getByText('Local conversation history')).toBeInTheDocument()
     fireEvent.mouseEnter(screen.getByTestId('page-guide-panel'), { clientX: 700, clientY: 92 })
     fireEvent.mouseMove(screen.getByTestId('page-guide-panel'), { clientX: 700, clientY: 92 })
     expect(screen.getByText('Local conversation history')).toBeInTheDocument()
