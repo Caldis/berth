@@ -37,7 +37,7 @@ import {
 } from '@/lib/utils'
 import { useSessionDetail } from '@/hooks/use-ipc'
 import { ScopeBadge } from '@/components/shared/scope-badge'
-import { EmptyState } from '@/components/shared/empty-state'
+import { EmptyState, PAGE_EMPTY_FILL } from '@/components/shared/empty-state'
 import { LoadingState } from '@/components/shared/loading-state'
 import { TokenUsageDisplay } from '@/components/shared/token-usage-display'
 import { usePageChrome, type PageChromeConfig } from '@/components/layout/page-chrome'
@@ -112,11 +112,14 @@ export function SessionDetail(): React.ReactElement {
           rows={4}
         />
       ) : !detail ? (
-        <EmptyState
-          icon={FileText}
-          title={t('sessions.emptyDetailTitle')}
-          description={t('sessions.emptyDetailDescription')}
-        />
+        <div className={cn('flex flex-col', PAGE_EMPTY_FILL)}>
+          <EmptyState
+            fullHeight
+            icon={FileText}
+            title={t('sessions.emptyDetailTitle')}
+            description={t('sessions.emptyDetailDescription')}
+          />
+        </div>
       ) : (
         <Tabs.Root
           value={activeTab}

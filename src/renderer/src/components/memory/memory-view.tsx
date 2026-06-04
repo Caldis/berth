@@ -18,7 +18,7 @@ import {
 import { cn, truncatePath, formatOptionalRelativeTime } from '@/lib/utils'
 import { useMemory } from '@/hooks/use-memory'
 import { useAppStore } from '@/stores/app'
-import { EmptyState } from '@/components/shared/empty-state'
+import { EmptyState, PAGE_EMPTY_FILL } from '@/components/shared/empty-state'
 import { usePageChrome, type PageChromeConfig } from '@/components/layout/page-chrome'
 import { FileViewerButton } from '@/components/shared/file-viewer-button'
 import { instructionGuideMap, type FeatureGuideEvidence } from '@/lib/feature-guidance'
@@ -793,12 +793,15 @@ export function MemoryView(): React.ReactElement {
       </div>
 
       {notes.length === 0 ? (
-        <EmptyState
-          icon={Brain}
-          title={t(`memory.${emptyKind}.title`, emptyFallback[emptyKind].title)}
-          description={t(`memory.${emptyKind}.hint`, emptyFallback[emptyKind].hint)}
-          action={null}
-        />
+        <div className={cn('flex flex-col', PAGE_EMPTY_FILL)}>
+          <EmptyState
+            fullHeight
+            icon={Brain}
+            title={t(`memory.${emptyKind}.title`, emptyFallback[emptyKind].title)}
+            description={t(`memory.${emptyKind}.hint`, emptyFallback[emptyKind].hint)}
+            action={null}
+          />
+        </div>
       ) : (
         <div className="flex min-h-[520px] gap-4 max-lg:flex-col">
           <CategoryJumpNav

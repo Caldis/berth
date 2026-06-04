@@ -15,7 +15,7 @@ import {
   formatOptionalRelativeTime
 } from '@/lib/utils'
 import { useSessions } from '@/hooks/use-ipc'
-import { EmptyState } from '@/components/shared/empty-state'
+import { EmptyState, PAGE_EMPTY_FILL } from '@/components/shared/empty-state'
 import { LoadingState } from '@/components/shared/loading-state'
 import { useAppStore } from '@/stores/app'
 import { TokenUsageDisplay } from '@/components/shared/token-usage-display'
@@ -181,11 +181,14 @@ export function Sessions(): React.ReactElement {
           rows={5}
         />
       ) : filtered.length === 0 ? (
-        <EmptyState
-          icon={MessageSquare}
-          title={t(hasFilter ? 'sessions.empty.noResultsTitle' : 'sessions.empty.title')}
-          description={t(hasFilter ? 'sessions.empty.noResultsDescription' : 'sessions.empty.description')}
-        />
+        <div className={cn('flex flex-col', PAGE_EMPTY_FILL)}>
+          <EmptyState
+            fullHeight
+            icon={MessageSquare}
+            title={t(hasFilter ? 'sessions.empty.noResultsTitle' : 'sessions.empty.title')}
+            description={t(hasFilter ? 'sessions.empty.noResultsDescription' : 'sessions.empty.description')}
+          />
+        </div>
       ) : (
         <div className="flex min-h-[520px] gap-4 max-lg:flex-col">
           <CategoryJumpNav

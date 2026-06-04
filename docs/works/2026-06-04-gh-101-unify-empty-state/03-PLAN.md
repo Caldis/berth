@@ -11,7 +11,8 @@
   - tests: 新增 `tests/renderer/empty-state.test.tsx` — fullHeight 时容器含 `flex-1`/`h-full`; 默认不含; 占位图与 heading 渲染正常。
   - verify: `pnpm test:renderer -- empty-state` 通过; typecheck 通过。
 
-- [ ] **T2: chrome-less 三页接 flex 高度链** (S2 / 验收 2,3)
+- [x] **T2: chrome-less 三页接 flex 高度链** (S2 / 验收 2,3)
+  - 证据: typecheck:web 通过; sessions-pages 25 测试中 23 通过 (2 个失败为他人 in-flight 改动既有失败, 已用 pathspec stash 比对确认非本改动回归)
   - 文件: `src/renderer/src/pages/sessions.tsx`, `src/renderer/src/pages/session-detail.tsx`, `src/renderer/src/components/memory/memory-view.tsx`
   - 改: 空态分支外包 `<div className={cn('flex flex-col', PAGE_EMPTY_FILL)}>` + `<EmptyState fullHeight .../>`; 非空/loading 分支不动。import PAGE_EMPTY_FILL。
   - tests: 复用并确保现有 `tests/renderer/sessions-pages.test.tsx` 等不破; 视高度撑满为 manual。
