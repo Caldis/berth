@@ -1704,6 +1704,7 @@
     "allTags": "All tags",
     "tagSearchPlaceholder": "Filter tags…",
     "noMatchingTags": "No matching tags",
+    "tagsSelected": "{{count}} selected",
     "sourceError": "Source unavailable: {{error}}",
     "evidence": {
       "notes": "notes",

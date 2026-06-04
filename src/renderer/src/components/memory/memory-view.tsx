@@ -13,7 +13,8 @@ import {
   RefreshCw,
   Link2,
   AlertTriangle,
-  Search
+  Search,
+  X
 } from 'lucide-react'
 import { cn, truncatePath, formatOptionalRelativeTime } from '@/lib/utils'
 import { useMemory } from '@/hooks/use-memory'
@@ -475,101 +476,147 @@ function FilterGroup({
   )
 }
 
-// Tags are the density hot spot (100+ in real use), so they get a dedicated
-// multi-select picker instead of the inline FilterGroup: a search box plus a
-// single bounded, scrollable panel (one source of truth — no folded row + hover
-// overlay duplication). Selected tags AND together (each narrows the result),
-// stay pinned to the top, and are never hidden by the query — the search only
-// narrows the unselected pool, so active filters remain visible and removable.
+// Tags are the density hot spot (60-100+ in real use). A always-on chip wall
+// devours the page, so the browse grid is collapsed by default (progressive
+// disclosure): the resting state is just a search box plus the current
+// selection. Search is the fast path for "find one tag"; the grid is the
+// opt-in "browse everything" path that expands in place (no floating overlay,
+// no hover). Selections surface as removable pills so active filters stay
+// visible — and AND together, each one narrowing the result.
 function TagFilter({
   label,
-  allLabel,
+  summaryLabel,
   searchPlaceholder,
   emptyText,
   selected,
   options,
   onToggle,
-  onClear,
   testId
 }: {
   label: string
-  allLabel: string
+  summaryLabel: string
   searchPlaceholder: string
   emptyText: string
   selected: string[]
   options: Array<{ id: string; label: string; count: number }>
   onToggle: (id: string) => void
-  onClear: () => void
   testId?: string
 }): React.ReactElement | null {
   const [query, setQuery] = useState('')
+  const [open, setOpen] = useState(false)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const q = query.trim().toLowerCase()
+  // Typing always reveals matches; the toggle reveals the full browse grid.
+  const showGrid = open || q !== ''
+
+  // Collapse back to the resting state when the user clicks away, so the grid
+  // only occupies space while it is actively in use.
+  useEffect(() => {
+    if (!showGrid) return
+    const handlePointerDown = (event: PointerEvent): void => {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setOpen(false)
+        setQuery('')
+      }
+    }
+    window.addEventListener('pointerdown', handlePointerDown)
+    return () => window.removeEventListener('pointerdown', handlePointerDown)
+  }, [showGrid])
+
   if (options.length === 0) return null
 
   const selectedSet = new Set(selected)
-  const q = query.trim().toLowerCase()
-  const visible = options
-    .filter((option) => selectedSet.has(option.id) || q === '' || option.label.toLowerCase().includes(q))
-    .sort((a, b) => {
-      const selDelta = (selectedSet.has(a.id) ? 0 : 1) - (selectedSet.has(b.id) ? 0 : 1)
-      if (selDelta !== 0) return selDelta
-      return b.count - a.count || a.label.localeCompare(b.label)
-    })
-
-  const chipClass = (isActive: boolean): string =>
-    cn(
-      'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium transition-colors',
-      isActive ? 'border-foreground bg-foreground text-background' : 'border-border text-muted-foreground hover:bg-muted/70'
-    )
+  const selectedOptions = options.filter((option) => selectedSet.has(option.id))
+  const visible = options.filter((option) => q === '' || option.label.toLowerCase().includes(q))
+  const hasSelection = selected.length > 0
 
   return (
-    <div data-testid={testId} className="flex items-start gap-2">
+    <div ref={containerRef} data-testid={testId} className="flex items-start gap-2">
       <span className="w-16 shrink-0 pt-2 text-[11px] font-medium uppercase tracking-normal text-muted-foreground">{label}</span>
       <div className="min-w-0 flex-1 space-y-2">
-        <div className="relative">
-          <Search aria-hidden="true" className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-          <input
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder={searchPlaceholder}
-            aria-label={searchPlaceholder}
-            data-testid={testId ? `${testId}-search` : undefined}
-            className="h-8 w-full rounded-md border border-input bg-background pl-8 pr-3 text-xs outline-none ring-ring focus:ring-1"
-          />
-        </div>
-        <div
-          data-testid={testId ? `${testId}-panel` : undefined}
-          className="max-h-[13rem] overflow-y-auto rounded-md border border-border bg-muted/20 p-2"
-        >
-          <div className="flex flex-wrap gap-2">
-            {q === '' && (
-              <button
-                type="button"
-                aria-pressed={selected.length === 0}
-                onClick={onClear}
-                className={chipClass(selected.length === 0)}
-              >
-                {allLabel}
-              </button>
-            )}
-            {visible.map((option) => {
-              const isActive = selectedSet.has(option.id)
-              return (
-                <button
-                  key={option.id}
-                  type="button"
-                  aria-pressed={isActive}
-                  onClick={() => onToggle(option.id)}
-                  className={chipClass(isActive)}
-                >
-                  {option.label}
-                  <span className={cn('rounded-full px-1.5 text-[10px]', isActive ? 'bg-background/15' : 'bg-muted')}>{option.count}</span>
-                </button>
-              )
-            })}
+        <div className="flex items-center gap-2">
+          <div className="relative flex-1">
+            <Search aria-hidden="true" className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+            <input
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              onFocus={() => setOpen(true)}
+              placeholder={searchPlaceholder}
+              aria-label={searchPlaceholder}
+              data-testid={testId ? `${testId}-search` : undefined}
+              className="h-8 w-full rounded-md border border-input bg-background pl-8 pr-3 text-xs outline-none ring-ring focus:ring-1"
+            />
           </div>
-          {visible.length === 0 && (
-            <p className="px-1 py-6 text-center text-xs text-muted-foreground">{emptyText}</p>
+          <button
+            type="button"
+            onClick={() => setOpen((current) => !current)}
+            aria-expanded={showGrid}
+            data-testid={testId ? `${testId}-toggle` : undefined}
+            className={cn(
+              'inline-flex h-8 shrink-0 items-center gap-1 rounded-md border px-2.5 text-xs font-medium transition-colors',
+              hasSelection ? 'border-foreground bg-foreground text-background' : 'border-input text-muted-foreground hover:bg-muted/70'
+            )}
+          >
+            {summaryLabel}
+            <ChevronDown aria-hidden="true" className={cn('h-3.5 w-3.5 transition-transform duration-200', showGrid && 'rotate-180')} />
+          </button>
+        </div>
+
+        {hasSelection && (
+          <div data-testid={testId ? `${testId}-selected` : undefined} className="flex flex-wrap gap-1.5">
+            {selectedOptions.map((option) => (
+              <button
+                key={option.id}
+                type="button"
+                onClick={() => onToggle(option.id)}
+                className="inline-flex items-center gap-1 rounded-full border border-foreground bg-foreground py-0.5 pl-2.5 pr-1.5 text-[11px] font-medium text-background transition-opacity hover:opacity-80"
+              >
+                {option.label}
+                <X aria-hidden="true" className="h-3 w-3" />
+              </button>
+            ))}
+          </div>
+        )}
+
+        <div
+          aria-hidden={!showGrid}
+          inert={!showGrid}
+          data-testid={testId ? `${testId}-grid` : undefined}
+          className={cn(
+            'grid transition-[grid-template-rows] duration-200 ease-out motion-reduce:transition-none',
+            showGrid ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
           )}
+        >
+          <div className="overflow-hidden">
+            <div
+              data-testid={testId ? `${testId}-panel` : undefined}
+              className="max-h-[12rem] overflow-y-auto rounded-md border border-border bg-muted/20 p-2"
+            >
+              <div className="flex flex-wrap gap-2">
+                {visible.map((option) => {
+                  const isActive = selectedSet.has(option.id)
+                  return (
+                    <button
+                      key={option.id}
+                      type="button"
+                      aria-pressed={isActive}
+                      onClick={() => onToggle(option.id)}
+                      className={cn(
+                        'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium transition-colors',
+                        isActive ? 'border-foreground bg-foreground text-background' : 'border-border text-muted-foreground hover:bg-muted/70'
+                      )}
+                    >
+                      {option.label}
+                      <span className={cn('rounded-full px-1.5 text-[10px]', isActive ? 'bg-background/15' : 'bg-muted')}>{option.count}</span>
+                    </button>
+                  )
+                })}
+              </div>
+              {visible.length === 0 && (
+                <p className="px-1 py-6 text-center text-xs text-muted-foreground">{emptyText}</p>
+              )}
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -723,8 +770,6 @@ export function MemoryView(): React.ReactElement {
     setTagFilter((current) => (current.includes(id) ? current.filter((tag) => tag !== id) : [...current, id]))
   }, [])
 
-  const clearTags = useCallback(() => setTagFilter([]), [])
-
   const navigate = useCallback((globalId: string) => {
     // Clear filters so the target is guaranteed visible, then focus it.
     if (focusTimerRef.current !== null) {
@@ -772,13 +817,12 @@ export function MemoryView(): React.ReactElement {
         />
         <TagFilter
           label={t('memory.tags', 'Tags')}
-          allLabel={t('memory.allTags', 'All tags')}
+          summaryLabel={tagFilter.length === 0 ? t('memory.allTags', 'All tags') : t('memory.tagsSelected', { count: tagFilter.length })}
           searchPlaceholder={t('memory.tagSearchPlaceholder', 'Filter tags…')}
           emptyText={t('memory.noMatchingTags', 'No matching tags')}
           selected={tagFilter}
           options={tagOptions}
           onToggle={toggleTag}
-          onClear={clearTags}
           testId="memory-tags-filter"
         />
         {hasFilters && (

@@ -340,7 +340,9 @@ describe('MemoryView', () => {
     expectImportanceBadge('Core', 'Core — loaded into context every session')
     expect(screen.queryByText('core')).not.toBeInTheDocument()
 
-    fireEvent.click(screen.getByRole('button', { name: 'ops 1' }))
+    // The tag browse grid is collapsed by default — reveal it before picking a tag.
+    fireEvent.click(screen.getByTestId('memory-tags-filter-toggle'))
+    fireEvent.click(within(screen.getByTestId('memory-tags-filter-panel')).getByRole('button', { name: 'ops 1' }))
     expect(screen.getByText('Core note')).toBeInTheDocument()
     expect(screen.queryByText('Archive note')).not.toBeInTheDocument()
 
@@ -349,7 +351,7 @@ describe('MemoryView', () => {
     expect(screen.getByText('Archive note')).toBeInTheDocument()
   })
 
-  it('renders all tags inline in a searchable scrollable panel without hover', () => {
+  it('collapses the tag browse grid by default and reveals it on demand', () => {
     memoryState.result = {
       sources: [
         {
@@ -380,16 +382,27 @@ describe('MemoryView', () => {
 
     render(<MemoryView />)
 
-    // No hover / popover: the panel is present inline and scrollable on first render.
-    const panel = screen.getByTestId('memory-tags-filter-panel')
-    expect(panel).toHaveClass('overflow-y-auto')
+    // Default: search box visible, browse grid collapsed (low footprint).
+    expect(screen.getByTestId('memory-tags-filter-search')).toBeInTheDocument()
+    const toggle = screen.getByTestId('memory-tags-filter-toggle')
+    const grid = screen.getByTestId('memory-tags-filter-grid')
+    expect(toggle).toHaveAttribute('aria-expanded', 'false')
+    expect(grid).toHaveClass('grid-rows-[0fr]')
+    expect(grid).toHaveAttribute('aria-hidden', 'true')
+    // Legacy hover/popover/row surfaces are gone.
     expect(screen.queryByTestId('memory-tags-filter-popover')).not.toBeInTheDocument()
     expect(screen.queryByTestId('memory-tags-filter-row')).not.toBeInTheDocument()
-    expect(screen.getByTestId('memory-tags-filter-search')).toBeInTheDocument()
+
+    // Reveal on demand via the toggle.
+    fireEvent.click(toggle)
+    expect(toggle).toHaveAttribute('aria-expanded', 'true')
+    expect(grid).toHaveClass('grid-rows-[1fr]')
+    const panel = screen.getByTestId('memory-tags-filter-panel')
+    expect(panel).toHaveClass('overflow-y-auto')
     expect(within(panel).getByRole('button', { name: 'tag-24 1' })).toBeInTheDocument()
   })
 
-  it('filters the tag list by the search box while keeping selected tags visible', () => {
+  it('typing in the search box reveals matches and selections show as removable pills', () => {
     memoryState.result = {
       sources: [
         {
@@ -420,17 +433,21 @@ describe('MemoryView', () => {
 
     render(<MemoryView />)
 
+    // Open and select a tag that will NOT match the upcoming query.
+    fireEvent.click(screen.getByTestId('memory-tags-filter-toggle'))
     const panel = screen.getByTestId('memory-tags-filter-panel')
-    // Select a tag that will NOT match the upcoming query.
     fireEvent.click(within(panel).getByRole('button', { name: 'alpha 1' }))
 
-    fireEvent.change(screen.getByTestId('memory-tags-filter-search'), { target: { value: 'be' } })
+    // Selection surfaces as a removable pill — visible regardless of the query.
+    const selected = screen.getByTestId('memory-tags-filter-selected')
+    expect(within(selected).getByRole('button', { name: 'alpha' })).toBeInTheDocument()
 
-    // Matching unselected tag stays; non-matching unselected tag is filtered out;
-    // selected tag remains visible even though it does not match the query.
+    // Typing auto-reveals the grid and filters the browse list by substring.
+    fireEvent.change(screen.getByTestId('memory-tags-filter-search'), { target: { value: 'be' } })
     expect(within(panel).getByRole('button', { name: 'beta 1' })).toBeInTheDocument()
     expect(within(panel).queryByRole('button', { name: 'gamma 1' })).not.toBeInTheDocument()
-    expect(within(panel).getByRole('button', { name: 'alpha 1' })).toBeInTheDocument()
+    // The active selection stays visible as a pill even though it does not match.
+    expect(within(selected).getByRole('button', { name: 'alpha' })).toBeInTheDocument()
   })
 
   it('filters memories by the intersection of multiple selected tags', () => {
@@ -492,6 +509,7 @@ describe('MemoryView', () => {
 
     render(<MemoryView />)
 
+    fireEvent.click(screen.getByTestId('memory-tags-filter-toggle'))
     const panel = screen.getByTestId('memory-tags-filter-panel')
 
     fireEvent.click(within(panel).getByRole('button', { name: 'esp32 2' }))
@@ -504,8 +522,10 @@ describe('MemoryView', () => {
     expect(screen.queryByText('Note B')).not.toBeInTheDocument()
     expect(screen.queryByText('Note C')).not.toBeInTheDocument()
 
-    // The all-tags chip resets the whole tag selection.
-    fireEvent.click(within(panel).getByRole('button', { name: 'All tags' }))
+    // Removing the selected pills clears the intersection back to everything.
+    const selected = screen.getByTestId('memory-tags-filter-selected')
+    fireEvent.click(within(selected).getByRole('button', { name: 'esp32' }))
+    fireEvent.click(within(selected).getByRole('button', { name: 'react' }))
     expect(screen.getByText('Note A')).toBeInTheDocument()
     expect(screen.getByText('Note B')).toBeInTheDocument()
     expect(screen.getByText('Note C')).toBeInTheDocument()

@@ -1695,6 +1695,7 @@
     "allTags": "全部标签",
     "tagSearchPlaceholder": "筛选标签…",
     "noMatchingTags": "无匹配标签",
+    "tagsSelected": "已选 {{count}}",
     "sourceError": "来源不可用: {{error}}",
     "evidence": {
       "notes": "条记忆",
