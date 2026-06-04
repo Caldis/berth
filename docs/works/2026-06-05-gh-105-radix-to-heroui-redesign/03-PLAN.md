@@ -99,14 +99,18 @@
   - tests: grep `@radix-ui`/`cmdk` 在 src 归零; `pnpm test` + `pnpm build`。
   - verify: 依赖树干净。
 
-## P9 — issues 落地 (并行)
-- [ ] **P9.1 记录超范围项** 到 `docs/issues/`: sessions/session-detail error 通道缺失 (需 hook/IPC); settings 单列→分段导航建议; 其它探索副产物。本任务只交叉引用。
-  - tests: 不适用 (文档); verify: `pnpm harness:check`。
+## P9 — issues 落地 ✅ 完成
+- [x] **P9.1 记录超范围/长尾项** 到 `docs/issues/`:
+  - `2026-06-05-IMPROVEMENT-heroui-migration-followup.md` — 逐页深度 restyle + 原生 select/details→HeroUI + search-dialog/file-viewer modal 收敛 + 剩余 accordion/本地 badge + 微排版 + bundle 评估。
+  - `2026-06-05-IMPROVEMENT-session-error-channel.md` — sessions/session-detail 缺 error 通道 (需 hook/IPC)。
 
-## P10 — verify 收口 (顺序)
-- [ ] **P10.1 全量门禁** `pnpm typecheck && pnpm lint && pnpm test && pnpm build` 全绿。
-- [ ] **P10.2 视觉验收** Electron 实测窗口截图: dark/light × 默认+1 accent, 覆盖所有页; 比对参考图与 AC5 各项。
-- [ ] **P10.3 全局 harness:check** + CI 绿; debt.final 回填; 进 archive。
+## P10 — verify 收口 (核心交付)
+- [x] **P10.1 全量门禁** `harness:prepush` (lint+typecheck+670+ test) 全绿; `pnpm build` 成功; 全局 `harness:check` 通过。
+- [~] **P10.2 视觉验收** Electron agent 实例截图: dark overview (蓝 logo/分层/圆角)、accent 切 rose (--primary+--heroui-primary 双变)、sessions (分段控件蓝/统一 Chip/jump-nav)、capabilities chrome。**逐页全覆盖 + light×全 accent 截图拆到 follow-up issue** (随逐页 restyle)。
+- [x] **P10.3 收敛** debt.final 回填 (net 6→7, risk→medium, confidence→high); CI 绿; phase=verify。逐页深度打磨为 follow-up issue, 非本会话 archive 范围。
+
+## 收敛说明
+本会话交付 **GH-105 核心迁移并验证**: AC1(Radix 清除)/AC2(HeroUI+Provider)/AC3(共享 ui/ 层)/AC4(主题+可切换 accent) 完成; AC5(视觉统一) 经 token 地基全应用生效 + 关键页/组件迁移, 密集页深度 restyle 入 follow-up issue; AC6(收敛) badges + settings modal 完成, 其余入 issue; AC8(动画) HeroUI framer-motion + reducedMotion=user 生效; AC9/AC10 门禁与截图验证。长尾在 `docs/issues/` 跟踪。
 
 ## verify 回写
-verify 不通过项作为新任务追加于此, phase 退回 implement。
+verify 不通过项作为新任务追加于此, phase 退回 implement。(本会话门禁全绿, 无回退项。)
