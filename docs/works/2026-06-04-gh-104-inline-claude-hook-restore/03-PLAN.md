@@ -8,9 +8,9 @@
   - tests: `pnpm vitest run tests/unit/claude-scanner.test.ts` — 12 passed
   - verify: 先新增失败测试证明 settings 缺失时 hooks 为空; 修复后 user sidecar 能生成 disabled Hook asset, permissions/env 仍不从缺失 settings 派生。
 
-- [ ] 任务 2: 删除恢复中心 UI 与 renderer 侧专用 API 使用。
-  - tests: `pnpm vitest run tests/renderer/hooks-lifecycle-view.test.tsx`
-  - verify: 左侧 rail 不再渲染 `hook-recovery-center`; 不调用 `window.api.hooks.recoveries`; Claude disabled Hook 仍在右侧显示 Disabled tag 和 Enable 按钮; Codex 行内启停不退化; 响应式/focus 使用现有行内按钮。
+- [x] 任务 2: 删除恢复中心 UI 与 renderer 侧专用 API 使用。
+  - tests: `pnpm vitest run tests/renderer/hooks-lifecycle-view.test.tsx` — 29 passed
+  - verify: 左侧 rail 不再渲染 `hook-recovery-center`; 不调用 `window.api.hooks.recoveries`; Claude disabled Hook 仍在右侧显示 Disabled tag 和 Enable 按钮并通过原行恢复; Codex 行内启停不退化; 响应式/focus 使用现有行内按钮。
 
 - [ ] 任务 3: 删除恢复中心 IPC/preload/shared type/main manager surface 与无用 i18n/mock。
   - tests: `pnpm typecheck:node`; `pnpm typecheck:web`; `pnpm vitest run tests/unit/hooks-manager.test.ts tests/unit/claude-scanner.test.ts tests/renderer/hooks-lifecycle-view.test.tsx`

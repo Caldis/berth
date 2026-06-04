@@ -701,7 +701,7 @@ describe('HooksLifecycleView', () => {
     expect(stageList.className).toContain('lg:space-y-1')
   })
 
-  it('keeps hook checks and recovery center below the lifecycle list in the left rail', async () => {
+  it('keeps hook checks below the lifecycle list in the left rail without a recovery center', async () => {
     renderHooks('all', [
       hookAsset('claude-pre', 'claude-code', 'PreToolUse'),
       hookAsset('codex-stop', 'codex', 'Stop')
@@ -711,12 +711,11 @@ describe('HooksLifecycleView', () => {
     const sidebar = screen.getByLabelText('Lifecycle')
     const stageList = within(sidebar).getByTestId('hook-lifecycle-stage-list')
     const healthPanel = within(sidebar).getByTestId('hook-health-panel')
-    const recoveryCenter = within(sidebar).getByTestId('hook-recovery-center')
 
     expect(healthPanel).toBeInTheDocument()
-    expect(recoveryCenter).toBeInTheDocument()
+    expect(within(sidebar).queryByTestId('hook-recovery-center')).not.toBeInTheDocument()
     expect(stageList.compareDocumentPosition(healthPanel) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
-    expect(healthPanel.compareDocumentPosition(recoveryCenter) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(window.api.hooks.recoveries).not.toHaveBeenCalled()
   })
 
   it('uses a vertical hook check layout without wrapping status tags', async () => {
@@ -1226,38 +1225,23 @@ describe('HooksLifecycleView', () => {
     expect(screen.queryByText('settings.json does not declare the Claude Code settings JSON schema.')).not.toBeInTheDocument()
   })
 
-  it('shows the recovery center and restores a recoverable Claude hook', async () => {
-    window.api.hooks.recoveries = vi.fn(async () => ({
-      points: [
-        {
-          hookKey: 'claude-code:scenario:hook',
-          agentId: 'claude-code',
-          agentName: 'Claude Code',
-          sourcePath: 'C:\\Users\\test\\.claude\\settings.json',
-          scope: 'user',
-          event: 'Stop',
-          hookType: 'command',
-          command: 'echo stop',
-          summary: 'echo stop',
-          createdAt: '2026-06-01T00:00:00.000Z',
-          status: 'recoverable',
-          message: 'This restore point can be written back to the source file.'
-        }
-      ],
-      issues: []
-    }))
-
-    renderHooks('claude', [hookAsset('claude-stop', 'claude-code', 'Stop')])
+  it('restores a disabled Claude hook from the original hook row', async () => {
+    renderHooks('claude', [
+      hookAsset('claude-stop', 'claude-code', 'Stop', {
+        hookKey: 'claude-code:scenario:hook',
+        enabled: false,
+        canToggleHook: true,
+        toggleStrategy: 'soft-remove',
+        disabledByBerth: true,
+        disabledAt: '2026-06-01T00:00:00.000Z'
+      })
+    ])
     await waitForHookHealthIdle()
 
-    expect(await screen.findByText('1 restore point(s), 0 issue(s)')).toBeInTheDocument()
-    fireEvent.click(screen.getByText('Recovery center'))
-    const recoveryCenter = screen.getByTestId('hook-recovery-center')
+    expect(screen.queryByTestId('hook-recovery-center')).not.toBeInTheDocument()
+    expect(screen.getByText('Disabled')).toBeInTheDocument()
 
-    expect(within(recoveryCenter).getByText('Recoverable')).toBeInTheDocument()
-    expect(within(recoveryCenter).getByText('echo stop')).toBeInTheDocument()
-
-    fireEvent.click(within(recoveryCenter).getByRole('button', { name: /Restore/ }))
+    fireEvent.click(screen.getByText('Enable'))
 
     await waitFor(() => {
       expect(window.confirm).toHaveBeenCalledWith(expect.stringContaining('Restore this Claude Code hook?'))
@@ -1266,82 +1250,11 @@ describe('HooksLifecycleView', () => {
         scope: 'user',
         hookKey: 'claude-code:scenario:hook',
         sourcePath: 'C:\\Users\\test\\.claude\\settings.json',
-        enabled: true
+        enabled: true,
+        managed: false
       })
     })
-  })
-
-  it('localizes the recovery loading label in Chinese', async () => {
-    await i18n.changeLanguage('zh')
-    let resolveRecoveries: ((value: { points: []; issues: [] }) => void) | undefined
-    window.api.hooks.recoveries = vi.fn(
-      () => new Promise<{ points: []; issues: [] }>((resolve) => {
-        resolveRecoveries = resolve
-      })
-    )
-
-    renderHooks('claude', [hookAsset('claude-stop', 'claude-code', 'Stop')])
-
-    fireEvent.click(screen.getByText('恢复中心'))
-
-    expect(screen.getByLabelText('正在加载 Hook 恢复记录')).toBeInTheDocument()
-    expect(screen.queryByLabelText('Loading hook recoveries')).not.toBeInTheDocument()
-
-    resolveRecoveries?.({ points: [], issues: [] })
-
-    await waitFor(() => {
-      expect(screen.queryByLabelText('正在加载 Hook 恢复记录')).not.toBeInTheDocument()
-    })
-  })
-
-  it('shows recovery issues and disables restore when the source file is missing', async () => {
-    window.api.hooks.recoveries = vi.fn(async () => ({
-      points: [
-        {
-          hookKey: 'claude-code:scenario:missing',
-          agentId: 'claude-code',
-          agentName: 'Claude Code',
-          sourcePath: 'C:\\Users\\test\\.claude\\settings.json',
-          scope: 'user',
-          event: 'SessionStart',
-          matcher: 'startup',
-          hookType: 'prompt',
-          command: 'Check startup context.',
-          summary: 'Check startup context.',
-          createdAt: '2026-06-01T00:00:00.000Z',
-          status: 'source-missing',
-          message: 'Source file is missing: C:\\Users\\test\\.claude\\settings.json'
-        }
-      ],
-      issues: [
-        {
-          agentId: 'claude-code',
-          sourcePath: 'C:\\Users\\test\\.claude\\.berth\\hooks-state.json',
-          severity: 'error',
-          message: 'Invalid Claude hooks state entry: broken'
-        }
-      ]
-    }))
-
-    renderHooks('claude', [hookAsset('claude-stop', 'claude-code', 'Stop')])
-    await waitForHookHealthIdle()
-
-    expect(await screen.findByText('1 restore point(s), 1 issue(s)')).toBeInTheDocument()
-    fireEvent.click(screen.getByText('Recovery center'))
-    const recoveryCenter = screen.getByTestId('hook-recovery-center')
-
-    expect(within(recoveryCenter).getByText('Invalid Claude hooks state entry: broken')).toBeInTheDocument()
-    expect(within(recoveryCenter).getByText('Source missing')).toBeInTheDocument()
-    expect(within(recoveryCenter).getByRole('button', { name: /Restore/ })).toBeDisabled()
-
-    fireEvent.click(within(recoveryCenter).getByRole('button', { name: /Clear/ }))
-
-    await waitFor(() => {
-      expect(window.api.hooks.clearRecovery).toHaveBeenCalledWith({
-        agentId: 'claude-code',
-        hookKey: 'claude-code:scenario:missing',
-        sourcePath: 'C:\\Users\\test\\.claude\\settings.json'
-      })
-    })
+    expect(window.api.hooks.recoveries).not.toHaveBeenCalled()
+    expect(screen.getByText('Enabled')).toBeInTheDocument()
   })
 })

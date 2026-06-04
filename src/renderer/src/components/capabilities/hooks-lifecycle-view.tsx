@@ -1,4 +1,4 @@
-import { type RefObject, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { type RefObject, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   CheckCircle2,
@@ -10,8 +10,6 @@ import {
   FileCode2,
   FolderOpen,
   Info,
-  RotateCcw,
-  Trash2,
   MoreHorizontal
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -39,7 +37,7 @@ import type {
   AgentCapabilityPluginHookHandlerFieldDescriptor,
   AgentPluginAgentId
 } from '@shared/types/agent-plugin'
-import type { HealthCheck, HookRecoveryIssue, HookRecoveryListResult, HookRecoveryPoint, HooksAgentId } from '@shared/types/ipc'
+import type { HealthCheck, HooksAgentId } from '@shared/types/ipc'
 
 interface HooksLifecycleViewProps {
   assets: Asset[]
@@ -189,7 +187,6 @@ export function HooksLifecycleView({
             </div>
           </div>
           <HookHealthSignal checks={hookHealthChecks} loading={healthLoading} stale={healthStale} />
-          <HookRecoveryCenter />
         </aside>
 
         <div className="relative z-10 min-w-0 space-y-3">
@@ -429,264 +426,6 @@ function connectorLinesEqual(current: HookConnectorLine[], next: HookConnectorLi
     const candidate = next[index]
     return line.id === candidate.id && line.path === candidate.path
   })
-}
-
-function HookRecoveryCenter(): React.ReactElement {
-  const { t } = useTranslation()
-  const [data, setData] = useState<HookRecoveryListResult | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [busyKey, setBusyKey] = useState<string | null>(null)
-
-  const loadRecoveries = useCallback(async (): Promise<void> => {
-    setLoading(true)
-    setError(null)
-    try {
-      const result = await window.api.hooks.recoveries()
-      setData(result)
-    } catch (err) {
-      setError(formatHookToggleError(t, err))
-    } finally {
-      setLoading(false)
-    }
-  }, [t])
-
-  useEffect(() => {
-    void loadRecoveries()
-  }, [loadRecoveries])
-
-  const points = data?.points ?? []
-  const issues = data?.issues ?? []
-  const hasContent = loading || error || points.length > 0 || issues.length > 0
-
-  return (
-    <details className="rounded-lg border border-border bg-card" data-testid="hook-recovery-center">
-      <summary className="grid cursor-pointer list-none gap-2 px-3 py-3">
-        <span className="min-w-0">
-          <span className="block text-sm font-semibold text-foreground">{t('capabilities.hooks.recovery.title')}</span>
-          <span className="mt-1 block text-xs text-muted-foreground">
-            {loading
-              ? t('capabilities.hooks.recovery.loading')
-              : t('capabilities.hooks.recovery.summary', { count: points.length, issues: issues.length })}
-          </span>
-        </span>
-        <span className="grid gap-1.5">
-          <span className="w-fit rounded-md border border-border bg-background px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
-            {t('capabilities.hooks.recovery.pointCount', { count: points.length })}
-          </span>
-          {issues.length > 0 && (
-            <span className="w-fit rounded-md bg-destructive/10 px-2 py-0.5 text-[11px] font-medium text-destructive">
-              {t('capabilities.hooks.recovery.issueCount', { count: issues.length })}
-            </span>
-          )}
-        </span>
-      </summary>
-      <div className="border-t border-border px-3 py-3">
-        {loading && <HookRecoverySkeleton />}
-        {!loading && error && (
-          <div className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-xs leading-5 text-destructive">
-            {error}
-          </div>
-        )}
-        {!loading && !hasContent && (
-          <div className="rounded-md border border-dashed border-border px-3 py-4">
-            <p className="text-sm font-medium text-foreground">{t('capabilities.hooks.recovery.emptyTitle')}</p>
-            <p className="mt-1 text-xs leading-5 text-muted-foreground">{t('capabilities.hooks.recovery.emptyBody')}</p>
-          </div>
-        )}
-        {!loading && issues.length > 0 && (
-          <div className="mb-3 space-y-2">
-            {issues.map((issue) => (
-              <HookRecoveryIssueRow key={`${issue.agentId}:${issue.sourcePath}:${issue.message}`} issue={issue} />
-            ))}
-          </div>
-        )}
-        {!loading && points.length > 0 && (
-          <div className="divide-y divide-border/60 rounded-md border border-border/70">
-            {points.map((point) => (
-              <HookRecoveryPointRow
-                key={point.hookKey}
-                point={point}
-                busy={busyKey === point.hookKey}
-                onBusyChange={setBusyKey}
-                onRefresh={() => void loadRecoveries()}
-              />
-            ))}
-          </div>
-        )}
-      </div>
-    </details>
-  )
-}
-
-function HookRecoverySkeleton(): React.ReactElement {
-  const { t } = useTranslation()
-  return (
-    <div className="space-y-2" aria-label={t('capabilities.hooks.recovery.loadingLabel')}>
-      <div className="h-4 w-48 animate-pulse rounded bg-muted" />
-      <div className="h-10 animate-pulse rounded-md bg-muted/60" />
-    </div>
-  )
-}
-
-function HookRecoveryIssueRow({ issue }: { issue: HookRecoveryIssue }): React.ReactElement {
-  const { t } = useTranslation()
-  return (
-    <div className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2">
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="rounded-md bg-destructive/10 px-1.5 py-0.5 text-[10px] font-medium text-destructive">
-          {t(`capabilities.hooks.recovery.issueSeverity.${issue.severity}`)}
-        </span>
-        <span className="text-xs font-medium text-foreground">{issue.message}</span>
-      </div>
-      <div className="mt-1 flex flex-wrap items-center gap-2">
-        <span className="font-mono text-[11px] text-muted-foreground">{issue.sourcePath}</span>
-        <button
-          type="button"
-          onClick={() => void window.api.shell.openPath(issue.sourcePath)}
-          className="rounded-md border border-border px-2 py-0.5 text-[11px] font-medium text-foreground transition-colors hover:bg-muted/70"
-        >
-          {t('capabilities.hooks.recovery.openSource')}
-        </button>
-      </div>
-    </div>
-  )
-}
-
-function HookRecoveryPointRow({
-  point,
-  busy,
-  onBusyChange,
-  onRefresh
-}: {
-  point: HookRecoveryPoint
-  busy: boolean
-  onBusyChange: (hookKey: string | null) => void
-  onRefresh: () => void
-}): React.ReactElement {
-  const { t } = useTranslation()
-  const canRestore = point.status === 'recoverable'
-  const statusLabel = t(`capabilities.hooks.recovery.status.${point.status}`)
-  const statusDescription = point.message ?? t(`capabilities.hooks.recovery.statusDetail.${point.status}`)
-  const createdAt = formatRecoveryTime(point.createdAt)
-  const [rowError, setRowError] = useState<string | null>(null)
-
-  const restore = async (): Promise<void> => {
-    if (!canRestore) return
-    const confirmed = window.confirm(t('capabilities.hooks.recovery.confirmRestore', {
-      sourcePath: point.sourcePath,
-      event: point.event,
-      summary: point.summary
-    }))
-    if (!confirmed) return
-    onBusyChange(point.hookKey)
-    setRowError(null)
-    try {
-      await window.api.hooks.setHookEnabled({
-        agentId: 'claude-code',
-        scope: 'user',
-        hookKey: point.hookKey,
-        sourcePath: point.sourcePath,
-        enabled: true
-      })
-      onRefresh()
-    } catch (err) {
-      setRowError(formatHookToggleError(t, err))
-    } finally {
-      onBusyChange(null)
-    }
-  }
-
-  const clear = async (): Promise<void> => {
-    const confirmed = window.confirm(t('capabilities.hooks.recovery.confirmClear', {
-      sourcePath: point.sourcePath,
-      event: point.event,
-      summary: point.summary
-    }))
-    if (!confirmed) return
-    onBusyChange(point.hookKey)
-    setRowError(null)
-    try {
-      await window.api.hooks.clearRecovery({
-        agentId: 'claude-code',
-        hookKey: point.hookKey,
-        sourcePath: point.sourcePath
-      })
-      onRefresh()
-    } catch (err) {
-      setRowError(formatHookToggleError(t, err))
-    } finally {
-      onBusyChange(null)
-    }
-  }
-
-  return (
-    <div className="flex flex-wrap items-start gap-3 px-3 py-3">
-      <div className="min-w-0 flex-1">
-        <div className="flex flex-wrap items-center gap-2">
-          <span className={cn('rounded-md px-1.5 py-0.5 text-[10px] font-medium', hookRecoveryStatusClass(point.status))}>
-            {statusLabel}
-          </span>
-          <span className="rounded-md bg-muted px-1.5 py-0.5 font-mono text-[10px] font-medium text-muted-foreground">
-            {point.hookType}
-          </span>
-          <span className="font-mono text-xs font-medium text-foreground">{point.event}</span>
-          {point.matcher && (
-            <span className="rounded-md border border-border px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
-              {point.matcher}
-            </span>
-          )}
-          {createdAt && <span className="text-[11px] text-muted-foreground">{createdAt}</span>}
-        </div>
-        <p className="mt-1 break-words font-mono text-xs text-foreground">{point.summary}</p>
-        <p className="mt-1 text-xs leading-5 text-muted-foreground">{statusDescription}</p>
-        {rowError && <p className="mt-1 text-xs leading-5 text-destructive">{rowError}</p>}
-        <p className="mt-1 truncate font-mono text-[11px] text-muted-foreground">{point.sourcePath}</p>
-      </div>
-      <div className="flex shrink-0 flex-wrap gap-1.5">
-        <button
-          type="button"
-          disabled={!canRestore || busy}
-          onClick={() => void restore()}
-          className="inline-flex items-center gap-1.5 rounded-md border border-border px-2 py-1 text-xs font-medium text-foreground transition-colors hover:bg-muted/70 disabled:cursor-not-allowed disabled:text-muted-foreground/50 disabled:hover:bg-transparent"
-        >
-          <RotateCcw className="h-3.5 w-3.5" />
-          {busy ? t('capabilities.hooks.recovery.working') : t('capabilities.hooks.recovery.restore')}
-        </button>
-        <button
-          type="button"
-          disabled={busy}
-          onClick={() => void clear()}
-          className="inline-flex items-center gap-1.5 rounded-md border border-border px-2 py-1 text-xs font-medium text-foreground transition-colors hover:bg-muted/70 disabled:cursor-not-allowed disabled:text-muted-foreground/50"
-        >
-          <Trash2 className="h-3.5 w-3.5" />
-          {t('capabilities.hooks.recovery.clear')}
-        </button>
-        <button
-          type="button"
-          onClick={() => void window.api.shell.openPath(point.sourcePath)}
-          className="inline-flex items-center gap-1.5 rounded-md border border-border px-2 py-1 text-xs font-medium text-foreground transition-colors hover:bg-muted/70"
-        >
-          <ExternalLink className="h-3.5 w-3.5" />
-          {t('capabilities.hooks.recovery.openSource')}
-        </button>
-      </div>
-    </div>
-  )
-}
-
-function hookRecoveryStatusClass(status: HookRecoveryPoint['status']): string {
-  if (status === 'recoverable') return 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
-  if (status === 'already-restored') return 'bg-blue-500/10 text-blue-700 dark:text-blue-300'
-  if (status === 'source-missing' || status === 'invalid') return 'bg-amber-500/10 text-amber-700 dark:text-amber-300'
-  return 'bg-muted text-muted-foreground'
-}
-
-function formatRecoveryTime(value: string | undefined): string | null {
-  if (!value) return null
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return value
-  return date.toLocaleString()
 }
 
 function HookHealthSignal({
