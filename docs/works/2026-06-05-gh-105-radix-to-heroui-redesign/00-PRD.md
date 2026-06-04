@@ -25,6 +25,11 @@
 5. **主题 / 强调色系统增强**: HeroUI theme 体系 + 可切换强调色 (accent)。
 6. **过渡动画补全**: 进入/退出、hover、focus、状态切换统一 motion。
 
+### 补充要求 (用户追加, 2026-06-05 explore 阶段)
+> 我希望我们有规范且一致的共享组件目录, 而不是每个页面各自为战, 公共的组件行为和样式尽可能得到共享。
+
+解读: 在 HeroUI primitive 之上沉淀一层 berth 自有的 design-system 封装层 (统一行为契约 + 样式 token + 变体), 收敛当前散落在 `components/shared/*` 与页面内联样式的"各自为战"实现; 所有页面只消费该共享层。此为设计系统沉淀的核心架构目标, design 阶段一等公民。
+
 ### 风格参考截图要点 (描述快照)
 - Image #1 (dashboard): 左侧深色 sidebar (头像 + 导航项, 选中项高亮圆角块, "New" badge), 顶部问候标题 + 搜索/通知/Invite 按钮; 内容区 segmented tabs (Overview/Sales/Expenses)、Monthly 下拉、Download 主按钮; 4 个 KPI 卡片 (Revenue/Expenses/Sales/Profit, 带涨跌 chip); 柱状图 + 折线图卡片; 数据表格 (Filter/Sort/Columns + 搜索, 行内头像/角色/操作图标)。整体暗色、圆角卡片、蓝色强调、绿/红语义色。
 - Image #3 (组件总览): HeroUI 组件全家桶 — Input/Select/Checkbox/Switch/Radio/Spinner、Slider、Tabs、Button (solid/bordered/light + danger 变体)、OTP input、Modal/Card、Card with avatar、Banner、Toast/Alert、Dropdown menu (含 danger zone)、Avatar group。暗色主题, 蓝色 primary, 圆角统一。

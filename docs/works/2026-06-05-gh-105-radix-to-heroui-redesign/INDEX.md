@@ -2,7 +2,7 @@
 task: 2026-06-05-gh-105-radix-to-heroui-redesign
 task_id: GH-105
 type: feature
-phase: explore
+phase: design
 created: 2026-06-05
 priority: P1
 target_date: 
@@ -11,17 +11,17 @@ source:
   refs: []
 debt:
   estimate:
-    incurred: 13
-    repaid: 5
-    net: 8
+    incurred: 16
+    repaid: 10
+    net: 6
     scope: global
     risk: high
     areas:
       - ui-ux
       - architecture
       - dependency
-    confidence: low
-    rationale: "0.0-new 初始估算; 整库迁移 shadcn(Radix 10 包/~266 处)→ HeroUI, 涉及 theme provider、Tailwind plugin、组件 API 全替换与全应用视觉重构, incurred 高; 设计系统沉淀与一致性提升偿还部分 ui-ux debt。explore/design 后必校准并追加 revisions。"
+    confidence: medium
+    rationale: "explore 校准: Radix 机械面远小于初判 (仅 2 文件 + 9 死依赖), 真实范围偏 ui-ux/architecture — 采用 HeroUI v2 (新增 framer-motion+react-aria 重依赖) + 沉淀共享 DS 封装层 + 7 页/~30 组件视觉重构 + 主题/accent 体系 + 动画补全; consolidation (删 9 死依赖、合并 3 处 focus-trap modal/4 处 accordion/多处 badge) 偿还可观 ui-ux 债。"
   final:
     incurred:
     repaid:
@@ -31,7 +31,12 @@ debt:
     areas: []
     confidence:
     rationale:
-  revisions: []
+  revisions:
+    - phase: explore
+      date: 2026-06-05
+      from: { incurred: 13, repaid: 5, net: 8, confidence: low }
+      to: { incurred: 16, repaid: 10, net: 6, confidence: medium }
+      reason: "Radix 真实使用面仅 2 文件 + 9 死依赖 (远小于初判 266 处); 真实工作量在 HeroUI v2 采用 + 共享 DS 层沉淀 + 全应用视觉/主题/动画重构。incurred 上调 (重依赖+迁移面), repaid 上调 (死依赖清理 + 大量重复收敛)。"
 issue:
   number: 105
   repo: Caldis/berth
@@ -59,7 +64,7 @@ artifacts:
 
 ## 产物
 - [x] 00-PRD.md / 00-BUG.md — 原始输入快照
-- [ ] 01-ANALYSIS.md — Explore 产物
+- [x] 01-ANALYSIS.md — Explore 产物
 - [ ] 02-SPEC.md — Design 产物
 - [ ] 03-PLAN.md — 活任务清单
 - [ ] 04-POLISH.md — 可选抛光记录
