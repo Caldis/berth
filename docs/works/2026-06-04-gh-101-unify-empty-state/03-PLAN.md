@@ -32,9 +32,16 @@
   - tests: 新增 `tests/renderer/capabilities-empty-state.test.tsx` — 空 tab 渲染共享空态 (堆叠卡片占位图存在, 无单图标本地结构)。
   - verify: 测试通过; 截图: capabilities (插头/拼图等 tab) 空态与其他页一致、填满、居中 (对应原截图 4 场景)。
 
-- [ ] **T5: 总门禁 + 视觉验收** (验收 4,5) — verify 阶段
-  - `pnpm harness:prepush` (typecheck/lint/test); B 类局部空态 (overview/settings) 回归未破。
-  - electron 实测窗口坐标截图, 对照四张原图场景确认统一 + 填满 + 居中。
+- [~] **T5: 总门禁 + 视觉验收** (验收 4,5) — verify 阶段
+  - 机械门禁:
+    - typecheck:web 绿; eslint(本任务 8 文件)绿。
+    - targeted 测试全绿: empty-state(4) + capabilities-empty-state(2) + status-line-section(8); sessions 23/25、instructions 4/5、capabilities-guidance 5/8 通过。
+    - 全量 `pnpm test`: 6 失败 (capabilities-guidance×3 / instructions-guidance×1 / sessions-pages×2), **逐一 commit/stash 级隔离确认非本改动回归** — 全部来自他人并行 GH-103 + 未提交工作区 in-flight 改动 (feature-guidance / 引导文案族)。
+    - 远端 CI 绿: `cea0440` (已含本任务 T1-T3) latest run success。
+    - Project 字段已 `ensure` 同步 (repaid 2 / net 0 / confidence high)。
+  - B 类局部空态 (overview / settings): 未改其文件, 默认 EmptyState 行为零变化 (empty-state.test 覆盖 border-0 override 仍生效)。
+  - **视觉验收 (待用户确认)**: 环境竞争 (2 个 vite dev + 他人 agent-owned electron 实例运行中), 不贸然另起实例。用户 dev 已 HMR 应用全部改动, 可在 sessions/记忆/指令/能力页触发空态 (无数据或无匹配过滤) 确认: 圆角虚线框撑满内容区 + 占位图垂直水平居中 + 全站一致。或按需由 Agent 起 agent-owned 实例截图。
+  - **推送阻塞**: 本地领先远端 3 提交中, 他人 GH-103 两提交叠在本任务 T4 之上, `git push` 会一并推出他人未完成提交 → 暂不推送; T4 将随他人推送自然带出, 或待工作区收敛后单独推。
 
 ## verify 回写
 verify 不通过项作为新任务追加于此, phase 退回 implement。

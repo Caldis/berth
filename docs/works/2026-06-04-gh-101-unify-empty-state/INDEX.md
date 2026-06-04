@@ -2,7 +2,7 @@
 task: 2026-06-04-gh-101-unify-empty-state
 task_id: GH-101
 type: bug
-phase: implement
+phase: verify
 created: 2026-06-04
 priority: P2
 target_date:
@@ -22,20 +22,26 @@ debt:
     confidence: medium
     rationale: "explore 校准; 共享组件加 fullHeight + 6+ renderer 文件接 flex 高度链; 删除 capabilities 本地实现 (偿还)。页面根改 flex 可能波及非空列表布局, risk 升 medium。"
   final:
-    incurred:
-    repaid:
-    net:
-    scope:
-    risk:
-    areas: []
-    confidence:
-    rationale:
+    incurred: 2
+    repaid: 2
+    net: 0
+    scope: module
+    risk: low
+    areas:
+      - ui-ux
+    confidence: high
+    rationale: "实现收口: 共享组件加 fullHeight + PAGE_EMPTY_FILL, 6 个 renderer 文件接 flex 高度链, 删除 capabilities 本地同名 EmptyState (消除同名遮蔽)。担心的非空列表布局回归未出现 (列表为自包含 min-h 块, 不受根 flex 影响), 故 risk 实测 low。targeted 测试全绿; T1-T3 已随 cea0440 远端 CI 绿灯。repaid 上调到 2 (移除整套分叉实现 + 防未来漂移)。"
   revisions:
     - phase: explore
       date: 2026-06-04
       from: { risk: low }
       to: { risk: medium }
       reason: "页面根接 flex 高度链可能波及非空列表布局; 改动文件数 6+。"
+    - phase: verify
+      date: 2026-06-04
+      from: { risk: medium }
+      to: { risk: low }
+      reason: "非空分支为自包含 min-h 块, 实测未受根 flex 影响; targeted 测试全绿, 远端 CI (cea0440, 含 T1-T3) 绿灯。"
 issue:
   number: 101
   repo: Caldis/berth
