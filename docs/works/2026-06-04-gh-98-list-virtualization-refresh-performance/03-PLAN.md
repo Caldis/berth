@@ -39,5 +39,10 @@
   - tests: `pnpm lint` passed; `pnpm typecheck` passed; `pnpm test` passed (89 files / 645 tests); `pnpm harness:check --work docs/works/2026-06-04-gh-98-list-virtualization-refresh-performance` passed; `node scripts/harness-projects.mjs check --strict --work docs/works/2026-06-04-gh-98-list-virtualization-refresh-performance` passed; `pnpm exec playwright test --grep "can navigate to sessions|can navigate to promoted instruction pages"` passed (2 Electron tests).
   - verify: renderer tests cover Sessions 130 rows -> 30 mounted, Memory 80 notes -> 20 mounted, Instructions 80 skills -> 25 mounted, plus jump nav calls. Agent-owned Electron instance `gh98-verify` confirmed Sessions heading, category nav count 1, visible row count 15, screenshot `/tmp/berth-gh98-sessions-1780540690611.png`; Skills empty-state screenshot `/tmp/berth-gh98-verify-1780540671569.png`. Full-project strict check has unrelated GH-90/GH-95 Project field mismatches; current task strict check passed. Remaining risk: no dedicated real Electron 800-row fixture in this stage.
 
+- [ ] 8. 优化 Sessions 项目类目聚合
+  - scope: `src/renderer/src/lib/session-location-groups.ts`, `src/renderer/src/pages/sessions.tsx`, `src/renderer/src/lib/virtual-list-model.ts`, `src/renderer/src/components/shared/category-jump-nav.tsx`, i18n 与对应 renderer tests。
+  - tests: 新增纯函数测试覆盖根目录置顶、同父目录合并、未知类目排序、短标签与完整路径标题; 更新 Sessions 页面测试覆盖虚拟列表挂载数量与类目跳转。
+  - verify: `/` 类目固定在顶部; 同一父目录下的多个项目合并为一个类目; 左侧主标签不再显示大段原始路径; 搜索后的分组与条目 key 稳定; 跳转导航保留第三方 Radix Navigation Menu 实现。
+
 ## verify 回写
 verify 不通过项作为新任务追加于此, phase 退回 implement。

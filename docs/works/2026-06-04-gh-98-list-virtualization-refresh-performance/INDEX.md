@@ -2,7 +2,7 @@
 task: 2026-06-04-gh-98-list-virtualization-refresh-performance
 task_id: GH-98
 type: maintenance
-phase: verify
+phase: implement
 created: 2026-06-04
 priority: P2
 target_date: 
