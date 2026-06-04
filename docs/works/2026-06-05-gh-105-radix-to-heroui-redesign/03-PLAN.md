@@ -37,23 +37,13 @@
   - tests: `tests/renderer/theme-accent.test.tsx` ✅ (默认 blue/切换持久化/恢复/非法回退 4 例)。
   - verify (P10 截图): 切 accent 后 CTA/focus 变色。
 
-## P3 — 共享 ui/ 层 (主 session 分批; 文件互不重叠, barrel 串行汇总)
-> 先由主 Agent 写 2 个范例 wrapper (button, chip) 定约定, 其余按范例补齐。每个含测试。
-- [ ] **P3.1 范例: ui/button.tsx + ui/chip.tsx + ui/index.ts + motion.ts**
-  - tests: `tests/renderer/ui/button.test.tsx`, `ui/chip.test.tsx` — variant/color/testid/className/onPress。
-  - verify: 不适用视觉单点 (P6 整页验收)。
-- [ ] **P3.2 ui/card.tsx, stat-card.tsx, detail-row.tsx**
-  - tests: 各 wrapper 测试 (isPressable/header-body-footer/testid)。
-- [ ] **P3.3 ui/input.tsx, select.tsx, kbd.tsx**
-  - tests: value/onChange/startContent/clear; select selectionChange。
-- [ ] **P3.4 ui/tabs.tsx (替 tab-group), accordion.tsx**
-  - tests: tab 切换/selectedKey; accordion 展开/aria-expanded。
-- [ ] **P3.5 ui/modal.tsx, drawer.tsx**
-  - tests: open/close/Escape/focus-trap/backdrop; testid 透传。
-- [ ] **P3.6 ui/dropdown.tsx, tooltip.tsx, listbox.tsx**
-  - tests: dropdown onAction/danger item; tooltip content; listbox selection。
-- [ ] **P3.7 ui/switch.tsx, slider.tsx, skeleton.tsx, spinner.tsx, avatar.tsx, alert.tsx, empty-state.tsx**
-  - tests: switch onValueChange; slider range; alert color; empty-state action。
+## P3 — 共享 ui/ 层 (种子) ✅ 完成
+> 精简高度 (AGENTS 简洁原则): 不为每个 HeroUI 组件写厚包装。`ui/index.ts` = 单一 import 入口 (re-export HeroUI primitives), 页面只从 `@/components/ui` 引。berth 专属 composite (语义 Chip / motion) 先落地; StatCard/SectionCard/Modal/Accordion 等**随 P5/P6 各页迁移按真实需求原地重建**, 长进这层 (而非投机抽象)。
+- [x] **P3.1 ui/index.ts (barrel) + ui/motion.ts + ui/chip.tsx (语义 Chip)**
+  - barrel re-export: Button/Card 族/Input/Select/Tabs/Switch/Slider/Modal 族/Drawer 族/Dropdown 族/Popover 族/Tooltip/Badge/Avatar/Accordion/Skeleton/Spinner/Listbox/Table 族/Kbd/Alert/Divider/ScrollShadow/useDisclosure + berth Chip/MOTION。
+  - Chip: tone(neutral/primary/success/warning/danger)→HeroUI color, 默认 flat/sm; 灭 badge 乱象。
+  - tests: `tests/renderer/ui/barrel.test.tsx` (导出齐全 + render) ✅ + `ui/chip.test.tsx` (tone 映射/默认/onClose) ✅。
+- [~] **P3.2 后续 composite (随 P5/P6 落地)**: SectionCard(面板)、StatCard(KPI+delta)、EmptyState/LoadingState 重建、Modal/Drawer/Accordion 收敛 — 见 P5/P6。
 
 ## P4 — 迁移 2 处真实 Radix (顺序, 各自文件)
 - [ ] **P4.1 session-detail Tabs → ui/tabs**
