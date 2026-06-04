@@ -54,5 +54,10 @@
   - tests: `pnpm test -- tests/renderer/session-location-groups.test.ts tests/renderer/category-jump-nav.test.tsx tests/renderer/sessions-pages.test.tsx` passed (32 tests); `pnpm typecheck:web` passed。
   - verify: 左侧类目从最后一级项目名开始作为可选项; n-1 父级目录只显示为不可点击小标题; `/` 仍保持顶部可选项; 虚拟列表 group key 仍由稳定路径驱动。
 
+- [x] 11. 层级修正后的全量门禁
+  - scope: 当前 GH-98 代码与任务态文档。
+  - tests: `pnpm lint` passed; `pnpm typecheck` passed; `pnpm test` passed on second run (90 files / 650 tests); `pnpm harness:check --work docs/works/2026-06-04-gh-98-list-virtualization-refresh-performance` passed; `pnpm exec playwright test --grep "can navigate to sessions"` passed (1 Electron test)。
+  - verify: 第一次全量 vitest 有一个 Settings 测试波动, 单独重跑该文件通过, 第二次全量 vitest 通过; 该失败路径不涉及本次 Sessions 文件。
+
 ## verify 回写
 verify 不通过项作为新任务追加于此, phase 退回 implement。
