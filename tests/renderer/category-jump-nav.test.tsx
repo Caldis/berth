@@ -44,7 +44,9 @@ describe('CategoryJumpNav', () => {
     render(<CategoryJumpNav items={items} activeId="today" onSelect={() => {}} testId="jump-nav" />)
 
     expect(screen.getByTestId('jump-nav')).toHaveClass('overflow-x-auto')
+    expect(screen.getByTestId('jump-nav')).toHaveClass('lg:overflow-x-hidden')
     expect(screen.getByTestId('jump-nav')).toHaveClass('lg:sticky')
+    expect(screen.getByTestId('jump-nav-list')).toHaveClass('lg:w-full')
     expect(screen.getByTestId('jump-nav-list')).toHaveClass('lg:flex-col')
   })
 })

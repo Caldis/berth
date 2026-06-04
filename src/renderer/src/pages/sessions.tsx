@@ -200,13 +200,16 @@ export function Sessions(): React.ReactElement {
             groups={sessionGroups}
             getItemKey={(session) => session.id}
             onActiveGroupChange={setActiveGroupId}
-            renderGroup={(group) => {
+            renderGroup={(group, groupIndex) => {
               const groupTitle = typeof group.meta?.pathTitle === 'string' ? group.meta.pathTitle : group.label
               const parentLabel = typeof group.meta?.parentLabel === 'string' ? group.meta.parentLabel : ''
               return (
                 <div
                   title={groupTitle}
-                  className="flex items-center gap-2 rounded-t-lg border border-border bg-card px-4 py-2.5"
+                  className={cn(
+                    'flex items-center gap-2 rounded-t-lg border-x border-t border-b border-border bg-card px-4 py-2.5',
+                    groupIndex > 0 ? 'mt-4' : undefined
+                  )}
                 >
                   <FolderOpen className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
                   <span className="flex min-w-0 flex-col">
@@ -219,17 +222,21 @@ export function Sessions(): React.ReactElement {
                 </div>
               )
             }}
-            renderItem={(session) => (
-              <SessionRow
-                session={session}
-                agentView={agentView}
-                unknownLabel={t('common.unknown')}
-                fallbackTitle={t('sessions.fallbackTitle', { id: session.id.slice(0, 8) })}
-                onOpen={() => navigate(`/sessions/${session.id}`)}
-              />
-            )}
+            renderItem={(session, context) => {
+              const isLastInGroup = context.group.items.at(-1)?.id === session.id
+              return (
+                <SessionRow
+                  session={session}
+                  agentView={agentView}
+                  unknownLabel={t('common.unknown')}
+                  fallbackTitle={t('sessions.fallbackTitle', { id: session.id.slice(0, 8) })}
+                  isLastInGroup={isLastInGroup}
+                  onOpen={() => navigate(`/sessions/${session.id}`)}
+                />
+              )
+            }}
             className="min-w-0 flex-1"
-            listClassName="rounded-lg border border-border bg-card"
+            listClassName="bg-transparent"
             defaultItemHeight={72}
             testId="sessions-virtual-list"
           />
@@ -280,6 +287,7 @@ interface SessionRowProps {
   agentView: 'all' | SessionSummary['agentId']
   unknownLabel: string
   fallbackTitle: string
+  isLastInGroup: boolean
   onOpen: () => void
 }
 
@@ -288,6 +296,7 @@ function SessionRow({
   agentView,
   unknownLabel,
   fallbackTitle,
+  isLastInGroup,
   onOpen
 }: SessionRowProps): React.ReactElement {
   return (
@@ -295,7 +304,10 @@ function SessionRow({
       type="button"
       data-testid={`session-row-${session.id}`}
       onClick={onOpen}
-      className="flex w-full items-center gap-4 border-b border-border px-4 py-3 text-left transition-colors last:border-b-0 hover:bg-accent/5"
+      className={cn(
+        'flex w-full items-center gap-4 border-x border-b border-border bg-card px-4 py-3 text-left transition-colors hover:bg-accent/5',
+        isLastInGroup ? 'rounded-b-lg' : undefined
+      )}
     >
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium text-card-foreground">

@@ -415,6 +415,7 @@ describe('session pages', () => {
     expect(within(jumpNav).getByText('Desktop/Code').closest('div')).toHaveAttribute('title', '/Users/caldis/Desktop/Code')
     expect(screen.queryByRole('button', { name: 'Desktop/Code, 65 items' })).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'berth, 65 items' })).toHaveAttribute('title', '/Users/caldis/Desktop/Code/berth')
+    expect(screen.getByTestId('sessions-virtual-group-1').firstChild).toHaveClass('mt-4')
 
     fireEvent.click(screen.getByRole('button', { name: 'archive, 65 items' }))
 

@@ -31,13 +31,13 @@ export function CategoryJumpNav({
       orientation="vertical"
       data-testid={testId}
       className={cn(
-        'overflow-x-auto pb-2 lg:sticky lg:top-[var(--berth-page-top-offset)] lg:max-h-[calc(100vh-var(--berth-page-top-offset)-24px)] lg:w-44 lg:shrink-0 lg:overflow-y-auto lg:pb-0',
+        'overflow-x-auto pb-2 lg:sticky lg:top-[var(--berth-page-top-offset)] lg:max-h-[calc(100vh-var(--berth-page-top-offset)-24px)] lg:w-44 lg:shrink-0 lg:overflow-x-hidden lg:overflow-y-auto lg:pb-0',
         className
       )}
     >
       <NavigationMenu.List
         data-testid={`${testId}-list`}
-        className="flex min-w-max gap-1 lg:min-w-0 lg:flex-col"
+        className="flex min-w-max gap-1 lg:w-full lg:min-w-0 lg:flex-col"
       >
         {items.map((item) => {
           if (item.kind === 'heading') {
@@ -65,7 +65,7 @@ export function CategoryJumpNav({
                 className={cn(
                   'flex h-8 w-full min-w-28 items-center justify-between gap-2 rounded-md border px-2.5 text-left text-xs font-medium outline-none transition-colors',
                   'focus-visible:ring-1 focus-visible:ring-ring lg:min-w-0',
-                  item.parentId ? 'lg:ml-2 lg:pl-3' : undefined,
+                  item.parentId ? 'lg:pl-4' : undefined,
                   active
                     ? 'border-border bg-muted text-foreground shadow-sm'
                     : 'border-transparent bg-transparent text-foreground/75 hover:border-border hover:bg-muted/50 hover:text-foreground'
