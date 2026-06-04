@@ -2,7 +2,7 @@
 task: 2026-06-04-gh-101-unify-empty-state
 task_id: GH-101
 type: bug
-phase: explore
+phase: implement
 created: 2026-06-04
 priority: P2
 target_date:
@@ -16,11 +16,11 @@ debt:
     repaid: 1
     net: 1
     scope: module
-    risk: low
+    risk: medium
     areas:
       - ui-ux
     confidence: medium
-    rationale: "0.0-new 初估; 空态一致性收敛, 改 1 个共享组件 + 移除 capabilities 本地同名 EmptyState + 校准各页面容器高度链。explore/design 后校准。"
+    rationale: "explore 校准; 共享组件加 fullHeight + 6+ renderer 文件接 flex 高度链; 删除 capabilities 本地实现 (偿还)。页面根改 flex 可能波及非空列表布局, risk 升 medium。"
   final:
     incurred:
     repaid:
@@ -30,7 +30,12 @@ debt:
     areas: []
     confidence:
     rationale:
-  revisions: []
+  revisions:
+    - phase: explore
+      date: 2026-06-04
+      from: { risk: low }
+      to: { risk: medium }
+      reason: "页面根接 flex 高度链可能波及非空列表布局; 改动文件数 6+。"
 issue:
   number: 101
   repo: Caldis/berth
@@ -58,9 +63,9 @@ artifacts:
 
 ## 产物
 - [x] 00-BUG.md — 原始输入快照
-- [ ] 01-ANALYSIS.md — Explore 产物
-- [ ] 02-SPEC.md — Design 产物
-- [ ] 03-PLAN.md — 活任务清单
+- [x] 01-ANALYSIS.md — Explore 产物
+- [x] 02-SPEC.md — Design 产物
+- [x] 03-PLAN.md — 活任务清单
 - [ ] 04-POLISH.md — 可选抛光记录
 
 ## 待澄清 (blocked 时填)
