@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useEffect, useRef, type FocusEvent } from 'react'
+import { useState, useMemo, useCallback, useEffect, useRef, useDeferredValue, type FocusEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import ReactMarkdown, { type Components } from 'react-markdown'
 import remarkGfm from 'remark-gfm'
@@ -22,6 +22,9 @@ import { usePageChrome, type PageChromeConfig } from '@/components/layout/page-c
 import { FileViewerButton } from '@/components/shared/file-viewer-button'
 import { instructionGuideMap, type FeatureGuideEvidence } from '@/lib/feature-guidance'
 import type { MemoryNote, MemorySourceStatus, MemoryImportance } from '@shared/types/memory'
+import { VirtualGroupedList, type VirtualGroupedListHandle } from '@/components/shared/virtual-grouped-list'
+import { CategoryJumpNav } from '@/components/shared/category-jump-nav'
+import { buildJumpNavItems, type VirtualListGroup } from '@/lib/virtual-list-model'
 
 // Color marks the exception, not the rule: `core` gets an emphasis hue (amber,
 // not red — these are important, not errors), archive/unknown fade into neutral.
@@ -285,6 +288,7 @@ function NoteCard({
   return (
     <div
       ref={ref}
+      data-testid={`memory-note-card-${note.id}`}
       className={cn(
         'rounded-lg border bg-card transition-colors hover:bg-accent/5',
         focused ? 'border-primary ring-1 ring-primary motion-safe:animate-pulse' : 'border-border'
@@ -525,6 +529,29 @@ function countBy<T extends string>(values: T[]): Map<T, number> {
   return counts
 }
 
+function buildMemoryGroups(notes: readonly MemoryNote[]): VirtualListGroup<MemoryNote>[] {
+  const groups = new Map<string, VirtualListGroup<MemoryNote>>()
+
+  for (const note of notes) {
+    const groupId = `source:${note.sourceId}`
+    const existing = groups.get(groupId)
+    if (existing) {
+      existing.items = [...existing.items, note]
+      existing.count = existing.items.length
+    } else {
+      groups.set(groupId, {
+        id: groupId,
+        label: note.sourceLabel,
+        count: 1,
+        items: [note],
+        meta: { sourceId: note.sourceId }
+      })
+    }
+  }
+
+  return [...groups.values()]
+}
+
 export function MemoryView(): React.ReactElement {
   const { t } = useTranslation()
   const { result, loading, refreshing, refresh } = useMemory()
@@ -534,7 +561,10 @@ export function MemoryView(): React.ReactElement {
   const [importanceFilter, setImportanceFilter] = useState<string>('all')
   const [tagFilter, setTagFilter] = useState('all')
   const [focusId, setFocusId] = useState<string | null>(null)
+  const [activeGroupId, setActiveGroupId] = useState<string | undefined>(undefined)
+  const deferredSearch = useDeferredValue(search)
   const focusTimerRef = useRef<number | null>(null)
+  const listRef = useRef<VirtualGroupedListHandle | null>(null)
 
   const importanceOptions = useMemo(() => {
     const counts = countBy(result.notes.map((note) => note.importance))
@@ -551,7 +581,7 @@ export function MemoryView(): React.ReactElement {
   }, [result.notes])
 
   const notes = useMemo(() => {
-    const q = search.trim().toLowerCase()
+    const q = deferredSearch.trim().toLowerCase()
     return result.notes
       .filter((n) => activeSource === 'all' || n.sourceId === activeSource)
       .filter((n) => importanceFilter === 'all' || n.importance === importanceFilter)
@@ -566,7 +596,22 @@ export function MemoryView(): React.ReactElement {
       })
       .slice()
       .sort(byRecency)
-  }, [result.notes, activeSource, importanceFilter, tagFilter, search])
+  }, [result.notes, activeSource, importanceFilter, tagFilter, deferredSearch])
+
+  const memoryGroups = useMemo(() => buildMemoryGroups(notes), [notes])
+  const jumpItems = useMemo(() => buildJumpNavItems(memoryGroups), [memoryGroups])
+
+  useEffect(() => {
+    setActiveGroupId((current) => {
+      if (current && memoryGroups.some((group) => group.id === current)) return current
+      return memoryGroups[0]?.id
+    })
+  }, [memoryGroups])
+
+  const handleJumpSelect = useCallback((groupId: string) => {
+    setActiveGroupId(groupId)
+    listRef.current?.scrollToGroup(groupId)
+  }, [])
 
   // Distinguish the three "nothing to show" states so the empty copy is honest:
   // no sources at all / sources exist but hold no notes / this query filtered all out.
@@ -629,6 +674,9 @@ export function MemoryView(): React.ReactElement {
     }
     clearFilters()
     setFocusId(globalId)
+    window.setTimeout(() => {
+      listRef.current?.scrollToItem(globalId, 'center')
+    }, 0)
     focusTimerRef.current = window.setTimeout(() => {
       setFocusId((current) => (current === globalId ? null : current))
       focusTimerRef.current = null
@@ -691,15 +739,44 @@ export function MemoryView(): React.ReactElement {
           action={null}
         />
       ) : (
-        <div className="space-y-2">
-          {notes.map((note) => (
-            <NoteCard
-              key={note.id}
-              note={note}
-              focused={note.id === focusId}
-              onNavigate={navigate}
-            />
-          ))}
+        <div className="flex min-h-[520px] gap-4 max-lg:flex-col">
+          <CategoryJumpNav
+            items={jumpItems}
+            activeId={activeGroupId}
+            onSelect={handleJumpSelect}
+            label={t('memory.groupNavigation', 'Memory groups')}
+            testId="memory-category-jump-nav"
+          />
+          <VirtualGroupedList<MemoryNote>
+            ref={listRef}
+            groups={memoryGroups}
+            getItemKey={(note) => note.id}
+            onActiveGroupChange={(groupId) => setActiveGroupId(groupId)}
+            renderGroup={(group) => {
+              const sourceId = typeof group.meta?.sourceId === 'string' ? group.meta.sourceId : ''
+              const Icon = sourceIcon(sourceId)
+              return (
+                <div className="flex items-center gap-2 px-1 py-2">
+                  <Icon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                  <span className="min-w-0 truncate text-sm font-medium text-foreground">{group.label}</span>
+                  <span className="ml-auto text-xs text-muted-foreground">{group.count}</span>
+                </div>
+              )
+            }}
+            renderItem={(note) => (
+              <div className="pb-2">
+                <NoteCard
+                  note={note}
+                  focused={note.id === focusId}
+                  onNavigate={navigate}
+                />
+              </div>
+            )}
+            className="min-w-0 flex-1"
+            listClassName="min-h-[520px]"
+            defaultItemHeight={96}
+            testId="memory-virtual-list"
+          />
         </div>
       )}
     </div>

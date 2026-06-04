@@ -11,6 +11,61 @@ import { SearchDialog } from '../../src/renderer/src/components/layout/search-di
 import { useAppStore } from '../../src/renderer/src/stores/app'
 import type { MemoryListResult } from '../../src/shared/types/memory'
 
+const memoryVirtuosoMock = vi.hoisted(() => ({
+  visibleLimit: 20,
+  props: undefined as any,
+  scrollToIndex: vi.fn()
+}))
+
+vi.mock('react-virtuoso', async () => {
+  const ReactModule = await import('react')
+
+  const GroupedVirtuoso = ReactModule.forwardRef(function MockGroupedVirtuoso(props: any, ref) {
+    memoryVirtuosoMock.props = props
+    ReactModule.useImperativeHandle(ref, () => ({
+      scrollToIndex: memoryVirtuosoMock.scrollToIndex
+    }))
+
+    const nodes: React.ReactNode[] = []
+    let itemIndex = 0
+    let renderedRows = 0
+
+    for (let groupIndex = 0; groupIndex < props.groupCounts.length; groupIndex += 1) {
+      nodes.push(
+        ReactModule.createElement(
+          'div',
+          { key: `group-${groupIndex}`, 'data-testid': `memory-virtual-group-${groupIndex}` },
+          props.groupContent(groupIndex, props.context)
+        )
+      )
+
+      for (let offset = 0; offset < props.groupCounts[groupIndex]; offset += 1) {
+        const item = props.data[itemIndex]
+        const key = props.computeItemKey(itemIndex, item, props.context)
+        if (renderedRows < memoryVirtuosoMock.visibleLimit) {
+          nodes.push(
+            ReactModule.createElement(
+              'div',
+              { key, 'data-testid': `memory-virtual-row-${key}` },
+              props.itemContent(itemIndex, groupIndex, item, props.context)
+            )
+          )
+          renderedRows += 1
+        }
+        itemIndex += 1
+      }
+    }
+
+    return ReactModule.createElement(
+      'div',
+      { 'data-testid': props['data-testid'] ?? 'memory-mock-virtuoso' },
+      nodes
+    )
+  })
+
+  return { GroupedVirtuoso }
+})
+
 const memoryState = vi.hoisted(() => ({
   result: {
     notes: [],
@@ -64,6 +119,7 @@ describe('MemoryView', () => {
     memoryState.loading = false
     memoryState.refreshing = false
     memoryState.refresh.mockClear()
+    memoryVirtuosoMock.scrollToIndex.mockClear()
     useAppStore.getState().closeInspector()
   })
 
@@ -316,6 +372,55 @@ describe('MemoryView', () => {
     const popover = screen.getByTestId('memory-tags-filter-popover')
     expect(popover).toHaveClass('overflow-y-auto')
     expect(within(popover).getByRole('button', { name: 'tag-24 1' })).toBeInTheDocument()
+  })
+
+  it('virtualizes large memory lists and exposes source jump navigation', () => {
+    memoryState.result = {
+      sources: [
+        {
+          id: 'united-memory',
+          label: 'United Memory',
+          available: true,
+          rootPath: 'C:\\Users\\test\\.united-memory',
+          noteCount: 40
+        },
+        {
+          id: 'claude-native',
+          label: 'Claude Memory',
+          available: true,
+          rootPath: 'C:\\Users\\test\\.claude',
+          noteCount: 40
+        }
+      ],
+      notes: Array.from({ length: 80 }, (_, index) => ({
+        id: `${index < 40 ? 'united-memory' : 'claude-native'}:note-${index}`,
+        sourceId: index < 40 ? 'united-memory' : 'claude-native',
+        sourceLabel: index < 40 ? 'United Memory' : 'Claude Memory',
+        title: `Memory note ${index}`,
+        summary: `Summary ${index}`,
+        tags: ['ops'],
+        importance: 'active',
+        path: `C:\\Users\\test\\.memory\\note-${index}.md`,
+        links: [],
+        createdAt: null,
+        updatedAt: new Date(Date.UTC(2026, 5, 3, 0, 0, index)).toISOString(),
+        body: `Body ${index}`
+      }))
+    }
+
+    render(<MemoryView />)
+
+    expect(screen.getByText('Memory note 79')).toBeInTheDocument()
+    expect(screen.queryByText('Memory note 0')).not.toBeInTheDocument()
+    expect(screen.getAllByTestId(/memory-note-card-/)).toHaveLength(memoryVirtuosoMock.visibleLimit)
+    expect(screen.getByRole('navigation', { name: 'Memory groups' })).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'United Memory, 40 items' }))
+
+    expect(memoryVirtuosoMock.scrollToIndex).toHaveBeenCalledWith({
+      groupIndex: 1,
+      align: 'start'
+    })
   })
 
   it('opens memory note content through the shared file viewer', async () => {

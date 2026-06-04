@@ -1689,6 +1689,7 @@
   "memory": {
     "allSources": "All sources",
     "searchPlaceholder": "Search memories...",
+    "groupNavigation": "Memory groups",
     "refresh": "Refresh",
     "relations": "Related",
     "clearFilters": "Clear filters",

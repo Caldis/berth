@@ -24,10 +24,10 @@
   - tests: `pnpm test -- tests/renderer/use-sessions-swr.test.tsx tests/renderer/use-memory-cache.test.tsx` passed; `pnpm test -- tests/renderer/instructions-guidance.test.tsx` passed; `pnpm typecheck:web` passed。
   - verify: Sessions 与 Memory 均覆盖 fresh cache 不重拉、stale cache 保持旧数据并刷新、same-result refresh 复用旧数组/结果引用; in-flight 继续由模块级 promise 去重。
 
-- [ ] 5. 改造 Memories 列表
+- [x] 5. 改造 Memories 列表
   - scope: `src/renderer/src/components/memory/memory-view.tsx`, 必要 i18n key。
-  - tests: 更新 `tests/renderer/memory-view.test.tsx`; 命令 `pnpm test -- tests/renderer/memory-view.test.tsx`。
-  - verify: source/importance/tag/search 使用 shared virtual list; note detail lazy load 与 focus target 保留; source unavailable、missing、tags、links、path、loading/empty/error 状态保留。
+  - tests: `pnpm test -- tests/renderer/memory-view.test.tsx` passed; `pnpm test -- tests/renderer/instructions-guidance.test.tsx` passed; `pnpm typecheck:web` passed。
+  - verify: 80 notes renderer test 只挂载 20 个 note card, source jump nav 调用 `scrollToIndex({ groupIndex: 1, align: 'start' })`; source/importance/tag/search、note detail lazy load、focus target、missing、tags、links、path、loading/empty 状态保留。
 
 - [ ] 6. 改造 Instructions 中 skills/conventions 列表
   - scope: `src/renderer/src/pages/instructions.tsx` 与共享 view model 复用。

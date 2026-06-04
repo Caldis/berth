@@ -1680,6 +1680,7 @@
   "memory": {
     "allSources": "全部来源",
     "searchPlaceholder": "搜索记忆…",
+    "groupNavigation": "记忆分组",
     "refresh": "刷新",
     "relations": "相关",
     "clearFilters": "清除筛选",
