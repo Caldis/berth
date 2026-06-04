@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useEffect, useRef, useDeferredValue, type FocusEvent } from 'react'
+import { useState, useMemo, useCallback, useEffect, useRef, useDeferredValue } from 'react'
 import { useTranslation } from 'react-i18next'
 import ReactMarkdown, { type Components } from 'react-markdown'
 import remarkGfm from 'remark-gfm'
@@ -12,7 +12,8 @@ import {
   Loader2,
   RefreshCw,
   Link2,
-  AlertTriangle
+  AlertTriangle,
+  Search
 } from 'lucide-react'
 import { cn, truncatePath, formatOptionalRelativeTime } from '@/lib/utils'
 import { useMemory } from '@/hooks/use-memory'
@@ -440,19 +441,14 @@ function FilterGroup({
   allLabel,
   active,
   options,
-  onChange,
-  collapsed = false,
-  testId
+  onChange
 }: {
   label: string
   allLabel: string
   active: string
   options: Array<{ id: string; label: string; count: number }>
   onChange: (id: string) => void
-  collapsed?: boolean
-  testId?: string
 }): React.ReactElement | null {
-  const [popoverOpen, setPopoverOpen] = useState(false)
   if (options.length === 0) return null
   const chip = (id: string, chipLabel: string, count?: number): React.ReactElement => (
     <button
@@ -469,56 +465,113 @@ function FilterGroup({
       {count != null && <span className={cn('rounded-full px-1.5 text-[10px]', active === id ? 'bg-background/15' : 'bg-muted')}>{count}</span>}
     </button>
   )
-  const renderChips = (): React.ReactElement[] => [
-    chip('all', allLabel),
-    ...options.map((option) => chip(option.id, option.label, option.count))
-  ]
-
-  const handleBlur = (event: FocusEvent<HTMLDivElement>): void => {
-    if (!(event.relatedTarget instanceof Node) || !event.currentTarget.contains(event.relatedTarget)) {
-      setPopoverOpen(false)
-    }
-  }
-
-  if (collapsed) {
-    return (
-      <div
-        data-testid={testId}
-        className="relative"
-        onPointerEnter={() => setPopoverOpen(true)}
-        onPointerLeave={() => setPopoverOpen(false)}
-        onFocus={() => setPopoverOpen(true)}
-        onBlur={handleBlur}
-      >
-        <div className="flex items-start gap-2">
-          <span className="w-16 shrink-0 pt-1.5 text-[11px] font-medium uppercase tracking-normal text-muted-foreground">{label}</span>
-          <div className="min-w-0 flex-1 overflow-hidden">
-            <div
-              data-testid={testId ? `${testId}-row` : undefined}
-              className="flex max-h-8 flex-wrap items-center gap-2 overflow-hidden pr-2"
-            >
-              {renderChips()}
-            </div>
-          </div>
-        </div>
-        {popoverOpen && (
-          <div
-            data-testid={testId ? `${testId}-popover` : undefined}
-            className="absolute left-16 right-0 top-full z-30 mt-2 max-h-[min(20rem,45vh)] overflow-y-auto rounded-lg border border-border bg-popover p-2 shadow-2xl"
-          >
-            <div className="flex flex-wrap gap-2">
-              {renderChips()}
-            </div>
-          </div>
-        )}
-      </div>
-    )
-  }
 
   return (
     <div className="flex flex-wrap items-center gap-2">
       <span className="w-16 text-[11px] font-medium uppercase tracking-normal text-muted-foreground">{label}</span>
-      {renderChips()}
+      {chip('all', allLabel)}
+      {options.map((option) => chip(option.id, option.label, option.count))}
+    </div>
+  )
+}
+
+// Tags are the density hot spot (100+ in real use), so they get a dedicated
+// multi-select picker instead of the inline FilterGroup: a search box plus a
+// single bounded, scrollable panel (one source of truth — no folded row + hover
+// overlay duplication). Selected tags AND together (each narrows the result),
+// stay pinned to the top, and are never hidden by the query — the search only
+// narrows the unselected pool, so active filters remain visible and removable.
+function TagFilter({
+  label,
+  allLabel,
+  searchPlaceholder,
+  emptyText,
+  selected,
+  options,
+  onToggle,
+  onClear,
+  testId
+}: {
+  label: string
+  allLabel: string
+  searchPlaceholder: string
+  emptyText: string
+  selected: string[]
+  options: Array<{ id: string; label: string; count: number }>
+  onToggle: (id: string) => void
+  onClear: () => void
+  testId?: string
+}): React.ReactElement | null {
+  const [query, setQuery] = useState('')
+  if (options.length === 0) return null
+
+  const selectedSet = new Set(selected)
+  const q = query.trim().toLowerCase()
+  const visible = options
+    .filter((option) => selectedSet.has(option.id) || q === '' || option.label.toLowerCase().includes(q))
+    .sort((a, b) => {
+      const selDelta = (selectedSet.has(a.id) ? 0 : 1) - (selectedSet.has(b.id) ? 0 : 1)
+      if (selDelta !== 0) return selDelta
+      return b.count - a.count || a.label.localeCompare(b.label)
+    })
+
+  const chipClass = (isActive: boolean): string =>
+    cn(
+      'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium transition-colors',
+      isActive ? 'border-foreground bg-foreground text-background' : 'border-border text-muted-foreground hover:bg-muted/70'
+    )
+
+  return (
+    <div data-testid={testId} className="flex items-start gap-2">
+      <span className="w-16 shrink-0 pt-2 text-[11px] font-medium uppercase tracking-normal text-muted-foreground">{label}</span>
+      <div className="min-w-0 flex-1 space-y-2">
+        <div className="relative">
+          <Search aria-hidden="true" className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+          <input
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder={searchPlaceholder}
+            aria-label={searchPlaceholder}
+            data-testid={testId ? `${testId}-search` : undefined}
+            className="h-8 w-full rounded-md border border-input bg-background pl-8 pr-3 text-xs outline-none ring-ring focus:ring-1"
+          />
+        </div>
+        <div
+          data-testid={testId ? `${testId}-panel` : undefined}
+          className="max-h-[13rem] overflow-y-auto rounded-md border border-border bg-muted/20 p-2"
+        >
+          <div className="flex flex-wrap gap-2">
+            {q === '' && (
+              <button
+                type="button"
+                aria-pressed={selected.length === 0}
+                onClick={onClear}
+                className={chipClass(selected.length === 0)}
+              >
+                {allLabel}
+              </button>
+            )}
+            {visible.map((option) => {
+              const isActive = selectedSet.has(option.id)
+              return (
+                <button
+                  key={option.id}
+                  type="button"
+                  aria-pressed={isActive}
+                  onClick={() => onToggle(option.id)}
+                  className={chipClass(isActive)}
+                >
+                  {option.label}
+                  <span className={cn('rounded-full px-1.5 text-[10px]', isActive ? 'bg-background/15' : 'bg-muted')}>{option.count}</span>
+                </button>
+              )
+            })}
+          </div>
+          {visible.length === 0 && (
+            <p className="px-1 py-6 text-center text-xs text-muted-foreground">{emptyText}</p>
+          )}
+        </div>
+      </div>
     </div>
   )
 }
@@ -559,7 +612,7 @@ export function MemoryView(): React.ReactElement {
   const [activeSource, setActiveSource] = useState('all')
   const [search, setSearch] = useState('')
   const [importanceFilter, setImportanceFilter] = useState<string>('all')
-  const [tagFilter, setTagFilter] = useState('all')
+  const [tagFilter, setTagFilter] = useState<string[]>([])
   const [focusId, setFocusId] = useState<string | null>(null)
   const [activeGroupId, setActiveGroupId] = useState<string | undefined>(undefined)
   const deferredSearch = useDeferredValue(search)
@@ -585,7 +638,7 @@ export function MemoryView(): React.ReactElement {
     return result.notes
       .filter((n) => activeSource === 'all' || n.sourceId === activeSource)
       .filter((n) => importanceFilter === 'all' || n.importance === importanceFilter)
-      .filter((n) => tagFilter === 'all' || n.tags.includes(tagFilter))
+      .filter((n) => tagFilter.length === 0 || tagFilter.every((tag) => n.tags.includes(tag)))
       .filter((n) => {
         if (!q) return true
         return (
@@ -615,7 +668,7 @@ export function MemoryView(): React.ReactElement {
 
   // Distinguish the three "nothing to show" states so the empty copy is honest:
   // no sources at all / sources exist but hold no notes / this query filtered all out.
-  const hasFilters = search.trim().length > 0 || activeSource !== 'all' || importanceFilter !== 'all' || tagFilter !== 'all'
+  const hasFilters = search.trim().length > 0 || activeSource !== 'all' || importanceFilter !== 'all' || tagFilter.length > 0
   const emptyKind =
     result.sources.length === 0
       ? 'noSources'
@@ -663,8 +716,14 @@ export function MemoryView(): React.ReactElement {
     setSearch('')
     setActiveSource('all')
     setImportanceFilter('all')
-    setTagFilter('all')
+    setTagFilter([])
   }, [])
+
+  const toggleTag = useCallback((id: string) => {
+    setTagFilter((current) => (current.includes(id) ? current.filter((tag) => tag !== id) : [...current, id]))
+  }, [])
+
+  const clearTags = useCallback(() => setTagFilter([]), [])
 
   const navigate = useCallback((globalId: string) => {
     // Clear filters so the target is guaranteed visible, then focus it.
@@ -711,13 +770,15 @@ export function MemoryView(): React.ReactElement {
           options={importanceOptions}
           onChange={setImportanceFilter}
         />
-        <FilterGroup
+        <TagFilter
           label={t('memory.tags', 'Tags')}
           allLabel={t('memory.allTags', 'All tags')}
-          active={tagFilter}
+          searchPlaceholder={t('memory.tagSearchPlaceholder', 'Filter tags…')}
+          emptyText={t('memory.noMatchingTags', 'No matching tags')}
+          selected={tagFilter}
           options={tagOptions}
-          onChange={setTagFilter}
-          collapsed
+          onToggle={toggleTag}
+          onClear={clearTags}
           testId="memory-tags-filter"
         />
         {hasFilters && (

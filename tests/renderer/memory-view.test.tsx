@@ -349,7 +349,7 @@ describe('MemoryView', () => {
     expect(screen.getByText('Archive note')).toBeInTheDocument()
   })
 
-  it('keeps tag filters to one row and shows all tags in a scrollable hover layer', () => {
+  it('renders all tags inline in a searchable scrollable panel without hover', () => {
     memoryState.result = {
       sources: [
         {
@@ -380,15 +380,173 @@ describe('MemoryView', () => {
 
     render(<MemoryView />)
 
-    const tagFilter = screen.getByTestId('memory-tags-filter')
-    expect(screen.getByTestId('memory-tags-filter-row')).toHaveClass('max-h-8')
+    // No hover / popover: the panel is present inline and scrollable on first render.
+    const panel = screen.getByTestId('memory-tags-filter-panel')
+    expect(panel).toHaveClass('overflow-y-auto')
     expect(screen.queryByTestId('memory-tags-filter-popover')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('memory-tags-filter-row')).not.toBeInTheDocument()
+    expect(screen.getByTestId('memory-tags-filter-search')).toBeInTheDocument()
+    expect(within(panel).getByRole('button', { name: 'tag-24 1' })).toBeInTheDocument()
+  })
 
-    fireEvent.pointerEnter(tagFilter)
+  it('filters the tag list by the search box while keeping selected tags visible', () => {
+    memoryState.result = {
+      sources: [
+        {
+          id: 'united-memory',
+          label: 'United Memory',
+          available: true,
+          rootPath: 'C:\\Users\\test\\.united-memory',
+          noteCount: 1
+        }
+      ],
+      notes: [
+        {
+          id: 'united-memory:multi-tag-note',
+          sourceId: 'united-memory',
+          sourceLabel: 'United Memory',
+          title: 'Multi tag note',
+          summary: 'alpha beta gamma',
+          tags: ['alpha', 'beta', 'gamma'],
+          importance: 'active',
+          path: 'C:\\Users\\test\\.united-memory\\mem\\multi-tag-note.md',
+          links: [],
+          createdAt: null,
+          updatedAt: null,
+          body: 'tags'
+        }
+      ]
+    }
 
-    const popover = screen.getByTestId('memory-tags-filter-popover')
-    expect(popover).toHaveClass('overflow-y-auto')
-    expect(within(popover).getByRole('button', { name: 'tag-24 1' })).toBeInTheDocument()
+    render(<MemoryView />)
+
+    const panel = screen.getByTestId('memory-tags-filter-panel')
+    // Select a tag that will NOT match the upcoming query.
+    fireEvent.click(within(panel).getByRole('button', { name: 'alpha 1' }))
+
+    fireEvent.change(screen.getByTestId('memory-tags-filter-search'), { target: { value: 'be' } })
+
+    // Matching unselected tag stays; non-matching unselected tag is filtered out;
+    // selected tag remains visible even though it does not match the query.
+    expect(within(panel).getByRole('button', { name: 'beta 1' })).toBeInTheDocument()
+    expect(within(panel).queryByRole('button', { name: 'gamma 1' })).not.toBeInTheDocument()
+    expect(within(panel).getByRole('button', { name: 'alpha 1' })).toBeInTheDocument()
+  })
+
+  it('filters memories by the intersection of multiple selected tags', () => {
+    memoryState.result = {
+      sources: [
+        {
+          id: 'united-memory',
+          label: 'United Memory',
+          available: true,
+          rootPath: 'C:\\Users\\test\\.united-memory',
+          noteCount: 3
+        }
+      ],
+      notes: [
+        {
+          id: 'united-memory:note-a',
+          sourceId: 'united-memory',
+          sourceLabel: 'United Memory',
+          title: 'Note A',
+          summary: 'esp32 + react',
+          tags: ['esp32', 'react'],
+          importance: 'active',
+          path: 'C:\\Users\\test\\.united-memory\\mem\\note-a.md',
+          links: [],
+          createdAt: null,
+          updatedAt: null,
+          body: 'A'
+        },
+        {
+          id: 'united-memory:note-b',
+          sourceId: 'united-memory',
+          sourceLabel: 'United Memory',
+          title: 'Note B',
+          summary: 'esp32 only',
+          tags: ['esp32'],
+          importance: 'active',
+          path: 'C:\\Users\\test\\.united-memory\\mem\\note-b.md',
+          links: [],
+          createdAt: null,
+          updatedAt: null,
+          body: 'B'
+        },
+        {
+          id: 'united-memory:note-c',
+          sourceId: 'united-memory',
+          sourceLabel: 'United Memory',
+          title: 'Note C',
+          summary: 'react only',
+          tags: ['react'],
+          importance: 'active',
+          path: 'C:\\Users\\test\\.united-memory\\mem\\note-c.md',
+          links: [],
+          createdAt: null,
+          updatedAt: null,
+          body: 'C'
+        }
+      ]
+    }
+
+    render(<MemoryView />)
+
+    const panel = screen.getByTestId('memory-tags-filter-panel')
+
+    fireEvent.click(within(panel).getByRole('button', { name: 'esp32 2' }))
+    expect(screen.getByText('Note A')).toBeInTheDocument()
+    expect(screen.getByText('Note B')).toBeInTheDocument()
+    expect(screen.queryByText('Note C')).not.toBeInTheDocument()
+
+    fireEvent.click(within(panel).getByRole('button', { name: 'react 2' }))
+    expect(screen.getByText('Note A')).toBeInTheDocument()
+    expect(screen.queryByText('Note B')).not.toBeInTheDocument()
+    expect(screen.queryByText('Note C')).not.toBeInTheDocument()
+
+    // The all-tags chip resets the whole tag selection.
+    fireEvent.click(within(panel).getByRole('button', { name: 'All tags' }))
+    expect(screen.getByText('Note A')).toBeInTheDocument()
+    expect(screen.getByText('Note B')).toBeInTheDocument()
+    expect(screen.getByText('Note C')).toBeInTheDocument()
+  })
+
+  it('shows an empty state when the tag search matches nothing', () => {
+    memoryState.result = {
+      sources: [
+        {
+          id: 'united-memory',
+          label: 'United Memory',
+          available: true,
+          rootPath: 'C:\\Users\\test\\.united-memory',
+          noteCount: 1
+        }
+      ],
+      notes: [
+        {
+          id: 'united-memory:tagged-note',
+          sourceId: 'united-memory',
+          sourceLabel: 'United Memory',
+          title: 'Tagged note',
+          summary: 'one tag',
+          tags: ['ops'],
+          importance: 'active',
+          path: 'C:\\Users\\test\\.united-memory\\mem\\tagged-note.md',
+          links: [],
+          createdAt: null,
+          updatedAt: null,
+          body: 'tagged'
+        }
+      ]
+    }
+
+    render(<MemoryView />)
+
+    fireEvent.change(screen.getByTestId('memory-tags-filter-search'), { target: { value: 'zzz' } })
+
+    const panel = screen.getByTestId('memory-tags-filter-panel')
+    expect(within(panel).getByText('No matching tags')).toBeInTheDocument()
+    expect(within(panel).queryByRole('button', { name: 'ops 1' })).not.toBeInTheDocument()
   })
 
   it('virtualizes large memory lists and exposes source jump navigation', () => {
@@ -562,6 +720,7 @@ describe('MemoryView', () => {
     expect(screen.getByRole('button', { name: '全部类型' })).toBeInTheDocument()
     expect(screen.getByText('标签')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: '全部标签' })).toBeInTheDocument()
+    expect(screen.getByPlaceholderText('筛选标签…')).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: /Missing note/ }))
 

@@ -1702,6 +1702,8 @@
     "allImportance": "All importance",
     "tags": "Tags",
     "allTags": "All tags",
+    "tagSearchPlaceholder": "Filter tags…",
+    "noMatchingTags": "No matching tags",
     "sourceError": "Source unavailable: {{error}}",
     "evidence": {
       "notes": "notes",

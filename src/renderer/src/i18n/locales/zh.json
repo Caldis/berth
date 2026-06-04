@@ -1693,6 +1693,8 @@
     "allImportance": "全部类型",
     "tags": "标签",
     "allTags": "全部标签",
+    "tagSearchPlaceholder": "筛选标签…",
+    "noMatchingTags": "无匹配标签",
     "sourceError": "来源不可用: {{error}}",
     "evidence": {
       "notes": "条记忆",
