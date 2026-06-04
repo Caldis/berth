@@ -343,6 +343,8 @@ describe('session pages', () => {
     expect(screen.getByText('Local conversation history')).toBeInTheDocument()
     expect(await screen.findByText('Fix session metadata')).toBeInTheDocument()
     expect(screen.getAllByText('D:/Code').length).toBeGreaterThan(0)
+    expect(screen.getByRole('button', { name: 'berth, 1 items' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'D:/Code, 1 items' })).not.toBeInTheDocument()
     expect(screen.queryByText('D:\\Code\\berth')).not.toBeInTheDocument()
     expect(screen.queryByText('D--Code-berth')).not.toBeInTheDocument()
     expect(screen.queryByText(/Invalid Date/i)).not.toBeInTheDocument()
@@ -409,9 +411,12 @@ describe('session pages', () => {
     expect(screen.queryByText('Showing 80 of 130 sessions')).not.toBeInTheDocument()
     expect(screen.getByRole('navigation', { name: 'Session groups' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Root /, 1 items' })).toHaveAttribute('title', '/')
-    expect(screen.getByRole('button', { name: 'Desktop/Code, 65 items' })).toHaveAttribute('title', '/Users/caldis/Desktop/Code')
+    const jumpNav = screen.getByTestId('sessions-category-jump-nav')
+    expect(within(jumpNav).getByText('Desktop/Code').closest('div')).toHaveAttribute('title', '/Users/caldis/Desktop/Code')
+    expect(screen.queryByRole('button', { name: 'Desktop/Code, 65 items' })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'berth, 65 items' })).toHaveAttribute('title', '/Users/caldis/Desktop/Code/berth')
 
-    fireEvent.click(screen.getByRole('button', { name: 'Desktop/Archive, 65 items' }))
+    fireEvent.click(screen.getByRole('button', { name: 'archive, 65 items' }))
 
     expect(sessionsVirtuosoMock.scrollToIndex).toHaveBeenCalledWith({
       groupIndex: 2,

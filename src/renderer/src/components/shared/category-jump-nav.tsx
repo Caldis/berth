@@ -40,6 +40,19 @@ export function CategoryJumpNav({
         className="flex min-w-max gap-1 lg:min-w-0 lg:flex-col"
       >
         {items.map((item) => {
+          if (item.kind === 'heading') {
+            return (
+              <NavigationMenu.Item key={item.id}>
+                <div
+                  title={item.title}
+                  className="flex h-7 min-w-24 items-center px-2.5 text-[11px] font-medium text-muted-foreground/80 lg:mt-2 lg:h-auto lg:min-w-0 lg:px-2.5 lg:pb-1 lg:pt-1 first:lg:mt-0"
+                >
+                  <span className="truncate">{item.label}</span>
+                </div>
+              </NavigationMenu.Item>
+            )
+          }
+
           const active = item.id === activeId
           return (
             <NavigationMenu.Item key={item.id}>
@@ -52,6 +65,7 @@ export function CategoryJumpNav({
                 className={cn(
                   'flex h-8 w-full min-w-28 items-center justify-between gap-2 rounded-md border px-2.5 text-left text-xs font-medium outline-none transition-colors',
                   'focus-visible:ring-1 focus-visible:ring-ring lg:min-w-0',
+                  item.parentId ? 'lg:pl-4' : undefined,
                   active
                     ? 'border-primary/25 bg-primary/10 text-primary'
                     : 'border-transparent bg-transparent text-muted-foreground hover:border-border hover:bg-muted/60 hover:text-foreground'

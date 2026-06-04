@@ -49,9 +49,9 @@
   - tests: `pnpm lint` passed; `pnpm typecheck` passed; `pnpm test` passed (90 files / 650 tests); `pnpm harness:check --work docs/works/2026-06-04-gh-98-list-virtualization-refresh-performance` passed; `pnpm exec playwright test --grep "can navigate to sessions"` passed (1 Electron test)。
   - verify: 工作区在提交后保持 clean; 全量 vitest 仍有既有 React act warning 输出, 但测试结果通过。
 
-- [ ] 10. 调整 Sessions 类目层级为父级标题 + 项目项
+- [x] 10. 调整 Sessions 类目层级为父级标题 + 项目项
   - scope: `src/renderer/src/lib/session-location-groups.ts`, `src/renderer/src/lib/virtual-list-model.ts`, `src/renderer/src/components/shared/category-jump-nav.tsx`, `src/renderer/src/pages/sessions.tsx`, tests 与当前 issue/任务态文档。
-  - tests: 更新纯函数测试覆盖同父级下多个项目不合并为单个可选项; 更新导航测试覆盖不可选小标题; 更新 Sessions 页面测试覆盖父级标题 `Desktop/Code` 与项目按钮 `berth` 分离。
+  - tests: `pnpm test -- tests/renderer/session-location-groups.test.ts tests/renderer/category-jump-nav.test.tsx tests/renderer/sessions-pages.test.tsx` passed (32 tests); `pnpm typecheck:web` passed。
   - verify: 左侧类目从最后一级项目名开始作为可选项; n-1 父级目录只显示为不可点击小标题; `/` 仍保持顶部可选项; 虚拟列表 group key 仍由稳定路径驱动。
 
 ## verify 回写

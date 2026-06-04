@@ -47,7 +47,7 @@ describe('buildSessionProjectGroups', () => {
     })
   })
 
-  it('merges projects with the same parent directory', () => {
+  it('groups by project name and carries parent directory metadata', () => {
     const groups = buildSessionProjectGroups(
       [
         session('berth', '/Users/caldis/Desktop/Code/berth', '2026-06-04T10:00:00.000Z'),
@@ -56,20 +56,30 @@ describe('buildSessionProjectGroups', () => {
       { labels }
     )
 
-    expect(groups).toHaveLength(1)
+    expect(groups).toHaveLength(2)
     expect(groups[0]).toMatchObject({
-      id: 'project-parent:/Users/caldis/Desktop/Code',
-      label: 'Desktop/Code',
-      count: 2,
+      id: 'project-path:/Users/caldis/Desktop/Code/berth',
+      label: 'berth',
+      count: 1,
       meta: expect.objectContaining({
-        kind: 'parent',
-        pathTitle: '/Users/caldis/Desktop/Code'
+        kind: 'project',
+        pathTitle: '/Users/caldis/Desktop/Code/berth',
+        parentPath: '/Users/caldis/Desktop/Code',
+        parentLabel: 'Desktop/Code'
       })
     })
-    expect(groups[0].items.map((item) => item.id)).toEqual(['berth', 'agentic'])
+    expect(groups[1]).toMatchObject({
+      id: 'project-path:/Users/caldis/Desktop/Code/agentic',
+      label: 'agentic',
+      count: 1,
+      meta: expect.objectContaining({
+        parentPath: '/Users/caldis/Desktop/Code',
+        parentLabel: 'Desktop/Code'
+      })
+    })
   })
 
-  it('orders current parent before other parent directories', () => {
+  it('orders the current project parent before other parent directories', () => {
     const groups = buildSessionProjectGroups(
       [
         session('archive', '/Users/caldis/Desktop/Archive/old', '2026-06-04T11:00:00.000Z'),
@@ -81,8 +91,12 @@ describe('buildSessionProjectGroups', () => {
       }
     )
 
-    expect(groups.map((group) => group.label)).toEqual(['Desktop/Code', 'Desktop/Archive'])
-    expect(groups[0].meta).toMatchObject({ kind: 'current-parent' })
+    expect(groups.map((group) => group.label)).toEqual(['berth', 'old'])
+    expect(groups[0].meta).toMatchObject({
+      kind: 'current-project',
+      parentLabel: 'Desktop/Code'
+    })
+    expect(groups[1].meta).toMatchObject({ parentLabel: 'Desktop/Archive' })
   })
 
   it('places unknown project data after path-backed groups', () => {
@@ -110,12 +124,26 @@ describe('buildSessionProjectGroups', () => {
       { labels }
     )
 
-    expect(groups).toHaveLength(1)
+    expect(groups).toHaveLength(2)
     expect(groups[0]).toMatchObject({
-      id: 'project-parent:D:/Code',
-      label: 'D:/Code',
-      count: 2,
-      meta: expect.objectContaining({ pathTitle: 'D:/Code' })
+      id: 'project-path:D:/Code/berth',
+      label: 'berth',
+      count: 1,
+      meta: expect.objectContaining({
+        pathTitle: 'D:/Code/berth',
+        parentPath: 'D:/Code',
+        parentLabel: 'D:/Code'
+      })
+    })
+    expect(groups[1]).toMatchObject({
+      id: 'project-path:D:/Code/agentic',
+      label: 'agentic',
+      count: 1,
+      meta: expect.objectContaining({
+        pathTitle: 'D:/Code/agentic',
+        parentPath: 'D:/Code',
+        parentLabel: 'D:/Code'
+      })
     })
   })
 })

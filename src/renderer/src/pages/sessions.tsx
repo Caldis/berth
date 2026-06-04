@@ -202,13 +202,19 @@ export function Sessions(): React.ReactElement {
             onActiveGroupChange={setActiveGroupId}
             renderGroup={(group) => {
               const groupTitle = typeof group.meta?.pathTitle === 'string' ? group.meta.pathTitle : group.label
+              const parentLabel = typeof group.meta?.parentLabel === 'string' ? group.meta.parentLabel : ''
               return (
                 <div
                   title={groupTitle}
                   className="flex items-center gap-2 rounded-t-lg border border-border bg-card px-4 py-2.5"
                 >
                   <FolderOpen className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                  <span className="min-w-0 truncate text-sm font-medium text-card-foreground">{group.label}</span>
+                  <span className="flex min-w-0 flex-col">
+                    <span className="truncate text-sm font-medium text-card-foreground">{group.label}</span>
+                    {parentLabel && (
+                      <span className="truncate text-[11px] text-muted-foreground">{parentLabel}</span>
+                    )}
+                  </span>
                   <span className="ml-auto text-xs text-muted-foreground">{group.count}</span>
                 </div>
               )

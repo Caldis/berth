@@ -5,6 +5,7 @@ import { CategoryJumpNav } from '../../src/renderer/src/components/shared/catego
 
 const items = [
   { id: 'today', label: 'Today', count: 12, targetIndex: 0 },
+  { id: 'heading:parent:/Users/caldis/Desktop/Archive', kind: 'heading' as const, label: 'Desktop/Archive', count: 0, targetIndex: 12, title: '/Users/caldis/Desktop/Archive' },
   { id: 'archive', label: 'Archive', count: 4, targetIndex: 12, title: '/Users/caldis/Desktop/Archive' }
 ]
 
@@ -21,6 +22,8 @@ describe('CategoryJumpNav', () => {
 
     expect(screen.getByRole('navigation', { name: 'Session groups' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Today, 12 items' })).toBeInTheDocument()
+    expect(screen.getByText('Desktop/Archive').closest('div')).toHaveAttribute('title', '/Users/caldis/Desktop/Archive')
+    expect(screen.queryByRole('button', { name: 'Desktop/Archive, 0 items' })).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Archive, 4 items' })).toHaveAttribute('aria-current', 'page')
     expect(screen.getByRole('button', { name: 'Archive, 4 items' })).toHaveAttribute('title', '/Users/caldis/Desktop/Archive')
     expect(screen.getByText('12')).toBeInTheDocument()

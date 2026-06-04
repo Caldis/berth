@@ -13,6 +13,8 @@ export interface JumpNavItem {
   label: string
   count: number
   targetIndex: number
+  kind?: 'item' | 'heading'
+  parentId?: string
   title?: string
   tone?: 'default' | 'muted' | 'warning'
 }
@@ -55,17 +57,38 @@ export function buildJumpNavItems<TItem>(
   groups: readonly VirtualListGroup<TItem>[]
 ): JumpNavItem[] {
   let targetIndex = 0
+  let lastParentId = ''
+  const items: JumpNavItem[] = []
 
-  return groups.map((group) => {
-    const item: JumpNavItem = {
+  for (const group of groups) {
+    const parentPath = typeof group.meta?.parentPath === 'string' ? group.meta.parentPath : ''
+    const parentLabel = typeof group.meta?.parentLabel === 'string' ? group.meta.parentLabel : ''
+    const parentId = parentPath ? `parent:${parentPath}` : ''
+
+    if (parentId && parentId !== lastParentId) {
+      items.push({
+        id: `heading:${parentId}`,
+        kind: 'heading',
+        label: parentLabel,
+        count: 0,
+        targetIndex,
+        title: parentPath
+      })
+      lastParentId = parentId
+    }
+
+    items.push({
       id: group.id,
+      kind: 'item',
       label: group.label,
       count: group.items.length,
       targetIndex,
+      parentId: parentId || undefined,
       title: typeof group.meta?.pathTitle === 'string' ? group.meta.pathTitle : undefined
-    }
+    })
 
     targetIndex += group.items.length
-    return item
-  })
+  }
+
+  return items
 }
