@@ -45,7 +45,7 @@ export function CategoryJumpNav({
               <NavigationMenu.Item key={item.id}>
                 <div
                   title={item.title}
-                  className="flex h-7 min-w-24 items-center px-2.5 text-[11px] font-medium text-muted-foreground/80 lg:mt-2 lg:h-auto lg:min-w-0 lg:px-2.5 lg:pb-1 lg:pt-1 first:lg:mt-0"
+                  className="flex h-6 min-w-24 items-center border-border/70 px-2.5 text-[10px] font-semibold tracking-wide text-muted-foreground/55 lg:mt-3 lg:h-auto lg:min-w-0 lg:border-t lg:px-2.5 lg:pb-1 lg:pt-2 first:lg:mt-0 first:lg:border-t-0"
                 >
                   <span className="truncate">{item.label}</span>
                 </div>
@@ -65,10 +65,10 @@ export function CategoryJumpNav({
                 className={cn(
                   'flex h-8 w-full min-w-28 items-center justify-between gap-2 rounded-md border px-2.5 text-left text-xs font-medium outline-none transition-colors',
                   'focus-visible:ring-1 focus-visible:ring-ring lg:min-w-0',
-                  item.parentId ? 'lg:pl-4' : undefined,
+                  item.parentId ? 'lg:ml-2 lg:pl-3' : undefined,
                   active
-                    ? 'border-primary/25 bg-primary/10 text-primary'
-                    : 'border-transparent bg-transparent text-muted-foreground hover:border-border hover:bg-muted/60 hover:text-foreground'
+                    ? 'border-border bg-muted text-foreground shadow-sm'
+                    : 'border-transparent bg-transparent text-foreground/75 hover:border-border hover:bg-muted/50 hover:text-foreground'
                 )}
               >
                 <span className="truncate">{item.label}</span>
@@ -76,7 +76,7 @@ export function CategoryJumpNav({
                   aria-hidden="true"
                   className={cn(
                     'inline-flex h-4 min-w-4 shrink-0 items-center justify-center rounded-full px-1 text-[10px] font-semibold',
-                    active ? 'bg-primary/15 text-primary' : 'bg-muted text-muted-foreground'
+                    active ? 'bg-background text-foreground' : 'bg-muted/70 text-muted-foreground'
                   )}
                 >
                   {item.count}
