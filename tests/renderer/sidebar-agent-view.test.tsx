@@ -104,14 +104,17 @@ describe('Sidebar', () => {
     expect(screen.queryByRole('separator', { name: 'Resize sidebar' })).not.toBeInTheDocument()
   })
 
-  it('shows the project scope entry in the sidebar footer', () => {
+  it('places the project scope entry above the sidebar search trigger', () => {
     render(
       <MemoryRouter>
         <Sidebar />
       </MemoryRouter>
     )
 
-    expect(screen.getByRole('button', { name: 'Project scope' })).toBeInTheDocument()
+    const projectScopeButton = screen.getByRole('button', { name: 'Project scope' })
+    const searchButton = screen.getByRole('button', { name: 'Search assets...' })
+
+    expect(projectScopeButton.compareDocumentPosition(searchButton) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })
 
   it('promotes instruction and capability sections into sidebar navigation', () => {

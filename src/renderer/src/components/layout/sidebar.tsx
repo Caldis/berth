@@ -93,26 +93,29 @@ export function Sidebar(): React.ReactElement {
         </div>
 
         <div className="px-3 pb-2">
-          <button
-            type="button"
-            onClick={() => setSearchOpen(true)}
-            aria-label={t('search.placeholder')}
-            title={collapsed ? t('search.placeholder') : undefined}
-            className={cn(
-              'titlebar-no-drag flex h-9 w-full items-center gap-2 rounded-md border border-sidebar-border bg-sidebar px-2.5 text-sm text-muted-foreground transition-colors hover:border-sidebar-accent/40 hover:bg-sidebar-accent/10 hover:text-sidebar-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
-              collapsed && 'justify-center px-0'
-            )}
-          >
-            <Search className="h-4 w-4 shrink-0" />
-            {!collapsed && (
-              <>
-                <span className="min-w-0 flex-1 truncate text-left">{t('search.placeholder')}</span>
-                <kbd className="rounded border border-sidebar-border bg-sidebar-accent/10 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
-                  {isMac ? '⌘' : 'Ctrl+'}K
-                </kbd>
-              </>
-            )}
-          </button>
+          <div className={cn('flex flex-col gap-1', collapsed && 'items-center')}>
+            <ProjectScopeSwitcher collapsed={collapsed} />
+            <button
+              type="button"
+              onClick={() => setSearchOpen(true)}
+              aria-label={t('search.placeholder')}
+              title={collapsed ? t('search.placeholder') : undefined}
+              className={cn(
+                'titlebar-no-drag flex h-9 w-full items-center gap-2 rounded-md border border-sidebar-border bg-sidebar px-2.5 text-sm text-muted-foreground transition-colors hover:border-sidebar-accent/40 hover:bg-sidebar-accent/10 hover:text-sidebar-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
+                collapsed && 'justify-center px-0'
+              )}
+            >
+              <Search className="h-4 w-4 shrink-0" />
+              {!collapsed && (
+                <>
+                  <span className="min-w-0 flex-1 truncate text-left">{t('search.placeholder')}</span>
+                  <kbd className="rounded border border-sidebar-border bg-sidebar-accent/10 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+                    {isMac ? '⌘' : 'Ctrl+'}K
+                  </kbd>
+                </>
+              )}
+            </button>
+          </div>
         </div>
 
         <nav className="flex-1 overflow-y-auto px-3 py-1">
@@ -169,36 +172,33 @@ export function Sidebar(): React.ReactElement {
         </nav>
 
         <div className="shrink-0 border-t border-sidebar-border p-3">
-          <div className={cn('flex gap-1', collapsed ? 'flex-col items-center' : 'flex-col')}>
-            <ProjectScopeSwitcher collapsed={collapsed} />
-            <div className={cn('flex gap-1', collapsed ? 'flex-col items-center' : 'items-center')}>
-              <button
-                ref={settingsButtonRef}
-                type="button"
-                onClick={() => setSettingsOpen(true)}
-                className={cn(
-                  'titlebar-no-drag flex h-8 items-center gap-2 rounded-md text-muted-foreground transition-colors hover:bg-sidebar-accent/10 hover:text-sidebar-foreground',
-                  collapsed ? 'w-8 justify-center' : 'flex-1 justify-start px-2.5'
-                )}
-                title={collapsed ? t('nav.settings') : undefined}
-                aria-label={t('nav.settings')}
-              >
-                <SettingsIcon className="h-3.5 w-3.5 shrink-0" />
-                {!collapsed && <span className="text-sm font-medium">{t('nav.settings')}</span>}
-              </button>
-              <button
-                type="button"
-                onClick={toggleSidebar}
-                className="titlebar-no-drag flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-sidebar-accent/10 hover:text-sidebar-foreground"
-                aria-label={collapsed ? t('nav.expandSidebar') : t('nav.collapseSidebar')}
-              >
-                {collapsed ? (
-                  <ChevronRight className="h-3.5 w-3.5" />
-                ) : (
-                  <ChevronLeft className="h-3.5 w-3.5" />
-                )}
-              </button>
-            </div>
+          <div className={cn('flex gap-1', collapsed ? 'flex-col items-center' : 'items-center')}>
+            <button
+              ref={settingsButtonRef}
+              type="button"
+              onClick={() => setSettingsOpen(true)}
+              className={cn(
+                'titlebar-no-drag flex h-8 items-center gap-2 rounded-md text-muted-foreground transition-colors hover:bg-sidebar-accent/10 hover:text-sidebar-foreground',
+                collapsed ? 'w-8 justify-center' : 'flex-1 justify-start px-2.5'
+              )}
+              title={collapsed ? t('nav.settings') : undefined}
+              aria-label={t('nav.settings')}
+            >
+              <SettingsIcon className="h-3.5 w-3.5 shrink-0" />
+              {!collapsed && <span className="text-sm font-medium">{t('nav.settings')}</span>}
+            </button>
+            <button
+              type="button"
+              onClick={toggleSidebar}
+              className="titlebar-no-drag flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-sidebar-accent/10 hover:text-sidebar-foreground"
+              aria-label={collapsed ? t('nav.expandSidebar') : t('nav.collapseSidebar')}
+            >
+              {collapsed ? (
+                <ChevronRight className="h-3.5 w-3.5" />
+              ) : (
+                <ChevronLeft className="h-3.5 w-3.5" />
+              )}
+            </button>
           </div>
         </div>
       </aside>
