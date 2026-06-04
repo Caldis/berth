@@ -2,7 +2,7 @@
 task: 2026-06-04-gh-99-header-block-layout
 task_id: GH-99
 type: maintenance
-phase: implement
+phase: verify
 created: 2026-06-04
 priority: P2
 target_date:
@@ -24,20 +24,26 @@ debt:
     confidence: medium
     rationale: "悬浮 header 测高/偏移补偿机制集中在布局外壳 (app-layout/top-navigation) + 两个 sticky 消费者 (category-jump-nav/hooks-lifecycle-view) + 对应测试; 改块布局可移除 ResizeObserver 测高、--berth-page-top-offset 间接层、paddingTop/scrollPaddingTop 补偿, 净偿还。风险 medium: 全局布局所有页面依赖, 但改动机械。explore/design 后校准。"
   final:
-    incurred:
-    repaid:
-    net:
-    scope:
-    risk:
-    areas: []
-    confidence:
-    rationale:
+    incurred: 1
+    repaid: 5
+    net: -4
+    scope: module
+    risk: low
+    areas:
+      - ui-ux
+    confidence: high
+    rationale: "最终 diff 净 -4 行 (53+/57-), 纯删减为主: 移除 ResizeObserver 测高 effect、onHeightChange 回调、topNavigationHeight state、运行时 --berth-page-top-offset 注入; --berth-page-top-offset 降为静态常量; 两个 sticky rail 各只改 top。6 路由页零改动。typecheck/lint/全量测试 (90 文件/652) 全绿; 风险 medium->low (改动机械、面小、测试全覆盖)。"
   revisions:
     - phase: explore
       date: 2026-06-04
       from: { net: -3, confidence: low }
       to: { net: -3, confidence: medium }
       reason: "并行逐页审计确认 6 个路由页本体零改动, 改动面收敛到 6 文件 + ~6 测试; net 不变, confidence low->medium。"
+    - phase: verify
+      date: 2026-06-04
+      from: { net: -3, risk: medium, confidence: medium }
+      to: { net: -4, risk: low, confidence: high }
+      reason: "实现完成后校准 final: 实际为纯删减 (净 -4 行), 全量门禁绿; 风险 medium->low, confidence medium->high。"
 issue:
   number: 99
   repo: Caldis/berth

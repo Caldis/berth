@@ -33,13 +33,20 @@
   - verify: 本机 (Windows) 实测 window-controls 与 header 行垂直对齐 (验收 6) — 留 verify。
 - [x] 任务 7: e2e 断言复核 (验收 8)
   - 已查 `tests/e2e/app.e2e.ts`、`tests/e2e/window-controls.e2e.ts`: 仅以 testId 定位 `top-navigation`, 无 `absolute`/`backdrop-blur`/top-offset/positioning 断言; testId 与 data-state 语义保留 → e2e 无需改动。
-- [ ] 任务 8: 全路由实测验证 (验收 5,1,4,6,7) — verify 阶段并行
-  - `pnpm dev` 启动, 主进程实测窗口坐标裁剪, 逐路由截图 (overview/sessions/session-detail/instructions/capabilities·各 section/usage), lg 与 max-lg 两档宽度; 检查首屏无遮挡/无空白、header 持久可见、sticky 贴顶、Windows 控件对齐。
+- [x] 任务 8: 全路由实测验证 (验收 5,1,4,6,7)
+  - 用 `pnpm dev:agent start --id gh99-verify --debug-port 9242` 启 agent-owned 实例 (独立 user-data-dir, 不动用户 dev PID 277068); Playwright `connectOverCDP` 点击侧栏导航 (MemoryRouter, 非 URL 路由), `agent-dev.mjs screenshot` 按真实窗口句柄裁剪。验毕仅 `stop gh99-verify`, 用户 dev 存活已确认。
   - tests: manual (Electron 实测截图)。
-  - verify: 6 路由全部布局准确 (验收 5); header 块布局 (验收 1); sticky (验收 4); Windows 控件 (验收 6); 拖拽 (验收 7)。
-- [ ] 任务 9: 收口门禁 (验收 8)
-  - `pnpm harness:check` (全局, 若被他人 active work 阻断则先 `--work` 本任务) + 全量目标 renderer 测试 + `pnpm harness:prepush` (代码提交前)。
-  - tests: 汇总。
+  - verify 证据 (截图存 $TEMP):
+    - overview: header 块级条 + 内容紧随其下, 无遮挡/无多余空白 (验收 1,5)。
+    - sessions: CategoryJumpNav sticky 左栏贴 header 下方 gutter; 滚动后 header 持久不动、左栏钉附原位、右侧列表独立滚动 (验收 1,4)。
+    - capabilities/hooks: hooks-lifecycle sticky 左栏正确贴顶 (验收 4)。
+    - usage: 带 subtitle 的 header 自然增高, 内容衔接正常 (验收 5)。
+    - session-detail: 嵌套面包屑 + 返回按钮 header 正确 (验收 1)。
+    - instructions/Skills: 空态卡片在块 header 下正确 (验收 5)。
+    - Windows window-controls 各页与 header 行对齐 (验收 6); titlebar 拖拽区保留 (验收 7); macOS 红绿灯在 sidebar 不受影响 (代码确认)。
+- [x] 任务 9: 收口门禁 (验收 8)
+  - `pnpm typecheck` 绿; `pnpm lint` 绿; `pnpm test` 全量 90 文件/652 tests 绿; 全局 `pnpm harness:check` 绿。
+  - 推送前: `pnpm harness:prepush` + CI baseline + `harness:ci:wait`。
   - verify: 全绿。
 
 ## verify 回写
