@@ -2,7 +2,7 @@
 task: 2026-06-05-gh-106-accent-global-theme
 task_id: GH-106
 type: feature
-phase: implement
+phase: verify
 created: 2026-06-05
 priority: P2
 target_date: 
