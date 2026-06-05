@@ -21,14 +21,15 @@ debt:
     confidence: high
     rationale: "explore 校准; 根因为 file-viewer-drawer macOS 分支冗余顶部偏移, 方案 B 仅改 drawer 两个 class + 同步 1 个 renderer 测试, backdrop 红绿灯契约不动。"
   final:
-    incurred:
-    repaid:
-    net:
-    scope:
-    risk:
-    areas: []
-    confidence:
-    rationale:
+    incurred: 1
+    repaid: 0
+    net: 1
+    scope: file
+    risk: low
+    areas:
+      - ui-ux
+    confidence: high
+    rationale: "方案 C1 单文件 drawer top-0 h-full + macOS titlebar-drag spacer + 同步 1 个 renderer 测试; CDP 实测确认贴顶/backdrop 护红绿灯/close 避系统区, 全套 lint+typecheck+test 绿。"
   revisions:
     - phase: explore
       date: 2026-06-05
