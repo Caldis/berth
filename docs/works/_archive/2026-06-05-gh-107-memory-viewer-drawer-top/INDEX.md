@@ -2,7 +2,7 @@
 task: 2026-06-05-gh-107-memory-viewer-drawer-top
 task_id: GH-107
 type: bug
-phase: implement
+phase: archive
 created: 2026-06-05
 priority: P2
 target_date:
@@ -21,14 +21,15 @@ debt:
     confidence: high
     rationale: "explore 校准; 根因为 file-viewer-drawer macOS 分支冗余顶部偏移, 方案 B 仅改 drawer 两个 class + 同步 1 个 renderer 测试, backdrop 红绿灯契约不动。"
   final:
-    incurred:
-    repaid:
-    net:
-    scope:
-    risk:
-    areas: []
-    confidence:
-    rationale: "verify 后用户纠正方案 C1->B (移除 spacer / backdrop top-10); 重新 verify 后填写。"
+    incurred: 1
+    repaid: 0
+    net: 1
+    scope: file
+    risk: low
+    areas:
+      - ui-ux
+    confidence: high
+    rationale: "方案 B: backdrop fixed inset-0 全屏遮罩 + 移除 spacer 按钮贴顶 + drawer top-0 h-full, 净删冗余平台分支; close 经用户 macOS 实测可点 + Windows e2e 佐证, 全套测试 + CI 绿。"
   revisions:
     - phase: explore
       date: 2026-06-05
@@ -51,7 +52,7 @@ gh_project:
   project_number: 6
   project_url: https://github.com/users/Caldis/projects/6
   item_id: PVTI_lAHOADXbEs4BZHvQzguy0e8
-  item_status: In Progress
+  item_status: Done
   project_id: PVT_kwHOADXbEs4BZHvQ
 artifacts:
   source: 00-BUG.md

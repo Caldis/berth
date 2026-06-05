@@ -17,7 +17,7 @@
   - verify: 重新 macOS 实测 — 遮罩到顶、按钮贴顶 (截图); close/copy 在 macOS 顶部系统区可点 (红线, header no-drag; 待实测 + 用户确认)。
 
 ## verify 回写
-**方案 C1 -> B (用户验收纠正)**: C1 曾全绿 verify, 但用户指出视觉问题 (遮罩未到顶 / 右上按钮偏下), 退回 implement 改方案 B (任务 4)。方案 B 重新 verify 进行中。以下保留 C1 历史 verify 记录。
+**方案 C1 -> B (用户验收纠正)**: C1 曾全绿 verify, 但用户指出视觉问题 (遮罩未到顶 / 右上按钮偏下), 退回 implement 改方案 B (任务 4)。**方案 B 用户验收通过 (2026-06-05): 视觉对 (遮罩到顶 + 按钮贴顶), close 经用户 macOS dev 窗口实测可点; 代码 CI 全绿含 Windows e2e 真实交互。** 以下保留 C1 历史 verify 记录。
 
 原 C1 verify (2026-06-05, GH-107):
 - 机械检查: `pnpm typecheck` ✓ / `pnpm lint` ✓ / `pnpm test` 676 passed ✓ (含 inspector-drawer 7 用例)。
