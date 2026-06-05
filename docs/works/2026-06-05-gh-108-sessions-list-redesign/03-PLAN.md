@@ -6,12 +6,12 @@
 
 **并行/顺序边界**: 任务 1、2 文件不重叠且测试独立 → 可并行; 任务 3 依赖 1+2; 任务 4 配合 3 同步; 任务 5 (验收) 最后。本 session 顺序推进 1→2→3→4→5, 小步提交。
 
-- [ ] 任务 1: `TokenSparkBar` 组件 (token 细分可视化) — AC6
+- [x] 任务 1: `TokenSparkBar` 组件 (token 细分可视化) — AC6  ✅ 4 测试通过
   - 实现: 新建 `src/renderer/src/components/shared/token-spark-bar.tsx`。复用 `tokenUsageSegments` + `TOKEN_SEGMENT_COLOR_VAR`; 渲染 `{formatNumber(totalTokens)} tok` + 紧凑分段 bar (段宽=percentage, 段色=segmentColor, unknown 半透明); `title`/`aria-label` 含 `Input N / Output M / …`; `!hasBreakdown` 或 `totalTokens===0` 仅数字无 bar。不改 `TokenUsageDisplay`。
   - tests: `tests/renderer/token-spark-bar.test.tsx` (新) — 总量文本; segments 段数与 width style; 段色 style; 空 usage 仅数字无 bar; aria-label 含 Input/Output。先写测试再实现。命令 `pnpm test -- token-spark-bar`。
   - verify: 单测绿; (verify 阶段) Electron 实测 bar 段色对应 token 类别且暗/亮主题自适应。
 
-- [ ] 任务 2: `AssetCountChip` 组件 (skills/mcp 计数) — AC4, AC5, AC1
+- [x] 任务 2: `AssetCountChip` 组件 (skills/mcp 计数) — AC4, AC5, AC1  ✅ 4 测试通过
   - 实现: 新建 `src/renderer/src/components/shared/asset-count-chip.tsx`。props `{icon, iconClassName, count, names[], label, max=3}`; `count===0` 返回 `null`; HeroUI `Chip` (tone neutral/flat/sm, `startContent`=icon, children=count); `aria-label`+`title`=`${label}: ${names.slice(0,max).join(', ')}` + 溢出 `+K`。
   - tests: `tests/renderer/asset-count-chip.test.tsx` (新) — count 显示; count=0 返回 null; aria-label 含 names; names>max 显示 `+K`; startContent icon 在 DOM。先写测试再实现。命令 `pnpm test -- asset-count-chip`。
   - verify: 单测绿; chip 图标语义 (Sparkles 蓝/Plug 绿) 与详情页一致。
