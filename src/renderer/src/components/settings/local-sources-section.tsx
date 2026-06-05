@@ -123,7 +123,7 @@ export function LocalSourcesSection({
                     className={cn(
                       'shrink-0 rounded-md border px-2 py-1 text-xs',
                       group.installed
-                        ? 'border-accent/30 bg-accent/10 text-foreground'
+                        ? 'border-primary/30 bg-primary/10 text-foreground'
                         : 'border-border text-muted-foreground'
                     )}
                   >
@@ -185,7 +185,7 @@ function SourceStatusCounts({
           className={cn(
             'rounded-md border px-1.5 py-0.5 text-[11px]',
             status === 'scanned'
-              ? 'border-accent/30 bg-accent/10 text-foreground'
+              ? 'border-primary/30 bg-primary/10 text-foreground'
               : 'border-border text-muted-foreground'
           )}
         >
@@ -253,7 +253,7 @@ function SourceStatusBadge({ status }: { status: NonNullable<ScanRoot['status']>
       className={cn(
         'rounded-md border px-1.5 py-0.5 text-[11px]',
         status === 'scanned'
-          ? 'border-accent/30 bg-accent/10 text-foreground'
+          ? 'border-primary/30 bg-primary/10 text-foreground'
           : 'border-border text-muted-foreground'
       )}
     >

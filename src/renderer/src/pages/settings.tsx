@@ -65,7 +65,7 @@ function Toggle({
       onClick={() => onToggle(!enabled)}
       className={cn(
         'relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full transition-colors',
-        enabled ? 'bg-accent' : 'bg-muted'
+        enabled ? 'bg-primary' : 'bg-muted'
       )}
     >
       <span
@@ -171,13 +171,13 @@ export function SettingsContent({
                     className={cn(
                       'flex items-center gap-2 rounded-md border px-3 py-2 text-sm transition-colors',
                       isSelected
-                        ? 'border-accent bg-accent/10 text-foreground'
-                        : 'border-border hover:border-accent/50'
+                        ? 'border-primary bg-primary/10 text-foreground'
+                        : 'border-border hover:border-primary/50'
                     )}
                   >
                     <themeOption.icon className="h-4 w-4" aria-hidden="true" />
                     {t(themeOption.labelKey)}
-                    {isSelected && <Check className="h-3.5 w-3.5 text-accent" aria-hidden="true" />}
+                    {isSelected && <Check className="h-3.5 w-3.5 text-primary" aria-hidden="true" />}
                   </button>
                 )
               })}
@@ -206,13 +206,13 @@ export function SettingsContent({
                     className={cn(
                       'flex items-center gap-2 rounded-md border px-3 py-2 text-sm transition-colors',
                       isSelected
-                        ? 'border-accent bg-accent/10 text-foreground'
-                        : 'border-border hover:border-accent/50'
+                        ? 'border-primary bg-primary/10 text-foreground'
+                        : 'border-border hover:border-primary/50'
                     )}
                   >
                     {lang.label}
                     {isSelected && (
-                      <Check className="h-3.5 w-3.5 text-accent" aria-hidden="true" />
+                      <Check className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
                     )}
                   </button>
                 )

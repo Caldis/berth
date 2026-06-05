@@ -11,10 +11,11 @@
   - tests: `tests/renderer/settings-accent.test.tsx` 加: 渲染 6 个 swatch、neutral 为首且默认 `aria-checked`、点击 neutral 写 localStorage+data-accent、箭头键导航覆盖 neutral。
   - verify: 界面项 — picker 首个为中性 swatch 且默认选中; 键盘箭头含 neutral; 深色下中性 swatch 可辨 (border-2 兜底); 截图浅/深。
   - 偏差: 任务1+2 合并为一次原子提交 (默认改 neutral 与 swatch 列表/测试强耦合, 分开会产生中间红态); i18n 现有 5 accent 均无 key, neutral 同用 defaultValue 'Neutral' 保持一致 (不单独加 zh, 免割裂); swatch check 深色对比加 `text-background` 兜底 (foreground 底白色 check 不可见)。已记 issue 跟踪 accent 名整体 i18n 缺失。
-- [ ] 任务3: 选中态/启用态改 --primary (SPEC B, 甲)
+- [x] 任务3: 选中态/启用态改 --primary (SPEC B, 甲)
   - 改动: `sidebar.tsx:144` (导航选中)、`search-dialog.tsx:346` (结果选中)、`settings.tsx:68/173-174/179/208-209/214` (toggle+主题/语言选中+check+hover)、`local-sources-section.tsx:126/188/256` (列表选中): `accent` 家族 → `primary` 家族。
   - tests: 新建或并入 `tests/renderer/sidebar.test.tsx` 断言 active item 含 `bg-primary text-primary-foreground`; `settings-accent.test.tsx` 扩展断言选中态用 primary class。
   - verify: 界面项 — 切任一彩色 accent 后, 导航选中 / toggle / 主题语言选中 / 列表选中 / CTA 跨页面跟随变色 (AC3); `hover:bg-accent/5` 与 `sidebar-accent` 与结构边框背景保持中性 (AC4); 截图浅/深 × neutral + 至少 2 彩色。
+  - 偏差: local-sources 三处 (126/188/256) 经查为 installed/detected 状态 badge (非纯选中态), 改 primary 与其他 icon badge 一致且符合甲; sidebar:158 description 文字一并跟随; settings/search/local 的 primary 由视觉验收覆盖, 单测聚焦 sidebar active (app-layout) + palette 语义更新。
 - [ ] 任务4: 视觉回归验收 (SPEC 界面表; AC2/3/4/5)
   - 改动: 无代码; Electron 主进程坐标裁剪截图矩阵 (neutral 浅黑 / 深白 + emerald + rose), 核对导航选中 / toggle / CTA 跟随、hover / sidebar / 结构保持中性、选中态文字对比度可读。
   - tests: manual (截图)。理由: 颜色渲染需人眼 / 截图实测, 单测仅覆盖 class 断言。

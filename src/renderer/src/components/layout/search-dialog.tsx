@@ -343,7 +343,7 @@ function SearchResultRow({ result, selected, onSelect }: SearchResultRowProps): 
       className={cn(
         'flex min-h-[64px] w-full items-start gap-3 rounded-md px-3 py-2 text-left transition-colors',
         selected
-          ? 'bg-accent text-accent-foreground'
+          ? 'bg-primary text-primary-foreground'
           : 'text-foreground hover:bg-accent hover:text-accent-foreground'
       )}
     >

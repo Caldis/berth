@@ -8,11 +8,14 @@ const usagePage = fs.readFileSync(path.join(root, 'src/renderer/src/pages/usage.
 const overviewPage = fs.readFileSync(path.join(root, 'src/renderer/src/pages/overview.tsx'), 'utf8')
 
 describe('renderer theme palette', () => {
-  it('uses a blue brand primary (CTA/focus) with neutral nav accent (GH-105 HeroUI)', () => {
-    // GH-105: brand primary is now blue (HeroUI #006FEE family), used for CTAs,
-    // chart series and the focus ring. Nav selection (--accent / --sidebar-accent)
-    // stays neutral by design — blue is reserved for CTAs/data, not nav highlights.
-    expect(globalsCss).toContain('--primary: 212 100% 47%;') // light
+  it('defaults to neutral primary with switchable accents incl. blue (GH-106 A)', () => {
+    // GH-106 (decision A): neutral is the default accent (light=near-black,
+    // dark=near-white) driving --primary, so nav/CTA/selection follow the picker.
+    // :root keeps blue as the data-accent='blue' fallback; --accent stays a neutral
+    // contrast token for hover/structure, no longer the nav-selection driver.
+    expect(globalsCss).toMatch(/html\[data-accent='neutral'\]/) // GH-106 neutral default block
+    expect(globalsCss).toMatch(/html\.dark\[data-accent='neutral'\]/) // light/dark branch
+    expect(globalsCss).toContain('--primary: 212 100% 47%;') // light (blue fallback)
     expect(globalsCss).toContain('--primary: 212 100% 50%;') // dark
     expect(globalsCss).toContain('--primary-foreground: 0 0% 100%;')
     expect(globalsCss).toContain('--ring: 212 100% 47%;') // unified blue focus ring

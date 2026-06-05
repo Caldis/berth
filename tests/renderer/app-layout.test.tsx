@@ -57,6 +57,13 @@ describe('AppLayout navigation shell', () => {
     })
   })
 
+  it('renders the active nav item with brand primary, not neutral accent (GH-106 A)', () => {
+    renderLayout('/')
+    const navItem = screen.getByRole('button', { name: 'Overview' })
+    expect(navItem.className).toContain('bg-primary')
+    expect(navItem.className).not.toContain('bg-accent')
+  })
+
   it('keeps top navigation outside the independent content scroll region', () => {
     renderLayout('/sessions')
 
