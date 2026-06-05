@@ -2,7 +2,7 @@
 task: 2026-06-05-gh-106-accent-global-theme
 task_id: GH-106
 type: feature
-phase: explore
+phase: design
 created: 2026-06-05
 priority: P2
 target_date: 
@@ -12,16 +12,16 @@ source:
     - GH-105
 debt:
   estimate:
-    incurred: 5
-    repaid: 1
-    net: 4
-    scope: global
+    incurred: 4
+    repaid: 2
+    net: 2
+    scope: module
     risk: medium
     areas:
       - ui-ux
       - architecture
-    confidence: low
-    rationale: "0.0-new 初估: accent 从局部 --primary 升级为全 UI 主题色, 需把 --accent/sidebar 等中性 token 接入 picker 驱动 + 新增中性黑默认 + 多组件适配 + 浅/深双主题逐页验收; incurred 来自全局主题驱动复杂度与维护面扩大, repaid 来自纠正 GH-105 accent 语义错位。explore/design 后校准。"
+    confidence: medium
+    rationale: "explore 校准: 核心是把误用 --accent 的选中态/启用态改用 --primary (已被 picker 驱动) + 新增中性黑 accent 设默认, 改动集中 ~6-10 处语义修正 + 1 个 data-accent 块, 非全局 token 接入; repaid 上调因偿还 GH-105 选中态语义错位的 ui-ux 债。"
   final:
     incurred:
     repaid:
@@ -31,7 +31,12 @@ debt:
     areas: []
     confidence:
     rationale:
-  revisions: []
+  revisions:
+    - phase: explore
+      date: 2026-06-05
+      from: { incurred: 5, repaid: 1, net: 4, scope: global, confidence: low }
+      to: { incurred: 4, repaid: 2, net: 2, scope: module, confidence: medium }
+      reason: "盘点确认改动集中于选中态语义修正 (~6-10 处), 远小于全局 token 接入初判; repaid 上调因偿还 GH-105 误用 --accent 的语义债。"
 issue:
   number: 106
   repo: Caldis/berth
@@ -59,7 +64,7 @@ artifacts:
 
 ## 产物
 - [x] 00-PRD.md — 原始输入 + 方向确认快照
-- [ ] 01-ANALYSIS.md — Explore 产物
+- [x] 01-ANALYSIS.md — Explore 产物
 - [ ] 02-SPEC.md — Design 产物
 - [ ] 03-PLAN.md — 活任务清单
 - [ ] 04-POLISH.md — 可选抛光记录
