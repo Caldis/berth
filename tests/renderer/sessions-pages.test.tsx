@@ -353,8 +353,43 @@ describe('session pages', () => {
     expect(screen.queryByText(/Invalid Date/i)).not.toBeInTheDocument()
     expect(screen.getByText('5m')).toBeInTheDocument()
     expect(screen.getByText('38 tok')).toBeInTheDocument()
-    expect(screen.getByText(/I 10 \/ O 5/)).toBeInTheDocument()
+    expect(screen.getByLabelText(/Input 10 \/ Output 5/)).toBeInTheDocument()
     expect(screen.getAllByText('claude-sonnet-4-20250514').length).toBeGreaterThan(0)
+  })
+
+  it('surfaces token breakdown, skill/mcp counts, and agent on each session row', async () => {
+    mockSessionApis()
+
+    renderSessionsPage()
+
+    expect(await screen.findByText('Fix session metadata')).toBeInTheDocument()
+    const row = screen.getByTestId('session-row-session-session-abc')
+    expect(within(row).getByText('38 tok')).toBeInTheDocument()
+    expect(within(row).getByLabelText(/Input 10 \/ Output 5/)).toBeInTheDocument()
+    expect(within(row).getByLabelText(/frontend-design/)).toBeInTheDocument()
+    expect(within(row).getByLabelText(/plugin_playwright_playwright/)).toBeInTheDocument()
+    expect(within(row).getByText('Claude')).toBeInTheDocument()
+    expect(within(row).queryByText('$0.00')).not.toBeInTheDocument()
+  })
+
+  it('omits cost and empty-asset chips for codex sessions', async () => {
+    const codexSession: SessionSummary = {
+      ...summary,
+      id: 'codex-1',
+      agentId: 'codex',
+      cost: null,
+      skillsUsed: [],
+      mcpServers: ['context7']
+    }
+    mockSessionApis(codexSession)
+
+    renderSessionsPage()
+
+    expect(await screen.findByText('Fix session metadata')).toBeInTheDocument()
+    const row = screen.getByTestId('session-row-codex-1')
+    expect(within(row).getByText('Codex')).toBeInTheDocument()
+    expect(within(row).queryByLabelText(/Skills used/)).not.toBeInTheDocument()
+    expect(within(row).getByLabelText(/context7/)).toBeInTheDocument()
   })
 
   it('filters sessions from the top navigation search field', async () => {
