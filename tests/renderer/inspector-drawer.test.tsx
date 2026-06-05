@@ -139,15 +139,25 @@ describe('InspectorDrawer focus management', () => {
 
     expect(screen.getByRole('dialog', { name: 'View Raw' })).toHaveClass('z-[9990]', 'top-0', 'h-full')
     expect(screen.getByTestId('file-viewer-header')).toHaveClass('pr-48')
+    // The macOS-only title-bar spacer must not render on Windows.
+    expect(screen.queryByTestId('file-viewer-mac-titlebar')).not.toBeInTheDocument()
   })
 
-  it('leaves the macOS traffic-light strip uncovered by the backdrop', () => {
+  it('flushes the macOS drawer to the top while sparing the traffic-light strip from the backdrop', () => {
     setNavigatorPlatform('MacIntel')
 
     render(<InspectorDrawer />)
 
+    // Backdrop still starts below the 40px strip so the left-side traffic lights
+    // are not dimmed by the scrim.
     expect(screen.getByTestId('file-viewer-backdrop')).toHaveClass('top-10')
-    expect(screen.getByRole('dialog', { name: 'View Raw' })).toHaveClass('top-10', 'h-[calc(100%-2.5rem)]')
+    // The drawer panel itself is flush to the window top (no gap above it)...
+    const dialog = screen.getByRole('dialog', { name: 'View Raw' })
+    expect(dialog).toHaveClass('top-0', 'h-full')
+    expect(dialog).not.toHaveClass('top-10')
+    // ...while a draggable spacer keeps the header buttons below the macOS system
+    // title-bar strip, where -webkit-app-region: no-drag is unreliable.
+    expect(screen.getByTestId('file-viewer-mac-titlebar')).toHaveClass('titlebar-drag')
     expect(screen.getByTestId('file-viewer-header')).not.toHaveClass('pr-48')
   })
 

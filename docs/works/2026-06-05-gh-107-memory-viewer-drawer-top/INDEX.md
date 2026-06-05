@@ -2,7 +2,7 @@
 task: 2026-06-05-gh-107-memory-viewer-drawer-top
 task_id: GH-107
 type: bug
-phase: implement
+phase: verify
 created: 2026-06-05
 priority: P2
 target_date:

@@ -168,7 +168,7 @@ export function FileViewerDrawer({ open, path, content, onClose }: FileViewerDra
         aria-label={t('common.viewRaw')}
         className={cn(
           'titlebar-no-drag fixed right-0 z-[9990] flex flex-col border-l border-border bg-background shadow-2xl',
-          isMac ? 'top-10 h-[calc(100%-2.5rem)]' : 'top-0 h-full',
+          'top-0 h-full',
           'animate-in slide-in-from-right duration-200'
         )}
         style={drawerStyle}
@@ -184,6 +184,17 @@ export function FileViewerDrawer({ open, path, content, onClose }: FileViewerDra
           )}
           onMouseDown={handleResizeMouseDown}
         />
+
+        {/* macOS hiddenInset: a draggable spacer keeps the header buttons below
+            the top system title-bar strip, where -webkit-app-region: no-drag is
+            unreliable, while the drawer background still sits flush to the top. */}
+        {isMac && (
+          <div
+            aria-hidden="true"
+            data-testid="file-viewer-mac-titlebar"
+            className="titlebar-drag h-10 w-full shrink-0"
+          />
+        )}
 
         <div
           data-testid="file-viewer-header"

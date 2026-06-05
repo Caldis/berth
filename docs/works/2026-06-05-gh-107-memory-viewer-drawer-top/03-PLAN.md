@@ -2,10 +2,10 @@
 
 从 02-SPEC 拆解。顺序执行 (TDD: 先更新测试断言 → 改实现转绿 → macOS 实测)。文件不重叠但逻辑耦合 (测试锁定实现), 不并行。
 
-- [ ] 任务 1: 更新 `tests/renderer/inspector-drawer.test.tsx` 的 macOS 用例 (`leaves the macOS traffic-light strip uncovered by the backdrop`) 以反映方案 C1: drawer 断言改为 `top-0`/`h-full` (去掉 `top-10`/`h-[calc(100%-2.5rem)]`); backdrop 仍断言 `top-10`; 新增断言存在 `data-testid=file-viewer-mac-titlebar` 的 `titlebar-drag` 占位条; header 仍 `not.toHaveClass('pr-48')`。用例名同步为体现"drawer 贴顶且红绿灯条受保护"。
+- [x] 任务 1: 更新 `tests/renderer/inspector-drawer.test.tsx` 的 macOS 用例 (`leaves the macOS traffic-light strip uncovered by the backdrop`) 以反映方案 C1: drawer 断言改为 `top-0`/`h-full` (去掉 `top-10`/`h-[calc(100%-2.5rem)]`); backdrop 仍断言 `top-10`; 新增断言存在 `data-testid=file-viewer-mac-titlebar` 的 `titlebar-drag` 占位条; header 仍 `not.toHaveClass('pr-48')`。用例名同步为体现"drawer 贴顶且红绿灯条受保护"。
   - tests: 测试即产物; 运行 `pnpm test -- inspector-drawer` 预期此用例先红 (实现未改)。
   - verify: 断言逐条对应 02-SPEC 测试矩阵; Windows 用例 (line 137-142) 不动。[验收 1/2/3/4]
-- [ ] 任务 2: 修改 `src/renderer/src/components/shared/file-viewer-drawer.tsx` 实现方案 C1: drawer 容器统一 `top-0 h-full`; resize handle 之后、header 之前插入 `{isMac && <div aria-hidden="true" data-testid="file-viewer-mac-titlebar" className="titlebar-drag h-10 w-full shrink-0" />}`; backdrop 与 header 不动。
+- [x] 任务 2: 修改 `src/renderer/src/components/shared/file-viewer-drawer.tsx` 实现方案 C1: drawer 容器统一 `top-0 h-full`; resize handle 之后、header 之前插入 `{isMac && <div aria-hidden="true" data-testid="file-viewer-mac-titlebar" className="titlebar-drag h-10 w-full shrink-0" />}`; backdrop 与 header 不动。
   - tests: `pnpm test -- inspector-drawer` 转绿; `pnpm test -- memory-view view-raw-button` 不回归; `pnpm typecheck` + `pnpm lint` 通过。
   - verify: renderer 测试全绿 + 类型/lint 通过; 确认 isMac 变量仍被 spacer 使用 (无未用变量)。[验收 1/3/5/6]
 - [ ] 任务 3: macOS 实机实测 (verify 阶段)。
