@@ -43,6 +43,8 @@
 
 `src/renderer/src/` 下: `components/{layout,shared,ui}`、`pages`、`stores` (Zustand)、`hooks`、`i18n` (en/zh)、`lib`、`styles`。
 
+- **UI 设计系统 (GH-105)**: `components/ui/` 是唯一 primitive 入口 — re-export HeroUI v2 组件 + berth composite (语义 `Chip`、`motion` token)。页面与 `shared/` 领域组件只从 `@/components/ui` 引入, 不直接 import `@heroui/react`。`shared/` 是建在 `ui/` 之上的领域 composite。HeroUI v2 经 `heroui()` Tailwind 插件接入 (Tailwind 3.4, `@heroui/theme` 为直接 devDep 满足 pnpm 解析 + content glob); App 由 `HeroUIProvider` (navigate/locale/reducedMotion) 包裹。
+- **主题 / 强调色**: `components/theme-provider.tsx` 在 `documentElement` toggle `.dark` (亮/暗/系统, localStorage `berth-theme`, 同步 `window.api.theme.set`) 并设 `data-accent` (可切换强调色, localStorage `berth-accent`)。`styles/globals.css` 用 HSL CSS 变量 (shadcn 命名) + `html[data-accent]` 块同时驱动 berth `--primary` 与 HeroUI `--heroui-primary`; `--chart-*` 为图表分类色, 独立维护。
 - `hooks/use-ipc.ts` — `useAssetRuntime()` 负责启动 runtime refresh、同步 snapshot/status; 页面数据 hook 只读 selector IPC。`useSessions()` 与 `useAgentCapabilityPlugins()` 使用 stale-while-refresh 缓存, 本地已有数据时立即展示并后台刷新。
 - `stores/app.ts` — 保存 `assetRuntimeStatus`、`assetSnapshotId`、`assetErrors` 与旧 `assets/stats` 兼容字段。
 - Overview 使用局部 skeleton: metrics、recent sessions、usage、health worklist 独立 loading/stale/error, 不使用全屏扫描遮罩。
@@ -73,7 +75,7 @@
 
 ## 技术栈
 
-Electron 33 (electron-vite 5) · React 19 + TS · Tailwind/shadcn · Zustand · react-router-dom 7 · Recharts · i18next · MiniSearch · better-sqlite3 · chokidar · Vitest · Playwright。Website 使用 Vite React SSG, 由 GitHub Pages 发布。
+Electron 33 (electron-vite 5) · React 19 + TS · Tailwind 3 + HeroUI v2 (React Aria + framer-motion) · Zustand · react-router-dom 7 · Recharts · i18next · MiniSearch · better-sqlite3 · chokidar · Vitest · Playwright。Website 使用 Vite React SSG, 由 GitHub Pages 发布。
 
 ## 相关
 
