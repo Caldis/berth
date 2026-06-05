@@ -2,7 +2,7 @@
 task: 2026-06-05-gh-107-memory-viewer-drawer-top
 task_id: GH-107
 type: bug
-phase: explore
+phase: implement
 created: 2026-06-05
 priority: P2
 target_date:
@@ -11,15 +11,15 @@ source:
   refs: []
 debt:
   estimate:
-    incurred: 2
+    incurred: 1
     repaid: 0
-    net: 2
-    scope: module
-    risk: medium
+    net: 1
+    scope: file
+    risk: low
     areas:
       - ui-ux
-    confidence: low
-    rationale: "0.0-new 初始估算; file-viewer-drawer 顶部贴合 + 顶部 dragarea app-region 层级回归风险, explore/design 后校准。"
+    confidence: high
+    rationale: "explore 校准; 根因为 file-viewer-drawer macOS 分支冗余顶部偏移, 方案 B 仅改 drawer 两个 class + 同步 1 个 renderer 测试, backdrop 红绿灯契约不动。"
   final:
     incurred:
     repaid:
@@ -29,7 +29,12 @@ debt:
     areas: []
     confidence:
     rationale:
-  revisions: []
+  revisions:
+    - phase: explore
+      date: 2026-06-05
+      from: "incurred 2 / scope module / risk medium / confidence low"
+      to: "incurred 1 / scope file / risk low / confidence high"
+      reason: "根因为 file-viewer-drawer macOS 分支冗余顶部偏移 (方案 B); backdrop 红绿灯契约与 header no-drag 不动, 既有 renderer 测试锁定。"
 issue:
   number: 107
   repo: Caldis/berth
@@ -57,9 +62,9 @@ artifacts:
 
 ## 产物
 - [x] 00-BUG.md — 原始输入快照
-- [ ] 01-ANALYSIS.md — Explore 产物
-- [ ] 02-SPEC.md — Design 产物
-- [ ] 03-PLAN.md — 活任务清单
+- [x] 01-ANALYSIS.md — Explore 产物
+- [x] 02-SPEC.md — Design 产物
+- [x] 03-PLAN.md — 活任务清单
 - [ ] 04-POLISH.md — 可选抛光记录
 
 ## 待澄清 (blocked 时填)
