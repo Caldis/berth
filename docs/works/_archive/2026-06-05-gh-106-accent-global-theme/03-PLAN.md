@@ -16,7 +16,7 @@
   - tests: 新建或并入 `tests/renderer/sidebar.test.tsx` 断言 active item 含 `bg-primary text-primary-foreground`; `settings-accent.test.tsx` 扩展断言选中态用 primary class。
   - verify: 界面项 — 切任一彩色 accent 后, 导航选中 / toggle / 主题语言选中 / 列表选中 / CTA 跨页面跟随变色 (AC3); `hover:bg-accent/5` 与 `sidebar-accent` 与结构边框背景保持中性 (AC4); 截图浅/深 × neutral + 至少 2 彩色。
   - 偏差: local-sources 三处 (126/188/256) 经查为 installed/detected 状态 badge (非纯选中态), 改 primary 与其他 icon badge 一致且符合甲; sidebar:158 description 文字一并跟随; settings/search/local 的 primary 由视觉验收覆盖, 单测聚焦 sidebar active (app-layout) + palette 语义更新。
-- [ ] 任务4: 视觉回归验收 (SPEC 界面表; AC2/3/4/5) — 移至 4.0-verify 实测 (视觉截图属 verify 范畴; 任务1-3 代码+单测已交付, e3886cd CI 绿)
+- [x] 任务4: 视觉回归验收 (SPEC 界面表; AC2/3/4/5) — 用户视觉验收通过 ("看了效果, 不错"); 配合 e3886cd CI 绿 + theme-accent/settings-accent/app-layout/theme-palette 单测覆盖默认值/6 swatch/导航 bg-primary/palette 语义。
   - 改动: 无代码; Electron 主进程坐标裁剪截图矩阵 (neutral 浅黑 / 深白 + emerald + rose), 核对导航选中 / toggle / CTA 跟随、hover / sidebar / 结构保持中性、选中态文字对比度可读。
   - tests: manual (截图)。理由: 颜色渲染需人眼 / 截图实测, 单测仅覆盖 class 断言。
   - verify: 逐条核对 AC2 (默认中性观感一致)、AC3 (彩色全局跟随)、AC4 (中性元素不变)、AC5 (浅深×6 对比度无回归); 截图临时存 tmp, 验收后清理 (重用价值的归档 works)。

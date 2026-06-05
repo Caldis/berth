@@ -2,7 +2,7 @@
 task: 2026-06-05-gh-106-accent-global-theme
 task_id: GH-106
 type: feature
-phase: verify
+phase: archive
 created: 2026-06-05
 priority: P2
 target_date: 
@@ -23,20 +23,27 @@ debt:
     confidence: medium
     rationale: "explore 校准: 核心是把误用 --accent 的选中态/启用态改用 --primary (已被 picker 驱动) + 新增中性黑 accent 设默认, 改动集中 ~6-10 处语义修正 + 1 个 data-accent 块, 非全局 token 接入; repaid 上调因偿还 GH-105 选中态语义错位的 ui-ux 债。"
   final:
-    incurred:
-    repaid:
-    net:
-    scope:
-    risk:
-    areas: []
-    confidence:
-    rationale:
+    incurred: 4
+    repaid: 2
+    net: 2
+    scope: module
+    risk: low
+    areas:
+      - ui-ux
+      - architecture
+    confidence: high
+    rationale: "实现交付并验证: neutral accent unlayered token (浅黑/深白) + 默认 + 误用 --accent 的选中态/启用态改 --primary; 3 commit (e035e2f/e3886cd/e8bc9a5) CI 绿含 harness:check/build/e2e, 用户视觉验收通过; 单测覆盖默认值/6 swatch/导航 bg-primary/palette 语义。net=2 同 estimate; risk 降 low (已验证稳定), confidence 升 high。"
   revisions:
     - phase: explore
       date: 2026-06-05
       from: { incurred: 5, repaid: 1, net: 4, scope: global, confidence: low }
       to: { incurred: 4, repaid: 2, net: 2, scope: module, confidence: medium }
       reason: "盘点确认改动集中于选中态语义修正 (~6-10 处), 远小于全局 token 接入初判; repaid 上调因偿还 GH-105 误用 --accent 的语义债。"
+    - phase: verify
+      date: 2026-06-05
+      from: { risk: medium, confidence: medium }
+      to: { risk: low, confidence: high }
+      reason: "实现交付 + 3 commit CI 绿 + 用户视觉验收通过; net 不变 (2), 残余风险降低。"
 issue:
   number: 106
   repo: Caldis/berth
@@ -49,7 +56,7 @@ gh_project:
   project_url: https://github.com/users/Caldis/projects/6
   project_id: PVT_kwHOADXbEs4BZHvQ
   item_id: PVTI_lAHOADXbEs4BZHvQzguyvXU
-  item_status: In Progress
+  item_status: Done
 artifacts:
   source: 00-PRD.md
   analysis: 01-ANALYSIS.md

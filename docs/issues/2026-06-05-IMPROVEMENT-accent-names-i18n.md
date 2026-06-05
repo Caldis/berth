@@ -16,4 +16,4 @@ accent 名随语言本地化 (zh: 中性 / 蓝 / 紫 / 绿 / 琥珀 / 玫瑰)。
 为 6 个 accent 在 `src/renderer/src/i18n/locales` 的 en / zh 加 `settings.accent.{neutral,blue,violet,emerald,amber,rose}` key; `settings.tsx` 已用 `t()` 读取, 加 key 即生效, 无需改组件。
 
 # 来源
-GH-105 引入 accent picker 时未加 i18n; GH-106 (#106) 新增 neutral 时沿用现状, 为保持一致未单独本地化 neutral, 改进项统一记于此。交叉引用: `docs/works/2026-06-05-gh-106-accent-global-theme/03-PLAN.md`。
+GH-105 引入 accent picker 时未加 i18n; GH-106 (#106) 新增 neutral 时沿用现状, 为保持一致未单独本地化 neutral, 改进项统一记于此。交叉引用: `docs/works/_archive/2026-06-05-gh-106-accent-global-theme/03-PLAN.md`。
