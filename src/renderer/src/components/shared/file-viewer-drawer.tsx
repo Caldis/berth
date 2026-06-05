@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState, type CSSProperties, type Mous
 import { useTranslation } from 'react-i18next'
 import { Check, Copy, X } from 'lucide-react'
 import { cn, truncatePath } from '@/lib/utils'
-import { isMacPlatform, isWindowsPlatform } from '@/lib/platform'
+import { isWindowsPlatform } from '@/lib/platform'
 
 const FOCUSABLE_SELECTOR = [
   'a[href]',
@@ -47,7 +47,6 @@ export function FileViewerDrawer({ open, path, content, onClose }: FileViewerDra
   const closeButtonRef = useRef<HTMLButtonElement>(null)
   const dragCleanupRef = useRef<(() => void) | null>(null)
   const isWindows = isWindowsPlatform()
-  const isMac = isMacPlatform()
   const drawerStyle: CSSProperties = {
     width: `min(100vw, ${width}px)`
   }
@@ -155,8 +154,7 @@ export function FileViewerDrawer({ open, path, content, onClose }: FileViewerDra
         aria-hidden="true"
         data-testid="file-viewer-backdrop"
         className={cn(
-          'fixed bottom-0 left-0 right-0 z-[9980] bg-black/30',
-          isMac ? 'top-10' : 'top-0'
+          'fixed inset-0 z-[9980] bg-black/30'
         )}
         onClick={onClose}
       />
@@ -184,17 +182,6 @@ export function FileViewerDrawer({ open, path, content, onClose }: FileViewerDra
           )}
           onMouseDown={handleResizeMouseDown}
         />
-
-        {/* macOS hiddenInset: a draggable spacer keeps the header buttons below
-            the top system title-bar strip, where -webkit-app-region: no-drag is
-            unreliable, while the drawer background still sits flush to the top. */}
-        {isMac && (
-          <div
-            aria-hidden="true"
-            data-testid="file-viewer-mac-titlebar"
-            className="titlebar-drag h-10 w-full shrink-0"
-          />
-        )}
 
         <div
           data-testid="file-viewer-header"

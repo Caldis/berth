@@ -2,7 +2,7 @@
 task: 2026-06-05-gh-107-memory-viewer-drawer-top
 task_id: GH-107
 type: bug
-phase: verify
+phase: implement
 created: 2026-06-05
 priority: P2
 target_date:
@@ -21,21 +21,25 @@ debt:
     confidence: high
     rationale: "explore 校准; 根因为 file-viewer-drawer macOS 分支冗余顶部偏移, 方案 B 仅改 drawer 两个 class + 同步 1 个 renderer 测试, backdrop 红绿灯契约不动。"
   final:
-    incurred: 1
-    repaid: 0
-    net: 1
-    scope: file
-    risk: low
-    areas:
-      - ui-ux
-    confidence: high
-    rationale: "方案 C1 单文件 drawer top-0 h-full + macOS titlebar-drag spacer + 同步 1 个 renderer 测试; CDP 实测确认贴顶/backdrop 护红绿灯/close 避系统区, 全套 lint+typecheck+test 绿。"
+    incurred:
+    repaid:
+    net:
+    scope:
+    risk:
+    areas: []
+    confidence:
+    rationale: "verify 后用户纠正方案 C1->B (移除 spacer / backdrop top-10); 重新 verify 后填写。"
   revisions:
     - phase: explore
       date: 2026-06-05
       from: "incurred 2 / scope module / risk medium / confidence low"
       to: "incurred 1 / scope file / risk low / confidence high"
       reason: "根因为 file-viewer-drawer macOS 分支冗余顶部偏移 (方案 B); backdrop 红绿灯契约与 header no-drag 不动, 既有 renderer 测试锁定。"
+    - phase: implement
+      date: 2026-06-05
+      from: "C1: drawer top-0 + macOS titlebar-drag spacer (h-10) + backdrop top-10"
+      to: "B: drawer + backdrop 全贴顶 (backdrop inset-0), 移除 spacer; risk low->medium, confidence high->medium"
+      reason: "用户验收纠正: C1 的 spacer 致按钮偏下、backdrop top-10 致遮罩未到顶。回到简洁全贴顶, header no-drag 保 close 可点 (close 入 macOS 系统区, 可点性待实测)。"
 issue:
   number: 107
   repo: Caldis/berth

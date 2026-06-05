@@ -12,8 +12,14 @@
   - tests: manual (jsdom 无法验证真实 app-region 与窗口状态)。
   - verify: `pnpm dev` 启动, 进入记忆模块打开 md 查看器; 按实测窗口坐标截图确认 (a) 面板背景贴合窗口顶部无留白 [验收 1]; (b) 左上红绿灯不被 backdrop 压暗、可见可点 [验收 2]; (c) 常规窗口下点击 close(×)/copy 生效 [验收 3]; (d) 窗口 maximize→restore 后再次点击 close/copy 仍生效 [验收 3 回归红线]; (e) inspector 入口表现一致 [验收 6]。截图存 tmp, 验收后清理。
 
+- [x] 任务 4 (verify 后用户纠正, 方案 C1 -> B): backdrop 改 `fixed inset-0` (全屏遮罩到顶, 不再 top-10); 移除 macOS titlebar-drag spacer (按钮贴顶, 不再偏下); drawer 保持 top-0 h-full; 清理不再用的 isMac / isMacPlatform。
+  - tests: 更新 inspector-drawer macOS 用例 (backdrop inset-0 / drawer top-0 h-full / 无 spacer / header 无 pr-48); `pnpm test inspector-drawer` 7 绿; typecheck:web + eslint 绿。
+  - verify: 重新 macOS 实测 — 遮罩到顶、按钮贴顶 (截图); close/copy 在 macOS 顶部系统区可点 (红线, header no-drag; 待实测 + 用户确认)。
+
 ## verify 回写
-verify 全部通过 (2026-06-05, GH-107):
+**方案 C1 -> B (用户验收纠正)**: C1 曾全绿 verify, 但用户指出视觉问题 (遮罩未到顶 / 右上按钮偏下), 退回 implement 改方案 B (任务 4)。方案 B 重新 verify 进行中。以下保留 C1 历史 verify 记录。
+
+原 C1 verify (2026-06-05, GH-107):
 - 机械检查: `pnpm typecheck` ✓ / `pnpm lint` ✓ / `pnpm test` 676 passed ✓ (含 inspector-drawer 7 用例)。
 - 真实 agent 实例 (dev:agent, hiddenInset) CDP 实测坐标: dialog y=0 贴顶, backdrop y=40 护红绿灯条, spacer 0-40 titlebar-drag, header y=40, close y=56 避顶部系统区 → 验收 1/2/3。
 - CDP renderer 截图 + 系统截图: drawer 贴顶无留白、左上红绿灯可见不压暗 → 验收 1/2。
@@ -22,4 +28,4 @@ verify 全部通过 (2026-06-05, GH-107):
 - memory 与 inspector 共用同组件 → 验收 6。
 - 真实 OS 系统点击 close 未执行: 环境受阻 (用户 dev 与 agent 双 Electron 同屏重叠, 系统截图/点击会误触用户 dev; scaled 双屏坐标不等比; 无 cliclick), 已沉淀 friction `20260603-4.0-verify-macos-dev-agent-screenshot.md`。close 在 y=56 常规 no-drag 区 (非系统区), 不属 app-region 命中风险, 可点性由 CDP 坐标 + renderer 单测 (focus/click/关闭) 覆盖。
 
-未通过项: 无。phase 维持 verify, 待用户确认验收后 archive。
+C1 未通过项: 用户验收视觉纠正 (遮罩未到顶 / 按钮偏下) -> 退回 implement, 见任务 4 (方案 B)。
