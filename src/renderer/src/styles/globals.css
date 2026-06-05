@@ -142,6 +142,28 @@ html[data-accent='rose'] {
   --heroui-focus: 350 89% 60%;
 }
 
+/* Neutral accent (GH-106 default). Unlike the 5 hues, neutral needs light/dark
+   branches: light = near-black, dark = near-white, mirroring the legacy --accent
+   contrast token but now driving --primary so the whole UI follows the picker. */
+html[data-accent='neutral'] {
+  --primary: 240 5.9% 10%;
+  --primary-foreground: 0 0% 98%;
+  --ring: 240 5.9% 10%;
+  --heroui-primary: 240 5.9% 10%;
+  --heroui-primary-500: 240 5.9% 10%;
+  --heroui-primary-foreground: 0 0% 98%;
+  --heroui-focus: 240 5.9% 10%;
+}
+html.dark[data-accent='neutral'] {
+  --primary: 0 0% 98%;
+  --primary-foreground: 240 5.9% 10%;
+  --ring: 0 0% 98%;
+  --heroui-primary: 0 0% 98%;
+  --heroui-primary-500: 0 0% 98%;
+  --heroui-primary-foreground: 240 5.9% 10%;
+  --heroui-focus: 0 0% 98%;
+}
+
 /* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 10px;

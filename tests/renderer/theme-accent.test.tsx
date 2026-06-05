@@ -23,14 +23,14 @@ describe('ThemeProvider accent (GH-105 P2.3)', () => {
     document.documentElement.removeAttribute('data-accent')
   })
 
-  it('defaults to blue and reflects it on documentElement', () => {
+  it('defaults to neutral and reflects it on documentElement', () => {
     render(
       <ThemeProvider>
         <AccentProbe />
       </ThemeProvider>
     )
-    expect(screen.getByTestId('accent').textContent).toBe('blue')
-    expect(document.documentElement.getAttribute('data-accent')).toBe('blue')
+    expect(screen.getByTestId('accent').textContent).toBe('neutral')
+    expect(document.documentElement.getAttribute('data-accent')).toBe('neutral')
   })
 
   it('switches accent, persists to localStorage, and updates data-accent', () => {
@@ -65,6 +65,21 @@ describe('ThemeProvider accent (GH-105 P2.3)', () => {
         <AccentProbe />
       </ThemeProvider>
     )
-    expect(screen.getByTestId('accent').textContent).toBe('blue')
+    expect(screen.getByTestId('accent').textContent).toBe('neutral')
+  })
+
+  it('switches to neutral, persists, and updates data-accent', () => {
+    localStorage.setItem('berth-accent', 'emerald')
+    render(
+      <ThemeProvider>
+        <AccentProbe />
+      </ThemeProvider>
+    )
+    act(() => {
+      screen.getByTestId('set-neutral').click()
+    })
+    expect(screen.getByTestId('accent').textContent).toBe('neutral')
+    expect(localStorage.getItem('berth-accent')).toBe('neutral')
+    expect(document.documentElement.getAttribute('data-accent')).toBe('neutral')
   })
 })

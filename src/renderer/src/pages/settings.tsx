@@ -131,6 +131,7 @@ export function SettingsContent({
 
   // Swatch hues mirror the html[data-accent] blocks in globals.css.
   const accents: Array<{ id: Accent; label: string; color: string }> = [
+    { id: 'neutral', label: 'Neutral', color: 'hsl(var(--foreground))' },
     { id: 'blue', label: 'Blue', color: 'hsl(212 100% 47%)' },
     { id: 'violet', label: 'Violet', color: 'hsl(262 83% 58%)' },
     { id: 'emerald', label: 'Emerald', color: 'hsl(160 84% 39%)' },
@@ -254,10 +255,18 @@ export function SettingsContent({
                     )}
                   >
                     <span
-                      className="flex h-5 w-5 items-center justify-center rounded-full text-white"
+                      className="flex h-5 w-5 items-center justify-center rounded-full"
                       style={{ backgroundColor: accentOption.color }}
                     >
-                      {isSelected && <Check className="h-3 w-3" aria-hidden="true" />}
+                      {isSelected && (
+                        <Check
+                          className={cn(
+                            'h-3 w-3',
+                            accentOption.id === 'neutral' ? 'text-background' : 'text-white'
+                          )}
+                          aria-hidden="true"
+                        />
+                      )}
                     </span>
                   </button>
                 )

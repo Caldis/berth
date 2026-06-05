@@ -11,7 +11,7 @@ describe('SettingsContent accent picker (GH-105)', () => {
     document.documentElement.removeAttribute('data-accent')
   })
 
-  it('renders five accent swatches with blue selected by default', () => {
+  it('renders six accent swatches with neutral selected by default', () => {
     render(
       <ThemeProvider>
         <SettingsContent showTitle={false} />
@@ -19,8 +19,8 @@ describe('SettingsContent accent picker (GH-105)', () => {
     )
     const group = screen.getByRole('radiogroup', { name: 'Accent color' })
     const swatches = within(group).getAllByRole('radio')
-    expect(swatches).toHaveLength(5)
-    expect(within(group).getByRole('radio', { name: 'Blue' })).toHaveAttribute('aria-checked', 'true')
+    expect(swatches).toHaveLength(6)
+    expect(within(group).getByRole('radio', { name: 'Neutral' })).toHaveAttribute('aria-checked', 'true')
   })
 
   it('switching accent updates selection and documentElement data-accent', () => {

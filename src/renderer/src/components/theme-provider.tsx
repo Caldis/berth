@@ -2,9 +2,9 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from '
 
 type Theme = 'dark' | 'light' | 'system'
 
-export type Accent = 'blue' | 'violet' | 'emerald' | 'amber' | 'rose'
+export type Accent = 'neutral' | 'blue' | 'violet' | 'emerald' | 'amber' | 'rose'
 
-export const ACCENTS: Accent[] = ['blue', 'violet', 'emerald', 'amber', 'rose']
+export const ACCENTS: Accent[] = ['neutral', 'blue', 'violet', 'emerald', 'amber', 'rose']
 
 interface ThemeContextValue {
   theme: Theme
@@ -18,7 +18,7 @@ const ThemeContext = createContext<ThemeContextValue>({
   theme: 'system',
   resolvedTheme: 'light',
   setTheme: () => {},
-  accent: 'blue',
+  accent: 'neutral',
   setAccent: () => {}
 })
 
@@ -33,7 +33,7 @@ function isAccent(value: string | null): value is Accent {
 export function ThemeProvider({
   children,
   defaultTheme = 'system',
-  defaultAccent = 'blue'
+  defaultAccent = 'neutral'
 }: {
   children: ReactNode
   defaultTheme?: Theme
