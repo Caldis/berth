@@ -12,9 +12,12 @@
 - [x] **P1.2** watcher 解耦: `AssetWatcher` 去掉 `electron` `BrowserWindow` import 与 `setWindow`/`webContents.send`, 改注入 `setListener(WatchEvent=>void)` + 公开 `notifyChange` + 纯函数 `buildWatchEvent`; `src/main/index.ts` 注入 `webContents.send('assets:changed', event)` (含 isDestroyed 守卫)。IPC handler 经核已是 `getAssetRuntime()` selector 薄代理 (codebase-map 证实), 无需改。
   - tests: ✅ tests/unit/watcher.test.ts 7/7 (含回调转发/basename assetId/无 listener 不抛); 先红(新 API 缺失)后绿。`pnpm typecheck:node` 通过; watcher.ts 已无 electron import (可提取)。
   - verify: 不适用 (引擎逻辑)。assets:changed 通道与 payload 形状不变 (`WatchEvent ≡ IpcEvents['assets:changed']`), 渲染层接收不变; 实机 assets:changed 到达留 4.0-verify 端到端抽验。
-- [ ] **P1.3** CLI `berth-scan`: scan/snapshot/assets/sessions/search/inspect/health/usage/sources/status; 全 `--json`、`--home-dir/--codex-home/--project` 注入、退出码 0/2/3、只读。
-  - tests: packages/.../tests/e2e/cli.e2e.ts 断言各命令 JSON schema + 退出码。
-  - verify: 不适用 (CLI)。`berth-scan scan --json | jq .stats` 人工抽验一次。
+- [x] **P1.3** (3a+3b) CLI `berth-scan` 框架 + 核心扫描命令: 纯 `parseArgs` (退出码 0/2/3) + `engine-bridge.runScan` (注入 homeDir/CODEX_HOME/project/BERTH_EXTRA_*) + dispatch `scan/assets/sources/status/help/version`; 全 `--json`、只读。tsup 经 `@shared` alias 把 electron-free + native-free 引擎打进 `dist/cli.cjs`。
+  - tests: ✅ cli-args 8/8 (先红后绿); scan-bridge 集成 3/3 (fixture HOME 实扫到 user/project skill+agent+CLAUDE.md); 包内 14/14 绿; tsup build 通过。CLI 实跑 smoke: `help` 出 manifest, `scan --home-dir <fixture> --json` exit 0 + stats.skills=1, `assets --type skill` count=1 exit 0。
+  - verify: 不适用 (CLI)。
+- [ ] **P1.3c** CLI 余下 selector 命令: `sessions/search/inspect/health/usage`(经 search.ts/health.ts/usage.ts/relations.ts 桥接), 当前返回 not-implemented。低风险增量, 可在 P1.4 后或 P2 期间补。
+  - tests: 各命令 JSON + 退出码; inspect 含 relations。
+  - verify: 不适用。
 - [ ] **P1.4** fixture HOME 树 `packages/.../fixtures/e2e/{home,project}` (覆盖 约定/skill/agent/command/output-mode/mcp/hook/plugin+组件/sessions, claude+codex) + golden-snapshot E2E harness(路径归一化)。先以现有引擎产出 baseline golden。
   - tests: packages/.../tests/e2e/scan.e2e.ts `toMatchSnapshot`; `pnpm --filter @berth/scan-engine test` 绿。
   - verify: 不适用。
