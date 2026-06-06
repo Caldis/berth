@@ -24,6 +24,9 @@ jobs:
       - run: pnpm lint
       - run: pnpm typecheck
       - run: pnpm test
+      - run: pnpm --filter @berth/scan-engine typecheck
+      - run: pnpm --filter @berth/scan-engine test # scan-engine unit + CLI E2E golden net
+      - run: pnpm --filter @berth/scan-engine build # smoke: engine package + CLI bundle
       - run: pnpm harness:check
       - run: pnpm build # smoke: production build must succeed
       - run: pnpm test:e2e

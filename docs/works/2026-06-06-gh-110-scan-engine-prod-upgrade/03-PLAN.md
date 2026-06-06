@@ -24,6 +24,9 @@
 
 ## P2 — 扫描覆盖增量 (描述符先行; 其后多项可并行, 各自 fixture+golden 守护)
 
+- [x] **P2.0** 把引擎包门禁接入 CI: `.github/workflows/ci.yml` 在 `pnpm test` 后加 `pnpm --filter @berth/scan-engine {typecheck,test,build}` (ubuntu + windows 矩阵), 让 P1.4 golden 回归网在 CI 守护后续扫描重写。
+  - tests: 由本次推送触发的 CI run 跨平台执行包 typecheck/test(19)/build 验证。
+  - verify: 不适用。
 - [ ] **P2.1** 描述符模型升级 (tier/emits/parserKey/ignore) + 描述符驱动 orchestrator: `scanner.ts` 从硬编码改为遍历描述符派生扫描与覆盖; 补 BuiltInScanSourceCode 新值。**[P2 其余项依赖此, 顺序]** (C9/A6)
   - tests: tests/unit/scan-descriptors.test.ts (tier/parserKey/ignore 派生 + 覆盖矩阵每行有描述符)。
   - verify: 不适用。golden snapshot 不回退 (行为等价)。
