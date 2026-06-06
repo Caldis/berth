@@ -10,6 +10,7 @@ interface WatcherRuntime {
 interface AssetRuntime {
   getProjectDir: () => string | undefined
   setProjectDir: (projectDir?: string) => void
+  hasSnapshotFor: (projectDir?: string) => boolean
   refresh: (opts: { reason: 'project-scope'; wait: true }) => Promise<unknown>
   getScanResult: () => ProjectScopeActivationResult['scanResult']
   getProjectCandidates: () => Promise<ProjectScopeActivationResult['candidates']>
@@ -30,10 +31,15 @@ export async function activateProjectScope(
   const runtime = deps.getRuntime()
   const nextProjectDir = normalizeActivatedProjectDir(projectPath)
   const shouldReinitialize = !sameOptionalProjectPath(runtime.getProjectDir(), nextProjectDir)
+  // A cached snapshot for this project is served instantly by setProjectDir; only
+  // (re)scan when there is no cache (the watcher keeps the active project fresh).
+  const cached = runtime.hasSnapshotFor(nextProjectDir)
   if (shouldReinitialize) {
     runtime.setProjectDir(nextProjectDir)
   }
-  await runtime.refresh({ reason: 'project-scope', wait: true })
+  if (!cached) {
+    await runtime.refresh({ reason: 'project-scope', wait: true })
+  }
 
   if (shouldReinitialize) {
     await deps.getWatcher().restart(nextProjectDir)

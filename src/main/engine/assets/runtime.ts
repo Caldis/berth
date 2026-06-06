@@ -12,7 +12,7 @@ import type {
   ScanResult
 } from '@shared/types/ipc'
 import type { AppScopeSelection, ProjectScopeCandidate } from '@shared/scope'
-import { DEFAULT_SCOPE_SELECTION, normalizeScopeSelection } from '@shared/scope'
+import { DEFAULT_SCOPE_SELECTION, normalizeProjectPathKey, normalizeScopeSelection } from '@shared/scope'
 import { normalizeTokenUsage } from '@shared/token-usage'
 import { assetMatchesProjectPath } from '../../project-scope'
 import { runHealthChecks } from '../health'
@@ -90,9 +90,17 @@ function searchScopeAllows(asset: Asset, selection: AppScopeSelection): boolean 
   return true
 }
 
+/** Stable per-project cache key (normalized; empty for no/global project). */
+function projectKey(projectDir?: string): string {
+  return projectDir ? normalizeProjectPathKey(projectDir) : ''
+}
+
 export class AgentAssetRuntime {
   private projectDir?: string
   private scopeSelection: AppScopeSelection = DEFAULT_SCOPE_SELECTION
+  // Per-project snapshot cache: re-selecting an already-scanned project serves
+  // its snapshot instantly (no rescan). The watcher keeps the active project fresh.
+  private readonly snapshotCache = new Map<string, AssetSnapshot>()
   private scanner: AssetRuntimeScanner
   private snapshot: AssetSnapshot
   private status: AssetRuntimeStatus
@@ -153,12 +161,27 @@ export class AgentAssetRuntime {
     this.selectorCache.clear()
   }
 
+  /** Whether a (cached) snapshot already exists for the given project. */
+  hasSnapshotFor(projectDir?: string): boolean {
+    return this.snapshotCache.has(projectKey(projectDir))
+  }
+
   setProjectDir(projectDir?: string): void {
     if (this.projectDir === projectDir) return
 
     this.projectDir = projectDir
     this.scanner = this.createScanner(projectDir)
     this.selectorCache.clear()
+
+    // Serve a cached snapshot for this project instantly (sub-second switching).
+    const cached = this.snapshotCache.get(projectKey(projectDir))
+    if (cached) {
+      this.snapshot = cached
+      this.assetMap = new Map(cached.assets.map((asset) => [asset.id, asset]))
+      this.status = { ...cached.status, projectDir, state: 'ready', stale: false }
+      return
+    }
+
     this.status = this.snapshot.id === 'initial'
       ? this.createIdleStatus()
       : {
@@ -316,6 +339,7 @@ export class AgentAssetRuntime {
         status
       }
       this.assetMap = new Map(scanResult.assets.map((asset) => [asset.id, asset]))
+      this.snapshotCache.set(projectKey(projectDir), this.snapshot)
       this.selectorCache.clear()
     } catch (error) {
       this.status = {

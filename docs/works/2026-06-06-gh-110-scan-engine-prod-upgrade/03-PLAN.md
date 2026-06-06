@@ -52,9 +52,10 @@
   - tests: ✅ project-scope-switcher renderer 7/7 (含 "user scope 不触发 activate" + "调 setScope" 断言); agent-asset-runtime 搜索作用域用例; project-scope e2e 本地通过。
   - verify: 切换感知逻辑由测试保证 (no rescan); 实机 < 1s + loading 态留 4.0-verify 截图确认。
   - **CI 修复 (随附)**: 纯前端过滤导致服务端 `assets:search` 不再随作用域变化 (e2e project-scope 红 — user 域仍搜到项目 skill)。修复: runtime 持有 `scopeSelection` + 新 fast IPC `project-scope:set-scope` (无重扫), switcher 每次切换都通知引擎; `search` 按作用域过滤 (user 域仅 user/enterprise, project/global 含全部)。本地 e2e 通过。
-- [ ] **P3.1b/P3.2** 运行时 per-project 快照缓存 + global 真聚合 (E14/E15): runtime 按 projectDir 缓存快照, 重选已扫项目即时返回 (首扫仍需全扫); watcher 变更失效对应缓存。让"选项目"也接近秒级。**[runtime, 包内可测]**
-  - tests: layered/cache 单测 (spy scanAll: 重选命中缓存 0 重扫; 变更后失效重扫)。
-  - verify: 大规模 (1k+) 首扫/重选计时。
+- [x] **P3.2** 运行时 per-project 快照缓存 (E14): runtime `snapshotCache` 按 normalize 后的 projectDir 缓存快照, 在 runRefresh 后写入; `setProjectDir` 命中缓存即即时复用 (status ready, 无重扫); `hasSnapshotFor` 暴露给 `activateProjectScope` —— 命中缓存则跳过 refresh (仅重选已扫项目即秒级)。watcher 重启绑定当前项目, 保活动项目新鲜。首扫每项目仍全扫。
+  - tests: ✅ agent-asset-runtime "重选已扫项目服务缓存不重扫" + project-scope-runtime "缓存命中跳过 refresh, watcher 仍重绑" (11/11); typecheck:node 绿。
+  - 已知取舍: 非活动项目缓存在其 global 部分跨项目改动时会短暂滞后, 由活动期 watcher / 手动 refresh 收敛 (可接受, 已注明)。
+  - **(deferred)** global 真聚合 / 全类型 file-cache (E15 layered store): 当前每个新项目首选仍全扫 (含 global)。属更大重构, 列为后续优化 (不阻塞本次生产级目标)。
 - [ ] **P3.2** 增量 watcher + 全类型 fingerprint cache + worker 池化 + 基准: file-cache 扩到所有 parser; watcher 局部重扫; 1k skills+1k sessions 首扫/切换计时。 (E15)
   - tests: tests/unit/file-cache-incremental.test.ts (命中率) + bench 计时断言阈值。
   - verify: 不适用 (基准数据记入 verify)。

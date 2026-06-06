@@ -28,7 +28,9 @@ function sessionAsset(projectPath: string): Asset {
 }
 
 class FakeScanner {
+  cached = false
   refresh = vi.fn(async () => {})
+  hasSnapshotFor = vi.fn((_projectDir?: string) => this.cached)
   setProjectDir = vi.fn((projectDir?: string) => {
     this.projectDir = projectDir
     this.assets = [sessionAsset(projectDir ?? 'global')]
@@ -101,6 +103,18 @@ describe('activateProjectScope', () => {
     expect(current.setProjectDir).not.toHaveBeenCalled()
     expect(current.refresh).toHaveBeenCalledTimes(1)
     expect(runtime.restart).not.toHaveBeenCalled()
+  })
+
+  it('serves a cached project snapshot instantly without rescanning', async () => {
+    const current = new FakeScanner(undefined)
+    current.cached = true
+    const runtime = deps(current)
+
+    await activateProjectScope('D:\\Code\\berth', runtime.deps)
+
+    expect(current.setProjectDir).toHaveBeenCalledWith('D:/Code/berth')
+    expect(current.refresh).not.toHaveBeenCalled() // cache hit → no rescan (sub-second switch)
+    expect(runtime.restart).toHaveBeenCalledWith('D:/Code/berth') // watcher still rebinds
   })
 
   it('clears project scanner context when leaving project scope', async () => {

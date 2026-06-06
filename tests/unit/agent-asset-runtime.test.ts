@@ -203,4 +203,23 @@ describe('AgentAssetRuntime', () => {
     expect(userResults.map((r) => r.asset.name)).toEqual(['alpha-user'])
     expect(scanner.scanAll).toHaveBeenCalledTimes(1) // no rescan on scope change
   })
+
+  it('serves a cached snapshot when re-selecting a previously scanned project', async () => {
+    const scanner = createScanner({ assets: [sessionAsset('session-1')], stats: { ...emptyStats, sessions: 1 }, errors: [] })
+    const runtime = createRuntime(scanner)
+    await runtime.refresh({ reason: 'startup', wait: true })
+    expect(scanner.scanAll).toHaveBeenCalledTimes(1)
+    const cachedId = runtime.getSnapshot().id
+
+    // Switching to an unscanned project has no cache.
+    runtime.setProjectDir('/repo/other')
+    expect(runtime.hasSnapshotFor('/repo/other')).toBe(false)
+    expect(runtime.hasSnapshotFor('/repo/berth')).toBe(true)
+
+    // Re-selecting the scanned project serves its snapshot instantly (no rescan).
+    runtime.setProjectDir('/repo/berth')
+    expect(scanner.scanAll).toHaveBeenCalledTimes(1)
+    expect(runtime.getSnapshot().id).toBe(cachedId)
+    expect(runtime.getStatus().state).toBe('ready')
+  })
 })
