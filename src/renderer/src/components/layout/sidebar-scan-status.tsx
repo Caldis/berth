@@ -100,7 +100,7 @@ function ScanProgressPanel(): React.ReactElement {
               <span className={cn('truncate', count === 0 ? 'text-muted-foreground/60' : 'text-muted-foreground')}>
                 {t(`nav.scanStatus.categories.${def.key}`)}
               </span>
-              <Chip size="sm" variant="flat" tone={count > 0 ? 'primary' : 'neutral'}>
+              <Chip size="sm" variant="flat" tone="neutral">
                 {count}
               </Chip>
             </li>

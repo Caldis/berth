@@ -216,7 +216,7 @@ function PluginCard({ plugin, components }: { plugin: Asset; components: Asset[]
           </div>
           <p className="mt-0.5 truncate text-xs text-muted-foreground font-mono">{plugin.path}</p>
         </div>
-        <Chip tone="primary" size="sm" variant="flat" className="shrink-0">
+        <Chip tone="neutral" size="sm" variant="flat" className="shrink-0">
           {t('capabilities.plugins.contains', { count: components.length })}
         </Chip>
         <ViewRawButton asset={plugin} />

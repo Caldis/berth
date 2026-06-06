@@ -103,7 +103,7 @@ function SourceBadge({ label, id }: { label: string; id: string }): React.ReactE
   const Icon = sourceIcon(id)
   return (
     <Chip
-      tone="primary"
+      tone="neutral"
       variant="flat"
       radius="full"
       startContent={<Icon className="ml-0.5 h-2.5 w-2.5" />}
