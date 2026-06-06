@@ -16,9 +16,9 @@
 - [x] C3: hooks `HookActions` `<details>` → HeroUI `Dropdown` (`hooks-lifecycle-view.tsx`)
   - tests: tests/renderer/hooks-lifecycle-view.test.tsx 29/29 绿; 其中 "opens hook source files from the row action menu" 直接覆盖迁移行为 (点 Actions 开菜单→点项→openPath 被调用), HeroUI Dropdown 下仍通过; typecheck+lint 绿
   - verify: 动作项/只读项展示; disabled 不可点; noOpenTargets 提示; role=menu 键盘可达 (verify 阶段截图)
-- [ ] C5: memory 搜索 `<input>` → HeroUI `Input` (`memory-view.tsx`)
-  - tests: typecheck:web + 截图 (例外: 同 C1 模式受控搜索)
-  - verify: placeholder/行为不变; focus-ring
+- [x] C5: memory 搜索 `<input>` → HeroUI `Input` (`memory-view.tsx`)
+  - tests: tests/renderer/memory-view.test.tsx 13/13 绿 (getByTestId('memory-tags-filter-search')+fireEvent.change 证明 data-testid 落在 input、change 穿透); typecheck+lint 绿
+  - verify: placeholder/行为不变; onFocus 开 grid; focus-ring (verify 阶段)
 - [ ] C6: 本地 Badge/pill → `ui/Chip` (`memory-view.tsx`/`agent-capability-plugins-section.tsx`/`instructions.tsx`)
   - tests: typecheck:web + 截图 (例外: 纯视觉替换)
   - verify: 语义 tone 一致; ≥text-xs; 密度统一

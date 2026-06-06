@@ -17,6 +17,7 @@ import {
   X
 } from 'lucide-react'
 import { cn, truncatePath, formatOptionalRelativeTime } from '@/lib/utils'
+import { Input } from '@/components/ui'
 import { useMemory } from '@/hooks/use-memory'
 import { useAppStore } from '@/stores/app'
 import { EmptyState, PAGE_EMPTY_FILL } from '@/components/shared/empty-state'
@@ -534,18 +535,26 @@ function TagFilter({
       <span className="w-16 shrink-0 pt-2 text-[11px] font-medium uppercase tracking-normal text-muted-foreground">{label}</span>
       <div className="min-w-0 flex-1 space-y-2">
         <div className="flex items-center gap-2">
-          <div className="relative flex-1">
-            <Search aria-hidden="true" className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-            <input
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              onFocus={() => setOpen(true)}
-              placeholder={searchPlaceholder}
-              aria-label={searchPlaceholder}
-              data-testid={testId ? `${testId}-search` : undefined}
-              className="h-8 w-full rounded-md border border-input bg-background pl-8 pr-3 text-xs outline-none ring-ring focus:ring-1"
-            />
-          </div>
+          <Input
+            value={query}
+            onValueChange={setQuery}
+            onFocus={() => setOpen(true)}
+            placeholder={searchPlaceholder}
+            aria-label={searchPlaceholder}
+            data-testid={testId ? `${testId}-search` : undefined}
+            size="sm"
+            variant="bordered"
+            radius="md"
+            startContent={
+              <Search aria-hidden="true" className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+            }
+            classNames={{
+              base: 'flex-1',
+              inputWrapper:
+                'h-8 min-h-8 border-input bg-background shadow-none data-[hover=true]:bg-muted/40 group-data-[focus=true]:border-ring',
+              input: 'text-xs placeholder:text-muted-foreground'
+            }}
+          />
           <button
             type="button"
             onClick={() => setOpen((current) => !current)}
