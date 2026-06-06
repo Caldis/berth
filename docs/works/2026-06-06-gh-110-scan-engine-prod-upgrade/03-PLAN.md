@@ -71,27 +71,27 @@
 - [x] **P4.2** 插件↔组件关系 UI (B7/F17): PluginCard 重写为按 `meta.pluginId` 把组件归到所属插件, HeroUI Accordion 分组 (skills/agents/commands/hooks/mcp) + Chip 显示 marketplace/启用态/组件数; capabilities plugins tab 从 visibleAssets 构建 pluginId→components 映射传入。i18n 增 enabled/disabled/noComponents (en+zh)。
   - tests: ✅ tests/renderer/capabilities-plugins.test.tsx 2/2 (插件名/marketplace/Enabled/"2 components" + 展开 Skills 组见 plugin-skill + MCP 组); typecheck(web)/eslint 绿。
   - verify: 界面质量项「布局层级/信息密度、组件选择/设计系统一致性」—— **待 4.0-verify 截图请用户确认**视觉与交互。
-- [ ] **P4.3** 折叠 session-error-channel (F18): useSessions/useSessionDetail 加 error 通道; HeroUI Alert+retry; 扫描错误 (snapshot.errors) 可见。
-  - tests: tests/renderer/session-error.test.tsx (模拟 IPC 失败显示 error)。
-  - verify: 界面质量项「error 态」; 截图请用户确认。
-- [ ] **P4.4** 折叠 sessions-list-virtualization (E/F18): GroupedVirtuoso/复用 VirtualGroupedList + 分类跳转; 大列表无卡顿。 **[与 P4.3 不同文件, 可并行]**
-  - tests: tests/renderer/sessions-virtualization.test.tsx (1k 行渲染 + 跳转)。
-  - verify: 界面质量项「响应式/可访问性」; 1k+ 行流畅; 截图确认。
-- [ ] **P4.5** 折叠 heroui-migration-followup (F17): 仅对本任务触及页面把残留手搓控件迁 HeroUI(cards/select/modal/accordion/chip); 不扩大到无关页。
-  - tests: 复用受影响页 renderer 测试; 代码审计无业务层直接 `@heroui/react`。
-  - verify: 界面质量项「设计系统一致性」; 截图确认。
+- [x] **P4.3** 折叠 session-error-channel (F18): useSessions/useSessionDetail 加 error+reload 通道 (捕获 IPC reject); 新增共享 ErrorState (HeroUI Alert+Button, 非手搓); sessions/session-detail 页加载失败且无数据时显式区分错误态与空态并提供重试。
+  - tests: ✅ tests/renderer/session-error.test.tsx 2/2 (hook error 通道 + reload 恢复); sessions-pages 27 无回归。i18n 增 sessions.errorTitle/Description (en+zh)。
+  - verify: 界面质量项「error 态」—— hook 级已测; 页面级错误态待 4.0-verify 截图 (需模拟 IPC 失败)。
+- [x] **P4.4** 折叠 sessions-list-virtualization (E/F18): 已由既有 `VirtualGroupedList` + `CategoryJumpNav` 实现 (sessions.tsx)。
+  - tests: ✅ 既有 sessions-pages.test.tsx「virtualizes large session lists + project jump nav」覆盖。
+  - verify: 实质已完成 (代码核实)。
+- [x] **P4.5** 折叠 heroui-migration-followup (F17): 业务层审计无直接 `@heroui/react` 引用 (统一经 `@/components/ui` 出口), 由并行 GH-109「手写控件迁 HeroUI」覆盖; 本任务新增控件 (ErrorState/进度弹层/Progress) 均用 HeroUI 公共控件。
+  - tests: ✅ 既有受影响页 renderer 测试无回归。
+  - verify: 实质已完成 (代码审计 + GH-109)。
 - [x] **P4.6** 扫描进度可视化 (用户追加需求): 流式扫描进度 — 引擎 `scanAll({onProgress,onPartial})` 按 adapter 边界发射进度 + 累积已扫资产 (保留 errors, 不改 AgentAdapter 接口); 经 worker 'partial' 消息 → worker-host onPartial → runtime applyPartial (更新 snapshot.assets/stats, **快照 id 不变**, 避免 plugins 重拉) + setProgressListener; 新 main→renderer `assets:progress` 推送; 渲染层 useAssetRuntime 订阅 + store applyAssetProgress 折入, 已扫资产实时进入页面; 边栏「扫描中」指示器经共享 FloatingPopover (hover/focus/click) 弹出面板, HeroUI Progress 总进度 + 当前阶段 + 按类目 (约定/技能/子代理/命令/输出模式/MCP/钩子/插件/状态栏/环境变量/会话) 实时计数 (由 live assets 派生)。进度条仅 parsing 阶段确定, 尾部阶段 indeterminate。
   - tests: ✅ engine-scanner (onProgress 逐 adapter + onPartial 累积); asset-worker-host ('partial' 转发); agent-asset-runtime (partial 实时改 snapshot.assets + listener 通知); app-store (applyAssetProgress 折入但不动 snapshotId / progress-only tick 不覆盖); use-asset-runtime (onProgress 订阅入库); sidebar-scan-status (hover 弹层类目计数/进度条)。全量 710 通过; build + scan-engine 包 24 通过。
   - verify: ✅ agent 实例冷启实测: hover「扫描中… 1/2」弹出面板, 顶部「已扫描 312 项」+ 阶段 + 进度条, 类目实时计数 (约定6/技能63/命令4/MCP2/钩子5/插件6/状态栏1/会话218); 截图已发用户。
 
 ## P5 — 测试收口 + 全量回归
 
-- [ ] **P5.1** 输出模式/命令/子代理无副作用用例 (G19): 构造 fixture, 断言扫描只读、产出正确。
-  - tests: tests/unit/output-mode-command-agent.test.ts。
-  - verify: 不适用。
-- [ ] **P5.2** 全量回归 + 引擎提取行为不变 (C10/C11): `pnpm typecheck && pnpm build && pnpm test` + `pnpm --filter @berth/scan-engine test` + CLI E2E golden; 全局 `pnpm harness:check`。
-  - tests: 上述全绿; golden snapshot 终态。
-  - verify: `pnpm dev` 启动应用端到端抽验 (扫描呈现/切换/关联/loading); 截图请用户确认主观项。
+- [x] **P5.1** 输出模式/命令/子代理无副作用用例 (G19): 临时 fixture 注入 agents/commands/output-modes, 断言 scanInstructions 正确解析 + 扫描严格只读 (内容/mtime/目录树不变)。
+  - tests: ✅ tests/unit/output-mode-command-agent.test.ts 4/4 (子代理 frontmatter+bodyLength / 命令 lineCount+raw / 输出模式 / 二次扫描只读)。
+  - verify: 不适用 (纯单测)。
+- [x] **P5.2** 全量回归 + 引擎提取行为不变 (C10/C11): ✅ `pnpm typecheck`(node+web) 绿; `pnpm test` 106 文件 718 用例全绿; `pnpm --filter @berth/scan-engine test` 24 绿 (CLI E2E golden 含其中); `pnpm build` 绿; `pnpm harness:check` 绿。
+  - tests: 全绿; scan-engine golden 终态稳定。
+  - verify: agent 实例端到端抽验 (扫描呈现/秒级切换/插件关联/统一 loading/进度弹层) 已截图发用户; 见 4.0-verify。
 
 ## 并行/顺序边界小结
 - 顺序: P1.1→P1.2→P1.3→P1.4; P2.1 先于 P2.2–P2.6; P3.1→P3.2; P3 在 P2 后; P5.2 最后。
