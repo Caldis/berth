@@ -186,6 +186,39 @@ describe('AgentAssetRuntime', () => {
     expect(runtime.getSnapshot().assets.map((a) => a.id)).toEqual(['session-partial'])
   })
 
+  it('emits a terminal ready status as the final progress event (P4.6 stuck-scan fix)', async () => {
+    const scanner: AssetRuntimeScanner = {
+      scanAll: vi.fn(async (options) => {
+        options?.onProgress?.({ phase: 'deriving', current: 0, total: 1 })
+        return { assets: [], stats: emptyStats, errors: [] }
+      }),
+      getScanSourceGroups: vi.fn(async () => []),
+      getProjectScopeCandidates: vi.fn(() => []),
+      getProjectDir: () => '/repo/berth'
+    }
+    const runtime = createRuntime(scanner)
+    const statuses: string[] = []
+    runtime.setProgressListener((payload) => statuses.push(payload.status.state))
+
+    await runtime.refresh({ reason: 'startup', wait: true })
+
+    // The channel must end on a terminal state, not a trailing scanning tick.
+    expect(statuses.at(-1)).toBe('ready')
+    expect(statuses).toContain('scanning')
+  })
+
+  it('emits a terminal error status through the progress channel when a scan fails (P4.6)', async () => {
+    const scanner = createScanner({ assets: [], stats: emptyStats, errors: [] })
+    vi.mocked(scanner.scanAll).mockRejectedValueOnce(new Error('boom'))
+    const runtime = createRuntime(scanner)
+    const statuses: string[] = []
+    runtime.setProgressListener((payload) => statuses.push(payload.status.state))
+
+    await runtime.refresh({ reason: 'startup', wait: true })
+
+    expect(statuses.at(-1)).toBe('error')
+  })
+
   it('keeps the last snapshot and marks it stale when a later scan fails', async () => {
     const scanner = createScanner({ assets: [sessionAsset('session-1')], stats: { ...emptyStats, sessions: 1 }, errors: [] })
     const runtime = createRuntime(scanner)

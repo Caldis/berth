@@ -358,6 +358,11 @@ export class AgentAssetRuntime {
       this.assetMap = new Map(scanResult.assets.map((asset) => [asset.id, asset]))
       this.snapshotCache.set(projectKey(projectDir), this.snapshot)
       this.selectorCache.clear()
+      // Emit the terminal status on the SAME progress channel as the live ticks
+      // so the renderer's last event is authoritative. Without this, a trailing
+      // "scanning" progress macrotask can clobber the `ready` set by the
+      // refresh() reply microtask, leaving the UI stuck at scanning (P4.6 fix).
+      this.progressListener?.({ status })
     } catch (error) {
       this.status = {
         state: 'error',
@@ -372,6 +377,7 @@ export class AgentAssetRuntime {
         ...this.snapshot,
         status: this.status
       }
+      this.progressListener?.({ status: this.status })
     } finally {
       this.inFlight = null
     }
