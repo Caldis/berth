@@ -51,3 +51,18 @@
 - `2026-06-05-IMPROVEMENT-session-error-channel`
 - `2026-06-04-IMPROVEMENT-sessions-list-virtualization`
 - `2026-06-05-IMPROVEMENT-heroui-migration-followup`
+
+## 追加输入 (2026-06-06, 探索阶段, 用户新增)
+
+将扫描引擎**进一步抽象为可独立发布的引擎 + CLI 项目**, UI 仅作为消费端:
+
+1. 扫描引擎本身能作为一个**独立的 CLI 项目发布** (与 Electron 解耦, 不依赖 app/BrowserWindow/ipcMain)。
+2. 基于该 CLI 做**完整的端到端测试闭环** (对 fixture HOME 跑 CLI、断言稳定 JSON 输出, 无需起 Electron 窗口)。
+3. **UI 依赖这个独立引擎** (Electron 主进程作为引擎的一个消费端, IPC 层只做薄封装)。
+4. **Agent 可使用该引擎与应用交互** — Agent-friendly CLI: 稳定 JSON 契约、确定性退出码、只读无副作用查询、`--json` 全覆盖。
+
+影响: 范围由"应用内模块收敛"升级为"引擎提取为独立包 + 公共 API + CLI 表面 + 多消费端 (Electron / CLI / Agent)"。
+
+设计阶段需决定 (待 design 收口, 默认假设已在 02-SPEC 标注待确认):
+- **包边界默认**: 仓库内 pnpm workspace 包 (如 `packages/berth-scan-engine`), 可独立 `npm publish` 并带 `bin`; 而非另起仓库。理由: UI 依赖本地化、E2E 在仓库内闭环、与现有 `src/shared` 类型共享、共享主分支多 Agent 协作成本最低, 且后续仍可拆仓 (可逆)。
+- 公共 API 粒度 (scan/snapshot/selectors/relations/sources/scope) 与 CLI 命令面。

@@ -2,7 +2,7 @@
 task: 2026-06-06-gh-110-scan-engine-prod-upgrade
 task_id: GH-110
 type: feature
-phase: explore
+phase: design
 created: 2026-06-06
 priority: P1
 target_date:
@@ -16,16 +16,17 @@ source:
     - docs/issues/2026-06-05-IMPROVEMENT-heroui-migration-followup.md
 debt:
   estimate:
-    incurred: 8
-    repaid: 3
-    net: 5
-    scope: cross-process
+    incurred: 13
+    repaid: 4
+    net: 9
+    scope: global
     risk: high
     areas:
       - architecture
       - performance
+      - tooling-ci
     confidence: low
-    rationale: "扫描引擎 + 适配器 + Scope runtime + IPC + 渲染层全链路升级, 收敛核心模块 (repay architecture) 同时新增全量覆盖/关联/缓存 (incur)。explore/design 后校准。"
+    rationale: "扫描引擎 + 适配器 + Scope runtime + IPC + 渲染层全链路升级, 收敛核心模块 (repay architecture); 叠加用户新增的引擎提取为独立可发布包 + CLI 表面 + 多消费端, scope 升至 global, 增 tooling-ci (打包/发布/E2E)。design 后再校准。"
   final:
     incurred:
     repaid:
@@ -35,7 +36,12 @@ debt:
     areas: []
     confidence:
     rationale:
-  revisions: []
+  revisions:
+    - phase: explore
+      date: 2026-06-06
+      from: { incurred: 8, repaid: 3, net: 5, scope: cross-process, areas: [architecture, performance] }
+      to: { incurred: 13, repaid: 4, net: 9, scope: global, areas: [architecture, performance, tooling-ci] }
+      reason: "用户新增需求: 扫描引擎提取为可独立发布的引擎 + CLI 项目, UI/CLI/Agent 三类消费端, scope 升至 global 并新增打包/发布/E2E (tooling-ci)。"
 issue:
   number: 110
   repo: Caldis/berth
@@ -65,7 +71,7 @@ artifacts:
 
 ## 产物
 - [x] 00-PRD.md — 原始输入快照
-- [ ] 01-ANALYSIS.md — Explore 产物
+- [x] 01-ANALYSIS.md — Explore 产物
 - [ ] 02-SPEC.md — Design 产物
 - [ ] 03-PLAN.md — 活任务清单
 - [ ] 04-POLISH.md — 可选抛光记录
