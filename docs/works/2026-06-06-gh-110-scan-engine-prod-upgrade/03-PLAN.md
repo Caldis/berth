@@ -80,9 +80,9 @@
 - [ ] **P4.5** 折叠 heroui-migration-followup (F17): 仅对本任务触及页面把残留手搓控件迁 HeroUI(cards/select/modal/accordion/chip); 不扩大到无关页。
   - tests: 复用受影响页 renderer 测试; 代码审计无业务层直接 `@heroui/react`。
   - verify: 界面质量项「设计系统一致性」; 截图确认。
-- [ ] **P4.6** 扫描进度可视化 (用户追加需求): 流式扫描进度 — 引擎 `scanAll({onProgress,onPartial})` 按 adapter 边界发射进度 + 累积已扫资产 (保留 errors, 不改 AgentAdapter 接口); 经 worker 'partial' 消息 → worker-host onPartial → runtime applyPartial (更新 snapshot.assets/stats, **快照 id 不变**, 避免 plugins 重拉) + setProgressListener; 新 main→renderer `assets:progress` 推送; 渲染层订阅后已扫资产实时进入页面; 边栏「扫描中」指示器 hover 弹出 HeroUI Popover 可视化各类目实时计数 + 总进度条 (HeroUI Progress)。按类目计数在渲染层由累积资产派生。
-  - tests: engine-scanner (onProgress 逐 adapter + onPartial 累积); asset-worker-host ('partial' 转发); agent-asset-runtime (partial 实时改 snapshot.assets + listener 通知); sidebar-scan-status (Popover 类目计数/进度)。
-  - verify: 界面质量项「交互反馈/loading 态」; agent 实例实测 hover 弹层 + 实时计数; 截图请用户确认。
+- [x] **P4.6** 扫描进度可视化 (用户追加需求): 流式扫描进度 — 引擎 `scanAll({onProgress,onPartial})` 按 adapter 边界发射进度 + 累积已扫资产 (保留 errors, 不改 AgentAdapter 接口); 经 worker 'partial' 消息 → worker-host onPartial → runtime applyPartial (更新 snapshot.assets/stats, **快照 id 不变**, 避免 plugins 重拉) + setProgressListener; 新 main→renderer `assets:progress` 推送; 渲染层 useAssetRuntime 订阅 + store applyAssetProgress 折入, 已扫资产实时进入页面; 边栏「扫描中」指示器经共享 FloatingPopover (hover/focus/click) 弹出面板, HeroUI Progress 总进度 + 当前阶段 + 按类目 (约定/技能/子代理/命令/输出模式/MCP/钩子/插件/状态栏/环境变量/会话) 实时计数 (由 live assets 派生)。进度条仅 parsing 阶段确定, 尾部阶段 indeterminate。
+  - tests: ✅ engine-scanner (onProgress 逐 adapter + onPartial 累积); asset-worker-host ('partial' 转发); agent-asset-runtime (partial 实时改 snapshot.assets + listener 通知); app-store (applyAssetProgress 折入但不动 snapshotId / progress-only tick 不覆盖); use-asset-runtime (onProgress 订阅入库); sidebar-scan-status (hover 弹层类目计数/进度条)。全量 710 通过; build + scan-engine 包 24 通过。
+  - verify: ✅ agent 实例冷启实测: hover「扫描中… 1/2」弹出面板, 顶部「已扫描 312 项」+ 阶段 + 进度条, 类目实时计数 (约定6/技能63/命令4/MCP2/钩子5/插件6/状态栏1/会话218); 截图已发用户。
 
 ## P5 — 测试收口 + 全量回归
 
