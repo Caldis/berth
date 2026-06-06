@@ -33,4 +33,6 @@
 - D2 session-detail `<input type=range>` → Slider (自定义样式评估)
 
 ## verify 回写
-verify 不通过项作为新任务追加于此, phase 退回 implement。
+- [x] 全局门禁: typecheck(node+web) ✓ / lint ✓ / build ✓ (4557 模块) / harness:check ✓ / test 689-690 (唯一失败 usage-tooltip-label 为负载超时 flake, 隔离 1.9s 通过)。
+- [x] 回归修复 (C2 连带): `sessions-pages.test.tsx` 两用例 ("passes selected cost mode"、"keeps previous usage visible") 原用原生 `<select>` 语义 (`getByRole('combobox')`+`fireEvent.change`) 驱动 cost mode; 迁 HeroUI Select 后改为 click trigger→click option, 27/27 绿。属测试驱动方式更新 (行为契约不变), 已就地修复并重验, phase 留 verify。
+- [ ] 视觉验收 (用户裁判, 不变量 22): header Input / usage Select / hooks Dropdown / memory Input+Chip / capabilities ScopeSelect 待用户截图确认。

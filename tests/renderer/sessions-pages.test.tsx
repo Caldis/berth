@@ -907,12 +907,14 @@ describe('session pages', () => {
 
     expect(await screen.findByText('Input: 10')).toBeInTheDocument()
     expect(screen.queryByRole('radiogroup', { name: 'Cost mode' })).not.toBeInTheDocument()
-    const costModeSelect = screen.getByRole('combobox', { name: 'Cost mode' })
-    expect(costModeSelect).toHaveValue('auto')
+    // Cost mode is a HeroUI Select (GH-109 C2): open the trigger, pick an option.
+    const costModeTrigger = screen.getByRole('button', { name: /Cost mode/ })
+    expect(costModeTrigger).toHaveTextContent('Auto')
     expect(
       screen.getByText('Use provider actual cost when available, otherwise use the pricing catalog estimate.')
     ).toBeInTheDocument()
-    fireEvent.change(costModeSelect, { target: { value: 'estimated' } })
+    fireEvent.click(costModeTrigger)
+    fireEvent.click(await screen.findByRole('option', { name: 'Estimated' }))
 
     await waitFor(() => {
       expect(window.api.usage.summary).toHaveBeenLastCalledWith({
@@ -1016,9 +1018,8 @@ describe('session pages', () => {
 
     expect(await screen.findByText('Input: 4')).toBeInTheDocument()
 
-    fireEvent.change(screen.getByRole('combobox', { name: 'Cost mode' }), {
-      target: { value: 'estimated' }
-    })
+    fireEvent.click(screen.getByRole('button', { name: /Cost mode/ }))
+    fireEvent.click(await screen.findByRole('option', { name: 'Estimated' }))
 
     expect(await screen.findByText('Usage data could not be loaded')).toBeInTheDocument()
     expect(

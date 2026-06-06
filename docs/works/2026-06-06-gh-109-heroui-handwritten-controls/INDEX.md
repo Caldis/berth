@@ -2,7 +2,7 @@
 task: 2026-06-06-gh-109-heroui-handwritten-controls
 task_id: GH-109
 type: maintenance
-phase: implement
+phase: verify
 created: 2026-06-06
 priority: P2
 target_date: 
