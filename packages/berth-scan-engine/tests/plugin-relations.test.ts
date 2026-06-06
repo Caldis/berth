@@ -70,6 +70,16 @@ describe('plugin descent + relations', () => {
     expect(plugin.meta.marketplace).toBe('acme')
   })
 
+  it('resolves @import relations from user CLAUDE.md to the imported skill', async () => {
+    const snap = await runScan({ homeDir: TEST_HOME, env: process.env })
+    const claudeMd = snap.assets.find((a) => a.type === 'claude-md' && a.scope === 'user')
+    const greet = snap.assets.find((a) => a.type === 'skill' && a.name === 'greet')
+    expect(claudeMd).toBeTruthy()
+    expect(greet).toBeTruthy()
+    const rels = resolveRelations(claudeMd!, snap.assets)
+    expect(rels.some((r) => r.kind === 'imports' && r.to === greet!.id)).toBe(true)
+  })
+
   it('descends a Codex plugin (cx-plugin) and links its skill', async () => {
     const snap = await runScan({ homeDir: TEST_HOME, env: process.env })
     const plugin = snap.assets.find((a) => a.type === 'plugin' && a.name === 'cx-plugin')

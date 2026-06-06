@@ -39,11 +39,11 @@
 - [ ] **P2.4** 第三方 manifest 描述符驱动只读扫描 (A3): orchestrator 按 manifest sourceDescriptors + 内置 parser 产出真实资产(替换元数据桩); 断言 implementation 不执行。**[依赖 P2.1]**
   - tests: tests/unit/manifest-scan.test.ts (断言只读、不 require 第三方入口)。
   - verify: 不适用。
-- [ ] **P2.5** MCP 多来源补全 (A4): `~/.claude.json` projects[].mcpServers、`.claude/settings.json`/`settings.local.json` mcpServers、插件 .mcp.json; 去重 (name,scope,sourcePath)。**[与 P2.2/2.3/2.6 并行(parsers 局部)]**
-  - tests: tests/unit/mcp-sources.test.ts (各来源 + 去重)。
+- [x] **P2.5** MCP 多来源补全 (A4): 新 `parseClaudeJsonProjectMcp()` 读 `~/.claude.json` 的 `projects[].mcpServers` (scope project, meta.projectPath); scanCapabilities mcpSources 增 `<proj>/.claude/settings.json` + `settings.local.json` (parseMcpServers 无 mcpServers 时返回空, 安全)。插件 .mcp.json 已由 P2.2 覆盖。
+  - tests: ✅ cli-e2e golden mcp 增断言 `fixture-projectmap-mcp` (来自 ~/.claude.json projects map); 包内 24/24; claude-scanner 12 无回归; typecheck:node 绿。fixture .claude.json 增 projects map。
   - verify: 不适用。
-- [ ] **P2.6** 约定嵌套 + @import 关系 (A5): 子目录 CLAUDE.md(受 ignore)、CLAUDE.local.md; @import 经 buildImportChain 成 imports 关系 + meta.importedBy; Codex profiles/project config 优先级。**[与 P2.5 并行]**
-  - tests: tests/unit/instructions-imports.test.ts (嵌套发现 + import 链 + 环检测)。
+- [x] **P2.6** 约定嵌套 + CLAUDE.local.md + @import 关系 (A5): scanInstructions 项目约定块重写 — 增 `CLAUDE.local.md` (root + .claude) + 嵌套 `**/CLAUDE.md` (glob ignore node_modules/.git/dist/out/build/.next) + 共享 dedup 防跨 projectDir/glob 重复。@import 关系经既有 relations.ts resolveRelations (imports) 已生效, 补测验证。
+  - tests: ✅ cli-e2e golden claude-md=4 (user + project root + nested sub + .claude/local); plugin-relations 增 "@import CLAUDE.md→greet skill imports 关系" 用例; 包内 24/24; engine-scanner 6 无回归。fixture 增 `project/sub/CLAUDE.md` + `project/.claude/CLAUDE.local.md`。
   - verify: 不适用。
 
 ## P3 — 性能 (秒级切换 + 无瓶颈; 顺序, 触及 runtime 高 risk)

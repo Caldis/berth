@@ -113,7 +113,8 @@ describe('berth-scan CLI E2E (isolated fixture HOME, in-process)', () => {
     expect(namesOfType(assets, 'agent')).toEqual(['plugin-agent', 'reviewer'])
     expect(namesOfType(assets, 'command')).toEqual(['deploy', 'plugin-cmd'])
     expect(namesOfType(assets, 'output-mode')).toEqual(['concise'])
-    expect(assets.filter((a) => a.type === 'claude-md').length).toBe(2) // user + project
+    // user CLAUDE.md + project CLAUDE.md + nested sub/CLAUDE.md + project .claude/CLAUDE.local.md
+    expect(assets.filter((a) => a.type === 'claude-md').length).toBe(4)
     expect(assets.filter((a) => a.type === 'agents-md').length).toBe(1) // codex user
 
     // Plugin + marketplace assets (Claude demo-plugin + Codex cx-plugin).
@@ -122,9 +123,10 @@ describe('berth-scan CLI E2E (isolated fixture HOME, in-process)', () => {
 
     // Capability coverage — incl. the plugin-bundled MCP server.
     const mcp = namesOfType(assets, 'mcp-server')
-    expect(mcp).toContain('fixture-user-mcp')
-    expect(mcp).toContain('fixture-project-mcp')
-    expect(mcp).toContain('fixture-plugin-mcp')
+    expect(mcp).toContain('fixture-user-mcp') // ~/.claude.json top-level
+    expect(mcp).toContain('fixture-project-mcp') // project .mcp.json
+    expect(mcp).toContain('fixture-plugin-mcp') // bundled by demo-plugin
+    expect(mcp).toContain('fixture-projectmap-mcp') // ~/.claude.json projects[].mcpServers
     expect(assets.some((a) => a.type === 'hook')).toBe(true)
 
     expect(payload.stats?.skills).toBe(5) // greet + proj + codex-helper + plugin-skill + cx-plugin-skill

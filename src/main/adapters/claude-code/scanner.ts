@@ -12,6 +12,7 @@ import {
   parseCommand,
   parseOutputMode,
   parseMcpServers,
+  parseClaudeJsonProjectMcp,
   parseHooks,
   parsePermissions,
   parseEnv,
@@ -80,26 +81,41 @@ export function scanInstructions(ctx: ScanContext): Asset[] {
     }
   }
 
-  // CLAUDE.md / AGENTS.md at project scope (.claude/)
+  // CLAUDE.md / CLAUDE.local.md / AGENTS.md at project scope (root + .claude/),
+  // plus nested CLAUDE.md anywhere in the project tree. Shared dedup avoids
+  // double-counting across the root-to-leaf project roots and the nested glob.
+  const seenConventions = new Set<string>()
+  const addConvention = (
+    fp: string,
+    parser: (filePath: string, scope: AssetScope) => Asset
+  ): void => {
+    const key = fp.toLowerCase()
+    if (seenConventions.has(key) || !fs.existsSync(fp)) return
+    seenConventions.add(key)
+    const a = safeScan(ctx, fp, path.basename(fp), () => parser(fp, 'project'))
+    if (a) assets.push(a)
+  }
   for (const projectDir of projectDirsFromContext(ctx)) {
     const projectClaudeDir = path.join(projectDir, '.claude')
-    for (const [file, parser] of [
-      ['CLAUDE.md', parseClaudeMd],
-      ['AGENTS.md', parseAgentsMd]
-    ] as const) {
-      // Check project root
-      const rootFp = path.join(projectDir, file)
-      if (fs.existsSync(rootFp)) {
-        const a = safeScan(ctx, rootFp, file, () => parser(rootFp, 'project'))
-        if (a) assets.push(a)
-      }
-      // Check .claude/ dir
-      const dotClaudeFp = path.join(projectClaudeDir, file)
-      if (fs.existsSync(dotClaudeFp)) {
-        const a = safeScan(ctx, dotClaudeFp, file, () => parser(dotClaudeFp, 'project'))
-        if (a) assets.push(a)
-      }
+    for (const file of ['CLAUDE.md', 'CLAUDE.local.md'] as const) {
+      addConvention(path.join(projectDir, file), parseClaudeMd)
+      addConvention(path.join(projectClaudeDir, file), parseClaudeMd)
     }
+    addConvention(path.join(projectDir, 'AGENTS.md'), parseAgentsMd)
+    addConvention(path.join(projectClaudeDir, 'AGENTS.md'), parseAgentsMd)
+    // Nested subtree CLAUDE.md (skip vendored / build output directories).
+    let nested: string[] = []
+    try {
+      nested = glob.sync('**/CLAUDE.md', {
+        cwd: projectDir,
+        absolute: true,
+        windowsPathsNoEscape: true,
+        ignore: ['**/node_modules/**', '**/.git/**', '**/dist/**', '**/out/**', '**/build/**', '**/.next/**']
+      })
+    } catch {
+      nested = []
+    }
+    for (const fp of nested) addConvention(fp, parseClaudeMd)
   }
 
   // Skills
@@ -167,12 +183,24 @@ export function scanCapabilities(ctx: ScanContext): Asset[] {
   }
   for (const projectDir of projectDirsFromContext(ctx)) {
     mcpSources.push([path.join(projectDir, '.mcp.json'), 'project'])
+    // mcpServers may also live under project settings (committed + local).
+    mcpSources.push([path.join(projectDir, '.claude', 'settings.json'), 'project'])
+    mcpSources.push([path.join(projectDir, '.claude', 'settings.local.json'), 'project'])
   }
   for (const [fp, scope] of mcpSources) {
     if (fs.existsSync(fp)) {
       const a = safeScan(ctx, fp, 'mcp-server', () => parseMcpServers(fp, scope))
       if (a) assets.push(...a)
     }
+  }
+
+  // Per-project MCP servers stored in ~/.claude.json's `projects` map.
+  const claudeJsonPath = path.join(ctx.claudeDir, '..', '.claude.json')
+  if (fs.existsSync(claudeJsonPath)) {
+    const projectMcp = safeScan(ctx, claudeJsonPath, 'mcp-server', () =>
+      parseClaudeJsonProjectMcp(claudeJsonPath)
+    )
+    if (projectMcp) assets.push(...projectMcp)
   }
 
   // Hooks, permissions, env from settings.json (user + project)

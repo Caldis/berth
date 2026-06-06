@@ -4,5 +4,15 @@
       "command": "npx",
       "args": ["-y", "@fixture/mcp-server"]
     }
+  },
+  "projects": {
+    "/fixture/projmap": {
+      "mcpServers": {
+        "fixture-projectmap-mcp": {
+          "command": "node",
+          "args": ["projmap-server.js"]
+        }
+      }
+    }
   }
 }

@@ -204,6 +204,38 @@ export function parseMcpServers(
   return assets
 }
 
+/**
+ * MCP servers configured per-project inside `~/.claude.json` under
+ * `projects["<dir>"].mcpServers` (written by `claude mcp add` at project scope).
+ * These are project-scoped and carry their owning project path in meta.
+ */
+export function parseClaudeJsonProjectMcp(filePath: string): Asset[] {
+  const assets: Asset[] = []
+  let config: { projects?: Record<string, { mcpServers?: Record<string, Record<string, unknown>> }> }
+  try {
+    config = JSON.parse(fs.readFileSync(filePath, 'utf-8'))
+  } catch {
+    return assets
+  }
+  const projects = config.projects ?? {}
+  for (const [projectPath, projectConfig] of Object.entries(projects)) {
+    const servers = projectConfig?.mcpServers ?? {}
+    for (const [name, serverConfig] of Object.entries(servers)) {
+      assets.push({
+        id: makeId('mcp-server'),
+        agentId: 'claude-code',
+        category: 'capability',
+        type: 'mcp-server',
+        scope: 'project',
+        name,
+        path: filePath,
+        meta: { serverConfig, source: filePath, projectPath }
+      })
+    }
+  }
+  return assets
+}
+
 // ---------------------------------------------------------------------------
 // Hooks (from settings.json)
 // ---------------------------------------------------------------------------
