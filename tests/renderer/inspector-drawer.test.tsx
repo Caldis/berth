@@ -134,11 +134,16 @@ describe('InspectorDrawer focus management', () => {
     })
   })
 
-  it('keeps the drawer header clear of Windows titlebar controls', () => {
+  it('overlays the Windows titlebar controls with a header matching the app header height', () => {
     render(<InspectorDrawer />)
 
-    expect(screen.getByRole('dialog', { name: 'View Raw' })).toHaveClass('z-[9990]', 'top-0', 'h-full')
-    expect(screen.getByTestId('file-viewer-header')).toHaveClass('pr-48')
+    // Drawer stacks above the WindowControls (z-[10000]) so its header covers the
+    // titlebar buttons — one close affordance, not two sets of [X].
+    expect(screen.getByRole('dialog', { name: 'View Raw' })).toHaveClass('z-[10001]', 'top-0', 'h-full')
+    const header = screen.getByTestId('file-viewer-header')
+    // Header height matches the app header (min-h-[72px]); no right reservation.
+    expect(header).toHaveClass('min-h-[72px]')
+    expect(header).not.toHaveClass('pr-48')
   })
 
   it('flushes the drawer and full-screen backdrop to the window top on macOS', () => {

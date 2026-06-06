@@ -2,7 +2,6 @@ import { useCallback, useEffect, useRef, useState, type CSSProperties, type Mous
 import { useTranslation } from 'react-i18next'
 import { Check, Copy, X } from 'lucide-react'
 import { cn, truncatePath } from '@/lib/utils'
-import { isWindowsPlatform } from '@/lib/platform'
 
 const FOCUSABLE_SELECTOR = [
   'a[href]',
@@ -46,7 +45,6 @@ export function FileViewerDrawer({ open, path, content, onClose }: FileViewerDra
   const drawerRef = useRef<HTMLDivElement>(null)
   const closeButtonRef = useRef<HTMLButtonElement>(null)
   const dragCleanupRef = useRef<(() => void) | null>(null)
-  const isWindows = isWindowsPlatform()
   const drawerStyle: CSSProperties = {
     width: `min(100vw, ${width}px)`
   }
@@ -165,7 +163,9 @@ export function FileViewerDrawer({ open, path, content, onClose }: FileViewerDra
         aria-modal="true"
         aria-label={t('common.viewRaw')}
         className={cn(
-          'titlebar-no-drag fixed right-0 z-[9990] flex flex-col border-l border-border bg-background shadow-2xl',
+          // z above the titlebar WindowControls (z-[10000]) so the drawer header
+          // overlays them — a single close affordance, not two sets of [X] (P4.3 follow-up).
+          'titlebar-no-drag fixed right-0 z-[10001] flex flex-col border-l border-border bg-background shadow-2xl',
           'top-0 h-full',
           'animate-in slide-in-from-right duration-200'
         )}
@@ -185,10 +185,10 @@ export function FileViewerDrawer({ open, path, content, onClose }: FileViewerDra
 
         <div
           data-testid="file-viewer-header"
-          className={cn(
-            'titlebar-no-drag flex items-center gap-3 border-b border-border px-4 py-3',
-            isWindows && 'pr-48'
-          )}
+          // Match the app header height (min-h-[72px]) so the drawer header reads as a
+          // seamless continuation of the titlebar; full-width (no right reservation) since
+          // it now overlays the window controls rather than dodging them.
+          className="titlebar-no-drag flex min-h-[72px] items-center gap-3 border-b border-border px-4 py-3"
         >
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-medium text-foreground">
