@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { ChevronRight, HelpCircle, Search } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { Input, Kbd } from '@/components/ui'
 import { findNavMatch } from './nav-config'
 import { isMacPlatform } from '@/lib/platform'
 import { FeatureGuidePanel } from '@/components/shared/feature-guide-panel'
@@ -157,20 +158,30 @@ export function TopNavigation({ isWindows }: TopNavigationProps): React.ReactEle
             </FloatingPopover>
           )}
           {pageChrome.search && (
-            <div className="relative min-w-[14rem] flex-1 sm:w-72 sm:flex-none">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-              <input
-                ref={searchInputRef}
-                value={pageChrome.search.value}
-                onChange={(event) => pageChrome.search?.onValueChange(event.target.value)}
-                placeholder={pageChrome.search.placeholder}
-                aria-label={pageChrome.search.ariaLabel ?? pageChrome.search.placeholder}
-                className="h-9 w-full rounded-md border border-border bg-background pl-9 pr-16 text-sm outline-none ring-ring transition-colors placeholder:text-muted-foreground hover:bg-muted/40 focus:ring-2"
-              />
-              <kbd className="pointer-events-none absolute right-2 top-1/2 hidden -translate-y-1/2 rounded border border-border bg-muted px-1.5 py-0.5 text-[10px] font-semibold text-muted-foreground md:block">
-                {isMac ? '⌘K' : 'Ctrl+K'}
-              </kbd>
-            </div>
+            <Input
+              ref={searchInputRef}
+              aria-label={pageChrome.search.ariaLabel ?? pageChrome.search.placeholder}
+              value={pageChrome.search.value}
+              onValueChange={pageChrome.search.onValueChange}
+              placeholder={pageChrome.search.placeholder}
+              variant="bordered"
+              size="sm"
+              radius="md"
+              startContent={
+                <Search className="pointer-events-none h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+              }
+              endContent={
+                <Kbd className="pointer-events-none hidden bg-muted text-[11px] font-semibold text-muted-foreground md:inline-flex">
+                  {isMac ? '⌘K' : 'Ctrl+K'}
+                </Kbd>
+              }
+              classNames={{
+                base: 'min-w-[14rem] flex-1 sm:w-72 sm:flex-none',
+                inputWrapper:
+                  'h-9 min-h-9 border-border bg-background shadow-none data-[hover=true]:bg-muted/40 group-data-[focus=true]:border-ring',
+                input: 'text-sm placeholder:text-muted-foreground'
+              }}
+            />
           )}
         </div>
       </div>

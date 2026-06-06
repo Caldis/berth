@@ -7,9 +7,9 @@
 顺序: C1 (用户点名, 先交付验收) → C2 → C3 → C5 → C6 → C4 (共享, blast radius 最大放最后)。
 每项独立提交。
 
-- [ ] C1: header 搜索框 `<input>` → HeroUI `Input` (`top-navigation.tsx`)
-  - tests: 新增 tests/renderer/top-navigation-search.test.tsx (渲染 + ⌘K ref 聚焦/全选 + onValueChange)
-  - verify: focus-ring/hover/圆角与页头密度; ⌘K 聚焦并全选; Search 图标 + ⌘K/Ctrl+K 提示; sm:w-72 响应式; aria-label; 暗/亮/accent 截图
+- [x] C1: header 搜索框 `<input>` → HeroUI `Input` (`top-navigation.tsx`)
+  - tests: tests/renderer/top-navigation-search.test.tsx 4/4 绿 (渲染+placeholder/aria-label / onValueChange / ⌘K kbd / ⌘K ref focus+select); typecheck:web + lint 绿
+  - verify: focus-ring/hover/圆角与页头密度; ⌘K 聚焦并全选; Search 图标 + ⌘K/Ctrl+K 提示; sm:w-72 响应式; aria-label; 暗/亮/accent 截图 (verify 阶段)
 - [ ] C2: usage cost-mode `<select>` → HeroUI `Select` (`pages/usage.tsx`)
   - tests: typecheck:web + 截图 (例外: 行为简单受控, 无既有单测)
   - verify: 选项/受控值/i18n 不变; 键盘方向键可达; open/选中态
