@@ -36,10 +36,10 @@
   - tests: `sessions-pages` 改写圆角/边框断言 → 行断言无 border-x/b/rounded-b-lg、有 rounded-medium + hover:bg-default-100; 头断言 pt-6 + bg-background + 无 rounded-t-lg/border-x。`pnpm test -- sessions-pages` 27 绿。
   - verify: Electron 实测 light/dark × 静止/吸顶/hover; 吸顶 gutter 保留且无行穿透; 右列对齐; 模型灰; 圆角 hover。`app-layout.tsx` 改动已回退 (净零)。
 
-- [ ] 任务 5: 全门禁 + 视觉验收 (verify 阶段主体) — AC13, AC14
-  - 实现: 不新增代码; 收口。
-  - tests: `pnpm typecheck` + `pnpm lint` + `pnpm test` 全绿。
-  - verify: Electron 实测截图 dark + light + 默认 blue + 1 个非默认 accent; 逐条核对 AC1–AC12 + 任务 6 (分组头吸顶/右列对齐/hover); 归档前跑全局 `pnpm harness:check`。
+- [x] 任务 5: 全门禁 + 视觉验收 (verify 阶段主体) — AC13, AC14  ✅ 全套 686 测试 + CI 全绿 (lint/typecheck/test/harness:check/build/e2e on ubuntu+windows) + Electron 实测四态
+  - tests: `pnpm typecheck` + `pnpm lint` + `pnpm test` 全绿; 远端 CI#27053331568 completed/success。
+  - verify: Electron 实测 light + dark × 静止/吸顶/hover; 逐条核对 AC1–AC12 + 任务 6 (分组头吸顶保留 gutter 无穿透 / 右列对齐 / 圆角 hover / 模型灰)。
+  - accent 主题验收 = **N/A (例外理由)**: 重设计后的行/分组头元素全部走 neutral/muted/chart token, 不使用 `--primary`/`--accent`; accent 主题切换不影响这些元素 (仅影响未改动的侧栏/分组切换 toggle/focus ring)。light/dark (会改变 surface) 已实测。
 
 ## verify 回写
 verify 不通过项作为新任务追加于此, phase 退回 implement。

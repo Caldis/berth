@@ -2,7 +2,7 @@
 task: 2026-06-05-gh-108-sessions-list-redesign
 task_id: GH-108
 type: feature
-phase: verify
+phase: archive
 created: 2026-06-05
 priority: P2
 target_date: 
@@ -21,14 +21,15 @@ debt:
     confidence: medium
     rationale: "explore 校准: react-virtuoso 官方确认零配置可变行高, 行高风险解除; DS 层 @/components/ui 已 re-export 全套 HeroUI, 组件即用; 本机样本佐证 skillsUsed ~65% / mcpServers 高有值率, 数据值得展示。incurred=4 (HeroUI 化 SessionRow + 1-2 小展示组件 + token 细分可视化 + i18n); repaid=2 (收敛手写 agent badge/model chip 到语义 Chip, 接续 GH-105)。net=2, scope=module 纯 renderer 无 IPC/main 改动。"
   final:
-    incurred:
-    repaid:
-    net:
-    scope:
-    risk:
-    areas: []
-    confidence:
-    rationale:
+    incurred: 5
+    repaid: 3
+    net: 2
+    scope: module
+    risk: low
+    areas:
+      - ui-ux
+    confidence: high
+    rationale: "最终: 单行高密度重构 + TokenSparkBar/AssetCountChip + 分组头/行容器重设计 (安静 section label + 无边框 + 右侧定宽对齐列 + sticky pt-6 偏移规避 virtuoso 行穿透 + HeroUI hover token 复用) + i18n。incurred=5, repaid=3 (收敛手写 agent badge/model chip + 移除圆角卡片跨 sticky 模拟与卡片边框), net=2。纯 renderer 无 IPC/main。CI 全绿 (lint/typecheck/test/harness:check/build/e2e on ubuntu+windows), 用户视觉多轮定稿。app-layout 全局 gutter 尝试经实测穿透已回退净零。"
   revisions:
     - phase: explore
       date: 2026-06-05
@@ -52,7 +53,7 @@ gh_project:
   project_url: https://github.com/users/Caldis/projects/6
   project_id: PVT_kwHOADXbEs4BZHvQ
   item_id: PVTI_lAHOADXbEs4BZHvQzgu0guY
-  item_status: In Progress
+  item_status: Done
 artifacts:
   source: 00-PRD.md
   analysis: 01-ANALYSIS.md
