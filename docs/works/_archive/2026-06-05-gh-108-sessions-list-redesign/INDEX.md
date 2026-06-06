@@ -2,7 +2,7 @@
 task: 2026-06-05-gh-108-sessions-list-redesign
 task_id: GH-108
 type: feature
-phase: design
+phase: archive
 created: 2026-06-05
 priority: P2
 target_date: 
@@ -11,8 +11,8 @@ source:
   refs: []
 debt:
   estimate:
-    incurred: 4
-    repaid: 2
+    incurred: 5
+    repaid: 3
     net: 2
     scope: module
     risk: low
@@ -21,20 +21,26 @@ debt:
     confidence: medium
     rationale: "explore 校准: react-virtuoso 官方确认零配置可变行高, 行高风险解除; DS 层 @/components/ui 已 re-export 全套 HeroUI, 组件即用; 本机样本佐证 skillsUsed ~65% / mcpServers 高有值率, 数据值得展示。incurred=4 (HeroUI 化 SessionRow + 1-2 小展示组件 + token 细分可视化 + i18n); repaid=2 (收敛手写 agent badge/model chip 到语义 Chip, 接续 GH-105)。net=2, scope=module 纯 renderer 无 IPC/main 改动。"
   final:
-    incurred:
-    repaid:
-    net:
-    scope:
-    risk:
-    areas: []
-    confidence:
-    rationale:
+    incurred: 5
+    repaid: 3
+    net: 2
+    scope: module
+    risk: low
+    areas:
+      - ui-ux
+    confidence: high
+    rationale: "最终: 单行高密度重构 + TokenSparkBar/AssetCountChip + 分组头/行容器重设计 (安静 section label + 无边框 + 右侧定宽对齐列 + sticky pt-6 偏移规避 virtuoso 行穿透 + HeroUI hover token 复用) + i18n。incurred=5, repaid=3 (收敛手写 agent badge/model chip + 移除圆角卡片跨 sticky 模拟与卡片边框), net=2。纯 renderer 无 IPC/main。CI 全绿 (lint/typecheck/test/harness:check/build/e2e on ubuntu+windows), 用户视觉多轮定稿。app-layout 全局 gutter 尝试经实测穿透已回退净零。"
   revisions:
     - phase: explore
       date: 2026-06-05
       from: { risk: medium, confidence: low, net: 2 }
       to: { risk: low, confidence: medium, net: 2 }
       reason: "虚拟列表可变行高经 react-virtuoso 官方文档确认 (风险解除); DS 层 HeroUI 组件全部就绪; 本机样本验证 skills ~65% / mcp 高有值率。net 不变, risk medium→low, confidence low→medium。"
+    - phase: implement
+      date: 2026-06-06
+      from: { incurred: 4, repaid: 2, net: 2 }
+      to: { incurred: 5, repaid: 3, net: 2 }
+      reason: "追加分组头 + 行容器重设计 (用户多轮视觉反馈, 03-PLAN 任务 6): incurred +1 (分组头安静 section label + 右侧定宽对齐列 + sticky gutter 写入头自身 pt-6 的穿透规避); repaid +1 (移除跨 sticky 的圆角卡片模拟与卡片边框, 收敛为无边框 + HeroUI hover token 复用)。net 不变 = 2, scope/risk 不变。app-layout 全局 gutter 尝试经实测穿透已回退 (净零)。"
 issue:
   number: 108
   repo: Caldis/berth
@@ -47,7 +53,7 @@ gh_project:
   project_url: https://github.com/users/Caldis/projects/6
   project_id: PVT_kwHOADXbEs4BZHvQ
   item_id: PVTI_lAHOADXbEs4BZHvQzgu0guY
-  item_status: In Progress
+  item_status: Done
 artifacts:
   source: 00-PRD.md
   analysis: 01-ANALYSIS.md
@@ -63,8 +69,8 @@ artifacts:
 ## 产物
 - [x] 00-PRD.md — 原始输入快照
 - [x] 01-ANALYSIS.md — Explore 产物
-- [ ] 02-SPEC.md — Design 产物
-- [ ] 03-PLAN.md — 活任务清单
+- [x] 02-SPEC.md — Design 产物
+- [x] 03-PLAN.md — 活任务清单
 - [ ] 04-POLISH.md — 可选抛光记录
 
 ## 待澄清 (blocked 时填)

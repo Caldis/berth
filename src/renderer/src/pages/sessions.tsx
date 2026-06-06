@@ -5,7 +5,8 @@ import {
   MessageSquare,
   Clock,
   Coins,
-  Hash,
+  Sparkles,
+  Plug,
   FolderOpen
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -19,7 +20,9 @@ import { useSessions } from '@/hooks/use-ipc'
 import { EmptyState, PAGE_EMPTY_FILL } from '@/components/shared/empty-state'
 import { LoadingState } from '@/components/shared/loading-state'
 import { useAppStore } from '@/stores/app'
-import { TokenUsageDisplay } from '@/components/shared/token-usage-display'
+import { TokenSparkBar } from '@/components/shared/token-spark-bar'
+import { AssetCountChip } from '@/components/shared/asset-count-chip'
+import { Chip } from '@/components/ui'
 import { sessionGuide, type FeatureGuideEvidence } from '@/lib/feature-guidance'
 import { projectPathForScope } from '@shared/scope'
 import { usePageChrome, type PageChromeConfig } from '@/components/layout/page-chrome'
@@ -196,43 +199,46 @@ export function Sessions(): React.ReactElement {
             groups={sessionGroups}
             getItemKey={(session) => session.id}
             onActiveGroupChange={setActiveGroupId}
-            renderGroup={(group, groupIndex) => {
+            renderGroup={(group) => {
               const groupTitle = typeof group.meta?.pathTitle === 'string' ? group.meta.pathTitle : group.label
               const parentLabel = typeof group.meta?.parentLabel === 'string' ? group.meta.parentLabel : ''
               return (
                 <div
                   title={groupTitle}
-                  className={cn(
-                    'flex items-center gap-2 rounded-t-lg border-x border-t border-b border-border bg-card px-4 py-2.5',
-                    groupIndex > 0 ? 'mt-4' : undefined
-                  )}
+                  // Gutter offset lives in the header's own top PADDING (not margin): when the
+                  // header is sticky-pinned, its opaque bg fills the gutter band above the label so
+                  // absolutely-positioned virtuoso rows can't bleed into it. Same offset in flow + stuck.
+                  className="flex items-center gap-2 border-b border-border bg-background px-4 pb-2 pt-6"
                 >
-                  <FolderOpen className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                  <FolderOpen className="h-3 w-3 shrink-0 text-muted-foreground" aria-hidden="true" />
                   <span className="flex min-w-0 flex-col">
-                    <span className="truncate text-sm font-medium text-card-foreground">{group.label}</span>
+                    <span className="truncate text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                      {group.label}
+                    </span>
                     {parentLabel && (
-                      <span className="truncate text-[11px] text-muted-foreground">{parentLabel}</span>
+                      <span className="truncate text-[10px] leading-tight text-muted-foreground">{parentLabel}</span>
                     )}
                   </span>
-                  <span className="ml-auto text-xs text-muted-foreground">{group.count}</span>
+                  <span className="ml-auto text-[11px] tabular-nums text-muted-foreground">{group.count}</span>
                 </div>
               )
             }}
-            renderItem={(session, context) => {
+            renderItem={(session) => {
               return (
                 <SessionRow
                   session={session}
                   agentView={agentView}
                   unknownLabel={t('common.unknown')}
+                  skillsLabel={t('sessions.skillsUsed')}
+                  mcpLabel={t('sessions.mcpConnected')}
                   fallbackTitle={t('sessions.fallbackTitle', { id: session.id.slice(0, 8) })}
-                  isLastInGroup={context.isLastInGroup}
                   onOpen={() => navigate(`/sessions/${session.id}`)}
                 />
               )
             }}
             className="min-w-0 flex-1"
             listClassName="bg-transparent"
-            defaultItemHeight={72}
+            defaultItemHeight={56}
             testId="sessions-virtual-list"
           />
         </div>
@@ -281,8 +287,9 @@ interface SessionRowProps {
   session: SessionSummary
   agentView: 'all' | SessionSummary['agentId']
   unknownLabel: string
+  skillsLabel: string
+  mcpLabel: string
   fallbackTitle: string
-  isLastInGroup: boolean
   onOpen: () => void
 }
 
@@ -290,50 +297,85 @@ function SessionRow({
   session,
   agentView,
   unknownLabel,
+  skillsLabel,
+  mcpLabel,
   fallbackTitle,
-  isLastInGroup,
   onOpen
 }: SessionRowProps): React.ReactElement {
+  const agentLabel = session.agentId === 'codex' ? 'Codex' : 'Claude'
   return (
-    <button
-      type="button"
-      data-testid={`session-row-${session.id}`}
-      onClick={onOpen}
-      className={cn(
-        'flex w-full items-center gap-4 border-x border-b border-border bg-card px-4 py-3 text-left transition-colors hover:bg-accent/5',
-        isLastInGroup ? 'rounded-b-lg' : undefined
-      )}
-    >
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium text-card-foreground">
-          {session.title || fallbackTitle}
-        </p>
-        <div className="mt-0.5 flex items-center gap-3 text-xs text-muted-foreground">
-          <span className="flex items-center gap-1">
+    // Borderless rows separated by whitespace; hover is an inset rounded highlight reusing
+    // HeroUI's listbox-item tokens (rounded-medium + bg-default-100) rather than a hand-rolled box.
+    <div className="px-2">
+      <button
+        type="button"
+        data-testid={`session-row-${session.id}`}
+        onClick={onOpen}
+        className="flex w-full items-center gap-3 rounded-medium px-2 py-2 text-left transition-colors hover:bg-default-100"
+      >
+        <div className="flex min-w-0 flex-1 items-center gap-2">
+          <span className="truncate text-sm font-medium text-foreground">
+            {session.title || fallbackTitle}
+          </span>
+          <span className="hidden shrink-0 items-center gap-1 whitespace-nowrap text-xs text-muted-foreground sm:inline-flex">
             <Clock className="h-3 w-3" />
             {formatOptionalRelativeTime(session.startedAt)}
           </span>
-          <span>{formatOptionalDuration(session.duration)}</span>
-        </div>
-      </div>
-      <div className="flex shrink-0 items-center gap-4 text-xs text-muted-foreground">
-        {agentView === 'all' && (
-          <span className="inline-flex items-center rounded-md border border-border px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
-            {session.agentId === 'codex' ? 'Codex' : 'Claude'}
+          <span className="hidden shrink-0 whitespace-nowrap text-xs text-muted-foreground md:inline">
+            {formatOptionalDuration(session.duration)}
           </span>
-        )}
-        <span className="flex items-center gap-1">
-          <Coins className="h-3 w-3" />
-          {formatOptionalCurrency(session.cost)}
-        </span>
-        <span className="flex items-center gap-1">
-          <Hash className="h-3 w-3" />
-          <TokenUsageDisplay usage={session.tokenUsage} />
-        </span>
-        <span className="inline-flex items-center rounded-md bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
-          {session.model || unknownLabel}
-        </span>
-      </div>
-    </button>
+        </div>
+        {/* Fixed-width right-aligned columns so metadata lines up vertically for continuous scanning. */}
+        <div className="flex shrink-0 items-center gap-2">
+          {agentView === 'all' && (
+            <div className="flex w-14 justify-end">
+              <Chip tone="neutral" variant="flat" size="sm">
+                {agentLabel}
+              </Chip>
+            </div>
+          )}
+          <div className="flex w-10 justify-end">
+            <AssetCountChip
+              icon={Sparkles}
+              iconClassName="text-blue-500"
+              count={session.skillsUsed.length}
+              names={session.skillsUsed}
+              label={skillsLabel}
+            />
+          </div>
+          <div className="flex w-10 justify-end">
+            <AssetCountChip
+              icon={Plug}
+              iconClassName="text-green-500"
+              count={session.mcpServers.length}
+              names={session.mcpServers}
+              label={mcpLabel}
+            />
+          </div>
+          <div className="hidden w-16 justify-end lg:flex">
+            {session.cost != null && (
+              <span className="inline-flex items-center gap-1 whitespace-nowrap text-xs text-muted-foreground">
+                <Coins className="h-3 w-3" />
+                {formatOptionalCurrency(session.cost)}
+              </span>
+            )}
+          </div>
+          <div className="flex w-32 justify-end">
+            <TokenSparkBar usage={session.tokenUsage} className="text-xs" />
+          </div>
+          <div className="flex w-24 justify-end">
+            <Chip
+              tone="neutral"
+              variant="flat"
+              size="sm"
+              className="max-w-full"
+              classNames={{ content: 'truncate' }}
+            >
+              {session.model || unknownLabel}
+            </Chip>
+          </div>
+        </div>
+      </button>
+    </div>
   )
 }

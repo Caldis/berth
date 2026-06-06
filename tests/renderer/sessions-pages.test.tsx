@@ -353,8 +353,43 @@ describe('session pages', () => {
     expect(screen.queryByText(/Invalid Date/i)).not.toBeInTheDocument()
     expect(screen.getByText('5m')).toBeInTheDocument()
     expect(screen.getByText('38 tok')).toBeInTheDocument()
-    expect(screen.getByText(/I 10 \/ O 5/)).toBeInTheDocument()
+    expect(screen.getByLabelText(/Input 10 \/ Output 5/)).toBeInTheDocument()
     expect(screen.getAllByText('claude-sonnet-4-20250514').length).toBeGreaterThan(0)
+  })
+
+  it('surfaces token breakdown, skill/mcp counts, and agent on each session row', async () => {
+    mockSessionApis()
+
+    renderSessionsPage()
+
+    expect(await screen.findByText('Fix session metadata')).toBeInTheDocument()
+    const row = screen.getByTestId('session-row-session-session-abc')
+    expect(within(row).getByText('38 tok')).toBeInTheDocument()
+    expect(within(row).getByLabelText(/Input 10 \/ Output 5/)).toBeInTheDocument()
+    expect(within(row).getByLabelText(/frontend-design/)).toBeInTheDocument()
+    expect(within(row).getByLabelText(/plugin_playwright_playwright/)).toBeInTheDocument()
+    expect(within(row).getByText('Claude')).toBeInTheDocument()
+    expect(within(row).queryByText('$0.00')).not.toBeInTheDocument()
+  })
+
+  it('omits cost and empty-asset chips for codex sessions', async () => {
+    const codexSession: SessionSummary = {
+      ...summary,
+      id: 'codex-1',
+      agentId: 'codex',
+      cost: null,
+      skillsUsed: [],
+      mcpServers: ['context7']
+    }
+    mockSessionApis(codexSession)
+
+    renderSessionsPage()
+
+    expect(await screen.findByText('Fix session metadata')).toBeInTheDocument()
+    const row = screen.getByTestId('session-row-codex-1')
+    expect(within(row).getByText('Codex')).toBeInTheDocument()
+    expect(within(row).queryByLabelText(/Skills used/)).not.toBeInTheDocument()
+    expect(within(row).getByLabelText(/context7/)).toBeInTheDocument()
   })
 
   it('filters sessions from the top navigation search field', async () => {
@@ -418,7 +453,15 @@ describe('session pages', () => {
     expect(within(jumpNav).getByText('Desktop/Code').closest('div')).toHaveAttribute('title', '/Users/caldis/Desktop/Code')
     expect(screen.queryByRole('button', { name: 'Desktop/Code, 65 items' })).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'berth, 65 items' })).toHaveAttribute('title', '/Users/caldis/Desktop/Code/berth')
-    expect(screen.getByTestId('sessions-virtual-group-1').firstChild).toHaveClass('mt-4')
+    const group1Header = screen.getByTestId('sessions-virtual-group-1').firstChild
+    // Gutter offset rides in the header's top PADDING so the sticky-pinned header's opaque
+    // background covers the gutter band (absolutely-positioned rows can't bleed into it).
+    expect(group1Header).toHaveClass('pt-6')
+    // Quiet section label on the page surface (bg-background, recedes), with no card box around
+    // the group and no rounded top corners to be "penetrated" while sticky-pinned (GH-108).
+    expect(group1Header).toHaveClass('bg-background')
+    expect(group1Header).not.toHaveClass('rounded-t-lg')
+    expect(group1Header).not.toHaveClass('border-x')
 
     fireEvent.click(screen.getByRole('button', { name: 'archive, 65 items' }))
 
@@ -428,7 +471,7 @@ describe('session pages', () => {
     })
   })
 
-  it('rounds only the final row inside each session group', async () => {
+  it('renders borderless rows with an inset rounded hover and no per-row dividers', async () => {
     const sessions = [
       ...Array.from({ length: 4 }, (_, index) => ({
         ...summary,
@@ -451,11 +494,23 @@ describe('session pages', () => {
 
     renderSessionsPage()
 
-    expect(await screen.findByTestId('session-row-root-0')).not.toHaveClass('rounded-b-lg')
-    expect(screen.getByTestId('session-row-root-1')).not.toHaveClass('rounded-b-lg')
-    expect(screen.getByTestId('session-row-root-2')).not.toHaveClass('rounded-b-lg')
-    expect(screen.getByTestId('session-row-root-3')).toHaveClass('rounded-b-lg')
-    expect(screen.getByTestId('session-row-berth-0')).toHaveClass('rounded-b-lg')
+    // Rows are fully borderless (no card edges, no dividers); separation comes from whitespace
+    // and the quiet header. Hover is an inset rounded highlight reusing HeroUI listbox-item tokens.
+    const firstRow = await screen.findByTestId('session-row-root-0')
+    expect(firstRow).not.toHaveClass('rounded-b-lg')
+    expect(firstRow).not.toHaveClass('border-x')
+    expect(firstRow).not.toHaveClass('border-b')
+    expect(firstRow).toHaveClass('rounded-medium')
+    expect(firstRow).toHaveClass('hover:bg-default-100')
+    expect(screen.getByTestId('session-row-root-3')).not.toHaveClass('border-b')
+    expect(screen.getByTestId('session-row-berth-0')).not.toHaveClass('border-b')
+
+    // The group header is a quiet section label: recedes into the page surface (bg-background),
+    // no card box, no rounded top corners.
+    const group0Header = screen.getByTestId('sessions-virtual-group-0').firstChild
+    expect(group0Header).toHaveClass('bg-background')
+    expect(group0Header).not.toHaveClass('rounded-t-lg')
+    expect(group0Header).not.toHaveClass('border-x')
   })
 
   it('passes selected project scope to the sessions list', async () => {
