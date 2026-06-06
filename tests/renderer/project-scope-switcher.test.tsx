@@ -201,7 +201,7 @@ describe('ProjectScopeSwitcher', () => {
     expect(await screen.findByRole('option', { name: 'berth' })).toBeInTheDocument()
   })
 
-  it('can switch to user scope without project candidates', async () => {
+  it('switches to user scope as an instant client-side filter (no rescan)', async () => {
     window.api.projectScope.candidates = vi.fn(async () => [])
     render(<ProjectScopeSwitcher collapsed={false} />)
 
@@ -209,9 +209,10 @@ describe('ProjectScopeSwitcher', () => {
     fireEvent.click(await screen.findByRole('option', { name: 'User' }))
 
     await waitFor(() => {
-      expect(window.api.projectScope.activate).toHaveBeenCalledWith({ projectPath: undefined })
       expect(useAppStore.getState().scopeSelection).toEqual({ mode: 'user' })
     })
+    // Global / User must not trigger a rescan — that is what made switching slow.
+    expect(window.api.projectScope.activate).not.toHaveBeenCalled()
   })
 
   it('keeps the icon-only trigger reachable when collapsed', () => {

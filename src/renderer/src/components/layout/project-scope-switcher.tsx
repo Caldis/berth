@@ -98,11 +98,19 @@ export function ProjectScopeSwitcher({ collapsed }: ProjectScopeSwitcherProps): 
   }
 
   const selectScope = async (selection: Partial<AppScopeSelection>): Promise<void> => {
+    // Global / User are pure client-side filters over the current snapshot, so
+    // switching is instant (no rescan). Only selecting a specific project
+    // (re)scans that project's roots. This is the core of sub-second switching.
+    if (selection.mode !== 'project') {
+      setError(null)
+      setScopeSelection(selection)
+      setOpen(false)
+      return
+    }
     setLoading(true)
     setError(null)
     try {
-      const projectPath = selection.mode === 'project' ? selection.projectPath : undefined
-      const result = await window.api.projectScope.activate({ projectPath })
+      const result = await window.api.projectScope.activate({ projectPath: selection.projectPath })
       setAssets(result.scanResult.assets ?? [])
       setStats(result.scanResult.stats)
       setProjectCandidates(result.candidates ?? [])

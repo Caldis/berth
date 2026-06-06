@@ -48,9 +48,12 @@
 
 ## P3 — 性能 (秒级切换 + 无瓶颈; 顺序, 触及 runtime 高 risk)
 
-- [ ] **P3.1** 分层缓存 store (global + per-project Map) + scope 切换纯过滤 + global 真聚合: `runtime`/`project-scope-runtime` 改造; global/user 切换不重扫只改 selection; 项目层缓存常驻。**[依赖 P2 完成的扫描产出]** (E14)
-  - tests: tests/unit/layered-store.test.ts (spy scanAll: global/user 切换 0 次重扫; 项目复选命中缓存)。
-  - verify: 切换感知 < 1s(P4 接 UI 后端到端实测 + 截图)。
+- [x] **P3.1a** scope 切换纯过滤 (E14, 头部高频场景): `project-scope-switcher.selectScope` 对 global/user 不再调 `projectScope.activate` (即不重扫), 只 `setScopeSelection` → 客户端 `filterAssetsByAppScope` 即时再过滤。这是 5-10s 等待的主因 (任何切换都全量重扫) 的直接修复; 同时 global 保留上次已扫项目资产 (更完整)。
+  - tests: ✅ project-scope-switcher renderer 7/7 (含 "user scope 不触发 activate" 断言)。
+  - verify: 切换感知逻辑由测试保证 (no rescan); 实机 < 1s + loading 态留 4.0-verify 截图确认。
+- [ ] **P3.1b/P3.2** 运行时 per-project 快照缓存 + global 真聚合 (E14/E15): runtime 按 projectDir 缓存快照, 重选已扫项目即时返回 (首扫仍需全扫); watcher 变更失效对应缓存。让"选项目"也接近秒级。**[runtime, 包内可测]**
+  - tests: layered/cache 单测 (spy scanAll: 重选命中缓存 0 重扫; 变更后失效重扫)。
+  - verify: 大规模 (1k+) 首扫/重选计时。
 - [ ] **P3.2** 增量 watcher + 全类型 fingerprint cache + worker 池化 + 基准: file-cache 扩到所有 parser; watcher 局部重扫; 1k skills+1k sessions 首扫/切换计时。 (E15)
   - tests: tests/unit/file-cache-incremental.test.ts (命中率) + bench 计时断言阈值。
   - verify: 不适用 (基准数据记入 verify)。
