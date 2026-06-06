@@ -56,6 +56,7 @@ export {
   AccordionItem,
   Skeleton,
   Spinner,
+  Progress,
   Listbox,
   ListboxItem,
   ListboxSection,

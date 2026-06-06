@@ -21,7 +21,28 @@
       "scanning": "扫描中…",
       "updating": "更新中…",
       "error": "扫描出错",
-      "issues": "{{count}} 个扫描问题"
+      "issues": "{{count}} 个扫描问题",
+      "title": "扫描进度",
+      "scannedTotal": "已扫描 {{count}} 项资产",
+      "phase": {
+        "discovering": "发现来源",
+        "parsing": "读取资产",
+        "indexing": "索引来源",
+        "deriving": "推导关联"
+      },
+      "categories": {
+        "conventions": "约定",
+        "skills": "技能",
+        "subagents": "子代理",
+        "commands": "命令",
+        "outputModes": "输出模式",
+        "mcp": "MCP",
+        "hooks": "钩子",
+        "plugins": "插件",
+        "statusLine": "状态栏",
+        "env": "环境变量",
+        "sessions": "会话"
+      }
     },
     "sections": {
       "work": "工作",

@@ -21,7 +21,28 @@
       "scanning": "Scanning…",
       "updating": "Updating…",
       "error": "Scan error",
-      "issues": "{{count}} scan issues"
+      "issues": "{{count}} scan issues",
+      "title": "Scan progress",
+      "scannedTotal": "{{count}} assets scanned",
+      "phase": {
+        "discovering": "Discovering sources",
+        "parsing": "Reading assets",
+        "indexing": "Indexing sources",
+        "deriving": "Deriving relations"
+      },
+      "categories": {
+        "conventions": "Conventions",
+        "skills": "Skills",
+        "subagents": "Subagents",
+        "commands": "Commands",
+        "outputModes": "Output modes",
+        "mcp": "MCP",
+        "hooks": "Hooks",
+        "plugins": "Plugins",
+        "statusLine": "Status line",
+        "env": "Env",
+        "sessions": "Sessions"
+      }
     },
     "sections": {
       "work": "WORK",

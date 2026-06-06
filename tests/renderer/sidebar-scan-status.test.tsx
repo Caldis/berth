@@ -1,10 +1,15 @@
 import React from 'react'
 import { describe, it, expect, beforeEach } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import { HeroUIProvider } from '@heroui/react'
 import '../../src/renderer/src/i18n'
 import { SidebarScanStatus } from '../../src/renderer/src/components/layout/sidebar-scan-status'
 import { useAppStore, IDLE_ASSET_RUNTIME_STATUS } from '../../src/renderer/src/stores/app'
+import type { Asset, AssetType } from '../../src/shared/types/asset'
+
+function asset(id: string, type: AssetType): Asset {
+  return { id, agentId: 'claude-code', category: 'capability', type, scope: 'user', name: id, path: `/x/${id}`, meta: {} }
+}
 
 function renderStatus(collapsed = false): ReturnType<typeof render> {
   return render(
@@ -62,5 +67,32 @@ describe('SidebarScanStatus (unified sidebar loading)', () => {
     })
     renderStatus()
     expect(screen.getByRole('status')).toHaveTextContent('Scan error')
+  })
+
+  it('opens a progress popover visualizing per-category live counts (P4.6)', async () => {
+    useAppStore.setState({
+      assetRuntimeStatus: {
+        ...IDLE_ASSET_RUNTIME_STATUS,
+        state: 'scanning',
+        progress: { phase: 'parsing', current: 1, total: 2, label: 'Claude Code' }
+      },
+      assetErrors: [],
+      assets: [asset('s1', 'skill'), asset('p1', 'plugin'), asset('m1', 'mcp-server')]
+    })
+    renderStatus()
+
+    fireEvent.click(screen.getByTestId('sidebar-scan-status-trigger'))
+
+    const panel = await screen.findByTestId('sidebar-scan-progress')
+    // Cumulative scanned total reflects the live asset list.
+    expect(panel).toHaveTextContent('3 assets scanned')
+    // Category taxonomy is visualized (full coverage, incl. conventions).
+    expect(panel).toHaveTextContent('Skills')
+    expect(panel).toHaveTextContent('Plugins')
+    expect(panel).toHaveTextContent('Conventions')
+    // Current scan phase is surfaced.
+    expect(panel).toHaveTextContent('Reading assets')
+    // A progress bar is rendered (HeroUI Progress).
+    expect(panel.querySelector('[role="progressbar"]')).not.toBeNull()
   })
 })
