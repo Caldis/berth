@@ -96,6 +96,46 @@ describe('AssetWorkerHost', () => {
     ])
   })
 
+  it('forwards cumulative partial assets from the worker (P4.6)', async () => {
+    const { host, workers } = createHost()
+    const partials: { assets: { id: string }[] }[] = []
+    const scanResult: ScanResult = { assets: [], stats: emptyStats, errors: [] }
+
+    const resultPromise = host.runScan({ projectDir: '/repo/berth' }, {
+      onPartial: (partial) => partials.push({ assets: partial.assets.map((a) => ({ id: a.id })) })
+    })
+
+    workers[0]?.send({
+      type: 'partial',
+      partial: {
+        assets: [{
+          id: 'claude-skill',
+          agentId: 'claude-code',
+          category: 'instruction',
+          type: 'skill',
+          scope: 'user',
+          name: 'claude-skill',
+          path: '/x/SKILL.md',
+          meta: {}
+        }],
+        stats: { ...emptyStats, skills: 1 }
+      }
+    })
+    workers[0]?.send({
+      type: 'done',
+      result: {
+        projectDir: '/repo/berth',
+        scanResult,
+        sources: [],
+        projectCandidates: [],
+        sessionCache: { entries: [] }
+      }
+    })
+
+    await resultPromise
+    expect(partials).toEqual([{ assets: [{ id: 'claude-skill' }] }])
+  })
+
   it('rejects when the worker reports an error', async () => {
     const { host, workers } = createHost()
     const resultPromise = host.runScan({ projectDir: '/repo/berth' })

@@ -13,21 +13,22 @@ async function run(): Promise<void> {
     sessionCache: AssetFileCache.fromSnapshot(data.sessionCache)
   })
 
-  post({
-    type: 'progress',
-    progress: { phase: 'discovering', current: 0, total: 3, label: 'assets' }
+  // Per-adapter progress + cumulative partials drive the live scan UI (P4.6);
+  // sources/candidates derivation reports its own coarse phases afterwards.
+  const scanResult = await scanner.scanAll({
+    onProgress: (progress) => post({ type: 'progress', progress }),
+    onPartial: (partial) => post({ type: 'partial', partial })
   })
-  const scanResult = await scanner.scanAll()
 
   post({
     type: 'progress',
-    progress: { phase: 'indexing', current: 2, total: 3, label: 'sources' }
+    progress: { phase: 'indexing', current: 0, total: 1, label: 'sources' }
   })
   const sources = await scanner.getScanSourceGroups()
 
   post({
     type: 'progress',
-    progress: { phase: 'deriving', current: 3, total: 3, label: 'project candidates' }
+    progress: { phase: 'deriving', current: 0, total: 1, label: 'project candidates' }
   })
   const projectCandidates = scanner.getProjectScopeCandidates()
 

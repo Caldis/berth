@@ -4,6 +4,7 @@ import type { ProjectScopeCandidate } from '@shared/scope'
 import type { Asset } from '@shared/types/asset'
 import type {
   AgentScanSourceGroup,
+  AssetScanPartial,
   AssetScanProgress,
   ScanResult
 } from '@shared/types/ipc'
@@ -25,6 +26,7 @@ export interface AssetWorkerScanPayload {
 
 export type AssetWorkerMessage =
   | { type: 'progress'; progress: AssetScanProgress }
+  | { type: 'partial'; partial: AssetScanPartial }
   | { type: 'done'; result: AssetWorkerScanPayload }
   | { type: 'error'; error: { message: string; stack?: string } }
 
@@ -40,6 +42,7 @@ export interface AssetWorkerHostOptions {
 
 export interface AssetWorkerRunOptions {
   onProgress?: (progress: AssetScanProgress) => void
+  onPartial?: (partial: AssetScanPartial) => void
 }
 
 export class AssetWorkerHost {
@@ -66,6 +69,10 @@ export class AssetWorkerHost {
         const workerMessage = message as AssetWorkerMessage
         if (workerMessage.type === 'progress') {
           options.onProgress?.(workerMessage.progress)
+          return
+        }
+        if (workerMessage.type === 'partial') {
+          options.onPartial?.(workerMessage.partial)
           return
         }
         if (workerMessage.type === 'done') {
@@ -113,7 +120,8 @@ export class WorkerAssetScanner implements AssetRuntimeScanner {
       projectDir: this.projectDir,
       sessionCache: this.sessionCache
     }, {
-      onProgress: options.onProgress
+      onProgress: options.onProgress,
+      onPartial: options.onPartial
     })
     this.sources = result.sources
     this.projectCandidates = result.projectCandidates

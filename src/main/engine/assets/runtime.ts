@@ -1,6 +1,7 @@
 import type { AgentView, Asset, AssetStats, CostMode, SessionSummary, UsageSummary } from '@shared/types/asset'
 import type {
   AgentScanSourceGroup,
+  AssetScanPartial,
   AssetScanProgress,
   AssetRuntimeStatus,
   AssetScanReason,
@@ -22,6 +23,7 @@ import { WorkerAssetScanner } from './worker-host'
 
 export interface AssetRuntimeScanOptions {
   onProgress?: (progress: AssetScanProgress) => void
+  onPartial?: (partial: AssetScanPartial) => void
 }
 
 export interface AssetRuntimeScanner {
