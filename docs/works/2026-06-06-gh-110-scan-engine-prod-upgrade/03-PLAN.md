@@ -61,9 +61,9 @@
 
 ## P4 — UI / 统一 loading / 折叠 issue (渲染层; 多数按页面顺序)
 
-- [ ] **P4.1** 边栏统一 loading + 乐观 scope 切换 UI (F16): 统一 Spinner/骨架组件; 切换立即切 UI 后台补扫。
-  - tests: tests/renderer/scope-switch-loading.test.tsx。
-  - verify: 界面质量项「交互反馈/状态切换、loading 态」; 切换 < 1s; 截图请用户确认。
+- [x] **P4.1** 边栏统一 loading UI (F16): 新 `SidebarScanStatus` 组件读中心 `assetRuntimeStatus` + `assetErrors`, 在边栏 (scope 切换器下方) 统一展示 scanning(HeroUI Spinner + 进度 current/total)/updating(stale)/error/N scan issues; ready+无错时隐藏 (无布局抖动); 折叠态只显图标。**附带**: 把 safeScan 静默丢弃的扫描错误 (根因 E) 在边栏暴露。乐观 scope 切换已由 P3.1a 完成。
+  - tests: ✅ tests/renderer/sidebar-scan-status.test.tsx 4/4 (隐藏/scanning+进度/N issues/error); typecheck(web)/eslint 绿。i18n 增 nav.scanStatus.* (en+zh)。
+  - verify: 界面质量项「交互反馈/状态切换、loading 态」—— 待 4.0-verify 截图确认。
 - [x] **P4.2** 插件↔组件关系 UI (B7/F17): PluginCard 重写为按 `meta.pluginId` 把组件归到所属插件, HeroUI Accordion 分组 (skills/agents/commands/hooks/mcp) + Chip 显示 marketplace/启用态/组件数; capabilities plugins tab 从 visibleAssets 构建 pluginId→components 映射传入。i18n 增 enabled/disabled/noComponents (en+zh)。
   - tests: ✅ tests/renderer/capabilities-plugins.test.tsx 2/2 (插件名/marketplace/Enabled/"2 components" + 展开 Skills 组见 plugin-skill + MCP 组); typecheck(web)/eslint 绿。
   - verify: 界面质量项「布局层级/信息密度、组件选择/设计系统一致性」—— **待 4.0-verify 截图请用户确认**视觉与交互。

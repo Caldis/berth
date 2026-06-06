@@ -17,6 +17,12 @@
     "resizeSidebar": "Resize sidebar",
     "expandSidebar": "Expand sidebar",
     "collapseSidebar": "Collapse sidebar",
+    "scanStatus": {
+      "scanning": "Scanning…",
+      "updating": "Updating…",
+      "error": "Scan error",
+      "issues": "{{count}} scan issues"
+    },
     "sections": {
       "work": "WORK",
       "instructions": "INSTRUCTIONS",

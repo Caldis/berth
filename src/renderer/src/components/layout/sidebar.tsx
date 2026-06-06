@@ -8,6 +8,7 @@ import { navItemMatchesLocation, navSections } from './nav-config'
 import { isMacPlatform } from '@/lib/platform'
 import { SettingsDialog } from './settings-dialog'
 import { ProjectScopeSwitcher } from './project-scope-switcher'
+import { SidebarScanStatus } from './sidebar-scan-status'
 
 export function Sidebar(): React.ReactElement {
   const { t } = useTranslation()
@@ -115,6 +116,7 @@ export function Sidebar(): React.ReactElement {
                 </>
               )}
             </button>
+            <SidebarScanStatus collapsed={collapsed} />
           </div>
         </div>
 

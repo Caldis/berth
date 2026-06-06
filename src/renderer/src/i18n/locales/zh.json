@@ -17,6 +17,12 @@
     "resizeSidebar": "调整侧边栏宽度",
     "expandSidebar": "展开侧边栏",
     "collapseSidebar": "折叠侧边栏",
+    "scanStatus": {
+      "scanning": "扫描中…",
+      "updating": "更新中…",
+      "error": "扫描出错",
+      "issues": "{{count}} 个扫描问题"
+    },
     "sections": {
       "work": "工作",
       "instructions": "指令",
