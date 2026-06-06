@@ -26,10 +26,20 @@
   - tests: `sessions-pages.test.tsx` 现有 zh 路径断言扩展 (chip aria 中文); 命令 `pnpm test -- sessions-pages`。
   - verify: zh/en 切换 chip aria 与明细文案正确; 无硬编码英文。
 
+- [x] 任务 6: 分组头 + 行容器视觉重设计 (用户反馈多轮迭代) — 追加  ✅ sessions-pages 27 + Electron 实测四态
+  - 背景: 原圆角卡片分组头在 `GroupedVirtuoso` sticky 吸顶时, 顶部圆角透明缺口被下方直角行透出 (穿透), 视觉不连贯。经多轮用户视觉裁定 (扁平灰条 → 否决; 方角卡片 → 否决) 收敛为「安静 section label + 无卡片边框」方向, 再叠加四处微调定稿。
+  - 分组头: 去整组卡片边框 (border-x/t), 改 `bg-background` 不透明 section bar + 底部 hairline; 标签改 `text-[11px] font-semibold uppercase tracking-wide text-muted-foreground` (小号大写字距打开柔和灰)。无圆角 → 无穿透。
+  - 微调① sticky 偏移: gutter 写进分组头**自身 top padding** (`pt-6`) 而非 margin / 容器 padding —— 吸顶时头自身不透明 bg 覆盖 gutter 带。virtuoso 行为绝对定位, 容器 padding 留出的透明 gap 会被行穿透 (已实测: app-layout 全局 gutter 方案与 sticky-top override 均穿透, 已回退); 唯有头自身 padding 可靠遮挡。flow 与 stuck 偏移一致。
+  - 微调② 右侧元数据定宽列: agent/skills/mcp/cost/token/model 各 `w-N` cell + `justify-end`, 跨行纵向成列, 支持连续竖扫; 缺省项仍占位保持对齐。
+  - 微调③ 模型标签 `tone` primary(蓝) → neutral(灰), 不再抢视觉。
+  - 微调④ 行无边框 + 圆角 hover: 去 border-x/b + rounded-b-lg, 无分割线; hover 复用 HeroUI listbox-item token (`rounded-medium` + `bg-default-100`) 做内缩 (`px-2` wrapper) 圆角高亮, 不自绘。未直接用 `Listbox` 组件: 它不虚拟化, 会让全部会话全量渲染牺牲 windowing, 故只复用视觉 token。
+  - tests: `sessions-pages` 改写圆角/边框断言 → 行断言无 border-x/b/rounded-b-lg、有 rounded-medium + hover:bg-default-100; 头断言 pt-6 + bg-background + 无 rounded-t-lg/border-x。`pnpm test -- sessions-pages` 27 绿。
+  - verify: Electron 实测 light/dark × 静止/吸顶/hover; 吸顶 gutter 保留且无行穿透; 右列对齐; 模型灰; 圆角 hover。`app-layout.tsx` 改动已回退 (净零)。
+
 - [ ] 任务 5: 全门禁 + 视觉验收 (verify 阶段主体) — AC13, AC14
   - 实现: 不新增代码; 收口。
   - tests: `pnpm typecheck` + `pnpm lint` + `pnpm test` 全绿。
-  - verify: Electron 实测截图 dark + light + 默认 blue + 1 个非默认 accent; 逐条核对 AC1–AC12; 归档前跑全局 `pnpm harness:check`。
+  - verify: Electron 实测截图 dark + light + 默认 blue + 1 个非默认 accent; 逐条核对 AC1–AC12 + 任务 6 (分组头吸顶/右列对齐/hover); 归档前跑全局 `pnpm harness:check`。
 
 ## verify 回写
 verify 不通过项作为新任务追加于此, phase 退回 implement。

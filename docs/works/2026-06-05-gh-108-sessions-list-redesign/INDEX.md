@@ -11,8 +11,8 @@ source:
   refs: []
 debt:
   estimate:
-    incurred: 4
-    repaid: 2
+    incurred: 5
+    repaid: 3
     net: 2
     scope: module
     risk: low
@@ -35,6 +35,11 @@ debt:
       from: { risk: medium, confidence: low, net: 2 }
       to: { risk: low, confidence: medium, net: 2 }
       reason: "虚拟列表可变行高经 react-virtuoso 官方文档确认 (风险解除); DS 层 HeroUI 组件全部就绪; 本机样本验证 skills ~65% / mcp 高有值率。net 不变, risk medium→low, confidence low→medium。"
+    - phase: implement
+      date: 2026-06-06
+      from: { incurred: 4, repaid: 2, net: 2 }
+      to: { incurred: 5, repaid: 3, net: 2 }
+      reason: "追加分组头 + 行容器重设计 (用户多轮视觉反馈, 03-PLAN 任务 6): incurred +1 (分组头安静 section label + 右侧定宽对齐列 + sticky gutter 写入头自身 pt-6 的穿透规避); repaid +1 (移除跨 sticky 的圆角卡片模拟与卡片边框, 收敛为无边框 + HeroUI hover token 复用)。net 不变 = 2, scope/risk 不变。app-layout 全局 gutter 尝试经实测穿透已回退 (净零)。"
 issue:
   number: 108
   repo: Caldis/berth

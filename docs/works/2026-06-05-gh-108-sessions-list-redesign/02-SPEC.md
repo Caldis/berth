@@ -27,7 +27,15 @@
 
 **Tooltip 决策** (规则 9 / 嵌套交互 / 可测性): 主行**不嵌 HeroUI Tooltip** — 它在 `<button>` 内有嵌套 focusable 风险, 且 content 未 hover 不入 DOM (不可单测、关闭态无 a11y 描述)。完整 skills/mcp 名称与 token 细分统一走原生 `title`+`aria-label` (cost-source-badge 已验证模式: 可测 `getByTitle`/`getByLabelText`、a11y 完整、无嵌套)。HeroUI Tooltip 仅在 implement 验证无嵌套/a11y 告警时作为视觉增强叠加, 否则不用。
 
-**不改**: `ui/index.ts` (Chip/Tooltip 已导出, 不需 Progress)、`CategoryJumpNav`、分组头、main 层。i18n `zh.json`/`en.json` 复用 `sessions.skillsUsed`/`sessions.mcpConnected`, 新增计数 aria 文案 key。
+**不改**: `ui/index.ts` (Chip/Tooltip 已导出, 不需 Progress)、`CategoryJumpNav`、main 层。i18n `zh.json`/`en.json` 复用 `sessions.skillsUsed`/`sessions.mcpConnected`, 新增计数 aria 文案 key。
+
+### 分组头 + 行容器重设计 (追加, 用户反馈定稿 — 见 03-PLAN 任务 6)
+上文「行首尾圆角逻辑不变」「不改分组头」已被本节取代。多轮用户视觉裁定后定稿:
+- **分组头**: 去整组卡片边框, `bg-background` 不透明 section bar + 底部 hairline; 标签 `text-[11px] font-semibold uppercase tracking-wide text-muted-foreground` (安静大写 eyebrow)。无圆角 → 无 sticky 穿透。
+- **sticky gutter 偏移**: gutter 写进分组头自身 `pt-6` (top padding), 非 margin/容器 padding。理由: virtuoso 行绝对定位, 容器 padding 或透明 gap 会被行穿透 (已实测回退 app-layout 全局方案与 sticky-top override); 头自身不透明 padding 才能遮挡, flow/stuck 一致。
+- **行**: 全无边框 (去 border-x/b/rounded-b-lg), 无分割线; hover 复用 HeroUI listbox-item token (`rounded-medium`+`bg-default-100`) 内缩圆角高亮 (`px-2` wrapper)。不直接用 `Listbox` (不虚拟化, 会牺牲 windowing), 只复用视觉 token。
+- **右侧元数据**: 定宽右对齐列 (`w-N`+`justify-end`), 跨行纵向成列; 缺省项占位保对齐。
+- **model `Chip`**: tone primary(蓝) → neutral(灰), 不抢视觉。
 
 ## 界面质量与交互验收
 
