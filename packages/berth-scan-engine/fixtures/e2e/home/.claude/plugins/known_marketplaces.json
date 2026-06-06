@@ -1,0 +1,7 @@
+{
+  "acme": {
+    "source": { "source": "github", "repo": "acme/claude-plugins" },
+    "installLocation": "marketplaces/acme",
+    "lastUpdated": "2026-01-01T00:00:00.000Z"
+  }
+}

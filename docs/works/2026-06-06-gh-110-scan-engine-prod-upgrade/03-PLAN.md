@@ -30,9 +30,9 @@
 - [ ] **P2.1** 描述符模型升级 (tier/emits/parserKey/ignore) + 描述符驱动 orchestrator: `scanner.ts` 从硬编码改为遍历描述符派生扫描与覆盖; 补 BuiltInScanSourceCode 新值。**[P2 其余项依赖此, 顺序]** (C9/A6)
   - tests: tests/unit/scan-descriptors.test.ts (tier/parserKey/ignore 派生 + 覆盖矩阵每行有描述符)。
   - verify: 不适用。golden snapshot 不回退 (行为等价)。
-- [ ] **P2.2** Claude 插件下钻 + 关联 (A1/B7/B8): 读 installed_plugins.json/known_marketplaces.json/settings.enabledPlugins; 枚举 cache/marketplaces/data; `.claude-plugin/plugin.json`; 下钻 commands/agents/skills/hooks/mcp 产出组件资产 + contains/belongs-to 关系。**[依赖 P2.1; 与 P2.3 并行(不同文件)]**
-  - tests: tests/unit/plugin-scan.test.ts + e2e fixture 含 cache/<mk>/<plugin>/<ver>; 断言组件资产数 + 关系。
-  - verify: 不适用 (UI 在 P4)。golden 更新经审阅。
+- [x] **P2.2** Claude 插件下钻 + 关联 (A1/B7/B8) — **提前到 P2.1 之前做** (直接增强 scanner, 不等描述符重构; P2.1 改为后续行为保持重构)。`scanPlugins()` 读 settings.enabledPlugins + known_marketplaces.json; glob `cache/**/.claude-plugin/plugin.json` + `data/**` 发现已装插件 (manifest 取 `.claude-plugin/plugin.json` 非 package.json); 下钻 `skills/**/SKILL.md`、`agents/**/*.md`、`commands/**/*.md`、`hooks/hooks.json`、`.mcp.json` 复用现有 parser 产出组件资产 (tag `meta.pluginId/pluginName/marketplace/origin='plugin'` + `enabled`); marketplace 资产来自 known_marketplaces.json。relations.ts: plugin→component `contains` (路径前缀, 既有) + component→plugin `belongs-to` (经 meta.pluginId, 新增)。
+  - tests: ✅ 包内 plugin-relations 3/3 (组件类型 [agent,command,hook,mcp-server,skill] + contains/belongs-to + enabled/marketplace); cli-e2e golden 更新并绿 (skill=[codex-helper,greet,plugin-skill,proj]/agent=[plugin-agent,reviewer]/command=[deploy,plugin-cmd]/plugin=[demo-plugin]/marketplace=[acme]/mcp 含 fixture-plugin-mcp/stats.skills=4); 包内 22/22。repo claude-scanner 12 + engine-scanner 6 无回归; typecheck:node 绿。fixture 增 `home/.claude/plugins/cache/acme/demo-plugin/1.0.0/**`。
+  - verify: 不适用 (UI 在 P4)。这是"大量插件内容缺失"根因 A 的修复。
 - [ ] **P2.3** Codex 插件下钻 (A2): `~/.codex/plugins/<mk>/<plugin>/manifest.toml` + skills/hooks/mcp。**[依赖 P2.1; 与 P2.2 并行]**
   - tests: tests/unit/codex-plugin-scan.test.ts + fixture manifest.toml。
   - verify: 不适用。

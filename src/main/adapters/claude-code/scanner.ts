@@ -16,7 +16,6 @@ import {
   parsePermissions,
   parseEnv,
   parseStatuslinesFromSettings,
-  parsePlugin,
   parseSessionMeta,
   parsePlan,
   parseTodo,
@@ -230,28 +229,141 @@ export function scanCapabilities(ctx: ScanContext): Asset[] {
     }
   }
 
-  // Plugins
+  // Plugins (+ their bundled skills/agents/commands/hooks/mcp) and marketplaces
+  assets.push(...scanPlugins(ctx))
+
+  return assets
+}
+
+// ---------------------------------------------------------------------------
+// Plugins: descend installed plugins into their bundled components
+// ---------------------------------------------------------------------------
+
+function readJsonRecord(filePath: string): Record<string, unknown> | null {
+  try {
+    const parsed = JSON.parse(fs.readFileSync(filePath, 'utf-8'))
+    return parsed && typeof parsed === 'object' ? (parsed as Record<string, unknown>) : null
+  } catch {
+    return null
+  }
+}
+
+function readEnabledPlugins(claudeDir: string): Record<string, boolean> {
+  const settings = readJsonRecord(path.join(claudeDir, 'settings.json'))
+  const ep = settings?.enabledPlugins
+  return ep && typeof ep === 'object' ? (ep as Record<string, boolean>) : {}
+}
+
+function pluginCoords(
+  pluginsDir: string,
+  root: string,
+  manifest: Record<string, unknown>
+): { marketplace: string; version: string } {
+  const relCache = path.relative(path.join(pluginsDir, 'cache'), root)
+  const manifestVersion = typeof manifest.version === 'string' ? manifest.version : undefined
+  if (relCache && !relCache.startsWith('..')) {
+    const parts = relCache.split(/[\\/]/).filter(Boolean)
+    return { marketplace: parts[0] ?? 'unknown', version: manifestVersion ?? parts[2] ?? 'unknown' }
+  }
+  return { marketplace: 'inline', version: manifestVersion ?? 'unknown' }
+}
+
+function scanPlugins(ctx: ScanContext): Asset[] {
+  const assets: Asset[] = []
   const pluginsDir = path.join(ctx.claudeDir, 'plugins')
-  if (fs.existsSync(pluginsDir)) {
-    try {
-      const entries = fs.readdirSync(pluginsDir, { withFileTypes: true })
-      for (const entry of entries) {
-        if (entry.isDirectory()) {
-          const pluginPath = path.join(pluginsDir, entry.name)
-          const a = safeScan(ctx, pluginPath, 'plugin', () => parsePlugin(pluginPath))
-          if (a) assets.push(a)
-        }
-      }
-    } catch (err) {
-      ctx.errors.push({
-        path: pluginsDir,
-        type: 'plugin',
-        message: err instanceof Error ? err.message : String(err)
+  if (!fs.existsSync(pluginsDir)) return assets
+
+  const enabled = readEnabledPlugins(ctx.claudeDir)
+
+  // Marketplace catalog assets (no descent; cache holds the installed copies).
+  const marketplaces = readJsonRecord(path.join(pluginsDir, 'known_marketplaces.json'))
+  if (marketplaces) {
+    for (const [id, value] of Object.entries(marketplaces)) {
+      const rec = value && typeof value === 'object' ? (value as Record<string, unknown>) : {}
+      assets.push({
+        id: `marketplace:${id}`,
+        agentId: 'claude-code',
+        category: 'integration',
+        type: 'marketplace',
+        scope: 'user',
+        name: id,
+        path: path.join(pluginsDir, 'marketplaces', id),
+        meta: { source: rec.source, installLocation: rec.installLocation, lastUpdated: rec.lastUpdated }
       })
     }
   }
 
+  // Installed plugins: any dir under cache/ or data/ with .claude-plugin/plugin.json.
+  const manifestPaths = [
+    ...safeGlob('cache/**/.claude-plugin/plugin.json', pluginsDir),
+    ...safeGlob('data/**/.claude-plugin/plugin.json', pluginsDir)
+  ]
+  for (const manifestPath of manifestPaths) {
+    const root = path.dirname(path.dirname(manifestPath))
+    const manifest = readJsonRecord(manifestPath) ?? {}
+    const name = (manifest.name as string) ?? path.basename(root)
+    const { marketplace, version } = pluginCoords(pluginsDir, root, manifest)
+    const plugin: Asset = {
+      id: `plugin:${marketplace}/${name}@${version}`,
+      agentId: 'claude-code',
+      category: 'capability',
+      type: 'plugin',
+      scope: 'user',
+      name,
+      path: root,
+      meta: {
+        marketplace,
+        version,
+        enabled: enabled[`${name}@${marketplace}`] ?? true,
+        description: manifest.description,
+        author: manifest.author,
+        manifestPath
+      }
+    }
+    assets.push(plugin)
+    assets.push(...descendPluginComponents(ctx, root, plugin))
+  }
+
   return assets
+}
+
+function descendPluginComponents(ctx: ScanContext, root: string, plugin: Asset): Asset[] {
+  const out: Asset[] = []
+  const tag = (asset: Asset): Asset => ({
+    ...asset,
+    scope: 'user',
+    meta: {
+      ...asset.meta,
+      pluginId: plugin.id,
+      pluginName: plugin.name,
+      marketplace: plugin.meta.marketplace,
+      origin: 'plugin'
+    }
+  })
+
+  for (const fp of safeGlob('skills/**/SKILL.md', root)) {
+    const a = safeScan(ctx, fp, 'plugin-skill', () => parseSkill(fp, 'user'))
+    if (a) out.push(tag(a))
+  }
+  for (const fp of safeGlob('agents/**/*.md', root)) {
+    const a = safeScan(ctx, fp, 'plugin-agent', () => parseAgent(fp, 'user'))
+    if (a) out.push(tag(a))
+  }
+  for (const fp of safeGlob('commands/**/*.md', root)) {
+    const a = safeScan(ctx, fp, 'plugin-command', () => parseCommand(fp, 'user'))
+    if (a) out.push(tag(a))
+  }
+  const hooksPath = path.join(root, 'hooks', 'hooks.json')
+  if (fs.existsSync(hooksPath)) {
+    const hooks = safeScan(ctx, hooksPath, 'plugin-hook', () => parseHooks(hooksPath, 'user'))
+    if (hooks) out.push(...hooks.map(tag))
+  }
+  const mcpPath = path.join(root, '.mcp.json')
+  if (fs.existsSync(mcpPath)) {
+    const servers = safeScan(ctx, mcpPath, 'plugin-mcp', () => parseMcpServers(mcpPath, 'user'))
+    if (servers) out.push(...servers.map(tag))
+  }
+  return out
 }
 
 function projectDirsFromContext(ctx: ScanContext): string[] {

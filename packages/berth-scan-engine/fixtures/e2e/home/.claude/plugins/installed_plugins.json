@@ -1,0 +1,14 @@
+{
+  "version": 2,
+  "plugins": {
+    "demo-plugin@acme": [
+      {
+        "scope": "user",
+        "installPath": "cache/acme/demo-plugin/1.0.0",
+        "version": "1.0.0",
+        "installedAt": "2026-01-01T00:00:00.000Z",
+        "lastUpdated": "2026-01-01T00:00:00.000Z"
+      }
+    ]
+  }
+}

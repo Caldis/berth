@@ -54,6 +54,14 @@ export function resolveRelations(asset: Asset, allAssets: Asset[]): Relation[] {
     }
   }
 
+  // Component -> plugin belongs-to (set by the plugin descent in the scanner).
+  if (asset.type !== 'plugin') {
+    const pluginId = typeof asset.meta.pluginId === 'string' ? asset.meta.pluginId : undefined
+    if (pluginId) {
+      relations.push({ from: asset.id, to: pluginId, kind: 'belongs-to' })
+    }
+  }
+
   // Hook -> triggered-by relations
   if (asset.type === 'hook') {
     const event = asset.meta.event as string | undefined

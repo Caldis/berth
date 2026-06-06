@@ -1,0 +1,6 @@
+{
+  "name": "demo-plugin",
+  "version": "1.0.0",
+  "description": "A fixture Claude Code plugin bundling a skill, agent, command, hook and MCP server.",
+  "author": { "name": "ACME" }
+}

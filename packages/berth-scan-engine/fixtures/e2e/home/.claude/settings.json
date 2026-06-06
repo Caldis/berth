@@ -1,4 +1,7 @@
 {
+  "enabledPlugins": {
+    "demo-plugin@acme": true
+  },
   "permissions": {
     "allow": ["Read", "Grep"],
     "deny": ["Bash(rm:*)"]
