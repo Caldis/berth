@@ -23,9 +23,10 @@
   - tests: settings-agent-plugins.test.tsx 10/10 + memory-view.test.tsx 13/13 绿 (expectImportanceBadge 辅助按新 Chip DOM 改为查 titled 祖先, 行为契约不变); typecheck+lint 绿
   - verify: tone 映射 (core→warning/source→primary/missing→warning/其余 neutral); 杀掉 text-[10px]/[11px]; 密度统一 (verify 阶段截图)
   - 范围修正 (不变量 8): instructions.tsx 无本地 Badge (用已 DS 化的 ScopeBadge); **交互筛选 pill** (memory 412/461/613、instructions 378) 是 filter tab 非 status badge, 排除; project-scope-switcher 状态 pill / session-detail tags 留 followup (heroui-migration-followup 已覆盖)
-- [ ] C4: `filter-bar` `ScopeSelect`/`FilterBar` → HeroUI `Select`/`Input` (`filter-bar.tsx`)
-  - tests: 3 消费方 (project-scope-switcher/capabilities/overview) 相关 renderer 测试 + 截图
-  - verify: 对外 props/testid/i18n 不变; 逐处回归; 键盘可达
+- [x] C4: `filter-bar` `ScopeSelect`/`FilterBar` → HeroUI `Select`/`Input` (`filter-bar.tsx`)
+  - tests: capabilities-guidance 8/8 + capabilities-empty-state 2/2 绿 (scope 过滤经 store 验证, 不依赖原生 select 交互); typecheck+lint 绿
+  - verify: 对外 props 签名不变 (value/onChange/scope/placeholder); ScopeSelect 内置 chevron; 键盘可达 (verify 阶段)
+  - 范围修正 (不变量 8): explore 误判"3 消费方" — `ScopeSelect`/`AppScopeSelection` 子串假阳性; 真实只有 capabilities.tsx 用 `ScopeSelect`; `FilterBar` 组合组件**全仓未引用 (死代码)**, 已迁内部控件但按规则不删, 记 docs/issues/2026-06-06-IMPROVEMENT-unused-filterbar-component.md
 
 ## 延后 (本任务不做, 留 followup 交叉引用)
 - D1 search-dialog 命令面板 `<input>` → Modal+Input (保留键盘 nav)

@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
-import { Search, ChevronDown } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { Search } from 'lucide-react'
+import { Input, Select, SelectItem } from '@/components/ui'
 import type { AssetScope } from '@shared/types/asset'
 
 export type ScopeFilter = 'all' | AssetScope
@@ -33,24 +33,27 @@ export function ScopeSelect({
   const { t } = useTranslation()
 
   return (
-    <div className={cn('relative', className)}>
-      <select
-        value={value}
-        aria-label={t('filter.scope', 'Scope')}
-        onChange={(e) => onChange(e.target.value as ScopeFilter)}
-        className={cn(
-          'h-9 w-full appearance-none rounded-md border border-input bg-background pl-3 pr-8 text-sm outline-none ring-ring focus:ring-1',
-          'cursor-pointer'
-        )}
-      >
-        {scopeOptions.map((opt) => (
-          <option key={opt.value} value={opt.value}>
-            {t(opt.labelKey)}
-          </option>
-        ))}
-      </select>
-      <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-    </div>
+    <Select
+      aria-label={t('filter.scope', 'Scope')}
+      selectionMode="single"
+      disallowEmptySelection
+      selectedKeys={[value]}
+      onSelectionChange={(keys) => {
+        const next = Array.from(keys)[0]
+        if (next) onChange(next as ScopeFilter)
+      }}
+      size="sm"
+      variant="bordered"
+      className={className}
+      classNames={{
+        trigger:
+          'h-9 min-h-9 border-input bg-background shadow-none data-[hover=true]:bg-muted/40 data-[open=true]:border-ring'
+      }}
+    >
+      {scopeOptions.map((opt) => (
+        <SelectItem key={opt.value}>{t(opt.labelKey)}</SelectItem>
+      ))}
+    </Select>
   )
 }
 
@@ -63,21 +66,27 @@ export function FilterBar({
   showScope = true
 }: FilterBarProps): React.ReactElement {
   const { t } = useTranslation()
+  const searchLabel = placeholder ?? t('search.placeholder')
 
   return (
     <div className="flex items-center gap-2">
-      <div className="relative flex-1">
-        <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-        <input
-          value={search}
-          onChange={(e) => onSearchChange(e.target.value)}
-          placeholder={placeholder ?? t('search.placeholder')}
-          className="h-9 w-full rounded-md border border-input bg-background pl-8 pr-3 text-sm outline-none ring-ring focus:ring-1"
-        />
-      </div>
-      {showScope && (
-        <ScopeSelect value={scope} onChange={onScopeChange} />
-      )}
+      <Input
+        value={search}
+        onValueChange={onSearchChange}
+        placeholder={searchLabel}
+        aria-label={searchLabel}
+        size="sm"
+        variant="bordered"
+        radius="md"
+        startContent={<Search className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />}
+        classNames={{
+          base: 'flex-1',
+          inputWrapper:
+            'h-9 min-h-9 border-input bg-background shadow-none data-[hover=true]:bg-muted/40 group-data-[focus=true]:border-ring',
+          input: 'text-sm placeholder:text-muted-foreground'
+        }}
+      />
+      {showScope && <ScopeSelect value={scope} onChange={onScopeChange} />}
     </div>
   )
 }
