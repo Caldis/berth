@@ -42,9 +42,20 @@ afterAll(() => {
   if (tmpRoot) fs.rmSync(tmpRoot, { recursive: true, force: true })
 })
 
+interface AssetLike {
+  type: string
+  name: string
+  scope: string
+}
+interface ScanPayload {
+  assets?: AssetLike[]
+  stats?: { skills: number }
+  sources?: unknown[]
+  commands?: Array<{ name: string }>
+}
 interface CliResult {
   code: number
-  payload: any
+  payload: ScanPayload
   stdout: string
 }
 
@@ -63,9 +74,9 @@ async function runCli(args: string[]): Promise<CliResult> {
     spy.mockRestore()
   }
   const stdout = chunks.join('')
-  let payload: unknown = null
+  let payload: ScanPayload = {}
   try {
-    payload = JSON.parse(stdout)
+    payload = JSON.parse(stdout) as ScanPayload
   } catch {
     /* non-JSON output */
   }
@@ -87,7 +98,7 @@ describe('berth-scan CLI E2E (isolated fixture HOME, in-process)', () => {
   it('scan emits a deterministic asset snapshot with exit 0', async () => {
     const { code, payload } = await runCli(withFixture(['scan', '--json']))
     expect(code).toBe(EXIT.OK)
-    const assets = payload.assets as Array<{ type: string; name: string; scope: string }>
+    const assets = payload.assets ?? []
 
     // Instruction coverage — exact, fully controlled by the fixture.
     expect(namesOfType(assets, 'skill')).toEqual(['codex-helper', 'greet', 'proj'])
@@ -103,7 +114,7 @@ describe('berth-scan CLI E2E (isolated fixture HOME, in-process)', () => {
     expect(mcp).toContain('fixture-project-mcp')
     expect(assets.some((a) => a.type === 'hook')).toBe(true)
 
-    expect(payload.stats.skills).toBe(3)
+    expect(payload.stats?.skills).toBe(3)
   })
 
   it('assets --type skill --scope user --agent claude-code isolates the Claude user skill', async () => {
@@ -111,12 +122,12 @@ describe('berth-scan CLI E2E (isolated fixture HOME, in-process)', () => {
       withFixture(['assets', '--type', 'skill', '--scope', 'user', '--agent', 'claude-code', '--json'])
     )
     expect(code).toBe(EXIT.OK)
-    expect(namesOfType(payload.assets, 'skill')).toEqual(['greet'])
+    expect(namesOfType(payload.assets ?? [], 'skill')).toEqual(['greet'])
   })
 
   it('assets --type skill --scope user returns both user-scope skills (claude + codex)', async () => {
     const { payload } = await runCli(withFixture(['assets', '--type', 'skill', '--scope', 'user', '--json']))
-    expect(namesOfType(payload.assets, 'skill')).toEqual(['codex-helper', 'greet'])
+    expect(namesOfType(payload.assets ?? [], 'skill')).toEqual(['codex-helper', 'greet'])
   })
 
   it('sources reports scan-source coverage', async () => {
@@ -129,6 +140,6 @@ describe('berth-scan CLI E2E (isolated fixture HOME, in-process)', () => {
   it('help lists the full command surface', async () => {
     const { code, payload } = await runCli(['help', '--json'])
     expect(code).toBe(EXIT.OK)
-    expect(payload.commands.map((c: { name: string }) => c.name)).toContain('scan')
+    expect((payload.commands ?? []).map((c) => c.name)).toContain('scan')
   })
 })
