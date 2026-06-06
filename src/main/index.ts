@@ -3,6 +3,7 @@ import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { registerAllHandlers } from './ipc'
 import { initScanner } from './engine/scanner'
+import { getAssetRuntime } from './engine/assets/runtime'
 import { getWatcher } from './engine/watcher'
 import { resolveDefaultProjectDir } from './project-dir'
 import { configureAgentDevProfile, shouldRequestSingleInstanceLock } from './dev-instance'
@@ -129,6 +130,12 @@ if (!gotTheLock) {
       mainWindow.webContents.send('assets:changed', event)
     })
     watcher.start(projectDir)
+
+    // Stream live scan status + already-scanned assets to the renderer (P4.6).
+    getAssetRuntime().setProgressListener((payload) => {
+      if (mainWindow.isDestroyed()) return
+      mainWindow.webContents.send('assets:progress', payload)
+    })
 
     app.on('activate', () => {
       if (BrowserWindow.getAllWindows().length === 0) createWindow({ openDevTools })

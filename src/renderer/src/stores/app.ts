@@ -7,7 +7,7 @@ import {
   type ProjectScopeCandidate
 } from '@shared/scope'
 import type { AgentView, Asset, AssetStats, SessionSummary, UsageSummary } from '@shared/types/asset'
-import type { AssetRuntimeStatus, AssetSnapshot, ScanError } from '@shared/types/ipc'
+import type { AssetRuntimeStatus, AssetScanPartial, AssetSnapshot, ScanError } from '@shared/types/ipc'
 
 export const SIDEBAR_COLLAPSED_WIDTH = 64
 export const SIDEBAR_DEFAULT_WIDTH = 248
@@ -64,6 +64,7 @@ interface AppState {
   lastAssetRefreshAt: string | null
   setAssetRuntimeStatus: (status: AssetRuntimeStatus) => void
   setAssetSnapshot: (snapshot: AssetSnapshot) => void
+  applyAssetProgress: (payload: { status: AssetRuntimeStatus; partial?: AssetScanPartial }) => void
 
   recentSessions: SessionSummary[]
   setRecentSessions: (sessions: SessionSummary[]) => void
@@ -126,6 +127,16 @@ export const useAppStore = create<AppState>((set) => ({
     assetErrors: snapshot.errors,
     scanning: snapshot.status.state === 'scanning',
     lastAssetRefreshAt: snapshot.status.lastCompletedAt ?? state.lastAssetRefreshAt
+  })),
+  // Live scan tick (P4.6): update status and, when a partial is present, fold the
+  // cumulative assets/stats into the store so pages render already-scanned items.
+  // Deliberately does NOT touch assetSnapshotId — that only changes on completion,
+  // so id-keyed consumers (plugin list) don't re-fetch on every partial.
+  applyAssetProgress: (payload) => set((state) => ({
+    assetRuntimeStatus: payload.status,
+    scanning: payload.status.state === 'scanning',
+    lastAssetRefreshAt: payload.status.lastCompletedAt ?? state.lastAssetRefreshAt,
+    ...(payload.partial ? { assets: payload.partial.assets, stats: payload.partial.stats } : {})
   })),
 
   recentSessions: [],

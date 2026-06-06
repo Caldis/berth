@@ -69,7 +69,8 @@ const mockApi = {
     get: async () => null,
     search: async () => [],
     healthCheck: async (_opts?: { refresh?: boolean }) => [],
-    onChanged: () => () => {}
+    onChanged: () => () => {},
+    onProgress: () => () => {}
   },
   agentPlugins: {
     list: async () => ({ plugins: [], manifests: [] })

@@ -2,6 +2,7 @@ import { ElectronAPI } from '@electron-toolkit/preload'
 import type {
   AgentScanSourceGroup,
   AssetRuntimeStatus,
+  AssetScanPartial,
   AssetSnapshot,
   ScanResult,
   SearchResult,
@@ -56,6 +57,9 @@ interface BerthAPI {
     search: (query: string) => Promise<SearchResult[]>
     healthCheck: (opts?: { refresh?: boolean }) => Promise<HealthCheck[]>
     onChanged: (callback: (event: unknown) => void) => () => void
+    onProgress: (
+      callback: (payload: { status: AssetRuntimeStatus; partial?: AssetScanPartial }) => void
+    ) => () => void
   }
   agentPlugins: {
     list: () => Promise<AgentCapabilityPluginListResult>

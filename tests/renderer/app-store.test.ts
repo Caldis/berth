@@ -1,7 +1,7 @@
 import { describe, expect, it, beforeEach } from 'vitest'
 import { DEFAULT_SCOPE_SELECTION, createProjectScopeCandidate } from '../../src/shared/scope'
 import { EMPTY_ASSET_STATS, IDLE_ASSET_RUNTIME_STATUS, SIDEBAR_DEFAULT_WIDTH, useAppStore } from '../../src/renderer/src/stores/app'
-import type { AssetSnapshot } from '../../src/shared/types/ipc'
+import type { AssetRuntimeStatus, AssetSnapshot } from '../../src/shared/types/ipc'
 
 describe('useAppStore scope state', () => {
   beforeEach(() => {
@@ -135,5 +135,60 @@ describe('useAppStore scope state', () => {
     expect(useAppStore.getState().assetErrors).toEqual(snapshot.errors)
     expect(useAppStore.getState().projectCandidates).toHaveLength(1)
     expect(useAppStore.getState().lastAssetRefreshAt).toBe('2026-06-03T00:00:02.000Z')
+  })
+
+  it('folds a partial scan tick into assets/stats without bumping the snapshot id (P4.6)', () => {
+    useAppStore.setState({ assetSnapshotId: 'snapshot-stable' })
+    const scanning: AssetRuntimeStatus = {
+      state: 'scanning',
+      reason: 'startup',
+      stale: false,
+      progress: { phase: 'parsing', current: 1, total: 2, label: 'Claude Code' }
+    }
+
+    useAppStore.getState().applyAssetProgress({
+      status: scanning,
+      partial: {
+        assets: [{
+          id: 'skill-live',
+          agentId: 'claude-code',
+          category: 'instruction',
+          type: 'skill',
+          scope: 'user',
+          name: 'live-skill',
+          path: '/x/SKILL.md',
+          meta: {}
+        }],
+        stats: { ...EMPTY_ASSET_STATS, skills: 1 }
+      }
+    })
+
+    expect(useAppStore.getState().scanning).toBe(true)
+    expect(useAppStore.getState().assets.map((a) => a.id)).toEqual(['skill-live'])
+    expect(useAppStore.getState().stats.skills).toBe(1)
+    // Snapshot id stays frozen during the scan so plugin consumers don't re-fetch.
+    expect(useAppStore.getState().assetSnapshotId).toBe('snapshot-stable')
+  })
+
+  it('applies a progress-only tick (no partial) without clobbering existing assets (P4.6)', () => {
+    useAppStore.setState({
+      assets: [{
+        id: 'existing',
+        agentId: 'codex',
+        category: 'state',
+        type: 'session',
+        scope: 'session',
+        name: 'existing',
+        path: '/x.jsonl',
+        meta: {}
+      }]
+    })
+
+    useAppStore.getState().applyAssetProgress({
+      status: { state: 'scanning', reason: 'watcher', stale: true, progress: { phase: 'indexing', current: 0, total: 1 } }
+    })
+
+    expect(useAppStore.getState().assets.map((a) => a.id)).toEqual(['existing'])
+    expect(useAppStore.getState().assetRuntimeStatus.progress?.phase).toBe('indexing')
   })
 })

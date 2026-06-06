@@ -169,6 +169,7 @@ export function useAssetRuntime(): {
   const status = useAppStore((s) => s.assetRuntimeStatus)
   const setAssetRuntimeStatus = useAppStore((s) => s.setAssetRuntimeStatus)
   const setAssetSnapshot = useAppStore((s) => s.setAssetSnapshot)
+  const applyAssetProgress = useAppStore((s) => s.applyAssetProgress)
   const mountedRef = useRef(false)
 
   const syncSnapshot = useCallback(async () => {
@@ -214,11 +215,17 @@ export function useAssetRuntime(): {
     const unsubscribe = window.api?.assets?.onChanged?.(() => {
       void syncSnapshot()
     })
+    // Live scan progress: status + already-scanned assets stream in mid-scan (P4.6).
+    const unsubscribeProgress = window.api?.assets?.onProgress?.((payload) => {
+      if (!mountedRef.current) return
+      applyAssetProgress(payload)
+    })
     return () => {
       mountedRef.current = false
       if (unsubscribe) unsubscribe()
+      if (unsubscribeProgress) unsubscribeProgress()
     }
-  }, [refresh, setAssetRuntimeStatus, syncSnapshot])
+  }, [applyAssetProgress, refresh, setAssetRuntimeStatus, syncSnapshot])
 
   return {
     loading: status.state === 'scanning',

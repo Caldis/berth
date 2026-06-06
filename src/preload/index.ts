@@ -37,6 +37,11 @@ const api = {
       const handler = (_: unknown, event: unknown): void => callback(event)
       ipcRenderer.on('assets:changed', handler)
       return () => ipcRenderer.removeListener('assets:changed', handler)
+    },
+    onProgress: (callback: (payload: unknown) => void) => {
+      const handler = (_: unknown, payload: unknown): void => callback(payload)
+      ipcRenderer.on('assets:progress', handler)
+      return () => ipcRenderer.removeListener('assets:progress', handler)
     }
   },
   agentPlugins: {

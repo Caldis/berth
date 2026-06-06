@@ -1,9 +1,19 @@
-import { renderHook, waitFor } from '@testing-library/react'
+import { act, renderHook, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useAssetRuntime } from '../../src/renderer/src/hooks/use-ipc'
 import { IDLE_ASSET_RUNTIME_STATUS, useAppStore } from '../../src/renderer/src/stores/app'
-import type { Asset } from '../../src/shared/types/asset'
+import type { Asset, AssetStats } from '../../src/shared/types/asset'
 import type { AssetRuntimeStatus, AssetSnapshot } from '../../src/shared/types/ipc'
+
+const emptyStats: AssetStats = {
+  skills: 0,
+  mcpServers: 0,
+  sessions: 0,
+  plugins: 0,
+  hooks: 0,
+  commands: 0,
+  subagents: 0,
+}
 
 const skillAsset: Asset = {
   id: 'skill-runtime',
@@ -98,5 +108,37 @@ describe('useAssetRuntime', () => {
     })
     expect(useAppStore.getState().assets[0]?.name).toBe('runtime-skill')
     expect(useAppStore.getState().assetRuntimeStatus.state).toBe('ready')
+  })
+
+  it('streams live partial assets from assets:progress into the store (P4.6)', async () => {
+    let progressHandler:
+      | ((payload: { status: AssetRuntimeStatus; partial?: { assets: Asset[]; stats: AssetStats } }) => void)
+      | null = null
+    window.api.assets.status = vi.fn(async () => ({ state: 'idle', stale: false }))
+    window.api.assets.snapshot = vi.fn(async () => snapshot({ state: 'idle', stale: false }))
+    window.api.assets.refresh = vi.fn(async () => scanningStatus)
+    window.api.assets.onProgress = vi.fn((handler) => {
+      progressHandler = handler as typeof progressHandler
+      return () => {}
+    })
+
+    renderHook(() => useAssetRuntime())
+
+    await waitFor(() => {
+      expect(progressHandler).not.toBeNull()
+    })
+
+    act(() => {
+      progressHandler?.({
+        status: scanningStatus,
+        partial: { assets: [skillAsset], stats: { ...emptyStats, skills: 1 } }
+      })
+    })
+
+    await waitFor(() => {
+      expect(useAppStore.getState().assets[0]?.name).toBe('runtime-skill')
+    })
+    // Partial stream keeps the store in the scanning state.
+    expect(useAppStore.getState().scanning).toBe(true)
   })
 })
