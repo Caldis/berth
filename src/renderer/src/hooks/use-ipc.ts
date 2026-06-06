@@ -251,7 +251,7 @@ export function useSessions(opts?: {
   projectPath?: string
   limit?: number
   agentView?: AgentView
-}): { sessions: SessionSummary[]; loading: boolean; stale: boolean } {
+}): { sessions: SessionSummary[]; loading: boolean; stale: boolean; error: string | null; reload: () => void } {
   const projectFilter = opts?.projectFilter
   const projectPath = opts?.projectPath
   const limit = opts?.limit
@@ -265,6 +265,16 @@ export function useSessions(opts?: {
   const [sessions, setSessions] = useState<SessionSummary[]>(initialCache?.sessions ?? [])
   const [loading, setLoading] = useState(initialCache == null)
   const [stale, setStale] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [reloadNonce, setReloadNonce] = useState(0)
+
+  // Retry: drop the cached entry + in-flight promise for this key so the effect
+  // re-requests from scratch (a fresh cache would otherwise short-circuit it).
+  const reload = useCallback(() => {
+    sessionListCache.delete(cacheKey)
+    sessionListInFlight.delete(cacheKey)
+    setReloadNonce((n) => n + 1)
+  }, [cacheKey])
 
   useEffect(() => {
     if (!window.api?.sessions?.list) {
@@ -280,6 +290,7 @@ export function useSessions(opts?: {
       if (isSessionListCacheFresh(cached)) {
         setLoading(false)
         setStale(false)
+        setError(null)
         return
       }
       setLoading(true)
@@ -289,15 +300,19 @@ export function useSessions(opts?: {
       setLoading(true)
       setStale(false)
     }
+    setError(null)
 
     requestSessionsList(cacheKey, request)
       .then((result) => {
         if (cancelled) return
         setSessions((current) => (current === result.sessions ? current : result.sessions))
         setStale(false)
+        setError(null)
       })
-      .catch(() => {
-        if (!cancelled) setStale(false)
+      .catch((err) => {
+        if (cancelled) return
+        setStale(false)
+        setError(err instanceof Error ? err.message : String(err))
       })
       .finally(() => {
         if (!cancelled) setLoading(false)
@@ -306,34 +321,52 @@ export function useSessions(opts?: {
     return () => {
       cancelled = true
     }
-  }, [cacheKey, request])
+  }, [cacheKey, request, reloadNonce])
 
-  return { sessions, loading, stale }
+  return { sessions, loading, stale, error, reload }
 }
 
 export function useSessionDetail(id: string): {
   detail: SessionDetailResult | null
   loading: boolean
+  error: string | null
+  reload: () => void
 } {
   const [detail, setDetail] = useState<SessionDetailResult | null>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [reloadNonce, setReloadNonce] = useState(0)
+
+  const reload = useCallback(() => setReloadNonce((n) => n + 1), [])
 
   useEffect(() => {
     if (!id || !window.api?.sessions?.get) {
       setLoading(false)
       return
     }
+    let cancelled = false
     setLoading(true)
+    setError(null)
     window.api.sessions
       .get(id)
       .then((result) => {
+        if (cancelled) return
         setDetail(result ?? null)
+        setError(null)
       })
-      .catch(() => {})
-      .finally(() => setLoading(false))
-  }, [id])
+      .catch((err) => {
+        if (cancelled) return
+        setError(err instanceof Error ? err.message : String(err))
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [id, reloadNonce])
 
-  return { detail, loading }
+  return { detail, loading, error, reload }
 }
 
 export function useUsageSummary(days: number, agentView?: AgentView, projectPath?: string): {

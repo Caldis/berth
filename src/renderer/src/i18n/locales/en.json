@@ -294,6 +294,10 @@
     "loadingDetailDescription": "Reading transcript-derived tools, assets, and artifacts.",
     "emptyDetailTitle": "Session not found",
     "emptyDetailDescription": "This session is no longer available in the current local scan.",
+    "errorTitle": "Could not load sessions",
+    "errorDescription": "The local session list request failed. Retry once the scan has settled.",
+    "errorDetailTitle": "Could not load session detail",
+    "errorDetailDescription": "Reading this transcript failed. Retry, or reopen from the session list.",
     "groupBy": "Group by",
     "groupNavigation": "Session groups",
     "location": {

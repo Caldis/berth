@@ -18,6 +18,7 @@ import {
 import { Tabs, Tab } from '@/components/ui'
 import { useSessions } from '@/hooks/use-ipc'
 import { EmptyState, PAGE_EMPTY_FILL } from '@/components/shared/empty-state'
+import { ErrorState } from '@/components/shared/error-state'
 import { LoadingState } from '@/components/shared/loading-state'
 import { useAppStore } from '@/stores/app'
 import { TokenSparkBar } from '@/components/shared/token-spark-bar'
@@ -47,7 +48,7 @@ export function Sessions(): React.ReactElement {
   const agentView = useAppStore((s) => s.agentView)
   const scopeSelection = useAppStore((s) => s.scopeSelection)
   const projectPath = projectPathForScope(scopeSelection)
-  const { sessions, loading, stale } = useSessions({ agentView, projectPath })
+  const { sessions, loading, stale, error, reload } = useSessions({ agentView, projectPath })
 
   const [filter, setFilter] = useState('')
   const deferredFilter = useDeferredValue(filter)
@@ -176,6 +177,15 @@ export function Sessions(): React.ReactElement {
           description={t('sessions.loadingListDescription')}
           rows={5}
         />
+      ) : error && sessions.length === 0 ? (
+        <div className={cn('flex flex-col', PAGE_EMPTY_FILL)}>
+          <ErrorState
+            fullHeight
+            title={t('sessions.errorTitle')}
+            description={t('sessions.errorDescription')}
+            onRetry={reload}
+          />
+        </div>
       ) : filtered.length === 0 ? (
         <div className={cn('flex flex-col', PAGE_EMPTY_FILL)}>
           <EmptyState

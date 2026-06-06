@@ -289,6 +289,10 @@
     "loadingDetailDescription": "正在读取 transcript 推导出的工具、资产和产物。",
     "emptyDetailTitle": "未找到会话",
     "emptyDetailDescription": "当前本地扫描结果里已经没有这个会话。",
+    "errorTitle": "会话列表加载失败",
+    "errorDescription": "本地会话列表请求出错。扫描稳定后请重试。",
+    "errorDetailTitle": "会话详情加载失败",
+    "errorDetailDescription": "读取该 transcript 失败。请重试, 或从会话列表重新打开。",
     "groupBy": "分组",
     "groupNavigation": "会话分组",
     "location": {

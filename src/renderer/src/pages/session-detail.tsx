@@ -38,6 +38,7 @@ import {
 import { useSessionDetail } from '@/hooks/use-ipc'
 import { ScopeBadge } from '@/components/shared/scope-badge'
 import { EmptyState, PAGE_EMPTY_FILL } from '@/components/shared/empty-state'
+import { ErrorState } from '@/components/shared/error-state'
 import { LoadingState } from '@/components/shared/loading-state'
 import { TokenUsageDisplay } from '@/components/shared/token-usage-display'
 import { usePageChrome, type PageChromeConfig } from '@/components/layout/page-chrome'
@@ -51,7 +52,7 @@ export function SessionDetail(): React.ReactElement {
   const { id } = useParams<{ id: string }>()
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const { detail, loading } = useSessionDetail(id ?? '')
+  const { detail, loading, error, reload } = useSessionDetail(id ?? '')
 
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
     new Set(['tools', 'skills', 'mcp', 'hooks', 'plans', 'todos', 'files', 'checkpoints'])
@@ -111,6 +112,15 @@ export function SessionDetail(): React.ReactElement {
           description={t('sessions.loadingDetailDescription')}
           rows={4}
         />
+      ) : error && !detail ? (
+        <div className={cn('flex flex-col', PAGE_EMPTY_FILL)}>
+          <ErrorState
+            fullHeight
+            title={t('sessions.errorDetailTitle')}
+            description={t('sessions.errorDetailDescription')}
+            onRetry={reload}
+          />
+        </div>
       ) : !detail ? (
         <div className={cn('flex flex-col', PAGE_EMPTY_FILL)}>
           <EmptyState
