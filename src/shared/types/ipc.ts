@@ -13,7 +13,7 @@ import type {
 } from './asset'
 import type { MemoryListResult, MemoryNote } from './memory'
 import type { AgentCapabilityPluginListResult } from './agent-plugin'
-import type { ProjectScopeCandidate } from '../scope'
+import type { AppScopeSelection, ProjectScopeCandidate } from '../scope'
 
 export interface PlatformInfo {
   platform: NodeJS.Platform
@@ -342,6 +342,7 @@ export interface IpcChannels {
   'agent-plugins:list': { args: []; result: AgentCapabilityPluginListResult }
   'project-scope:candidates': { args: []; result: ProjectScopeCandidate[] }
   'project-scope:activate': { args: [{ projectPath?: string }]; result: ProjectScopeActivationResult }
+  'project-scope:set-scope': { args: [AppScopeSelection]; result: { applied: boolean } }
   'assets:scan-category': { args: [AssetCategory]; result: Asset[] }
   'assets:get': { args: [string]; result: Asset | null }
   'assets:relations': { args: [string]; result: Relation[] }

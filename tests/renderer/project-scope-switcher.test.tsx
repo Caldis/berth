@@ -126,6 +126,7 @@ describe('ProjectScopeSwitcher', () => {
     })
     window.api.assets.snapshot = vi.fn(async () => assetSnapshot(activeProjectPath))
     window.api.assets.scanSources = vi.fn(async () => scanSourceGroups)
+    window.api.projectScope.setScope = vi.fn(async () => ({ applied: true }))
     window.api.shell.openPath = vi.fn(async () => {})
   })
 
@@ -213,6 +214,8 @@ describe('ProjectScopeSwitcher', () => {
     })
     // Global / User must not trigger a rescan — that is what made switching slow.
     expect(window.api.projectScope.activate).not.toHaveBeenCalled()
+    // But the engine is told the active scope (fast, no rescan) so search honours it.
+    expect(window.api.projectScope.setScope).toHaveBeenCalledWith({ mode: 'user' })
   })
 
   it('keeps the icon-only trigger reachable when collapsed', () => {

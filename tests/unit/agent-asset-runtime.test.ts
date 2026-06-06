@@ -173,4 +173,34 @@ describe('AgentAssetRuntime', () => {
     expect(runtime.getSnapshot().id).toBe('snapshot-1')
     expect(runtime.getSnapshot().assets).toHaveLength(1)
   })
+
+  it('scopes search results to the active scope selection (user excludes project)', async () => {
+    const skill = (id: string, scope: Asset['scope']): Asset => ({
+      id,
+      agentId: 'claude-code',
+      category: 'instruction',
+      type: 'skill',
+      scope,
+      name: id,
+      path: `/x/${id}.md`,
+      meta: {}
+    })
+    const scanner = createScanner({
+      assets: [skill('alpha-user', 'user'), skill('alpha-project', 'project')],
+      stats: emptyStats,
+      errors: []
+    })
+    const runtime = createRuntime(scanner)
+    await runtime.refresh({ reason: 'startup', wait: true })
+
+    // Global (default): both match.
+    const globalResults = await runtime.search('alpha')
+    expect(globalResults.map((r) => r.asset.name).sort()).toEqual(['alpha-project', 'alpha-user'])
+
+    // User scope: project asset is excluded without any rescan.
+    runtime.setScopeSelection({ mode: 'user' })
+    const userResults = await runtime.search('alpha')
+    expect(userResults.map((r) => r.asset.name)).toEqual(['alpha-user'])
+    expect(scanner.scanAll).toHaveBeenCalledTimes(1) // no rescan on scope change
+  })
 })

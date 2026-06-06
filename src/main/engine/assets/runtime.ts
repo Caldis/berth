@@ -11,7 +11,8 @@ import type {
   SessionListResult,
   ScanResult
 } from '@shared/types/ipc'
-import type { ProjectScopeCandidate } from '@shared/scope'
+import type { AppScopeSelection, ProjectScopeCandidate } from '@shared/scope'
+import { DEFAULT_SCOPE_SELECTION, normalizeScopeSelection } from '@shared/scope'
 import { normalizeTokenUsage } from '@shared/token-usage'
 import { assetMatchesProjectPath } from '../../project-scope'
 import { runHealthChecks } from '../health'
@@ -79,8 +80,19 @@ class SnapshotSelectorCache implements AssetSelectorCache {
   }
 }
 
+/**
+ * Scope predicate for server-side reads (search). User scope is restricted to
+ * user/enterprise assets; project & global include everything in the current
+ * snapshot, which already reflects the active project's scan.
+ */
+function searchScopeAllows(asset: Asset, selection: AppScopeSelection): boolean {
+  if (selection.mode === 'user') return asset.scope === 'user' || asset.scope === 'enterprise'
+  return true
+}
+
 export class AgentAssetRuntime {
   private projectDir?: string
+  private scopeSelection: AppScopeSelection = DEFAULT_SCOPE_SELECTION
   private scanner: AssetRuntimeScanner
   private snapshot: AssetSnapshot
   private status: AssetRuntimeStatus
@@ -128,6 +140,17 @@ export class AgentAssetRuntime {
 
   getProjectDir(): string | undefined {
     return this.projectDir
+  }
+
+  getScopeSelection(): AppScopeSelection {
+    return this.scopeSelection
+  }
+
+  /** Active scope (global/user/project). Used to scope server-side reads like
+   * search. Updated on scope switch without a rescan (sub-second switching). */
+  setScopeSelection(selection: AppScopeSelection): void {
+    this.scopeSelection = normalizeScopeSelection(selection)
+    this.selectorCache.clear()
   }
 
   setProjectDir(projectDir?: string): void {
@@ -207,7 +230,13 @@ export class AgentAssetRuntime {
 
   async search(query: string): Promise<SearchResult[]> {
     const snapshot = await this.ensureReady({ reason: 'manual' })
-    return this.select(`search:${query}`, () => getSearch().search(query, snapshot.assets))
+    const sel = this.scopeSelection
+    const scopeKey = sel.mode === 'project' ? `project:${sel.projectPathKey}` : sel.mode
+    return this.select(`search:${scopeKey}:${query}`, () =>
+      getSearch()
+        .search(query, snapshot.assets)
+        .filter((result) => searchScopeAllows(result.asset, sel))
+    )
   }
 
   async getHealthChecks(opts: HealthCheckRequest = {}): Promise<HealthCheck[]> {

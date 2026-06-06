@@ -4,6 +4,7 @@ import { AlertCircle, Check, ExternalLink, FileText, Folder, Globe2, Loader2, Us
 import {
   createProjectScopeCandidate,
   normalizeProjectPathKey,
+  normalizeScopeSelection,
   type AppScopeSelection,
   type ProjectScopeCandidate,
   type ProjectScopeCandidateSource
@@ -98,11 +99,18 @@ export function ProjectScopeSwitcher({ collapsed }: ProjectScopeSwitcherProps): 
   }
 
   const selectScope = async (selection: Partial<AppScopeSelection>): Promise<void> => {
+    // Inform the engine of the active scope so server-side reads (search) honour
+    // it. This is a fast no-rescan IPC — the core of sub-second switching.
+    setError(null)
+    try {
+      await window.api.projectScope.setScope?.(normalizeScopeSelection(selection))
+    } catch {
+      /* non-fatal: scope still applies client-side */
+    }
     // Global / User are pure client-side filters over the current snapshot, so
     // switching is instant (no rescan). Only selecting a specific project
-    // (re)scans that project's roots. This is the core of sub-second switching.
+    // (re)scans that project's roots.
     if (selection.mode !== 'project') {
-      setError(null)
       setScopeSelection(selection)
       setOpen(false)
       return

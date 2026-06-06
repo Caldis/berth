@@ -49,8 +49,9 @@
 ## P3 — 性能 (秒级切换 + 无瓶颈; 顺序, 触及 runtime 高 risk)
 
 - [x] **P3.1a** scope 切换纯过滤 (E14, 头部高频场景): `project-scope-switcher.selectScope` 对 global/user 不再调 `projectScope.activate` (即不重扫), 只 `setScopeSelection` → 客户端 `filterAssetsByAppScope` 即时再过滤。这是 5-10s 等待的主因 (任何切换都全量重扫) 的直接修复; 同时 global 保留上次已扫项目资产 (更完整)。
-  - tests: ✅ project-scope-switcher renderer 7/7 (含 "user scope 不触发 activate" 断言)。
+  - tests: ✅ project-scope-switcher renderer 7/7 (含 "user scope 不触发 activate" + "调 setScope" 断言); agent-asset-runtime 搜索作用域用例; project-scope e2e 本地通过。
   - verify: 切换感知逻辑由测试保证 (no rescan); 实机 < 1s + loading 态留 4.0-verify 截图确认。
+  - **CI 修复 (随附)**: 纯前端过滤导致服务端 `assets:search` 不再随作用域变化 (e2e project-scope 红 — user 域仍搜到项目 skill)。修复: runtime 持有 `scopeSelection` + 新 fast IPC `project-scope:set-scope` (无重扫), switcher 每次切换都通知引擎; `search` 按作用域过滤 (user 域仅 user/enterprise, project/global 含全部)。本地 e2e 通过。
 - [ ] **P3.1b/P3.2** 运行时 per-project 快照缓存 + global 真聚合 (E14/E15): runtime 按 projectDir 缓存快照, 重选已扫项目即时返回 (首扫仍需全扫); watcher 变更失效对应缓存。让"选项目"也接近秒级。**[runtime, 包内可测]**
   - tests: layered/cache 单测 (spy scanAll: 重选命中缓存 0 重扫; 变更后失效重扫)。
   - verify: 大规模 (1k+) 首扫/重选计时。

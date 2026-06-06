@@ -19,7 +19,7 @@ import type {
 import type { AgentView, Asset, CostMode, UsageSummary } from '../shared/types/asset'
 import type { AgentCapabilityPluginListResult } from '../shared/types/agent-plugin'
 import type { MemoryListResult, MemoryNote } from '../shared/types/memory'
-import type { ProjectScopeCandidate } from '../shared/scope'
+import type { AppScopeSelection, ProjectScopeCandidate } from '../shared/scope'
 
 interface PlatformInfo {
   platform: NodeJS.Platform
@@ -63,6 +63,7 @@ interface BerthAPI {
   projectScope: {
     candidates: () => Promise<ProjectScopeCandidate[]>
     activate: (opts: { projectPath?: string }) => Promise<ProjectScopeActivationResult>
+    setScope: (selection: AppScopeSelection) => Promise<{ applied: boolean }>
   }
   sessions: {
     list: (opts: { projectFilter?: string; projectPath?: string; limit?: number; agentView?: AgentView }) => Promise<SessionListResult>

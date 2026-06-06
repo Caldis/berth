@@ -1,5 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
+import type { AppScopeSelection } from '../shared/scope'
 
 const api = {
   window: {
@@ -43,7 +44,8 @@ const api = {
   },
   projectScope: {
     candidates: () => ipcRenderer.invoke('project-scope:candidates'),
-    activate: (opts: { projectPath?: string }) => ipcRenderer.invoke('project-scope:activate', opts)
+    activate: (opts: { projectPath?: string }) => ipcRenderer.invoke('project-scope:activate', opts),
+    setScope: (selection: AppScopeSelection) => ipcRenderer.invoke('project-scope:set-scope', selection)
   },
   sessions: {
     list: (opts: { projectFilter?: string; projectPath?: string; limit?: number; agentView?: string }) =>

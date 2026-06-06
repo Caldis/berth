@@ -45,6 +45,7 @@ import { listMemory, readMemory } from '../memory'
 import { resolveModelPricing } from '../engine/pricing/catalog'
 import { listAgentCapabilityPlugins } from '../agent-plugins/registry'
 import { activateProjectScope } from '../project-scope-runtime'
+import type { AppScopeSelection } from '@shared/scope'
 import { toSessionActivityMetrics } from './session-activity'
 
 export function registerAssetHandlers(): void {
@@ -123,6 +124,13 @@ export function registerAssetHandlers(): void {
 
   ipcMain.handle('project-scope:activate', async (_event, opts: { projectPath?: string } = {}) => {
     return activateProjectScope(opts.projectPath)
+  })
+
+  // Update the active scope without rescanning (sub-second scope switching).
+  // Server-side reads like search honour this selection.
+  ipcMain.handle('project-scope:set-scope', async (_event, selection: AppScopeSelection) => {
+    getAssetRuntime().setScopeSelection(selection)
+    return { applied: true }
   })
 
   ipcMain.handle(
