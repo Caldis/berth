@@ -249,6 +249,34 @@ describe('AssetScanner', () => {
     expect(result.assets[1]?.meta.equivalentSourceCount).toBe(2)
   })
 
+  it('streams per-adapter progress and cumulative partial assets (P4.6)', async () => {
+    mocks.claudeScanAll.mockResolvedValueOnce({
+      assets: [skillAsset('claude-skill', 'claude-code')],
+      errors: []
+    })
+    mocks.codexScanAll.mockResolvedValueOnce({
+      assets: [skillAsset('codex-skill', 'codex')],
+      errors: []
+    })
+    const scanner = new AssetScanner()
+
+    const progress: { phase: string; current: number; total: number; label?: string }[] = []
+    const partials: { assets: Asset[] }[] = []
+    await scanner.scanAll({
+      onProgress: (event) => progress.push(event),
+      onPartial: (partial) => partials.push({ assets: partial.assets })
+    })
+
+    // Per-adapter granularity: total === adapter count (claude + codex).
+    expect(progress.every((p) => p.phase === 'parsing' && p.total === 2)).toBe(true)
+    expect(progress.at(-1)).toMatchObject({ current: 2, total: 2 })
+
+    // Two partials (one per adapter), each cumulative.
+    expect(partials).toHaveLength(2)
+    expect(partials[0]?.assets.map((a) => a.id)).toEqual(['claude-skill'])
+    expect(partials[1]?.assets.map((a) => a.id)).toEqual(['claude-skill', 'codex-skill'])
+  })
+
   it('keeps other source groups visible when one adapter detection fails', async () => {
     mocks.claudeDetect.mockRejectedValueOnce(new Error('permission denied'))
     const scanner = new AssetScanner()
@@ -266,6 +294,19 @@ describe('AssetScanner', () => {
     expect(groups[1]?.installed).toBe(true)
   })
 })
+
+function skillAsset(id: string, agentId: string): Asset {
+  return {
+    id,
+    agentId,
+    category: 'instruction',
+    type: 'skill',
+    scope: 'user',
+    name: id,
+    path: `C:\\Users\\test\\.claude\\skills\\${id}\\SKILL.md`,
+    meta: {}
+  }
+}
 
 function hookAsset(overrides: Partial<Asset> & { id: string; agentId: string }): Asset {
   return {

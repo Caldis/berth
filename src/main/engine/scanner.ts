@@ -2,7 +2,7 @@ import * as fs from 'fs'
 import * as path from 'path'
 import type { AgentAdapter, Asset, AssetCategory, AssetStats } from '@shared/types/asset'
 import type { ScanRoot } from '@shared/types/asset'
-import type { AgentScanSourceGroup, ScanResult } from '@shared/types/ipc'
+import type { AgentScanSourceGroup, AssetScanPartial, AssetScanProgress, ScanResult } from '@shared/types/ipc'
 import type { ProjectScopeCandidate } from '@shared/scope'
 import { createAgentAdapters, type AgentAdapterRegistryOptions } from '../agent-plugins/adapter-registry'
 import { projectScopeCandidatesFromAssets } from '../project-scope'
@@ -21,6 +21,17 @@ interface HookEquivalentSource {
 interface AssetScannerOptions {
   sessionCache?: AssetFileCache<Asset>
   adapterRegistry?: Omit<AgentAdapterRegistryOptions, 'sessionCache'>
+}
+
+/**
+ * Streaming hooks for a full scan (GH-110 P4.6). `onProgress` fires once per
+ * adapter boundary; `onPartial` carries the cumulative assets scanned so far so
+ * the UI can render already-discovered items before the scan completes. Both are
+ * optional — a scan without them behaves exactly as before.
+ */
+export interface AssetScanStreamOptions {
+  onProgress?: (progress: AssetScanProgress) => void
+  onPartial?: (partial: AssetScanPartial) => void
 }
 
 export class AssetScanner {
@@ -42,10 +53,10 @@ export class AssetScanner {
     })
   }
 
-  async scanAll(): Promise<ScanResult> {
+  async scanAll(options: AssetScanStreamOptions = {}): Promise<ScanResult> {
     if (this.scanPromise) return this.scanPromise
 
-    this.scanPromise = this.runScanAll()
+    this.scanPromise = this.runScanAll(options)
     try {
       return await this.scanPromise
     } finally {
@@ -53,10 +64,17 @@ export class AssetScanner {
     }
   }
 
-  private async runScanAll(): Promise<ScanResult> {
+  private async runScanAll(options: AssetScanStreamOptions): Promise<ScanResult> {
     const assets: Asset[] = []
     const errors: ScanResult['errors'] = []
+    const total = this.adapters.length
+    // Emit per-adapter progress + a cumulative partial after each adapter so the
+    // UI can render already-scanned assets mid-scan (per-category counts are
+    // derived downstream from these cumulative assets — see P4.6).
+    options.onProgress?.({ phase: 'parsing', current: 0, total })
+    let index = 0
     for (const adapter of this.adapters) {
+      options.onProgress?.({ phase: 'parsing', current: index, total, label: adapter.displayName })
       try {
         const result = await adapter.scanAll()
         assets.push(...result.assets)
@@ -68,6 +86,9 @@ export class AssetScanner {
           message: err instanceof Error ? err.message : String(err)
         })
       }
+      index += 1
+      options.onProgress?.({ phase: 'parsing', current: index, total, label: adapter.displayName })
+      options.onPartial?.({ assets: [...assets], stats: this.computeStats(assets) })
     }
     annotateEquivalentHookSources(assets)
     this.cachedAssets = assets

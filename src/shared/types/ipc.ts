@@ -57,6 +57,13 @@ export interface AssetScanProgress {
   label?: string
 }
 
+/** Cumulative assets scanned so far, streamed mid-scan so the UI renders
+ * already-discovered items before the scan completes (GH-110 P4.6). */
+export interface AssetScanPartial {
+  assets: Asset[]
+  stats: AssetStats
+}
+
 export interface AssetRuntimeStatus {
   state: AssetRuntimeState
   reason?: AssetScanReason
@@ -370,4 +377,6 @@ export interface IpcEvents {
   'window:maximized-change': { maximized: boolean }
   'assets:changed': { type: 'added' | 'changed' | 'removed'; assetId: string; asset?: Asset }
   'scan:progress': { phase: string; current: number; total: number }
+  /** Live scan status + cumulative partial assets pushed during a scan (P4.6). */
+  'assets:progress': { status: AssetRuntimeStatus; partial?: AssetScanPartial }
 }
