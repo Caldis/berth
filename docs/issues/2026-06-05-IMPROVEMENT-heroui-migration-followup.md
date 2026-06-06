@@ -23,3 +23,7 @@
 - 分页推进 (overview→usage→capabilities→instructions/memory→session-detail→settings→layout shell), 每页消费 ui/ 层 + 应用 dashboard 语言, 保留 testid/虚拟化/PageChrome/拖拽区/i18n, 每页一提交并截图验收。
 - search-dialog/file-viewer-drawer 迁 HeroUI Modal/Drawer 时保留命令面板键盘 nav 与 drag-resize。
 - 评估 bundle: 优先 `@heroui/<component>` 按需包 + 确认 tree-shaking。
+
+# 进展
+- GH-109 (docs/works/_archive/2026-06-06-gh-109-heroui-handwritten-controls) 已兑现"手写控件"长尾的控件子集: header 搜索 Input、usage cost-mode Select、hooks HookActions Dropdown、memory 标签筛选 Input、filter-bar ScopeSelect/FilterBar Select+Input、agent-plugin 本地 Badge + memory 状态徽标 → Chip; sessions 分组切换器 → Tabs (commit c27c446d)。
+- 仍待: section 卡片 → Card、复杂浮层 (search-dialog/file-viewer-drawer) → Modal/Drawer、重复折叠 → Accordion、交互筛选 pill、project-scope/session-detail tags → Chip、settings 其余面板、bundle 按需 import。

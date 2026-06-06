@@ -14,4 +14,4 @@
 # 解决方案 (候选, 待确认)
 - 选项 A: 删除 `FilterBar` 函数与 `FilterBarProps`, 仅保留 `ScopeSelect` + `ScopeFilter`。
 - 选项 B: 若有意作为对外/未来 API, 保留并补一处使用或注释说明。
-- 交叉引用: GH-109 (docs/works/2026-06-06-gh-109-heroui-handwritten-controls)。
+- 交叉引用: GH-109 (docs/works/_archive/2026-06-06-gh-109-heroui-handwritten-controls)。
