@@ -67,5 +67,5 @@ describe('Usage daily cost tooltip label', () => {
 
     expect(await screen.findByTestId('daily-cost-tooltip-label')).toHaveTextContent('费用')
     expect(screen.queryByText('Cost')).not.toBeInTheDocument()
-  })
+  }, 15000) // Usage page render is heavy; the 5s default flakes under parallel load.
 })

@@ -1247,6 +1247,8 @@ describe('HooksLifecycleView', () => {
         managed: false
       })
     })
-    expect(screen.getByText('Enabled')).toBeInTheDocument()
+    // The "Enabled" label updates in a later render after the IPC resolves;
+    // findByText waits for it so the assertion is not flaky under load.
+    expect(await screen.findByText('Enabled')).toBeInTheDocument()
   })
 })
