@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": ["Read", "Grep"],
+    "deny": ["Bash(rm:*)"]
+  },
+  "env": {
+    "BERTH_FIXTURE": "1"
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [{ "type": "command", "command": "echo fixture-pretooluse" }]
+      }
+    ]
+  }
+}

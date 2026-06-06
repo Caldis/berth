@@ -1,0 +1,5 @@
+model = "gpt-5-codex"
+
+[mcp_servers.fixture-codex-mcp]
+command = "npx"
+args = ["-y", "@fixture/codex-mcp"]

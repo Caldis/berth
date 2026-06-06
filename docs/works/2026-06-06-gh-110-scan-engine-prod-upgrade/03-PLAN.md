@@ -18,9 +18,9 @@
 - [ ] **P1.3c** CLI 余下 selector 命令: `sessions/search/inspect/health/usage`(经 search.ts/health.ts/usage.ts/relations.ts 桥接), 当前返回 not-implemented。低风险增量, 可在 P1.4 后或 P2 期间补。
   - tests: 各命令 JSON + 退出码; inspect 含 relations。
   - verify: 不适用。
-- [ ] **P1.4** fixture HOME 树 `packages/.../fixtures/e2e/{home,project}` (覆盖 约定/skill/agent/command/output-mode/mcp/hook/plugin+组件/sessions, claude+codex) + golden-snapshot E2E harness(路径归一化)。先以现有引擎产出 baseline golden。
-  - tests: packages/.../tests/e2e/scan.e2e.ts `toMatchSnapshot`; `pnpm --filter @berth/scan-engine test` 绿。
-  - verify: 不适用。
+- [x] **P1.4** fixture HOME 树 `packages/.../fixtures/e2e/{home,project}` (claude: CLAUDE.md/skill/agent/command/output-mode/settings(hooks+perm+env)/.claude.json mcp; codex: config.toml mcp/AGENTS.md/skill; project: CLAUDE.md/.claude skill/.mcp.json) + CLI E2E golden (`tests/cli-e2e.test.ts`, 进程内 `run()` + stdout 捕获)。**关键**: 测试把 fixture 复制到 OS temp (仓库外) 再扫, 否则 `resolveProjectConfigRoots` 会上溯到 berth git root 把仓库自身 `.claude/skills`(harness-*) 算进项目作用域 —— E2E 已暴露并隔离此行为。
+  - tests: ✅ cli-e2e 5/5 (golden: skill=[codex-helper,greet,proj]/agent=[reviewer]/command=[deploy]/output-mode=[concise]/claude-md=2/agents-md=1/mcp 含 user+project/hook 存在; --scope+--agent+--type 过滤组合); 包内 19/19 绿。这是 **P2 扫描重写的回归网**。
+  - verify: 不适用。后续可加 subprocess (`node dist/cli.cjs`) golden 作打包态校验 (低优先, 进程内已覆盖逻辑)。
 
 ## P2 — 扫描覆盖增量 (描述符先行; 其后多项可并行, 各自 fixture+golden 守护)
 
