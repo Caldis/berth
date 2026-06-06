@@ -20,6 +20,7 @@ import { useAppStore } from '@/stores/app'
 import { useAgentCapabilityPlugins } from '@/hooks/use-ipc'
 import { ScopeSelect, type ScopeFilter } from '@/components/shared/filter-bar'
 import { EmptyState, PAGE_EMPTY_FILL } from '@/components/shared/empty-state'
+import { LoadingState } from '@/components/shared/loading-state'
 import { DetailRow } from '@/components/shared/detail-row'
 import { WarningBanner } from '@/components/shared/warning-banner'
 import { ScopeBadge } from '@/components/shared/scope-badge'
@@ -870,6 +871,10 @@ export function Capabilities({ activeSection }: { activeSection?: string } = {})
   const assets = useAppStore((s) => s.assets)
   const agentView = useAppStore((s) => s.agentView)
   const scopeSelection = useAppStore((s) => s.scopeSelection)
+  const scanning = useAppStore((s) => s.scanning)
+  const runtimeState = useAppStore((s) => s.assetRuntimeStatus.state)
+  // Initial scan still in flight (empty + scanning/idle): show a skeleton, not empty.
+  const snapshotLoading = assets.length === 0 && (scanning || runtimeState === 'idle')
   const { plugins } = useAgentCapabilityPlugins()
   const activeTab = normalizeCapabilityTab(activeSection)
   const [search, setSearch] = useState('')
@@ -908,6 +913,9 @@ export function Capabilities({ activeSection }: { activeSection?: string } = {})
   }, [activeTab, filteredAssets])
 
   const renderContent = (): React.ReactElement => {
+    if (snapshotLoading) {
+      return <LoadingState title={t('nav.scanStatus.scanning')} icon={tabIconMap[activeTab] ?? Plug} />
+    }
     switch (activeTab) {
       case 'mcp':
         if (filteredAssets.length === 0) return <EmptyState fullHeight icon={Plug} message={t('common.empty')} />

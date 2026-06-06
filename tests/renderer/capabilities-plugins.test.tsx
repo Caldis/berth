@@ -68,6 +68,18 @@ describe('Capabilities plugins tab — plugin↔component relations', () => {
     expect(screen.getByText('2 components')).toBeInTheDocument()
   })
 
+  it('shows a loading skeleton (not an empty state) while the initial scan is in flight', async () => {
+    useAppStore.setState({
+      assets: [],
+      agentView: 'all',
+      scopeSelection: { mode: 'global' },
+      scanning: true
+    })
+    renderCapabilities('plugins')
+    // LoadingState renders role=status (EmptyState does not), proving a skeleton shows.
+    expect(await screen.findByRole('status')).toBeInTheDocument()
+  })
+
   it('groups bundled components by type and reveals them on expand', async () => {
     renderCapabilities('plugins')
     await screen.findByText('demo-plugin')

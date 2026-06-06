@@ -20,6 +20,7 @@ import { useAppStore } from '@/stores/app'
 import { type ScopeFilter } from '@/components/shared/filter-bar'
 import { DetailRow } from '@/components/shared/detail-row'
 import { EmptyState, PAGE_EMPTY_FILL } from '@/components/shared/empty-state'
+import { LoadingState } from '@/components/shared/loading-state'
 import { ScopeBadge } from '@/components/shared/scope-badge'
 import { ViewRawButton } from '@/components/shared/view-raw-button'
 import {
@@ -397,6 +398,11 @@ export function Instructions({ activeSection }: { activeSection?: string } = {})
   const assets = useAppStore((s) => s.assets)
   const agentView = useAppStore((s) => s.agentView)
   const scopeSelection = useAppStore((s) => s.scopeSelection)
+  const scanning = useAppStore((s) => s.scanning)
+  const runtimeState = useAppStore((s) => s.assetRuntimeStatus.state)
+  // The whole snapshot is still loading on the initial scan (empty + scanning/idle):
+  // show a skeleton instead of an empty state so the page does not look broken.
+  const snapshotLoading = assets.length === 0 && (scanning || runtimeState === 'idle')
   const { result: memoryResult } = useMemory()
   const activeTab = normalizeInstructionSection(activeSection)
   const [search, setSearch] = useState('')
@@ -490,6 +496,9 @@ export function Instructions({ activeSection }: { activeSection?: string } = {})
 
     if (filteredAssets.length === 0) {
       const Icon = tabIconMap[activeTab] ?? FileText
+      if (snapshotLoading) {
+        return <LoadingState title={t('nav.scanStatus.scanning')} icon={Icon} />
+      }
       return <EmptyState fullHeight icon={Icon} message={t('common.empty')} />
     }
 

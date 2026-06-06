@@ -65,6 +65,9 @@
 - [x] **P4.1** 边栏统一 loading UI (F16): 新 `SidebarScanStatus` 组件读中心 `assetRuntimeStatus` + `assetErrors`, 在边栏 (scope 切换器下方) 统一展示 scanning(HeroUI Spinner + 进度 current/total)/updating(stale)/error/N scan issues; ready+无错时隐藏 (无布局抖动); 折叠态只显图标。**附带**: 把 safeScan 静默丢弃的扫描错误 (根因 E) 在边栏暴露。乐观 scope 切换已由 P3.1a 完成。
   - tests: ✅ tests/renderer/sidebar-scan-status.test.tsx 4/4 (隐藏/scanning+进度/N issues/error); typecheck(web)/eslint 绿。i18n 增 nav.scanStatus.* (en+zh)。
   - verify: 界面质量项「交互反馈/状态切换、loading 态」—— 待 4.0-verify 截图确认。
+- [x] **P4.1b** 页面级加载态 (verify 实测发现): 初次扫描进行中时, instructions / capabilities 页内容区原本显示 `EmptyState`(“暂无内容”), 看起来像空/坏。改为: 快照空且 `scanning`/`idle` 时显示 `LoadingState` 骨架, 扫描完成后正常渲染。这正是用户反馈"全局看不到约定/数据"的真因(看的是扫描进行中那一刻)。
+  - tests: ✅ capabilities-plugins 增 "扫描中显示骨架非空态" (role=status); typecheck(web)/eslint 绿; 既有 capabilities/instructions 测试无回归。
+  - verify: 实测 agent 实例: 扫描完成后 约定=6、插件=superpowers(14 skills)/united-memory/claude-dashboard 等组件齐全 (截图已发用户)。
 - [x] **P4.2** 插件↔组件关系 UI (B7/F17): PluginCard 重写为按 `meta.pluginId` 把组件归到所属插件, HeroUI Accordion 分组 (skills/agents/commands/hooks/mcp) + Chip 显示 marketplace/启用态/组件数; capabilities plugins tab 从 visibleAssets 构建 pluginId→components 映射传入。i18n 增 enabled/disabled/noComponents (en+zh)。
   - tests: ✅ tests/renderer/capabilities-plugins.test.tsx 2/2 (插件名/marketplace/Enabled/"2 components" + 展开 Skills 组见 plugin-skill + MCP 组); typecheck(web)/eslint 绿。
   - verify: 界面质量项「布局层级/信息密度、组件选择/设计系统一致性」—— **待 4.0-verify 截图请用户确认**视觉与交互。
