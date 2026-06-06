@@ -26,6 +26,13 @@ export interface AssetRuntimeScanOptions {
   onPartial?: (partial: AssetScanPartial) => void
 }
 
+/** Pushed to the main process on every progress tick / partial during a scan so
+ * it can forward live status + already-scanned assets to the renderer (P4.6). */
+export interface AssetProgressPayload {
+  status: AssetRuntimeStatus
+  partial?: AssetScanPartial
+}
+
 export interface AssetRuntimeScanner {
   scanAll(options?: AssetRuntimeScanOptions): Promise<ScanResult>
   getScanSourceGroups(): Promise<AgentScanSourceGroup[]>
@@ -112,6 +119,7 @@ export class AgentAssetRuntime {
   private readonly createScanner: (projectDir?: string) => AssetRuntimeScanner
   private readonly now: () => string
   private readonly createSnapshotId: () => string
+  private progressListener?: (payload: AssetProgressPayload) => void
 
   constructor(options: AssetRuntimeOptions = {}) {
     this.projectDir = options.projectDir
@@ -122,6 +130,12 @@ export class AgentAssetRuntime {
     this.selectorCache = new SnapshotSelectorCache()
     this.status = this.createIdleStatus()
     this.snapshot = this.createInitialSnapshot()
+  }
+
+  /** Register the sink that forwards live scan status + partial assets to the
+   * renderer. The main process wires this to `webContents.send`. */
+  setProgressListener(listener: ((payload: AssetProgressPayload) => void) | undefined): void {
+    this.progressListener = listener
   }
 
   getStatus(): AssetRuntimeStatus {
@@ -314,7 +328,8 @@ export class AgentAssetRuntime {
   private async runRefresh(reason: AssetScanReason): Promise<void> {
     try {
       const scanResult = await this.scanner.scanAll({
-        onProgress: (progress) => this.setProgress(progress)
+        onProgress: (progress) => this.setProgress(progress),
+        onPartial: (partial) => this.applyPartial(partial)
       })
       const sources = await this.scanner.getScanSourceGroups()
       const projectCandidates = this.scanner.getProjectScopeCandidates()
@@ -392,6 +407,23 @@ export class AgentAssetRuntime {
       ...this.snapshot,
       status: this.status
     }
+    this.progressListener?.({ status: this.status })
+  }
+
+  /**
+   * Fold a cumulative partial into the live snapshot so the renderer can show
+   * already-scanned assets mid-scan. The snapshot id is deliberately kept stable
+   * (only `runRefresh` mints a fresh id on completion) so id-keyed consumers like
+   * the plugin list don't re-fetch on every partial.
+   */
+  private applyPartial(partial: AssetScanPartial): void {
+    this.snapshot = {
+      ...this.snapshot,
+      assets: partial.assets,
+      stats: partial.stats
+    }
+    this.assetMap = new Map(partial.assets.map((asset) => [asset.id, asset]))
+    this.progressListener?.({ status: this.status, partial })
   }
 }
 

@@ -158,6 +158,34 @@ describe('AgentAssetRuntime', () => {
     await refresh
   })
 
+  it('folds partial assets into the live snapshot and notifies the progress listener (P4.6)', async () => {
+    const partialAsset = sessionAsset('session-partial')
+    const scanner: AssetRuntimeScanner = {
+      scanAll: vi.fn(async (options) => {
+        options?.onProgress?.({ phase: 'parsing', current: 0, total: 2 })
+        options?.onPartial?.({ assets: [partialAsset], stats: { ...emptyStats, sessions: 1 } })
+        return { assets: [partialAsset], stats: { ...emptyStats, sessions: 1 }, errors: [] }
+      }),
+      getScanSourceGroups: vi.fn(async () => []),
+      getProjectScopeCandidates: vi.fn(() => []),
+      getProjectDir: () => '/repo/berth'
+    }
+    const runtime = createRuntime(scanner)
+    const payloads: { hasPartial: boolean; assetCount: number }[] = []
+    runtime.setProgressListener((payload) =>
+      payloads.push({ hasPartial: payload.partial != null, assetCount: payload.partial?.assets.length ?? 0 })
+    )
+
+    await runtime.refresh({ reason: 'startup', wait: true })
+
+    // A partial was forwarded with the cumulative asset(s).
+    expect(payloads.some((p) => p.hasPartial && p.assetCount === 1)).toBe(true)
+    // Progress-only ticks (no partial) are forwarded too.
+    expect(payloads.some((p) => !p.hasPartial)).toBe(true)
+    // Final ready snapshot reflects the scanned assets.
+    expect(runtime.getSnapshot().assets.map((a) => a.id)).toEqual(['session-partial'])
+  })
+
   it('keeps the last snapshot and marks it stale when a later scan fails', async () => {
     const scanner = createScanner({ assets: [sessionAsset('session-1')], stats: { ...emptyStats, sessions: 1 }, errors: [] })
     const runtime = createRuntime(scanner)
