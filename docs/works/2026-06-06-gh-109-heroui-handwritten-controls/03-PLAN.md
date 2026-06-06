@@ -10,9 +10,9 @@
 - [x] C1: header 搜索框 `<input>` → HeroUI `Input` (`top-navigation.tsx`)
   - tests: tests/renderer/top-navigation-search.test.tsx 4/4 绿 (渲染+placeholder/aria-label / onValueChange / ⌘K kbd / ⌘K ref focus+select); typecheck:web + lint 绿
   - verify: focus-ring/hover/圆角与页头密度; ⌘K 聚焦并全选; Search 图标 + ⌘K/Ctrl+K 提示; sm:w-72 响应式; aria-label; 暗/亮/accent 截图 (verify 阶段)
-- [ ] C2: usage cost-mode `<select>` → HeroUI `Select` (`pages/usage.tsx`)
-  - tests: typecheck:web + 截图 (例外: 行为简单受控, 无既有单测)
-  - verify: 选项/受控值/i18n 不变; 键盘方向键可达; open/选中态
+- [x] C2: usage cost-mode `<select>` → HeroUI `Select` (`pages/usage.tsx`)
+  - tests: typecheck:web + lint 绿; 截图留 verify (例外: HeroUI Select 经 portal/overlay 开列表, jsdom 选项交互易 flake; 受控值映射简单, 以 typecheck+视觉+手动键盘替代)
+  - verify: 选项/受控值/i18n 不变; 键盘方向键可达; open/选中态 (verify 阶段)
 - [ ] C3: hooks `HookActions` `<details>` → HeroUI `Dropdown` (`hooks-lifecycle-view.tsx`)
   - tests: 复用 tests/renderer/hooks-lifecycle-view.test.tsx 改后仍绿 (必要时补 case)
   - verify: 动作项/只读项展示; 开关交互; role=menu 键盘可达

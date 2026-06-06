@@ -28,6 +28,7 @@ import { CostSourceBadge } from '@/components/shared/cost-source-badge'
 import { NoticePanel } from '@/components/shared/notice-panel'
 import { projectPathForScope } from '@shared/scope'
 import { usePageChrome, type PageChromeConfig } from '@/components/layout/page-chrome'
+import { Select, SelectItem } from '@/components/ui'
 import { CHART_CATEGORICAL, CHART_SERIES_FILL } from '@/lib/chart-colors'
 
 const TIME_RANGES = [
@@ -469,25 +470,31 @@ export function Usage(): React.ReactElement {
                       </p>
                     </div>
                     <div className="min-w-[190px]">
-                      <label
-                        htmlFor="usage-cost-mode"
-                        className="text-xs font-medium uppercase tracking-wide text-muted-foreground"
-                      >
+                      <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                         {t('usage.costModeLabel')}
-                      </label>
-                      <select
-                        id="usage-cost-mode"
-                        value={costMode}
-                        onChange={(event) => setCostMode(event.target.value as CostMode)}
+                      </span>
+                      <Select
+                        aria-label={t('usage.costModeLabel')}
                         aria-describedby="usage-cost-mode-help"
-                        className="mt-1 w-full rounded-md border border-border bg-background px-3 py-2 text-sm font-medium outline-none transition-colors focus:border-foreground"
+                        selectionMode="single"
+                        disallowEmptySelection
+                        selectedKeys={[costMode]}
+                        onSelectionChange={(keys) => {
+                          const next = Array.from(keys)[0]
+                          if (next) setCostMode(next as CostMode)
+                        }}
+                        size="sm"
+                        variant="bordered"
+                        className="mt-1 w-full"
+                        classNames={{
+                          trigger:
+                            'border-border bg-background shadow-none data-[hover=true]:bg-muted/40 data-[open=true]:border-ring'
+                        }}
                       >
                         {COST_MODES.map((mode) => (
-                          <option key={mode.value} value={mode.value}>
-                            {t(mode.labelKey)}
-                          </option>
+                          <SelectItem key={mode.value}>{t(mode.labelKey)}</SelectItem>
                         ))}
-                      </select>
+                      </Select>
                       <p id="usage-cost-mode-help" className="mt-1 text-xs text-muted-foreground">
                         {t(selectedCostMode.tooltipKey)}
                       </p>
