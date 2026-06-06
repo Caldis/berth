@@ -13,6 +13,7 @@ import {
   MoreHorizontal
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { Button, Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from '@/components/ui'
 import { ScopeBadge } from '@/components/shared/scope-badge'
 import { FloatingPopover } from '@/components/shared/floating-popover'
 import { useHealthChecks } from '@/hooks/use-ipc'
@@ -1382,30 +1383,54 @@ function HookActions({ states }: { states: HookManagementState[] }): React.React
     await window.api?.shell.openPath(targetPath)
   }
 
+  const disabledKeys = openStates
+    .filter((state) => state.availability !== 'available')
+    .map((state) => state.action as string)
+  const showNote = availableCount === 0
+  if (showNote) disabledKeys.push('no-open-targets')
+
   return (
-    <details className="relative shrink-0">
-      <summary className="flex cursor-pointer list-none items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-muted/70">
-        <MoreHorizontal className="h-3.5 w-3.5" />
-        {t('capabilities.hooks.actions.menu')}
-      </summary>
-      <div className="absolute right-0 z-20 mt-1 w-56 rounded-md border border-border bg-popover p-1 shadow-lg">
-        {openStates.map((state) => (
-          <button
-            key={state.action}
-            type="button"
-            disabled={state.availability !== 'available'}
-            onClick={() => void openPath(state)}
-            className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs text-foreground transition-colors hover:bg-muted/70 disabled:cursor-not-allowed disabled:text-muted-foreground/60 disabled:hover:bg-transparent"
-          >
-            {iconForAction(state.action)}
-            <span className="min-w-0 flex-1">{t(`capabilities.hooks.actions.${state.action}`)}</span>
-          </button>
-        ))}
-        {availableCount === 0 && (
-          <p className="px-2 py-1.5 text-xs text-muted-foreground">{t('capabilities.hooks.actions.noOpenTargets')}</p>
-        )}
-      </div>
-    </details>
+    <Dropdown placement="bottom-end">
+      <DropdownTrigger>
+        <Button
+          size="sm"
+          variant="bordered"
+          startContent={<MoreHorizontal className="h-3.5 w-3.5" />}
+          className="h-auto shrink-0 gap-1.5 border-border px-2.5 py-1 text-xs font-medium text-foreground data-[hover=true]:bg-muted/70"
+        >
+          {t('capabilities.hooks.actions.menu')}
+        </Button>
+      </DropdownTrigger>
+      <DropdownMenu
+        aria-label={t('capabilities.hooks.actions.menu')}
+        variant="flat"
+        disabledKeys={disabledKeys}
+        onAction={(key) => {
+          const state = openStates.find((item) => item.action === key)
+          if (state) void openPath(state)
+        }}
+        emptyContent={t('capabilities.hooks.actions.noOpenTargets')}
+      >
+        {[
+          ...openStates.map((state) => (
+            <DropdownItem key={state.action} startContent={iconForAction(state.action)}>
+              {t(`capabilities.hooks.actions.${state.action}`)}
+            </DropdownItem>
+          )),
+          ...(showNote
+            ? [
+                <DropdownItem
+                  key="no-open-targets"
+                  textValue={t('capabilities.hooks.actions.noOpenTargets')}
+                  className="text-muted-foreground"
+                >
+                  {t('capabilities.hooks.actions.noOpenTargets')}
+                </DropdownItem>
+              ]
+            : [])
+        ]}
+      </DropdownMenu>
+    </Dropdown>
   )
 }
 

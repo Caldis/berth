@@ -13,9 +13,9 @@
 - [x] C2: usage cost-mode `<select>` → HeroUI `Select` (`pages/usage.tsx`)
   - tests: typecheck:web + lint 绿; 截图留 verify (例外: HeroUI Select 经 portal/overlay 开列表, jsdom 选项交互易 flake; 受控值映射简单, 以 typecheck+视觉+手动键盘替代)
   - verify: 选项/受控值/i18n 不变; 键盘方向键可达; open/选中态 (verify 阶段)
-- [ ] C3: hooks `HookActions` `<details>` → HeroUI `Dropdown` (`hooks-lifecycle-view.tsx`)
-  - tests: 复用 tests/renderer/hooks-lifecycle-view.test.tsx 改后仍绿 (必要时补 case)
-  - verify: 动作项/只读项展示; 开关交互; role=menu 键盘可达
+- [x] C3: hooks `HookActions` `<details>` → HeroUI `Dropdown` (`hooks-lifecycle-view.tsx`)
+  - tests: tests/renderer/hooks-lifecycle-view.test.tsx 29/29 绿; 其中 "opens hook source files from the row action menu" 直接覆盖迁移行为 (点 Actions 开菜单→点项→openPath 被调用), HeroUI Dropdown 下仍通过; typecheck+lint 绿
+  - verify: 动作项/只读项展示; disabled 不可点; noOpenTargets 提示; role=menu 键盘可达 (verify 阶段截图)
 - [ ] C5: memory 搜索 `<input>` → HeroUI `Input` (`memory-view.tsx`)
   - tests: typecheck:web + 截图 (例外: 同 C1 模式受控搜索)
   - verify: placeholder/行为不变; focus-ring
