@@ -59,7 +59,10 @@ function ScanProgressPanel(): React.ReactElement {
   const progress = status.progress
   const scanning = status.state === 'scanning' || status.state === 'stale'
   const pct = progress && progress.total > 0 ? Math.round((progress.current / progress.total) * 100) : 0
-  const indeterminate = scanning && (!progress || progress.total === 0)
+  // Determinate bar only for the bulk per-adapter `parsing` phase; the short
+  // discovering/indexing/deriving tails animate indeterminately rather than
+  // pretending to a 0% reset.
+  const indeterminate = scanning && (progress?.phase !== 'parsing' || progress.total === 0)
   const phaseLabel = progress ? t(`nav.scanStatus.phase.${progress.phase}`) : ''
 
   return (
