@@ -14,6 +14,7 @@ import {
   formatOptionalDuration,
   formatOptionalRelativeTime
 } from '@/lib/utils'
+import { Tabs, Tab } from '@/components/ui'
 import { useSessions } from '@/hooks/use-ipc'
 import { EmptyState, PAGE_EMPTY_FILL } from '@/components/shared/empty-state'
 import { LoadingState } from '@/components/shared/loading-state'
@@ -126,30 +127,22 @@ export function Sessions(): React.ReactElement {
       </div>
       <div className="flex h-9 items-center gap-2">
         <span className="text-xs text-muted-foreground">{t('sessions.groupBy')}</span>
-        <div className="flex rounded-md border border-input">
-          <button
-            onClick={() => setGroupBy('project')}
-            className={cn(
-              'px-2.5 py-1 text-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
-              groupBy === 'project'
-                ? 'bg-primary text-primary-foreground'
-                : 'text-muted-foreground hover:text-foreground'
-            )}
-          >
-            {t('sessions.project')}
-          </button>
-          <button
-            onClick={() => setGroupBy('date')}
-            className={cn(
-              'px-2.5 py-1 text-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
-              groupBy === 'date'
-                ? 'bg-primary text-primary-foreground'
-                : 'text-muted-foreground hover:text-foreground'
-            )}
-          >
-            {t('sessions.date')}
-          </button>
-        </div>
+        <Tabs
+          aria-label={t('sessions.groupBy')}
+          size="sm"
+          color="primary"
+          selectedKey={groupBy}
+          onSelectionChange={(key) => setGroupBy(key as GroupBy)}
+          classNames={{
+            tabList: 'rounded-md border border-input bg-transparent p-0.5',
+            cursor: 'shadow-sm',
+            tabContent:
+              'text-xs text-muted-foreground group-data-[selected=true]:text-primary-foreground'
+          }}
+        >
+          <Tab key="project" title={t('sessions.project')} />
+          <Tab key="date" title={t('sessions.date')} />
+        </Tabs>
       </div>
     </>
   ), [groupBy, t, toolbarStatus])
