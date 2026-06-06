@@ -16,3 +16,9 @@
 # 解决方案
 - 在 `useSessions` / `useSessionDetail` 增加 `error` 通道 (捕获 IPC reject), 页面据此渲染错误态 (复用 ui/Alert) + 重试。
 - 同步更新对应 renderer 测试覆盖错误分支。
+
+# 状态
+- **RESOLVED** — 由 GH-110 P4.3 落地 (提交 2b90b7c1): useSessions/useSessionDetail 加
+  error+reload 通道, 新增共享 `ErrorState` (HeroUI Alert+Button), sessions/session-detail
+  页区分错误态与空态并提供重试; tests/renderer/session-error.test.tsx 覆盖。
+  归档: `docs/works/_archive/2026-06-06-gh-110-scan-engine-prod-upgrade/`。

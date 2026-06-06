@@ -2,7 +2,7 @@
 task: 2026-06-06-gh-110-scan-engine-prod-upgrade
 task_id: GH-110
 type: feature
-phase: implement
+phase: archive
 created: 2026-06-06
 priority: P1
 target_date:
@@ -28,15 +28,23 @@ debt:
     confidence: medium
     rationale: "扫描引擎 + 适配器 + Scope runtime + IPC + 渲染层全链路升级, 收敛核心模块 (repay architecture); 叠加引擎提取为独立可发布包 + CLI 表面 + 多消费端, scope=global, 含 tooling-ci。design 实测提取仅 4 文件 Electron 耦合 + 节奏定 hybrid (先建 CLI/E2E 闭环再增量迁移) 降低风险, confidence low→medium。"
   final:
-    incurred:
-    repaid:
-    net:
-    scope:
-    risk:
-    areas: []
-    confidence:
-    rationale:
+    incurred: 13
+    repaid: 5
+    net: 8
+    scope: global
+    risk: medium
+    areas:
+      - architecture
+      - performance
+      - tooling-ci
+    confidence: high
+    rationale: "全链路升级 + 引擎提取为 @berth/scan-engine 包 + CLI/E2E golden 按估算落地 (incurred 13)。架构收敛 (统一 runtime/scanner/scope) + P4.3 错误通道健壮性 + 为输出模式/命令/子代理补无副作用测试, repay 较估算 +1 (repaid 5, net 8)。risk high→medium、confidence medium→high: 全量 718 单测 + scan-engine 24 + build + harness:check 全绿, 多 SHA CI 绿, agent 实例冷启实测 (扫描呈现/秒级切换/插件关联/统一 loading/进度弹层/三处用户报告问题) 降残余风险。"
   revisions:
+    - phase: verify
+      date: 2026-06-07
+      from: { repaid: 4, net: 9, risk: high, confidence: medium }
+      to: { repaid: 5, net: 8, risk: medium, confidence: high }
+      reason: "实现与全量回归后下修: 718 单测 + scan-engine 24 + 多 SHA CI 绿 + agent 实例实测覆盖全部核心条件与三处用户报告问题 (卡扫描/灰底蓝字/文件查看双控件), 残余风险与不确定性下降; P4.3/P5.1 额外 repay。"
     - phase: explore
       date: 2026-06-06
       from: { incurred: 8, repaid: 3, net: 5, scope: cross-process, areas: [architecture, performance] }
@@ -59,7 +67,7 @@ gh_project:
   project_number: 6
   project_url: https://github.com/users/Caldis/projects/6
   item_id: PVTI_lAHOADXbEs4BZHvQzgu6PSA
-  item_status: In Progress
+  item_status: Done
 artifacts:
   source: 00-PRD.md
   analysis: 01-ANALYSIS.md
