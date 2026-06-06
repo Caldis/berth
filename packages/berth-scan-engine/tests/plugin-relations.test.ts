@@ -69,4 +69,21 @@ describe('plugin descent + relations', () => {
     expect(plugin.meta.enabled).toBe(true)
     expect(plugin.meta.marketplace).toBe('acme')
   })
+
+  it('descends a Codex plugin (cx-plugin) and links its skill', async () => {
+    const snap = await runScan({ homeDir: TEST_HOME, env: process.env })
+    const plugin = snap.assets.find((a) => a.type === 'plugin' && a.name === 'cx-plugin')
+    expect(plugin).toBeTruthy()
+    const components = snap.assets.filter((a) => pluginIdOf(a.meta) === plugin!.id)
+    expect(components.map((c) => c.name)).toContain('cx-plugin-skill')
+    const contained = resolveRelations(plugin!, snap.assets)
+      .filter((r) => r.kind === 'contains')
+      .map((r) => r.to)
+    for (const component of components) {
+      expect(contained).toContain(component.id)
+      expect(
+        resolveRelations(component, snap.assets).some((r) => r.kind === 'belongs-to' && r.to === plugin!.id)
+      ).toBe(true)
+    }
+  })
 })

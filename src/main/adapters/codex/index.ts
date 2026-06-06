@@ -2,6 +2,7 @@ import * as fs from 'fs'
 import * as os from 'os'
 import * as path from 'path'
 import { glob } from 'glob'
+import { parse as parseToml } from 'smol-toml'
 import type {
   AgentAdapter,
   Asset,
@@ -100,10 +101,78 @@ export class CodexAdapter implements AgentAdapter {
       assets: [
         ...this.scanInstructions(errors),
         ...this.scanCapabilities(errors),
-        ...this.scanSessions(errors)
+        ...this.scanSessions(errors),
+        ...this.scanCodexPlugins(errors)
       ],
       errors
     }
+  }
+
+  // Codex plugins: ~/.codex/plugins/<marketplace>/<plugin>/manifest.toml bundling
+  // skills (skills/**/SKILL.md) and hooks (hooks.json). Components are tagged with
+  // pluginId so the central relations resolver links them (contains / belongs-to).
+  private scanCodexPlugins(errors: ScanError[]): Asset[] {
+    const assets: Asset[] = []
+    for (const codexDir of this.codexDirs) {
+      const pluginsRoot = path.join(codexDir, 'plugins')
+      if (!fs.existsSync(pluginsRoot)) continue
+      let manifests: string[] = []
+      try {
+        manifests = glob.sync('*/*/manifest.toml', {
+          cwd: pluginsRoot,
+          absolute: true,
+          windowsPathsNoEscape: true
+        })
+      } catch (err) {
+        errors.push({
+          path: pluginsRoot,
+          type: 'codex-plugin',
+          message: err instanceof Error ? err.message : String(err)
+        })
+        continue
+      }
+
+      for (const manifestPath of manifests) {
+        const root = path.dirname(manifestPath)
+        const rel = path.relative(pluginsRoot, root).split(/[\\/]/).filter(Boolean)
+        const marketplace = rel[0] ?? 'unknown'
+        const manifest =
+          safeScan(errors, manifestPath, 'codex-plugin', () => {
+            const parsed = parseToml(fs.readFileSync(manifestPath, 'utf-8'))
+            return parsed && typeof parsed === 'object' ? (parsed as Record<string, unknown>) : {}
+          }) ?? {}
+        const name = typeof manifest.name === 'string' ? manifest.name : path.basename(root)
+        const version = typeof manifest.version === 'string' ? manifest.version : 'unknown'
+        const pluginId = `codex-plugin:${marketplace}/${name}@${version}`
+        const plugin: Asset = {
+          id: pluginId,
+          agentId: 'codex',
+          category: 'capability',
+          type: 'plugin',
+          scope: 'user',
+          name,
+          path: root,
+          meta: { marketplace, version, manifestPath, origin: 'codex-plugin' }
+        }
+        assets.push(plugin)
+
+        const tag = (asset: Asset): Asset => ({
+          ...asset,
+          scope: 'user',
+          meta: { ...asset.meta, pluginId, pluginName: name, marketplace, origin: 'codex-plugin' }
+        })
+
+        assets.push(
+          ...scanDir(errors, path.join(root, 'skills'), 'user', '**/SKILL.md', 'codex-plugin-skill', parseCodexSkill).map(tag)
+        )
+        const hooksPath = path.join(root, 'hooks.json')
+        if (fs.existsSync(hooksPath)) {
+          const hooks = safeScan(errors, hooksPath, 'codex-plugin-hook', () => parseCodexHooksJson(hooksPath, 'user'))
+          if (hooks) assets.push(...hooks.map(tag))
+        }
+      }
+    }
+    return assets
   }
 
   watchAssets(callback: (event: WatchEvent) => void): { dispose(): void } {

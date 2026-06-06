@@ -101,16 +101,23 @@ describe('berth-scan CLI E2E (isolated fixture HOME, in-process)', () => {
     const assets = payload.assets ?? []
 
     // Instruction coverage — exact. Includes components bundled by demo-plugin
-    // (plugin-skill / plugin-agent / plugin-cmd), proving plugin descent.
-    expect(namesOfType(assets, 'skill')).toEqual(['codex-helper', 'greet', 'plugin-skill', 'proj'])
+    // (plugin-skill / plugin-agent / plugin-cmd) and the Codex plugin skill
+    // (cx-plugin-skill), proving plugin descent for both agents.
+    expect(namesOfType(assets, 'skill')).toEqual([
+      'codex-helper',
+      'cx-plugin-skill',
+      'greet',
+      'plugin-skill',
+      'proj'
+    ])
     expect(namesOfType(assets, 'agent')).toEqual(['plugin-agent', 'reviewer'])
     expect(namesOfType(assets, 'command')).toEqual(['deploy', 'plugin-cmd'])
     expect(namesOfType(assets, 'output-mode')).toEqual(['concise'])
     expect(assets.filter((a) => a.type === 'claude-md').length).toBe(2) // user + project
     expect(assets.filter((a) => a.type === 'agents-md').length).toBe(1) // codex user
 
-    // Plugin + marketplace assets.
-    expect(namesOfType(assets, 'plugin')).toEqual(['demo-plugin'])
+    // Plugin + marketplace assets (Claude demo-plugin + Codex cx-plugin).
+    expect(namesOfType(assets, 'plugin')).toEqual(['cx-plugin', 'demo-plugin'])
     expect(namesOfType(assets, 'marketplace')).toEqual(['acme'])
 
     // Capability coverage — incl. the plugin-bundled MCP server.
@@ -120,7 +127,7 @@ describe('berth-scan CLI E2E (isolated fixture HOME, in-process)', () => {
     expect(mcp).toContain('fixture-plugin-mcp')
     expect(assets.some((a) => a.type === 'hook')).toBe(true)
 
-    expect(payload.stats?.skills).toBe(4) // greet + proj + codex-helper + plugin-skill
+    expect(payload.stats?.skills).toBe(5) // greet + proj + codex-helper + plugin-skill + cx-plugin-skill
   })
 
   it('assets --type skill --scope user --agent claude-code includes user + plugin skills', async () => {
@@ -134,7 +141,12 @@ describe('berth-scan CLI E2E (isolated fixture HOME, in-process)', () => {
 
   it('assets --type skill --scope user returns all user-scope skills (claude + plugin + codex)', async () => {
     const { payload } = await runCli(withFixture(['assets', '--type', 'skill', '--scope', 'user', '--json']))
-    expect(namesOfType(payload.assets ?? [], 'skill')).toEqual(['codex-helper', 'greet', 'plugin-skill'])
+    expect(namesOfType(payload.assets ?? [], 'skill')).toEqual([
+      'codex-helper',
+      'cx-plugin-skill',
+      'greet',
+      'plugin-skill'
+    ])
   })
 
   it('sources reports scan-source coverage', async () => {
