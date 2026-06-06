@@ -25,6 +25,7 @@ import { WarningBanner } from '@/components/shared/warning-banner'
 import { ScopeBadge } from '@/components/shared/scope-badge'
 import { ViewRawButton } from '@/components/shared/view-raw-button'
 import { HooksLifecycleView } from '@/components/capabilities/hooks-lifecycle-view'
+import { Accordion, AccordionItem, Chip } from '@/components/ui'
 import {
   buildFeatureGuideEvidence,
   capabilityGuideMap,
@@ -168,45 +169,96 @@ function McpSummary({ assets }: { assets: Asset[] }): React.ReactElement {
   )
 }
 
-/* ---------- Plugin card ---------- */
-function PluginCard({ asset }: { asset: Asset }): React.ReactElement {
-  const { t } = useTranslation()
-  const [expanded, setExpanded] = useState(false)
+/* ---------- Plugin card (plugin → bundled components) ---------- */
+const PLUGIN_COMPONENT_TYPES = ['skill', 'agent', 'command', 'hook', 'mcp-server'] as const
 
-  const skillCount = (asset.meta.skillCount as number) ?? 0
-  const commandCount = (asset.meta.commandCount as number) ?? 0
-  const agentCount = (asset.meta.agentCount as number) ?? 0
-  const containsTotal = skillCount + commandCount + agentCount
+function pluginComponentLabel(t: (key: string) => string, type: string): string {
+  switch (type) {
+    case 'skill':
+      return t('instructions.tabs.skills')
+    case 'agent':
+      return t('instructions.tabs.subagents')
+    case 'command':
+      return t('instructions.tabs.commands')
+    case 'hook':
+      return t('capabilities.tabs.hooks')
+    case 'mcp-server':
+      return t('capabilities.tabs.mcp')
+    default:
+      return type
+  }
+}
+
+function PluginCard({ plugin, components }: { plugin: Asset; components: Asset[] }): React.ReactElement {
+  const { t } = useTranslation()
+  const groups = PLUGIN_COMPONENT_TYPES.map((type) => ({
+    type,
+    items: components.filter((component) => component.type === type)
+  })).filter((group) => group.items.length > 0)
+
+  const enabled = plugin.meta.enabled !== false
+  const marketplace = typeof plugin.meta.marketplace === 'string' ? plugin.meta.marketplace : undefined
+  const version = typeof plugin.meta.version === 'string' ? plugin.meta.version : undefined
 
   return (
-    <div className="rounded-lg border border-border bg-card transition-colors hover:bg-accent/5">
-      <button
-        onClick={() => setExpanded(!expanded)}
-        className="flex w-full items-center gap-3 px-4 py-3 text-left"
-      >
-        {expanded ? <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" /> : <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />}
+    <div className="rounded-lg border border-border bg-card" data-plugin-card>
+      <div className="flex items-center gap-3 px-4 py-3">
         <Puzzle className="h-4 w-4 shrink-0 text-purple-500" />
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <span className="truncate text-sm font-medium text-foreground">{asset.name}</span>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="truncate text-sm font-medium text-foreground">{plugin.name}</span>
+            {marketplace && <Chip tone="neutral" size="sm" variant="flat">{marketplace}</Chip>}
+            {version && <span className="text-xs text-muted-foreground">v{version}</span>}
+            <Chip tone={enabled ? 'success' : 'neutral'} size="sm" variant="flat">
+              {enabled ? t('capabilities.plugins.enabled') : t('capabilities.plugins.disabled')}
+            </Chip>
           </div>
-          <p className="mt-0.5 truncate text-xs text-muted-foreground font-mono">{asset.path}</p>
+          <p className="mt-0.5 truncate text-xs text-muted-foreground font-mono">{plugin.path}</p>
         </div>
-        <span className="shrink-0 text-xs text-muted-foreground">
-          {t('capabilities.plugins.contains', { count: containsTotal })}
-        </span>
-      </button>
+        <Chip tone="primary" size="sm" variant="flat" className="shrink-0">
+          {t('capabilities.plugins.contains', { count: components.length })}
+        </Chip>
+        <ViewRawButton asset={plugin} />
+      </div>
 
-      {expanded && (
-        <div className="border-t border-border px-4 py-3 space-y-2">
-          <DetailRow label={t('instructions.path')} value={asset.path} mono />
-          {skillCount > 0 && <DetailRow label={t('instructions.tabs.skills')} value={String(skillCount)} />}
-          {commandCount > 0 && <DetailRow label={t('instructions.tabs.commands')} value={String(commandCount)} />}
-          {agentCount > 0 && <DetailRow label={t('instructions.tabs.subagents')} value={String(agentCount)} />}
-
-          <div className="flex gap-2 pt-1">
-            <ViewRawButton asset={asset} />
-          </div>
+      {groups.length > 0 ? (
+        <div className="border-t border-border px-2 py-1">
+          <Accordion isCompact selectionMode="multiple" aria-label={plugin.name}>
+            {groups.map((group) => (
+              <AccordionItem
+                key={group.type}
+                aria-label={pluginComponentLabel(t, group.type)}
+                title={
+                  <span className="flex items-center gap-2 text-sm font-medium text-foreground">
+                    {pluginComponentLabel(t, group.type)}
+                    <Chip tone="neutral" size="sm" variant="flat">{group.items.length}</Chip>
+                  </span>
+                }
+              >
+                <div className="space-y-1 pb-2">
+                  {group.items.map((item) => (
+                    <div
+                      key={item.id}
+                      data-plugin-component
+                      className="flex items-center gap-2 rounded px-2 py-1 text-sm hover:bg-accent/5"
+                    >
+                      <span className="truncate text-foreground">{item.name}</span>
+                      <span
+                        className="ml-auto truncate font-mono text-[11px] text-muted-foreground"
+                        title={item.path}
+                      >
+                        {item.path}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </AccordionItem>
+            ))}
+          </Accordion>
+        </div>
+      ) : (
+        <div className="border-t border-border px-4 py-2 text-xs text-muted-foreground">
+          {t('capabilities.plugins.noComponents')}
         </div>
       )}
     </div>
@@ -872,13 +924,25 @@ export function Capabilities({ activeSection }: { activeSection?: string } = {})
         return <HooksLifecycleView assets={filteredAssets} agentView={agentView} search={search} scope={scope} plugins={plugins} />
       }
 
-      case 'plugins':
+      case 'plugins': {
         if (filteredAssets.length === 0) return <EmptyState fullHeight icon={Puzzle} message={t('common.empty')} />
+        // Group bundled components (skills/agents/commands/hooks/mcp) under their plugin.
+        const componentsByPlugin = new Map<string, Asset[]>()
+        for (const candidate of visibleAssets) {
+          const pluginId = typeof candidate.meta.pluginId === 'string' ? candidate.meta.pluginId : undefined
+          if (!pluginId) continue
+          const existing = componentsByPlugin.get(pluginId)
+          if (existing) existing.push(candidate)
+          else componentsByPlugin.set(pluginId, [candidate])
+        }
         return (
           <div className="space-y-2">
-            {filteredAssets.map((a) => <PluginCard key={a.id} asset={a} />)}
+            {filteredAssets.map((a) => (
+              <PluginCard key={a.id} plugin={a} components={componentsByPlugin.get(a.id) ?? []} />
+            ))}
           </div>
         )
+      }
 
       case 'statusLine':
         return <StatusLineSection assets={filteredAssets} agentView={agentView} />

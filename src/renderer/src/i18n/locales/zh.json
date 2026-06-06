@@ -1152,7 +1152,10 @@
       }
     },
     "plugins": {
-      "contains": "{{count}} 个组件"
+      "contains": "{{count}} 个组件",
+      "enabled": "已启用",
+      "disabled": "已禁用",
+      "noComponents": "未检测到捆绑组件"
     },
     "permissions": {
       "warning": "警告",

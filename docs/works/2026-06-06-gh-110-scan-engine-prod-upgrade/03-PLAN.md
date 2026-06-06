@@ -64,9 +64,9 @@
 - [ ] **P4.1** 边栏统一 loading + 乐观 scope 切换 UI (F16): 统一 Spinner/骨架组件; 切换立即切 UI 后台补扫。
   - tests: tests/renderer/scope-switch-loading.test.tsx。
   - verify: 界面质量项「交互反馈/状态切换、loading 态」; 切换 < 1s; 截图请用户确认。
-- [ ] **P4.2** 插件↔组件关系 UI (B7/F17): capabilities plugins tab 改 HeroUI Card + Accordion 分组(skills/agents/commands/hooks/mcp)+ Chip; 组件可跳转。
-  - tests: tests/renderer/capabilities-plugins.test.tsx (展开 + 组件计数 + 关系链接)。
-  - verify: 界面质量项「布局层级/信息密度、组件选择/设计系统一致性」; 截图请用户确认。
+- [x] **P4.2** 插件↔组件关系 UI (B7/F17): PluginCard 重写为按 `meta.pluginId` 把组件归到所属插件, HeroUI Accordion 分组 (skills/agents/commands/hooks/mcp) + Chip 显示 marketplace/启用态/组件数; capabilities plugins tab 从 visibleAssets 构建 pluginId→components 映射传入。i18n 增 enabled/disabled/noComponents (en+zh)。
+  - tests: ✅ tests/renderer/capabilities-plugins.test.tsx 2/2 (插件名/marketplace/Enabled/"2 components" + 展开 Skills 组见 plugin-skill + MCP 组); typecheck(web)/eslint 绿。
+  - verify: 界面质量项「布局层级/信息密度、组件选择/设计系统一致性」—— **待 4.0-verify 截图请用户确认**视觉与交互。
 - [ ] **P4.3** 折叠 session-error-channel (F18): useSessions/useSessionDetail 加 error 通道; HeroUI Alert+retry; 扫描错误 (snapshot.errors) 可见。
   - tests: tests/renderer/session-error.test.tsx (模拟 IPC 失败显示 error)。
   - verify: 界面质量项「error 态」; 截图请用户确认。

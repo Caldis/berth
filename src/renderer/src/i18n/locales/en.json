@@ -1157,7 +1157,10 @@
       }
     },
     "plugins": {
-      "contains": "{{count}} components"
+      "contains": "{{count}} components",
+      "enabled": "Enabled",
+      "disabled": "Disabled",
+      "noComponents": "No bundled components detected"
     },
     "permissions": {
       "warning": "Warning",
