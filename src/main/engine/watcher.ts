@@ -3,18 +3,24 @@ import * as os from 'os'
 import * as fs from 'fs'
 import { watch } from 'chokidar'
 import type { FSWatcher } from 'chokidar'
-import type { BrowserWindow } from 'electron'
-import type { IpcEvents } from '@shared/types/ipc'
+import type { WatchEvent } from '@shared/types/asset'
 import { resolveClaudeManagedDir } from '../adapters/claude-code'
 import { resolveClaudeDirs, resolveCodexHomeDirs } from '../agent-homes'
 import { resolveProjectConfigRoots } from '../project-config-roots'
 
+export type AssetWatchListener = (event: WatchEvent) => void
+
 export class AssetWatcher {
   private watcher: FSWatcher | null = null
-  private mainWindow: BrowserWindow | null = null
+  private listener: AssetWatchListener | null = null
 
-  setWindow(win: BrowserWindow): void {
-    this.mainWindow = win
+  /**
+   * Register the change listener. Kept Electron-free: the host (Electron main,
+   * CLI, or a test) decides what to do with the event. The Electron app wires
+   * this to `webContents.send('assets:changed', event)`.
+   */
+  setListener(listener: AssetWatchListener | null): void {
+    this.listener = listener
   }
 
   start(projectDir?: string): void {
@@ -33,9 +39,9 @@ export class AssetWatcher {
       ]
     })
 
-    this.watcher.on('add', (filePath) => this.emit('added', filePath))
-    this.watcher.on('change', (filePath) => this.emit('changed', filePath))
-    this.watcher.on('unlink', (filePath) => this.emit('removed', filePath))
+    this.watcher.on('add', (filePath) => this.notifyChange('added', filePath))
+    this.watcher.on('change', (filePath) => this.notifyChange('changed', filePath))
+    this.watcher.on('unlink', (filePath) => this.notifyChange('removed', filePath))
   }
 
   async stop(): Promise<void> {
@@ -51,12 +57,15 @@ export class AssetWatcher {
     this.start(projectDir)
   }
 
-  private emit(type: IpcEvents['assets:changed']['type'], filePath: string): void {
-    if (!this.mainWindow || this.mainWindow.isDestroyed()) return
-    // Derive a simple assetId from the path
-    const assetId = path.basename(filePath)
-    this.mainWindow.webContents.send('assets:changed', { type, assetId, asset: undefined })
+  /** Dispatch a filesystem change to the registered listener. Public for testing. */
+  notifyChange(type: WatchEvent['type'], filePath: string): void {
+    this.listener?.(buildWatchEvent(type, filePath))
   }
+}
+
+/** Build the change event for a filesystem path. Pure; exported for tests. */
+export function buildWatchEvent(type: WatchEvent['type'], filePath: string): WatchEvent {
+  return { type, assetId: path.basename(filePath), asset: undefined }
 }
 
 export function getAssetWatchPaths(

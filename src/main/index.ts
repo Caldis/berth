@@ -123,7 +123,11 @@ if (!gotTheLock) {
     const watcher = getWatcher()
 
     const mainWindow = createWindow({ openDevTools })
-    watcher.setWindow(mainWindow)
+    // Engine watcher is Electron-free; the main process owns the IPC delivery.
+    watcher.setListener((event) => {
+      if (mainWindow.isDestroyed()) return
+      mainWindow.webContents.send('assets:changed', event)
+    })
     watcher.start(projectDir)
 
     app.on('activate', () => {

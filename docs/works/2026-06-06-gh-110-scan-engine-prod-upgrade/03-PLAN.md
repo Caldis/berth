@@ -9,9 +9,9 @@
   - tests: ✅ `pnpm --filter @berth/scan-engine test` 3/3 绿 (tests/capabilities.test.ts); `typecheck` 干净; `build` 产出 dist (ESM+CJS+dts)。根 `pnpm typecheck:node` 通过 (无回归)。
   - verify: 不适用 (无 UI)。
   - 偏差/友: 引擎包 vitest 需本地 `vitest.config.ts` 隔离 (否则继承根 renderer setup 报错)。Windows 本地 `pnpm install` 的 `electron-builder install-app-deps` postinstall 因 esbuild 平台 optional 包 ENOENT 退出 1 —— 预存 Windows 本地摩擦, 不阻塞 dev/test/build, CI(Linux) 不复现; 记 `docs/friction/20260606-3.0-implement-pnpm-postinstall-esbuild-windows.md`。
-- [ ] **P1.2** watcher 解耦: `AssetWatcher` 去 `BrowserWindow`/`webContents.send`, 改注入 `onChange(evt)`; `src/main/index.ts` 注入回调; IPC handler 退化为薄代理引擎 selectors。
-  - tests: tests/unit/watcher.test.ts 用回调断言事件; 现有 watcher 测试更新通过。
-  - verify: 不适用。`pnpm dev` 启动应用、assets:changed 仍到渲染层(手测一次)。
+- [x] **P1.2** watcher 解耦: `AssetWatcher` 去掉 `electron` `BrowserWindow` import 与 `setWindow`/`webContents.send`, 改注入 `setListener(WatchEvent=>void)` + 公开 `notifyChange` + 纯函数 `buildWatchEvent`; `src/main/index.ts` 注入 `webContents.send('assets:changed', event)` (含 isDestroyed 守卫)。IPC handler 经核已是 `getAssetRuntime()` selector 薄代理 (codebase-map 证实), 无需改。
+  - tests: ✅ tests/unit/watcher.test.ts 7/7 (含回调转发/basename assetId/无 listener 不抛); 先红(新 API 缺失)后绿。`pnpm typecheck:node` 通过; watcher.ts 已无 electron import (可提取)。
+  - verify: 不适用 (引擎逻辑)。assets:changed 通道与 payload 形状不变 (`WatchEvent ≡ IpcEvents['assets:changed']`), 渲染层接收不变; 实机 assets:changed 到达留 4.0-verify 端到端抽验。
 - [ ] **P1.3** CLI `berth-scan`: scan/snapshot/assets/sessions/search/inspect/health/usage/sources/status; 全 `--json`、`--home-dir/--codex-home/--project` 注入、退出码 0/2/3、只读。
   - tests: packages/.../tests/e2e/cli.e2e.ts 断言各命令 JSON schema + 退出码。
   - verify: 不适用 (CLI)。`berth-scan scan --json | jq .stats` 人工抽验一次。

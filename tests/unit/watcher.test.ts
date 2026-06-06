@@ -2,7 +2,8 @@ import * as fs from 'fs'
 import * as os from 'os'
 import * as path from 'path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { getAssetWatchPaths } from '../../src/main/engine/watcher'
+import { AssetWatcher, buildWatchEvent, getAssetWatchPaths } from '../../src/main/engine/watcher'
+import type { WatchEvent } from '../../src/shared/types/asset'
 
 let tempDir: string | null = null
 
@@ -108,5 +109,33 @@ describe('getAssetWatchPaths', () => {
         path.join(extraCodexDir, 'sessions')
       ])
     )
+  })
+})
+
+describe('AssetWatcher change dispatch (Electron-decoupled)', () => {
+  it('buildWatchEvent derives assetId from the path basename', () => {
+    expect(buildWatchEvent('changed', path.join('a', 'b', 'CLAUDE.md'))).toEqual({
+      type: 'changed',
+      assetId: 'CLAUDE.md',
+      asset: undefined
+    })
+  })
+
+  it('forwards filesystem events to the injected listener', () => {
+    const events: WatchEvent[] = []
+    const watcher = new AssetWatcher()
+    watcher.setListener((event) => events.push(event))
+
+    watcher.notifyChange('added', path.join('x', 'skills', 'foo.md'))
+    watcher.notifyChange('removed', path.join('x', '.mcp.json'))
+
+    expect(events).toEqual([
+      { type: 'added', assetId: 'foo.md', asset: undefined },
+      { type: 'removed', assetId: '.mcp.json', asset: undefined }
+    ])
+  })
+
+  it('does not throw when no listener is registered', () => {
+    expect(() => new AssetWatcher().notifyChange('changed', 'x')).not.toThrow()
   })
 })
