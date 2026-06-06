@@ -17,7 +17,7 @@ import {
   X
 } from 'lucide-react'
 import { cn, truncatePath, formatOptionalRelativeTime } from '@/lib/utils'
-import { Input } from '@/components/ui'
+import { Input, Chip } from '@/components/ui'
 import { useMemory } from '@/hooks/use-memory'
 import { useAppStore } from '@/stores/app'
 import { EmptyState, PAGE_EMPTY_FILL } from '@/components/shared/empty-state'
@@ -27,16 +27,6 @@ import { instructionGuideMap, type FeatureGuideEvidence } from '@/lib/feature-gu
 import type { MemoryNote, MemorySourceStatus, MemoryImportance } from '@shared/types/memory'
 import { VirtualGroupedList, type VirtualGroupedListHandle } from '@/components/shared/virtual-grouped-list'
 import { type VirtualListGroup } from '@/lib/virtual-list-model'
-
-// Color marks the exception, not the rule: `core` gets an emphasis hue (amber,
-// not red — these are important, not errors), archive/unknown fade into neutral.
-// `active` (the common case) stays quiet so the rare cases stand out.
-const importanceColors: Record<MemoryImportance, string> = {
-  core: 'bg-amber-500/15 text-amber-700 dark:text-amber-400',
-  active: 'bg-muted text-muted-foreground',
-  archive: 'bg-muted/60 text-muted-foreground/70',
-  unknown: 'bg-muted/60 text-muted-foreground/70'
-}
 
 // i18n defaults live in-component so the view stays readable even when the shared
 // en/zh.json locale files lag behind (they are edited concurrently by other work).
@@ -91,13 +81,17 @@ function byRecency(a: MemoryNote, b: MemoryNote): number {
 
 function ImportanceBadge({ importance }: { importance: MemoryImportance }): React.ReactElement {
   const { t } = useTranslation()
+  // core gets an emphasis hue (warning≈amber, not danger — important, not errors);
+  // active/archive/unknown stay quiet neutral so the rare core case stands out.
   return (
-    <span
+    <Chip
+      tone={importance === 'core' ? 'warning' : 'neutral'}
+      variant="flat"
+      radius="full"
       title={t(`memory.importanceHint.${importance}`, importanceHintFallback[importance])}
-      className={cn('inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold', importanceColors[importance] ?? importanceColors.unknown)}
     >
       {formatImportanceLabel(t, importance)}
-    </span>
+    </Chip>
   )
 }
 
@@ -108,20 +102,28 @@ function formatImportanceLabel(t: ReturnType<typeof useTranslation>['t'], import
 function SourceBadge({ label, id }: { label: string; id: string }): React.ReactElement {
   const Icon = sourceIcon(id)
   return (
-    <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
-      <Icon className="h-2.5 w-2.5" />
+    <Chip
+      tone="primary"
+      variant="flat"
+      radius="full"
+      startContent={<Icon className="ml-0.5 h-2.5 w-2.5" />}
+    >
       {label}
-    </span>
+    </Chip>
   )
 }
 
 function MissingBadge(): React.ReactElement {
   const { t } = useTranslation()
   return (
-    <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-700 dark:text-amber-300">
-      <AlertTriangle className="h-2.5 w-2.5" />
+    <Chip
+      tone="warning"
+      variant="flat"
+      radius="full"
+      startContent={<AlertTriangle className="ml-0.5 h-2.5 w-2.5" />}
+    >
       {t('memory.fileMissing', 'File missing')}
-    </span>
+    </Chip>
   )
 }
 

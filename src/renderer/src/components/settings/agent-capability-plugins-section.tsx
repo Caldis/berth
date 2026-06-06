@@ -11,6 +11,7 @@ import {
 } from 'lucide-react'
 import { EmptyState } from '@/components/shared/empty-state'
 import { LoadingState } from '@/components/shared/loading-state'
+import { Chip } from '@/components/ui'
 import { cn } from '@/lib/utils'
 import type {
   AgentCapabilityPlugin,
@@ -729,17 +730,17 @@ function Badge({
   children: React.ReactNode
   tone?: 'muted' | 'strong'
 }): ReactElement {
+  // Delegates to the shared ui/Chip (GH-109 C6) — same muted/strong semantics,
+  // no hand-rolled span; matches how ScopeBadge/CostSourceBadge consume Chip.
   return (
-    <span
-      className={cn(
-        'inline-flex max-w-full items-center rounded-md border px-1.5 py-0.5 text-[11px] leading-4',
-        tone === 'strong'
-          ? 'border-foreground/15 bg-foreground/[0.04] text-foreground'
-          : 'border-border text-muted-foreground'
-      )}
+    <Chip
+      tone="neutral"
+      variant={tone === 'strong' ? 'flat' : 'bordered'}
+      radius="md"
+      className="max-w-full"
     >
       {children}
-    </span>
+    </Chip>
   )
 }
 

@@ -19,9 +19,10 @@
 - [x] C5: memory 搜索 `<input>` → HeroUI `Input` (`memory-view.tsx`)
   - tests: tests/renderer/memory-view.test.tsx 13/13 绿 (getByTestId('memory-tags-filter-search')+fireEvent.change 证明 data-testid 落在 input、change 穿透); typecheck+lint 绿
   - verify: placeholder/行为不变; onFocus 开 grid; focus-ring (verify 阶段)
-- [ ] C6: 本地 Badge/pill → `ui/Chip` (`memory-view.tsx`/`agent-capability-plugins-section.tsx`/`instructions.tsx`)
-  - tests: typecheck:web + 截图 (例外: 纯视觉替换)
-  - verify: 语义 tone 一致; ≥text-xs; 密度统一
+- [x] C6: 本地状态 Badge → `ui/Chip` (`agent-capability-plugins-section.tsx` 本地 Badge delegate Chip; `memory-view.tsx` Importance/Source/Missing → Chip)
+  - tests: settings-agent-plugins.test.tsx 10/10 + memory-view.test.tsx 13/13 绿 (expectImportanceBadge 辅助按新 Chip DOM 改为查 titled 祖先, 行为契约不变); typecheck+lint 绿
+  - verify: tone 映射 (core→warning/source→primary/missing→warning/其余 neutral); 杀掉 text-[10px]/[11px]; 密度统一 (verify 阶段截图)
+  - 范围修正 (不变量 8): instructions.tsx 无本地 Badge (用已 DS 化的 ScopeBadge); **交互筛选 pill** (memory 412/461/613、instructions 378) 是 filter tab 非 status badge, 排除; project-scope-switcher 状态 pill / session-detail tags 留 followup (heroui-migration-followup 已覆盖)
 - [ ] C4: `filter-bar` `ScopeSelect`/`FilterBar` → HeroUI `Select`/`Input` (`filter-bar.tsx`)
   - tests: 3 消费方 (project-scope-switcher/capabilities/overview) 相关 renderer 测试 + 截图
   - verify: 对外 props/testid/i18n 不变; 逐处回归; 键盘可达

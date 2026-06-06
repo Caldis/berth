@@ -98,7 +98,12 @@ vi.mock('../../src/renderer/src/hooks/use-memory', () => ({
 }))
 
 function expectImportanceBadge(label: string, title: string): void {
-  const badge = screen.getAllByText(label).find((element) => element.getAttribute('title') === title)
+  // The badge is a ui/Chip (GH-109 C6): the `title` hint sits on the Chip root,
+  // the label text on the inner content span — so resolve via the nearest
+  // titled ancestor rather than the text element itself.
+  const badge = screen
+    .getAllByText(label)
+    .find((element) => element.closest('[title]')?.getAttribute('title') === title)
   expect(badge).toBeDefined()
 }
 
