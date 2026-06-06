@@ -5,9 +5,10 @@
 
 ## P1 — 引擎包骨架 + CLI + E2E 闭环 (基础, 严格顺序; global/high-risk)
 
-- [ ] **P1.1** 建 pnpm workspace + `packages/berth-scan-engine` 骨架: `package.json`(@berth/scan-engine, bin berth-scan, exports)、`tsup.config.ts`、`tsconfig`; `src/index.ts` 薄 re-export 现有引擎公共 API(暂从 `../../src/main/engine` 引或先软迁移)。根 `pnpm-workspace.yaml` + 钉 pnpm 9。
-  - tests: `pnpm install` 成功 + `pnpm --filter @berth/scan-engine build` 产出 dist; typecheck 通过。
-  - verify: 不适用 (无 UI)。`pnpm build`(Electron)仍通过。
+- [x] **P1.1** 建 pnpm workspace + `packages/berth-scan-engine` 骨架: `package.json`(@berth/scan-engine, bin berth-scan, exports)、`tsup.config.ts`、`vitest.config.ts`、`tsconfig`; `src/index.ts` + `src/capabilities.ts`(agent CLI 命令清单单一真源, 供 P1.3 CLI 与 status 消费)。根 `pnpm-workspace.yaml`(仅 `packages/*`, 不动 website)。
+  - tests: ✅ `pnpm --filter @berth/scan-engine test` 3/3 绿 (tests/capabilities.test.ts); `typecheck` 干净; `build` 产出 dist (ESM+CJS+dts)。根 `pnpm typecheck:node` 通过 (无回归)。
+  - verify: 不适用 (无 UI)。
+  - 偏差/友: 引擎包 vitest 需本地 `vitest.config.ts` 隔离 (否则继承根 renderer setup 报错)。Windows 本地 `pnpm install` 的 `electron-builder install-app-deps` postinstall 因 esbuild 平台 optional 包 ENOENT 退出 1 —— 预存 Windows 本地摩擦, 不阻塞 dev/test/build, CI(Linux) 不复现; 记 `docs/friction/20260606-3.0-implement-pnpm-postinstall-esbuild-windows.md`。
 - [ ] **P1.2** watcher 解耦: `AssetWatcher` 去 `BrowserWindow`/`webContents.send`, 改注入 `onChange(evt)`; `src/main/index.ts` 注入回调; IPC handler 退化为薄代理引擎 selectors。
   - tests: tests/unit/watcher.test.ts 用回调断言事件; 现有 watcher 测试更新通过。
   - verify: 不适用。`pnpm dev` 启动应用、assets:changed 仍到渲染层(手测一次)。
