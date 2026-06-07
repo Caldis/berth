@@ -1,0 +1,788 @@
+{
+  "research": [
+    {
+      "system": "macOS Spotlight (mds / mds_stores / mdworker / mdimporter)",
+      "summary": "Spotlight is macOS's always-on, background, incremental metadata indexer — architecturally the closest production analog to berth's target state (\"scan everything at startup, then stay live, incremental, throttled, cached\"). Its design splits cleanly into seven mechanisms that map onto berth's existing stack (worker_threads, better-sqlite3, chokidar, MiniSearch): (1) an event-driven full→incremental model where the initial volume scan and steady-state updates run through the SAME pipeline, differing only in scope — there is no separate \"full scan\" code path; (2) a UTI-keyed importer plugin model where a per-file-type dispatcher loads the right extractor, with importer-version-based cache invalidation (re-import when the importer bundle's datestamp changes); (3) an mds→mdworker dispatch model: a coordinator daemon spawns/kills isolated worker processes, scaling worker count to event volume as implicit backpressure; (4) FSEvents-based change detection with kernel-side coalescing (default 0.1s latency, directory-granular events, 30s same-dir merge) — chokidar is berth's FSEvents equivalent and needs the same coalescing discipline; (5) a two-tier index store (transient posting tables for fresh data, periodically consolidated into static tables during \"housekeeping\"; deletes are tombstoned and swept later) backing per-volume .Spotlight-V100/store.db; (6) volume-level exclusion + privacy via .noindex suffix, dot-prefix, and an explicit privacy exclusion list persisted in VolumeConfiguration.plist; (7) low-priority background execution (Nice + LowPriorityIO) plus non-intrusive progress (a percentage bar surfaced only when the user actually searches mid-index) and an mdutil control surface (status / enable-disable / erase-and-rebuild). The single most transferable insight for berth: unify full and incremental scanning into one fingerprint-driven pipeline where \"full\" just means \"every fingerprint is a miss,\" and treat the importer/parser VERSION as part of the cache key so a parser upgrade transparently invalidates and re-derives affected assets. Caveat: Spotlight is C/CFPlugin/Mach/kernel-fsevents on a single OS; berth is cross-platform Node — adopt the patterns (dispatch, coalescing, two-tier store, versioned cache, exclusion, throttle, non-intrusive progress), not the implementation. Several mechanisms berth already has in embryonic form (AssetFileCache fingerprints, chokidar watcher, worker host, MiniSearch) — the gap is that they aren't yet wired into one continuous incremental loop with versioned invalidation, exclusion config, and throttling.",
+      "techniques": [
+        {
+          "name": "Unified full→incremental pipeline (one code path, scope is the only difference)",
+          "whatItDoes": "Spotlight does not have a distinct 'full scan' subsystem. The initial volume index and every later incremental update flow through the SAME pipeline: a file event arrives, mdworker resolves its type, the importer extracts metadata, mds_stores writes it into .Spotlight-V100. 'Initial indexing builds this from scratch; incremental updates add modified files only' — full indexing is just the degenerate case where every file is new. Per-file work is idempotent and keyed on the file, so re-running over an already-indexed file is cheap (a no-op write).",
+          "applicabilityToBerth": "HIGH / directly migratable. berth today has TWO conceptual paths: AssetScanner.runScanAll (per-adapter full loop) and AssetWatcher firing coarse WatchEvents that the host must turn into rescans. Collapse them: make the unit of work a single (path → asset[]) derivation guarded by AssetFileCache (src/main/engine/assets/file-cache.ts already does size+mtime fingerprinting with hit/miss/deleted/error states). Startup full scan = enumerate all candidate paths and run each through the cache (all misses on a cold cache). A chokidar 'change' event = run that ONE path through the exact same function (a single miss, everything else hits). This removes the '切项目重扫' (re-scan on project switch) cost entirely — switching scope becomes a pure filter over already-derived assets, matching the user's redefined [global]=everything model. The cache's pruneTo() already handles deletions.",
+          "tradeoffs": "Requires reframing adapters from 'scanAll() returns everything' to 'deriveAssetsForPath(path) returns the assets owned by that path,' so a single file event maps to a bounded re-derivation. Multi-entity files (settings.json yielding many hooks/mcp; SKILL.md directories) need a stable path→assetIds reverse map so one file change replaces exactly its prior assets, not append-duplicates. better-sqlite3 should hold the persisted fingerprint+asset store so a cold start with a warm DB skips re-deriving unchanged files (today AssetFileCache is in-memory only, rebuilt every launch — that is the biggest missed win vs Spotlight's on-disk store.db)."
+        },
+        {
+          "name": "Type-keyed importer dispatch with version-based cache invalidation",
+          "whatItDoes": "Each file's UTI selects exactly one .mdimporter plugin (declared via LSItemContentTypes); mdworker loads it and calls one entry point, GetMetadataForFile(attributes, contentTypeUTI, pathToFile). Critically, Spotlight tracks the importer BUNDLE's modification date: 'New importers are detected by comparing the importer's modification date... when an updated app runs for the first time Spotlight reindexes existing files with the new importer.' mdimport -r forces re-import of all files claimed by a given importer. So the importer version participates in cache validity — upgrade the extractor and affected files transparently re-derive.",
+          "applicabilityToBerth": "HIGH. berth already has a type→adapter/parser registry (createAgentAdapters, the claude-code/codex scanners with per-category parsers). Two concrete adoptions: (1) Add a parserVersion constant per asset-type parser and fold it into the AssetFileCache validity check (currently sameFingerprint compares only path/size/mtime). When you ship a parser fix — e.g. the recent legacy-scanner-stale bug in docs/issues — bumping parserVersion auto-invalidates just that type's cached entries on next launch, no manual cache nuke, no full rescan. (2) Expose a berth equivalent of 'mdimport -r <type>' — a 'reparse all assets of type X' command — useful for dev iteration and for a targeted repair when one parser is suspected stale, without erasing the whole store.",
+          "tradeoffs": "Version key must be coarse enough to be maintainable (one version per parser/type, not per-field) yet bumped reliably — easy to forget, so make it a lint/test invariant (a test that fails if a parser file changed without a version bump is the Spotlight 'different datestamp' discipline made explicit). Persisting parserVersion alongside each cached entry adds a column to the on-disk store schema; migrations needed when the schema itself changes."
+        },
+        {
+          "name": "Coordinator→worker dispatch with volume-scaled worker count as implicit backpressure",
+          "whatItDoes": "mds (root coordinator) reads /dev/fsevents, then 'creates, monitors, and kills mdworkers based on light rules,' communicating over Mach messaging. Importers run in ISOLATED worker processes (sandboxed) so a crashing/hanging importer on a malformed file can't take down the indexer. mds 'spawns more mdworker processes when handling a higher event magnitude' — worker count tracks load, which both parallelizes and bounds concurrency (a fixed-ish pool = natural backpressure; the queue absorbs bursts instead of unbounded fan-out).",
+          "applicabilityToBerth": "MEDIUM-HIGH. berth has AssetWorkerHost spawning a worker_threads Worker per scan (one-shot, src/main/engine/assets/worker-host.ts) — note docs/issues/2026-06-07-IMPROVEMENT-scan-worker-long-lived already flags moving to a long-lived worker. Adopt the Spotlight shape: ONE persistent coordinator in main + a small fixed worker pool (sized from the '按设备性能调节' performance setting). Coordinator owns a bounded work queue of (path, reason) items; watcher events and the startup enumeration both enqueue into it; workers pull, derive, and post partials back via the existing AssetWorkerMessage channel. Fixed pool size = the backpressure knob the user asked for. Isolation matters: a transcript/JSONL parse that OOMs or infinite-loops on a giant session file should fail that one item (cache 'error' state already exists) without killing the loop.",
+          "tradeoffs": "worker_threads share the process (not OS-process isolation like mdworker), so a true native crash/segfault still risks the process — but berth parsers are JS, so try/catch + per-item timeouts get ~90% of the isolation benefit at a fraction of the cost. A persistent worker changes lifecycle: must drain/replay the queue on project-switch and on app suspend/resume, and must serialize incremental asset deltas back rather than whole snapshots (today the worker returns a full AssetWorkerScanPayload — fine for full scan, wasteful per single-file change). structured-clone cost of large assets is already a known pain (stripAssetRaw in scanner.ts); a long-lived worker should send minimal deltas."
+        },
+        {
+          "name": "FSEvents-style coalescing: latency window + directory-granular batching + same-dir merge",
+          "whatItDoes": "Spotlight consumes kernel FSEvents, which coalesce by design: a tunable latency (default 0.1s) delays flush so rapid-fire changes batch into one event; events are DIRECTORY-granular ('two files changed in /tmp → one event saying /tmp changed' so the consumer scans the dir once); and 'multiple changes to the same directory within 30s coalesce into a single event.' This caps notification volume under bursts (e.g. a git checkout rewriting hundreds of files) so the indexer reacts to settled state, not every intermediate write.",
+          "applicabilityToBerth": "HIGH. chokidar is berth's FSEvents layer and emits per-file add/change/unlink with NO coalescing today (AssetWatcher.notifyChange fires the listener immediately per event, src/main/engine/watcher.ts). Add a debounce/coalescing stage between chokidar and the work queue: (1) chokidar's own awaitWriteFinish to ignore in-progress writes; (2) a debounce window (start ~150–300ms, expose as a 'scan responsiveness' setting) that batches a burst into one flush; (3) collapse multiple events under the same asset-owning directory (e.g. a skill dir, a sessions dir) into ONE re-derive of that unit. This is the single most important defense against the worst-case berth scenario — Claude/Codex writing session JSONL continuously and a project's whole .claude/ being rewritten on branch switch.",
+          "tradeoffs": "Longer latency = staler live UI (user edits CLAUDE.md, sees it after the window). Spotlight's 0.1s is aggressive because its store is fast; berth's parse+clone is heavier, so a slightly longer window (200ms+) is safer. Session transcripts append continuously — debouncing alone isn't enough; those need either tail-reading or a longer dedicated interval (the user's '限频/拉长间隔' lever) so a chatty session doesn't dominate the queue. chokidar on macOS already uses FSEvents under the hood, but on Windows/Linux it polls/uses native APIs with different coalescing — berth must implement coalescing in JS to be cross-platform-uniform, not rely on the OS."
+        },
+        {
+          "name": "Two-tier index store: transient posting tables consolidated into static tables; tombstoned deletes",
+          "whatItDoes": "store.db avoids rewriting the main index on every change. Fresh metadata lands in 'separate transient posting tables... later incorporated into static tables during housekeeping.' Frequent vs rare tokens are split into two-level tables (frequent ones optimized for cheap updates, rare ones for fast search). Deleted files' index entries 'remain until scheduled housekeeping removes them' — i.e. logical tombstones, swept in batches — 'supporting consistent searching despite constant file changes.' Reads stay correct and fast while writes accumulate cheaply and get compacted off the hot path.",
+          "applicabilityToBerth": "MEDIUM, conceptually HIGH. berth's 'index' is two layers: the better-sqlite3 asset store (to be added/extended) + the in-memory MiniSearch index (src/main/engine/search.ts). Apply the tiering: (1) Persist derived assets + fingerprints in better-sqlite3 as the durable store; incremental updates are cheap upserts/deletes, not a full-table rewrite. (2) Treat MiniSearch as the 'static search table' rebuilt from the store — but it currently rebuilds the WHOLE index on any signature change (ensureIndexed → removeAll + addAll). Move to incremental MiniSearch ops (it supports add/remove/replace per-doc) so a single file change touches one doc, not the whole index — the Spotlight 'transient → consolidate' idea applied to MiniSearch. (3) Tombstone deletes: mark removed, sweep on idle, so search stays consistent mid-burst.",
+          "tradeoffs": "Incremental MiniSearch updates are trickier than full rebuilds (must track doc identity and handle replace correctly) — the current full-rebuild is simpler and, for berth's asset COUNT (hundreds–low thousands, not Spotlight's millions), may be fast enough that incremental indexing is premature optimization. Recommendation: keep full MiniSearch rebuild until profiling shows it as a bottleneck; prioritize the better-sqlite3 durable store first (bigger win: warm-start skips re-derivation). Spotlight's full two-level token tables are far beyond berth's needs — borrow only the transient/consolidate + tombstone ideas."
+        },
+        {
+          "name": "Volume-level exclusion & privacy: .noindex sentinels + explicit persisted exclusion list",
+          "whatItDoes": "Spotlight skips content via three mechanisms: a .noindex folder-name suffix, dot-prefixed (hidden) folders, and an explicit user-managed Privacy exclusion list persisted in VolumeConfiguration.plist (which also stores Creation_Predicates and excluded paths). It also historically honored .metadata_never_index sentinel files (now unreliable in recent macOS). The principle: indexing scope is data-driven config, separate from the indexer code, and both convention-based (in-tree markers) and centrally-managed (the list).",
+          "applicabilityToBerth": "MEDIUM-HIGH. berth's scope is hardcoded in watcher.ts (getAssetWatchPaths) and the adapter roots, with only an ad-hoc ignore predicate (isIgnoredWatchPath skips node_modules/.git). Adopt a two-layer exclusion model: (1) An explicit, persisted exclusion list in settings (the user-configurable '按设备性能调节' surface) — e.g. 'don't index these projects / these session dirs / sessions older than N days.' This is essential because the user's [global]=ALL-projects model means session-derived candidate projects could explode; a Spotlight-style privacy list lets users cap it. (2) Honor an in-tree marker (a .berthignore or reuse .noindex convention) so a repo can opt out. Persist the list where the durable store lives and re-evaluate scope cheaply since scope is now a filter over the index, not a rescan trigger.",
+          "tradeoffs": "Exclusion semantics interact with the unified-pipeline cache: an excluded path must be both NOT-enumerated AND have its prior cached assets evicted (or it lingers). Spotlight's lesson (the now-broken .metadata_never_index) is that sentinel-file conventions rot — prefer the explicit persisted list as the source of truth, treat in-tree markers as a convenience. Over-exposing exclusion config risks confusing users about why an asset is missing — needs the 'visible=indexed, hidden=excluded' clarity the user already articulated ('在[全局]看不到=等于没有')."
+        },
+        {
+          "name": "Low-priority background execution + non-intrusive progress + mdutil control surface",
+          "whatItDoes": "Indexing runs deliberately demoted: Nice (CPU scheduling, 0–20, higher=lower priority) and LowPriorityIO (boolean telling the kernel to treat its filesystem I/O as low priority) — admins literally set Nice=20, LowPriorityIO=true on the mds launch daemon to keep indexing from starving foreground work. Progress is non-intrusive: there's no always-on progress bar; macOS surfaces a percentage bar ONLY when the user opens Spotlight search mid-index. Control is a clean CLI: mdutil -s (status), mdutil -i on|off (enable/disable), mdutil -E (erase + rebuild). Spotlight prefers to under-promise responsiveness over hogging the machine.",
+          "applicabilityToBerth": "HIGH for the UX/control patterns. (1) Background priority: Node can't set Nice directly cross-platform, but berth's equivalents are — run derivation in the worker pool (already off the UI thread), insert small yields/throttle between queue items (the '限频/拉长间隔' lever), and process in priority bands (user-visible scope first, then the long tail of other projects' sessions) so the active view paints fast while the rest fills in lazily — exactly Spotlight's 'usually within a second or two' for the file you just touched. (2) Non-intrusive progress: berth already has sidebar-scan-status.tsx and partial streaming (onPartial/onProgress). Follow Spotlight: show progress passively (a subtle indicator), surface detail (percent / 'indexing N items') only on demand or when the user lands on a scope that's still filling — and use LOCAL loading states per panel (the user's '局部 loading' requirement) rather than a global blocking spinner. (3) Control surface: provide berth's mdutil — a settings/debug action for status, pause/resume indexing (the '可暂停可控' requirement), and erase-and-rebuild (nuke store.db + reparse), which is also the clean recovery from a corrupt cache.",
+          "tradeoffs": "Priority banding needs a notion of 'what the user is looking at now' fed back into the queue scheduler (a reprioritize signal on scope/route change) — more coupling between renderer state and the main-process scheduler. Pause/resume must persist queue state so a pause mid-burst doesn't lose pending work. Erase-and-rebuild is destructive (loses warm cache → next start is a cold full scan); gate it as a recovery action, not a routine button. Spotlight's kernel-level I/O throttling has no clean Node equivalent — berth approximates with concurrency limits and inter-item delays, which is coarser and won't perfectly yield to disk pressure from other apps."
+        }
+      ],
+      "recommendations": [
+        "Adopt the unified pipeline as the refactor's spine: one deriveAssetsForPath(path) function guarded by AssetFileCache, where startup-full-scan = enumerate-all (all misses) and a chokidar event = run-one-path (one miss). This directly kills berth's '切项目重扫' cost and realizes the user's '切域=narrow-down 过滤, 不触发扫描' model — scope becomes a filter over the already-derived asset set, not a rescan. (src/main/engine/scanner.ts, file-cache.ts)",
+        "Make the cache durable in better-sqlite3 (not just in-memory). Today AssetFileCache is rebuilt every launch, so berth pays a full cold scan on every start — the opposite of Spotlight's warm store.db. Persist fingerprint+derived-asset rows; on start, only re-derive files whose (size,mtime) or parserVersion changed. This is the single highest-ROI change and the prerequisite for 'startup scans everything' to be cheap on the 2nd+ launch.",
+        "Fold a per-parser parserVersion into the cache validity check (sameFingerprint currently compares only path/size/mtime). Bumping a parser's version auto-invalidates just that type on next launch — the Spotlight 'importer datestamp changed → reindex' discipline. Add a test that fails when a parser file changes without a version bump, so the invalidation can't be silently forgotten (this would have auto-fixed the legacy-scanner-stale issue in docs/issues without a manual cache nuke).",
+        "Insert a coalescing/debounce stage between chokidar and the work queue (awaitWriteFinish + a ~200ms batch window + same-owning-directory merge), modeled on FSEvents' latency/directory-granular/30s-merge coalescing. Without it, a git branch switch or a chatty session JSONL will flood the pipeline. Give session-transcript paths a separate, longer interval (the user's '拉长间隔' lever) so continuous appends don't dominate. (src/main/engine/watcher.ts)",
+        "Evolve AssetWorkerHost into a long-lived coordinator + fixed worker pool (aligns with the already-filed IMPROVEMENT-scan-worker-long-lived issue). The fixed pool size is the user's device-performance/backpressure knob; the bounded queue absorbs bursts; per-item try/catch+timeout gives Spotlight-style importer isolation so one malformed session file fails that item, not the loop. Send incremental asset deltas back, not whole snapshots, to avoid the known structured-clone cost (stripAssetRaw).",
+        "Build a Spotlight-style control + exclusion + non-intrusive-progress surface in settings: status (indexed/queued counts), pause/resume ('可暂停可控'), erase-and-rebuild (recovery from corrupt cache), an explicit persisted exclusion list (cap the session-derived-project explosion that [global]=ALL-projects implies), and priority banding so the user's current scope paints first while the long tail fills in lazily behind per-panel local loading states. Reuse existing onPartial/onProgress + sidebar-scan-status.tsx; surface detailed progress only on demand, never as a global blocking spinner.",
+        "Defer incremental MiniSearch updates until profiling justifies them. berth's asset count (hundreds–low thousands) is orders of magnitude below Spotlight's scale, so the current full removeAll+addAll rebuild (search.ts ensureIndexed) is likely fine; the durable-store and coalescing wins come first. Adopt Spotlight's transient→consolidate + tombstone ideas only at the better-sqlite3 layer initially."
+      ],
+      "citations": [
+        "https://eclecticlight.co/2021/01/28/spotlight-on-search-how-spotlight-works/",
+        "https://eclecticlight.co/2025/07/30/a-deeper-dive-into-spotlight-indexes/",
+        "https://eclecticlight.co/2022/12/08/spotlight-problems-mds_stores-and-mdworker-in-trouble/",
+        "https://developer.apple.com/library/archive/documentation/Carbon/Conceptual/MDImporters/Concepts/WritingAnImp.html",
+        "https://developer.apple.com/library/archive/documentation/Carbon/Conceptual/MDImporters/Concepts/Troubleshooting.html",
+        "https://developer.apple.com/library/archive/documentation/Carbon/Conceptual/MDImporters/Concepts/Importers.html",
+        "https://blog.doyensec.com/2017/11/15/osx-spotlight.html",
+        "https://theevilbit.github.io/posts/macos_persistence_spotlight_importers/",
+        "https://thegreyblog.blogspot.com/2012/04/is-mdworker-jeopardizing-your-resources.html",
+        "https://newartisans.com/2008/04/run-the-spotlight-indexer-at-a-lower-priority/",
+        "https://eclecticlight.co/2024/07/09/excluding-folders-and-files-from-time-machine-spotlight-and-icloud-drive/",
+        "https://eclecticlight.co/2025/06/16/spotlight-search-can-be-blocked-by-extended-attributes/",
+        "https://ss64.com/mac/mdutil.html",
+        "https://ss64.com/mac/mdimport.html",
+        "https://eclecticlight.co/2024/11/19/when-and-how-to-rebuild-spotlight-indexes/",
+        "https://grokipedia.com/page/fsevents",
+        "https://alexwlchan.net/2026/watch-files-on-macos/",
+        "https://github.com/ydkhatri/spotlight_parser"
+      ]
+    },
+    {
+      "system": "Windows Search Indexer (SearchIndexer.exe / Windows Search service, \"gatherer\" 架构)",
+      "summary": "Windows Search Indexer 是桌面级\"后台、持续、增量\"全盘索引器的成熟参考实现, 与 berth 目标高度同构。其核心可迁移工程模式有六类: (1) 三阶段 gatherer 流水线 (URL 入队 → crawl → 更新索引), 用三条优先级队列 (高优先通知 / 普通通知 / 周期 crawl, 均 FIFO) 解耦\"发现变更\"与\"处理变更\"; (2) \"一次全量 crawl + 此后纯通知驱动增量\"的源模型, NTFS 走 USN Change Journal 做变更通知, 永不再全扫, 除非通知失败 / journal rollover; (3) checkpoint + reset/restore signature 的失效与恢复协议, 用 GUID 签名判定\"需要重推哪些通知 / 重建整库\", 这是缓存失效的硬核范本; (4) 批量通知协议 (按 n 条变更或 t 时间窗 flush + ack/重发), 即天然的背压与去抖; (5) indexer backoff: 检测用户活动 / 高 I/O / 电池, 自动降速或暂停, 空闲恢复满速, 且暴露注册表/组策略开关 (DisableBackoff、respect power settings、battery pause); (6) Windows 11 已从单一 ESE (Windows.edb) 拆成三个 SQLite 文件 (Windows.db 属性库 / Windows-gather.db 路径与 crawl 结构 / Windows-usn.db 变更日志), 用 WAL — 这与 berth 现有 better-sqlite3 栈几乎一一对应。berth 在 macOS/Linux 无 USN, 但 chokidar (FSEvents/inotify) 在架构上正是 berth 的\"通知提供者\", 可直接套用 gatherer 队列 + checkpoint 恢复 + backoff 三件套, 把当前\"切项目全扫\"的 worker 模型改造成全量起底一次、之后通知驱动的持续增量索引。",
+      "techniques": [
+        {
+          "name": "三阶段 gatherer 流水线 + 三条优先级 FIFO 队列",
+          "whatItDoes": "索引被拆成三阶段, 由 gatherer 协调: 阶段1 把变更 URL 入队; 阶段2 crawl (取 stream/metadata); 阶段3 更新索引。关键是三条队列: 高优先通知队列 (需立即反映, 如用户刚改了标题)、普通通知队列、周期 crawl 队列; 通知队列总是先于 crawl 队列处理, 每条队列内部 FIFO。这把'发现变更'(生产者) 与'处理变更'(消费者) 彻底解耦, 并让交互触发的变更插队到后台全扫前面。",
+          "applicabilityToBerth": "直接可迁移且收益最大。berth 现状是 AssetScanner.scanAll 一次性全扫, 无优先级概念。改造: 在 worker_thread 里建一个调度器, 持有三条队列 — (a) 用户当前所在域/项目的资产 (高优先, 切换即插队但只是重排队列, 不重扫), (b) chokidar 推来的增量变更 (普通), (c) 启动时的全量起底 crawl (低优先, 慢慢扫)。队列项是 '资产路径 + 类型 + 期望操作'。消费端单线程 FIFO 取, 天然限频。用户切到某项目时只把该项目相关 URL 提到高优先队列头部 (满足'narrow-down 不触发扫描', 但首屏局部 loading 可被加速)。",
+          "tradeoffs": "需要把现有'适配器逐个全扫'重构为'单元素可独立处理'的任务粒度 (每个 skill/hook/mcp/session 文件是一个 queue item), 适配器要从 scanAll(project) 拆成 scanOne(url)。重构成本中等, 但这是后续所有增量/背压能力的地基, 不做这一步其余技术都落不了地。队列需持久化 (见 Windows-gather.db 模式) 才能在重启后续跑。"
+        },
+        {
+          "name": "全量 crawl 一次 + 此后纯通知驱动的增量 (notification-only 源模型)",
+          "whatItDoes": "Windows Search 把数据源分两类: notification-only (NTFS/Outlook) 初次全量 crawl 后永不再全扫, 之后完全靠 USN Change Journal / Outlook 推送的增量通知维持新鲜度; notification-enabled (FAT/IE) 启动时做一次 incremental crawl 再监听。NTFS 上 USN Change Journal 充当 file:// 协议下所有 URL 的统一通知提供者。'通知是稳态, 全扫是初态'。",
+          "applicabilityToBerth": "正是用户要的'启动即全量起底、之后渐进持续增量'的权威范式, 直接对应 berth 目标重定义。映射: berth 的 ~/.claude 与 ~/.codex 整棵树 = crawl scope; 启动时做一次全量 crawl 建立完整快照 (满足'[全局]=全部可扫资产完整结果'); 此后 chokidar (macOS FSEvents / Linux inotify / Windows ReadDirectoryChangesW) 充当 berth 的'通知提供者'角色, 等价于 USN 之于 NTFS。切项目/切域不再触发任何扫描, 只过滤已扫快照。把当前'切项目重扫'彻底删除。",
+          "tradeoffs": "chokidar 的语义弱于 USN: 它给的是文件系统事件 (add/change/unlink) 而非带版本号的有序 journal, 跨平台可靠性参差 (网络盘、容器挂载、editor 原子写会丢/重事件)。因此必须像 Windows 那样保留'周期性安全网全扫'兜底 (低频, 如每数小时或检测到 watcher 异常时), 不能 100% 信任 watcher。USN 的 rollover 概念在 berth 对应'watcher 曾掉线/丢事件'→ 触发受影响 scope 的 reconcile 全扫。"
+        },
+        {
+          "name": "checkpoint + reset/restore signature 的失效与恢复协议",
+          "whatItDoes": "通过 ISearchNotifyInlineSite::OnCatalogStatusChange 暴露三个值: guidCatalogResetSignature (变了=整库重置, 必须重推全部 crawl scope)、guidCheckPointSignature (变了=回滚到上一 checkpoint, 重推该 checkpoint 之后累积的通知)、dwLastCheckPointNumber (最后保存的 checkpoint 号)。checkpoint 之前发出的通知都已落盘安全, 提供者只需追踪'两个 checkpoint 之间'的通知。这是一套精确的、最小代价的缓存失效与崩溃恢复语义: 永远只重做不可信的那段, 而非全量重建。",
+          "applicabilityToBerth": "berth 缓存失效的硬核范本, 用 better-sqlite3 落地极自然。建议表: 一张 catalog_meta 存 reset_signature / checkpoint_number; 每个资产行存 last_indexed_checkpoint。处理一批增量后, 在一个 sqlite 事务里写资产更新并 bump checkpoint (= 事务提交点)。崩溃/重启后: 若 schema 版本变 (= reset signature 变) → 全量重建; 否则只重新 reconcile 'checkpoint 之后被 watcher 标脏但未确认完成'的资产。比起 berth 现在的整快照重算, 这能把重启恢复成本从 O(全部资产) 降到 O(未确认增量)。",
+          "tradeoffs": "需要引入'确认/未确认'状态机和 checkpoint 计数, 增加少量状态管理复杂度。但因为 berth 本就有 better-sqlite3 且 SQLite 事务即天然 checkpoint 边界, 实现成本远低于其语义价值。signature 用 schema 哈希 + 适配器版本号拼出, 适配器逻辑升级时自动触发对应资产类型的重建 (而非全库), 可做到细粒度失效。"
+        },
+        {
+          "name": "批量通知协议: n 条 / t 时间窗 flush + ack + 超时重发",
+          "whatItDoes": "通知提供者不逐条推送变更, 而是攒批: '每 n 条变更或每 t 时间间隔, 或两者组合' flush 一批 SEARCH_ITEM_CHANGE 给 indexer; indexer 返回每条的 HRESULT ack (+ 分配的 DocId); 若超时未收到 ack, 提供者重发。这同时实现了去抖 (debounce)、批处理 (减少 IPC/事务次数) 和可靠投递 (at-least-once + ack)。",
+          "applicabilityToBerth": "直接解决 chokidar 高频抖动问题。chokidar 对一次 git checkout / npm install 会喷出成千上万事件; berth 应在 watcher 与索引队列之间加一层 coalescing buffer, 按 (达到 N 条 或 距首事件 T ms) 成批 flush 进队列, 并对同一路径的多次事件折叠成最后一次 (last-write-wins)。N/T 正好做成用户可调的性能档位 (见可配置项)。ack 在 berth 内是进程内调用, 可简化为'消费成功才从 buffer 移除', 失败留在 buffer 下轮重试。",
+          "tradeoffs": "攒批会引入'变更到可见'的延迟 (t 窗口), 与'实时'目标有张力 — 解法是分层: 用户当前域/项目用短窗口或直接走高优先队列 (近实时), 后台其余 scope 用长窗口 (省资源)。需要按路径去重的数据结构 (Map<path, lastEvent>), 实现简单。"
+        },
+        {
+          "name": "Indexer backoff: 用户活动 / I/O / 电池感知的自适应降速与暂停",
+          "whatItDoes": "默认开启的 backoff 机制在检测到用户正在活跃使用设备或系统高负载 (高磁盘 I/O) 时自动降低甚至暂停索引, 空闲时自动恢复满速; 安装后的首次全量索引就会'在高 I/O 和用户活动期间暂停'。另有独立的电源策略: 电池供电 / Battery Saver / 低电量模式下暂停或降速, 接 AC 恢复 (Win10 2004+ 的 'respect device power settings')。所有这些都暴露为注册表/组策略开关 (HKLM\\...\\Windows Search\\DisableBackoff, respect power settings, pause on battery), 并在 UI 显示'因用户活动索引已降速'状态。",
+          "applicabilityToBerth": "这是'不打扰 UX + 按设备性能调节'的现成蓝本, 与用户'局部 loading、限频/拉长间隔、背压'要求完全吻合。Electron 可取信号: powerMonitor (onBattery / on-ac / system idle: powerMonitor.getSystemIdleTime()), app 窗口 focus/blur, 以及 worker 内自测 (用 process CPU、事件循环延迟近似负载)。策略: 应用前台且用户活跃 → 后台 crawl 队列降速 (拉长 tick 间隔/缩小批量), 高优先队列照常; 窗口失焦/系统空闲 → 全速跑后台全扫; 笔记本电池 → 默认暂停后台全扫只保留增量。状态在 UI 用局部 loading/进度条而非全屏阻塞呈现。",
+          "tradeoffs": "powerMonitor 的 idle 检测跨平台精度不一 (Linux 需 X11/Wayland 支持), 电池信息在台式机/某些虚机不可用 — 需优雅降级 (取不到信号就用保守默认)。降速逻辑要避免抖动 (活跃↔空闲频繁切换导致索引走走停停), 应加滞回 (hysteresis): 进入空闲需持续 X 秒才提速。这些都是调参工作量, 无架构风险。"
+        },
+        {
+          "name": "Windows 11: 单一 ESE 库拆成三个职责分离的 SQLite 文件 (WAL)",
+          "whatItDoes": "Windows 11 把原来单体的 Windows.edb (ESE/JetBlue, 含属性库 + 正排 value index + 倒排 inverted index) 重构为三个 SQLite 文件: Windows.db (核心索引, SystemIndex_1_PropertyStore 存属性/时间戳/内容摘要)、Windows-gather.db (SystemIndex_Gthr / GthrPth, 文件夹层级与全路径重建即 crawl/gather 结构)、Windows-usn.db (变更日志状态)。每个库带 .db-wal / .db-shm, 即 WAL 模式。职责被沿'稳定的最终索引 / 易变的发现-爬取队列 / 高频的变更日志'三条轴切开。",
+          "applicabilityToBerth": "对 berth 是最贴脸的迁移, 因为它本就用 better-sqlite3 + MiniSearch。建议照此分层 (可同库不同表, 不必三文件): (a) 资产属性/快照表 = berth 的最终可查询结果 (供[全局]/域/项目过滤展示); (b) gather/queue 表 = 持久化的待处理队列与 crawl 进度 (重启可续跑, 对应 SystemIndex_Gthr); (c) watcher 游标/checkpoint 表 = 记录每个 scope 最后处理到的状态, 对应 Windows-usn.db。倒排检索继续交给 MiniSearch, 但 MiniSearch 索引应可从属性表重建 (MiniSearch 内存态 = 派生缓存, 真源在 sqlite)。开启 WAL (better-sqlite3 pragma journal_mode=WAL) 让后台写入不阻塞前台读查询 — 这正是'后台持续索引 + 前台实时查询'并发场景需要的。",
+          "tradeoffs": "把队列/进度持久化进 sqlite 比纯内存队列复杂, 但换来重启可续跑与崩溃安全 (配合 checkpoint 技术)。MiniSearch 全内存倒排在资产量大 (海量 session 文件) 时有内存压力, 需评估是否只对'轻量元数据'建 MiniSearch、对'重内容'走 sqlite FTS5 — 但这超出当前必需, 可后置。WAL 需注意 -wal 文件清理与 checkpoint 频率调参。"
+        }
+      ],
+      "recommendations": [
+        "把 AssetScanner 从'切项目全扫'重构为'全量起底一次 + 通知驱动增量'的稳态模型 (照搬 notification-only 源模型): 启动即在后台低优先 crawl 整个 ~/.claude + ~/.codex 建立[全局]完整快照; 此后只靠 chokidar 增量维护; 切域/切项目纯过滤快照, 删除一切重扫路径。这是落地用户目标重定义的主干。",
+        "在 worker_thread 内建调度器 + 三条优先级 FIFO 队列 (高优先=用户当前域/项目, 普通=chokidar 增量, 低优先=全量 crawl), 把适配器从 scanAll(project) 拆成 scanOne(assetUrl) 的可独立处理粒度。这是后续限频/背压/局部 loading 的地基, 应最先做。",
+        "在 chokidar 与队列之间加 coalescing/debounce 缓冲层 (按 N 条或 T ms flush, 同路径折叠为 last-write-wins), 把 N/T 做成用户可调性能档位。直接解决 git checkout / npm install 触发的事件风暴, 实现天然背压与去抖。",
+        "用 better-sqlite3 实现 checkpoint + signature 失效协议: catalog_meta 表存 schema/适配器版本 signature 与 checkpoint 号, 每批增量在一个事务内写更新并 bump checkpoint。重启后 signature 变则按资产类型重建、未变则只 reconcile 未确认增量; 适配器逻辑升级自动失效对应类型而非全库。把重启恢复成本从 O(全部) 降到 O(未确认增量)。",
+        "实现 Electron 版 indexer backoff: 用 powerMonitor (电池/AC、系统空闲时长) + 窗口 focus/blur + 事件循环延迟近似负载, 驱动后台 crawl 队列降速/暂停 (高优先队列不受影响), 空闲/失焦时提速, 电池默认暂停后台全扫。加滞回避免走走停停; 状态用局部 loading/进度条呈现, 不阻塞前台。对应'不打扰 + 按设备性能调节'。",
+        "开启 better-sqlite3 WAL (journal_mode=WAL), 让后台索引写入不阻塞前台查询读; 按 Windows 11 三库职责分离原则把'最终资产快照表 / 持久化 gather 队列与 crawl 进度 / watcher 游标 checkpoint'三类状态分表持久化, 使队列重启可续跑。MiniSearch 倒排索引视为可从 sqlite 属性表重建的派生缓存, 真源放 sqlite。",
+        "保留低频'安全网全扫'兜底 (对应 NTFS 周期 crawl 与 USN rollover 恢复): 在 watcher 掉线/丢事件/检测异常时, 对受影响 scope 做一次 reconcile 全扫, 不盲目信任跨平台 FS 事件 (网络盘/容器挂载/editor 原子写会丢事件)。这是 chokidar 弱于 USN 有序 journal 的必要补偿。",
+        "在设置中暴露与 Windows Search 同构的用户可配置项: 后台索引开关、性能档位 (映射到 flush 批量 N/T 与队列 tick 间隔)、电池时暂停后台全扫、空闲时才全速、手动暂停/恢复, 满足'可在设置中按设备性能调节'的要求。"
+      ],
+      "citations": [
+        "https://learn.microsoft.com/en-us/windows/win32/search/-search-indexing-process-overview",
+        "https://learn.microsoft.com/en-us/windows/win32/search/-search-3x-wds-notifyingofchanges",
+        "https://learn.microsoft.com/en-us/windows/win32/search/-search-3x-wds-extidx-csm",
+        "https://learn.microsoft.com/en-us/windows/win32/search/-search-3x-wds-extidx-prot-implementing",
+        "https://learn.microsoft.com/en-us/windows/win32/fileio/change-journals",
+        "https://learn.microsoft.com/en-us/windows/win32/api/winioctl/ns-winioctl-read_usn_journal_data_v0",
+        "https://www.ninjaone.com/blog/enable-or-disable-indexer-backoff/",
+        "https://www.elevenforum.com/t/turn-on-or-off-respect-power-settings-when-indexing-in-windows-11.2960/",
+        "https://www.tenforums.com/tutorials/93880-enable-disable-indexing-when-battery-power-windows.html",
+        "https://www.cyberengage.org/post/a-deep-dive-into-windows-search-database-parsing-winsearchdbanalyzer---sqlite---sidr",
+        "https://www.levelblue.com/blogs/spiderlabs-blog/windows-search-index-the-forensic-artifact-youve-been-searching-for/",
+        "https://medium.com/@boutnaru/the-windows-forensic-journey-windows-search-index-windows-desktop-search-3055667197bd"
+      ]
+    },
+    {
+      "system": "berth scanner refactor — external research (题目: Everything/USN, ripgrep, fd, watchman, chokidar, fsevents)",
+      "summary": "针对 berth 把\"按项目一次性全扫\"改造为\"后台/渐进/实时/持续/增量/可控/带缓存失效\"的目标，调研了 Everything(USN journal)、ripgrep/fd(ignore crate 并行遍历+gitignore)、Watchman、chokidar v4、fsevents 六个系统的具体工程做法，并补充了两个对落地最关键的邻接技术：@parcel/watcher(原生跨平台 watcher，提供 snapshot + getEventsSince 离线变更检测) 与 Rust ignore crate(可作为 gitignore 库复用思路)。\n\n核心可迁移结论（已结合 berth 的 worker_threads / better-sqlite3 / chokidar / MiniSearch 现状）：\n\n1. 最高价值单点：用 @parcel/watcher 替换 chokidar，并引入 writeSnapshot/getEventsSince。这一条同时解决 berth 当前三个痛点——(a) 应用关闭期间发生的变更目前完全丢失(chokidar ignoreInitial:true，重启只能靠全量重扫)；getEventsSince 用持久化 snapshot 在启动时只取增量；(b) C++ 层 throttle+coalesce，git checkout / npm install 这类风暴不会冲垮 JS 线程(berth 现在没有任何 debounce/coalescing)；(c) macOS 走 FSEvents、Windows 走 ReadDirectoryChangesW、安装了 watchman 自动用 watchman，毫秒级而非秒级。这是 Everything 的 USN \"since\" 模型在跨平台下的现成等价物，远比在 Node 里自己读 USN journal(需管理员权限+原生 addon，见下)现实。\n\n2. 增量 reconcile 模型：现 AssetFileCache 已是 (path,size,mtimeMs) 指纹缓存，但只在\"整轮 scanAll 里被动命中\"，变更事件并不驱动它做精准失效。应把 watcher 事件(create/update/delete)映射到\"受影响的 scan root → 只重解析该文件/该目录的少量资产 → patch 进 snapshot + 增量更新 MiniSearch(已有 addAsset/removeAsset/discard) + 失效 SnapshotSelectorCache\"。这把\"切项目/有变更=全量重扫\"降为 O(变更数)。\n\n3. 持久化缓存升级：把 AssetFileCache 的内存快照落到已有的 better-sqlite3（berth 已用于 memory），按设备做 (volume, path) → (size, mtime, ino, parsedAssetJson) 表，配合 parcel snapshot 文件，实现冷启动\"读 DB + getEventsSince 增量补差\"而非冷扫全盘——这正是 Everything\"开机读 MFT 建库、之后只读 USN\"的可迁移形态。\n\n4. 遍历与过滤：ripgrep/fd 的 ignore crate 证明\"并行 work-stealing 遍历 + 分层 gitignore 匹配(每层 .gitignore 自身的编译也并行)\"是大目录扫描的正解。berth 资产根很浅(.claude/.codex/项目配置)，不需要 Rust，但应迁移其两条原则：(a) 遍历时即时按目录层级短路 ignore(node_modules/.git/构建产物)，berth 现在 watcher 的 ignored 只挡 node_modules|.git，全量扫描侧没有等价的早剪枝，会跟着 session 派生项目遍历无关大目录；(b) 用 worker_threads 池对多个 scan root 并行解析(现在是适配器串行 for 循环)。\n\n5. 限频/背压/不打扰 UX：Watchman 的 settle(默认20ms 空闲后才派发) + fsevents_latency(默认0.01s 批处理) + 可配 ignore_dirs 前8项走 OS 级加速，给 berth 提供了直接的参数化模板——在\"设置里按设备性能调节\"时，settle 窗口、batch 间隔、并发 worker 数、是否轮询(网络盘)都应是显式可调项。chokidar 的 awaitWriteFinish(stabilityThreshold 默认2000ms / pollInterval 100ms)、atomic(100ms 合并 unlink+add)、depth 限制是 berth 立即可加的稳健性补丁(编辑器原子写、半写文件、深目录)。\n\n取舍主线：原生 watcher(parcel)带来预编译二进制/Electron ABI 维护成本，但 berth 已经在编译 better-sqlite3，原生工具链与 onlyBuiltDependencies 闸门都已就绪，边际成本低；直接读 Windows USN 不推荐(管理员权限是硬门槛，普通桌面应用拿不到)。fsevents 历史 replay / 网络盘轮询 / 符号链接环检测(fd 的 -L 无防环，berth 必须自己加 visited-inode 防环)是健壮性必须显式处理的边界。",
+      "techniques": [
+        {
+          "name": "USN Journal 'since' 模型 (Everything / voidtools)",
+          "whatItDoes": "Everything 初始用一次批量读 NTFS MFT(主文件表)在约1秒内建全盘文件名库，之后不再扫盘，只每秒读一次 USN(Update Sequence Number) change journal——NTFS 驱动持久维护的 append-only 变更日志，记录所有 create/rename/move/delete。关键：应用没运行时系统仍在写 journal，重新打开后从上次 USN 续读即可补齐离线变更，零漏。",
+          "applicabilityToBerth": "理念直接适用：berth 现在 chokidar ignoreInitial:true，关闭期间的变更全丢，只能靠重启全量重扫兜底。应改为'持久化一个游标(snapshot/USN/event-id)，启动时只取自上次以来的增量'。但直接在 Node 读 Windows USN 不现实——FSCTL_READ_USN_JOURNAL 需 DeviceIoControl + CreateFile(volume handle, FILE_FLAG_BACKUP_SEMANTICS)，且需管理员权限(ERROR_ACCESS_DENIED)，普通桌面应用拿不到；还得写原生 addon。故采纳模型、不采纳实现，用 @parcel/watcher 的 getEventsSince 做跨平台等价物。",
+          "tradeoffs": "自研 USN：最快、最省、Windows 原生，但管理员权限是死结(berth 不可能要求用户提权)，且仅 NTFS/Windows，macOS 无对应物，跨平台代价高。结论：作为'增量游标'设计的灵感来源，落地用 parcel watcher。"
+        },
+        {
+          "name": "@parcel/watcher: snapshot + getEventsSince 离线增量 + 原生后端 (Everything USN 的跨平台等价物)",
+          "whatItDoes": "原生 C++ Node 模块。subscribe(dir,fn,{ignore,backend}) 实时订阅；writeSnapshot(dir,path) 在退出前持久化文件系统状态；getEventsSince(dir,snapshotPath) 返回自该快照以来的变更(即使进程当时没运行)，事件结构与 subscribe 回调一致。事件在 C++ 层 throttle+coalesce：每文件只发一条(create 与随后 update 合并为一条 create)，git checkout/npm install 风暴不冲垮 JS 线程。后端自动择优：macOS→FSEvents，装了 watchman→watchman，Linux→inotify，Windows→ReadDirectoryChangesW，大树毫秒级而非秒级。",
+          "applicabilityToBerth": "这是单点收益最高的替换。(1)用 getEventsSince 直接补齐 berth 当前完全缺失的'离线变更检测'：启动时对每个 scan root 比对上次 writeSnapshot，只增量解析。(2)C++ throttle 直接填补 berth 现在零 debounce/coalescing 的缺口。(3)Windows 走 ReadDirectoryChangesW 比 chokidar 的 fs.watch 更稳、网络盘和大目录更省。berth 已编译 better-sqlite3，原生模块工具链 + pnpm onlyBuiltDependencies 闸门已就位，接入边际成本低。snapshot 文件可与 better-sqlite3 缓存并存(DB 存已解析资产，snapshot 存 FS 游标)。",
+          "tradeoffs": "引入第二个原生依赖，需维护 Electron ABI/预编译二进制(electron-rebuild 已在用)。Linux 无 watchman 时 getEventsSince 走 brute-force(秒级，但 berth 的 .claude/.codex 根很小，可接受)。ignore 用 picomatch glob，与 berth 现有 minimatch/glob 语义需对齐。迁移时 chokidar 的现有 ignored 正则规则要转成 parcel 的 ignore 数组。"
+        },
+        {
+          "name": "ignore crate 分层 gitignore + 并行 work-stealing 遍历 (ripgrep / fd)",
+          "whatItDoes": "ripgrep/fd 把 gitignore 匹配抽成独立 ignore crate：递归遍历时维护一个分层匹配器(repo 根→各级 .gitignore→.ignore→.fdignore，就近优先)，进入每个目录即时判断是否整目录短路；且'每个 .gitignore 文件的编译与匹配本身也并行'。遍历用 crossbeam 无锁 work-stealing 队列，多线程同时走目录树+解析，每线程独立 matcher 无锁竞争。默认跳隐藏文件、二进制、.gitignore 命中项。",
+          "applicabilityToBerth": "两条原则可迁移，无需 Rust(berth 资产根浅)：(1)早剪枝——berth 全量扫描侧目前没有遍历期 ignore，跟着 session 派生 projectPath 走时会遍历项目里 node_modules/构建产物等无关大目录(watcher 侧的 isIgnoredWatchPath 只挡 node_modules|.git，扫描侧无等价物)。应在 glob/遍历入口加同一套 ignore 早剪枝。(2)并行——现 AssetScanner.runScanAll 是适配器串行 for 循环 + scanner.ts 里 shallow 扫描也串行；多个 scan root / 多项目 root 应用 worker_threads 池并行解析(berth 已有 worker 基建)。",
+          "tradeoffs": "并行解析提速但要控并发上限(设置项按设备调，呼应 Watchman 模板)，否则磁盘/CPU 争用反伤交互。gitignore 早剪枝要小心别把用户真想看的 .claude 子项误剪(berth 资产本就在 dot 目录里——这正是 GH-111 R2 修过的坑：catch-all dotfile 正则误伤 .claude/.codex/.agents)，ignore 规则必须白名单 berth 自己的根。"
+        },
+        {
+          "name": "Watchman settle/latency/ignore_dirs 限频与背压参数模板",
+          "whatItDoes": "Watchman 的可调参数给出工业级 debounce/批处理范式：settle(默认20ms 文件系统空闲后才派发触发器，避免风暴中每事件都触发)；fsevents_latency(默认0.01s，让系统批量合并更多变更通知)；ignore_dirs(完全排除目录，macOS 前8项走 OS 级加速、变更根本不传给 watchman)；ignore_vcs(默认[.git,.hg,.svn]，对 VCS 目录做浅监听只存 cookie)；fsevents_try_resync(丢事件后尝试重放 journal 而非整树 recrawl)；recrawl 概念(失同步后整树重扫，是要极力避免的退化路径，常因 inotify 上限过小)。",
+          "applicabilityToBerth": "直接做 berth'设置里按设备性能调节'的参数清单与默认值模板：可配项 = settle 空闲窗口、批处理间隔、并发 worker 数、ignore 目录集、网络盘是否轮询。berth 现在零 debounce，应在 watcher 事件 → reconcile 之间加一个 settle 合并窗口(把同一 burst 内的多文件事件批量处理一次)。'避免 recrawl'映射到 berth：变更事件能精准 patch 时绝不触发全量 scanAll(全量重扫 = berth 版 recrawl，是要消灭的退化)。",
+          "tradeoffs": "settle 窗口越大越省但实时性越差，是延迟/CPU 的显式权衡，正适合做成设置项。不引入 watchman 守护进程(额外安装/运维)，只借其参数语义；parcel watcher 在装了 watchman 时会自动用它，等于免费获得其后端优势。"
+        },
+        {
+          "name": "chokidar v4 稳健性选项 (awaitWriteFinish / atomic / depth / usePolling / followSymlinks)",
+          "whatItDoes": "awaitWriteFinish(stabilityThreshold 默认2000ms, pollInterval 100ms)：文件大小稳定后才发 change，避免读到半写文件。atomic(默认 true，100ms 内 delete→re-add 合并为 change)：吃掉编辑器原子写产生的 unlink+add 抖动。depth：限制递归层数。usePolling+interval(100ms)/binaryInterval(300ms)：网络盘必须轮询才可靠。followSymlinks(默认 true，false 则只监听链接本身)。chokidar v4 砍依赖 13→1、去掉内置 glob。",
+          "applicabilityToBerth": "即便不换 parcel，这些是 berth 现有 chokidar 配置立即可补的稳健性补丁——现 watcher 只设了 depth:5/ignoreInitial/ignorePermissionErrors/ignored，缺 awaitWriteFinish(berth 解析 JSON/JSONL session 时极易读到半写文件→解析报错进 errors) 与 atomic(VS Code 等保存 .claude 配置走原子写，现在会产生伪 unlink+add 抖动触发误删资产)。网络盘场景(用户 home 在网络盘)需 usePolling 开关作为设置项。符号链接(skills/agents 常被 symlink)需显式决定 followSymlinks 并自己防环。",
+          "tradeoffs": "awaitWriteFinish 增加 ~2s 变更可见延迟(对 berth 资产可接受，正确性优先)。usePolling 显著吃 CPU，只对网络盘开。若最终换 parcel watcher，这些大多由原生后端内建(throttle/coalesce)，但 awaitWriteFinish 式'写完成判定'仍需在 berth 应用层对 session JSONL 做(原生 watcher 不懂文件语义完整性)。"
+        },
+        {
+          "name": "FSEvents 历史 replay / latency 合并 / NoDefer 边沿语义",
+          "whatItDoes": "FSEvents 流以 event-id 为游标：传 kFSEventStreamEventIdSinceNow 表示'从现在起'，传上次收到的最高 event-id 可重放该 id 之后的历史变更(离线补差的底层机制)。latency 参数做时间合并(设1秒则每秒最多通知一次)。kFSEventStreamCreateFlagFileEvents(10.7+)让事件精确到单个文件而非目录粒度。NoDefer 控制在变更的前沿还是后沿通知。UserDropped/KernelDropped 标志表示内核缓冲溢出丢事件，需 resync 或 recrawl 兜底。",
+          "applicabilityToBerth": "berth 不直接调 FSEvents(由 parcel/chokidar 封装)，但其 event-id 游标 = parcel getEventsSince 的 snapshot 在 macOS 的底层实现，理解它能让 berth 正确处理'丢事件'边界：必须有'检测到 dropped/缓冲溢出 → 对受影响 root 做一次局部重扫'的兜底路径(而非整库 recrawl)。latency 合并语义印证了上面 settle 窗口的设计。kFSEventStreamCreateFlagFileEvents 文件级粒度让 berth 能精准定位'哪个资产变了'做增量 patch。",
+          "tradeoffs": "dropped-event 兜底是必须实现的边界(高写入场景如批量 git 操作会触发)，否则增量索引会静默漂移。这部分逻辑跨平台不一致(Windows ReadDirectoryChangesW 的缓冲溢出语义不同)，berth 应在应用层统一抽象成'可信度降级 → 局部重扫'信号，不依赖具体后端语义。"
+        },
+        {
+          "name": "持久化增量索引缓存 (Everything 建库模型 × berth better-sqlite3 + MiniSearch)",
+          "whatItDoes": "Everything 的'开机一次性建库、之后只读 journal 增量维护'落到 berth 形态：用已有 better-sqlite3 建资产缓存表(volume/path → size, mtime, inode, parsedAssetJson)，冷启动读 DB 秒级恢复 UI，再用 parcel getEventsSince 取离线增量补差，避免冷扫全盘；运行期变更事件 → 精准失效该行 + 增量更新 MiniSearch。",
+          "applicabilityToBerth": "高度契合现状。berth 的 AssetFileCache 已是 (path,size,mtimeMs) 指纹缓存但只存内存、只在整轮 scanAll 被动命中；better-sqlite3 已在 memory 模块用。把指纹缓存落库即得'冷启动免全扫'。MiniSearch 已有 addAsset/removeAsset/discard 增量 API 和 indexedSignature 去重——现在 ensureIndexed 仍是'整批 docs 算签名比对'(O(n))，应改为变更驱动的增量 add/remove，配合 SnapshotSelectorCache 按 snapshotId 失效。这样'切用户域/项目域 = narrow-down 过滤'天然成立(全集在库，scope 只是过滤谓词，呼应 GH-113 设计)。",
+          "tradeoffs": "落库引入 schema 迁移与缓存一致性责任(mtime 粒度在某些 FS 只到秒，需配 size+inode 兜底，呼应 file-cache 现有指纹)。DB 写入要批量/事务化，避免每事件一次 I/O。MiniSearch 增量更新后内存索引与 DB 需保持同源，崩溃恢复时以 DB+getEventsSince 为准重建。inode 在 Windows 需用 fileIndex(ReadDirectoryChangesW/GetFileInformationByHandle)，跨平台抽象有成本。"
+        }
+      ],
+      "recommendations": [
+        "最高优先：用 @parcel/watcher 替换 chokidar，引入 writeSnapshot/getEventsSince。一次解决三件事——离线变更检测(berth 当前完全缺失，关闭期变更全丢)、C++ 层 throttle/coalesce(berth 当前零 debounce)、Windows/macOS 原生后端(比 fs.watch 稳)。berth 已编译 better-sqlite3，原生工具链与 pnpm onlyBuiltDependencies 闸门已就位，接入成本低。",
+        "不要自研 Windows USN journal 读取：FSCTL_READ_USN_JOURNAL 需管理员权限(ERROR_ACCESS_DENIED)+原生 addon，普通桌面应用拿不到提权，且仅 NTFS。采纳其'持久游标 + since 增量'模型，用 parcel getEventsSince 做跨平台落地。",
+        "把'变更事件 → 精准失效'接通：watcher 的 create/update/delete 映射到受影响 scan root，只重解析少量文件 patch 进 snapshot，增量更新 MiniSearch(已有 addAsset/removeAsset/discard) + 失效 SnapshotSelectorCache。消灭'有变更就全量 scanAll'这个 berth 版 recrawl 退化路径。",
+        "AssetFileCache 指纹缓存落到 better-sqlite3(已用于 memory)，按 (volume,path)→(size,mtime,inode,parsedAssetJson) 建表。冷启动读 DB 秒级恢复 UI + getEventsSince 补离线增量，替代冷扫全盘。这直接支撑'启动即扫全部、scope 只是 narrow-down 过滤'的目标。",
+        "立即给现有 chokidar 打稳健性补丁(即使先不换 parcel)：加 awaitWriteFinish(stabilityThreshold~2000ms，挡半写 session JSONL 解析失败) 与 atomic(挡 VS Code 原子写产生的伪 unlink+add 误删)；网络盘 home 场景把 usePolling 做成设置项；symlink 资产(skills/agents)显式决定 followSymlinks 并自加 visited-inode 防环(fd 的 -L 无内置防环，berth 必须自己做)。",
+        "把限频/背压做成'按设备性能调节'的显式设置项，默认值借 Watchman 模板：settle 空闲合并窗口(默认~20ms)、批处理间隔、并发 worker 数、ignore 目录集、网络盘轮询开关。在 watcher 事件 → reconcile 之间加 settle 合并窗口批量处理同一 burst。",
+        "遍历侧引入 ripgrep/fd 的早剪枝 + 并行：扫描入口加与 watcher 同源的 ignore 早剪枝(扩展现 isIgnoredWatchPath，但白名单 berth 自己的 .claude/.codex/.agents dot 根，避免重蹈 GH-111 R2 误伤覆辙)；用 worker_threads 池并行解析多个 scan root(现为串行 for 循环)，并发上限受上面设置项约束。",
+        "实现'丢事件兜底'边界：检测到后端缓冲溢出(FSEvents UserDropped/KernelDropped、Windows 缓冲溢出)时，对受影响 root 做一次局部重扫并降级可信度，绝不退化成整库 recrawl。这是高写入场景(批量 git 操作)下增量索引不静默漂移的前提。"
+      ],
+      "citations": [
+        "https://www.voidtools.com/faq/",
+        "https://www.voidtools.com/support/everything/recent_changes/",
+        "https://www.voidtools.com/forum/viewtopic.php?t=11919",
+        "https://github.com/parcel-bundler/watcher/blob/master/README.md",
+        "https://www.npmjs.com/package/@parcel/watcher",
+        "https://github.com/paulmillr/chokidar",
+        "https://www.npmjs.com/package/chokidar",
+        "https://facebook.github.io/watchman/docs/config",
+        "https://facebook.github.io/watchman/docs/cmd/subscribe.html",
+        "https://facebook.github.io/watchman/docs/troubleshooting",
+        "https://facebook.github.io/watchman/docs/expr/since.html",
+        "https://github.com/BurntSushi/ripgrep",
+        "https://github.com/BurntSushi/ripgrep/pull/202",
+        "https://docs.rs/crate/fd-find/7.4.0",
+        "https://github.com/BurntSushi/walkdir",
+        "https://learn.microsoft.com/en-us/windows/win32/api/winioctl/ni-winioctl-fsctl_read_usn_journal",
+        "https://learn.microsoft.com/en-us/windows/win32/api/winioctl/ni-winioctl-fsctl_query_usn_journal",
+        "https://pkg.go.dev/github.com/fsnotify/fsevents",
+        "https://github.com/phracker/MacOSX-SDKs/blob/master/MacOSX10.6.sdk/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/CarbonCore.framework/Versions/A/Headers/FSEvents.h"
+      ]
+    },
+    {
+      "system": "VSCode 文件监听+搜索 / JetBrains 索引 / LSP workspace indexing 三类成熟系统的工程技术调研, 面向 berth 扫描器从\"按项目一次性全扫 worker\"重构为\"后台、渐进、增量、可暂停、带缓存与失效\"的全局索引引擎。",
+      "summary": "调研了 VSCode (parcel/Node 双层文件监听 + ripgrep 搜索的 batch-512/超时流式回传 + watcherExclude)、JetBrains IntelliJ (dumb-mode 渐进可用 + FileBasedIndex 版本号失效 + 扫描/更新两阶段 + 共享索引)、LSP 3.17 ($/progress workDoneProgress 的 cancellable/percentage/message + partialResultToken 增量流 + $/cancelRequest)、rust-analyzer (salsa 增量重算 + 输入失效驱动取消 + prime-caches 优先级) 与 clangd (per-file .idx 分片磁盘缓存 + 后台线程池 + 打开文件优先级提升 + dynamic/static 分层 MergedIndex) 五套系统。逐条映射到 berth 的 worker_threads / better-sqlite3 / chokidar / MiniSearch / 现有 AssetFileCache(size+mtime 指纹) / AgentAssetRuntime 快照缓存现状, 给出可落地的全量→增量、变更检测、限流背压、缓存失效、不打扰进度 UX、用户可配置项方案与取舍。核心结论: berth 已具备 80% 的零件 (AssetFileCache 指纹/快照、partial 流、per-project 缓存), 缺的是把\"单项目一次性\"换成\"全设备持续 + better-sqlite3 持久化 + chokidar 失效 + 优先级队列 + cancellation token\"。",
+      "techniques": [
+        {
+          "name": "VSCode 双层文件监听 + watcherExclude 噪声过滤 (recursive ParcelWatcher / 非递归 Node fs.watch)",
+          "whatItDoes": "VSCode 对目录树用原生递归 watcher(parcel-watcher), 对单文件用 Node fs.watch; 递归监听自动套用 files.watcherExclude(默认排除 node_modules/.git 等) 把高频噪声目录从事件源头剔除; 不存在的路径降级为 fs.watchFile 5s 轮询; 重叠请求按最短路径去重(last-one-wins)。",
+          "applicabilityToBerth": "berth 已依赖 chokidar, 不需引入 parcel。直接迁移的是‘排除规则前置’与‘按 agent 根目录而非整盘监听’: 只 watch ~/.claude 与 ~/.codex 这两棵已知小树 + 会话派生项目根的少量约定文件(CLAUDE.md/AGENTS.md/.claude|.codex 配置), 用 chokidar ignored 直接排除 sessions 大目录的逐条事件(sessions 走低频轮询或按需)。会话派生项目可能在网络盘/不存在 → 复用 VSCode 的‘不存在路径轮询降级’思路: chokidar 对这些路径用 usePolling+较长 interval, 避免 native watcher 句柄耗尽。",
+          "tradeoffs": "递归 watcher 在超大目录/网络盘不可靠且吃 inotify/句柄配额; berth 把监听限定在 agent 资产树(本就很小)可规避。代价是 sessions 这类大目录失去实时性, 需用‘低频轮询+mtime 指纹’补偿(可接受, sessions 不需要秒级实时)。"
+        },
+        {
+          "name": "chokidar awaitWriteFinish + atomic 写抖动抑制",
+          "whatItDoes": "awaitWriteFinish 轮询文件大小, 直到稳定一段时间才发 add/change, 抑制编辑器分块写入产生的中间事件; atomic(默认 true) 把 100ms 内的 unlink→add 合并成单个 change, 过滤‘原子写’(临时文件 rename)假事件。",
+          "applicabilityToBerth": "settings.json/config.toml/CLAUDE.md 这类配置常被编辑器原子写, 直接开 awaitWriteFinish({stabilityThreshold: 200~300ms, pollInterval: 50ms}) + atomic:true, 避免一次保存触发多次重扫。配合下面的‘debounce 失效合并’形成两级去抖。",
+          "tradeoffs": "awaitWriteFinish 给变更检测引入 200~300ms 固有延迟(对配置文件完全可接受); stabilityThreshold 过大则用户改完看到更新变慢, 需作为‘性能档位’的一个内部常量而非用户旋钮。"
+        },
+        {
+          "name": "IntelliJ dumb-mode: 扫描/更新两阶段 + 阈值决定透明更新还是降级",
+          "whatItDoes": "IntelliJ 把索引拆成‘Scanning files to index’(先快速枚举决定待更新文件数) 与‘Updating indexes’ 两个后台阶段; 有一个文件数阈值: 低于阈值就透明增量更新, 高于阈值才进入 dumb-mode(只保留不依赖索引的功能)。dumb-mode 期间 PSI client 默认禁用, 除非显式声明能容忍无索引。",
+          "applicabilityToBerth": "直接对应 berth 的‘渐进可用 / dumb-mode’诉求。落地: 第一阶段只做‘廉价枚举+指纹’(stat 所有 agent 资产文件, 不解析), 算出 miss 集合; 第二阶段才真正 parse/解析 raw。UI 在第一阶段就能渲染‘已发现 N 项(灰态/局部 loading)’, 第二阶段逐项点亮。berth 的 AssetFileCache.read 已天然区分 hit/miss/deleted/error, 正好做第一阶段的廉价枚举来源。‘阈值’对应你的‘按设备性能调节’: 设备弱→批更小、间隔更长。",
+          "tradeoffs": "两阶段引入一次额外全盘 stat(对几百个 agent 资产文件成本可忽略, 远小于 parse)。需要 UI 支持‘骨架/灰态’中间状态, 增加渲染态复杂度; 但 berth 已有 partial 流, 改造面集中在‘先发 names/counts 再发 body’。"
+        },
+        {
+          "name": "IntelliJ FileBasedIndex getVersion(): 版本号驱动的整索引失效",
+          "whatItDoes": "每个索引实现声明一个 version 整数, 持久化在磁盘 version 文件; 启动时比对当前实现版本与磁盘版本, 不一致即整体标记 rebuild。这是‘解析逻辑变了→历史缓存必须作废’的标准机制(区别于‘文件变了→单条失效’)。",
+          "applicabilityToBerth": "berth 把扫描结果落 better-sqlite3 持久化后必须有这个: 给每个 adapter/parser 一个 schemaVersion, 连同 app 版本写入 sqlite meta 表; 启动时版本不符则丢弃该 adapter 的全部缓存行重扫。否则升级 berth 后旧解析结果(字段缺失/语义变化)会污染 UI。berth 当前 AssetFileCache 只有 size+mtime 文件级失效, 缺这层‘代码级失效’, 必须补。",
+          "tradeoffs": "几乎零运行时成本, 只在启动比一次版本号。唯一风险是忘记 bump version 导致脏缓存沉默存活 → 用 CI/测试约束 parser 改动必须改 version, 或干脆把 parser 源码 hash 进 version。"
+        },
+        {
+          "name": "better-sqlite3 持久化 per-file 索引分片 (clangd .idx 分片 + 摘要跳过)",
+          "whatItDoes": "clangd 按‘每文件一个 .idx 分片’落盘到 .cache/clangd/index, 索引前先查分片、用文件摘要判断是否变化, 未变则跳过重解析, 启动即可复用上次结果实现‘冷启动不重扫’。",
+          "applicabilityToBerth": "berth 现在 AssetFileCache 是纯内存快照, 重启全丢; AgentAssetRuntime.snapshotCache 也仅进程内。迁移点: 把 AssetFileCacheEntry{fingerprint(path,size,mtimeMs), value} 直接落 better-sqlite3 一张表 (path PK, size, mtimeMs, schemaVersion, json_value)。启动时整表载入即得‘上次全设备索引’, 切项目/重启都是 hit; 只对 mtime/size 变化的行重 parse。这把你要的‘冷启动渐进可用 + 全局=全设备结果’一步到位, 且复用既有 fingerprint 逻辑几乎不改解析层。",
+          "tradeoffs": "sqlite 写放大: 全量首扫会写几百~几千行; 用单事务批量 upsert(better-sqlite3 同步事务极快)规避。json_value 存 raw body 会让库膨胀 → 按 berth 已有的 stripAssetRaw 思路, body 单独表或按需 lazy 读, 索引表只存轻量字段。跨设备不可移植(mtime 设备相关), 但 berth 是单机应用无需共享索引(IntelliJ shared-indexes 那套对 berth 过度设计, 不迁)。"
+        },
+        {
+          "name": "clangd dynamic/static 分层 MergedIndex: 打开/活动项优先 + 内存层覆盖磁盘层",
+          "whatItDoes": "clangd 把‘当前打开文件’的内存 dynamic index 叠在‘后台磁盘 static index’之上(MergedIndex, dynamic 优先), 保证活动内容永远最新, 后台慢索引不阻塞前台; 后台线程池对‘打开文件相关的 TU’做优先级 boost。",
+          "applicabilityToBerth": "对应你的‘优先级队列(可见/活动优先)’。落地: 维护两层——(1) 内存层: 用户当前所在 scope(项目域/用户域)涉及的资产, 同步或最高优先解析, 立即可见; (2) 后台层: 其余全设备资产用低优先 worker 队列慢慢补。‘当前项目 + 当前可见类目’的文件 enqueue 时插队到队头。MiniSearch 索引同理可分层: 先索引可见集合让搜索立即可用, 后台再补全。",
+          "tradeoffs": "两层合并要处理‘同一资产内存层与磁盘层并存’的去重(berth 已有 mergeSharedConventions/dedupeKey 后处理可复用其思路按归一化路径去重)。优先级队列增加调度复杂度, 但能用一个简单的双端队列(可见→unshift, 后台→push)起步, 不必上完整优先级堆。"
+        },
+        {
+          "name": "LSP workDoneProgress: cancellable/percentage/message 三段式不打扰进度",
+          "whatItDoes": "$/progress 用唯一 token 串起 begin{title,cancellable,message,percentage}→report{percentage 单调上升,message}→end{message}; cancellable 控制是否显示取消按钮; percentage 省略即‘无限进度’(spinner); 多个并发活动各用独立 token。",
+          "applicabilityToBerth": "berth 现有 AssetScanProgress{phase,current,total,label} 已接近, 但缺 (1) cancellable 标志驱动 UI 取消按钮; (2) 多并发 token——重构后会有‘当前项目快扫’和‘全设备后台扫’两条并行进度, 应各带 token, UI 分别用‘局部 loading vs 全局后台条’渲染, 正好匹配你‘局部 loading + 不打扰’的要求。把 percentage 省略用于 sessions 这类‘总数未知’的流式阶段(spinner), 已知文件集合阶段才给 0-100。",
+          "tradeoffs": "几乎纯协议/类型层改动, 风险低。多 token 需要 UI 端能并存多条进度而不互相覆盖(当前单一 status 字段需扩成 map), 是这条的主要改造点。"
+        },
+        {
+          "name": "LSP partialResultToken: 集合结果的增量 append 流式回传",
+          "whatItDoes": "请求带 partialResultToken 时, 服务端用 n 个 $/progress 通知逐批 append 结果(每条 payload 与最终结果同型), 最终响应 result 为空; 客户端累积。用于 workspace/symbol 等大集合, 实现‘边算边出’。",
+          "applicabilityToBerth": "berth 现有 onPartial 已是此模式(每 adapter 边界发累积快照), 但当前是‘每次发全量累积’(partialAssets 全列表), 数据量随扫描线性膨胀、structured-clone 成本上升。迁移 LSP 的‘append 增量’语义: partial 只发本批新增/变更的资产(delta), renderer 端累积合并, 而非每次重发整表。配合 better-sqlite3 持久化, 重启后 delta 基线就是磁盘快照。",
+          "tradeoffs": "从‘全量快照’改‘delta’需要 renderer 维护可合并的本地 store(berth 用 Zustand, 天然适合 upsert/remove by id)并处理乱序/丢失(worker→main 是有序可靠通道, 风险低)。收益是大幅降低 worker→main 的 clone 成本, 直接缓解你列的‘背压’问题。"
+        },
+        {
+          "name": "rust-analyzer salsa: 输入失效驱动的后台计算取消 (cancellation token)",
+          "whatItDoes": "salsa 把分析建成查询图; set_file_contents 改输入即触发增量重算并失效下游; 后台线程若查询到已失效输入, 通过特殊 panic 在 join 点被取消(ProcessCanceledException 同理)。即‘输入一变, 正在跑的过期后台任务立刻作废, 不浪费算力出陈旧结果’。",
+          "applicabilityToBerth": "对应你的‘cancellation token + 后台重建不阻塞交互 + 可暂停可控’。berth worker 当前是 fire-and-forget 无法中途取消。落地(不引 salsa, 用轻量 token): 给每轮后台扫分配 epoch/AbortController; chokidar 检测到变更→bump epoch→worker 在每个 adapter/文件边界 checkCanceled(读共享 SharedArrayBuffer 标志或收 postMessage 信号), 命中即丢弃当前过期批次, 用新 epoch 重启。IntelliJ 的 ProgressManager.checkCanceled() 是同一模式的最简实现, 直接照搬‘在循环边界查标志位’即可。‘暂停’= 把 epoch 置为暂停态, worker 在 checkpoint 阻塞。",
+          "tradeoffs": "worker_threads 取消需协作式 checkpoint(不能强杀否则状态不一致), 要在 scanner 的 for-adapter / for-file 循环里插 checkCanceled 点, 是实打实的代码改动。SharedArrayBuffer 标志位是 worker 间最低延迟取消通道, 但需在 vite/electron 下确认可用; 退而求其次用 postMessage+轮询标志(延迟一个 checkpoint, 可接受)。"
+        },
+        {
+          "name": "VSCode 搜索 batch-512 + 超时兜底的流式批处理 (背压平衡)",
+          "whatItDoes": "VSCode 搜索进程曾攒满 512 条结果才回传前端导致‘结果攒着不显示’; 修复是加超时——批没攒满也按时间片先发, 兼顾吞吐(批大)与首字延迟(超时小)。配合 search.maxResults(默认 20000) 封顶资源。throttle 而非 debounce 上报进度(保证至少每隔固定时间出一次)。",
+          "applicabilityToBerth": "直接调你的 onPartial 触发策略: 当前是‘每 adapter 边界发一次’(粒度粗, sessions 多的 adapter 一憋一大批)。改成‘攒够 N 条(如 64~128)或距上次 >150ms 任一满足就 flush’的批+超时, 让 UI 既不被每文件一条刷爆(背压), 又不会长时间空白。进度用 throttle(固定 ~100ms 一次)而非每文件一次, 防止高频 postMessage 自身成为瓶颈。maxResults 思路对 sessions 适用: 设上限/分页, 超出走‘按需加载’而非全塞进首屏快照。",
+          "tradeoffs": "批阈值与超时是性能档位的核心旋钮: 弱机调大批/长超时(省 CPU/IPC, 牺牲实时性), 强机反之。需要实测标定默认值(berth 可在 dev 实测窗口下用真实 ~/.claude 规模标定)。"
+        },
+        {
+          "name": "用户可配置的性能档位 (rust-analyzer prime-caches worker 数 / clangd 后台线程优先级 / IntelliJ 阈值)",
+          "whatItDoes": "rust-analyzer 用 numThreads 配置 prime-caches 工作线程(默认 0=自动按机器选); clangd 提供 CLI flag 设后台索引线程优先级(低优先级避免抢占交互), 并可 --background-index=false 整体关掉; IntelliJ 用文件数阈值平衡透明更新 vs dumb-mode。",
+          "applicabilityToBerth": "对应你‘可在设置中按设备性能调节’。给 berth 设置面板暴露少量档位: (1) 后台并发度(worker 数, 默认按 navigator.hardwareConcurrency 自动); (2) 扫描节流强度(对应上面的批大小/超时/awaitWriteFinish 阈值, 打包成‘高性能/均衡/省电’三档而非裸露常量); (3) 是否监听 sessions 实时(默认低频轮询); (4) 总开关‘后台持续扫描 on/off’对标 --background-index=false。worker 线程本身用低优先级(Node 无原生线程优先级, 但可用‘小批+主动 yield/setImmediate 让出’近似)。",
+          "tradeoffs": "档位过多=用户认知负担且测试矩阵爆炸; 遵循 berth 的 Simplicity-First, 起步只给‘均衡/省电’二档 + ‘后台扫描总开关’, 其余作为内部常量随档位联动。Node worker 无真线程优先级, ‘低优先级’只能靠协作式让出近似, 在重负载下仍可能影响主线程, 需配合上面的 checkpoint/批控。"
+        }
+      ],
+      "recommendations": [
+        "落地优先级 P0 — 持久化层先行: 把现有 AssetFileCache(size+mtime 指纹) 从内存快照升级为 better-sqlite3 一张索引表(path PK + size + mtimeMs + schemaVersion + 轻量字段 json, raw body 分离/lazy)。这是‘全局=全设备结果 + 冷启动渐进可用’的地基, 且复用既有 fingerprintFile/sameFingerprint 逻辑, 解析层几乎不动。同时加 schemaVersion(IntelliJ getVersion 模式)做代码级失效。",
+        "P0 — 把‘单 projectDir 一次性’换成‘全设备持续’的两阶段(IntelliJ scanning/updating): 阶段1 廉价枚举所有 agent 资产文件做指纹比对得 miss 集合(UI 立即渲染灰态 names/counts); 阶段2 仅对 miss 行 parse 点亮。AssetScanner.runScanAll 的 for-adapter 循环改为‘先全 stat 再按需 parse’。",
+        "P1 — chokidar 失效闭环 + 两级去抖: 只 watch ~/.claude、~/.codex 与会话派生项目根的约定文件(ignored 排除 sessions 大目录), 开 awaitWriteFinish(stabilityThreshold≈250ms)+atomic; 变更事件→debounce 合并→标记对应 sqlite 行失效→入后台队列重 parse。sessions 走低频轮询+mtime, 不进实时 watcher。",
+        "P1 — cancellation/epoch + 优先级队列: 给后台扫分配 epoch(AbortController 或 SharedArrayBuffer 标志), 在 scanner 循环边界插 checkCanceled(IntelliJ ProgressManager 模式); chokidar 变更或切 scope 时 bump epoch 作废过期批次。队列用双端: 当前 scope/可见类目 unshift 插队(clangd dynamic 层优先), 其余 push 后台慢补。‘暂停’= epoch 暂停态在 checkpoint 阻塞。",
+        "P2 — partial 流从‘全量累积快照’改‘delta append’(LSP partialResultToken 语义)+ VSCode batch+超时调度: onPartial 只发本批新增/变更资产, renderer Zustand 按 id upsert/remove; flush 条件=攒够 64~128 条或距上次>150ms; 进度改 throttle(~100ms)而非每文件一次。直接缓解 worker→main 的 structured-clone 背压。",
+        "P2 — 进度 UX 多 token 化(LSP workDoneProgress): AssetScanProgress 扩出 cancellable 标志 + 支持并发 token(当前项目快扫 vs 全设备后台扫各一条), UI 用‘局部 loading(可见区) + 全局静默后台条(可取消)’渲染, 匹配‘不打扰’。总数未知阶段(sessions)省略 percentage 走 spinner。",
+        "P3 — 设置面板暴露最小性能档位: ‘后台持续扫描 总开关’(对标 clangd --background-index=false) + ‘均衡/省电’二档(联动批大小/超时/awaitWriteFinish 阈值/并发 worker 数, 默认按 hardwareConcurrency 自动) + ‘sessions 实时监听 on/off’。遵循 Simplicity-First 不裸露常量, 不照搬 IntelliJ shared-indexes(单机应用过度设计, 明确不迁)。",
+        "验证策略: 用真实 ~/.claude+~/.codex 规模在 dev 实测窗口标定批大小/超时/去抖默认值; 为 sqlite 索引表加 schemaVersion 失效、chokidar 变更→单行失效→重 parse、epoch 取消丢弃过期批次、delta partial 合并 这四条写单测(berth 已有 engine-scanner/file-cache 测试可扩), 保证‘渐进/增量/取消/失效’各有回归网。"
+      ],
+      "citations": [
+        "https://github.com/microsoft/vscode/wiki/File-Watcher-Internals",
+        "https://github.com/microsoft/vscode/wiki/Search-Issues",
+        "https://github.com/microsoft/vscode/issues/16284",
+        "https://github.com/microsoft/vscode/pull/126762",
+        "https://github.com/microsoft/vscode/issues/86131",
+        "https://github.com/paulmillr/chokidar",
+        "https://www.npmjs.com/package/chokidar",
+        "https://plugins.jetbrains.com/docs/intellij/indexing-and-psi-stubs.html",
+        "https://plugins.jetbrains.com/docs/intellij/file-based-indexes.html",
+        "https://www.jetbrains.com/help/idea/indexing.html",
+        "https://www.jetbrains.com/help/idea/shared-indexes.html",
+        "https://dploeger.github.io/intellij-api-doc/com/intellij/openapi/project/DumbService.html",
+        "https://dploeger.github.io/intellij-api-doc/com/intellij/util/indexing/FileBasedIndexExtension.html",
+        "https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/",
+        "https://github.com/microsoft/language-server-protocol/issues/786",
+        "https://rust-analyzer.github.io/book/configuration.html",
+        "https://github.com/rust-lang/rust-analyzer/issues/17491",
+        "https://rust-lang.github.io/rust-analyzer/vfs/index.html",
+        "https://clangd.llvm.org/design/indexing",
+        "https://reviews.llvm.org/D125673",
+        "https://clang.llvm.org/extra/doxygen/classclang_1_1clangd_1_1BackgroundIndex.html"
+      ]
+    },
+    {
+      "system": "scheduling / backpressure / incremental-indexing 调研 (berth 扫描器重构外部方案)",
+      "summary": "针对 berth 扫描器从「切项目一次性全扫」重构为「后台、渐进、持续、增量、可暂停、带缓存/失效、按设备性能可调」的目标, 我先核对了 berth 现状代码 (src/main/engine/scanner.ts 顺序扫所有 adapter; assets/file-cache.ts 用 path+size+mtimeMs 指纹做基本失效; assets/worker-host.ts 单 worker 一次性扫 + postMessage 结构化克隆回传 progress/partial/done; watcher.ts 用 chokidar depth:5 逐文件触发、无 debounce/coalesce; search.ts 用 MiniSearch、靠全文档 signature 决定整树 removeAll/addAll 重建, 已有 addAsset/removeAsset 增量接口但未在扫描主路径用), 然后按 6 个子题做了英文检索并拉取一手资料 (Mercator/IR-book 前台优先级+后台礼貌双队列 frontier; 微软 Optimal Freshness Crawl under Politeness 最优重访; Zobel/Lester In-place vs Re-build vs Re-merge 倒排索引维护; Watchman since-cursor 增量查询; AIMD 自适应并发; LSM/RUM 写放大权衡; SQLite FTS5 每 64 次插入做 segment merge 的 LSM 式增量索引; requestIdleCallback→MessageChannel 时间分片; AbortController 协作式取消; 文件监听 debounce/coalesce; SWR/skeleton 不打扰 UX)。下面 12 条技术每条都标注了对 berth (worker_threads/better-sqlite3/chokidar/MiniSearch) 的具体落地点与取舍。核心结论: ①把全扫拆成任务级优先级队列+协作式取消+时间分片的持续调度器; ②用 Watchman 式 since-cursor + chokidar 批处理把 watch 事件折叠成增量 dirty 集只重扫脏文件; ③把 MiniSearch 改成基线索引+增量 add/discard/replace, 失效用现有 mtime 指纹驱动; ④重资产 (session transcript) 用 better-sqlite3 + FTS5 external-content 做持久增量索引 (FTS5 的 segment merge 天然是 LSM 增量结构), 避免每次进程重启全量重 parse; ⑤限流用 token bucket (允许突发) 控 fs 读, 背压用有界队列, 设备档位映射成并发数+时间片预算+重访间隔三个可配参数, 运行时再叠加 AIMD 自适应。最高杠杆的小改动 (watcher debounce + MiniSearch 增量 + worker 协作取消) 可独立先做。",
+      "techniques": [
+        {
+          "name": "Mercator/IR-book 双阶段 frontier: 前台优先级队列 + 后台礼貌队列(按域分桶) + 最小下次时间堆",
+          "whatItDoes": "经典高性能爬虫调度结构(Mercator, IR-book 第20章)。前台 F 个优先级队列: prioritizer 按重要性+变更频率给每个 URL 打 1..F 优先级(变更越频繁/越重要优先级越高)。后台 B 个队列, 每个只装同一个 host 的 URL 用于限速(politeness); 一个 host→队列号映射表 T; 一个小根堆按每个后台队列的最早可下次抓取时间 te 排序。worker 取堆顶(te 最小 host)→等到 now>=te→弹一个 URL 抓取→该队列空了就从前台队列(偏向高优先级)补一个→按 now+10×上次耗时 更新 te 重新入堆。内存只驻留各队列一部分, 其余落盘。",
+          "applicabilityToBerth": "迁移度最高。host 换成 berth 的来源域/根目录(~/.claude、~/.codex、每个 project root、user/enterprise 层), URL 换成待扫文件/资产单元。前台优先级队列对应用户当前在看的域优先扫: 当前 scope 资产打最高优先级先出结果, [全局]其余项低优先级后台慢慢扫——实现渐进、当前域先可见。后台按根目录分桶保证不对单目录瞬时打满 fs(等价 politeness)。最小时间堆同时承担重访调度: te 设成该来源下次重扫时刻就把增量重访并进同一调度器。落地在 src/main/engine 新增 ScanScheduler 取代 scanner.ts 里 for-of 顺序扫 adapter 的循环。",
+          "tradeoffs": "引入真正的队列+堆比现在顺序循环复杂; 优先级/te 公式需调参。berth 规模(几千~几万文件、单机)不需落盘 frontier, 全内存即可, 省掉论文里最复杂的磁盘溢出部分。建议先实现前台优先级+单一全局令牌桶, 暂不做 per-root 多后台队列, 等某目录拖慢再加。"
+        },
+        {
+          "name": "Token bucket 限速(允许突发) vs Leaky bucket(平滑吞吐) — 用于 fs 读限频",
+          "whatItDoes": "Token bucket: 桶按固定速率加令牌, 每次操作消耗一个, 没令牌就延迟或拒绝; 令牌攒够时允许短时突发。Leaky bucket: 请求入队以恒定速率漏出, 强制平滑抗抖动, 适合服务边界做背压。两者都是 O(1) 状态(令牌数+上次刷新时间戳), 无需定时器, 惰性按时间差补令牌。",
+          "applicabilityToBerth": "用 token bucket 控每秒打开/stat/read 的文件数: 启动时桶满→首屏能突发快速扫出当前域(好首屏), 之后回落稳定低速后台扫, 不抢用户磁盘/CPU。设备档位直接映射成令牌速率+桶容量两个数。session transcript 这类重 IO 用更小的桶单独限。实现极轻(~20行), 放在 ScanScheduler 出队前做准入。Leaky bucket 更适合给 watch 事件→重扫 这条链做背压(与下面 debounce 二选一)。",
+          "tradeoffs": "token bucket 桶设太大启动瞬间仍可能卡 UI——桶容量按一帧内可接受的 fs 操作数封顶。纯限速不解决队列无限堆积, 必须配合有界队列背压。"
+        },
+        {
+          "name": "有界队列 + 背压(bounded queue / 信号量并发上限)",
+          "whatItDoes": "给待扫任务队列设容量上限; 生产者(watcher、重访调度)入队超限时丢弃可合并的重复项或等待, 而非无限堆积内存。配合一个并发信号量限制同时在跑的 parse 任务数。这是背压本质: 下游处理不过来时让压力反向传导到上游而非崩内存。",
+          "applicabilityToBerth": "berth 当前没有队列, watch 风暴(git checkout 改上千文件、session 目录批量写)会直接触发 N 次 refresh()/全扫——现成隐患。落地: 待扫单元用 Map<dirtyKey,task> 而非数组(天然去重/合并, dirtyKey=文件路径), 入队即覆盖, 队列长度有上限。并发上限=设备档位里的 worker 并发数。runtime.ts 里 inFlight 单 promise 要扩成队列+在跑集合。",
+          "tradeoffs": "Map 合并语义要求任务幂等(重扫同一文件多次结果一致)——berth 的 parse 是纯函数, 满足。丢弃/合并策略要保证最后一次变更不丢, 用 mtime 比较兜底。"
+        },
+        {
+          "name": "AbortController 协作式取消 + worker 内 checkpoint 让出",
+          "whatItDoes": "用 AbortController/AbortSignal 做跨层取消信号。关键警示: 在 worker_threads 里 abort 信号本身不会停止已在跑的 CPU 工作——必须代码协作式地在循环里检查 signal.aborted 并主动 break/return, 否则只能 terminate 整个 worker(泄漏未完成 promise、丢缓存)。生产级 worker 池给每个任务包一个 AbortController+超时, 并有优雅取消 vs 强杀挂死 worker 的明确策略。",
+          "applicabilityToBerth": "实现可暂停可控+切换不浪费的核心。berth 现状 runtime.ts 用 isCurrent() 比较 scanner 代际软放弃过期结果, 但 worker 仍把整轮扫完才丢弃——白烧 CPU。改成: 给 worker 传 SharedArrayBuffer/MessagePort 作取消信号, worker 在每个 adapter 之间/每 N 个文件 检查一次取消位, 命中即停并保留已建缓存。暂停=置位+不再补令牌; 恢复=清位。切换域不再需要丢弃整轮扫(持续增量下切换只改优先级/过滤, 符合切换只是 narrow-down 不触发扫描 的定义)。",
+          "tradeoffs": "需在 worker 扫描循环插入 checkpoint, 侵入现有 worker.ts。取消粒度=checkpoint 间隔, 太密有开销、太疏取消不及时, 建议按 adapter 边界+每处理约50个文件双触发。"
+        },
+        {
+          "name": "时间分片/协作式让出: requestIdleCallback→MessageChannel/setImmediate(React Scheduler 模式)",
+          "whatItDoes": "把大任务切成小块, 每块跑固定时间预算(如5ms)就让出, 避免长任务卡事件循环。React 起初用 requestIdleCallback 但不可靠(浏览器空闲才回调、间隔不稳), 改用 MessageChannel.postMessage 自造宏任务稳定调度; 环境优先级 setImmediate>MessageChannel>setTimeout。每个时间片跑到预算耗尽就 yield。",
+          "applicabilityToBerth": "berth 扫描在 worker 线程, 目的不是让主线程 UI——而是①让 worker 内部能周期回到消息泵以响应取消/暂停信号(配合上一条); ②控制 partial 回传节奏避免 postMessage 风暴。worker 里用 setImmediate 在 parse 批次间让出(Node 无 requestIdleCallback, setImmediate 是等价物), 每跑满一个时间片就 postMessage 累积 partial+检查取消位。这把时间分片+协作取消+渐进 partial 统一到一个 yield 点。",
+          "tradeoffs": "时间片预算需按设备档位调(低端机更小片更频繁让出, 高端机大片少开销)。让出有上下文切换成本不能切太碎。主线程本身不卡(扫描在 worker), 故优先级低于 worker 取消 checkpoint, 实现点重合可一起做。"
+        },
+        {
+          "name": "chokidar 事件 debounce/coalesce 批处理(50ms 静默窗口)",
+          "whatItDoes": "文件监听器天然对一次逻辑操作(保存、git 操作)喷出多个事件。三种收敛: throttle(固定节奏发)、debounce(静默期后发一次)、coalesce(等文件稳定再发)。实践: 50ms debounce 窗口对保存→重载几乎不增可感延迟, 却能把绝大多数编辑写入模式折叠成单批。VS Code/LSP/Helix(notify-debouncer-full)都用此模式。",
+          "applicabilityToBerth": "berth watcher.ts 现在每个 add/change/unlink 立刻 notifyChange→上层 refresh, 完全没 debounce——当前最容易出问题的点(一次 git checkout=上千次 refresh)。落地最简单: AssetWatcher 里用 Map<path,type> 累积事件+一个 50~200ms debounce 定时器, 窗口到了一次性把脏文件集交给 ScanScheduler。脏集去重+与 dirty 队列合并。改动最小、收益最直接, 可独立先做。",
+          "tradeoffs": "debounce 增加从文件变到 UI 更新的延迟(50~200ms), 对桌面资产监控完全可接受。窗口太长用户觉得改了没反应; 建议当前域 100ms、后台域可更长(拉长间隔正是省电策略)。需处理 unlink+add 快速交替(重命名)的合并。"
+        },
+        {
+          "name": "Watchman since-cursor/clock: 增量 delta 查询替代全树 recrawl",
+          "whatItDoes": "Watchman 给每次查询发一个单调时钟游标(clock/cursor); 用 since 游标查询只返回自该游标以来变更的文件而非整树。游标失效(进程重启/新实例)时返回 is_fresh_instance=true, 退化为列出当前所有文件、全标记 new。它明确指出: 频繁全树 recrawl 昂贵, 会把所有文件误标 changed 并触发下游全量处理——要尽量避免。",
+          "applicabilityToBerth": "增量 vs 全量的指导模型。berth 应维护持久的上次扫描点(file-cache 快照的 mtime 集+逻辑版本号)。正常路径: 启动时若有有效缓存快照→只对 mtime/size 变了的文件走增量重扫(delta), 其余直接复用缓存值——而非现在每次 scanAll 全量重 parse。冷启动/缓存失效(快照版本不匹配)→退化为一次全扫(=fresh_instance)。berth 已有 file-cache 的 fingerprint(path+size+mtimeMs)已具备 delta 判定能力, 缺的是把它驱动成持续增量主循环而非只在 worker 内一次性扫时查一下。",
+          "tradeoffs": "需把缓存快照持久化跨进程(落 better-sqlite3 或磁盘 JSON), 现在快照只在内存+经 worker postMessage 传一次。mtime 在某些 FS/网络盘不可靠, 需保留内容 hash 兜底选项。删除检测要靠目录列举 diff(mtime 测不出删除), 即 pruneTo 那条路径要在增量循环里定期跑。"
+        },
+        {
+          "name": "倒排索引增量维护: In-place vs Re-build vs Re-merge / Hybrid(Zobel-Lester)",
+          "whatItDoes": "权威结论(Lester/Zobel/Moffat, ACSC04 & IPM06): 维护倒排索引面对持续插入有三策略——Re-build(整建, berth 现在 MiniSearch 干的)、In-place(就地把新 posting 追加到磁盘上每个词的列表尾, 省去读全索引但需处理列表搬迁)、Re-merge(分块各建子索引再归并, 大 buffer 下最快)。Hybrid: 长列表 in-place、短列表 re-merge 综合最优。要点: 插入率低或内存受限时 in-place 就够; re-merge 要大 buffer。",
+          "applicabilityToBerth": "诊断: search.ts 的 ensureIndexed() 用全文档 signature 比对, 不同就整库 removeAll()+addAll()=纯 Re-build, 每次任意一个资产变都重建整个 MiniSearch——持续增量目标下这是最差策略。MiniSearch 已提供 add()/discard()/replace()=天然支持 In-place 增量(代码里 addAsset/removeAsset 已封好但主路径没用)。落地: 扫描产出增量 changeset(added/changed/removed 资产 id)直接驱动 index.discard(id)+index.add(doc), 丢弃 signature 整建, 只在冷启动/索引结构变更时全建一次。berth 资产变更率低(人改配置文件), 正落在论文说的 in-place 就够 区间。",
+          "tradeoffs": "MiniSearch 是内存索引, in-place 增量足够, 无需自实现磁盘 in-place/merge 复杂度。增量维护久了内存索引有碎片/删除标记累积, 建议设累计 N 次增量后或空闲时整建一次的兜底(这正是 FTS5 segment merge 的内存等价物)。"
+        },
+        {
+          "name": "SQLite FTS5 持久增量索引(external-content) + 每 64 次插入自动 segment merge",
+          "whatItDoes": "FTS5 external-content 模式: 索引不存正文副本只引用外部表取原文——适合文档编辑频繁的增量场景。其内部结构本身是 LSM 式增量: 每次插入新建一个 segment, segment 太多时(默认每约64次插入)自动 merge 成更大的 B-tree。批量插入用 INSERT...SELECT 最快; WAL 模式下 synchronous=NORMAL 兼顾安全与吞吐只在 checkpoint 时 fsync; 维护用 OPTIMIZE 后接 VACUUM。",
+          "applicabilityToBerth": "berth 已依赖 better-sqlite3(现仅用于 memory)。重资产——尤其 Claude/Codex 的 session transcript(大、量多、structured-clone 成本高, 代码里专门 stripAssetRaw 剥离 raw 就是为此)——适合落 better-sqlite3+FTS5 external-content 做持久全文索引: ①跨进程重启不必重新 parse 所有 transcript(现状每次冷启动全扫); ②FTS5 的 segment merge 把写放大 vs 读放大的增量索引难题交给 SQLite, 不必自实现; ③搜索下推到 SQL, 大数据集比内存 MiniSearch 更稳。配置: WAL+synchronous=NORMAL, 批量写包在一个 better-sqlite3 transaction(同步 API 天然适合批事务)。轻量资产(skill/hook/mcp/agent/command 数量小)留 MiniSearch 即可不必都搬。",
+          "tradeoffs": "引入第二套索引(MiniSearch 轻资产+FTS5 重资产)增架构复杂度, 需明确边界(按资产类型/体量分流)。FTS5 external-content 的 delete/update 要手动喂 delete 指令保持同步否则查到悬空行。WAL 文件可能无限涨需定期 checkpoint。建议作为第二阶段: 先把调度/增量/MiniSearch in-place 做好, session 量真成瓶颈再上 FTS5。"
+        },
+        {
+          "name": "最优新鲜度重访调度: 变更率×重要性驱动的重扫间隔(Cho-Garcia-Molina / 微软 PoliteBinaryLambdaCrawl)",
+          "whatItDoes": "爬虫新鲜度调度理论: 页面变更按泊松过程建模(速率 λ), 结合非均匀重要性权重和抓取预算/礼貌约束, 求固定预算下最大化加权新鲜度的最优重访频率。微软 Optimal Freshness Crawl under Politeness Constraints 给出该约束下首个最优算法(PoliteBinaryLambdaCrawl)。直觉: 重访频率随变更率和重要性上升但非线性——变得极快的页面边际收益递减, 最优解对超高频变更页适度认输少访。",
+          "applicabilityToBerth": "用来决定后台持续扫时每类资产/每个来源多久重扫一次, 实现拉长间隔省性能。λ 换成该文件历史 mtime 变更频率, 重要性换成是否当前用户在看的域/资产类型权重。规则落地为每个来源在 frontier 堆里的 te 增量: 常变+高重要(当前 project 的 CLAUDE.md)→短间隔; 几乎不变+当前不可见(别的 project 历史 session)→长间隔甚至只在空闲时扫。berth 不需实现完整最优算法, 取频率正比于变更率、上界由预算/档位封顶的启发式即可, 直接喂进双队列 frontier 的 te 公式。",
+          "tradeoffs": "需积累每文件变更历史(落缓存快照里加 changeCount/lastChanged), 冷启动无历史用类型默认值。过度优化重访策略对单机桌面收益有限——先用当前域短、后台域长、watch 命中即时 的三档粗粒度, 数据足够再细化。"
+        },
+        {
+          "name": "AIMD 自适应并发(加性增/乘性减) — 运行时自调档",
+          "whatItDoes": "源自 TCP 拥塞控制(Vector 的 Adaptive Request Concurrency、rate_limiter_aimd 等): 延迟容忍内时并发上限+1(加性增, 线性探高); 一旦观测到延迟升高/失败信号则并发上限×backoff(乘性减, 指数回退)。自动收敛到当前环境最优并发, 无需人工标定。",
+          "applicabilityToBerth": "叠加在设备档位手动设置 之上做运行时微调: 把单次 parse 批次耗时/事件循环延迟/主进程是否在响应 UI 当作拥塞信号。扫描期间检测到 UI 卡顿(帧时间或 IPC 往返变长)→乘性减并发/调小令牌速率(让扫描退让); 系统空闲、扫描顺畅→加性增。让按设备性能调节 从纯静态配置升级为自适应, 用户不必精确知道机器多快。控制变量就是 token bucket 的速率和并发信号量上限。",
+          "tradeoffs": "需可靠的拥塞信号, 桌面端最现成的是事件循环 lag(perf_hooks monitorEventLoopDelay)或主→worker 心跳 RTT。AIMD 会振荡需平滑/设上下界。属锦上添花, 应在静态档位+限流+背压都就位后再加, 否则调不准反难调试。"
+        },
+        {
+          "name": "不打扰的进度 UX: Stale-While-Revalidate + skeleton + 局部 loading + 乐观更新",
+          "whatItDoes": "SWR: 立即展示缓存(可能陈旧)数据, 后台静默重取并最终一致, 减少 spinner、改善体感。Skeleton 屏: 展示布局占位让用户感到系统已在交付, 每个占位被真实数据替换都被大脑解读为在加速, 适合 feed/dashboard/搜索结果/列表。乐观 UI: 用户操作后立即更新界面、失败再回滚, 适合低风险高频操作(toggle/收藏)。后台任务 UX 原则: 给可见性、控制权、信心, 优雅处理部分失败。",
+          "applicabilityToBerth": "直接支撑性能由工程手段保证: 局部 loading 的要求。berth 已有 partial 流式+快照(runtime.ts 的 applyPartial/snapshotCache)=已是 SWR 骨架: 切域立即显示该域缓存快照(符合切换只是 narrow-down 不重扫), 后台增量到了再静默替换。建议: ①每个资产分类用独立 skeleton/局部 loading 而非全局大 spinner——某类还在扫不挡其他类已出的结果(渐进可见); ②全局进度收敛成不打扰的细条/角标(后台扫描中 N/M)别用模态; ③启停按钮(暂停/恢复扫描)给用户控制权; ④在[全局]看不到=等于没扫到 靠 partial 持续灌注解决, skeleton 表达这一类还在路上 而非空态误导成没有。",
+          "tradeoffs": "SWR 展示陈旧数据要有正在刷新 的弱提示, 否则用户可能基于旧数据误操作(尤其 berth 能改/禁用资产)。skeleton 数量要贴近真实结果数否则布局抖动。乐观更新对 berth 写操作(启停 hook 等)需可靠回滚。这条主要是渲染层工作, 与调度层解耦可并行推进。"
+        }
+      ],
+      "recommendations": [
+        "分阶段落地, 按收益/改动比排序。第1阶段(最小改动、最高收益, 可独立做): 在 src/main/engine/watcher.ts 给 chokidar 事件加 50~200ms debounce + Map<path,type> coalesce, 把每文件即时全 refresh 改成批量脏集; 同步把 search.ts 的 ensureIndexed 全量 removeAll/addAll 改成由 changeset 驱动的 MiniSearch in-place discard/add(复用已存在但未启用的 addAsset/removeAsset)。这两步直接消除当前两个最明显的全量重建热点。",
+        "第2阶段: 用 Mercator 双阶段 frontier 思路在 src/main/engine 下新增 ScanScheduler 取代 scanner.ts 里顺序 for-of 扫 adapter——前台优先级队列(当前 scope 域最高优先, 实现当前域先出结果)、token bucket 控 fs 读速率、有界去重队列做背压、worker 内插 AbortSignal checkpoint + setImmediate 时间片让出(统一实现协作式取消/暂停/渐进 partial)。把全扫语义改成持续增量调度, 切域只调优先级/过滤不触发新扫(对齐用户对[全局]/narrow-down 的定义)。",
+        "第3阶段: 增量主循环用 Watchman since-cursor 模型——持久化 file-cache 快照(落 better-sqlite3 或磁盘)跨进程复用, 启动走 delta(只扫 mtime/size 变化文件 + 定期 pruneTo 检测删除), 冷启动/快照版本失效才退化为全扫。重访间隔用变更率×重要性启发式喂进 frontier 的 te(当前域短、后台域长、watch 命中即时), 落地拉长间隔省性能。",
+        "第4阶段(按需): session transcript 等重资产迁到 better-sqlite3 + FTS5 external-content 做持久增量全文索引(WAL + synchronous=NORMAL + 批事务), 利用 FTS5 自带 segment merge 处理增量写放大, 消除每次冷启动全量 re-parse transcript; 轻量资产保留 MiniSearch。仅当 session 规模成为实测瓶颈再做。",
+        "设备性能档位设计成三个正交可配参数并暴露到设置页: token bucket 速率/容量(fs 操作/秒)、worker 并发信号量上限、时间片预算(ms)+后台重访基准间隔。静态档位(省电/平衡/性能)是这三参数的预设组合; 运行时再叠加 AIMD, 以 perf_hooks 事件循环 lag 或 worker 心跳 RTT 作拥塞信号自动微调(UI 卡→乘性减让步, 空闲顺畅→加性增)。AIMD 为锦上添花最后做。",
+        "渲染层与调度层并行推进: 把现有 partial 流 + snapshotCache 明确做成 Stale-While-Revalidate(切域立即上缓存、后台静默替换); 进度用每分类独立 skeleton/局部 loading + 不打扰的全局细条/角标(后台 N/M)而非模态 spinner; 提供暂停/恢复控制; 用持续 partial 灌注 + skeleton 区分还在扫 与 确实没有, 避免空态误导。",
+        "取舍总纲: berth 是单机桌面、资产变更率低、数据规模中等, 因此①frontier 全内存即可, 跳过论文中磁盘溢出/分布式部分; ②倒排索引按论文落在 in-place 增量就够 区间, 不必自造磁盘 merge; ③优先用现有依赖(worker_threads/better-sqlite3/chokidar/MiniSearch)而非引新库——所列技术(token bucket、AIMD、debounce、双队列、in-place 增量)都是几十行可手写的算法而非框架。先把 debounce + MiniSearch 增量 + 协作取消 三件最高杠杆的小改动做掉, 再上完整调度器。"
+      ],
+      "citations": [
+        "https://nlp.stanford.edu/IR-book/html/htmledition/the-url-frontier-1.html",
+        "https://www.cs.cornell.edu/courses/cs685/2002fa/mercator.pdf",
+        "https://www.microsoft.com/en-us/research/publication/optimal-freshness-crawl-under-politeness-constraints/",
+        "https://people.eng.unimelb.edu.au/jzobel/fulltext/acsc04.pdf",
+        "https://people.eng.unimelb.edu.au/jzobel/fulltext/ipm06.pdf",
+        "https://link.springer.com/chapter/10.1007/11735106_21",
+        "https://www.eraser.io/decision-node/api-rate-limiting-strategies-token-bucket-vs-leaky-bucket",
+        "https://konghq.com/blog/engineering/how-to-design-a-scalable-rate-limiting-algorithm",
+        "https://medium.com/@kaushalsinh73/node-js-structured-concurrency-in-2025-abortcontroller-asyncdisposable-and-cross-stack-ec621b217a9a",
+        "https://betterstack.com/community/guides/scaling-nodejs/understanding-abortcontroller/",
+        "https://medium.com/@impactarchitecture/file-watchers-lie-debounce-throttle-and-coalescing-in-build-loops-8d91cb29f712",
+        "https://facebook.github.io/watchman/docs/cookies",
+        "https://facebook.github.io/watchman/docs/cmd/query",
+        "https://w3c.github.io/requestidlecallback/",
+        "https://medium.com/swlh/the-advent-of-cooperative-scheduling-into-the-javascript-world-d9799dfbe2b4",
+        "https://vector.dev/blog/adaptive-request-concurrency/",
+        "https://en.wikipedia.org/wiki/Additive_increase/multiplicative_decrease",
+        "https://www.bitsxpages.com/p/understanding-lsm-trees-via-read",
+        "https://www.cidrdb.org/cidr2017/papers/p82-dong-cidr17.pdf",
+        "https://darksi.de/13.sqlite-fts5-structure/",
+        "https://sqlite.work/optimizing-fts5-external-content-tables-and-vacuum-interactions/",
+        "https://web.dev/articles/stale-while-revalidate",
+        "https://www.onething.design/post/skeleton-screens-vs-loading-spinners",
+        "https://blog.logrocket.com/ux-design/ui-patterns-for-async-workflows-background-jobs-and-data-pipelines/"
+      ]
+    },
+    {
+      "system": "berth 扫描器重构 — 缓存与失效策略 (持久化磁盘索引) 外部方案调研",
+      "summary": "现状定位: berth 当前缓存是纯内存的 AssetFileCache (src/main/engine/assets/file-cache.ts), 用 mtime+size 指纹 (无 ctime、无 content-hash), 通过 worker_threads 的快照传输 (AssetWorkerHost.runScan 返回 sessionCache 快照) 在主进程持有, 进程退出即丢失, 启动必然全量重扫。better-sqlite3 (^11.7.0) 虽已声明且在 pnpm.onlyBuiltDependencies 中, 但 src/main 内目前没有任何实际 import (memory 走 united-memory/claude-native 文件源), 因此\"持久化磁盘索引\"对 berth 是全新模块。chokidar 是 v4 (已有 atomic/awaitWriteFinish 概念), MiniSearch 索引每次靠 createIndexSignature 全量重建。\n\n针对题目六个聚焦点的核心结论:\n1) 失效键: berth 现用 mtime+size 存在\"racy\"漏洞 (1 秒内原地等长改写检测不到) 且 mtime 不可跨机/跨重装稳定。推荐沿用 Git 的成熟方案: stat (mtime+size, 可加 ctime) 作快路径, 仅当\"racy 嫌疑\"(mtime 等于索引写入时刻) 时才回退 content-hash, 而非对每个文件都算 hash。\n2) 持久化: 用 better-sqlite3 单文件 SQLite + WAL 模式, 一张 file_fingerprint 表 (path PK, mtime, size, ctime, hash, parsed_blob, schema_version) 即可承载分片缓存; 比自研 LSM 省事且 berth 已有原生构建链路。\n3) 版本/迁移: 在表内嵌 schema_version 整数, parser 逻辑变更即 bump, 命中旧版本行直接当 miss 重扫 (purge-on-version-change), 避免写复杂迁移。\n4) 分片缓存: 按 file 粒度存行 (而非整库一个 blob), 天然支持部分失效与增量。\n5) staleness: 借鉴 Watchman clockspec/since-cursor 与 salsa 全局 revision + durability 分层 — 把\"几乎不变\"的用户级/企业级约定标为高耐久, 单文件变更只 bump 低耐久层, 跳过绝大多数子图校验。\n6) 启动: 启动时做\"增量校验\"(只 stat 比对、不读内容) 而非全量重扫, 命中即秒出, 仅 miss 的文件入后台重扫队列; session JSONL 用 byte-offset tail 增量解析, 不整文件重读。",
+      "techniques": [
+        {
+          "name": "stat 快路径 + racy 回退 content-hash (Git index 模型)",
+          "whatItDoes": "Git 的 ce_match_stat_basic: 先比 stat (mtime/size/ctime/ino/mode), 任一不符直接判 dirty 无需读内容; 仅当 stat 全符且文件 mtime 等于(或晚于)索引写入时刻 (racily clean) 才回退读内容算 hash 比对。写索引时把这些 racy 条目的 size 字段清零, 保证下次 stat 必失配, 避免反复做昂贵内容比对。可选 USE_NSEC 用纳秒 mtime 进一步去歧义 (但 Linux 默认关, 因 in-core 与 on-disk 粒度不一致会误报)。",
+          "applicabilityToBerth": "直接替换 file-cache.ts 的 sameFingerprint。现状只比 mtime+size 有两个真实缺陷: (a) racy — 同一秒内原地等长改写 (编辑器保存、脚本快速重写 settings.json/config.toml) 检测不到, 导致漏更新; (b) mtime 跨机/重装不稳定, 持久化到磁盘后换机或恢复备份会全体误判 stale 引发无谓全扫。引入 racy 回退即可在不给每个文件都算 hash 的前提下堵住漏洞: 绝大多数文件走纯 stat 快路径 (零额外 IO), 只有'刚写过'的少数文件读一次内容。berth 资产文件普遍小 (settings.json/skill md/agent md 多为 KB 级), hash 成本可忽略; 唯独 session JSONL 可能很大, 对其用 byte-offset 增量解析单列处理 (见下条)。FileFingerprint 增加可选 ctime 与 hash 字段, 并记录'本次 cache 写入时刻'用于判 racy。",
+          "tradeoffs": "取: 修掉漏更新且持久化后跨环境稳健, 额外 IO 极小 (仅 racy 文件读内容)。舍: 实现比纯 stat 比对复杂, 需在 cache 里多存 hash 列与一个全局'索引时间戳'; ctime 在'恢复备份重写文件'场景会刷新而内容没变 (borg/grav 踩过), 故 ctime 只作辅助、不作唯一键。Windows 下 mtimeMs 已是 berth 现用字段, ctime 经 fs.statSync 的 ctimeMs 可取。"
+        },
+        {
+          "name": "better-sqlite3 + WAL 单文件持久化索引 (分片/按 file 粒度行)",
+          "whatItDoes": "用 SQLite 单文件库 (WAL 模式) 存索引: 一张 file 表, path 主键, 列含 mtime/size/ctime/hash/scope/agent_id/parsed_json/schema_version/indexed_at。WAL 模式下读写分离 — 多个连接可并发读, 同时单个写者不阻塞读者, 但需定期 checkpoint 防 WAL 膨胀 (WAL 越大读越慢, 每个读者要扫 WAL)。bulk upsert 用单事务 + prepared statement (官方实测可把万级插入从分钟级降到秒级; 批量注意 SQLITE_MAX_VARIABLE_NUMBER=32766 上限)。读多写少的缓存场景可设 PRAGMA synchronous=NORMAL + journal WAL + mmap_size。",
+          "applicabilityToBerth": "berth 已有 better-sqlite3 ^11.7.0 (在 pnpm.onlyBuiltDependencies, 原生编译链已通) 但 src/main 尚未实际用, 落地零新依赖风险。把 AssetFileCacheSnapshot 从'内存数组经 worker 结构化克隆回传'换成'SQLite 表', 解决三件事: (1) 持久化 — 启动直接读库秒出上次结果, 不再裸全扫; (2) 分片 — 按 path 行存, 单文件变更只 upsert 一行, 不重写整库 (对照现状 toSnapshot 整体序列化); (3) 跨进程 — worker_threads 里 better-sqlite3 不能共享连接, 但每个 worker 各开自己的连接指向同一 .db 文件即可 (官方推荐模式), WAL 允许 worker 并发读缓存、主进程写。库放 app.getPath('userData')/berth-index.db。",
+          "tradeoffs": "取: 持久化+分片+跨进程并发一举到位, 复用已装原生模块, 比自研 LSM/手写文件格式省大量事。舍: 引入 SQLite schema 与迁移负担; better-sqlite3 是同步 API, 大批量写要放 worker 或拆事务避免卡主线程 (官方明示主线程仅适合快查询); WAL 需要 checkpoint 策略且 -wal/-shm 副文件不可漏 (备份/清理时); Electron 打包要确保原生 .node 随 arch 正确分发 (项目已有 esbuild/electron 构建脚本经验, 见 docs/friction 里 better-sqlite3/electron 构建踩坑记录)。"
+        },
+        {
+          "name": "schema_version 内嵌 + purge-on-version-change (不写迁移)",
+          "whatItDoes": "在每行 (或一张 meta 表) 存一个 schema_version 整数, 代表'产出这条缓存的 parser/格式版本'。读取时若行的版本 != 当前代码版本, 直接当 cache miss 重新解析并覆写; 需要整体失效时只 bump 版本号, 旧行自然变不可达。这是 build 工具与 Redis 缓存通行做法: 版本即缓存契约, 增版本比写防御式反序列化/分阶段迁移简单且安全。",
+          "applicabilityToBerth": "berth 的 parser 经常演进 (近期 commit 大量改 adapter/合并约定/hook 去重逻辑), 每次 parser 行为变更如果不失效旧缓存, 会让用户看到用旧逻辑解析的陈旧资产。给缓存行加一个 PARSER_SCHEMA_VERSION 常量, adapter 解析逻辑或 Asset 结构一变就 +1, 命中旧版本行即重扫该文件。可做到 per-category 版本 (skill/session/hook 各自版本), 这样只改 session 解析不会让 skill 缓存全废 — 对应 salsa per-input 失效思路。",
+          "tradeoffs": "取: 零迁移代码, 杜绝'旧逻辑陈旧结果'类隐 bug, 升级即自愈。舍: bump 版本会触发一次冷启动全量重扫该类资产 (一次性成本, 可接受, 因为本来就是后台渐进扫); 需要纪律 — 改了解析逻辑必须记得 bump (可在 PR checklist / 测试里加'结构变更须改版本号'的断言兜底)。"
+        },
+        {
+          "name": "启动增量校验 (stat-only revalidate) 而非全量重扫",
+          "whatItDoes": "启动不立刻读取+重解析所有文件, 而是: 先从持久化索引把上次结果秒级载入并渲染; 同时后台对每个已缓存 path 只做一次 lstat (不读内容) 比对 stat 指纹, 命中即保留旧解析结果, 仅 miss/新增/删除的文件入后台重扫队列。增量扫描器 (Symantec DLP、搜索引擎索引) 与 ccache/构建系统都用'change detection 比对元数据判 stale, 只重扫变化项'。",
+          "applicabilityToBerth": "直击目标'启动时增量校验 vs 全量重扫'与'应用启动即开始扫全部, 但要快出结果'。当前 runScan 每次跑全部 adapter 全量扫。改成: 启动 → 读 SQLite → 立即 emit 一个 ready 快照 (上次结果) → 后台 stat 比对 → 只把变化的 path 喂给对应 adapter 重解析 → 增量 upsert 回库并发 partial 更新 UI。配合现有 onPartial 流式通道天然契合 (runtime.ts applyPartial 已支持渐进渲染)。对'全局=所有项目+用户级+企业级全部资产'的新定义尤其关键: 全量集合可能很大, 必须靠增量校验把每次启动成本从 O(全部文件读+解析) 压到 O(stat 全部 + 解析变化项)。",
+          "tradeoffs": "取: 启动秒出 + 后台只补差, 性能由工程手段保证 (符合任务'局部 loading/增量/缓存'要求)。舍: 首次冷启动 (无库) 仍需全量一次, 需有空索引下的渐进扫 fallback; stat 全部文件在超大树上也有成本 (可结合 Watchman 式 since-cursor 进一步省, 见下条); 删除检测需对账 (现有 pruneTo 已有'按 live 集合裁剪'雏形, 可复用)。"
+        },
+        {
+          "name": "salsa durability 分层 + 全局 revision (按变更频率分层失效)",
+          "whatItDoes": "salsa 不是单一全局版本号, 而是 (volatile/normal/durable) 多层版本向量。输入按'多久变一次'分层: 用户正在编辑的项目文件=volatile, 依赖=normal, 标准库等几乎不变的=durable。单个文件变更只 bump 对应层, 校验某查询时若其依赖的 durable 层版本没变, 整个子图直接跳过校验 (O(1), rust-analyzer 实测省掉 ~300ms 的 stdlib 重校验)。",
+          "applicabilityToBerth": "berth 资产天然分层: 企业级 (managed-settings.json)/用户级 (~/.claude, ~/.codex 顶层 settings) 几乎不变 = 高耐久; 当前活跃项目的 .claude/.agents = 低耐久 (用户常改); session JSONL = 仅追加。给缓存层引入一个'耐久度'标记, 单文件变更只让对应层 revision++; staleness 校验时高耐久层未变就跳过该批文件的 stat (连 stat 都省)。这把'切项目只是 narrow-down 不触发扫描'的产品需求落到机制上 — 切项目根本不动缓存, 只换过滤谓词 (runtime.ts 已有 setScopeSelection 不重扫的雏形, 可强化为全局单次扫 + 纯过滤)。",
+          "tradeoffs": "取: 把'全设备全资产'的大集合按变更频率切片, 绝大多数校验被高耐久层短路掉, 大幅降本。舍: 需要正确给每个 scan root 标耐久度 (标错会漏更新 — 比如把实际常变的目录标成高耐久); 实现比单一 revision 复杂; 对 berth 是中长期优化, 可在 SQLite 索引 + 增量校验跑通后再叠加。"
+        },
+        {
+          "name": "Watchman since-cursor / clockspec 式增量发现 (避免重扫整树)",
+          "whatItDoes": "Watchman 给客户端一个命名 cursor, 每次 since 查询只返回'自上次该 cursor 以来变化的文件', 用抽象时钟 (随变化滴答而非随时间) 规避竞态。频繁 recrawl (全树重扫并把所有文件标 changed) 是大忌; 应只 watch 仓库根、避免同树多重叠 watch。",
+          "applicabilityToBerth": "berth 已有 chokidar watcher (watcher.ts), 但它只在运行时推变更事件, 不解决'两次启动之间发生的变更'。可用'持久化一个 last-scan 时间戳/cursor + 启动时 stat 比对'近似 Watchman since 语义: 启动后只需对 mtime > last_scan 的文件重扫。watcher.ts 的教训已印证 Watchman 建议 — 之前 dotfile ignore 正则误伤 .claude/.codex 监听根 (GH-111 R2 注释), 正对应'别在监听根上做错误过滤'。可考虑把多个分散 watch (现 getAssetWatchPaths 列了 ~/.claude/项目/.codex 等多路径) 收敛, 避免重叠 watch 放大事件。",
+          "tradeoffs": "取: 启动增量发现成本从 O(stat 全树) 降到 O(变化项), 对'全设备全资产'大集合收益显著。舍: berth 没装 Watchman (额外重依赖, 跨平台分发成本高), 只能用 chokidar+持久化时间戳近似, 精度不如真 Watchman (mtime 1s 粒度仍有 racy, 故仍需配合 hash 回退); 真要 since 语义需自己维护 cursor 与对账逻辑。"
+        },
+        {
+          "name": "session JSONL 的 byte-offset tail 增量解析",
+          "whatItDoes": "NDJSON/JSONL 是仅追加格式, 可在索引里记录每个 session 文件已解析到的 byte offset, 下次只 seek 到 offset 之后读新增行解析 (i-json 等增量解析器), 不把整文件重新 JSON.parse。处理大日志的标准做法: 迭代行、跳过已处理部分、只处理新行。",
+          "applicabilityToBerth": "Claude/Codex 的 session 是持续增长的 JSONL (~/.claude/projects/*/*.jsonl, ~/.codex/sessions)。当前若 session 文件一变 (追加一条消息) 就整文件重读重解析, 是最大的重复成本来源 (session 文件可达数 MB)。在 SQLite 索引为每个 session path 多存一列 parsed_byte_offset + 累计统计 (token/cost/消息数), 文件变大时只读 [offset, EOF) 的新行增量累加。这也让 mtime+size 失效策略对 session 特别有效: size 只增不减时直接走增量分支, 而非当成整体 miss。",
+          "tradeoffs": "取: 把 session 这类最大文件的更新成本从 O(文件大小) 降到 O(新增字节), 是增量化收益最高的单点。舍: 需处理边界 — 文件被截断/重写 (size 变小或 mtime 倒退) 时必须放弃 offset 全量重读; JSONL 跨 offset 的半行需缓冲处理; 累计统计 (如总 cost) 要保证幂等避免重复累加。session 解析逻辑变更时受 schema_version 约束需整体重算。"
+        },
+        {
+          "name": "事件 coalesce + 去抖 + 令牌桶限频 (背压, 可配置)",
+          "whatItDoes": "文件事件先 coalesce (同一文件多次事件合一、删重复), 再 debounce (突发聚成一次, 但 debounce 只拿到最后一个事件需注意丢中间态), 重扫任务入队并用 token bucket 限速 (令牌恒定速率补充, 有令牌才放行, 突发受 burst 上限约束) 做背压。chokidar v4 自带 atomic (100ms 内 unlink→add 合成 change) 与 awaitWriteFinish (轮询 size 稳定才发事件, 防半写文件被读)。",
+          "applicabilityToBerth": "对应目标'后台/限频/背压/可暂停可控/按设备性能调节'。在 watcher 与重扫之间加一层: 维护 per-file dirty set (合并抖动), debounce ~200-500ms 后批量入重扫队列, 队列用 token bucket 限并发与速率, 暴露 pause/resume。chokidar v4 应显式开 awaitWriteFinish (防止正在写的 settings.json/JSONL 被读到半截 — issue #675 显示大文件即便高 awaitWriteFinish 仍可能早发 add, 需配合 size 稳定判定)。用户可配置项落地于设置页: 扫描并发数、debounce 窗口、令牌桶速率、是否轮询 (usePolling 对网络盘/特殊 FS, 但会显著耗 CPU/电, 默认关), 这些直接映射'按设备性能调节'。",
+          "tradeoffs": "取: 突发变更不打爆 CPU, 后台扫不抢 UI, 满足可暂停/可调速。舍: debounce 增加变更到可见的延迟 (需在'实时'与'省资源'间取窗口); awaitWriteFinish 增加单文件可见延迟; usePolling 在大目录/Electron 里耗电显著 (搜索结果明确警告), 仅作兜底选项; 令牌桶/队列引入额外状态机, 需测可暂停语义不丢事件。"
+        }
+      ],
+      "recommendations": [
+        "失效键升级 (低风险高收益, 先做): 把 file-cache.ts 的 sameFingerprint 从 mtime+size 升级为 Git 模型 — stat 快路径 + 仅 racy(文件 mtime>=本次索引写入时刻) 时回退 content-hash; FileFingerprint 增 ctime(辅助) 与可选 hash 列, 并记录索引写入时刻。这是持久化前必须修的正确性前提 (否则 mtime 跨机不稳 + 同秒改写漏更新)。",
+        "持久化层用 better-sqlite3+WAL 落地, 复用已声明依赖, 零新增风险: 库放 userData/berth-index.db, 按 path 行存 (mtime/size/ctime/hash/scope/agent_id/parsed_json/schema_version/indexed_at/parsed_byte_offset)。worker_threads 内每个 worker 各开自己的连接指向同一 .db (官方推荐, 不可共享连接), 主进程批量 upsert 用单事务+prepared statement。把现有 AssetFileCacheSnapshot 经 worker 结构化克隆回传的链路替换为 SQLite 读写, 顺带消除大快照 clone 成本。",
+        "schema_version 内嵌 + per-category 版本: 给缓存行加 PARSER_SCHEMA_VERSION (可按 skill/session/hook 分列), parser 行为或 Asset 结构变更即 bump, 命中旧版本行当 miss 重扫。用测试断言'Asset 结构/解析逻辑变更须改版本号'兜底。零迁移代码。",
+        "启动改为增量校验而非全量重扫: 启动先读 SQLite 秒级 emit 上次快照 (复用 runtime.ts onPartial/applyPartial 渐进通道), 后台只对已缓存 path 做 stat-only 比对, 仅 miss/新增/删除入重扫队列。复用 pruneTo 做删除对账。冷启动 (空库) 才走全量渐进扫 fallback。",
+        "session JSONL 用 byte-offset 增量解析: 索引为每个 session 存 parsed_byte_offset + 累计统计, size 只增时只读新增字节累加 (注意截断/重写时放弃 offset 全量重读, 幂等累计)。这是增量化收益最高的单点 (session 是最大、最常追加的文件)。",
+        "背压与可配置项收尾: watcher 与重扫间加 per-file dirty set + debounce(~200-500ms) + token bucket 限频队列, 暴露 pause/resume; chokidar v4 显式开 awaitWriteFinish 防半写文件; 设置页暴露 扫描并发/debounce 窗口/令牌桶速率/是否轮询, 映射'按设备性能调节'。",
+        "中长期叠加 salsa 式 durability 分层 + Watchman since-cursor 近似: 把企业级/用户级标高耐久、活跃项目标低耐久, 单文件变更只 bump 对应层跳过高耐久批的 stat; 持久化 last-scan cursor, 启动只 stat mtime>cursor 的文件。这把'切项目只 narrow-down 不重扫'与'全设备全资产大集合'的成本进一步压低。建议在前述 SQLite+增量校验跑通后再做。",
+        "实现注意 berth 已踩过的坑: chokidar ignore 正则不可误伤 .claude/.codex/.agents 监听根 (GH-111 R2 已修, 新增过滤须复测); better-sqlite3 原生模块打包须按 arch 正确分发 (参考 docs/friction 里 pnpm/esbuild/electron 构建记录, 必须 pnpm 9.x 走 onlyBuiltDependencies); 同步 SQLite 大批量写须在 worker 或拆事务, 勿卡主线程。"
+      ],
+      "citations": [
+        "https://git-scm.com/docs/racy-git/2.5.6",
+        "https://crypto.stanford.edu/~blynn/gg/race.html",
+        "https://github.com/python/mypy/issues/3403",
+        "https://github.com/borgbackup/borg/issues/911",
+        "https://github.com/phpstan/phpstan/issues/2122",
+        "https://interrupt.memfault.com/blog/ccache-debugging",
+        "https://sqlite.org/wal.html",
+        "https://sqlite.org/tempfiles.html",
+        "https://github.com/WiseLibs/better-sqlite3/blob/master/docs/threads.md",
+        "https://sqlite.org/forum/info/f832398c19d30a4a",
+        "https://avi.im/blag/2021/fast-sqlite-inserts/",
+        "https://powersync.com/blog/sqlite-optimizations-for-ultra-high-performance",
+        "https://rust-analyzer.github.io/blog/2023/07/24/durable-incrementality.html",
+        "https://docs.rs/salsa/latest/salsa/struct.Durability.html",
+        "https://facebook.github.io/watchman/docs/clockspec.html",
+        "https://facebook.github.io/watchman/docs/troubleshooting",
+        "https://github.com/paulmillr/chokidar",
+        "https://github.com/paulmillr/chokidar/issues/675",
+        "https://dev.to/satrobit/rate-limiting-using-the-token-bucket-algorithm-3cjh",
+        "https://developer.mozilla.org/en-US/docs/Web/API/Background_Tasks_API",
+        "https://github.com/bjouhier/i-json",
+        "https://oneuptime.com/blog/post/2026-01-30-cache-invalidation-strategies/view",
+        "https://blog.devgenius.io/version-your-cache-keys-to-survive-rolling-deployments-a62545326220"
+      ]
+    }
+  ],
+  "maps": [
+    {
+      "area": "berth 扫描引擎 (AssetScanner, 适配器, Worker, 浅索引)",
+      "currentBehavior": "## 一次性全扫模型 (Snapshot-based, Per-Project)\n\n**启动与扫描流程**:\n- `AssetScanner.scanAll()` (src/main/engine/scanner.ts:59-68) — 单次同步式全扫, 返回 ScanResult (assets + stats + errors)\n- Worker 架构 (src/main/engine/assets/worker.ts + worker-host.ts) — 每次扫描都新建 Worker, 跨度传输 sessionCache snapshot (入参+回传, 两次完整序列化)\n- `AgentAssetRuntime` (src/main/engine/assets/runtime.ts:97-439) — 维护 per-project snapshotCache (project 快照缓存), 项目切换时 setProjectDir 触发重扫\n\n**适配器驱动**:\n- 两个内置适配器: `ClaudeCodeAdapter` (instruction/capability/state/observability/integration 五类) 和 `CodexAdapter`\n- 每个适配器 scanAll() 返回单个 {assets, errors}, 再在 scanner 层合并\n- 适配器通过 ScanContext 链接到文件系统 (claudeDir, projectDir, projectDirs, managedDir)\n\n**进度与部分流**:\n- `onProgress` (src/main/engine/scanner.ts:77-93) — per-adapter 粒度, phase='parsing', current/total 计数\n- `onPartial` (src/main/engine/scanner.ts:99-104) — 每适配器完成后推送累积资产, 资产 strip raw (P4.6 性能优化)\n- Worker 直通转发 progress/partial 到主进程 (worker.ts:18-20)\n\n**浅索引与去重**:\n- `appendShallowConventions()` (scanner.ts:261-273) — 扫描完深资产后, 对每个非活动 session-派生项目的 repo root 浅扫\n- `scanShallowConventions()` (src/main/engine/shallow-conventions.ts:34-55) — 仅扫 5 个源 (AGENTS.md/CLAUDE.md, 在项目根与 .claude/), meta 标记 scanDepth='shallow' + projectPath\n- `mergeSharedConventions()` (scanner.ts:336-360) — 折叠跨适配器同一物理文件 (AGENTS.md, meta.dedupeKey), 通过 readByAgentIds 并集保留可见性\n- `annotateEquivalentHookSources()` (scanner.ts:377-405) — Hooks 通过 scenarioHash+hookHash 分组, 标记等价源与 effectiveEnabled\n\n**边界与限制**:\n- 一次性模型: scanAll() 必须一口气完成, 无法暂停/恢复或背压\n- 无持久化索引: 每次都重新扫全部目录 (除 sessionCache 利用 mtime 复用)\n- 非活动项目仅约定: 浅索引故意仅覆盖 AGENTS.md/CLAUDE.md, 不含 skill/agent/command/hook/mcp/statusline (Codex 性能取舍)\n- 项目快照模型: 全局并无真正的\"全设备索引\", 仅是活动项目快照 + 其它项目浅索引约定的拼接",
+      "keyFiles": [
+        "src/main/engine/scanner.ts:59-127 (scanAll + runScanAll, 一次性全扫主入口)",
+        "src/main/engine/scanner.ts:261-273 (appendShallowConventions, 非活动项目浅扫约定)",
+        "src/main/engine/shallow-conventions.ts:34-55 (scanShallowConventions, 浅索引实现, 仅 5 个源)",
+        "src/main/engine/scanner.ts:336-360 (mergeSharedConventions, AGENTS.md 去重)",
+        "src/main/adapters/claude-code/index.ts:141-154 (ClaudeCodeAdapter.scanAll, 适配器全扫实现)",
+        "src/main/adapters/claude-code/scanner.ts:91-196 (scanInstructions/scanCapabilities/scanState/scanObservability/scanIntegration, 五类资产扫描函数)",
+        "src/main/engine/assets/worker-host.ts:57-96 (AssetWorkerHost.runScan, 每次新建 Worker 传输 sessionCache)",
+        "src/main/engine/assets/worker.ts:10-55 (Worker 入口, 调用 AssetScanner, 转发 progress/partial)",
+        "src/main/engine/assets/runtime.ts:322-389 (AgentAssetRuntime.runRefresh, 扫描调度与 snapshot 缓存更新)",
+        "src/shared/types/ipc.ts:53-68 (AssetScanProgress/AssetScanPartial 接口定义)",
+        "docs/issues/2026-06-07-FEATURE-background-progressive-asset-indexer.md (目标特性定义)",
+        "docs/issues/2026-06-07-IMPROVEMENT-global-shallow-index-conventions-only.md (浅索引现状与决议)"
+      ],
+      "reusable": [
+        "per-adapter progress 模型 (phase/current/total) — 可直接复用到后台调度, 加入优先级/预估与背压",
+        "AssetScanPartial 流 — 已支持 onProgress/onPartial 钩子, 后台索引可沿用扩展为 delta-only 或增量推送",
+        "sessionCache (AssetFileCache) + mtime 复用机制 — 可升级为持久化索引存储, 增量变更检测已有框架",
+        "scanShallowConventions() — 快速索引模板, 可推广为其它资产类型的快速扫 (on-demand 或分层)",
+        "mergeSharedConventions + dedupeKey — 已实现去重逻辑, 可保留用于全局索引的跨项目合并",
+        "projectScopeCandidatesFromAssets() — 自动发现 session 派生项目的机制已成熟, 可驱动全设备扫描计划生成",
+        "per-project snapshotCache (runtime.ts) — 快速项目切换的模式可保留, 升级为全局索引中的 scope-filtered view",
+        "Worker 线程模式 — 可改为长驻独立 worker, 避免每轮 sessionCache 双向序列化 (IMPROVEMENT 已跟踪)"
+      ],
+      "gaps": [
+        "无后台索引服务: 扫描仅由主进程同步触发, 无独立后台 daemon/worker 持续运行与调度",
+        "无持久化索引: 无持久化存储 (DB/cache 文件), 每次扫描从零开始, sessionCache 仅内存 snapshot",
+        "无增量扫描: 无 mtime/USN/git 等变更检测, 无能力跳过未变目录或只扫新增文件",
+        "无暂停/恢复: scanAll() 一口气完成, 无法中断/暂停/恢复, 无背压与调度队列 (特别大项目/慢存储时卡顿)",
+        "无扫描设置: 不可在 UI/settings.json 配置扫描频率/间隔/并发/排除路径/重建, 无性能调节旋钮",
+        "全局非全扫: 当前[全局] = 活动项目深扫 + 其它项目仅约定浅扫, 不满足「设备上所有可扫描资产」(FEATURE 澄清)",
+        "非活动项目缺能力: 浅索引故意排除 skill/agent/command/hook/mcp/statusline, 用户在[全局]无法看到其它项目的能力",
+        "每扫新 Worker: Worker 无复用, 每轮都 new Worker + clone sessionCache 两次 (序列化开销随规模放大, IMPROVEMENT#8 跟踪)",
+        "legacy scanner 并存: IPC 路由 assets:scan-category 与 hooks:statuses 仍走同步 getScanner(), 不随项目切换更新 (BUG 已跟踪)",
+        "无 resolveProjectConfigRoots 缓存: 每次扫描都遍历 .git 查找 repo root, 多项目场景重复计算"
+      ],
+      "risks": [
+        "[架构风险] 一次性模型难扩展到后台增量: 现 scanAll() 设计假设「一口气扫完整」, 改为后台渐进模式需重构 Progress/Partial/Snapshot 的生命周期与一致性保证 (特别项目切换时的缓存隔离, runtime.ts 已有 isCurrent 守护但索引场景更复杂)",
+        "[性能风险] 大规模设备冷启: 设备上百个项目 + 全扫所有 .claude/.codex + session 派生项目 → 首次启动可能数分钟卡顿 (当前 per-project 分摊压力, 后台全扫会暴露); 需背压/分段策略 (局部 loading, 活动项目优先)",
+        "[数据一致性风险] 项目切换时的索引状态: 活动项目正深扫, 用户切换到另一项目 → runtime 立即服务新项目快照, 但后台全扫仍在旧项目上进行 (isCurrent 可挡 snapshot 写, 但不能取消已启动的 I/O, 特别网络/缓慢存储会 race condition)",
+        "[成本风险] 持久化索引设计复杂: 跨平台 (Mac/Windows/Linux) 的 DB/缓存方案选型 (sqlite/leveldb/mmap...), 缓存失效策略 (mtime/hash/inode 追踪), 迁移与重建流程 → 工作量预期偏低",
+        "[兼容性风险] 扩展浅索引到能力类型: 当前 SHALLOW_SOURCES 仅 5 个文件, 若要显示全 .claude/skill/*.md + .claude/agents/*.md + hooks/mcp → 扫描面积剧增, 需评估十数个项目的性能影响",
+        "[跨过程交互风险] legacy scanner 并存: assets:scan-category 与 hooks:statuses 仍走同步路径, 新后台索引模型时需确保两者一致; 倾向淘汰 legacy getScanner(), 但涉及多处 IPC 梳理与测试",
+        "[工程债] Worker 优化延期: 每扫新建 Worker + sessionCache 双向序列化 (IMPROVEMENT#8), 独立长驻 worker 原定 Codex B① 优先级, 若后台服务先上会加倍 Worker 数量与开销"
+      ]
+    },
+    {
+      "area": "berth runtime 与缓存: AgentAssetRuntime snapshot/snapshotCache(per-project)/status/refresh 与 AssetFileCache 序列化策略, 映射到\"全量后台渐进增量可暂停索引器\"重构",
+      "currentBehavior": "\n当前 berth 实现一次性全扫模型:\n1. **AssetScanner (src/main/engine/scanner.ts)**: 串行枚举所有 adapter, 每个 adapter scanAll() 驱动部分资产扫描。支持流式 onProgress/onPartial 用于 UI 实时渲染已扫资产, 但本质是同步期间内一次性完成。\n2. **AssetFileCache (src/main/engine/assets/file-cache.ts:L24-80)**: 进程内进程级缓存, 基于 fingerprint (path + size + mtimeMs) 判断文件是否变更。支持 toSnapshot()/fromSnapshot() 序列化, 跨 worker 边界复用 Claude session/Codex rollout 的大型 JSON 元数据。无磁盘持久化, 仅内存保存。\n3. **AgentAssetRuntime (src/main/engine/assets/runtime.ts:L97-440)**: 中心运行时维护:\n   - snapshotCache: Map<projectKey, snapshot> 缓存已扫的单个项目快照, 支持亚秒级项目切换 (setProjectDir/hasSnapshotFor)\n   - SnapshotSelectorCache: 细粒度选择器缓存 (search:key/health:snapshotId), 基于 snapshotId 判断是否命中\n   - status: AssetRuntimeStatus (idle/scanning/ready/stale/error) 的单一中心状态机\n   - 扫描触发: ensureReady()/refresh() lazy-on-demand, 仅在需要数据时触发扫描; 或 watcher 变更触发增量更新 (updateAsset/removeAsset)\n4. **扫描生命周期**: \n   - setProjectDir() → 检查 snapshotCache.has() → 有则瞬时返回, 无则标记 stale; 不自动触发扫描\n   - 首页 Overview, Instructions 等页面调用 ensureReady() → 检查 idle/stale → 触发 refresh()\n   - refresh() 创建一次性 Worker job, scanAll() 驱动全扫, 完成后在 snapshotCache 存结果; 切项目中途扫描通过 isCurrent 守护防止旧扫结果 clobber\n5. **Shallow-索引 (GH-113 T3b, src/main/engine/scanner.ts:L261-274)**: 非活动项目仅扫 AGENTS.md/CLAUDE.md 约定, 能力不深扫。通过 appendShallowConventions() 在深扫适配器后追加, meta.projectPath 标记所属项目, 在 scope filter 时按需展示。\n6. **Watcher (src/main/engine/watcher.ts)**: chokidar 监听多路径 (Claude/.claude, Codex home, 项目 .claude/.mcp.json 等), 粗粒度变更通知。setListener() → IPC 发给渲染层 `assets:changed` 事件, 但无自动增量刷新逻辑, 目前是用户手动刷新或页面 ensureReady() 再全扫。\n7. **Scope 过滤 (src/shared/scope.ts:L83-95)**: \n   - global mode: 返回全部资产\n   - user mode: scope == user|enterprise\n   - project mode: 活动项目无 meta.projectPath 的 scope==project 资产 + 有 meta.projectPath 指向当前项目的资产\n   - narrow-down: 切换 scope 时调 setScopeSelection() 清 selectorCache 但不重扫, 由 assetMatchesAppScope 谓词过滤已有资产\n8. **Worker 边界 (src/main/engine/assets/worker-host.ts)**: 一次性 worker job, 接收 AssetWorkerData (projectDir + sessionCache snapshot), 返回 AssetWorkerScanPayload (scanResult + sources + projectCandidates + 新 sessionCache snapshot)。sessionCache 序列化往返成本高: 若有数百个 session JSON, 结构化 clone 可能 100ms+ 级延迟。\n",
+      "keyFiles": [
+        "src/main/engine/assets/runtime.ts:L97-160 [AgentAssetRuntime class structure + snapshotCache]",
+        "src/main/engine/assets/runtime.ts:L175-204 [setProjectDir per-project snapshot serving]",
+        "src/main/engine/assets/runtime.ts:L206-248 [refresh/ensureReady lazy trigger + in-flight guard]",
+        "src/main/engine/assets/runtime.ts:L322-389 [runRefresh: scanner generation guard + state machine]",
+        "src/main/engine/assets/file-cache.ts:L24-80 [AssetFileCache in-memory fingerprint cache]",
+        "src/main/engine/scanner.ts:L40-68 [AssetScanner.scanAll streaming hookss + sessionCache mgmt]",
+        "src/main/engine/scanner.ts:L261-274 [appendShallowConventions non-active project shallow scan]",
+        "src/main/engine/scanner.ts:L336-375 [mergeSharedConventions deduplication logic]",
+        "src/main/engine/assets/worker-host.ts:L57-96 [AssetWorkerHost runScan worker lifecycle]",
+        "src/main/engine/assets/worker.ts:L10-45 [worker process sessionCache reconstruct + phases]",
+        "src/main/engine/watcher.ts:L26-58 [AssetWatcher start/restart chokidar setup]",
+        "src/main/project-scope-runtime.ts:L24-53 [activateProjectScope: refresh + watcher restart]",
+        "src/shared/scope.ts:L83-95 [assetMatchesAppScope narrow-down predicate]",
+        "src/main/ipc/handlers.ts:L90-133 [IPC snapshot/status/refresh/scope-set handlers]",
+        "src/renderer/src/stores/app.ts:L116-140 [applyAssetProgress live tick handler + snapshot update]"
+      ],
+      "reusable": [
+        "AssetFileCache fingerprint 机制 (path + size + mtimeMs) — 可复用于持久化缓存的有效性检查; 扩展为基于 content-hash 或 mtime polling 的增量变更检测",
+        "SnapshotSelectorCache 选择器缓存架构 — 适用于持久化/高性能缓存场景, key = cache policy, value = derived result; 扩展为 LRU/TTL 驱逐策略",
+        "per-project snapshotCache + setProjectDir() 亚秒级切换模式 — 可复用于多投影/多作用域缓存, 但需扩展为全设备全扫场景下的 lazy-loading 与后台刷新并行",
+        "AssetScanner 串行 adapter enumeration + onProgress/onPartial 流式钩子 — 基础设施完备, 可原位扩展为增量phase (discovering/parsing/indexing/deriving) 与优先级队列",
+        "mergeSharedConventions dedupeKey + canonical id 去重机制 — 已确定式, 支持跨会话/跨扫描周期的稳定 asset.id; 扩展为全局资产池的增量合并",
+        "Watcher chokidar path 多路径监听 + 轻量级粗粒度事件 — 基础完备, 需关联 AssetFileCache fingerprint 做增量 diff → AssetScanner 的增量 adapter 入口",
+        "AssetRuntimeStatus + isCurrent() 守护模式 — 中途项目切换防 clobber 机制, 适用于后台增量任务中途被优先级抢占时的一致性保护",
+        "Worker 序列化边界 (sessionCache toSnapshot/fromSnapshot) — 可作为持久化格式基础, 但需优化: 增量更新而非整体序列化; 或分离 metadata 与 content 流",
+        "AppScopeSelection + assetMatchesAppScope() 谓词 — owner-tagged 资产已支持跨项目过滤, 可复用于全设备全局范围内的细粒度权限/可见性控制"
+      ],
+      "gaps": [
+        "[关键缺口] 持久化资产索引: AssetFileCache/SnapshotSelectorCache 均为内存, 应用重启丧失全部缓存; 重构需持久化存储 (SQLite/RocksDB), 支持 mtime/content-hash 失效策略与增量检查点",
+        "[关键缺口] 增量索引: 当前 watcher 事件粗粒度 (added/changed/removed), 缺乏与 AssetScanner adapter 的增量消费逻辑; 需 diff adapter 分支: 仅重扫变更文件的能力类型而非全扫",
+        "[关键缺口] 后台调度与背压: 无队列/优先级/限流; 全扫按活动项目→用户→非活动项目优先级推进, 但无动态调度; 缺乏空闲调度器与 CPU/内存背压机制",
+        "[关键缺口] 扫描暂停/恢复: refresh() 无内置暂停机制, in-flight Promise 不能中断; 需 AbortController 或 task scheduler 支持状态机 (idle/paused/resuming)",
+        "[关键缺口] 全资产全索引: 当前浅索引仅约定 (conventions-only), 导致全局非活动项目能力不可见; 需扩展 shallow-conventions 覆盖能力类型或全索引所有项目 (GH-113 T4+T5 确认需求)",
+        "[性能缺口] Worker 序列化成本: sessionCache.toSnapshot() 结构化 clone 大型元数据, 可能 100ms+ 延迟; 需优化: 增量更新、流式 Readable、或分离 content/metadata",
+        "[运维缺口] 无扫描设置 UI: 用户无法配置频率/并发/排除路径/缓存策略; 需设置面板与持久化配置 (settings.json 扩展或独立 .berth/indexing.json)",
+        "[检测缺口] 无增量变更 diff: watcher 事件 → adapter 间无关联; 缺乏'文件 X 变更, 仅重扫 skill/hook 不重扫 mcp' 的能力",
+        "[兼容性缺口] Worker 中途切项目: isCurrent() 守护防止旧扫 clobber, 但若后台多个 worker 并行扫多项目, 状态一致性需重新设计 (当前单 worker 可行, 后台长生命周期需版本化快照)",
+        "[集成缺口] 生命周期整合: 当前 watcher/scanner/runtime 独立初始化, 缺乏统一的启动/关闭/重置入口; 后台索引器需中心事件总线或 task scheduler"
+      ],
+      "risks": [
+        "[性能风险] 全索引所有项目能力: 若数十个项目 × 全 .claude/.codex 扫描, 导致启动时间爆炸; 需 lazy-loading + 后台渐进 + 用户控制的 depth 策略 (GH-113 确认性能取舍: 暂保留浅索引为基础)",
+        "[一致性风险] 持久化缓存与 watcher 同步: 若磁盘 fingerprint 与实时 mtime 不一致 (时区/浮点精度/跨进程竞争), 导致增量判断失效; 需 content-hash + atomic 写入保证",
+        "[资源风险] 持久化存储选型: SQLite 写锁可能阻塞 watcher 事件处理; RocksDB/LMDB 存储格式稳定性; 需评估工程成本与可维护性 (当前 better-sqlite3 已在依赖中)",
+        "[中断风险] 扫描暂停/恢复: AbortController 无法阻止 adapter.scanAll() 内部 I/O; 需 adapter interface 扩展支持中断点; 或采用 generator-based 扫描器",
+        "[并发风险] 后台多 worker + 活动项目切换: isCurrent() 守护仅保护单 worker, 若后台有数个长生命周期 worker 并行扫, 中途切项目时需版本化快照隔离; 当前架构假设单 worker",
+        "[迁移风险] 类型契约变更: Asset/AssetSnapshot 扩展新字段 (e.g., scanDepth/scanPhase/cacheVersion) 需向后兼容; 持久化格式 schema 迁移复杂",
+        "[关键业务风险] 全局 ≠ 完整扫结果: 当前浅索引缺口被用户定性为 BUG (GH-113 澄清), 若继续延迟全索引, 用户认知与实现脱离; 需明确优先级与交付里程碑",
+        "[可观测性风险] 缺乏扫描进度/指标: 当前 progress 事件粗粒度 (per-adapter), 缺乏 ETA/速率/内存占用; 后台长期运行需详细指标与告警",
+        "[安全风险] sessionCache 与用户凭证: AssetFileCache 缓存 session 元数据包含 model/cost 等敏感字段; 持久化到磁盘需加密或隔离 (当前内存仅进程隔离)",
+        "[兼容性风险] Codex 与 Claude Code 扫描不对称: Codex 仅 T1 浅去重, 后续深扫逻辑未明确; 后台索引器需支持多 adapter 的异步 depth/priority 策略"
+      ]
+    },
+    {
+      "area": "berth engine/watcher.ts: 文件监听 + 增量索引映射",
+      "currentBehavior": "AssetWatcher 当前实现为**被动式、语句级、非增量**：\n\n1. **监听范围** (watcher.ts:29-40, watcher.ts:81-113):\n   - chokidar 监听多个根路径: ~/.claude*, ~/.codex*, 项目级 .claude/.codex/.agents/skills、CLAUDE.md、AGENTS.md、.mcp.json、managed-settings.json\n   - depth=5, ignoreInitial=true, 仅忽略 node_modules/.git，GH-111 R2 修复了点目录误忽略\n\n2. **增量事件映射** (watcher.ts:67-69):\n   - buildWatchEvent() 映射文件变化为 { type, assetId: path.basename(), asset: undefined }\n   - assetId 仅为**文件名**，不含路径上下文；asset 字段始终 undefined\n   - 三种事件类型: added/changed/removed\n\n3. **项目切换重启** (project-scope-runtime.ts:44-45):\n   - activateProjectScope() 调用 watcher.restart(nextProjectDir)\n   - 停止旧 watcher、重启新项目的 watcher\n\n4. **缺失的增量应用**:\n   - watcher 事件发送到 IPC (`webContents.send('assets:changed', event)`) —— 见 main/index.ts:128-131\n   - preload/index.ts 暴露 `assets.onChanged()` 以及 `assets.onProgress()` 回调\n   - **渲染层无增量处理**: WatchEvent 接收后，没有发现对 asset map 的增量更新逻辑\n   - 当前策略似乎是事件触发后全量刷新（assets:refresh）而非局部补丁\n\n5. **扫描时流式更新** (scanner.ts:99-104, runtime.ts:430-437):\n   - 有 onPartial 回调流式传递累计资产\n   - 但这是**扫描过程中**的聚合，不是**监听事件后**的增量更新\n\n6. **缺口**:\n   - assetId 仅文件名 → 无法精确定位被监听资产\n   - 没有增量 assetId→Asset 的映射表更新\n   - watcher 事件转化为资产级增量的桥接代码不存在\n   - 无缓存失效策略（资产关系、衍生数据在文件变化后不清除）\n   - 无增量索引的队列、去重、批处理、背压控制",
+      "keyFiles": [
+        "D:\\Code\\berth\\src\\main\\engine\\watcher.ts:67-69",
+        "D:\\Code\\berth\\src\\main\\engine\\watcher.ts:26-45",
+        "D:\\Code\\berth\\src\\main\\engine\\watcher.ts:81-113",
+        "D:\\Code\\berth\\src\\main\\project-scope-runtime.ts:44-45",
+        "D:\\Code\\berth\\src\\main\\index.ts:128-131",
+        "D:\\Code\\berth\\src\\preload\\index.ts:36-45",
+        "D:\\Code\\berth\\src\\main\\engine\\scanner.ts:59-127",
+        "D:\\Code\\berth\\src\\main\\engine\\assets\\runtime.ts:430-437"
+      ],
+      "reusable": [
+        "AssetWatcher 类框架",
+        "chokidar 集成 + 路径解析逻辑",
+        "WatchEvent 类型 + buildWatchEvent 工厂",
+        "项目切换时 watcher.restart() 协调",
+        "AssetScanner.onPartial 流式处理框架",
+        "AssetRuntime.applyPartial 增量应用模式 (可参考)",
+        "normalizeProjectPathKey/sameProjectPath 路径规范化",
+        "IPC bridge (assets:changed/assets:progress 信道)"
+      ],
+      "gaps": [
+        "1. assetId 精确映射: 从文件路径→资产 ID（需引入路径→ID 的反向索引，考虑多 agent 共享文件如 AGENTS.md 的 dedupeKey 合并）",
+        "2. 增量资产解析: 文件变化后，需判断是否完整重扫该文件类型(如 settings.json 影响多个 hook asset)，还是局部补丁",
+        "3. 缓存失效级联: 文件变化→清除该资产及其依赖(import、relation chains、search index)",
+        "4. 渲染侧增量应用: assetId→Asset 的 CRUD 操作，更新 runtime.snapshot.assetMap",
+        "5. 增量队列 + 背压: 高频文件变化时的去重、批处理、限频",
+        "6. 持久化缓存策略: 增量变化是否写入 file-cache.ts，以支持应用重启时的快速恢复",
+        "7. 项目级监听粒度: 当前 getAssetWatchPaths 返回全局+项目路径，切换项目时全量重启 watcher，未支持在全局索引基础上增量裁剪"
+      ],
+      "risks": [
+        "1. 路径碰撞: AGENTS.md、CLAUDE.md 在多层级存在(用户/项目)，仅用 basename 无法区分，buildWatchEvent 无法确定资产归属",
+        "2. 增量扫描不完整性: 单文件变化可能影响多个资产(如 settings.json hook 嵌套结构)，局部补丁可能遗漏衍生数据",
+        "3. 竞态条件: 项目切换与 watcher 事件并发，新项目 watcher 启动前旧项目事件仍可能抵达，导致资产污染(GH-111 R4 在 runtime 层面修复了扫描竞态，但 watch 事件级竞态未覆盖)",
+        "4. 性能陷阱: 若无背压控制，高频编辑(如批量修改 skills 目录)会导致频繁全量刷新或消息队列堆积",
+        "5. 企业级资产不可见: 目标中 enterprise 级资产(managed-settings.json)也被监听，但 getAssetWatchPaths 不支持运行时添加新根，管理员下发策略后需应用重启",
+        "6. 缓存一致性: file-cache.ts 的会话级快照与 watcher 增量的同步边界不明确，可能导致冷启后数据陈旧或重复扫描"
+      ]
+    },
+    {
+      "area": "berth IPC 与渲染层 loading — 全量后台渐进增量可暂停索引器重构的当前实现映射",
+      "currentBehavior": "IPC 层 (src/shared/types/ipc.ts): assets:snapshot/status/refresh 单向轮询调用; assets:progress 事件流传递 {status: AssetRuntimeStatus, partial?: AssetScanPartial}，其中 status 包含扫描状态 (idle|scanning|ready|stale|error) 与进度信息 (phase: discovering|parsing|indexing|deriving, current/total)。\n\n主进程资产运行时 (src/main/engine/assets/runtime.ts AgentAssetRuntime): 全局单例管理单个 projectDir 的快照。scopeSelection (global|user|project 模式) 与扫描独立。refresh(reason, wait?) 触发扫描，流转 onProgress (逐适配器进度) 和 onPartial (累计资产无 raw 字段) 回调，最后发送 terminal status。snapshotCache 按 projectKey 缓存快照，scope 切换若有缓存直接服务 (无重扫)。\n\n扫描适配器 (src/main/engine/scanner.ts AssetScanner): 按顺序串行扫描 claude-code/codex/agent-plugins，每个适配器前后发送 progress 事件，完成后发送累计 partial (资产、stats、errorCount)。\n\n渲染层订阅 (src/renderer/src/hooks/use-ipc.ts useAssetRuntime): 挂载时查询 status，idle/stale/error 触发 refresh()。双订阅 onChanged (单项变化) 和 onProgress (扫描流)。applyAssetProgress 仅折叠 partial assets/stats，刻意不更新 assetSnapshotId (保留给完成时更新，避免 ID 键消费者重取)。\n\n应用存储 (src/renderer/src/stores/app.ts useAppStore): assets/stats 渲染列表，assetRuntimeStatus 中央状态，scopeSelection/projectCandidates 域选择。applyAssetProgress 不触发页面重新请求。\n\n域过滤 (src/shared/scope.ts): assetMatchesAppScope() 纯谓词 (global 返 true; user 过滤 enterprise/user scope; project 含继承链)。filterAssetsByAppScope() 渲染层单向操作，全量结果存 app.assets。\n\n项目切换 (src/main/project-scope-runtime.ts activateProjectScope): setProjectDir() 交换 scanner，服务缓存快照或标记 stale；无缓存则 refresh()；重启 watcher。\n\n启动 (src/main/index.ts): initScanner() 初始化，无显式 startup scan，依赖渲染层 useAssetRuntime 触发 (lazy)。progressListener 已注册，watcher 启动。\n\nUI 进度 (sidebar-scan-status.tsx): 实时展示 progress phases + per-category counts (来自活资产列表)。\n\n当前限制: (1) 扫描范围固定单项目; (2) 无全量后台索引，启动不自动扫全部设备; (3) scope 切换不扫描; (4) 快照缓存无 TTL/失效; (5) 无增量更新 (全量替换); (6) 扫描串行无背压; (7) watcher 单项目。",
+      "keyFiles": [
+        "src/shared/types/ipc.ts:26-90 — AssetScanProgress、AssetScanPartial、AssetRuntimeStatus 类型",
+        "src/shared/types/ipc.ts:378-385 — assets:progress IPC 事件定义",
+        "src/shared/scope.ts:83-95 — assetMatchesAppScope 与 filterAssetsByAppScope 谓词",
+        "src/main/engine/assets/runtime.ts:97-448 — AgentAssetRuntime 类，snapshot 缓存、scopeSelection、refresh/setProgress/applyPartial 核心流程",
+        "src/main/engine/assets/runtime.ts:322-389 — runRefresh() 完整流程：onProgress/onPartial 转发、terminal status、error 处理、isCurrent() 竞态守卫",
+        "src/main/engine/scanner.ts:59-127 — AssetScanner.scanAll() 适配器循环、onProgress/onPartial 流转、partial 去 raw 字段",
+        "src/renderer/src/hooks/use-ipc.ts:165-234 — useAssetRuntime() 初始化查询、onProgress/onChanged 双订阅、lazy refresh 触发",
+        "src/renderer/src/stores/app.ts:88-150 — useAppStore 中心状态、applyAssetProgress (不更新 snapshotId)、setScopeSelection",
+        "src/main/ipc/handlers.ts:90-106 — IPC 处理: assets:snapshot/status/refresh、assets:scan-all (legacy-scan-all 原因值)",
+        "src/preload/index.ts:26-45 — preload API 暴露: assets.onProgress 回调注册",
+        "src/main/index.ts:112-143 — 应用启动: progressListener 注册于 mainWindow.webContents.send，watcher 启动于 projectDir",
+        "src/main/project-scope-runtime.ts:24-53 — activateProjectScope: setProjectDir → refresh → watcher.restart 流程",
+        "src/renderer/src/components/layout/sidebar-scan-status.tsx:39-100 — 实时进度 UI: phase label、progress bar、per-category counts 从活资产派生"
+      ],
+      "reusable": [
+        "AssetProgressPayload 结构与 progressListener 机制 — 支持多项目后台索引，上游多个 payload 串行或批量发送至同一 IPC 通道",
+        "AssetScanProgress/AssetScanPartial 类型 — 已支持渐进流，phase 枚举可扩展 (discovering/parsing/indexing/deriving/global-merge/cache-verify 等)",
+        "snapshotCache: Map<projectKey, snapshot> 架构 — 多项目本地化快照管理，可复用 projectKey='' 表示全局快照",
+        "assetMatchesAppScope() 谓词 — 场景化过滤逻辑分离，可用于全量结果窄化至 user/project 域",
+        "per-adapter onProgress 机制 — 适配器层与 progress 已接耦，可扩展为多项目并行扫描或限频背压",
+        "scopeSelection ↔ snapshot 分离设计 — scope 切换无需重扫，与「后台全量 + 前台过滤」目标对齐",
+        "watcher + assets:changed IPC — 单项目监控可扩展为多项目 watcher 实例或设备范围统一监听"
+      ],
+      "gaps": [
+        "无全局索引入口: 当前 refresh() 仅扫单 projectDir 的 scanner，缺 indexGlobal()/refreshAll() 方法以扫全部项目+用户+企业级资产",
+        "缺增量扫描: snapshot 全量替换，无 delta 更新。单文件变更需重算全部 stats，不符合「渐进增量」目标",
+        "无可控后台运行: 扫描由前台 refresh() 同步触发，无独立后台任务/事件循环。启动时无自动全量索引，依赖 lazy 初始化",
+        "缺暂停与背压: 扫描串行线性，无 pause/resume/throttle API，适配器无限频机制 (GH-110 P4 未涉及)",
+        "全局 scope 无完整性保证: global mode 无条件返回全表，但若后台扫描未完成或某项目报错，用户看「全局」实际不全",
+        "watcher 范围固定: getWatcher() 仅监 projectDir，其他项目文件变更无法驱动增量更新，不支持设备范围监控",
+        "缓存无失效策略: snapshotCache 无 TTL/LRU/大小限制。目标提到「可在设置中按设备性能调节」但未实现",
+        "无性能配置面板: 并发度、限频参数等硬编码或无选项，不可在设置中配置",
+        "IPC 往返延迟: onPartial 逐适配器发送整个 partial.assets 数组，高频 webContents.send() 可能瓶颈，无批处理/防抖",
+        "元数据缺失: 资产未标「全局索引发现」vs「项目私有」来源，影响全局完整性声明与跨项目去重"
+      ],
+      "risks": [
+        "项目切换竞态: setProjectDir() 中途交换 scanner，runRefresh() 中 isCurrent() 检查丢弃旧结果。全局并行扫多项目需强化 scanner/snapshot 隔离",
+        "快照 ID 与 ID 键消费者: assetSnapshotId 仅完成时更新 (保留 plugin list 稳定)，增量更新资产需明确 ID 更新策略，可能导致不必要重取",
+        "progressListener 窗口销毁: mainWindow.webContents.send() 若窗口已销毁则失败。后台全量扫若在窗口关闭后继续，无法转发至新窗口，进度丢失",
+        "部分扫描暴露: applyAssetProgress 中间状态含「不完整」资产 (仅前 N 适配器)，UI 需容错或明确「加载中」标示",
+        "global scope 虚假完整: filterAssetsByAppScope(assets, global) 无条件返回全表，但若某项目未扫或报错，「全局」实际不全，用户体验下降",
+        "watcher 重启延迟: setProjectDir → refresh → watcher.restart 串行，新项目短暂无监控窗口",
+        "适配器错误传播: 单个适配器失败被捕获为 ScanError，不中断扫描。全局扫某项目适配器崩溃可能导致虚假「全局完整」",
+        "内存压力: snapshotCache 无大小限制，100+ 项目快照累积导致 GC 压力",
+        "IPC 序列化成本: partial.assets 数千条时 structured-clone 可能阻塞 IPC，需批处理或增量发送",
+        "errorCount 不同步: applyAssetProgress 不更新 assetErrors，中间态错误数与最终不一致，错误展示混淆"
+      ]
+    },
+    {
+      "area": "Berth Settings & Persistence Layer - Current Architecture Mapping for Progressive Incremental Indexer Refactoring",
+      "currentBehavior": "## Current Behavior\n\n### Settings Storage\n- **Browser localStorage only**: Theme (`berth-theme`), accent (`berth-accent`), language (`berth-language`), advanced mode, ignored health checks\n- Located in renderer via `ThemeProvider` and pages (`overview.tsx`, `settings.tsx`, `pages/settings.tsx`)\n- No server-side settings persistence (no electron-store, no JSON files, no SQLite)\n- User can change theme/accent/language but NO persistent application-level settings\n\n### Asset Indexing & Caching\n- **In-process memory only**: `AssetFileCache<Asset>` (src/main/engine/assets/file-cache.ts) uses `Map<string, AssetFileCacheEntry>` with file fingerprints (path + size + mtimeMs)\n- Session metadata caching: Caches parsed Claude Code sessions/Codex rollouts to avoid re-parsing unchanged files\n- **No disk persistence**: Snapshots exist only in memory during runtime; lost on app restart\n- Cache is rebuilding from scratch on every launch\n\n### Scanning Architecture\n- **On-demand full scans**: App starts → runs full scan immediately (no incremental skip)\n- **Watcher-driven updates**: chokidar watches 25+ asset paths (~/.claude/, .codex/, .agents/, project dirs)\n- **Worker thread isolation**: AssetWorkerHost spawns worker_threads for heavy I/O; sessionCache passed to worker as snapshot\n- **Streaming partial results**: `onPartial` callbacks emit cumulative assets mid-scan (GH-111 P1, GH-113 T1)\n- **Snapshot cache per project**: `snapshotCache: Map<projectKey, AssetSnapshot>` in runtime (in-memory) allows sub-second project switching\n\n### Current Data Flow\n1. App launch → `initScanner(projectDir)` → full scan in worker\n2. Watcher listens for fs changes → `notifyChange()` → partial refresh triggers full re-scan\n3. Renderer requests snapshot via IPC → gets latest in-memory snapshot\n4. Changing project scope → swaps runtime.projectDir → instant cache lookup or triggers new scan\n\n### Better-SQLite3 Status\n- **Included in package.json** (v11.7.0) but **NOT USED** anywhere in codebase\n- No database initialization, schema, or queries exist\n- Listed in `.onlyBuiltDependencies` (native module), meaning it compiles but sits unused\n- Declared in README as \"Storage\" tech but no actual implementation",
+      "keyFiles": [
+        "src/main/engine/assets/file-cache.ts:1-99 (in-memory cache with fingerprint tracking)",
+        "src/main/engine/assets/runtime.ts:75-95 (SnapshotSelectorCache, snapshotCache Map)",
+        "src/main/engine/assets/worker-host.ts:14-25 (AssetWorkerData, sessionCache snapshot passing)",
+        "src/main/engine/scanner.ts:40-80 (AssetScanner.runScanAll with onPartial streaming)",
+        "src/main/engine/watcher.ts:81-113 (getAssetWatchPaths for fs observation targets)",
+        "src/main/adapters/claude-code/index.ts:32-54 (ClaudeCodeAdapter with sessionCache injection)",
+        "src/main/adapters/claude-code/scanner.ts:36-56 (ScanContext.sessionCache usage)",
+        "src/renderer/src/stores/app.ts:88-159 (Zustand state, no persistence middleware)",
+        "src/renderer/src/components/theme-provider.tsx:42-50 (localStorage for theme/accent only)",
+        "src/renderer/src/pages/settings.tsx:1-80 (settings page component)",
+        "src/main/ipc/handlers.ts:90-135 (IPC asset snapshot/refresh contract)",
+        "package.json:39,61 (better-sqlite3 declared but unused)",
+        "docs/ARCHITECTURE.md:26-29 (documents 'caches only in process memory, not disk')"
+      ],
+      "reusable": [
+        "AssetFileCache<T> class (file-cache.ts) - can evolve into DB-backed cache wrapper",
+        "AssetFileCacheSnapshot<T> serialization API (toSnapshot/fromSnapshot) - ready for persistence",
+        "Fingerprint logic (path + size + mtimeMs) - proven incremental invalidation strategy",
+        "SnapshotSelectorCache (runtime.ts) - selector memoization pattern applicable to DB queries",
+        "workerData/sessionCache snapshot passing pattern - can extend to pass persisted cache state",
+        "Streaming partial results (onPartial callbacks) - UI already expects partial updates mid-scan",
+        "Project-scoped snapshot cache key (projectKey) - normalizes project paths for cache lookup",
+        "Watcher listen/stop API (watcher.ts) - can integrate with scan pause/resume",
+        "IPC asset:refresh handler with wait flag - can extend for progressive indexing visibility",
+        "Renderer localStorage pattern - can migrate to app-level IndexedDB or BetterSQLite3 for larger data"
+      ],
+      "gaps": [
+        "No persistent index database - every launch scans from zero (no cache survival across restarts)",
+        "No application-level settings storage - theme/accent/language only in localStorage; no server-side config, no hook configs, no scan preferences",
+        "No pause/resume capability - scans run to completion or crash; no incremental batching or background deferral",
+        "No rate-limiting or load profile management - full adapter iteration regardless of device load; no priority queue or scheduler",
+        "No scan progress tracking - UI sees progress bar but no persistent scan state; can't resume mid-scan after crash",
+        "No cache invalidation strategy beyond fingerprint - no TTL, no LRU, no versioning; can't detect deep changes (moved files, symlinks)",
+        "No health/performance metrics storage - scan timing, adapter performance, error frequency lost on restart",
+        "No settings UI for tuning - no 'scan frequency', 'batch size', 'debounce delay' controls accessible to users",
+        "No data retention policy - no 'purge old sessions' or 'archive inactive projects' capability",
+        "No cross-process state sharing - multi-window apps would each re-scan; single-window workaround in place but not scalable"
+      ],
+      "risks": [
+        "Performance cliff on large codebases - 100+ projects × 1000s assets per project = multi-second scans on every launch; no background deferral",
+        "User-visible blocking during scan - Electron IPC calls block renderer on initial snapshot request (no streaming to UI during first load)",
+        "Watcher churn on high-frequency changes - Codex sessions generated rapidly can hammer re-scans; no debounce or batch deduplication",
+        "Cache invalidation brittleness - Fingerprint misses on permissions changes, symlinks, or network mounts; silent stale data risk",
+        "Data loss on crash - No persistent scan metadata means partial results lost if worker crashes mid-scan",
+        "Settings divergence - LocalStorage (renderer) vs env vars + JSON files (agents) vs IPC (runtime state) = 3 sources of truth for capabilities/hooks",
+        "Better-SQLite3 unmaintained in codebase - dependency version drift, no schema, native module binary compatibility if skipped",
+        "Scope/project mapping fragility - normalizeProjectPathKey used in 2 places; if logic diverges, cache key collision/miss risk",
+        "Worker thread memory leak potential - sessionCache snapshots passed per-scan; large transcripts × many scans = unbounded memory if not GC'd",
+        "Testing gaps - No fixtures for persisted cache behavior; E2E tests assume clean state each time"
+      ]
+    }
+  ]
+}
