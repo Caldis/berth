@@ -420,3 +420,118 @@ function skillAsset(id: string): Asset {
     meta: {}
   }
 }
+
+// GH-113 I1: a single changed file's freshly-derived assets are folded into the
+// live snapshot by sourceKey — no full rescan. These tests inject the derived
+// assets directly (the derive-from-path logic is a separate slice).
+function fileAsset(id: string, sourceKey: string, type: Asset['type'] = 'skill'): Asset {
+  return {
+    id,
+    agentId: 'claude-code',
+    category: type === 'command' ? 'instruction' : 'capability',
+    type,
+    scope: 'user',
+    name: id,
+    path: `/x/${id}`,
+    meta: { sourceKey }
+  }
+}
+
+async function readyRuntime(assets: Asset[], store?: { load: ReturnType<typeof vi.fn>; save: ReturnType<typeof vi.fn> }): Promise<AgentAssetRuntime> {
+  const scanner = createScanner({ assets, stats: emptyStats, errors: [] })
+  const runtime = new AgentAssetRuntime({
+    projectDir: '/repo/berth',
+    createScanner: () => scanner,
+    now: () => '2026-06-07T00:00:00.000Z',
+    createSnapshotId: () => 'ready-snap',
+    snapshotStore: store
+  })
+  await runtime.refresh({ reason: 'startup', wait: true })
+  return runtime
+}
+
+describe('AgentAssetRuntime.applyFileChange (GH-113 I1)', () => {
+  it('replaces only the changed file’s assets and recomputes stats', async () => {
+    const runtime = await readyRuntime([
+      fileAsset('a-skill', 'key-a', 'skill'),
+      fileAsset('b-cmd', 'key-b', 'command')
+    ])
+    runtime.applyFileChange('key-a', [fileAsset('a-skill-2', 'key-a', 'skill'), fileAsset('a-extra', 'key-a', 'skill')])
+
+    const snap = runtime.getSnapshot()
+    expect(snap.assets.map((x) => x.id).sort()).toEqual(['a-extra', 'a-skill-2', 'b-cmd'])
+    expect(snap.stats.skills).toBe(2)
+    expect(snap.stats.commands).toBe(1)
+  })
+
+  it('removes a file’s assets when it is deleted (empty derived set)', async () => {
+    const runtime = await readyRuntime([fileAsset('a', 'key-a'), fileAsset('b', 'key-b')])
+    runtime.applyFileChange('key-a', [])
+    expect(runtime.getSnapshot().assets.map((x) => x.id)).toEqual(['b'])
+  })
+
+  it('adds assets for a newly-created file', async () => {
+    const runtime = await readyRuntime([fileAsset('a', 'key-a')])
+    runtime.applyFileChange('key-c', [fileAsset('c', 'key-c')])
+    expect(runtime.getSnapshot().assets.map((x) => x.id).sort()).toEqual(['a', 'c'])
+  })
+
+  it('collapses cross-agent AGENTS.md via mergeSharedConventions', async () => {
+    const agentsMd = (agentId: string): Asset => ({
+      id: `agents-${agentId}`,
+      agentId,
+      category: 'instruction',
+      type: 'agents-md',
+      scope: 'project',
+      name: 'AGENTS.md',
+      path: '/repo/berth/AGENTS.md',
+      meta: { sourceKey: 'key-agents', dedupeKey: 'key-agents', readByAgentIds: [agentId] }
+    })
+    const runtime = await readyRuntime([fileAsset('keep', 'key-keep')])
+    runtime.applyFileChange('key-agents', [agentsMd('claude-code'), agentsMd('codex')])
+
+    const agents = runtime.getSnapshot().assets.filter((x) => x.type === 'agents-md')
+    expect(agents).toHaveLength(1) // collapsed to one canonical row
+    expect(agents[0].meta.readByAgentIds).toEqual(expect.arrayContaining(['claude-code', 'codex']))
+  })
+
+  it('keeps the snapshot id stable and invalidates the selector cache', async () => {
+    const runtime = await readyRuntime([fileAsset('a', 'key-a', 'skill')])
+    const idBefore = runtime.getSnapshot().id
+    const derive = vi.fn((assets: Asset[]) => assets.length)
+
+    expect(runtime.select('count', (s) => derive(s.assets))).toBe(1)
+    runtime.applyFileChange('key-a', [fileAsset('a', 'key-a', 'skill'), fileAsset('a2', 'key-a', 'skill')])
+
+    expect(runtime.getSnapshot().id).toBe(idBefore) // stable id → id-keyed consumers don't re-fetch
+    expect(runtime.select('count', (s) => derive(s.assets))).toBe(2) // cache cleared → re-derived
+    expect(derive).toHaveBeenCalledTimes(2)
+  })
+
+  it('persists the updated snapshot and emits a partial to the listener', async () => {
+    const store = { load: vi.fn(() => null), save: vi.fn() }
+    const runtime = await readyRuntime([fileAsset('a', 'key-a')], store)
+    store.save.mockClear() // ignore the refresh-time save
+    const partials: number[] = []
+    runtime.setProgressListener((p) => { if (p.partial) partials.push(p.partial.assets.length) })
+
+    runtime.applyFileChange('key-a', [fileAsset('a2', 'key-a')])
+
+    expect(store.save).toHaveBeenCalledTimes(1)
+    expect(partials).toEqual([1])
+  })
+
+  it('is a no-op when an untracked file yields no assets', async () => {
+    const store = { load: vi.fn(() => null), save: vi.fn() }
+    const runtime = await readyRuntime([fileAsset('a', 'key-a')], store)
+    store.save.mockClear()
+    const partials: number[] = []
+    runtime.setProgressListener((p) => { if (p.partial) partials.push(1) })
+
+    runtime.applyFileChange('key-unknown', [])
+
+    expect(store.save).not.toHaveBeenCalled()
+    expect(partials).toHaveLength(0)
+    expect(runtime.getSnapshot().assets.map((x) => x.id)).toEqual(['a'])
+  })
+})

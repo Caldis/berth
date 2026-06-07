@@ -20,6 +20,7 @@ import { runHealthChecks } from '../health'
 import { getSearch } from '../search'
 import { buildUsageSummary } from '../usage'
 import { WorkerAssetScanner } from './worker-host'
+import { mergeSharedConventions } from '../scanner'
 import type { SnapshotStore } from './snapshot-store'
 
 export interface AssetRuntimeScanOptions {
@@ -471,6 +472,59 @@ export class AgentAssetRuntime {
     this.assetMap = new Map(partial.assets.map((asset) => [asset.id, asset]))
     this.progressListener?.({ status: this.status, partial })
   }
+
+  /**
+   * Apply one changed file's freshly-derived assets to the live snapshot without
+   * a full rescan (GH-113 I1). Every asset previously sourced from the same file
+   * (matched by normalized `sourceKey`) is replaced with `derivedAssets` — an
+   * empty array means the file was deleted. The cross-agent AGENTS.md merge is
+   * re-run (so a touched AGENTS.md re-collapses across adapters), stats + the
+   * assetMap are recomputed, and the result is persisted + forwarded as a partial.
+   * The snapshot id stays stable (mirroring applyPartial) so id-keyed consumers
+   * don't re-fetch. The `derivedAssets` are produced by the caller (watcher wiring)
+   * from `deriveAssetsForPath`, keeping this purely a snapshot-folding operation.
+   */
+  applyFileChange(sourceKey: string, derivedAssets: Asset[]): void {
+    if (!sourceKey) return
+    const retained = this.snapshot.assets.filter((asset) => assetSourceKey(asset) !== sourceKey)
+    // The file had no assets before and produces none now → nothing changed.
+    if (retained.length === this.snapshot.assets.length && derivedAssets.length === 0) return
+
+    const merged = mergeSharedConventions([...retained, ...derivedAssets])
+    const stats = computeAssetStats(merged)
+    this.snapshot = { ...this.snapshot, assets: merged, stats }
+    this.assetMap = new Map(merged.map((asset) => [asset.id, asset]))
+    this.selectorCache.clear()
+    this.snapshotCache.set(projectKey(this.projectDir), this.snapshot)
+    // Persist only the default/global view, mirroring runRefresh's cold-start intent. (T1)
+    if (projectKey(this.projectDir) === projectKey(this.initialProjectDir)) {
+      this.snapshotStore?.save(this.snapshot)
+    }
+    this.progressListener?.({ status: this.status, partial: { assets: merged, stats } })
+  }
+}
+
+/** Category counts over the live asset list — recomputed on an incremental file
+ * change since the runtime (unlike a full scan) has no worker-computed stats to
+ * lean on. Mirrors AssetScanner.computeStats; the AssetStats shape is fixed. */
+function computeAssetStats(assets: Asset[]): AssetStats {
+  return {
+    skills: assets.filter((a) => a.type === 'skill').length,
+    mcpServers: assets.filter((a) => a.type === 'mcp-server').length,
+    sessions: assets.filter((a) => a.type === 'session').length,
+    plugins: assets.filter((a) => a.type === 'plugin').length,
+    hooks: assets.filter((a) => a.type === 'hook').length,
+    commands: assets.filter((a) => a.type === 'command').length,
+    subagents: assets.filter((a) => a.type === 'agent').length
+  }
+}
+
+/** Normalized per-file replacement key (GH-113). Set by parsers via
+ * `dedupePathKey`; the watcher emits the same key so a change replaces exactly
+ * the assets that file produced. */
+function assetSourceKey(asset: Asset): string | undefined {
+  const key = asset.meta?.sourceKey
+  return typeof key === 'string' ? key : undefined
 }
 
 let runtimeInstance: AgentAssetRuntime | null = null
