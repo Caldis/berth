@@ -16,6 +16,10 @@
 - 用户明确: conventions-only 是 **BUG**; [全局] 必须是全设备**全部资产**的完整结果, 启动即后台扫全部, 切 scope 仅 narrow-down。
 - **本 IMPROVEMENT 被取代**: 完整需求与执行见 [[2026-06-07-FEATURE-background-progressive-asset-indexer]]。
 
+# RESOLVED (2026-06-08, 提交 4a17c54a)
+- `scanProjectCapabilities` 落地: 后台索引非活动项目的**全部能力** (skill/agent/command/output-style/mcp/hook/permission/env/statusline), owner-tag; T3a 谓词使 global 全显、project 域过滤。conventions-only 的边界已闭合。性能用 per-file 指纹缓存 (worker↔main 往返) 控制。e2e 验证 global 命中其它项目 skill、切项目过滤。
+- 状态: RESOLVED。
+
 # 来源 / 关联
 - GH-113 实现边界 (T3b 浅索引)。关联 `docs/works/2026-06-07-gh-113-scope-refactor-convergence/`。
 - 状态: SUPERSEDED by FEATURE-background-progressive-asset-indexer。

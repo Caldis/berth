@@ -65,7 +65,9 @@
   - snapshot-store.ts (注入 dir, 版本化 + 原子 rename + 剥 raw); runtime 构造 restorePersistedSnapshot (stale, 不扫) + 提交时仅默认 project 落盘; main initAssetRuntime 注入 userData store。渲染层 SWR 链路 (syncSnapshot 读快照 + stale 触发 refresh) 无需改 ensureReady。
   - tests: ✅ snapshot-store(4) + runtime 冷启(2) + e2e snapshot-persistence (扫描→落盘→重启冷启端到端); 全量 817 + 20 e2e + scan-engine 24 + harness + build 全绿 (整条测试链路闭环)。
 - [ ] **T2 单管线 + changeset 协议 + SQLite**: deriveAssetsForPath; worker parse→changeset→main 单 writer 写 SQLite; canonical merge 写库前显式 (sourceKey 替换); sidecar 依赖图 (hooks-state→settings); parse-error 保留旧行标 source_status=error; 单调 checkpoint 防覆盖; 不做 asset_raw 大表 (raw 按需读盘)。tests: 切域零 I/O; 单文件多资产原子替换; 畸形 session 不杀循环; parse error 不丢旧资产; 冷启读 DB 秒出。
-- [ ] **T3 全局后台 + 纯过滤 + 完成度**: 后台全量扫全设备 (删/降级 appendShallowConventions); setProjectDir→纯过滤 (search/sessions/health/usage 统一谓词); per-root 完成度状态 (全局空态须 root ≥1 校验完成); 设备级统一 watcher。tests: 全局含其它项目全部资产类型; 切域不重扫; 未扫完不误导空态; project-scope + global e2e。
+- [~] **T3 全局后台 + 纯过滤 + 完成度** (用户选 option-1, 部分落地)
+  - [x] **全局=全部能力** (提交 4a17c54a): `scanProjectCapabilities` 后台索引非活动项目全部能力 (skill/agent/command/output-style/mcp/hook/permission/env/statusline), owner-tag; T3a 谓词 global 全显/project 过滤。**性能**: per-file 指纹缓存 (AssetFileCache<Asset[]>) worker↔main 往返, 跳过未变配置。tests: 单测 + e2e (global 命中其它项目 skill, 切项目过滤)。issue conventions-only RESOLVED。
+  - [ ] 余: setProjectDir→纯过滤统一谓词 (search 已统一, sessions/health/usage 待核); per-root 完成度状态 (空态不误导); 设备级统一 watcher; 删/降级 scanShallowConventions (现与 capabilities 并存, 待全量索引稳定后收敛)。
 - [ ] **T4 后置 (实测规模驱动)**: delta partial / session byte-offset tail / FTS5 / SAB 取消 / AIMD / 长驻 worker 池 / 丰富 knob + 暂停-恢复 UI + 性能档位设置。
 
 ## 并行/顺序
