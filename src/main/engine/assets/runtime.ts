@@ -13,7 +13,7 @@ import type {
   ScanResult
 } from '@shared/types/ipc'
 import type { AppScopeSelection, ProjectScopeCandidate } from '@shared/scope'
-import { DEFAULT_SCOPE_SELECTION, normalizeProjectPathKey, normalizeScopeSelection } from '@shared/scope'
+import { assetMatchesAppScope, DEFAULT_SCOPE_SELECTION, normalizeProjectPathKey, normalizeScopeSelection } from '@shared/scope'
 import { normalizeTokenUsage } from '@shared/token-usage'
 import { assetMatchesProjectPath } from '../../project-scope'
 import { runHealthChecks } from '../health'
@@ -87,16 +87,6 @@ class SnapshotSelectorCache implements AssetSelectorCache {
   clear(): void {
     this.values.clear()
   }
-}
-
-/**
- * Scope predicate for server-side reads (search). User scope is restricted to
- * user/enterprise assets; project & global include everything in the current
- * snapshot, which already reflects the active project's scan.
- */
-function searchScopeAllows(asset: Asset, selection: AppScopeSelection): boolean {
-  if (selection.mode === 'user') return asset.scope === 'user' || asset.scope === 'enterprise'
-  return true
 }
 
 /** Stable per-project cache key (normalized; empty for no/global project). */
@@ -271,10 +261,13 @@ export class AgentAssetRuntime {
     const snapshot = await this.ensureReady({ reason: 'manual' })
     const sel = this.scopeSelection
     const scopeKey = sel.mode === 'project' ? `project:${sel.projectPathKey}` : sel.mode
+    // Server-side search must honor the SAME scope predicate as the rendered
+    // list (shared assetMatchesAppScope) — otherwise project mode leaks other
+    // projects' assets, which matters once the snapshot holds >1 project. (T2)
     return this.select(`search:${scopeKey}:${query}`, () =>
       getSearch()
         .search(query, snapshot.assets)
-        .filter((result) => searchScopeAllows(result.asset, sel))
+        .filter((result) => assetMatchesAppScope(result.asset, sel))
     )
   }
 

@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 import type { Asset, AssetStats } from '../../src/shared/types/asset'
 import type { AgentScanSourceGroup, ScanResult } from '../../src/shared/types/ipc'
 import { AgentAssetRuntime, type AssetRuntimeScanner } from '../../src/main/engine/assets/runtime'
-import { createProjectScopeCandidate } from '../../src/shared/scope'
+import { createProjectScopeCandidate, normalizeProjectPathKey } from '../../src/shared/scope'
 
 const emptyStats: AssetStats = {
   skills: 0,
@@ -292,6 +292,43 @@ describe('AgentAssetRuntime', () => {
     const userResults = await runtime.search('alpha')
     expect(userResults.map((r) => r.asset.name)).toEqual(['alpha-user'])
     expect(scanner.scanAll).toHaveBeenCalledTimes(1) // no rescan on scope change
+  })
+
+  it('scopes project-mode search to the selected project (no cross-project leak)', async () => {
+    // GH-113 T2: server-side search must reuse the SAME scope predicate as the
+    // list (shared assetMatchesAppScope). Project mode previously returned every
+    // asset, leaking other projects' rows once the snapshot holds >1 project.
+    const projectSkill = (id: string, projectPath: string): Asset => ({
+      id,
+      agentId: 'claude-code',
+      category: 'instruction',
+      type: 'skill',
+      scope: 'project',
+      name: id,
+      path: `/x/${id}.md`,
+      meta: { projectPath }
+    })
+    const scanner = createScanner({
+      assets: [projectSkill('review-berth', '/repo/berth'), projectSkill('review-other', '/repo/other')],
+      stats: emptyStats,
+      errors: []
+    })
+    const runtime = createRuntime(scanner)
+    await runtime.refresh({ reason: 'startup', wait: true })
+
+    // Global: both projects' assets are searchable.
+    const globalResults = await runtime.search('review')
+    expect(globalResults.map((r) => r.asset.name).sort()).toEqual(['review-berth', 'review-other'])
+
+    // Project scope: only the selected project's asset, no rescan.
+    runtime.setScopeSelection({
+      mode: 'project',
+      projectPath: '/repo/berth',
+      projectPathKey: normalizeProjectPathKey('/repo/berth')
+    })
+    const projectResults = await runtime.search('review')
+    expect(projectResults.map((r) => r.asset.name)).toEqual(['review-berth'])
+    expect(scanner.scanAll).toHaveBeenCalledTimes(1)
   })
 
   it('serves a cached snapshot when re-selecting a previously scanned project', async () => {
