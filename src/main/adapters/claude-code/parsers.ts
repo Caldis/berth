@@ -705,6 +705,7 @@ export function parseSessionMeta(filePath: string, projectName: string): Asset {
   let legacyTokenUsage = emptyTokenUsage()
   let totalCost: number | undefined
   let fileHistoryCount = 0
+  let malformedLineCount = 0
   const skillsUsed = new Set<string>()
   const mcpServers = new Set<string>()
   const hookEventCounts = new Map<string, number>()
@@ -727,6 +728,7 @@ export function parseSessionMeta(filePath: string, projectName: string): Asset {
       try {
         parsed = JSON.parse(line)
       } catch {
+        malformedLineCount += 1
         continue
       }
       if (!isRecord(parsed)) continue
@@ -803,8 +805,9 @@ export function parseSessionMeta(filePath: string, projectName: string): Asset {
         }
       }
     }
-  } catch {
-    // file read error
+  } catch (err) {
+    // Surface read/stat failure instead of silently returning a blank session.
+    meta.parseError = err instanceof Error ? err.message : String(err)
   }
 
   const resolvedProjectPath = projectPath ?? decodeClaudeProjectDir(projectName)
@@ -833,6 +836,7 @@ export function parseSessionMeta(filePath: string, projectName: string): Asset {
   meta.hooksFired = Array.from(hookEventCounts.values()).reduce((sum, count) => sum + count, 0)
   meta.hookEventCounts = hookCountsObject
   meta.fileHistoryCount = fileHistoryCount
+  if (malformedLineCount > 0) meta.malformedLineCount = malformedLineCount
   if (totalCost != null) meta.totalCost = totalCost
 
   return {

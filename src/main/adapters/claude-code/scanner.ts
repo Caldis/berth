@@ -459,14 +459,20 @@ export function scanState(ctx: ScanContext): Asset[] {
       for (const projEntry of projectEntries) {
         if (!projEntry.isDirectory()) continue
         const projPath = path.join(projectsDir, projEntry.name)
-        const jsonlFiles = safeGlob('*.jsonl', projPath)
+        const jsonlFiles = safeGlob('*.jsonl', projPath, ctx)
         for (const fp of jsonlFiles) {
           const a = safeScan(ctx, fp, 'session', () =>
             ctx.sessionCache
               ? ctx.sessionCache.getOrParse(fp, () => parseSessionMeta(fp, projEntry.name))
               : parseSessionMeta(fp, projEntry.name)
           )
-          if (a) assets.push(a)
+          if (a) {
+            assets.push(a)
+            // A session whose transcript could not be read is surfaced (O2).
+            if (typeof a.meta.parseError === 'string') {
+              ctx.errors.push({ path: fp, type: 'session', message: a.meta.parseError })
+            }
+          }
         }
       }
     } catch (err) {
