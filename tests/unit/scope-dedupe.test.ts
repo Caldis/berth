@@ -1,3 +1,4 @@
+import * as path from 'path'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 // AGENTS.md is a cross-agent open standard: the Claude and Codex adapters both
@@ -124,10 +125,13 @@ describe('mergeSharedConventions', () => {
 
 describe('relations point at the merged canonical id', () => {
   it('CLAUDE.md @AGENTS.md import resolves to the merged AGENTS.md id', () => {
-    const fp = 'D:\\Code\\react-zmage\\AGENTS.md'
+    // Build paths with the host `path` module so dirname/resolve are consistent
+    // on both POSIX (CI) and Windows — backslash literals are not portable.
+    const dir = path.resolve('react-zmage')
+    const agentsPath = path.join(dir, 'AGENTS.md')
     const merged = mergeSharedConventions([
-      parseAgentsMd(fp, 'project'),
-      parseCodexAgentsMd(fp, 'project')
+      parseAgentsMd(agentsPath, 'project'),
+      parseCodexAgentsMd(agentsPath, 'project')
     ])[0]!
     const claudeMd: Asset = {
       id: 'claude-md-1',
@@ -136,7 +140,7 @@ describe('relations point at the merged canonical id', () => {
       type: 'claude-md',
       scope: 'project',
       name: 'CLAUDE.md',
-      path: 'D:\\Code\\react-zmage\\CLAUDE.md',
+      path: path.join(dir, 'CLAUDE.md'),
       meta: { imports: ['AGENTS.md'] }
     }
 
