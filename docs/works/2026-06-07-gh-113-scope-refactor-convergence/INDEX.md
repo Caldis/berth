@@ -2,7 +2,7 @@
 task: 2026-06-07-gh-113-scope-refactor-convergence
 task_id: GH-113
 type: feature
-phase: implement
+phase: explore
 created: 2026-06-07
 priority: P1
 target_date:
@@ -31,7 +31,13 @@ debt:
     areas: []
     confidence:
     rationale:
-  revisions: []
+  revisions:
+    - phase: implement
+      note: "T2 初版 naive 套 shared assetMatchesAppScope 破坏继承链可见 (project-scope.e2e 红); reframe 为 T3a owner-tagging 谓词 (显式 owner 过滤 + 无 owner=活动项目放行), 同时修继承链 bug 并完成 search/列表收敛。"
+    - phase: implement
+      note: "Codex B① 独立后台 shallow worker 降级为性能后续 (功能正确性由 in-scan 浅扫已满足); resolveScanPlan 真分支未引入 (现架构 appendShallowConventions 已隔离深/浅, 无 projectDirs 过载)。"
+    - phase: explore
+      note: "2026-06-07 用户重定义核心: [全局]=全设备全部资产完整结果 (含能力, 非仅约定), 启动即后台扫全部, 切 scope 仅 narrow-down; conventions-only 是 BUG; 扫描须为 spotlight 式后台渐进增量可暂停可配置索引器。任务重开 implement→explore, 走调研→重设计→Codex 两轮→落地。已落地 T1/T3a/T4 (去重/owner 谓词/确定式 id) 作为地基保留; T3b 浅索引 approach 被全量索引器取代。完整需求见 docs/issues/2026-06-07-FEATURE-background-progressive-asset-indexer。"
 issue:
   number: 113
   repo: Caldis/berth
@@ -58,6 +64,8 @@ artifacts:
 任务索引与交接锚。phase 字段为唯一状态源, `harness-0.1-continue` 据此续跑。
 
 目标 (常规用户心智): 全局=设备上所有可扫描资产 (所有项目+用户+企业); 用户域=项目外公共/用户级; 项目域=保持现状。收敛分散 scope 逻辑到统一模块; 修复同一物理文件被多适配器重复扫描 (AGENTS.md)。流程同 GH-111 (Codex 两轮交叉 review)。审查记录见 `review/`。
+
+**2026-06-07 重定义 (扩大范围, 任务重开 explore)**: [全局] 必须是全设备**全部资产**的完整扫描结果 (含能力, 非仅约定), 应用启动即后台扫全部; 切 用户/项目 scope 仅 narrow-down 已扫结果。扫描重构为 **spotlight 式后台渐进增量可暂停可配置索引器** (持久化缓存/增量检测/调度背压/局部 loading/可配置策略)。conventions-only (T3b) 被取代。完整需求: `docs/issues/2026-06-07-FEATURE-background-progressive-asset-indexer.md`。已落地 T1/T3a/T4 作地基保留。第二轮调研产物见 `review/`/新 ANALYSIS。
 
 ## 产物
 - [x] 00-PRD.md — 原始输入快照
