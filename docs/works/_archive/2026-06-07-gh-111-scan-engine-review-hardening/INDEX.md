@@ -2,7 +2,7 @@
 task: 2026-06-07-gh-111-scan-engine-review-hardening
 task_id: GH-111
 type: feature
-phase: implement
+phase: archive
 created: 2026-06-07
 priority: P1
 target_date:
@@ -27,15 +27,23 @@ debt:
     confidence: medium
     rationale: "Codex×Claude 两轮对抗审查得出的 Tier-1 加固: 覆盖纠正 (output-styles/skills) + 可观测性 (区分缺失/坏数据) + 正确性 (statSync/watcher/samePath/scanner 代际) + partial 去 raw。多为边界清晰的缺陷修复 (repay 静默失败/覆盖技术债), 跨适配器/worker/watcher (scope cross-process)。Tier-2 架构项 (长驻 worker/流式/退役 legacy scanner) 记 issues 不在本任务。"
   final:
-    incurred:
-    repaid:
-    net:
-    scope:
-    risk:
-    areas: []
-    confidence:
-    rationale:
-  revisions: []
+    incurred: 6
+    repaid: 7
+    net: -1
+    scope: cross-process
+    risk: low
+    areas:
+      - architecture
+      - performance
+      - testability
+    confidence: high
+    rationale: "Tier-1 11 项修复 (覆盖 output-styles/skills; 可观测 settings/glob/session 区分缺失与坏数据; 正确性 statSync 守护/watcher 自忽略/samePath/runRefresh 代际竞态; perf partial 去 raw) 全部单测覆盖 (新增 6 个测试文件) + 全量回归 (111 文件 736 用例) + scan-engine 24 + build + CI 绿 + 冷启 smoke。repay 静默失败与覆盖技术债 (修缺失数据看似无数据的根因类) 大于新增的少量 helper/守护复杂度 → 净降债 net -1。risk medium→low、confidence medium→high。Tier-2 架构项 (长驻 worker/流式/退役 legacy scanner/scope 继承/disableAllHooks) 已记 5 条 docs/issues 跟踪。"
+  revisions:
+    - phase: verify
+      date: 2026-06-07
+      from: { repaid: 5, net: 1, risk: medium, confidence: medium }
+      to: { repaid: 7, net: -1, risk: low, confidence: high }
+      reason: "实现+全量回归后下修: 11 项修复全测试覆盖 + CI 绿 + 冷启 smoke, 多为修复静默失败/覆盖缺陷 (净降债), 残余风险与不确定性下降。"
 issue:
   number: 111
   repo: Caldis/berth
@@ -47,7 +55,7 @@ gh_project:
   project_number: 6
   project_url: https://github.com/users/Caldis/projects/6
   item_id: PVTI_lAHOADXbEs4BZHvQzgu8qVg
-  item_status: In Progress
+  item_status: Done
   project_id: PVT_kwHOADXbEs4BZHvQ
 artifacts:
   source: 00-PRD.md
