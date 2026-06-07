@@ -20,6 +20,7 @@ import { runHealthChecks } from '../health'
 import { getSearch } from '../search'
 import { buildUsageSummary } from '../usage'
 import { WorkerAssetScanner } from './worker-host'
+import type { SnapshotStore } from './snapshot-store'
 
 export interface AssetRuntimeScanOptions {
   onProgress?: (progress: AssetScanProgress) => void
@@ -55,6 +56,9 @@ export interface AssetRuntimeOptions {
   createScanner?: (projectDir?: string) => AssetRuntimeScanner
   now?: () => string
   createSnapshotId?: () => string
+  /** Persists the snapshot for instant cold-start (GH-113 T1). Injected by the
+   * host with `app.getPath('userData')`; absent in tests that don't exercise it. */
+  snapshotStore?: SnapshotStore
 }
 
 export interface AssetSelectorCache {
@@ -109,17 +113,43 @@ export class AgentAssetRuntime {
   private readonly createScanner: (projectDir?: string) => AssetRuntimeScanner
   private readonly now: () => string
   private readonly createSnapshotId: () => string
+  private readonly snapshotStore?: SnapshotStore
+  private readonly initialProjectDir?: string
   private progressListener?: (payload: AssetProgressPayload) => void
 
   constructor(options: AssetRuntimeOptions = {}) {
     this.projectDir = options.projectDir
+    this.initialProjectDir = options.projectDir
     this.createScanner = options.createScanner ?? ((projectDir) => new WorkerAssetScanner(projectDir))
     this.now = options.now ?? (() => new Date().toISOString())
     this.createSnapshotId = options.createSnapshotId ?? createDefaultSnapshotId
+    this.snapshotStore = options.snapshotStore
     this.scanner = this.createScanner(this.projectDir)
     this.selectorCache = new SnapshotSelectorCache()
     this.status = this.createIdleStatus()
     this.snapshot = this.createInitialSnapshot()
+    this.restorePersistedSnapshot()
+  }
+
+  /**
+   * Cold-start (GH-113 T1): seed the runtime with the last persisted snapshot so
+   * the renderer shows the previous result instantly. The status is `stale`, which
+   * the renderer reacts to by triggering a background `refresh()` — SWR. A scan
+   * has not run yet, so the persisted assets are served verbatim until it does.
+   */
+  private restorePersistedSnapshot(): void {
+    const persisted = this.snapshotStore?.load()
+    if (!persisted || persisted.assets.length === 0) return
+    const status: AssetRuntimeStatus = {
+      state: 'stale',
+      stale: true,
+      projectDir: this.projectDir,
+      lastCompletedAt: persisted.status?.lastCompletedAt
+    }
+    this.status = status
+    this.snapshot = { ...persisted, projectDir: this.projectDir, status }
+    this.assetMap = new Map(persisted.assets.map((asset) => [asset.id, asset]))
+    this.snapshotCache.set(projectKey(this.projectDir), this.snapshot)
   }
 
   /** Register the sink that forwards live scan status + partial assets to the
@@ -360,6 +390,11 @@ export class AgentAssetRuntime {
       this.assetMap = new Map(scanResult.assets.map((asset) => [asset.id, asset]))
       this.snapshotCache.set(projectKey(projectDir), this.snapshot)
       this.selectorCache.clear()
+      // Persist only the default/global view so the next cold start restores the
+      // same scope the app opens in — not whatever project was last selected. (T1)
+      if (projectKey(projectDir) === projectKey(this.initialProjectDir)) {
+        this.snapshotStore?.save(this.snapshot)
+      }
       // Emit the terminal status on the SAME progress channel as the live ticks
       // so the renderer's last event is authoritative. Without this, a trailing
       // "scanning" progress macrotask can clobber the `ready` set by the
@@ -447,8 +482,10 @@ export function getAssetRuntime(): AgentAssetRuntime {
   return runtimeInstance
 }
 
-export function initAssetRuntime(projectDir?: string): AgentAssetRuntime {
-  runtimeInstance = new AgentAssetRuntime({ projectDir })
+/** Construct the singleton runtime with host-provided options (e.g. the snapshot
+ * store backed by `app.getPath('userData')`). Call once before first use. (T1) */
+export function initAssetRuntime(options: AssetRuntimeOptions = {}): AgentAssetRuntime {
+  runtimeInstance = new AgentAssetRuntime(options)
   return runtimeInstance
 }
 

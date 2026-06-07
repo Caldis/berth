@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { Asset, AssetStats } from '../../src/shared/types/asset'
-import type { AgentScanSourceGroup, ScanResult } from '../../src/shared/types/ipc'
+import type { AgentScanSourceGroup, AssetSnapshot, ScanResult } from '../../src/shared/types/ipc'
 import { AgentAssetRuntime, type AssetRuntimeScanner } from '../../src/main/engine/assets/runtime'
 import { createProjectScopeCandidate, normalizeProjectPathKey } from '../../src/shared/scope'
 
@@ -362,4 +362,61 @@ describe('AgentAssetRuntime', () => {
     expect(runtime.getSnapshot().id).toBe(cachedId)
     expect(runtime.getStatus().state).toBe('ready')
   })
+
+  it('cold-starts from the persisted snapshot without scanning (GH-113 T1)', () => {
+    const persisted: AssetSnapshot = {
+      id: 'persisted',
+      projectDir: '/repo/berth',
+      assets: [skillAsset('cached')],
+      stats: { ...emptyStats, skills: 1 },
+      errors: [],
+      sources: [],
+      projectCandidates: [],
+      status: { state: 'ready', stale: false, lastCompletedAt: '2026-06-06T00:00:00.000Z' }
+    }
+    const store = { load: vi.fn(() => persisted), save: vi.fn() }
+    const scanner = createScanner({ assets: [], stats: emptyStats, errors: [] })
+    const runtime = new AgentAssetRuntime({
+      projectDir: '/repo/berth',
+      createScanner: () => scanner,
+      now: () => '2026-06-07T00:00:00.000Z',
+      createSnapshotId: () => 'snap',
+      snapshotStore: store
+    })
+
+    // Persisted data is served immediately, marked stale, with no scan triggered.
+    expect(runtime.getSnapshot().assets.map((a) => a.id)).toEqual(['cached'])
+    expect(runtime.getStatus().state).toBe('stale')
+    expect(runtime.getStatus().stale).toBe(true)
+    expect(scanner.scanAll).not.toHaveBeenCalled()
+  })
+
+  it('persists the default-project snapshot on refresh complete, not other projects (GH-113 T1)', async () => {
+    const store = { load: vi.fn(() => null), save: vi.fn() }
+    const scanner = createScanner({ assets: [skillAsset('fresh')], stats: { ...emptyStats, skills: 1 }, errors: [] })
+    const runtime = new AgentAssetRuntime({
+      projectDir: '/repo/berth',
+      createScanner: () => scanner,
+      now: () => '2026-06-07T00:00:00.000Z',
+      createSnapshotId: () => 'snap',
+      snapshotStore: store
+    })
+
+    await runtime.refresh({ reason: 'startup', wait: true })
+    expect(store.save).toHaveBeenCalledTimes(1)
+    expect((store.save.mock.calls[0][0] as AssetSnapshot).assets.map((a) => a.id)).toEqual(['fresh'])
+  })
 })
+
+function skillAsset(id: string): Asset {
+  return {
+    id,
+    agentId: 'claude-code',
+    category: 'instruction',
+    type: 'skill',
+    scope: 'user',
+    name: id,
+    path: `/x/${id}.md`,
+    meta: {}
+  }
+}

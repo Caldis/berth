@@ -3,7 +3,8 @@ import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { registerAllHandlers } from './ipc'
 import { initScanner } from './engine/scanner'
-import { getAssetRuntime } from './engine/assets/runtime'
+import { getAssetRuntime, initAssetRuntime } from './engine/assets/runtime'
+import { createSnapshotStore } from './engine/assets/snapshot-store'
 import { getWatcher } from './engine/watcher'
 import { resolveDefaultProjectDir } from './project-dir'
 import { configureAgentDevProfile, shouldRequestSingleInstanceLock } from './dev-instance'
@@ -121,6 +122,9 @@ if (!gotTheLock) {
     // Initialize the asset engine
     const projectDir = resolveDefaultProjectDir({ isDev: is.dev, cwd: process.cwd() })
     initScanner(projectDir)
+    // Seed the runtime with the persisted snapshot (GH-113 T1): cold start shows
+    // the last result instantly, then the renderer triggers a background refresh.
+    initAssetRuntime({ projectDir, snapshotStore: createSnapshotStore(app.getPath('userData')) })
     const watcher = getWatcher()
 
     const mainWindow = createWindow({ openDevTools })
