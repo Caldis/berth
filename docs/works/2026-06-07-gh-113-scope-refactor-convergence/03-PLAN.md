@@ -12,9 +12,10 @@
   - tests: ✅ scope-dedupe.test.ts (11) + agent-view.test.ts (6) + engine-scanner 合并集成 (含 partial 无双行)。typecheck/lint/test(783)/build 全绿。
   - 旁支: claude `makeId()` 对 claude-md/skill/agent/command 等仍非确定 → 刷新后选中/raw 重取失败, 同源问题但超 T1 验收范围, 记 docs/issues 交叉引用, 稳定化随 T4 deep-wins key 一并处理。
 
-- [ ] **T2 scope/search 谓词收敛到 shared 真源** (地基, 必须早于浅扫 — A5)
-  - 改动: 删 main 重复项目过滤实现, 统一 `src/shared/scope.ts` `assetMatchesProjectPath`; `searchScopeAllows` (runtime.ts:97-100,270-278) 与 `filterAssetsByAppScope` 统一谓词。
-  - tests: project 模式搜索只命中选中项目资产 (不串项目); 三档语义回归 (scope.test 扩展)。
+- [x] **T2 scope/search 谓词收敛到 shared 真源** (地基, 必须早于浅扫 — A5) — 提交 0ac85be1
+  - 改动: runtime.search 改走 shared `assetMatchesAppScope` (与列表 `filterAssetsByAppScope` 同一真源), 删分歧的本地 `searchScopeAllows`。
+  - 注: main `filterAssetsByProjectPath`/`assetMatchesProjectPath` 已是 shared 委托 (project-scope.ts:10-15), 无重复实现需删; 真正分歧仅 search 一处。
+  - tests: ✅ agent-asset-runtime project 模式 search 不泄漏其它项目 (纯过滤无重扫); 全量 785 全绿。
   - verify: 不适用。
 
 - [ ] **T3 resolveScanPlan + 后台浅索引 worker** (global=全设备, A2/A3/B①)
