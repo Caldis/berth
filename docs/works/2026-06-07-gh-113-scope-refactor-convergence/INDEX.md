@@ -2,7 +2,7 @@
 task: 2026-06-07-gh-113-scope-refactor-convergence
 task_id: GH-113
 type: feature
-phase: explore
+phase: implement
 created: 2026-06-07
 priority: P1
 target_date:
@@ -54,7 +54,9 @@ gh_project:
 artifacts:
   source: 00-PRD.md
   analysis: 01-ANALYSIS.md
-  spec: 02-SPEC.md
+  spec: 02-SPEC-background-indexer.md
+  spec_v1: 02-SPEC.md
+  research: review/research-synthesis.md
   plan: 03-PLAN.md
   polish: 04-POLISH.md
 ---

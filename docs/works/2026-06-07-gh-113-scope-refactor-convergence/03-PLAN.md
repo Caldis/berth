@@ -47,6 +47,22 @@
   - tests: ✅ 全量 791 + build + 2 e2e (project-scope + global-shallow) 本地通过; CI 全绿。
   - verify: 功能验收以 e2e 为准 (确定式, 强于一次性截图); 视觉可按需补 electron 截图。
 
+## V2 后台渐进增量索引器 (用户重定义 + Codex 两轮交叉 review 后)
+设计见 `02-SPEC-background-indexer.md`。上方 T1/T3a/T4 (去重/owner 谓词/确定式 id) 作地基复用; T3b 浅索引被全量索引取代。每 tier 独立可验 + 小步提交; 改 scope/search/IPC 推送前本地跑 project-scope e2e (friction 20260606 硬门禁)。
+
+- [ ] **Pre-T0 身份契约** (第一个 PR, 一切地基; 顺带修 makeid 选中/raw 丢失 bug)
+  - 改动: Claude 全 `makeId` 资产 → 确定式 id `${type}-${scope}-${stableAssetHash(sourceKey+':'+entityKey)}`; entityKey (单文件=归一化路径非 name; hook=scenarioHash:hookHash; mcp=name; project-mcp=projectPathKey:name; permission=kind; statusline=settingKey); 每条 meta.sourceKey; Codex 侧 id 统一到 dedupePathKey/stableAssetHash; **stableAssetHash 加宽** (sha256 截断, 32-bit djb2 不够做 DB PK)。
+  - tests: 同文件扫两次全部 id 稳定; project-mcp 同名跨项目 id 不同; 改 skill 标题 id 不变; settings.json 多资产可按 sourceKey 整组替换; 全量回归 (id 消费方: runtime/search/view-raw/relations)。
+  - verify: 不适用 (引擎/适配器)。
+- [ ] **T0 正确性快赢** (Pre-T0 后)
+  - 改动: ①racy-hash 窄窗失效 (file-cache.ts:96, 仅 mtime 接近 indexed_at 且 size 未变才补 hash; session 不全 hash); ②watcher debounce/coalescing (awaitWriteFinish stabilityThreshold~250ms + atomic + 同目录合并) + 事件带归一 sourceKey (非 basename), unlink 不被吞。[MiniSearch changeset 后置]
+  - tests: 同秒等长改写 fixture 被检出; git checkout fixture N 文件→一次批处理; unlink 不丢; watcher 事件含 sourceKey。
+  - verify: 不适用。
+- [ ] **T1 冷启垫脚石**: JSON AssetSnapshot 持久化 (main loadSnapshot/saveSnapshot→userData, SWR 冷启秒出; 非 AssetFileCache 后端)。tests: 冷启读 JSON 立即 emit + 后台 revalidate 覆盖。
+- [ ] **T2 单管线 + changeset 协议 + SQLite**: deriveAssetsForPath; worker parse→changeset→main 单 writer 写 SQLite; canonical merge 写库前显式 (sourceKey 替换); sidecar 依赖图 (hooks-state→settings); parse-error 保留旧行标 source_status=error; 单调 checkpoint 防覆盖; 不做 asset_raw 大表 (raw 按需读盘)。tests: 切域零 I/O; 单文件多资产原子替换; 畸形 session 不杀循环; parse error 不丢旧资产; 冷启读 DB 秒出。
+- [ ] **T3 全局后台 + 纯过滤 + 完成度**: 后台全量扫全设备 (删/降级 appendShallowConventions); setProjectDir→纯过滤 (search/sessions/health/usage 统一谓词); per-root 完成度状态 (全局空态须 root ≥1 校验完成); 设备级统一 watcher。tests: 全局含其它项目全部资产类型; 切域不重扫; 未扫完不误导空态; project-scope + global e2e。
+- [ ] **T4 后置 (实测规模驱动)**: delta partial / session byte-offset tail / FTS5 / SAB 取消 / AIMD / 长驻 worker 池 / 丰富 knob + 暂停-恢复 UI + 性能档位设置。
+
 ## 并行/顺序
 - T1 (parsers + engine scanner + agent-view) 文件独立于后续 scope 收敛 → 先落, 即时可见。
 - T2 必须在 T3 之前 (浅索引把多项目放进 snapshot, 搜索过滤须先收敛, 否则项目搜索串项目)。
