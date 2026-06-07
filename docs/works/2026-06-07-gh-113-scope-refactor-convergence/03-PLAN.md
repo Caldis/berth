@@ -60,7 +60,9 @@
   - **watcher debounce 降级为优化 (非 T0 必需)**: 消费方 (renderer onChanged use-ipc.ts:215,454) 忽略事件 payload, 且 runtime.refresh 有 inFlight 守护已合并 flood 触发的重扫 → debounce 是减少 IPC/重扫频率的优化, 非正确性。随 T2 长驻 coordinator 队列一并做 (coalescing 是队列天然属性); 单独提前做边际价值低。
   - **buildWatchEvent 带 sourceKey**: 当前 assetId=basename 无消费方使用 → 留到 T2 changeset 协议 (届时事件需精确 sourceKey 做 per-source 替换) 一并改, 避免无消费方的空改动。
   - 结论: T0 无独立必需增量, 内容并入 T1/T2; Pre-T0 后直接 T1。
-- [ ] **T1 冷启垫脚石**: JSON AssetSnapshot 持久化 (main loadSnapshot/saveSnapshot→userData, SWR 冷启秒出; 非 AssetFileCache 后端)。tests: 冷启读 JSON 立即 emit + 后台 revalidate 覆盖。
+- [x] **T1 冷启垫脚石** — 提交 0c8641d1
+  - snapshot-store.ts (注入 dir, 版本化 + 原子 rename + 剥 raw); runtime 构造 restorePersistedSnapshot (stale, 不扫) + 提交时仅默认 project 落盘; main initAssetRuntime 注入 userData store。渲染层 SWR 链路 (syncSnapshot 读快照 + stale 触发 refresh) 无需改 ensureReady。
+  - tests: ✅ snapshot-store(4) + runtime 冷启(2) + e2e snapshot-persistence (扫描→落盘→重启冷启端到端); 全量 817 + 20 e2e + scan-engine 24 + harness + build 全绿 (整条测试链路闭环)。
 - [ ] **T2 单管线 + changeset 协议 + SQLite**: deriveAssetsForPath; worker parse→changeset→main 单 writer 写 SQLite; canonical merge 写库前显式 (sourceKey 替换); sidecar 依赖图 (hooks-state→settings); parse-error 保留旧行标 source_status=error; 单调 checkpoint 防覆盖; 不做 asset_raw 大表 (raw 按需读盘)。tests: 切域零 I/O; 单文件多资产原子替换; 畸形 session 不杀循环; parse error 不丢旧资产; 冷启读 DB 秒出。
 - [ ] **T3 全局后台 + 纯过滤 + 完成度**: 后台全量扫全设备 (删/降级 appendShallowConventions); setProjectDir→纯过滤 (search/sessions/health/usage 统一谓词); per-root 完成度状态 (全局空态须 root ≥1 校验完成); 设备级统一 watcher。tests: 全局含其它项目全部资产类型; 切域不重扫; 未扫完不误导空态; project-scope + global e2e。
 - [ ] **T4 后置 (实测规模驱动)**: delta partial / session byte-offset tail / FTS5 / SAB 取消 / AIMD / 长驻 worker 池 / 丰富 knob + 暂停-恢复 UI + 性能档位设置。
