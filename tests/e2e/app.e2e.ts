@@ -102,15 +102,16 @@ test.describe('App Shell', () => {
       return box!
     }
 
-    const memories = await itemBox(navNames.memories)
+    // Instruction group order: conventions, memories, skills (GH-112 follow-up move).
     const conventions = await itemBox(navNames.conventions)
+    const memories = await itemBox(navNames.memories)
     const skills = await itemBox(navNames.skills)
 
     const gapBetween = (previous: Box, next: Box): number => next.y - previous.y - previous.height
 
-    const regularGap = gapBetween(memories, conventions)
+    const regularGap = gapBetween(conventions, memories)
 
-    expect(gapBetween(conventions, skills)).toBeCloseTo(regularGap, 0)
+    expect(gapBetween(memories, skills)).toBeCloseTo(regularGap, 0)
   })
 
   test('overview page loads by default', async () => {

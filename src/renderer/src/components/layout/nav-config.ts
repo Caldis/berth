@@ -34,18 +34,18 @@ export interface NavSection {
 
 export const instructionNavItems = [
   {
-    id: 'instruction-memories',
-    labelKey: 'instructions.tabs.memories',
-    descriptionKey: 'nav.descriptions.memories',
-    icon: Brain,
-    path: '/instructions/memories'
-  },
-  {
     id: 'instruction-conventions',
     labelKey: 'instructions.tabs.conventions',
     descriptionKey: 'nav.descriptions.conventions',
     icon: FileText,
     path: '/instructions/conventions'
+  },
+  {
+    id: 'instruction-memories',
+    labelKey: 'instructions.tabs.memories',
+    descriptionKey: 'nav.descriptions.memories',
+    icon: Brain,
+    path: '/instructions/memories'
   },
   {
     id: 'instruction-skills',
