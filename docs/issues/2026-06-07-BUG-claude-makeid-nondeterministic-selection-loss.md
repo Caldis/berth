@@ -14,10 +14,10 @@
 
 # 进展
 - AGENTS.md: 已确定式化 (GH-113 T1, 提交 c9d330c2)。
-- CLAUDE.md: 已确定式化 (GH-113 T4, `claude-md-${scope}-${hash(dedupeKey)}`)。
-- **仍 OPEN (本 issue 跟踪剩余类型)**: `parseSkill`/`parseAgent`/`parseCommand`/`parseOutputMode`/`parseMcpServers`/`parseHooks`/`parsePermissions`/`parseEnv`/`parseStatusline*`/`parsePlugin`/`parsePlan`/`parseTodo`/`parseHistory`/... 仍用 `makeId(Date.now)`。多实体文件 (settings.json 的 hook/mcp) 需 path+entity 复合稳定键, 不可仅 path。
+- CLAUDE.md: 已确定式化 (GH-113 T4)。
+- **RESOLVED (GH-113 Pre-T0, 提交 9d890f05 + 8f39175b)**: Claude `makeId(Date.now)` 全部清除, 所有资产改 `assetEntityId(type, scope, sourcePath, entityKey)` 确定式 id (多实体文件用 path+entityKey 复合键: hook=scenarioHash:hookHash, mcp=name, project-mcp=projectPathKey:name, permission=kind, statusline=settingKey; 单文件用归一化路径非展示名)。Codex 侧 6 类一并统一到同一 helper + 加宽 hash。`stableAssetHash` 升 sha256-16hex。
 
 # 来源 / 关联
 - GH-113 T1 实施中发现。复用 `src/shared/asset-dedupe.ts` `dedupePathKey`+`stableAssetHash`。
 - 关联 `docs/works/2026-06-07-gh-113-scope-refactor-convergence/` (T1/T4)。
-- 状态: OPEN (AGENTS.md/CLAUDE.md 已修, 余下类型待批量确定式化)。
+- 状态: RESOLVED (GH-113 Pre-T0, 全 parser 确定式化)。

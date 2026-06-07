@@ -50,10 +50,11 @@
 ## V2 后台渐进增量索引器 (用户重定义 + Codex 两轮交叉 review 后)
 设计见 `02-SPEC-background-indexer.md`。上方 T1/T3a/T4 (去重/owner 谓词/确定式 id) 作地基复用; T3b 浅索引被全量索引取代。每 tier 独立可验 + 小步提交; 改 scope/search/IPC 推送前本地跑 project-scope e2e (friction 20260606 硬门禁)。
 
-- [ ] **Pre-T0 身份契约** (第一个 PR, 一切地基; 顺带修 makeid 选中/raw 丢失 bug)
-  - 改动: Claude 全 `makeId` 资产 → 确定式 id `${type}-${scope}-${stableAssetHash(sourceKey+':'+entityKey)}`; entityKey (单文件=归一化路径非 name; hook=scenarioHash:hookHash; mcp=name; project-mcp=projectPathKey:name; permission=kind; statusline=settingKey); 每条 meta.sourceKey; Codex 侧 id 统一到 dedupePathKey/stableAssetHash; **stableAssetHash 加宽** (sha256 截断, 32-bit djb2 不够做 DB PK)。
-  - tests: 同文件扫两次全部 id 稳定; project-mcp 同名跨项目 id 不同; 改 skill 标题 id 不变; settings.json 多资产可按 sourceKey 整组替换; 全量回归 (id 消费方: runtime/search/view-raw/relations)。
-  - verify: 不适用 (引擎/适配器)。
+- [x] **Pre-T0 身份契约** (第一个 PR, 一切地基; 修 makeid 选中/raw 丢失 bug) — 提交 9d890f05 (a) + 8f39175b (b+c)
+  - Pre-T0a: stableAssetHash 加宽 sha256-16hex + 新增 assetEntityId; AGENTS.md/CLAUDE.md 先行接入。
+  - Pre-T0b: Claude 全 makeId → assetEntityId (entityKey: 单文件=路径非 name; hook=scenarioHash:hookHash; mcp=name; project-mcp=projectPathKey:name; permission=kind; statusline=settingKey); 删 makeId。
+  - Pre-T0c: Codex 6 类 (agent/agents-md/skill/mcp/hook/statusline) 统一到 assetEntityId (修 safeId 有损碰撞 + 升宽 hash; AGENTS.md id 与 Claude 一致可合并); session 保持 sessionId-keyed。
+  - tests: ✅ asset-dedupe (6) + parser-identity (8, 含改名稳定/多资产不撞/project-mcp 跨项目/codex 统一); 全量 805 + build + 2 e2e。issue 2026-06-07-BUG-claude-makeid RESOLVED。
 - [ ] **T0 正确性快赢** (Pre-T0 后)
   - 改动: ①racy-hash 窄窗失效 (file-cache.ts:96, 仅 mtime 接近 indexed_at 且 size 未变才补 hash; session 不全 hash); ②watcher debounce/coalescing (awaitWriteFinish stabilityThreshold~250ms + atomic + 同目录合并) + 事件带归一 sourceKey (非 basename), unlink 不被吞。[MiniSearch changeset 后置]
   - tests: 同秒等长改写 fixture 被检出; git checkout fixture N 文件→一次批处理; unlink 不丢; watcher 事件含 sourceKey。
