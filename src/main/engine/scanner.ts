@@ -88,7 +88,14 @@ export class AssetScanner {
       }
       index += 1
       options.onProgress?.({ phase: 'parsing', current: index, total, label: adapter.displayName })
-      options.onPartial?.({ assets: [...assets], stats: this.computeStats(assets) })
+      // Strip `raw` from partials — the live UI only needs names/counts, and the
+      // large transcript/markdown bodies blow up structured-clone cost. (GH-111 P1)
+      // Carry the running error count so mid-scan failures are visible. (O4)
+      options.onPartial?.({
+        assets: assets.map(stripAssetRaw),
+        stats: this.computeStats(assets),
+        errorCount: errors.length
+      })
     }
     annotateEquivalentHookSources(assets)
     this.cachedAssets = assets
@@ -262,6 +269,12 @@ function samePath(a: string | undefined, b: string | undefined): boolean {
 function normalizePath(filePath: string): string {
   const resolved = path.resolve(filePath)
   return process.platform === 'win32' ? resolved.toLowerCase() : resolved
+}
+
+/** Drop the heavy `raw` body for partial streaming; identity-preserving when
+ * there is no raw to strip so unchanged assets aren't needlessly re-cloned. */
+function stripAssetRaw(asset: Asset): Asset {
+  return asset.raw === undefined ? asset : { ...asset, raw: undefined }
 }
 
 function annotateEquivalentHookSources(assets: Asset[]): void {

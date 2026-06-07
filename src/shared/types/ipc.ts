@@ -58,10 +58,13 @@ export interface AssetScanProgress {
 }
 
 /** Cumulative assets scanned so far, streamed mid-scan so the UI renders
- * already-discovered items before the scan completes (GH-110 P4.6). */
+ * already-discovered items before the scan completes (GH-110 P4.6).
+ * `raw` is stripped from partial assets to keep structured-clone cost low; the
+ * final snapshot retains it. `errorCount` exposes scan errors mid-scan (GH-111). */
 export interface AssetScanPartial {
   assets: Asset[]
   stats: AssetStats
+  errorCount?: number
 }
 
 export interface AssetRuntimeStatus {

@@ -277,6 +277,25 @@ describe('AssetScanner', () => {
     expect(partials[1]?.assets.map((a) => a.id)).toEqual(['claude-skill', 'codex-skill'])
   })
 
+  it('strips raw from partials and reports the running error count (GH-111 P1+O4)', async () => {
+    mocks.claudeScanAll.mockResolvedValueOnce({
+      assets: [{ ...skillAsset('s1', 'claude-code'), raw: 'A VERY LARGE TRANSCRIPT BODY' }],
+      errors: [{ path: '/x', type: 'glob', message: 'boom' }]
+    })
+    mocks.codexScanAll.mockResolvedValueOnce({ assets: [], errors: [] })
+    const scanner = new AssetScanner()
+
+    const partials: { assets: Asset[]; errorCount?: number }[] = []
+    const result = await scanner.scanAll({ onPartial: (p) => partials.push(p) })
+
+    // Partial assets carry no raw body...
+    expect(partials[0]?.assets[0]?.raw).toBeUndefined()
+    // ...but the running error count is exposed...
+    expect(partials[0]?.errorCount).toBe(1)
+    // ...and the final ScanResult still retains the full raw.
+    expect(result.assets.find((a) => a.id === 's1')?.raw).toBe('A VERY LARGE TRANSCRIPT BODY')
+  })
+
   it('keeps other source groups visible when one adapter detection fails', async () => {
     mocks.claudeDetect.mockRejectedValueOnce(new Error('permission denied'))
     const scanner = new AssetScanner()
