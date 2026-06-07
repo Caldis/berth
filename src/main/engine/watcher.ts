@@ -4,6 +4,9 @@ import * as fs from 'fs'
 import { watch } from 'chokidar'
 import type { FSWatcher } from 'chokidar'
 import type { WatchEvent } from '@shared/types/asset'
+import { dedupePathKey } from '@shared/asset-dedupe'
+
+type WatchOptions = Parameters<typeof watch>[1]
 import { resolveClaudeManagedDir } from '../adapters/claude-code'
 import { resolveClaudeDirs, resolveCodexHomeDirs } from '../agent-homes'
 import { resolveProjectConfigRoots } from '../project-config-roots'
@@ -28,16 +31,7 @@ export class AssetWatcher {
 
     const watchPaths = getAssetWatchPaths(projectDir)
 
-    this.watcher = watch(watchPaths, {
-      ignoreInitial: true,
-      depth: 5,
-      ignorePermissionErrors: true,
-      // Ignore only build/VCS noise. The old dotfile regex /(^|[/\\])\../ also
-      // matched the watch roots themselves (~/.claude, .codex, .agents), so
-      // chokidar silently ignored the very directories it was told to watch —
-      // live asset updates never fired. (GH-111 R2)
-      ignored: isIgnoredWatchPath
-    })
+    this.watcher = watch(watchPaths, buildWatchOptions())
 
     this.watcher.on('add', (filePath) => this.notifyChange('added', filePath))
     this.watcher.on('change', (filePath) => this.notifyChange('changed', filePath))
@@ -63,9 +57,30 @@ export class AssetWatcher {
   }
 }
 
-/** Build the change event for a filesystem path. Pure; exported for tests. */
+/**
+ * Watcher options (GH-113). `awaitWriteFinish` waits for a file to stop growing
+ * before emitting, so the incremental indexer never parses a half-written config
+ * (a JSON/TOML mid-write would parse-error and drop assets); `atomic` collapses
+ * the editor "atomic save" unlink+add into a single change so a save is not seen
+ * as a delete. `ignored` keeps watching the dot-directory roots themselves —
+ * the old catch-all dotfile regex matched ~/.claude/.codex/.agents and silently
+ * disabled live updates. (GH-111 R2)
+ */
+export function buildWatchOptions(): WatchOptions {
+  return {
+    ignoreInitial: true,
+    depth: 5,
+    ignorePermissionErrors: true,
+    ignored: isIgnoredWatchPath,
+    awaitWriteFinish: { stabilityThreshold: 250, pollInterval: 100 },
+    atomic: true
+  }
+}
+
+/** Build the change event for a filesystem path. Pure; exported for tests. The
+ * `sourceKey` is the normalized per-source replacement key (GH-113). */
 export function buildWatchEvent(type: WatchEvent['type'], filePath: string): WatchEvent {
-  return { type, assetId: path.basename(filePath), asset: undefined }
+  return { type, assetId: path.basename(filePath), sourceKey: dedupePathKey(filePath), asset: undefined }
 }
 
 /**

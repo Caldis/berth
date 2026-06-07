@@ -1,7 +1,8 @@
 import * as os from 'os'
 import * as path from 'path'
 import { describe, expect, it } from 'vitest'
-import { getAssetWatchPaths, isIgnoredWatchPath } from '../../src/main/engine/watcher'
+import { buildWatchEvent, buildWatchOptions, getAssetWatchPaths, isIgnoredWatchPath } from '../../src/main/engine/watcher'
+import { dedupePathKey } from '../../src/shared/asset-dedupe'
 
 // GH-111 R2: the watcher must not ignore its own dot-directory roots.
 describe('isIgnoredWatchPath', () => {
@@ -23,5 +24,24 @@ describe('isIgnoredWatchPath', () => {
     for (const root of roots) {
       expect(isIgnoredWatchPath(root)).toBe(false)
     }
+  })
+})
+
+// GH-113: hardened watcher options + per-source change events.
+describe('buildWatchOptions', () => {
+  it('waits for writes to finish and collapses editor atomic saves', () => {
+    const opts = buildWatchOptions()
+    expect(opts?.awaitWriteFinish).toMatchObject({ stabilityThreshold: 250, pollInterval: 100 })
+    expect(opts?.atomic).toBe(true)
+    expect(opts?.ignored).toBe(isIgnoredWatchPath)
+    expect(opts?.ignoreInitial).toBe(true)
+  })
+})
+
+describe('buildWatchEvent', () => {
+  it('carries a normalized sourceKey for per-source replacement', () => {
+    const event = buildWatchEvent('changed', 'C:\\Users\\me\\.claude\\settings.json')
+    expect(event.type).toBe('changed')
+    expect(event.sourceKey).toBe(dedupePathKey('C:\\Users\\me\\.claude\\settings.json'))
   })
 })

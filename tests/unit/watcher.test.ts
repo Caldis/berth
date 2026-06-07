@@ -4,6 +4,7 @@ import * as path from 'path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { AssetWatcher, buildWatchEvent, getAssetWatchPaths } from '../../src/main/engine/watcher'
 import type { WatchEvent } from '../../src/shared/types/asset'
+import { dedupePathKey } from '../../src/shared/asset-dedupe'
 
 let tempDir: string | null = null
 
@@ -113,10 +114,12 @@ describe('getAssetWatchPaths', () => {
 })
 
 describe('AssetWatcher change dispatch (Electron-decoupled)', () => {
-  it('buildWatchEvent derives assetId from the path basename', () => {
-    expect(buildWatchEvent('changed', path.join('a', 'b', 'CLAUDE.md'))).toEqual({
+  it('derives assetId from the basename and a normalized sourceKey from the path', () => {
+    const fp = path.join('a', 'b', 'CLAUDE.md')
+    expect(buildWatchEvent('changed', fp)).toEqual({
       type: 'changed',
       assetId: 'CLAUDE.md',
+      sourceKey: dedupePathKey(fp),
       asset: undefined
     })
   })
@@ -126,12 +129,14 @@ describe('AssetWatcher change dispatch (Electron-decoupled)', () => {
     const watcher = new AssetWatcher()
     watcher.setListener((event) => events.push(event))
 
-    watcher.notifyChange('added', path.join('x', 'skills', 'foo.md'))
-    watcher.notifyChange('removed', path.join('x', '.mcp.json'))
+    const skill = path.join('x', 'skills', 'foo.md')
+    const mcp = path.join('x', '.mcp.json')
+    watcher.notifyChange('added', skill)
+    watcher.notifyChange('removed', mcp)
 
     expect(events).toEqual([
-      { type: 'added', assetId: 'foo.md', asset: undefined },
-      { type: 'removed', assetId: '.mcp.json', asset: undefined }
+      { type: 'added', assetId: 'foo.md', sourceKey: dedupePathKey(skill), asset: undefined },
+      { type: 'removed', assetId: '.mcp.json', sourceKey: dedupePathKey(mcp), asset: undefined }
     ])
   })
 

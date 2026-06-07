@@ -114,6 +114,9 @@ export interface DetectResult {
 export interface WatchEvent {
   type: 'added' | 'changed' | 'removed'
   assetId: string
+  /** Normalized physical-path key of the changed file — the per-source key the
+   * incremental indexer replaces against (GH-113). Stable across case/separator. */
+  sourceKey?: string
   asset?: Asset
 }
 
