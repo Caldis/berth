@@ -315,6 +315,37 @@ describe('AssetScanner', () => {
     }
   })
 
+  it('shallow-indexes the repo root when a session cwd is a monorepo subdir (GH-113 T3b)', async () => {
+    const repoRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'berth-eng-repo-'))
+    fs.mkdirSync(path.join(repoRoot, '.git'), { recursive: true })
+    fs.writeFileSync(path.join(repoRoot, 'AGENTS.md'), '# Repo-root conventions\nbody')
+    const subdir = path.join(repoRoot, 'packages', 'app')
+    fs.mkdirSync(subdir, { recursive: true })
+    try {
+      mocks.claudeScanAll.mockResolvedValueOnce({
+        assets: [{
+          id: 'session-sub',
+          agentId: 'claude-code',
+          category: 'state',
+          type: 'session',
+          scope: 'session',
+          name: 'Session',
+          path: 'C:\\x\\session.jsonl',
+          // Session cwd is the subdir, but the AGENTS.md lives at the repo root.
+          meta: { projectPath: subdir }
+        }],
+        errors: []
+      })
+      const scanner = new AssetScanner()
+      const result = await scanner.scanAll()
+      const shallow = result.assets.find((a) => a.type === 'agents-md' && a.meta.scanDepth === 'shallow')
+      expect(shallow).toBeDefined()
+      expect(sameProjectPath(String(shallow?.meta.projectPath), repoRoot)).toBe(true)
+    } finally {
+      fs.rmSync(repoRoot, { recursive: true, force: true })
+    }
+  })
+
   it('streams per-adapter progress and cumulative partial assets (P4.6)', async () => {
     mocks.claudeScanAll.mockResolvedValueOnce({
       assets: [skillAsset('claude-skill', 'claude-code')],

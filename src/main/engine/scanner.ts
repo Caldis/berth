@@ -7,6 +7,7 @@ import type { ProjectScopeCandidate } from '@shared/scope'
 import { normalizeProjectPathKey } from '@shared/scope'
 import { createAgentAdapters, type AgentAdapterRegistryOptions } from '../agent-plugins/adapter-registry'
 import { projectScopeCandidatesFromAssets } from '../project-scope'
+import { resolveProjectConfigRoots } from '../project-config-roots'
 import { AssetFileCache, type AssetFileCacheSnapshot } from './assets/file-cache'
 import { scanShallowConventions } from './shallow-conventions'
 
@@ -252,14 +253,22 @@ export class AssetScanner {
    * EXCEPT the active one (which the deep scan already covers in full). Each
    * shallow asset carries `meta.projectPath` so scope filtering attributes it to
    * its owner — global shows all, project mode shows only the active project.
+   *
+   * Candidates are resolved to their repository config ROOT so a session whose
+   * cwd is a monorepo subdir still surfaces the repo-level conventions, and so a
+   * repo with many sessions is shallow-scanned once.
    */
   private appendShallowConventions(assets: Asset[]): Asset[] {
-    const activeKey = this.projectDir ? normalizeProjectPathKey(this.projectDir) : ''
+    const activeRootKey = resolvedRootKey(this.projectDir)
+    const seen = new Set<string>()
     const shallow: Asset[] = []
     for (const candidate of projectScopeCandidatesFromAssets(assets, this.projectDir)) {
-      if (candidate.pathKey === activeKey) continue
-      if (!fs.existsSync(candidate.path)) continue
-      shallow.push(...scanShallowConventions(candidate.path))
+      const root = resolveProjectConfigRoots(candidate.path)[0] ?? candidate.path
+      const rootKey = normalizeProjectPathKey(root)
+      if (!rootKey || rootKey === activeRootKey || seen.has(rootKey)) continue
+      seen.add(rootKey)
+      if (!fs.existsSync(root)) continue
+      shallow.push(...scanShallowConventions(root))
     }
     return shallow.length > 0 ? [...assets, ...shallow] : assets
   }
@@ -276,6 +285,13 @@ export class AssetScanner {
 
     return [...projectPaths].filter((projectPath) => projectPath.trim().length > 0)
   }
+}
+
+/** Normalized key of a directory's repository config root (repo root when a
+ * `.git` is found, else the directory itself). Empty for no directory. */
+function resolvedRootKey(dir?: string): string {
+  if (!dir) return ''
+  return normalizeProjectPathKey(resolveProjectConfigRoots(dir)[0] ?? dir)
 }
 
 function sourceListContainsProject(sources: ScanRoot[], projectPath: string): boolean {
