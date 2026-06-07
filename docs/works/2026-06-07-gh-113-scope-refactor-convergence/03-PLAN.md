@@ -6,11 +6,11 @@
 
 ## 实现项
 
-- [ ] **T1 AGENTS.md 跨适配器合并 + agent view 可见性** (即时可见修复, 用户截图问题)
-  - 改动: claude `parseAgentsMd` 加 `meta.dedupeKey`+`readByAgentIds=['claude-code']`+**确定式 id** (A1); codex `parseCodexAgentsMd` 加 `dedupeKey`+`readByAgentIds=['codex']`; engine `mergeSharedConventions` 纯函数 (final + partial 两路, A1/D1); 渲染 `assetMatchesAgentView` 读 `readByAgentIds`。
+- [x] **T1 AGENTS.md 跨适配器合并 + agent view 可见性** (即时可见修复, 用户截图问题) — 提交 c9d330c2
+  - 改动: 新增 `src/shared/asset-dedupe.ts` (dedupePathKey + stableAssetHash); claude `parseAgentsMd` 加 `meta.dedupeKey`+`readByAgentIds=['claude-code']`+**确定式 id** (A1); codex `parseCodexAgentsMd` 加 `dedupeKey`+`readByAgentIds=['codex']`; engine `mergeSharedConventions` 纯+幂等 (final + partial 两路, A1/D1); 渲染 `assetMatchesAgentView` 读 `readByAgentIds`。
   - 不碰: shallow / 全局 scope / health / hook / mcp / equivalentSources / skills (R2-C 收窄)。
-  - tests: 共享 AGENTS.md 跨适配器→单条 + 并集 readByAgentIds; 三视图可见; settings.json 多 hook/mcp 不误合并; CLAUDE.md @AGENTS.md relation→合并 id; plugin/skill 不合并; id 跨两扫稳定 + Windows 大小写归一。
-  - verify: 不适用 (引擎/渲染纯逻辑; 视觉验收并入 T5)。
+  - tests: ✅ scope-dedupe.test.ts (11) + agent-view.test.ts (6) + engine-scanner 合并集成 (含 partial 无双行)。typecheck/lint/test(783)/build 全绿。
+  - 旁支: claude `makeId()` 对 claude-md/skill/agent/command 等仍非确定 → 刷新后选中/raw 重取失败, 同源问题但超 T1 验收范围, 记 docs/issues 交叉引用, 稳定化随 T4 deep-wins key 一并处理。
 
 - [ ] **T2 scope/search 谓词收敛到 shared 真源** (地基, 必须早于浅扫 — A5)
   - 改动: 删 main 重复项目过滤实现, 统一 `src/shared/scope.ts` `assetMatchesProjectPath`; `searchScopeAllows` (runtime.ts:97-100,270-278) 与 `filterAssetsByAppScope` 统一谓词。
