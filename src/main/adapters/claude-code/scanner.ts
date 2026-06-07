@@ -54,11 +54,33 @@ function safeScan<T>(
   }
 }
 
-function safeGlob(pattern: string, cwd: string): string[] {
+function safeGlob(pattern: string, cwd: string, ctx?: ScanContext): string[] {
   try {
     return glob.sync(pattern, { cwd, absolute: true, windowsPathsNoEscape: true })
-  } catch {
+  } catch (err) {
+    // A glob failure (permission, IO, broken symlink) silently drops assets;
+    // surface it so missing data is visible instead of looking like "no data".
+    ctx?.errors.push({
+      path: cwd,
+      type: 'glob',
+      message: err instanceof Error ? err.message : String(err)
+    })
     return []
+  }
+}
+
+/** stat guarded against TOCTOU: a file globbed then deleted/locked must not throw
+ * out of the whole adapter scan — record it and skip the single file. */
+function safeStatIsFile(ctx: ScanContext, filePath: string): boolean {
+  try {
+    return fs.statSync(filePath).isFile()
+  } catch (err) {
+    ctx.errors.push({
+      path: filePath,
+      type: 'stat',
+      message: err instanceof Error ? err.message : String(err)
+    })
+    return false
   }
 }
 
@@ -222,6 +244,21 @@ export function scanCapabilities(ctx: ScanContext): Asset[] {
   }
   for (const [fp, scope] of settingsSources) {
     const settingsExists = fs.existsSync(fp)
+    // Make malformed settings loud: a JSON typo otherwise silently drops ALL
+    // hooks/permissions/env/statusline (parsers swallow parse errors → null).
+    // An empty/whitespace file is treated as absent, not malformed.
+    if (settingsExists) {
+      try {
+        const rawSettings = fs.readFileSync(fp, 'utf-8')
+        if (rawSettings.trim().length > 0) JSON.parse(rawSettings)
+      } catch (err) {
+        ctx.errors.push({
+          path: fp,
+          type: 'settings-json',
+          message: err instanceof Error ? err.message : String(err)
+        })
+      }
+    }
     const sidecarPath = scope === 'user'
       ? path.join(ctx.claudeDir, '.berth', 'hooks-state.json')
       : undefined
@@ -503,9 +540,9 @@ export function scanIntegration(ctx: ScanContext): Asset[] {
   // IDE locks
   const ideDir = path.join(ctx.claudeDir, 'ide')
   if (fs.existsSync(ideDir)) {
-    const files = safeGlob('*', ideDir)
+    const files = safeGlob('*', ideDir, ctx)
     for (const fp of files) {
-      if (fs.statSync(fp).isFile()) {
+      if (safeStatIsFile(ctx, fp)) {
         const a = safeScan(ctx, fp, 'ide-lock', () => parseIdeLock(fp))
         if (a) assets.push(a)
       }
@@ -521,9 +558,9 @@ export function scanIntegration(ctx: ScanContext): Asset[] {
     'oauth*'
   ]
   for (const pattern of credentialPatterns) {
-    const files = safeGlob(pattern, ctx.claudeDir)
+    const files = safeGlob(pattern, ctx.claudeDir, ctx)
     for (const fp of files) {
-      if (fs.statSync(fp).isFile()) {
+      if (safeStatIsFile(ctx, fp)) {
         const a = safeScan(ctx, fp, 'credential', () => parseCredential(fp))
         if (a) assets.push(a)
       }
@@ -546,7 +583,7 @@ function scanDir(
 ): Asset[] {
   if (!fs.existsSync(dir)) return []
   const assets: Asset[] = []
-  const files = safeGlob(pattern, dir)
+  const files = safeGlob(pattern, dir, ctx)
   for (const fp of files) {
     const a = safeScan(ctx, fp, path.basename(fp), () => parser(fp, scope))
     if (a) assets.push(a)
