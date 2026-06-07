@@ -2,7 +2,7 @@
 task: 2026-06-07-gh-112-plugin-component-cross-navigation
 task_id: GH-112
 type: feature
-phase: explore
+phase: implement
 created: 2026-06-07
 priority: P2
 target_date:
@@ -61,9 +61,9 @@ artifacts:
 
 ## 产物
 - [x] 00-PRD.md — 原始输入快照
-- [ ] 01-ANALYSIS.md — Explore 产物
-- [ ] 02-SPEC.md — Design 产物
-- [ ] 03-PLAN.md — 活任务清单
+- [x] 01-ANALYSIS.md — Explore 产物 (Workflow 5 路并行探查综合)
+- [x] 02-SPEC.md — Design 产物 (焦点传输 + 每页 locator + 徽标 + 测试矩阵)
+- [x] 03-PLAN.md — 活任务清单 (P1–P5)
 - [ ] 04-POLISH.md — 可选抛光记录
 
 ## 待澄清 (blocked 时填)
