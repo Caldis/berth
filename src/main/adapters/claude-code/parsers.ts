@@ -471,8 +471,16 @@ function parseClaudeDisabledHookEntry(value: unknown): ClaudeDisabledHookEntry |
   }
 }
 
-function samePath(left: string, right: string): boolean {
-  return path.resolve(left).toLocaleLowerCase() === path.resolve(right).toLocaleLowerCase()
+/**
+ * Path equality consistent with the filesystem's case semantics. Only fold case
+ * on Windows (case-insensitive); case-sensitive filesystems must compare exactly.
+ * Uses `toLowerCase` (not locale-aware `toLocaleLowerCase`, which mangles e.g.
+ * the Turkish dotted-İ). Mirrors `normalizePath` in scanner.ts.
+ */
+export function samePath(left: string, right: string, platform: NodeJS.Platform = process.platform): boolean {
+  const a = path.resolve(left)
+  const b = path.resolve(right)
+  return platform === 'win32' ? a.toLowerCase() === b.toLowerCase() : a === b
 }
 
 function readCommonHookConfig(hookRecord: Record<string, unknown>): Record<string, unknown> {

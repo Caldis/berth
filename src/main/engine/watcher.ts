@@ -32,11 +32,11 @@ export class AssetWatcher {
       ignoreInitial: true,
       depth: 5,
       ignorePermissionErrors: true,
-      // Ignore very large or binary files
-      ignored: [
-        /(^|[/\\])\../, // dotfiles inside watched dirs are fine, this is default
-        /node_modules/
-      ]
+      // Ignore only build/VCS noise. The old dotfile regex /(^|[/\\])\../ also
+      // matched the watch roots themselves (~/.claude, .codex, .agents), so
+      // chokidar silently ignored the very directories it was told to watch —
+      // live asset updates never fired. (GH-111 R2)
+      ignored: isIgnoredWatchPath
     })
 
     this.watcher.on('add', (filePath) => this.notifyChange('added', filePath))
@@ -66,6 +66,16 @@ export class AssetWatcher {
 /** Build the change event for a filesystem path. Pure; exported for tests. */
 export function buildWatchEvent(type: WatchEvent['type'], filePath: string): WatchEvent {
   return { type, assetId: path.basename(filePath), asset: undefined }
+}
+
+/**
+ * Watcher ignore predicate (GH-111 R2). Ignores only build/VCS noise
+ * (node_modules, .git) anywhere in the path — crucially NOT the dot-directory
+ * watch roots (.claude/.codex/.agents), which the previous catch-all dotfile
+ * regex wrongly matched, disabling live updates entirely.
+ */
+export function isIgnoredWatchPath(testPath: string): boolean {
+  return /[/\\](?:node_modules|\.git)(?:[/\\]|$)/.test(testPath)
 }
 
 export function getAssetWatchPaths(
