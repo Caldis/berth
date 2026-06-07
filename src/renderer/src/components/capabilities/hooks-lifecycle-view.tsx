@@ -15,6 +15,9 @@ import {
 import { cn } from '@/lib/utils'
 import { Button, Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from '@/components/ui'
 import { ScopeBadge } from '@/components/shared/scope-badge'
+import { PluginOriginBadge } from '@/components/shared/plugin-origin-badge'
+import { pluginOriginOf } from '@/lib/plugin-origin'
+import { useFocusTarget, FOCUS_HIGHLIGHT_CLASS } from '@/hooks/use-focus-target'
 import { FloatingPopover } from '@/components/shared/floating-popover'
 import { useHealthChecks } from '@/hooks/use-ipc'
 import {
@@ -85,6 +88,16 @@ export function HooksLifecycleView({
   const currentStageId = activeStageId ?? groups[0]?.id ?? null
   const connectorLayerRef = useRef<HTMLDivElement | null>(null)
   const connectorLines = useHookStageConnectors(groups, connectorLayerRef)
+  const { focusId, isFocused } = useFocusTarget()
+
+  // Jumped-to from the plugin page: scroll the focused hook row into view (GH-112).
+  useEffect(() => {
+    if (!focusId) return
+    const id = window.setTimeout(() => {
+      document.getElementById(`hook-row-${focusId}`)?.scrollIntoView({ block: 'center', behavior: 'smooth' })
+    }, 0)
+    return () => window.clearTimeout(id)
+  }, [focusId])
 
   useEffect(() => {
     setActiveStageId((current) => {
@@ -192,7 +205,7 @@ export function HooksLifecycleView({
 
         <div className="relative z-10 min-w-0 space-y-3">
           {groups.map((group) => (
-            <HookStageSection key={group.id} group={group} agentView={agentView} hookSchemas={hookSchemas} />
+            <HookStageSection key={group.id} group={group} agentView={agentView} hookSchemas={hookSchemas} isFocused={isFocused} />
           ))}
         </div>
       </div>
@@ -635,16 +648,18 @@ function HookHealthCheckTipRow({ check }: { check: HealthCheck }): React.ReactEl
 function HookStageSection({
   group,
   agentView,
-  hookSchemas
+  hookSchemas,
+  isFocused = () => false
 }: {
   group: HookStageGroup
   agentView: AgentView
   hookSchemas: HookSchemaMap
+  isFocused?: (id: string) => boolean
 }): React.ReactElement {
   const { t } = useTranslation()
 
   if (!group.stage) {
-    return <UnknownHookSection group={group} agentView={agentView} hookSchemas={hookSchemas} />
+    return <UnknownHookSection group={group} agentView={agentView} hookSchemas={hookSchemas} isFocused={isFocused} />
   }
 
   const supports = getVisibleStageSupport(group.stage, agentView, { hookSchemas })
@@ -670,7 +685,7 @@ function HookStageSection({
       </div>
 
       <div className="px-4 py-4">
-        <HookEventList group={group} agentView={agentView} hookSchemas={hookSchemas} />
+        <HookEventList group={group} agentView={agentView} hookSchemas={hookSchemas} isFocused={isFocused} />
       </div>
     </section>
   )
@@ -767,11 +782,13 @@ function AgentSupportTip({ stageId, support }: { stageId: string; support: HookA
 function UnknownHookSection({
   group,
   agentView,
-  hookSchemas
+  hookSchemas,
+  isFocused = () => false
 }: {
   group: HookStageGroup
   agentView: AgentView
   hookSchemas: HookSchemaMap
+  isFocused?: (id: string) => boolean
 }): React.ReactElement {
   const { t } = useTranslation()
 
@@ -786,7 +803,7 @@ function UnknownHookSection({
         <p className="mt-1 max-w-[72ch] text-sm leading-6 text-muted-foreground">{t('capabilities.hooks.unknown.body')}</p>
       </div>
       <div className="px-4 py-4">
-        <HookEventList group={group} agentView={agentView} hookSchemas={hookSchemas} />
+        <HookEventList group={group} agentView={agentView} hookSchemas={hookSchemas} isFocused={isFocused} />
       </div>
     </section>
   )
@@ -795,11 +812,13 @@ function UnknownHookSection({
 function HookEventList({
   group,
   agentView,
-  hookSchemas
+  hookSchemas,
+  isFocused = () => false
 }: {
   group: HookStageGroup
   agentView: AgentView
   hookSchemas: HookSchemaMap
+  isFocused?: (id: string) => boolean
 }): React.ReactElement {
   const { t } = useTranslation()
 
@@ -824,7 +843,7 @@ function HookEventList({
           </div>
           <div className="divide-y divide-border/60">
             {eventGroup.hooks.map((hook) => (
-              <HookAssetRow key={hook.id} hook={hook} agentView={agentView} hookSchemas={hookSchemas} />
+              <HookAssetRow key={hook.id} hook={hook} agentView={agentView} hookSchemas={hookSchemas} focused={isFocused(hook.id)} />
             ))}
           </div>
         </div>
@@ -836,13 +855,16 @@ function HookEventList({
 function HookAssetRow({
   hook,
   agentView,
-  hookSchemas
+  hookSchemas,
+  focused = false
 }: {
   hook: Asset
   agentView: AgentView
   hookSchemas: HookSchemaMap
+  focused?: boolean
 }): React.ReactElement {
   const { t } = useTranslation()
+  const origin = pluginOriginOf(hook)
   const matcher = typeof hook.meta.matcher === 'string' ? hook.meta.matcher : ''
   const handlerDescriptor = findHookHandlerDescriptor(hook, hookSchemas)
   const supportNote = typeof hook.meta.supportNote === 'string'
@@ -903,7 +925,10 @@ function HookAssetRow({
   }
 
   return (
-    <div className="px-3 py-3">
+    <div
+      id={`hook-row-${hook.id}`}
+      className={cn('px-3 py-3', focused && cn(FOCUS_HIGHLIGHT_CLASS, 'rounded-md'))}
+    >
       <div className="flex flex-wrap items-start gap-3">
         <div className="min-w-0 flex-1">
           <div className="flex min-w-0 flex-wrap items-center gap-2">
@@ -920,6 +945,7 @@ function HookAssetRow({
             )}
             <span className="min-w-0 max-w-full break-all font-mono text-xs text-foreground">{display.primary}</span>
             <ScopeBadge scope={hook.scope} />
+            {origin && <PluginOriginBadge pluginId={origin.pluginId} pluginName={origin.pluginName} />}
             {hookCanShowEnabledBadge(hook, toggleState) && (
               <span className={cn(
                 'rounded-md px-1.5 py-0.5 text-[10px] font-medium',

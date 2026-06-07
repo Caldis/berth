@@ -1,5 +1,6 @@
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import React from 'react'
+import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import i18n from '../../src/renderer/src/i18n'
 import { HooksLifecycleView } from '../../src/renderer/src/components/capabilities/hooks-lifecycle-view'
@@ -45,13 +46,15 @@ function renderHooks(
   plugins: AgentCapabilityPlugin[] = []
 ): ReturnType<typeof render> {
   return render(
-    <HooksLifecycleView
-      assets={assets}
-      agentView={agentView}
-      search=""
-      scope="all"
-      plugins={plugins}
-    />
+    <MemoryRouter>
+      <HooksLifecycleView
+        assets={assets}
+        agentView={agentView}
+        search=""
+        scope="all"
+        plugins={plugins}
+      />
+    </MemoryRouter>
   )
 }
 
