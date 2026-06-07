@@ -117,6 +117,10 @@ export interface WatchEvent {
   /** Normalized physical-path key of the changed file — the per-source key the
    * incremental indexer replaces against (GH-113). Stable across case/separator. */
   sourceKey?: string
+  /** Original (un-normalized) path of the changed file. The incremental indexer
+   * reads it to re-derive the file's assets — `sourceKey` is lowercased on Windows
+   * and unsafe to read on case-sensitive filesystems. (GH-113 I1) */
+  filePath?: string
   asset?: Asset
 }
 

@@ -80,7 +80,7 @@ export function buildWatchOptions(): WatchOptions {
 /** Build the change event for a filesystem path. Pure; exported for tests. The
  * `sourceKey` is the normalized per-source replacement key (GH-113). */
 export function buildWatchEvent(type: WatchEvent['type'], filePath: string): WatchEvent {
-  return { type, assetId: path.basename(filePath), sourceKey: dedupePathKey(filePath), asset: undefined }
+  return { type, assetId: path.basename(filePath), sourceKey: dedupePathKey(filePath), filePath, asset: undefined }
 }
 
 /**

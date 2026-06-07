@@ -120,6 +120,7 @@ describe('AssetWatcher change dispatch (Electron-decoupled)', () => {
       type: 'changed',
       assetId: 'CLAUDE.md',
       sourceKey: dedupePathKey(fp),
+      filePath: fp,
       asset: undefined
     })
   })
@@ -135,8 +136,8 @@ describe('AssetWatcher change dispatch (Electron-decoupled)', () => {
     watcher.notifyChange('removed', mcp)
 
     expect(events).toEqual([
-      { type: 'added', assetId: 'foo.md', sourceKey: dedupePathKey(skill), asset: undefined },
-      { type: 'removed', assetId: '.mcp.json', sourceKey: dedupePathKey(mcp), asset: undefined }
+      { type: 'added', assetId: 'foo.md', sourceKey: dedupePathKey(skill), filePath: skill, asset: undefined },
+      { type: 'removed', assetId: '.mcp.json', sourceKey: dedupePathKey(mcp), filePath: mcp, asset: undefined }
     ])
   })
 

@@ -6,6 +6,7 @@ import { initScanner } from './engine/scanner'
 import Database from 'better-sqlite3'
 import { getAssetRuntime, initAssetRuntime } from './engine/assets/runtime'
 import { createSqliteSnapshotStore } from './engine/assets/sqlite-snapshot-store'
+import { applyWatchEvent } from './engine/assets/watch-wiring'
 import { getWatcher } from './engine/watcher'
 import { resolveDefaultProjectDir } from './project-dir'
 import { configureAgentDevProfile, shouldRequestSingleInstanceLock } from './dev-instance'
@@ -134,11 +135,11 @@ if (!gotTheLock) {
     const watcher = getWatcher()
 
     const mainWindow = createWindow({ openDevTools })
-    // Engine watcher is Electron-free; the main process owns the IPC delivery.
-    watcher.setListener((event) => {
-      if (mainWindow.isDestroyed()) return
-      mainWindow.webContents.send('assets:changed', event)
-    })
+    // GH-113 I1: a file change re-derives just that file's assets and folds them
+    // into the live snapshot incrementally — no full rescan. The renderer is
+    // updated through the runtime's progress channel (the partial emitted by
+    // applyFileChange), so the raw 'assets:changed' push is retired.
+    watcher.setListener((event) => applyWatchEvent(event, getAssetRuntime()))
     watcher.start(projectDir)
 
     // Stream live scan status + already-scanned assets to the renderer (P4.6).
