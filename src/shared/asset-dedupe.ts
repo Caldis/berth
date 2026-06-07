@@ -1,10 +1,12 @@
+import * as crypto from 'crypto'
 import * as path from 'path'
 
 /**
  * Canonical key identifying the same *physical* file across adapters and
  * platforms. AGENTS.md is a cross-agent open standard, so the Claude and Codex
  * adapters both legitimately scan the same file; this key lets the engine
- * collapse the two rows into a single asset (see `mergeSharedConventions`).
+ * collapse the two rows into a single asset (see `mergeSharedConventions`) and is
+ * the per-source replacement key for incremental indexing (GH-113 V2).
  *
  * Case-folds only on Windows (case-insensitive filesystem); POSIX paths are
  * compared exactly. Uses the platform-specific `path` implementation so the key
@@ -18,15 +20,30 @@ export function dedupePathKey(filePath: string, platform: NodeJS.Platform = proc
 }
 
 /**
- * Small deterministic non-cryptographic hash (base36) used to build STABLE asset
- * ids from a path. Stability across scans matters because ids are consumed as
- * opaque handles by the renderer (selection, raw-content refetch) — a
- * `Date.now()`-based id would break those on every refresh.
+ * Deterministic, collision-safe digest (16 hex chars / 64 bits of SHA-256) used
+ * to build STABLE asset ids. Stability matters because ids are opaque handles for
+ * the renderer (selection, raw refetch) AND will become the persistent SQLite
+ * primary key (GH-113 V2) — a `Date.now()` id or a narrow 32-bit hash (collision
+ * risk at thousands of assets) is unsafe for a PK. (Codex round-2 D1)
  */
 export function stableAssetHash(value: string): string {
-  let hash = 0
-  for (let i = 0; i < value.length; i += 1) {
-    hash = (hash * 31 + value.charCodeAt(i)) >>> 0
-  }
-  return hash.toString(36)
+  return crypto.createHash('sha256').update(value).digest('hex').slice(0, 16)
+}
+
+/**
+ * Canonical deterministic asset id: `${type}-${scope}-${hash(sourceKey:entityKey)}`.
+ * `sourceKey` is the normalized physical path (case-folded on Windows); `entityKey`
+ * disambiguates the N assets a single file can yield (hooks/mcp/permission in one
+ * settings.json) and MUST be content/structure-derived (never a display name or a
+ * handler index), so the id is stable across scans and renames. Empty entityKey =
+ * the file is a single-asset source keyed on path alone. (GH-113 Pre-T0)
+ */
+export function assetEntityId(
+  type: string,
+  scope: string,
+  sourcePath: string,
+  entityKey = '',
+  platform: NodeJS.Platform = process.platform
+): string {
+  return `${type}-${scope}-${stableAssetHash(`${dedupePathKey(sourcePath, platform)}:${entityKey}`)}`
 }

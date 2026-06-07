@@ -7,7 +7,7 @@ import {
   normalizeTokenUsage
 } from '@shared/token-usage'
 import { buildHookHash, buildHookKey, buildHookScenarioHash } from '@shared/hook-identity'
-import { dedupePathKey, stableAssetHash } from '@shared/asset-dedupe'
+import { assetEntityId, dedupePathKey } from '@shared/asset-dedupe'
 import { extractCommandEntryPaths } from '../command-entry-paths'
 import type { Asset, AssetScope } from '../types'
 
@@ -27,14 +27,14 @@ export function parseClaudeMd(filePath: string, scope: AssetScope): Asset {
   // scans — important for shallow-indexed CLAUDE.md, which is re-scanned on every
   // global refresh and would otherwise re-key and lose selection. (GH-113 T4)
   return {
-    id: `claude-md-${scope}-${stableAssetHash(dedupePathKey(filePath))}`,
+    id: assetEntityId('claude-md', scope, filePath),
     agentId: 'claude-code',
     category: 'instruction',
     type: 'claude-md',
     scope,
     name: path.basename(filePath),
     path: filePath,
-    meta: { imports, lineCount: raw.split('\n').length },
+    meta: { imports, lineCount: raw.split('\n').length, sourceKey: dedupePathKey(filePath) },
     raw
   }
 }
@@ -47,16 +47,16 @@ export function parseAgentsMd(filePath: string, scope: AssetScope): Asset {
   // (`mergeSharedConventions`), and use a DETERMINISTIC id (not `makeId()`'s
   // `Date.now()`) so the canonical row's id stays stable across scans — the id is
   // an opaque handle for renderer selection / raw refetch (GH-113 T1).
-  const dedupeKey = dedupePathKey(filePath)
+  const sourceKey = dedupePathKey(filePath)
   return {
-    id: `agents-md-${scope}-${stableAssetHash(dedupeKey)}`,
+    id: assetEntityId('agents-md', scope, filePath),
     agentId: 'claude-code',
     category: 'instruction',
     type: 'agents-md',
     scope,
     name: path.basename(filePath),
     path: filePath,
-    meta: { imports, lineCount: raw.split('\n').length, dedupeKey, readByAgentIds: ['claude-code'] },
+    meta: { imports, lineCount: raw.split('\n').length, dedupeKey: sourceKey, sourceKey, readByAgentIds: ['claude-code'] },
     raw
   }
 }

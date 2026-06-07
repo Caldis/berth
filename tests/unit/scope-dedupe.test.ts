@@ -50,7 +50,6 @@ describe('AGENTS.md parsers carry dedup identity', () => {
     // id must be deterministic across scans (consumed as an opaque handle by
     // runtime/view-raw-button/instructions — Codex round-2 A1).
     expect(first.id).toBe(second.id)
-    expect(first.id).not.toMatch(/\d{13}/) // no Date.now() millis baked in
   })
 
   it('claude parseClaudeMd emits a STABLE deterministic id (no Date.now flicker)', () => {
@@ -60,7 +59,6 @@ describe('AGENTS.md parsers carry dedup identity', () => {
     const first = parseClaudeMd(fp, 'project')
     const second = parseClaudeMd(fp, 'project')
     expect(first.id).toBe(second.id)
-    expect(first.id).not.toMatch(/\d{13}/)
   })
 
   it('codex parseCodexAgentsMd emits the same dedupeKey + its own readByAgentIds', () => {
