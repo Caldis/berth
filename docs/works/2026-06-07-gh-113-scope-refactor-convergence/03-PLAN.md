@@ -55,10 +55,11 @@
   - Pre-T0b: Claude 全 makeId → assetEntityId (entityKey: 单文件=路径非 name; hook=scenarioHash:hookHash; mcp=name; project-mcp=projectPathKey:name; permission=kind; statusline=settingKey); 删 makeId。
   - Pre-T0c: Codex 6 类 (agent/agents-md/skill/mcp/hook/statusline) 统一到 assetEntityId (修 safeId 有损碰撞 + 升宽 hash; AGENTS.md id 与 Claude 一致可合并); session 保持 sessionId-keyed。
   - tests: ✅ asset-dedupe (6) + parser-identity (8, 含改名稳定/多资产不撞/project-mcp 跨项目/codex 统一); 全量 805 + build + 2 e2e。issue 2026-06-07-BUG-claude-makeid RESOLVED。
-- [ ] **T0 正确性快赢** (Pre-T0 后)
-  - 改动: ①racy-hash 窄窗失效 (file-cache.ts:96, 仅 mtime 接近 indexed_at 且 size 未变才补 hash; session 不全 hash); ②watcher debounce/coalescing (awaitWriteFinish stabilityThreshold~250ms + atomic + 同目录合并) + 事件带归一 sourceKey (非 basename), unlink 不被吞。[MiniSearch changeset 后置]
-  - tests: 同秒等长改写 fixture 被检出; git checkout fixture N 文件→一次批处理; unlink 不丢; watcher 事件含 sourceKey。
-  - verify: 不适用。
+- [~] **T0 正确性快赢 — 实施中重排** (Pre-T0 后)
+  - **racy-hash 移到 T1**: 实现期发现 in-session 实时 watcher (chokidar 不依赖 mtime) 已覆盖同会话 in-place 改写; racy-fingerprint 漏更新只在**持久化缓存跨重启**时真实发生 → 归 T1 (持久化) 一并做。
+  - **watcher debounce 降级为优化 (非 T0 必需)**: 消费方 (renderer onChanged use-ipc.ts:215,454) 忽略事件 payload, 且 runtime.refresh 有 inFlight 守护已合并 flood 触发的重扫 → debounce 是减少 IPC/重扫频率的优化, 非正确性。随 T2 长驻 coordinator 队列一并做 (coalescing 是队列天然属性); 单独提前做边际价值低。
+  - **buildWatchEvent 带 sourceKey**: 当前 assetId=basename 无消费方使用 → 留到 T2 changeset 协议 (届时事件需精确 sourceKey 做 per-source 替换) 一并改, 避免无消费方的空改动。
+  - 结论: T0 无独立必需增量, 内容并入 T1/T2; Pre-T0 后直接 T1。
 - [ ] **T1 冷启垫脚石**: JSON AssetSnapshot 持久化 (main loadSnapshot/saveSnapshot→userData, SWR 冷启秒出; 非 AssetFileCache 后端)。tests: 冷启读 JSON 立即 emit + 后台 revalidate 覆盖。
 - [ ] **T2 单管线 + changeset 协议 + SQLite**: deriveAssetsForPath; worker parse→changeset→main 单 writer 写 SQLite; canonical merge 写库前显式 (sourceKey 替换); sidecar 依赖图 (hooks-state→settings); parse-error 保留旧行标 source_status=error; 单调 checkpoint 防覆盖; 不做 asset_raw 大表 (raw 按需读盘)。tests: 切域零 I/O; 单文件多资产原子替换; 畸形 session 不杀循环; parse error 不丢旧资产; 冷启读 DB 秒出。
 - [ ] **T3 全局后台 + 纯过滤 + 完成度**: 后台全量扫全设备 (删/降级 appendShallowConventions); setProjectDir→纯过滤 (search/sessions/health/usage 统一谓词); per-root 完成度状态 (全局空态须 root ≥1 校验完成); 设备级统一 watcher。tests: 全局含其它项目全部资产类型; 切域不重扫; 未扫完不误导空态; project-scope + global e2e。
