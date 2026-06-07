@@ -10,7 +10,8 @@ function post(message: AssetWorkerMessage): void {
 async function run(): Promise<void> {
   const data = workerData as AssetWorkerData
   const scanner = new AssetScanner(data.projectDir, {
-    sessionCache: AssetFileCache.fromSnapshot(data.sessionCache)
+    sessionCache: AssetFileCache.fromSnapshot(data.sessionCache),
+    projectScanCache: AssetFileCache.fromSnapshot(data.projectScanCache)
   })
 
   // Per-adapter progress + cumulative partials drive the live scan UI (P4.6);
@@ -39,7 +40,8 @@ async function run(): Promise<void> {
       scanResult,
       sources,
       projectCandidates,
-      sessionCache: scanner.getSessionCacheSnapshot()
+      sessionCache: scanner.getSessionCacheSnapshot(),
+      projectScanCache: scanner.getProjectScanCacheSnapshot()
     }
   })
 }

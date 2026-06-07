@@ -39,6 +39,9 @@ test.beforeEach(async ({ browserName: _browserName }, testInfo) => {
     mkdirSync(join(dir, '.git'), { recursive: true })
     writeFileSync(join(dir, 'AGENTS.md'), `# ${dir} conventions\nbody`)
   }
+  // A capability (skill) in bravo — global must show it, project scope must filter it.
+  mkdirSync(join(bravoDir, '.claude', 'skills', 'bravoskill'), { recursive: true })
+  writeFileSync(join(bravoDir, '.claude', 'skills', 'bravoskill', 'SKILL.md'), '---\nname: bravoskill\n---\nBravo capability')
   writeCodexSession(sessionsDir, 'alpha-session', alphaDir)
   writeCodexSession(sessionsDir, 'bravo-session', bravoDir)
 
@@ -68,9 +71,14 @@ test('global scope shallow-indexes every project; project scope filters to one',
   expect(await searchPaths('alpha')).toContain(normalize(join(alphaDir, 'AGENTS.md')))
   expect(await searchPaths('bravo')).toContain(normalize(join(bravoDir, 'AGENTS.md')))
 
-  // Switching to project alpha filters the other project's convention OUT.
+  // Global also shows other projects' CAPABILITIES (not just conventions).
+  const bravoSkill = normalize(join(bravoDir, '.claude', 'skills', 'bravoskill', 'SKILL.md'))
+  await expect.poll(() => searchPaths('bravoskill')).toContain(bravoSkill)
+
+  // Switching to project alpha filters bravo's convention AND capability OUT.
   await setProjectScope(alphaDir)
   await expect.poll(() => searchPaths('bravo')).not.toContain(normalize(join(bravoDir, 'AGENTS.md')))
+  expect(await searchPaths('bravoskill')).not.toContain(bravoSkill)
   expect(await searchPaths('alpha')).toContain(normalize(join(alphaDir, 'AGENTS.md')))
 })
 

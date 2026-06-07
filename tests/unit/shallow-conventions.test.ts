@@ -2,7 +2,9 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 import * as fs from 'fs'
 import * as os from 'os'
 import * as path from 'path'
-import { scanShallowConventions } from '../../src/main/engine/shallow-conventions'
+import type { Asset } from '../../src/shared/types/asset'
+import { scanProjectCapabilities, scanShallowConventions } from '../../src/main/engine/shallow-conventions'
+import { AssetFileCache } from '../../src/main/engine/assets/file-cache'
 import { dedupePathKey } from '../../src/shared/asset-dedupe'
 
 // GH-113 T3b: the global scope shows every session-derived project's ROOT
@@ -60,5 +62,55 @@ describe('scanShallowConventions', () => {
     } finally {
       fs.rmSync(empty, { recursive: true, force: true })
     }
+  })
+})
+
+// GH-113: global = all capabilities — a non-active project's skills/mcp/hooks/...
+// are owner-tagged so global shows them and project mode filters.
+describe('scanProjectCapabilities', () => {
+  let dir: string
+
+  beforeAll(() => {
+    dir = fs.mkdtempSync(path.join(os.tmpdir(), 'berth-cap-'))
+    fs.mkdirSync(path.join(dir, '.claude', 'skills', 'demo'), { recursive: true })
+    fs.writeFileSync(path.join(dir, '.claude', 'skills', 'demo', 'SKILL.md'), '---\nname: demo-skill\n---\nbody')
+    fs.writeFileSync(
+      path.join(dir, '.claude', 'settings.json'),
+      JSON.stringify({
+        mcpServers: { gh: { command: 'x' } },
+        hooks: { PreToolUse: [{ matcher: 'Bash', hooks: [{ type: 'command', command: 'echo a' }] }] }
+      })
+    )
+  })
+
+  afterAll(() => {
+    fs.rmSync(dir, { recursive: true, force: true })
+  })
+
+  it('scans skills/mcp/hooks, owner-tagged + scanDepth shallow + project scope', () => {
+    const assets = scanProjectCapabilities(dir)
+    const types = new Set(assets.map((a) => a.type))
+    expect(types.has('skill')).toBe(true)
+    expect(types.has('mcp-server')).toBe(true)
+    expect(types.has('hook')).toBe(true)
+    expect(assets.every((a) => a.meta.projectPath === dir && a.meta.scanDepth === 'shallow')).toBe(true)
+    expect(assets.every((a) => a.scope === 'project')).toBe(true)
+  })
+
+  it('returns nothing for a project without capabilities', () => {
+    const empty = fs.mkdtempSync(path.join(os.tmpdir(), 'berth-cap-empty-'))
+    try {
+      expect(scanProjectCapabilities(empty)).toEqual([])
+    } finally {
+      fs.rmSync(empty, { recursive: true, force: true })
+    }
+  })
+
+  it('reuses the fingerprint cache across scans (perf) and stays consistent', () => {
+    const cache = new AssetFileCache<Asset[]>()
+    const first = scanProjectCapabilities(dir, cache)
+    const second = scanProjectCapabilities(dir, cache)
+    expect(second.map((a) => a.id).sort()).toEqual(first.map((a) => a.id).sort())
+    expect(cache.toSnapshot().entries.length).toBeGreaterThan(0)
   })
 })

@@ -9,7 +9,7 @@ import { createAgentAdapters, type AgentAdapterRegistryOptions } from '../agent-
 import { projectScopeCandidatesFromAssets } from '../project-scope'
 import { resolveProjectConfigRoots } from '../project-config-roots'
 import { AssetFileCache, type AssetFileCacheSnapshot } from './assets/file-cache'
-import { scanShallowConventions } from './shallow-conventions'
+import { scanProjectCapabilities, scanShallowConventions } from './shallow-conventions'
 
 interface HookEquivalentSource {
   id: string
@@ -23,6 +23,9 @@ interface HookEquivalentSource {
 
 interface AssetScannerOptions {
   sessionCache?: AssetFileCache<Asset>
+  /** Fingerprint cache for background-project capability files — skips re-parsing
+   * unchanged configs across scans so indexing many projects stays cheap. (GH-113) */
+  projectScanCache?: AssetFileCache<Asset[]>
   adapterRegistry?: Omit<AgentAdapterRegistryOptions, 'sessionCache'>
 }
 
@@ -46,10 +49,12 @@ export class AssetScanner {
   private scanPromise: Promise<ScanResult> | null = null
   private readonly projectDir?: string
   private readonly sessionCache: AssetFileCache<Asset>
+  private readonly projectScanCache: AssetFileCache<Asset[]>
 
   constructor(projectDir?: string, options: AssetScannerOptions = {}) {
     this.projectDir = projectDir
     this.sessionCache = options.sessionCache ?? new AssetFileCache<Asset>()
+    this.projectScanCache = options.projectScanCache ?? new AssetFileCache<Asset[]>()
     this.adapters = createAgentAdapters(projectDir, {
       ...options.adapterRegistry,
       sessionCache: this.sessionCache
@@ -156,6 +161,10 @@ export class AssetScanner {
 
   getSessionCacheSnapshot(): AssetFileCacheSnapshot<Asset> {
     return this.sessionCache.toSnapshot()
+  }
+
+  getProjectScanCacheSnapshot(): AssetFileCacheSnapshot<Asset[]> {
+    return this.projectScanCache.toSnapshot()
   }
 
   hasScanned(): boolean {
@@ -268,7 +277,7 @@ export class AssetScanner {
       if (!rootKey || rootKey === activeRootKey || seen.has(rootKey)) continue
       seen.add(rootKey)
       if (!fs.existsSync(root)) continue
-      shallow.push(...scanShallowConventions(root))
+      shallow.push(...scanShallowConventions(root), ...scanProjectCapabilities(root, this.projectScanCache))
     }
     return shallow.length > 0 ? [...assets, ...shallow] : assets
   }
