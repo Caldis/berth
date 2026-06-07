@@ -51,25 +51,26 @@ const SHALLOW_SOURCES: ShallowConventionSource[] = [
  * `meta.projectPath=<owner>` so scope filtering attributes it to the right project
  * (and a deep rescan replaces it by stable key when that project is selected — T4).
  */
-export function scanShallowConventions(projectDir: string): Asset[] {
+export function scanShallowConventions(projectDir: string, cache?: AssetFileCache<Asset[]>): Asset[] {
   const assets: Asset[] = []
   for (const source of SHALLOW_SOURCES) {
     const filePath = path.join(projectDir, source.file)
     if (!fs.existsSync(filePath)) continue
-    let asset: Asset
     try {
-      asset = source.parse(filePath, 'project')
+      const produce = (): Asset[] => {
+        const asset = source.parse(filePath, 'project')
+        asset.meta = {
+          ...asset.meta,
+          scanDepth: 'shallow',
+          projectPath: projectDir,
+          ...(source.sharedReaders ? { readByAgentIds: SHARED_AGENT_READERS } : {})
+        }
+        return [asset]
+      }
+      assets.push(...(cache ? cache.getOrParse(filePath, produce) : produce()))
     } catch {
       // A convention file we cannot read is simply absent from the shallow index.
-      continue
     }
-    asset.meta = {
-      ...asset.meta,
-      scanDepth: 'shallow',
-      projectPath: projectDir,
-      ...(source.sharedReaders ? { readByAgentIds: SHARED_AGENT_READERS } : {})
-    }
-    assets.push(asset)
   }
   return assets
 }

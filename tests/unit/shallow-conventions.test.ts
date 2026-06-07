@@ -63,6 +63,14 @@ describe('scanShallowConventions', () => {
       fs.rmSync(empty, { recursive: true, force: true })
     }
   })
+
+  it('reuses the fingerprint cache across scans (perf)', () => {
+    const cache = new AssetFileCache<Asset[]>()
+    const first = scanShallowConventions(dir, cache)
+    const second = scanShallowConventions(dir, cache)
+    expect(second.map((a) => a.id).sort()).toEqual(first.map((a) => a.id).sort())
+    expect(cache.toSnapshot().entries.length).toBeGreaterThan(0)
+  })
 })
 
 // GH-113: global = all capabilities — a non-active project's skills/mcp/hooks/...

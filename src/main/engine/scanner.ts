@@ -277,7 +277,10 @@ export class AssetScanner {
       if (!rootKey || rootKey === activeRootKey || seen.has(rootKey)) continue
       seen.add(rootKey)
       if (!fs.existsSync(root)) continue
-      shallow.push(...scanShallowConventions(root), ...scanProjectCapabilities(root, this.projectScanCache))
+      shallow.push(
+        ...scanShallowConventions(root, this.projectScanCache),
+        ...scanProjectCapabilities(root, this.projectScanCache)
+      )
     }
     return shallow.length > 0 ? [...assets, ...shallow] : assets
   }
