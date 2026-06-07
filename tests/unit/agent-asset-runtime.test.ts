@@ -294,40 +294,53 @@ describe('AgentAssetRuntime', () => {
     expect(scanner.scanAll).toHaveBeenCalledTimes(1) // no rescan on scope change
   })
 
-  it('scopes project-mode search to the selected project (no cross-project leak)', async () => {
-    // GH-113 T2: server-side search must reuse the SAME scope predicate as the
-    // list (shared assetMatchesAppScope). Project mode previously returned every
-    // asset, leaking other projects' rows once the snapshot holds >1 project.
-    const projectSkill = (id: string, projectPath: string): Asset => ({
+  it('filters cross-project sessions from project-mode search but keeps project assets visible', async () => {
+    // GH-113 T2: sessions are the one asset type that is global-across-projects
+    // in every per-project snapshot, so project-mode search must filter them to
+    // the selected project (no leak). Project-scoped assets — including those
+    // inherited from the repo root via the .git chain — must stay visible, since
+    // a per-project snapshot already contains only the active project's chain.
+    const session = (id: string, projectPath: string): Asset => ({
       id,
+      agentId: 'codex',
+      category: 'state',
+      type: 'session',
+      scope: 'session',
+      name: id,
+      path: `/tmp/${id}.jsonl`,
+      meta: { projectPath }
+    })
+    const projectSkill: Asset = {
+      id: 'review-skill',
       agentId: 'claude-code',
       category: 'instruction',
       type: 'skill',
       scope: 'project',
-      name: id,
-      path: `/x/${id}.md`,
-      meta: { projectPath }
-    })
+      name: 'review-skill',
+      path: '/x/review-skill.md',
+      meta: {}
+    }
     const scanner = createScanner({
-      assets: [projectSkill('review-berth', '/repo/berth'), projectSkill('review-other', '/repo/other')],
+      assets: [session('review-berth', '/repo/berth'), session('review-other', '/repo/other'), projectSkill],
       stats: emptyStats,
       errors: []
     })
     const runtime = createRuntime(scanner)
     await runtime.refresh({ reason: 'startup', wait: true })
 
-    // Global: both projects' assets are searchable.
+    // Global: both sessions and the project skill are searchable.
     const globalResults = await runtime.search('review')
-    expect(globalResults.map((r) => r.asset.name).sort()).toEqual(['review-berth', 'review-other'])
+    expect(globalResults.map((r) => r.asset.name).sort()).toEqual(['review-berth', 'review-other', 'review-skill'])
 
-    // Project scope: only the selected project's asset, no rescan.
+    // Project scope: the other project's session is filtered out; the active
+    // project's session AND the project skill stay visible. No rescan.
     runtime.setScopeSelection({
       mode: 'project',
       projectPath: '/repo/berth',
       projectPathKey: normalizeProjectPathKey('/repo/berth')
     })
     const projectResults = await runtime.search('review')
-    expect(projectResults.map((r) => r.asset.name)).toEqual(['review-berth'])
+    expect(projectResults.map((r) => r.asset.name).sort()).toEqual(['review-berth', 'review-skill'])
     expect(scanner.scanAll).toHaveBeenCalledTimes(1)
   })
 
