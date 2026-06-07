@@ -82,7 +82,7 @@ vi.mock('react-virtuoso', async () => {
   return { GroupedVirtuoso }
 })
 
-function skillAsset(id: string, scope: Asset['scope'], path: string): Asset {
+function skillAsset(id: string, scope: Asset['scope'], path: string, projectPath?: string): Asset {
   return {
     id,
     agentId: 'codex',
@@ -92,7 +92,9 @@ function skillAsset(id: string, scope: Asset['scope'], path: string): Asset {
     name: id,
     path,
     meta: {
-      description: `${id} description`
+      description: `${id} description`,
+      // Cross-project assets carry an explicit owner under the GH-113 T3 model.
+      ...(projectPath ? { projectPath } : {})
     }
   }
 }
@@ -145,7 +147,7 @@ describe('Instructions guidance surfaces', () => {
       assets: [
         skillAsset('User skill', 'user', 'C:/Users/mail/.codex/skills/user/SKILL.md'),
         skillAsset('Project skill', 'project', 'D:/Code/berth/.agents/skills/project/SKILL.md'),
-        skillAsset('Other project skill', 'project', 'D:/Code/other/.agents/skills/project/SKILL.md')
+        skillAsset('Other project skill', 'project', 'D:/Code/other/.agents/skills/project/SKILL.md', 'D:/Code/other')
       ],
       agentView: 'all'
     })

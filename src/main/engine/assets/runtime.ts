@@ -89,22 +89,6 @@ class SnapshotSelectorCache implements AssetSelectorCache {
   }
 }
 
-/**
- * Scope predicate for server-side reads (search) in the current per-project
- * snapshot architecture. A project-mode snapshot already holds only the active
- * project's project-scoped assets (its full inheritance chain), so those — plus
- * user/enterprise — pass through unfiltered. Sessions are the exception: every
- * project's sessions live in every snapshot, so in non-global modes they must be
- * filtered to the selected scope (via the shared assetMatchesAppScope) to avoid
- * cross-project leakage. Owner-based filtering of project-scoped assets lands
- * with the global multi-project snapshot in T3. (GH-113 T2)
- */
-function searchScopeAllows(asset: Asset, selection: AppScopeSelection): boolean {
-  if (selection.mode === 'user') return asset.scope === 'user' || asset.scope === 'enterprise'
-  if (asset.type === 'session') return assetMatchesAppScope(asset, selection)
-  return true
-}
-
 /** Stable per-project cache key (normalized; empty for no/global project). */
 function projectKey(projectDir?: string): string {
   return projectDir ? normalizeProjectPathKey(projectDir) : ''
@@ -277,10 +261,14 @@ export class AgentAssetRuntime {
     const snapshot = await this.ensureReady({ reason: 'manual' })
     const sel = this.scopeSelection
     const scopeKey = sel.mode === 'project' ? `project:${sel.projectPathKey}` : sel.mode
+    // Server-side search honors the SAME scope predicate as the rendered list
+    // (shared assetMatchesAppScope). With owner-tagged cross-project assets, this
+    // filters project mode to the active project (incl. inheritance chain) without
+    // leaking shallow-indexed other projects. (GH-113 T3)
     return this.select(`search:${scopeKey}:${query}`, () =>
       getSearch()
         .search(query, snapshot.assets)
-        .filter((result) => searchScopeAllows(result.asset, sel))
+        .filter((result) => assetMatchesAppScope(result.asset, sel))
     )
   }
 

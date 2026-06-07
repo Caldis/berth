@@ -57,19 +57,28 @@ describe('project scope helpers', () => {
     })).toBe('D:/Code/berth')
   })
 
-  it('matches project assets by explicit projectPath or file path containment', () => {
+  it('matches project assets by explicit owner; un-owned project assets belong to the active project', () => {
+    // Explicit owner (sessions + shallow-indexed conventions) → match by projectPath.
     expect(assetMatchesProjectPath(
       asset('explicit', 'session', 'C:/Users/test/session.jsonl', { projectPath: 'D:/Code/berth' }, 'session'),
       'd:/code/berth/'
     )).toBe(true)
+    // A cross-project asset carries an explicit owner → excluded for another project.
     expect(assetMatchesProjectPath(
-      asset('contained', 'project', 'D:/Code/berth/.agents/skills/demo/SKILL.md'),
-      'D:/Code/berth'
-    )).toBe(true)
-    expect(assetMatchesProjectPath(
-      asset('other', 'project', 'D:/Code/other/.agents/skills/demo/SKILL.md'),
+      asset('other', 'project', 'D:/Code/other/.agents/skills/demo/SKILL.md', { projectPath: 'D:/Code/other' }),
       'D:/Code/berth'
     )).toBe(false)
+    // An un-owned project asset was scanned as part of the ACTIVE project's
+    // snapshot (its full inheritance chain, possibly rooted above the selected
+    // subdir), so it belongs to the active project. (GH-113 T3)
+    expect(assetMatchesProjectPath(
+      asset('inherited', 'project', 'D:/Code/berth/AGENTS.md'),
+      'D:/Code/berth/packages/app'
+    )).toBe(true)
+    expect(assetMatchesProjectPath(
+      asset('active', 'project', 'D:/Code/berth/.agents/skills/demo/SKILL.md'),
+      'D:/Code/berth'
+    )).toBe(true)
   })
 
   it('filters assets by application scope', () => {
@@ -77,7 +86,7 @@ describe('project scope helpers', () => {
       asset('enterprise', 'enterprise', 'C:/ProgramData/Claude/managed.json'),
       asset('user', 'user', 'C:/Users/mail/.codex/config.toml'),
       asset('project-match', 'project', 'D:/Code/berth/.codex/config.toml'),
-      asset('project-other', 'project', 'D:/Code/other/.codex/config.toml'),
+      asset('project-other', 'project', 'D:/Code/other/.codex/config.toml', { projectPath: 'D:/Code/other' }),
       asset('session-match', 'session', 'C:/Users/mail/.codex/sessions/1.jsonl', { projectPath: 'D:/Code/berth' }, 'session')
     ]
 

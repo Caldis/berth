@@ -72,7 +72,12 @@ export function assetMatchesProjectPath(asset: Asset, projectPath: string | unde
   if (!projectPath) return true
   const explicitProjectPath = assetProjectPath(asset)
   if (explicitProjectPath) return sameProjectPath(explicitProjectPath, projectPath)
-  return asset.scope === 'project' && pathIsInsideProject(asset.path, projectPath)
+  // No explicit owner: a project-scoped asset without a recorded `projectPath`
+  // was scanned as part of the ACTIVE project's snapshot — including inheritance
+  // chain configs rooted ABOVE a selected subdir (path containment would wrongly
+  // exclude those). Cross-project assets (shallow-indexed other projects) always
+  // carry an explicit `projectPath` and are matched above. (GH-113 T3)
+  return asset.scope === 'project'
 }
 
 export function assetMatchesAppScope(asset: Asset, selection: AppScopeSelection): boolean {
@@ -145,13 +150,6 @@ function isWindowsLikePath(projectPath: string): boolean {
 function projectNameFromPath(projectPath: string): string {
   const parts = normalizeProjectPath(projectPath).split('/').filter(Boolean)
   return parts[parts.length - 1] || projectPath
-}
-
-function pathIsInsideProject(assetPath: string, projectPath: string): boolean {
-  const assetPathKey = normalizeProjectPathKey(assetPath)
-  const projectPathKey = normalizeProjectPathKey(projectPath)
-  if (!assetPathKey || !projectPathKey) return false
-  return assetPathKey === projectPathKey || assetPathKey.startsWith(`${projectPathKey}/`)
 }
 
 function uniqueSources(sources: ProjectScopeCandidateSource[]): ProjectScopeCandidateSource[] {

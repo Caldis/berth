@@ -26,7 +26,13 @@ function hookAsset(): Asset {
   }
 }
 
-function scopedHookAsset(id: string, scope: Asset['scope'], path: string, command: string): Asset {
+function scopedHookAsset(
+  id: string,
+  scope: Asset['scope'],
+  path: string,
+  command: string,
+  projectPath?: string
+): Asset {
   return {
     id,
     agentId: 'codex',
@@ -37,7 +43,9 @@ function scopedHookAsset(id: string, scope: Asset['scope'], path: string, comman
     path,
     meta: {
       eventType: 'Stop',
-      command
+      command,
+      // Cross-project assets carry an explicit owner under the GH-113 T3 model.
+      ...(projectPath ? { projectPath } : {})
     }
   }
 }
@@ -231,7 +239,7 @@ describe('Capabilities guidance surfaces', () => {
       assets: [
         scopedHookAsset('user-hook', 'user', 'C:/Users/mail/.codex/hooks.json', 'pwsh user-hook.ps1'),
         scopedHookAsset('project-hook', 'project', 'D:/Code/berth/.codex/hooks.json', 'pwsh project-hook.ps1'),
-        scopedHookAsset('other-project-hook', 'project', 'D:/Code/other/.codex/hooks.json', 'pwsh other-hook.ps1')
+        scopedHookAsset('other-project-hook', 'project', 'D:/Code/other/.codex/hooks.json', 'pwsh other-hook.ps1', 'D:/Code/other')
       ],
       agentView: 'all'
     })
