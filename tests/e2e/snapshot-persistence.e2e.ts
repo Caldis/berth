@@ -17,7 +17,7 @@ async function launch(): Promise<ElectronApplication> {
   })
 }
 
-test('persists the snapshot on scan and cold-starts from it on relaunch', async ({}, info) => {
+test('persists the snapshot on scan and cold-starts from it on relaunch', async ({ browserName: _b }, info) => {
   tempDir = info.outputPath('snap-persist')
   userDataDir = join(tempDir, 'user-data')
   const sessionsDir = join(tempDir, 'codex-home', 'sessions')
