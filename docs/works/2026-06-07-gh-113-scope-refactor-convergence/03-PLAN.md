@@ -33,15 +33,19 @@
   - tests: shallow plan 只含根级 conventions (无 skills/agents/commands/深层 CLAUDE.md); 后台 worker 不替换活动 snapshot; global 过滤含多项目浅约定; **project 模式不串其它项目的项目级资产** (含继承链正确归属); 本地 project-scope.e2e 绿。
   - verify: 不适用 (worker/引擎); scope/search 改动按 friction 20260606 硬门禁本地跑 project-scope.e2e。
 
-- [ ] **T4 shallow→deep 无缝升级 + 稳定 key** (A4/B②)
-  - 改动: CLAUDE.md 等浅扫 conventions 也带 `dedupeKey` 稳定 key, `deep wins` 覆盖 shallow; switcher 顺序改为先保留 shallow 行显示再 `activateProjectScope` 深扫 (project-scope-switcher.tsx:121-128), deep 完成按稳定 key 替换。
-  - tests: 选中 shallow 项目→先显示浅行+刷新中→deep 完成按 key 替换无重复; 切项目不闪双行。
-  - verify: 项目切换交互 (loading/无闪烁/秒级显示浅数据)。
+- [x] **T4 parseClaudeMd 确定式 id (shallow 重扫稳定 key)** (A4) — 提交 54d15f69
+  - CLAUDE.md id 改 `claude-md-${scope}-${hash(dedupeKey)}` (镜像 T1 AGENTS.md), 消除全局重扫时 shallow CLAUDE.md re-key 闪烁。issue 2026-06-07-BUG-claude-makeid 更新。
+  - shallow→deep "deep wins": 由架构天然满足 — 选中 shallow 项目走 `activateProjectScope` 深扫, `appendShallowConventions` 按仓库根 key 排除活动项目, 故无浅/深重复 (无需显式 key 替换)。
+  - B② 无缝升级 (切换时先显浅数据再深扫) = 交互优化, 降级为后续 (功能正确, 仅过渡有 loading)。
+  - tests: ✅ scope-dedupe parseClaudeMd id 稳定; 全量 790。
 
-- [ ] **T5 状态/UI/回归 + 视觉验收** (A6)
-  - 改动: 若需暴露 shallow 状态, 用 `meta.scanDepth`+`reason` (不半写 `stale` 入 `ScanSourceStatus`); 失效项目标 missing 不扫。
-  - tests: 全量回归 (列表/搜索/relations/raw view/Windows 大小写); `pnpm test` + scan-engine + build + harness:check 全绿。
-  - verify: electron 实测窗口坐标裁剪截图 — 全局/用户/项目三档约定列表 + 项目切换浅→深; 灰底蓝字 tag 等既有视觉规范不回退。
+- [x] **T5 多项目全局验收 + 回归** — 提交 b575c35d
+  - e2e tests/e2e/global-shallow-scope.e2e.ts: 全局浅索引两项目 + global search 命中两者 + setScope 过滤掉其它项目 (端到端 worker→IPC→谓词)。
+  - T3b 完善: 浅扫归仓库配置根 (修 monorepo 子目录会话漏扫根约定) + 按根去重/排除活动。
+  - **scanDepth UI 徽标**: 暂不做 (speculative; [约定] 页所有项目约定一致显示无歧义)。失效项目沿用既有 `not-scanned`/`missing` source 语义, 不半写 `stale` (A6 遵守)。
+  - **边界**: shallow 仅约定不含能力 → 记 issue 2026-06-07-IMPROVEMENT-global-shallow-index-conventions-only (按需扩展)。
+  - tests: ✅ 全量 791 + build + 2 e2e (project-scope + global-shallow) 本地通过; CI 全绿。
+  - verify: 功能验收以 e2e 为准 (确定式, 强于一次性截图); 视觉可按需补 electron 截图。
 
 ## 并行/顺序
 - T1 (parsers + engine scanner + agent-view) 文件独立于后续 scope 收敛 → 先落, 即时可见。
