@@ -8,13 +8,9 @@ import {
 } from '@shared/token-usage'
 import { buildHookHash, buildHookKey, buildHookScenarioHash } from '@shared/hook-identity'
 import { assetEntityId, dedupePathKey } from '@shared/asset-dedupe'
+import { normalizeProjectPathKey } from '@shared/scope'
 import { extractCommandEntryPaths } from '../command-entry-paths'
 import type { Asset, AssetScope } from '../types'
-
-let _nextId = 0
-function makeId(type: string): string {
-  return `${type}-${Date.now()}-${_nextId++}`
-}
 
 // ---------------------------------------------------------------------------
 // Markdown instruction files (CLAUDE.md, AGENTS.md)
@@ -88,7 +84,7 @@ export function parseSkill(filePath: string, scope: AssetScope): Asset {
   const raw = fs.readFileSync(filePath, 'utf-8')
   const { frontmatter, body } = splitFrontmatter(raw)
   return {
-    id: makeId('skill'),
+    id: assetEntityId('skill', scope, filePath),
     agentId: 'claude-code',
     category: 'instruction',
     type: 'skill',
@@ -116,7 +112,7 @@ export function parseAgent(filePath: string, scope: AssetScope): Asset {
       bodyLength: body.length
     }
     return {
-      id: makeId('agent'),
+      id: assetEntityId('agent', scope, filePath),
       agentId: 'claude-code',
       category: 'instruction',
       type: 'agent',
@@ -135,7 +131,7 @@ export function parseAgent(filePath: string, scope: AssetScope): Asset {
     // malformed yaml — still return the asset with empty meta
   }
   return {
-    id: makeId('agent'),
+    id: assetEntityId('agent', scope, filePath),
     agentId: 'claude-code',
     category: 'instruction',
     type: 'agent',
@@ -154,7 +150,7 @@ export function parseCommand(filePath: string, scope: AssetScope): Asset {
   const raw = fs.readFileSync(filePath, 'utf-8')
   const name = path.basename(filePath, path.extname(filePath))
   return {
-    id: makeId('command'),
+    id: assetEntityId('command', scope, filePath),
     agentId: 'claude-code',
     category: 'instruction',
     type: 'command',
@@ -174,7 +170,7 @@ export function parseOutputMode(filePath: string, scope: AssetScope): Asset {
   const raw = fs.readFileSync(filePath, 'utf-8')
   const name = path.basename(filePath, path.extname(filePath))
   return {
-    id: makeId('output-mode'),
+    id: assetEntityId('output-mode', scope, filePath),
     agentId: 'claude-code',
     category: 'instruction',
     type: 'output-mode',
@@ -208,7 +204,7 @@ export function parseMcpServers(
   const servers = config.mcpServers ?? {}
   for (const [name, serverConfig] of Object.entries(servers)) {
     assets.push({
-      id: makeId('mcp-server'),
+      id: assetEntityId('mcp-server', scope, filePath, name),
       agentId: 'claude-code',
       category: 'capability',
       type: 'mcp-server',
@@ -239,7 +235,7 @@ export function parseClaudeJsonProjectMcp(filePath: string): Asset[] {
     const servers = projectConfig?.mcpServers ?? {}
     for (const [name, serverConfig] of Object.entries(servers)) {
       assets.push({
-        id: makeId('mcp-server'),
+        id: assetEntityId('mcp-server', 'project', filePath, `${normalizeProjectPathKey(projectPath)}:${name}`),
         agentId: 'claude-code',
         category: 'capability',
         type: 'mcp-server',
@@ -324,7 +320,7 @@ export function parseHooks(filePath: string, scope: AssetScope, options: ParseHo
             return
           }
           assets.set(assetKey, {
-            id: makeId('hook'),
+            id: assetEntityId('hook', scope, filePath, `${scenarioHash}:${hookHash}`),
             agentId: 'claude-code',
             category: 'capability',
             type: 'hook',
@@ -396,7 +392,7 @@ function appendDisabledClaudeHooks(
     const hookType = readString(entry.hook, 'type') ?? (command ? 'command' : 'unknown')
     const entryPaths = command ? extractCommandEntryPaths(entry.sourcePath, command, { scope }) : []
     assets.set(assetKey, {
-      id: makeId('hook'),
+      id: assetEntityId('hook', scope, entry.sourcePath, `${scenarioHash}:${hookHash}`),
       agentId: 'claude-code',
       category: 'capability',
       type: 'hook',
@@ -530,7 +526,7 @@ export function parsePermissions(filePath: string, scope: AssetScope): Asset[] {
   const perms = settings.permissions
   if (perms.allow && perms.allow.length > 0) {
     assets.push({
-      id: makeId('permission'),
+      id: assetEntityId('permission', scope, filePath, 'allow'),
       agentId: 'claude-code',
       category: 'capability',
       type: 'permission',
@@ -542,7 +538,7 @@ export function parsePermissions(filePath: string, scope: AssetScope): Asset[] {
   }
   if (perms.deny && perms.deny.length > 0) {
     assets.push({
-      id: makeId('permission'),
+      id: assetEntityId('permission', scope, filePath, 'deny'),
       agentId: 'claude-code',
       category: 'capability',
       type: 'permission',
@@ -564,7 +560,7 @@ export function parseEnv(filePath: string, scope: AssetScope): Asset[] {
   if (!settings?.env || Object.keys(settings.env).length === 0) return []
   return [
     {
-      id: makeId('env'),
+      id: assetEntityId('env', scope, filePath, 'env'),
       agentId: 'claude-code',
       category: 'capability',
       type: 'env',
@@ -621,7 +617,7 @@ function parseStatuslineSetting(
   const entryPaths = command ? extractCommandEntryPaths(filePath, command, { scope }) : []
 
   return {
-    id: makeId('statusline'),
+    id: assetEntityId('statusline', scope, filePath, settingKey),
     agentId: 'claude-code',
     category: 'capability',
     type: 'statusline',
@@ -662,7 +658,7 @@ export function parsePlugin(filePath: string): Asset {
     }
   }
   return {
-    id: makeId('plugin'),
+    id: assetEntityId('plugin', 'user', filePath),
     agentId: 'claude-code',
     category: 'capability',
     type: 'plugin',
@@ -680,7 +676,7 @@ export function parsePlugin(filePath: string): Asset {
 export function parseStatusline(filePath: string, scope: AssetScope): Asset {
   const raw = readRawFile(filePath)
   return {
-    id: makeId('statusline'),
+    id: assetEntityId('statusline', scope, filePath, 'legacy'),
     agentId: 'claude-code',
     category: 'capability',
     type: 'statusline',
@@ -869,7 +865,7 @@ export function parsePlan(filePath: string): Asset {
   const raw = fs.readFileSync(filePath, 'utf-8')
   const name = path.basename(filePath, path.extname(filePath))
   return {
-    id: makeId('plan'),
+    id: assetEntityId('plan', 'user', filePath),
     agentId: 'claude-code',
     category: 'state',
     type: 'plan',
@@ -889,7 +885,7 @@ export function parseTodo(filePath: string): Asset {
   const raw = fs.readFileSync(filePath, 'utf-8')
   const name = path.basename(filePath, path.extname(filePath))
   return {
-    id: makeId('todo'),
+    id: assetEntityId('todo', 'user', filePath),
     agentId: 'claude-code',
     category: 'state',
     type: 'todo',
@@ -914,7 +910,7 @@ export function parseHistory(filePath: string): Asset {
     // ignore
   }
   return {
-    id: makeId('history'),
+    id: assetEntityId('history', 'user', filePath),
     agentId: 'claude-code',
     category: 'state',
     type: 'history',
@@ -937,7 +933,7 @@ export function parseStatsCache(filePath: string): Asset {
     // ignore
   }
   return {
-    id: makeId('stats-cache'),
+    id: assetEntityId('stats-cache', 'user', filePath),
     agentId: 'claude-code',
     category: 'observability',
     type: 'stats-cache',
@@ -961,7 +957,7 @@ export function parseUsageData(filePath: string): Asset {
   }
   const name = path.basename(filePath, path.extname(filePath))
   return {
-    id: makeId('usage-data'),
+    id: assetEntityId('usage-data', 'user', filePath),
     agentId: 'claude-code',
     category: 'observability',
     type: 'usage-data',
@@ -984,7 +980,7 @@ export function parseIdeLock(filePath: string): Asset {
     // ignore
   }
   return {
-    id: makeId('ide-lock'),
+    id: assetEntityId('ide-lock', 'user', filePath),
     agentId: 'claude-code',
     category: 'integration',
     type: 'ide-lock',
@@ -1001,7 +997,7 @@ export function parseIdeLock(filePath: string): Asset {
 
 export function parseCredential(filePath: string): Asset {
   return {
-    id: makeId('credential'),
+    id: assetEntityId('credential', 'user', filePath),
     agentId: 'claude-code',
     category: 'integration',
     type: 'credential',

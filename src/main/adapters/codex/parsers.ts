@@ -4,7 +4,7 @@ import * as yaml from 'js-yaml'
 import { parse as parseToml } from 'smol-toml'
 import { emptyTokenUsage, normalizeTokenUsage } from '@shared/token-usage'
 import { buildHookHash, buildHookKey, buildHookScenarioHash } from '@shared/hook-identity'
-import { dedupePathKey } from '@shared/asset-dedupe'
+import { assetEntityId, dedupePathKey } from '@shared/asset-dedupe'
 import { extractCommandEntryPaths } from '../command-entry-paths'
 import type { Asset, AssetScope } from '../types'
 import type { TokenUsageBreakdown } from '@shared/types/asset'
@@ -47,7 +47,7 @@ export function parseCodexCustomAgent(filePath: string, scope: AssetScope): Asse
   const config = parseCodexToml(filePath)
   const name = readString(config, 'name') ?? path.basename(filePath, '.toml')
   return {
-    id: `codex-agent-${safeId(name)}-${hashString(filePath)}`,
+    id: assetEntityId('agent', scope, filePath),
     agentId: 'codex',
     category: 'instruction',
     type: 'agent',
@@ -80,8 +80,9 @@ export function parseCodexAgentsMd(filePath: string, scope: AssetScope): Asset {
   // Same physical file as Claude's AGENTS.md — carry the identical `dedupeKey`
   // (computed by the shared helper) so `mergeSharedConventions` collapses the two
   // rows, and record this adapter in `readByAgentIds` (GH-113 T1).
+  const sourceKey = dedupePathKey(filePath)
   return {
-    id: `codex-agents-md-${safeId(scope)}-${hashString(filePath)}`,
+    id: assetEntityId('agents-md', scope, filePath),
     agentId: 'codex',
     category: 'instruction',
     type: 'agents-md',
@@ -91,7 +92,8 @@ export function parseCodexAgentsMd(filePath: string, scope: AssetScope): Asset {
     meta: {
       imports,
       lineCount: raw.split('\n').length,
-      dedupeKey: dedupePathKey(filePath),
+      dedupeKey: sourceKey,
+      sourceKey,
       readByAgentIds: ['codex']
     },
     raw
@@ -103,7 +105,7 @@ export function parseCodexSkill(filePath: string, scope: AssetScope): Asset {
   const { frontmatter, body } = splitFrontmatter(raw)
   const skillDir = path.basename(path.dirname(filePath))
   return {
-    id: `codex-skill-${safeId((frontmatter?.name as string | undefined) ?? skillDir)}-${hashString(filePath)}`,
+    id: assetEntityId('skill', scope, filePath),
     agentId: 'codex',
     category: 'instruction',
     type: 'skill',
@@ -134,7 +136,7 @@ function parseCodexMcpServers(
   return Object.entries(servers)
     .filter(([, serverConfig]) => isRecord(serverConfig))
     .map(([name, serverConfig]) => ({
-      id: `codex-mcp-server-${safeId(name)}-${hashString(filePath)}`,
+      id: assetEntityId('mcp-server', scope, filePath, name),
       agentId: 'codex',
       category: 'capability',
       type: 'mcp-server',
@@ -207,7 +209,7 @@ function parseCodexHooks(
           return
         }
         assets.set(assetKey, {
-          id: `codex-hook-${safeId(event)}-${safeId(scenarioHash)}-${safeId(hookHash)}-${hashString(filePath)}`,
+          id: assetEntityId('hook', scope, filePath, `${scenarioHash}:${hookHash}`),
           agentId: 'codex',
           category: 'capability',
           type: 'hook',
@@ -324,7 +326,7 @@ function parseCodexStatusLine(
 
   return [
     {
-      id: `codex-statusline-${safeId(scope)}-${hashString(filePath)}`,
+      id: assetEntityId('statusline', scope, filePath, 'tui'),
       agentId: 'codex',
       category: 'capability',
       type: 'statusline',
