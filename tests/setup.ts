@@ -1,6 +1,11 @@
 import '@testing-library/jest-dom'
 import { beforeEach } from 'vitest'
 
+// jsdom does not implement scrollIntoView; stub it so focus/jump code under test runs.
+if (typeof Element !== 'undefined' && !Element.prototype.scrollIntoView) {
+  Element.prototype.scrollIntoView = function scrollIntoView(): void {}
+}
+
 const emptyTokenUsage = {
   inputTokens: 0,
   outputTokens: 0,

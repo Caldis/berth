@@ -1,5 +1,6 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useNavigate } from 'react-router-dom'
 import {
   Plug,
   Webhook,
@@ -24,7 +25,11 @@ import { LoadingState } from '@/components/shared/loading-state'
 import { DetailRow } from '@/components/shared/detail-row'
 import { WarningBanner } from '@/components/shared/warning-banner'
 import { ScopeBadge } from '@/components/shared/scope-badge'
+import { PluginOriginBadge } from '@/components/shared/plugin-origin-badge'
 import { ViewRawButton } from '@/components/shared/view-raw-button'
+import { routeForAsset } from '@/lib/asset-route'
+import { useFocusTarget, FOCUS_HIGHLIGHT_CLASS } from '@/hooks/use-focus-target'
+import { pluginOriginOf } from '@/lib/plugin-origin'
 import { HooksLifecycleView } from '@/components/capabilities/hooks-lifecycle-view'
 import { Accordion, AccordionItem, Chip } from '@/components/ui'
 import {
@@ -63,9 +68,11 @@ function normalizeCapabilityTab(value: string | undefined): string {
 }
 
 /* ---------- MCP Server card ---------- */
-function McpServerCard({ asset }: { asset: Asset }): React.ReactElement {
+function McpServerCard({ asset, focused = false }: { asset: Asset; focused?: boolean }): React.ReactElement {
   const { t } = useTranslation()
   const [expanded, setExpanded] = useState(false)
+  const cardRef = useRef<HTMLDivElement>(null)
+  const origin = pluginOriginOf(asset)
 
   const status = (asset.meta.status as string) ?? 'unknown'
   const command = (asset.meta.command as string) ?? ''
@@ -79,27 +86,45 @@ function McpServerCard({ asset }: { asset: Asset }): React.ReactElement {
       ? 'text-destructive'
       : 'text-muted-foreground'
 
+  // Jumped-to from the plugin page: scroll into view + expand.
+  useEffect(() => {
+    if (!focused) return
+    cardRef.current?.scrollIntoView({ block: 'center', behavior: 'smooth' })
+    setExpanded(true)
+  }, [focused])
+
   return (
-    <div className="rounded-lg border border-border bg-card transition-colors hover:bg-accent/5">
-      <button
-        onClick={() => setExpanded(!expanded)}
-        className="flex w-full items-center gap-3 px-4 py-3 text-left"
-      >
-        {expanded ? <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" /> : <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />}
-        <Circle className={cn('h-2.5 w-2.5 shrink-0 fill-current', statusColor)} />
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <span className="truncate text-sm font-medium text-foreground">{asset.name}</span>
-            <ScopeBadge scope={asset.scope} />
+    <div
+      ref={cardRef}
+      id={`mcp-card-${asset.id}`}
+      className={cn('rounded-lg border bg-card transition-colors hover:bg-accent/5', focused ? FOCUS_HIGHLIGHT_CLASS : 'border-border')}
+    >
+      <div className="flex items-stretch">
+        <button
+          onClick={() => setExpanded(!expanded)}
+          className="flex min-w-0 flex-1 items-center gap-3 px-4 py-3 text-left"
+        >
+          {expanded ? <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" /> : <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />}
+          <Circle className={cn('h-2.5 w-2.5 shrink-0 fill-current', statusColor)} />
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <span className="truncate text-sm font-medium text-foreground">{asset.name}</span>
+              <ScopeBadge scope={asset.scope} />
+            </div>
+            {overriddenBy && (
+              <p className="mt-0.5 text-xs text-amber-500">{t('capabilities.mcp.overriddenBy', { scope: overriddenBy })}</p>
+            )}
           </div>
-          {overriddenBy && (
-            <p className="mt-0.5 text-xs text-amber-500">{t('capabilities.mcp.overriddenBy', { scope: overriddenBy })}</p>
-          )}
-        </div>
-        <span className={cn('shrink-0 text-xs', statusColor)}>
-          {t(`capabilities.mcp.status.${status}`)}
-        </span>
-      </button>
+          <span className={cn('shrink-0 text-xs', statusColor)}>
+            {t(`capabilities.mcp.status.${status}`)}
+          </span>
+        </button>
+        {origin && (
+          <div className="flex shrink-0 items-center pr-3">
+            <PluginOriginBadge pluginId={origin.pluginId} pluginName={origin.pluginName} />
+          </div>
+        )}
+      </div>
 
       {expanded && (
         <div className="border-t border-border px-4 py-3 space-y-2">
@@ -190,8 +215,19 @@ function pluginComponentLabel(t: (key: string) => string, type: string): string 
   }
 }
 
-function PluginCard({ plugin, components }: { plugin: Asset; components: Asset[] }): React.ReactElement {
+function PluginCard({
+  plugin,
+  components,
+  focused = false
+}: {
+  plugin: Asset
+  components: Asset[]
+  focused?: boolean
+}): React.ReactElement {
   const { t } = useTranslation()
+  const navigate = useNavigate()
+  const cardRef = useRef<HTMLDivElement>(null)
+  const [openKeys, setOpenKeys] = useState<Set<string>>(new Set())
   const groups = PLUGIN_COMPONENT_TYPES.map((type) => ({
     type,
     items: components.filter((component) => component.type === type)
@@ -201,8 +237,20 @@ function PluginCard({ plugin, components }: { plugin: Asset; components: Asset[]
   const marketplace = typeof plugin.meta.marketplace === 'string' ? plugin.meta.marketplace : undefined
   const version = typeof plugin.meta.version === 'string' ? plugin.meta.version : undefined
 
+  // When jumped-to from a component page: scroll into view + expand all groups.
+  useEffect(() => {
+    if (!focused) return
+    cardRef.current?.scrollIntoView({ block: 'center', behavior: 'smooth' })
+    setOpenKeys(new Set(PLUGIN_COMPONENT_TYPES))
+  }, [focused])
+
   return (
-    <div className="rounded-lg border border-border bg-card" data-plugin-card>
+    <div
+      ref={cardRef}
+      id={`plugin-card-${plugin.id}`}
+      className={cn('rounded-lg border bg-card', focused ? FOCUS_HIGHLIGHT_CLASS : 'border-border')}
+      data-plugin-card
+    >
       <div className="flex items-center gap-3 px-4 py-3">
         <Puzzle className="h-4 w-4 shrink-0 text-purple-500" />
         <div className="min-w-0 flex-1">
@@ -224,7 +272,13 @@ function PluginCard({ plugin, components }: { plugin: Asset; components: Asset[]
 
       {groups.length > 0 ? (
         <div className="border-t border-border px-2 py-1">
-          <Accordion isCompact selectionMode="multiple" aria-label={plugin.name}>
+          <Accordion
+            isCompact
+            selectionMode="multiple"
+            aria-label={plugin.name}
+            selectedKeys={openKeys}
+            onSelectionChange={(keys) => setOpenKeys(new Set(keys as Set<string>))}
+          >
             {groups.map((group) => (
               <AccordionItem
                 key={group.type}
@@ -238,10 +292,14 @@ function PluginCard({ plugin, components }: { plugin: Asset; components: Asset[]
               >
                 <div className="space-y-1 pb-2">
                   {group.items.map((item) => (
-                    <div
+                    <button
                       key={item.id}
+                      type="button"
                       data-plugin-component
-                      className="flex items-center gap-2 rounded px-2 py-1 text-sm hover:bg-accent/5"
+                      data-testid={`plugin-component-${item.id}`}
+                      aria-label={t('plugins.jumpToComponent', { name: item.name })}
+                      onClick={() => navigate(routeForAsset(item), { state: { focusAssetId: item.id } })}
+                      className="flex w-full items-center gap-2 rounded px-2 py-1 text-left text-sm outline-none transition-colors hover:bg-accent/10 focus-visible:ring-2 focus-visible:ring-ring"
                     >
                       <span className="truncate text-foreground">{item.name}</span>
                       <span
@@ -250,7 +308,8 @@ function PluginCard({ plugin, components }: { plugin: Asset; components: Asset[]
                       >
                         {item.path}
                       </span>
-                    </div>
+                      <ChevronRight aria-hidden="true" className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                    </button>
                   ))}
                 </div>
               </AccordionItem>
@@ -876,6 +935,7 @@ export function Capabilities({ activeSection }: { activeSection?: string } = {})
   // Initial scan still in flight (empty + scanning/idle): show a skeleton, not empty.
   const snapshotLoading = assets.length === 0 && (scanning || runtimeState === 'idle')
   const { plugins } = useAgentCapabilityPlugins()
+  const { isFocused } = useFocusTarget()
   const activeTab = normalizeCapabilityTab(activeSection)
   const [search, setSearch] = useState('')
   const [scope, setScope] = useState<ScopeFilter>('all')
@@ -923,7 +983,7 @@ export function Capabilities({ activeSection }: { activeSection?: string } = {})
           <div className="space-y-3">
             <McpSummary assets={filteredAssets} />
             <div className="space-y-2">
-              {filteredAssets.map((a) => <McpServerCard key={a.id} asset={a} />)}
+              {filteredAssets.map((a) => <McpServerCard key={a.id} asset={a} focused={isFocused(a.id)} />)}
             </div>
           </div>
         )
@@ -946,7 +1006,12 @@ export function Capabilities({ activeSection }: { activeSection?: string } = {})
         return (
           <div className="space-y-2">
             {filteredAssets.map((a) => (
-              <PluginCard key={a.id} plugin={a} components={componentsByPlugin.get(a.id) ?? []} />
+              <PluginCard
+                key={a.id}
+                plugin={a}
+                components={componentsByPlugin.get(a.id) ?? []}
+                focused={isFocused(a.id)}
+              />
             ))}
           </div>
         )
