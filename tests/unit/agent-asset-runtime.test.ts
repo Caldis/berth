@@ -219,6 +219,35 @@ describe('AgentAssetRuntime', () => {
     expect(statuses.at(-1)).toBe('error')
   })
 
+  it('discards a mid-flight scan whose project was switched away (no clobber) (GH-111 R4)', async () => {
+    const deferred = createDeferred<ScanResult>()
+    const scannerA: AssetRuntimeScanner = {
+      scanAll: vi.fn(() => deferred.promise),
+      getScanSourceGroups: vi.fn(async () => []),
+      getProjectScopeCandidates: vi.fn(() => []),
+      getProjectDir: () => '/repo/berth'
+    }
+    const scannerB = createScanner({ assets: [], stats: emptyStats, errors: [] })
+    let calls = 0
+    const runtime = new AgentAssetRuntime({
+      projectDir: '/repo/berth',
+      createScanner: () => (calls++ === 0 ? scannerA : scannerB),
+      now: () => '2026-06-07T00:00:00.000Z',
+      createSnapshotId: () => 'snapshot-old'
+    })
+
+    await runtime.refresh({ reason: 'startup' }) // starts scannerA scan (in-flight)
+    runtime.setProjectDir('/other') // swaps to scannerB mid-scan
+
+    const waitForOldScan = runtime.refresh({ wait: true })
+    deferred.resolve({ assets: [sessionAsset('stale-asset')], stats: { ...emptyStats, sessions: 1 }, errors: [] })
+    await waitForOldScan
+
+    // The switched-away scan must not have committed its assets onto /other.
+    expect(runtime.getSnapshot().assets.map((a) => a.id)).not.toContain('stale-asset')
+    expect(runtime.getStatus().state).not.toBe('ready')
+  })
+
   it('keeps the last snapshot and marks it stale when a later scan fails', async () => {
     const scanner = createScanner({ assets: [sessionAsset('session-1')], stats: { ...emptyStats, sessions: 1 }, errors: [] })
     const runtime = createRuntime(scanner)

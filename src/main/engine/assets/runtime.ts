@@ -326,14 +326,22 @@ export class AgentAssetRuntime {
   }
 
   private async runRefresh(reason: AssetScanReason): Promise<void> {
+    // Capture the scanner generation. setProjectDir() can swap `this.scanner`
+    // (and serve a cached snapshot) while this scan is awaiting — committing the
+    // old scan's result afterwards would clobber the newly-selected project with
+    // stale assets. Guard every state write on the scanner still being current. (GH-111 R4)
+    const scanner = this.scanner
+    const isCurrent = (): boolean => this.scanner === scanner
     try {
-      const scanResult = await this.scanner.scanAll({
-        onProgress: (progress) => this.setProgress(progress),
-        onPartial: (partial) => this.applyPartial(partial)
+      const scanResult = await scanner.scanAll({
+        onProgress: (progress) => { if (isCurrent()) this.setProgress(progress) },
+        onPartial: (partial) => { if (isCurrent()) this.applyPartial(partial) }
       })
-      const sources = await this.scanner.getScanSourceGroups()
-      const projectCandidates = this.scanner.getProjectScopeCandidates()
-      const projectDir = this.scanner.getProjectDir() ?? this.projectDir
+      if (!isCurrent()) return
+      const sources = await scanner.getScanSourceGroups()
+      const projectCandidates = scanner.getProjectScopeCandidates()
+      const projectDir = scanner.getProjectDir() ?? this.projectDir
+      if (!isCurrent()) return
       const status: AssetRuntimeStatus = {
         state: 'ready',
         reason,
@@ -364,6 +372,9 @@ export class AgentAssetRuntime {
       // refresh() reply microtask, leaving the UI stuck at scanning (P4.6 fix).
       this.progressListener?.({ status })
     } catch (error) {
+      // A scan whose project was switched away mid-flight must not mark the
+      // newly-selected project as errored. (GH-111 R4)
+      if (!isCurrent()) return
       this.status = {
         state: 'error',
         reason,
