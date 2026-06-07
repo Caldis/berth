@@ -71,13 +71,12 @@ artifacts:
 
 ## 续跑指南 (handoff — context 重置后从这里接)
 
-**已落地 (全 CI-green, master 干净)**: 设计 (Codex 两轮 `review/scan-redesign-round*-codex.md` + 调研 `review/research-synthesis.md`) → 终版 `02-SPEC-background-indexer.md` (不变量 I1 单管线/I2 scope=过滤/I3 SQLite 真源)。增量: **Pre-T0** 全 parser 确定式 id `assetEntityId` (makeid bug 已 RESOLVED) · **可观测性 v1** (IndexHairline/IndexingInline/IndexPulse + useIndexActivity) · **T1** 快照持久化冷启 SWR (`snapshot-store.ts` + runtime restorePersistedSnapshot) · **watcher 加固** (awaitWriteFinish/atomic + 事件带 sourceKey) · **全局=全部能力** (`scanProjectCapabilities` owner-tag + 指纹缓存 worker↔main 往返)。用户核心诉求"全局=全设备所有资产"**已功能达成 + e2e 验证** (`tests/e2e/global-shallow-scope.e2e.ts`)。
+**已落地 (全 CI-green, master 干净)**: 设计 (Codex 两轮 `review/scan-redesign-round*-codex.md` + 调研 `review/research-synthesis.md`) → 终版 `02-SPEC-background-indexer.md` (不变量 I1 单管线/I2 scope=过滤/I3 SQLite 真源)。增量: **Pre-T0** 全 parser 确定式 id `assetEntityId` (makeid bug 已 RESOLVED) · **可观测性 v1** (IndexHairline/IndexingInline/IndexPulse + useIndexActivity) · **T1** 快照持久化冷启 SWR (`snapshot-store.ts` + runtime restorePersistedSnapshot) · **watcher 加固** (awaitWriteFinish/atomic + 事件带 sourceKey) · **全局=全部能力** (`scanProjectCapabilities` owner-tag + 指纹缓存 worker↔main 往返) · **SQLite 真源 I3** (行级 `SqliteSnapshotStore` drop-in 替 JSON 持久层 + main 接线 + `snapshot-persistence.e2e` 验证打包主进程 open DB; de-risk 通过, ABI 阻塞天然解除)。用户核心诉求"全局=全设备所有资产"**已功能达成 + e2e 验证** (`tests/e2e/global-shallow-scope.e2e.ts`)。
 
 **下一步 (按价值×独立性, 详见 03-PLAN V2 + 各 issue)**:
-1. **SQLite 持久真索引 (I3)** — JSON 快照 → 行级 SQLite。**起点先 de-risk**: better-sqlite3 是 Node-ABI 构建, Electron 主进程加载需 electron-rebuild + `electron.vite.config` external; e2e 探针验证打包主进程能 open DB。通过后建 `SqliteSnapshotStore implements SnapshotStore` (T1 已留好接口, drop-in)。关联 BUILD_ENV/原生模块 friction。
-2. **实时增量 (I1 单管线)** — 抽 `deriveAssetsForFile(filePath)` (派发逻辑参考 `shallow-conventions.ts` CAPABILITY_FILES/GLOBS); runtime 加 `applyFileChange(event)` 按 `sourceKey` 替换该文件资产; main 把 watcher listener 接到它 (事件已带 sourceKey) → 单文件改不再全量重扫。
-3. **可暂停/可控 + 设置档位** (用户明确要) — 需先有协作式取消基建 (worker checkpoint 轮询, 非 SAB); 最后做。
-4. 收尾: sessions/health/usage 入口统一 `assetMatchesAppScope`; per-root 完成度 (现各页 empty 态已用 LoadingState 兜底, 不误导); 设备级统一 watcher; 待全量索引稳定后收敛 `scanShallowConventions`。
+1. **实时增量写 (I1 单管线 + SQLite changeset)** — SQLite 持久层已就绪 (`source_key` 列已预留)。抽 `deriveAssetsForPath(filePath)` (派发逻辑参考 `shallow-conventions.ts` CAPABILITY_FILES/GLOBS); runtime 加 `applyFileChange(event)` 按 `sourceKey` 替换该文件资产 (DB 层 `DELETE...WHERE source_key=?` + insert 新派生); main 把 watcher listener 接到它 (事件已带 sourceKey) → 单文件改不再全量重扫。worker parse 产 changeset, **main 单 writer** 写库 (worker 跑原生模块在 Electron 有崩溃风险 electron#43513)。
+2. **可暂停/可控 + 设置档位** (用户明确要) — 需先有协作式取消基建 (worker checkpoint 轮询, 非 SAB); 最后做。
+3. 收尾: sessions/health/usage 入口统一 `assetMatchesAppScope`; per-root 完成度 (现各页 empty 态已用 LoadingState 兜底, 不误导); 设备级统一 watcher; 待全量索引稳定后收敛 `scanShallowConventions`; 老用户 JSON→SQLite 迁移 (issue 2026-06-08-IMPROVEMENT-json-to-sqlite-snapshot-migration)。
 
 **铁律**: 确定式 id 走 `assetEntityId`; scope=过滤真源 `assetMatchesAppScope`; 改 scope/search/watcher 推送前本地跑 `project-scope`+`global-shallow` e2e (friction 20260606); 提交前对**最终 staged 状态**重跑 lint+typecheck (friction 20260607 陈旧绿)。
 
