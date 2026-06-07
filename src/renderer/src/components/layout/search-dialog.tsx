@@ -11,6 +11,7 @@ import {
 } from 'lucide-react'
 import { useAppStore } from '@/stores/app'
 import { cn } from '@/lib/utils'
+import { routeForAsset } from '@/lib/asset-route'
 import { useFocusPageSearch } from './page-chrome'
 import type { Asset } from '@shared/types/asset'
 import type { SearchResult } from '@shared/types/ipc'
@@ -373,23 +374,6 @@ function SearchResultRow({ result, selected, onSelect }: SearchResultRowProps): 
       </span>
     </button>
   )
-}
-
-function routeForAsset(asset: Asset): string {
-  if (asset.type === 'session') return `/sessions/${asset.id}`
-  if (asset.type === 'usage-data' || asset.type === 'stats-cache') return '/usage'
-  if (asset.type === 'hook') return '/capabilities/hooks'
-  if (asset.type === 'mcp-server') return '/capabilities/mcp'
-  if (asset.type === 'permission') return '/capabilities/permissions'
-  if (asset.type === 'plugin') return '/capabilities/plugins'
-  if (asset.type === 'statusline') return '/capabilities/status-line'
-  if (asset.type === 'env') return '/capabilities/env'
-  if (asset.type === 'skill') return '/instructions/skills'
-  if (asset.type === 'command') return '/instructions/commands'
-  if (asset.type === 'agent') return '/instructions/subagents'
-  if (asset.type === 'output-mode') return '/instructions/output-modes'
-  if (asset.type === 'claude-md' || asset.type === 'agents-md') return '/instructions/conventions'
-  return '/'
 }
 
 function iconForAsset(asset: Asset): ComponentType<{ className?: string }> {

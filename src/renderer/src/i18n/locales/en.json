@@ -71,6 +71,11 @@
     "claude": "Claude",
     "codex": "Codex"
   },
+  "plugins": {
+    "fromPlugin": "From {{name}}",
+    "viewPlugin": "View plugin {{name}}",
+    "jumpToComponent": "Open {{name}}"
+  },
   "projectScope": {
     "label": "Project scope",
     "listLabel": "Project scope options",

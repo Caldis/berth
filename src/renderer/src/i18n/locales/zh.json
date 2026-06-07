@@ -71,6 +71,11 @@
     "claude": "Claude",
     "codex": "Codex"
   },
+  "plugins": {
+    "fromPlugin": "来自 {{name}}",
+    "viewPlugin": "查看插件 {{name}}",
+    "jumpToComponent": "打开 {{name}}"
+  },
   "projectScope": {
     "label": "项目范围",
     "listLabel": "项目范围选项",
