@@ -23,8 +23,11 @@ function makeId(type: string): string {
 export function parseClaudeMd(filePath: string, scope: AssetScope): Asset {
   const raw = fs.readFileSync(filePath, 'utf-8')
   const imports = extractAtImports(raw)
+  // Deterministic id (not `makeId()`'s `Date.now()`) so the row is stable across
+  // scans — important for shallow-indexed CLAUDE.md, which is re-scanned on every
+  // global refresh and would otherwise re-key and lose selection. (GH-113 T4)
   return {
-    id: makeId('claude-md'),
+    id: `claude-md-${scope}-${stableAssetHash(dedupePathKey(filePath))}`,
     agentId: 'claude-code',
     category: 'instruction',
     type: 'claude-md',

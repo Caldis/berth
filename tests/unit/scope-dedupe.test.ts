@@ -15,7 +15,7 @@ vi.mock('fs', async () => {
   }
 })
 
-import { parseAgentsMd } from '../../src/main/adapters/claude-code/parsers'
+import { parseAgentsMd, parseClaudeMd } from '../../src/main/adapters/claude-code/parsers'
 import { parseCodexAgentsMd } from '../../src/main/adapters/codex/parsers'
 import { mergeSharedConventions } from '../../src/main/engine/scanner'
 import { resolveRelations } from '../../src/main/engine/relations'
@@ -51,6 +51,16 @@ describe('AGENTS.md parsers carry dedup identity', () => {
     // runtime/view-raw-button/instructions — Codex round-2 A1).
     expect(first.id).toBe(second.id)
     expect(first.id).not.toMatch(/\d{13}/) // no Date.now() millis baked in
+  })
+
+  it('claude parseClaudeMd emits a STABLE deterministic id (no Date.now flicker)', () => {
+    // CLAUDE.md is claude-only (no dedupeKey), but its id must still be stable so
+    // shallow-indexed CLAUDE.md does not re-key on every global rescan. (T4 / A4)
+    const fp = 'D:\\Code\\proj\\CLAUDE.md'
+    const first = parseClaudeMd(fp, 'project')
+    const second = parseClaudeMd(fp, 'project')
+    expect(first.id).toBe(second.id)
+    expect(first.id).not.toMatch(/\d{13}/)
   })
 
   it('codex parseCodexAgentsMd emits the same dedupeKey + its own readByAgentIds', () => {
