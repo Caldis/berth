@@ -510,16 +510,15 @@ export function Instructions({ activeSection }: { activeSection?: string } = {})
         ref={listRef}
         groups={assetGroups}
         getItemKey={(asset) => asset.id}
-        renderGroup={(group) => {
-          const scopeValue = typeof group.meta?.scope === 'string' ? group.meta.scope as Asset['scope'] : 'user'
-          return (
-            <div className="flex items-center gap-2 px-1 py-2">
-              <ScopeBadge scope={scopeValue} className="rounded-full px-2 font-semibold" />
-              <span className="min-w-0 truncate text-sm font-medium text-foreground">{group.label}</span>
-              <span className="ml-auto text-xs text-muted-foreground">{group.count}</span>
-            </div>
-          )
-        }}
+        renderGroup={(group) => (
+          // The group label already is the scope name (groups are by scope); a
+          // ScopeBadge here would just repeat it ("项目级 项目级"). Plain label +
+          // count, consistent with the memory/sessions group headers.
+          <div data-testid={`instructions-group-${group.id}`} className="flex items-center gap-2 px-1 py-2">
+            <span className="min-w-0 truncate text-sm font-medium text-foreground">{group.label}</span>
+            <span className="ml-auto text-xs text-muted-foreground">{group.count}</span>
+          </div>
+        )}
         renderItem={(asset) => (
           <div className="pb-2">
             {renderAsset(asset)}

@@ -86,6 +86,18 @@ describe('Instructions plugin-origin badge + focus (GH-112 P3)', () => {
     expect(screen.getAllByTestId(`plugin-origin-badge-${PLUGIN_ID}`)).toHaveLength(1)
   })
 
+  it('does not duplicate the scope label in the group header (badge + text)', async () => {
+    useAppStore.setState({
+      assets: [{ ...builtinSkill(), scope: 'project' }],
+      agentView: 'all',
+      scopeSelection: { mode: 'global' }
+    })
+    renderSkills()
+    const header = await screen.findByTestId('instructions-group-scope:project')
+    // The scope name ("Project") must appear exactly once in the header, not twice.
+    expect(within(header).getAllByText('Project')).toHaveLength(1)
+  })
+
   it('highlights and expands the skill card when focused from the plugin page', async () => {
     renderSkills('skill-plugin')
     const card = await screen.findByTestId('instruction-asset-card-skill-plugin')
