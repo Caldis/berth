@@ -19,7 +19,15 @@
   - tests: ✅ agent-asset-runtime: project 模式 search 过滤跨项目 session + 项目资产放行; 本地 build + project-scope.e2e 通过; 全量 785 全绿。
   - verify: ✅ 本地 windows project-scope.e2e 绿。
 
-- [ ] **T3 resolveScanPlan + 后台浅索引 worker** (global=全设备, A2/A3/B①)
+- [x] **T3a 项目归属谓词收敛** (deferred-from-T2; 修继承链可见 + 统一 search/列表) — 提交 269d1869
+  - shared `assetMatchesProjectPath`: 显式 owner → 按 owner; 无 owner 项目资产 = 活动项目快照所扫 (含继承链) → 放行; 删 `pathIsInsideProject`。runtime.search 改走 shared `assetMatchesAppScope`, 删 T2 stopgap。
+  - tests: ✅ scope.test 新契约 + 两 guidance fixture owner 化; build + project-scope.e2e; 全量绿。
+- [x] **T3b 全局浅索引所有项目根级约定** (global=全设备核心交付) — 提交 8fffb532
+  - 新增 `scanShallowConventions` (仅根级 AGENTS.md/CLAUDE.md, 不深扫能力/嵌套 glob — A2); scanner 深扫后 `appendShallowConventions` 排除活动项目并入 (partial 仍深扫-only — A3); 归属交 T3a 谓词。
+  - tests: ✅ shallow-conventions(3) + engine-scanner 集成 (会话派生浅索引 + 活动排除); 全量 789 + build + e2e。
+  - **后续 (Codex B① 优化, 非阻塞)**: 浅扫现随深扫同跑 (worker 内); 若项目数多致首扫变慢, 再拆独立低优先级后台 worker + mtime 缓存。功能正确性已具备, 仅延迟优化。
+
+- [ ] **T3-orig resolveScanPlan + 独立后台 worker** (Codex B① 性能优化, 降级为后续)
   - 改动: 新增 `resolveScanPlan {activeProject{dir,roots,depth:'deep'}, shallowProjects[{dir,depth:'shallow'}]}` (真分支, 不复用 projectDirs); 独立低优先级一次性 shallow worker (concurrency=1, mtime 缓存), 首轮前台深扫完成后启动; 浅扫仅根级 conventions (不走 `**/CLAUDE.md` 嵌套 glob, 不扫全部 .claude/.codex); 资产标 `meta.scanDepth='shallow'`; 结果 merge 进 snapshot, 不覆盖活动项目深扫态。
   - 并入 (从 T2 推迟): 全局快照含多项目项目级资产后, 项目级资产的**归属过滤**收敛到 shared 真源 (按 dedupeKey/projectPath/roots 判定 owner, 含 `.git` 继承链), `searchScopeAllows` 与列表 `filterAssetsByAppScope` 对项目级资产统一; 替换 T2 的 session-only 临时过滤。
   - tests: shallow plan 只含根级 conventions (无 skills/agents/commands/深层 CLAUDE.md); 后台 worker 不替换活动 snapshot; global 过滤含多项目浅约定; **project 模式不串其它项目的项目级资产** (含继承链正确归属); 本地 project-scope.e2e 绿。
