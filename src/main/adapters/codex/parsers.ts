@@ -4,6 +4,7 @@ import * as yaml from 'js-yaml'
 import { parse as parseToml } from 'smol-toml'
 import { emptyTokenUsage, normalizeTokenUsage } from '@shared/token-usage'
 import { buildHookHash, buildHookKey, buildHookScenarioHash } from '@shared/hook-identity'
+import { dedupePathKey } from '@shared/asset-dedupe'
 import { extractCommandEntryPaths } from '../command-entry-paths'
 import type { Asset, AssetScope } from '../types'
 import type { TokenUsageBreakdown } from '@shared/types/asset'
@@ -76,6 +77,9 @@ export function parseCodexHooksJson(
 export function parseCodexAgentsMd(filePath: string, scope: AssetScope): Asset {
   const raw = fs.readFileSync(filePath, 'utf-8')
   const imports = extractAtImports(raw)
+  // Same physical file as Claude's AGENTS.md — carry the identical `dedupeKey`
+  // (computed by the shared helper) so `mergeSharedConventions` collapses the two
+  // rows, and record this adapter in `readByAgentIds` (GH-113 T1).
   return {
     id: `codex-agents-md-${safeId(scope)}-${hashString(filePath)}`,
     agentId: 'codex',
@@ -84,7 +88,12 @@ export function parseCodexAgentsMd(filePath: string, scope: AssetScope): Asset {
     scope,
     name: path.basename(filePath),
     path: filePath,
-    meta: { imports, lineCount: raw.split('\n').length },
+    meta: {
+      imports,
+      lineCount: raw.split('\n').length,
+      dedupeKey: dedupePathKey(filePath),
+      readByAgentIds: ['codex']
+    },
     raw
   }
 }

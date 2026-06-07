@@ -249,6 +249,33 @@ describe('AssetScanner', () => {
     expect(result.assets[1]?.meta.equivalentSourceCount).toBe(2)
   })
 
+  it('merges the same physical AGENTS.md across adapters in final + partial (GH-113 T1)', async () => {
+    const dedupeKey = 'd:\\code\\react-zmage\\agents.md'
+    mocks.claudeScanAll.mockResolvedValueOnce({
+      assets: [agentsMdAsset('claude-agents', 'claude-code', ['claude-code'], dedupeKey)],
+      errors: []
+    })
+    mocks.codexScanAll.mockResolvedValueOnce({
+      assets: [agentsMdAsset('codex-agents', 'codex', ['codex'], dedupeKey)],
+      errors: []
+    })
+    const scanner = new AssetScanner()
+
+    const partials: { assets: Asset[] }[] = []
+    const result = await scanner.scanAll({ onPartial: (p) => partials.push({ assets: p.assets }) })
+
+    // Final snapshot: a single canonical row, claude-code primary, union readers.
+    const agentsMd = result.assets.filter((a) => a.type === 'agents-md')
+    expect(agentsMd).toHaveLength(1)
+    expect(agentsMd[0]?.id).toBe('claude-agents')
+    expect(agentsMd[0]?.agentId).toBe('claude-code')
+    expect(agentsMd[0]?.meta.readByAgentIds).toEqual(['claude-code', 'codex'])
+
+    // The partial emitted after the codex adapter must already be merged — no
+    // transient double row while the scan is mid-flight.
+    expect(partials.at(-1)?.assets.filter((a) => a.type === 'agents-md')).toHaveLength(1)
+  })
+
   it('streams per-adapter progress and cumulative partial assets (P4.6)', async () => {
     mocks.claudeScanAll.mockResolvedValueOnce({
       assets: [skillAsset('claude-skill', 'claude-code')],
@@ -324,6 +351,24 @@ function skillAsset(id: string, agentId: string): Asset {
     name: id,
     path: `C:\\Users\\test\\.claude\\skills\\${id}\\SKILL.md`,
     meta: {}
+  }
+}
+
+function agentsMdAsset(
+  id: string,
+  agentId: string,
+  readByAgentIds: string[],
+  dedupeKey: string
+): Asset {
+  return {
+    id,
+    agentId,
+    category: 'instruction',
+    type: 'agents-md',
+    scope: 'project',
+    name: 'AGENTS.md',
+    path: 'D:\\Code\\react-zmage\\AGENTS.md',
+    meta: { dedupeKey, readByAgentIds }
   }
 }
 

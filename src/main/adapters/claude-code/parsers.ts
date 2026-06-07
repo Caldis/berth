@@ -7,6 +7,7 @@ import {
   normalizeTokenUsage
 } from '@shared/token-usage'
 import { buildHookHash, buildHookKey, buildHookScenarioHash } from '@shared/hook-identity'
+import { dedupePathKey, stableAssetHash } from '@shared/asset-dedupe'
 import { extractCommandEntryPaths } from '../command-entry-paths'
 import type { Asset, AssetScope } from '../types'
 
@@ -38,15 +39,21 @@ export function parseClaudeMd(filePath: string, scope: AssetScope): Asset {
 export function parseAgentsMd(filePath: string, scope: AssetScope): Asset {
   const raw = fs.readFileSync(filePath, 'utf-8')
   const imports = extractAtImports(raw)
+  // AGENTS.md is a cross-agent open standard scanned by both adapters. Carry a
+  // `dedupeKey` + `readByAgentIds` so the engine can collapse the duplicate rows
+  // (`mergeSharedConventions`), and use a DETERMINISTIC id (not `makeId()`'s
+  // `Date.now()`) so the canonical row's id stays stable across scans — the id is
+  // an opaque handle for renderer selection / raw refetch (GH-113 T1).
+  const dedupeKey = dedupePathKey(filePath)
   return {
-    id: makeId('agents-md'),
+    id: `agents-md-${scope}-${stableAssetHash(dedupeKey)}`,
     agentId: 'claude-code',
     category: 'instruction',
     type: 'agents-md',
     scope,
     name: path.basename(filePath),
     path: filePath,
-    meta: { imports, lineCount: raw.split('\n').length },
+    meta: { imports, lineCount: raw.split('\n').length, dedupeKey, readByAgentIds: ['claude-code'] },
     raw
   }
 }

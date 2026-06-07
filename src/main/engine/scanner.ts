@@ -91,23 +91,29 @@ export class AssetScanner {
       // Strip `raw` from partials — the live UI only needs names/counts, and the
       // large transcript/markdown bodies blow up structured-clone cost. (GH-111 P1)
       // Carry the running error count so mid-scan failures are visible. (O4)
+      // Merge cross-agent shared conventions (AGENTS.md) on the partial too, so a
+      // mid-scan snapshot never shows a transient double row. (GH-113 T1)
+      const partialAssets = mergeSharedConventions(assets)
       options.onPartial?.({
-        assets: assets.map(stripAssetRaw),
-        stats: this.computeStats(assets),
+        assets: partialAssets.map(stripAssetRaw),
+        stats: this.computeStats(partialAssets),
         errorCount: errors.length
       })
     }
-    annotateEquivalentHookSources(assets)
-    this.cachedAssets = assets
+    // Collapse cross-agent shared conventions BEFORE annotation/cache/stats so the
+    // single canonical id flows into relations, search, and the renderer. (GH-113 T1)
+    const merged = mergeSharedConventions(assets)
+    annotateEquivalentHookSources(merged)
+    this.cachedAssets = merged
     this.cachedErrors = errors
     this.scanned = true
     this.assetMap.clear()
-    for (const a of assets) {
+    for (const a of merged) {
       this.assetMap.set(a.id, a)
     }
     return {
-      assets,
-      stats: this.computeStats(assets),
+      assets: merged,
+      stats: this.computeStats(merged),
       errors
     }
   }
@@ -275,6 +281,57 @@ function normalizePath(filePath: string): string {
  * there is no raw to strip so unchanged assets aren't needlessly re-cloned. */
 function stripAssetRaw(asset: Asset): Asset {
   return asset.raw === undefined ? asset : { ...asset, raw: undefined }
+}
+
+/**
+ * Collapse cross-agent shared instruction files (AGENTS.md) into one canonical
+ * asset. Only assets carrying an explicit `meta.dedupeKey` are grouped — the
+ * parsers tag just AGENTS.md, so multi-entity files (settings.json hooks/mcp),
+ * skills, and plugin components have no dedupeKey and pass through untouched. The
+ * canonical row keeps a stable primary id (claude-code preferred) and unions
+ * `readByAgentIds` so the file stays visible under every agent view. Pure (does
+ * not mutate the input) and idempotent (safe to run on already-merged input,
+ * which is why the partial stream and the final result can both call it).
+ */
+export function mergeSharedConventions(assets: Asset[]): Asset[] {
+  const groups = new Map<string, Asset[]>()
+  for (const asset of assets) {
+    const dedupeKey = readString(asset.meta, 'dedupeKey')
+    if (!dedupeKey) continue
+    const list = groups.get(dedupeKey) ?? []
+    list.push(asset)
+    groups.set(dedupeKey, list)
+  }
+  if (groups.size === 0) return assets
+
+  const emitted = new Set<string>()
+  const result: Asset[] = []
+  for (const asset of assets) {
+    const dedupeKey = readString(asset.meta, 'dedupeKey')
+    if (!dedupeKey) {
+      result.push(asset)
+      continue
+    }
+    if (emitted.has(dedupeKey)) continue
+    emitted.add(dedupeKey)
+    result.push(mergeConventionGroup(groups.get(dedupeKey) ?? [asset]))
+  }
+  return result
+}
+
+function mergeConventionGroup(group: Asset[]): Asset {
+  if (group.length === 1) return group[0]
+  const primary = group.find((asset) => asset.agentId === 'claude-code') ?? group[0]
+  const readByAgentIds: string[] = []
+  for (const asset of group) {
+    const readers = Array.isArray(asset.meta.readByAgentIds)
+      ? asset.meta.readByAgentIds.filter((value): value is string => typeof value === 'string')
+      : [asset.agentId]
+    for (const reader of readers) {
+      if (!readByAgentIds.includes(reader)) readByAgentIds.push(reader)
+    }
+  }
+  return { ...primary, meta: { ...primary.meta, readByAgentIds } }
 }
 
 function annotateEquivalentHookSources(assets: Asset[]): void {
