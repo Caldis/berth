@@ -8,6 +8,7 @@ import { findNavMatch } from './nav-config'
 import { isMacPlatform } from '@/lib/platform'
 import { FeatureGuidePanel } from '@/components/shared/feature-guide-panel'
 import { FloatingPopover } from '@/components/shared/floating-popover'
+import { IndexingInline } from '@/components/shared/index-activity'
 import { useCurrentPageChrome, useRegisterPageSearchFocus } from './page-chrome'
 
 type BreadcrumbItem = {
@@ -127,6 +128,7 @@ export function TopNavigation({ isWindows }: TopNavigationProps): React.ReactEle
           key={`${location.pathname}${location.search}-chrome-actions`}
           className="titlebar-no-drag flex min-w-0 flex-wrap items-center gap-2 motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-right-2 motion-safe:duration-150 lg:justify-end"
         >
+          <IndexingInline className="mr-0.5" />
           {pageChrome.actions}
           {pageChrome.guide && (
             <FloatingPopover

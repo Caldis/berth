@@ -24,6 +24,8 @@
       "issues": "{{count}} scan issues",
       "title": "Scan progress",
       "scannedTotal": "{{count}} assets scanned",
+      "indexing": "Indexing",
+      "found": "{{count}} found",
       "phase": {
         "discovering": "Discovering sources",
         "parsing": "Reading assets",

@@ -245,3 +245,24 @@ html.dark[data-accent='neutral'] {
 .titlebar-no-drag {
   -webkit-app-region: no-drag;
 }
+
+/* Ambient indexing presence (GH-113): a calm scanner sweep + breathing pulse.
+ * Motion-safe only — reduced-motion falls back to a static tint in the markup. */
+@keyframes index-sweep {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(400%);
+  }
+}
+
+@keyframes index-breathe {
+  0%,
+  100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 1;
+  }
+}

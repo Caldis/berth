@@ -3,8 +3,9 @@ import { useTranslation } from 'react-i18next'
 import { AlertTriangle } from 'lucide-react'
 import type { AssetType } from '@shared/types/asset'
 import type { AssetRuntimeStatus } from '@shared/types/ipc'
-import { Chip, Progress, Spinner } from '@/components/ui'
+import { Chip, Progress } from '@/components/ui'
 import { FloatingPopover } from '@/components/shared/floating-popover'
+import { IndexPulse } from '@/components/shared/index-activity'
 import { cn } from '@/lib/utils'
 import { useAppStore } from '@/stores/app'
 
@@ -142,7 +143,7 @@ export function SidebarScanStatus({ collapsed }: { collapsed: boolean }): React.
   }
 
   const icon = showSpinner ? (
-    <Spinner size="sm" />
+    <IndexPulse />
   ) : (
     <AlertTriangle className={cn('h-3.5 w-3.5 shrink-0', iconClass)} />
   )

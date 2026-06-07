@@ -8,6 +8,7 @@ import { WindowControls } from './window-controls'
 import { useAssets } from '@/hooks/use-ipc'
 import { TopNavigation } from './top-navigation'
 import { PageChromeProvider } from './page-chrome'
+import { IndexHairline } from '@/components/shared/index-activity'
 
 type ContentScrollStyle = CSSProperties & {
   '--berth-page-scrollbar-gutter': string
@@ -64,7 +65,10 @@ export function AppLayout({ children }: { children: ReactNode }): React.ReactEle
           className="flex min-w-0 flex-1 flex-col overflow-hidden transition-[margin] duration-200"
           style={{ marginLeft: effectiveSidebarWidth }}
         >
-          <TopNavigation isWindows={isWindows} />
+          <div className="relative shrink-0">
+            <TopNavigation isWindows={isWindows} />
+            <IndexHairline />
+          </div>
           <main
             ref={scrollRegionRef}
             data-testid="app-content-scroll"
