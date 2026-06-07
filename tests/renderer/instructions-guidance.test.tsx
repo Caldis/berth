@@ -129,7 +129,7 @@ describe('Instructions guidance surfaces', () => {
   })
 
   it('uses an instructive memory empty state when no sources are found', async () => {
-    render(<Instructions activeSection="memories" />)
+    render(<MemoryRouter><Instructions activeSection="memories" /></MemoryRouter>)
 
     expect(await screen.findByText('No memory sources found')).toBeInTheDocument()
     expect(screen.getByText(/Berth looks for native Claude Code memory and united-memory/)).toBeInTheDocument()
@@ -150,7 +150,7 @@ describe('Instructions guidance surfaces', () => {
       agentView: 'all'
     })
 
-    render(<Instructions />)
+    render(<MemoryRouter><Instructions /></MemoryRouter>)
 
     expect(await screen.findByText('Project skill')).toBeInTheDocument()
     expect(screen.getByText('User skill')).toBeInTheDocument()

@@ -1,4 +1,4 @@
-import { useCallback, useDeferredValue, useMemo, useState } from 'react'
+import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   FileText,
@@ -22,7 +22,10 @@ import { DetailRow } from '@/components/shared/detail-row'
 import { EmptyState, PAGE_EMPTY_FILL } from '@/components/shared/empty-state'
 import { LoadingState } from '@/components/shared/loading-state'
 import { ScopeBadge } from '@/components/shared/scope-badge'
+import { PluginOriginBadge } from '@/components/shared/plugin-origin-badge'
 import { ViewRawButton } from '@/components/shared/view-raw-button'
+import { pluginOriginOf } from '@/lib/plugin-origin'
+import { useFocusTarget, FOCUS_HIGHLIGHT_CLASS } from '@/hooks/use-focus-target'
 import {
   buildFeatureGuideEvidence,
   instructionGuideMap,
@@ -35,7 +38,7 @@ import { filterAssetsByAppScope } from '@shared/scope'
 import { MemoryView } from '@/components/memory/memory-view'
 import { useMemory } from '@/hooks/use-memory'
 import { usePageChrome, type PageChromeConfig } from '@/components/layout/page-chrome'
-import { VirtualGroupedList } from '@/components/shared/virtual-grouped-list'
+import { VirtualGroupedList, type VirtualGroupedListHandle } from '@/components/shared/virtual-grouped-list'
 import { type VirtualListGroup } from '@/lib/virtual-list-model'
 
 const tabTypeMap: Record<string, string[]> = {
@@ -116,9 +119,10 @@ function MemoryCard({ asset }: { asset: Asset }): React.ReactElement {
 }
 
 /* ---------- Skill card ---------- */
-function SkillCard({ asset }: { asset: Asset }): React.ReactElement {
+function SkillCard({ asset, focused = false }: { asset: Asset; focused?: boolean }): React.ReactElement {
   const { t } = useTranslation()
   const [expanded, setExpanded] = useState(false)
+  const origin = pluginOriginOf(asset)
 
   const description = (asset.meta.description as string) ?? ''
   const triggerType = (asset.meta.triggerType as string) ?? 'manual'
@@ -130,38 +134,53 @@ function SkillCard({ asset }: { asset: Asset }): React.ReactElement {
     window.api?.shell.openPath(asset.path)
   }, [asset.path])
 
+  // Jumped-to from the plugin page: expand (page handles scroll via list ref).
+  useEffect(() => {
+    if (focused) setExpanded(true)
+  }, [focused])
+
   return (
-    <div data-testid={`instruction-asset-card-${asset.id}`} className="rounded-lg border border-border bg-card transition-colors hover:bg-accent/5">
-      <button
-        onClick={() => setExpanded(!expanded)}
-        className="flex w-full items-center gap-3 px-4 py-3 text-left"
-      >
-        {expanded ? <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" /> : <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />}
-        <Sparkles className="h-4 w-4 shrink-0 text-blue-500" />
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <span className="truncate text-sm font-medium text-foreground">{asset.name}</span>
-            <ScopeBadge scope={asset.scope} className="rounded-full px-2 font-semibold" />
+    <div
+      data-testid={`instruction-asset-card-${asset.id}`}
+      className={cn('rounded-lg border bg-card transition-colors hover:bg-accent/5', focused ? FOCUS_HIGHLIGHT_CLASS : 'border-border')}
+    >
+      <div className="flex items-stretch">
+        <button
+          onClick={() => setExpanded(!expanded)}
+          className="flex min-w-0 flex-1 items-center gap-3 px-4 py-3 text-left"
+        >
+          {expanded ? <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" /> : <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />}
+          <Sparkles className="h-4 w-4 shrink-0 text-blue-500" />
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <span className="truncate text-sm font-medium text-foreground">{asset.name}</span>
+              <ScopeBadge scope={asset.scope} className="rounded-full px-2 font-semibold" />
+            </div>
+            {description && (
+              <p className="mt-0.5 truncate text-xs text-muted-foreground">{description}</p>
+            )}
           </div>
-          {description && (
-            <p className="mt-0.5 truncate text-xs text-muted-foreground">{description}</p>
-          )}
-        </div>
-        <div className="flex shrink-0 items-center gap-3 text-xs text-muted-foreground">
-          {fileCount > 0 && (
-            <span className="flex items-center gap-1">
-              <FileCode className="h-3 w-3" />
-              {fileCount}
-            </span>
-          )}
-          {lineCount > 0 && (
-            <span className="flex items-center gap-1">
-              <Hash className="h-3 w-3" />
-              {lineCount}
-            </span>
-          )}
-        </div>
-      </button>
+          <div className="flex shrink-0 items-center gap-3 text-xs text-muted-foreground">
+            {fileCount > 0 && (
+              <span className="flex items-center gap-1">
+                <FileCode className="h-3 w-3" />
+                {fileCount}
+              </span>
+            )}
+            {lineCount > 0 && (
+              <span className="flex items-center gap-1">
+                <Hash className="h-3 w-3" />
+                {lineCount}
+              </span>
+            )}
+          </div>
+        </button>
+        {origin && (
+          <div className="flex shrink-0 items-center pr-3">
+            <PluginOriginBadge pluginId={origin.pluginId} pluginName={origin.pluginName} />
+          </div>
+        )}
+      </div>
 
       {expanded && (
         <div className="border-t border-border px-4 py-3 space-y-2">
@@ -202,9 +221,10 @@ function SkillCard({ asset }: { asset: Asset }): React.ReactElement {
 }
 
 /* ---------- Generic asset card (subagents, commands, output modes) ---------- */
-function GenericAssetCard({ asset, icon: Icon }: { asset: Asset; icon: React.ComponentType<{ className?: string }> }): React.ReactElement {
+function GenericAssetCard({ asset, icon: Icon, focused = false }: { asset: Asset; icon: React.ComponentType<{ className?: string }>; focused?: boolean }): React.ReactElement {
   const { t } = useTranslation()
   const [expanded, setExpanded] = useState(false)
+  const origin = pluginOriginOf(asset)
 
   const description = (asset.meta.description as string) ?? ''
   const model = (asset.meta.model as string) ?? ''
@@ -215,35 +235,49 @@ function GenericAssetCard({ asset, icon: Icon }: { asset: Asset; icon: React.Com
     window.api?.shell.openPath(asset.path)
   }, [asset.path])
 
+  useEffect(() => {
+    if (focused) setExpanded(true)
+  }, [focused])
+
   return (
-    <div data-testid={`instruction-asset-card-${asset.id}`} className="rounded-lg border border-border bg-card transition-colors hover:bg-accent/5">
-      <button
-        onClick={() => setExpanded(!expanded)}
-        className="flex w-full items-center gap-3 px-4 py-3 text-left"
-      >
-        {expanded ? <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" /> : <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />}
-        <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <span className="truncate text-sm font-medium text-foreground">
-              {asset.type === 'command' ? `/${asset.name}` : asset.name}
-            </span>
-            <ScopeBadge scope={asset.scope} className="rounded-full px-2 font-semibold" />
+    <div
+      data-testid={`instruction-asset-card-${asset.id}`}
+      className={cn('rounded-lg border bg-card transition-colors hover:bg-accent/5', focused ? FOCUS_HIGHLIGHT_CLASS : 'border-border')}
+    >
+      <div className="flex items-stretch">
+        <button
+          onClick={() => setExpanded(!expanded)}
+          className="flex min-w-0 flex-1 items-center gap-3 px-4 py-3 text-left"
+        >
+          {expanded ? <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" /> : <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />}
+          <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <span className="truncate text-sm font-medium text-foreground">
+                {asset.type === 'command' ? `/${asset.name}` : asset.name}
+              </span>
+              <ScopeBadge scope={asset.scope} className="rounded-full px-2 font-semibold" />
+            </div>
+            {description && (
+              <p className="mt-0.5 truncate text-xs text-muted-foreground">{description}</p>
+            )}
           </div>
-          {description && (
-            <p className="mt-0.5 truncate text-xs text-muted-foreground">{description}</p>
-          )}
-        </div>
-        <div className="flex shrink-0 items-center gap-3 text-xs text-muted-foreground">
-          {model && <span>{model}</span>}
-          {toolsCount > 0 && (
-            <span>{toolsCount} {t('instructions.tools')}</span>
-          )}
-          {agentCount > 0 && (
-            <span>{agentCount} {t('instructions.agents')}</span>
-          )}
-        </div>
-      </button>
+          <div className="flex shrink-0 items-center gap-3 text-xs text-muted-foreground">
+            {model && <span>{model}</span>}
+            {toolsCount > 0 && (
+              <span>{toolsCount} {t('instructions.tools')}</span>
+            )}
+            {agentCount > 0 && (
+              <span>{agentCount} {t('instructions.agents')}</span>
+            )}
+          </div>
+        </button>
+        {origin && (
+          <div className="flex shrink-0 items-center pr-3">
+            <PluginOriginBadge pluginId={origin.pluginId} pluginName={origin.pluginName} />
+          </div>
+        )}
+      </div>
 
       {expanded && (
         <div className="border-t border-border px-4 py-3 space-y-2">
@@ -407,6 +441,15 @@ export function Instructions({ activeSection }: { activeSection?: string } = {})
   const activeTab = normalizeInstructionSection(activeSection)
   const [search, setSearch] = useState('')
   const [scope, setScope] = useState<ScopeFilter>('all')
+  const listRef = useRef<VirtualGroupedListHandle | null>(null)
+  const { focusId, isFocused } = useFocusTarget()
+
+  // Jumped-to from the plugin page: scroll the virtual list to the focused asset.
+  useEffect(() => {
+    if (!focusId) return
+    const id = window.setTimeout(() => listRef.current?.scrollToItem(focusId, 'center'), 0)
+    return () => window.clearTimeout(id)
+  }, [focusId])
   const deferredSearch = useDeferredValue(search)
   const visibleAssets = useMemo(
     () => filterAssetsByAppScope(filterAssetsByAgentView(assets, agentView), scopeSelection),
@@ -464,6 +507,7 @@ export function Instructions({ activeSection }: { activeSection?: string } = {})
   ): React.ReactElement => (
     <div className="min-h-[520px]">
       <VirtualGroupedList<Asset>
+        ref={listRef}
         groups={assetGroups}
         getItemKey={(asset) => asset.id}
         renderGroup={(group) => {
@@ -506,13 +550,13 @@ export function Instructions({ activeSection }: { activeSection?: string } = {})
       case 'conventions':
         return renderVirtualAssetList((asset) => <MemoryCard asset={asset} />)
       case 'skills':
-        return renderVirtualAssetList((asset) => <SkillCard asset={asset} />)
+        return renderVirtualAssetList((asset) => <SkillCard asset={asset} focused={isFocused(asset.id)} />)
       case 'subagents':
-        return renderVirtualAssetList((asset) => <GenericAssetCard asset={asset} icon={Bot} />)
+        return renderVirtualAssetList((asset) => <GenericAssetCard asset={asset} icon={Bot} focused={isFocused(asset.id)} />)
       case 'commands':
-        return renderVirtualAssetList((asset) => <GenericAssetCard asset={asset} icon={Terminal} />)
+        return renderVirtualAssetList((asset) => <GenericAssetCard asset={asset} icon={Terminal} focused={isFocused(asset.id)} />)
       case 'outputModes':
-        return renderVirtualAssetList((asset) => <GenericAssetCard asset={asset} icon={Palette} />)
+        return renderVirtualAssetList((asset) => <GenericAssetCard asset={asset} icon={Palette} focused={isFocused(asset.id)} />)
       default:
         return <EmptyState fullHeight icon={FileText} message={t('common.empty')} />
     }
