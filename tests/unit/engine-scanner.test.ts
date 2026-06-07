@@ -1,5 +1,9 @@
+import * as fs from 'fs'
+import * as os from 'os'
+import * as path from 'path'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Asset } from '../../src/shared/types/asset'
+import { sameProjectPath } from '../../src/shared/scope'
 
 const mocks = vi.hoisted(() => ({
   claudeScanAll: vi.fn(async () => ({ assets: [], errors: [] })),
@@ -274,6 +278,41 @@ describe('AssetScanner', () => {
     // The partial emitted after the codex adapter must already be merged — no
     // transient double row while the scan is mid-flight.
     expect(partials.at(-1)?.assets.filter((a) => a.type === 'agents-md')).toHaveLength(1)
+  })
+
+  it('shallow-indexes session-derived projects, excluding the active one (GH-113 T3b)', async () => {
+    const projectDir = fs.mkdtempSync(path.join(os.tmpdir(), 'berth-eng-shallow-'))
+    fs.writeFileSync(path.join(projectDir, 'AGENTS.md'), '# Other project conventions\nbody')
+    const sessionFor = (dir: string): Asset => ({
+      id: `session-${path.basename(dir)}`,
+      agentId: 'claude-code',
+      category: 'state',
+      type: 'session',
+      scope: 'session',
+      name: 'Session',
+      path: 'C:\\x\\session.jsonl',
+      meta: { projectPath: dir }
+    })
+    try {
+      // No active project → the session-derived project is shallow-indexed.
+      mocks.claudeScanAll.mockResolvedValueOnce({ assets: [sessionFor(projectDir)], errors: [] })
+      const globalScanner = new AssetScanner()
+      const globalResult = await globalScanner.scanAll()
+      const shallow = globalResult.assets.find(
+        (a) => a.type === 'agents-md' && a.meta.scanDepth === 'shallow'
+      )
+      expect(shallow).toBeDefined()
+      expect(sameProjectPath(String(shallow?.meta.projectPath), projectDir)).toBe(true)
+
+      // When that project IS the active one, its conventions come from the deep
+      // scan (here mocked empty) — the shallow pass must NOT duplicate it.
+      mocks.claudeScanAll.mockResolvedValueOnce({ assets: [sessionFor(projectDir)], errors: [] })
+      const activeScanner = new AssetScanner(projectDir)
+      const activeResult = await activeScanner.scanAll()
+      expect(activeResult.assets.some((a) => a.meta.scanDepth === 'shallow')).toBe(false)
+    } finally {
+      fs.rmSync(projectDir, { recursive: true, force: true })
+    }
   })
 
   it('streams per-adapter progress and cumulative partial assets (P4.6)', async () => {

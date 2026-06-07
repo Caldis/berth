@@ -4,9 +4,11 @@ import type { AgentAdapter, Asset, AssetCategory, AssetStats } from '@shared/typ
 import type { ScanRoot } from '@shared/types/asset'
 import type { AgentScanSourceGroup, AssetScanPartial, AssetScanProgress, ScanResult } from '@shared/types/ipc'
 import type { ProjectScopeCandidate } from '@shared/scope'
+import { normalizeProjectPathKey } from '@shared/scope'
 import { createAgentAdapters, type AgentAdapterRegistryOptions } from '../agent-plugins/adapter-registry'
 import { projectScopeCandidatesFromAssets } from '../project-scope'
 import { AssetFileCache, type AssetFileCacheSnapshot } from './assets/file-cache'
+import { scanShallowConventions } from './shallow-conventions'
 
 interface HookEquivalentSource {
   id: string
@@ -100,9 +102,14 @@ export class AssetScanner {
         errorCount: errors.length
       })
     }
+    // Shallow-index other session-derived projects' root conventions so the global
+    // scope shows every project's AGENTS.md/CLAUDE.md (GH-113 T3b). Done after the
+    // deep adapters (partials above stay deep-only for fast first paint), before
+    // the merge so cross-agent shared shallow files collapse too.
+    const withShallow = this.appendShallowConventions(assets)
     // Collapse cross-agent shared conventions BEFORE annotation/cache/stats so the
     // single canonical id flows into relations, search, and the renderer. (GH-113 T1)
-    const merged = mergeSharedConventions(assets)
+    const merged = mergeSharedConventions(withShallow)
     annotateEquivalentHookSources(merged)
     this.cachedAssets = merged
     this.cachedErrors = errors
@@ -238,6 +245,23 @@ export class AssetScanner {
       })
     }
     return nextSources
+  }
+
+  /**
+   * Append shallow-indexed root conventions for every session-derived project
+   * EXCEPT the active one (which the deep scan already covers in full). Each
+   * shallow asset carries `meta.projectPath` so scope filtering attributes it to
+   * its owner — global shows all, project mode shows only the active project.
+   */
+  private appendShallowConventions(assets: Asset[]): Asset[] {
+    const activeKey = this.projectDir ? normalizeProjectPathKey(this.projectDir) : ''
+    const shallow: Asset[] = []
+    for (const candidate of projectScopeCandidatesFromAssets(assets, this.projectDir)) {
+      if (candidate.pathKey === activeKey) continue
+      if (!fs.existsSync(candidate.path)) continue
+      shallow.push(...scanShallowConventions(candidate.path))
+    }
+    return shallow.length > 0 ? [...assets, ...shallow] : assets
   }
 
   private getProjectCandidatePaths(agentId: string): string[] {
