@@ -57,9 +57,10 @@
   - tests: ✅ asset-dedupe (6) + parser-identity (8, 含改名稳定/多资产不撞/project-mcp 跨项目/codex 统一); 全量 805 + build + 2 e2e。issue 2026-06-07-BUG-claude-makeid RESOLVED。
 - [~] **T0 正确性快赢 — 实施中重排** (Pre-T0 后)
   - **racy-hash 移到 T1**: 实现期发现 in-session 实时 watcher (chokidar 不依赖 mtime) 已覆盖同会话 in-place 改写; racy-fingerprint 漏更新只在**持久化缓存跨重启**时真实发生 → 归 T1 (持久化) 一并做。
-  - **watcher debounce 降级为优化 (非 T0 必需)**: 消费方 (renderer onChanged use-ipc.ts:215,454) 忽略事件 payload, 且 runtime.refresh 有 inFlight 守护已合并 flood 触发的重扫 → debounce 是减少 IPC/重扫频率的优化, 非正确性。随 T2 长驻 coordinator 队列一并做 (coalescing 是队列天然属性); 单独提前做边际价值低。
-  - **buildWatchEvent 带 sourceKey**: 当前 assetId=basename 无消费方使用 → 留到 T2 changeset 协议 (届时事件需精确 sourceKey 做 per-source 替换) 一并改, 避免无消费方的空改动。
-  - 结论: T0 无独立必需增量, 内容并入 T1/T2; Pre-T0 后直接 T1。
+  - **watcher 加固已落地** (提交 bfb56eaf): buildWatchOptions 加 awaitWriteFinish(250)+atomic (避免增量解析半写文件 + 滤原子保存噪声); WatchEvent+buildWatchEvent 带 sourceKey (changeset 替换键, Codex A5)。完整 debounce/coalescing 队列仍随 T2 长驻 coordinator 做 (队列天然属性)。
+  - 结论: T0 内容并入 T1/T2; 已落地 watcher 加固 + sourceKey 作为 T2 起步。
+
+> **T2 实施前置阻塞 (实施期发现)**: better-sqlite3 虽在 deps+onlyBuiltDependencies, 但 `src` 零使用, 原生二进制按 **Node ABI** 构建, 非 Electron ABI。直接在主进程 import 大概率 `NODE_MODULE_VERSION` 失配。T2 真索引前需先: ①electron.vite.config 把 better-sqlite3 列 external; ②配 electron-rebuild/对 Electron ABI 重建原生模块 (关联 BUILD_ENV friction 原生模块踩坑); ③e2e 验证在打包 Electron 主进程能 open DB。建议作为 T2 第一个独立 spike 增量, 验证通过再建 SqliteSnapshotStore。
 - [x] **T1 冷启垫脚石** — 提交 0c8641d1
   - snapshot-store.ts (注入 dir, 版本化 + 原子 rename + 剥 raw); runtime 构造 restorePersistedSnapshot (stale, 不扫) + 提交时仅默认 project 落盘; main initAssetRuntime 注入 userData store。渲染层 SWR 链路 (syncSnapshot 读快照 + stale 触发 refresh) 无需改 ensureReady。
   - tests: ✅ snapshot-store(4) + runtime 冷启(2) + e2e snapshot-persistence (扫描→落盘→重启冷启端到端); 全量 817 + 20 e2e + scan-engine 24 + harness + build 全绿 (整条测试链路闭环)。
