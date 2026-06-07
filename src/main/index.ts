@@ -3,8 +3,9 @@ import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { registerAllHandlers } from './ipc'
 import { initScanner } from './engine/scanner'
+import Database from 'better-sqlite3'
 import { getAssetRuntime, initAssetRuntime } from './engine/assets/runtime'
-import { createSnapshotStore } from './engine/assets/snapshot-store'
+import { createSqliteSnapshotStore } from './engine/assets/sqlite-snapshot-store'
 import { getWatcher } from './engine/watcher'
 import { resolveDefaultProjectDir } from './project-dir'
 import { configureAgentDevProfile, shouldRequestSingleInstanceLock } from './dev-instance'
@@ -122,9 +123,14 @@ if (!gotTheLock) {
     // Initialize the asset engine
     const projectDir = resolveDefaultProjectDir({ isDev: is.dev, cwd: process.cwd() })
     initScanner(projectDir)
-    // Seed the runtime with the persisted snapshot (GH-113 T1): cold start shows
-    // the last result instantly, then the renderer triggers a background refresh.
-    initAssetRuntime({ projectDir, snapshotStore: createSnapshotStore(app.getPath('userData')) })
+    // Seed the runtime with the persisted snapshot (GH-113 I3): cold start shows
+    // the last result instantly from the on-disk SQLite index, then the renderer
+    // triggers a background refresh (SWR). better-sqlite3's Electron-ABI binding
+    // loads only here in the main process — never in the unit-test host.
+    initAssetRuntime({
+      projectDir,
+      snapshotStore: createSqliteSnapshotStore(app.getPath('userData'), (file) => new Database(file))
+    })
     const watcher = getWatcher()
 
     const mainWindow = createWindow({ openDevTools })

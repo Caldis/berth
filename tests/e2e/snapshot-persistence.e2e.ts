@@ -1,11 +1,13 @@
 import { test, expect, type ElectronApplication } from '@playwright/test'
 import { _electron as electron } from '@playwright/test'
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'fs'
+import { existsSync, mkdirSync, rmSync, writeFileSync } from 'fs'
 import { join, resolve } from 'path'
 
-// GH-113 T1: the snapshot is persisted on scan completion and restored on a cold
-// start, so a relaunch shows the last result instantly (then revalidates). This
-// closes the persistence loop end-to-end through the real worker + IPC.
+// GH-113 I3: the snapshot is persisted to an on-disk SQLite index on scan
+// completion and restored on a cold start, so a relaunch shows the last result
+// instantly (then revalidates). This closes the persistence loop end-to-end
+// through the real worker + IPC, and proves better-sqlite3's Electron-ABI
+// binding opens a real DB inside the packaged main process.
 
 let tempDir: string
 let userDataDir: string
@@ -46,13 +48,13 @@ test('persists the snapshot on scan and cold-starts from it on relaunch', async 
     await app1.close()
   }
 
-  // The persisted snapshot file exists, is versioned, has assets, and is lean.
-  const snapPath = join(userDataDir, 'berth-snapshot.json')
-  expect(existsSync(snapPath)).toBe(true)
-  const persisted = JSON.parse(readFileSync(snapPath, 'utf-8'))
-  expect(persisted.version).toBe(1)
-  expect(persisted.snapshot.assets.length).toBeGreaterThan(0)
-  expect(persisted.snapshot.assets.every((a: { raw?: unknown }) => a.raw === undefined)).toBe(true)
+  // The persisted SQLite index exists on disk. Its row-level contents (schema
+  // versioning, lean raw-stripping) are covered by the unit tests — the e2e host
+  // runs on system Node and cannot load the Electron-ABI better-sqlite3 binding,
+  // so here we assert the file exists and prove the data survives via the
+  // cold-start read below.
+  const dbPath = join(userDataDir, 'berth-index.db')
+  expect(existsSync(dbPath)).toBe(true)
 
   // Run 2 — cold start: the persisted assets are available immediately (the very
   // first snapshot read is already populated, before a fresh scan could finish).
