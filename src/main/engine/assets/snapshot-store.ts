@@ -47,6 +47,9 @@ export function createSnapshotStore(dir: string): SnapshotStore {
   }
 }
 
-function stripRaw(asset: Asset): Asset {
+/** Drops heavy `raw` bodies before persistence — the snapshot is for the
+ * list/counts, raw is re-read on demand. Shared by every {@link SnapshotStore}
+ * backend so the lean contract never drifts between JSON and SQLite. */
+export function stripRaw(asset: Asset): Asset {
   return asset.raw === undefined ? asset : { ...asset, raw: undefined }
 }
