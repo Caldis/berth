@@ -118,11 +118,12 @@ export function scanInstructions(ctx: ScanContext): Asset[] {
     for (const fp of nested) addConvention(fp, parseClaudeMd)
   }
 
-  // Skills
-  assets.push(...scanDir(ctx, path.join(ctx.claudeDir, 'skills'), 'user', '**/*.md', parseSkill))
+  // Skills — official form is `<name>/SKILL.md`; supporting files (reference.md,
+  // etc.) live alongside SKILL.md and must NOT be scanned as separate skills.
+  assets.push(...scanDir(ctx, path.join(ctx.claudeDir, 'skills'), 'user', '**/SKILL.md', parseSkill))
   for (const projectDir of projectDirsFromContext(ctx)) {
     assets.push(
-      ...scanDir(ctx, path.join(projectDir, '.claude', 'skills'), 'project', '**/*.md', parseSkill)
+      ...scanDir(ctx, path.join(projectDir, '.claude', 'skills'), 'project', '**/SKILL.md', parseSkill)
     )
   }
 
@@ -158,10 +159,16 @@ export function scanInstructions(ctx: ScanContext): Asset[] {
     )
   }
 
-  // Output modes
+  // Output styles — official dir is `output-styles` (user + project), not
+  // `output-modes`. (https://docs.claude.com/en/docs/claude-code/output-styles)
   assets.push(
-    ...scanDir(ctx, path.join(ctx.claudeDir, 'output-modes'), 'user', '**/*.md', parseOutputMode)
+    ...scanDir(ctx, path.join(ctx.claudeDir, 'output-styles'), 'user', '**/*.md', parseOutputMode)
   )
+  for (const projectDir of projectDirsFromContext(ctx)) {
+    assets.push(
+      ...scanDir(ctx, path.join(projectDir, '.claude', 'output-styles'), 'project', '**/*.md', parseOutputMode)
+    )
+  }
 
   return assets
 }

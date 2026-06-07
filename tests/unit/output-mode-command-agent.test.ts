@@ -62,10 +62,10 @@ describe('output-mode / command / subagent scanning (GH-110 P5.1)', () => {
     claudeDir = fs.mkdtempSync(path.join(os.tmpdir(), 'berth-p51-'))
     fs.mkdirSync(path.join(claudeDir, 'agents'), { recursive: true })
     fs.mkdirSync(path.join(claudeDir, 'commands'), { recursive: true })
-    fs.mkdirSync(path.join(claudeDir, 'output-modes'), { recursive: true })
+    fs.mkdirSync(path.join(claudeDir, 'output-styles'), { recursive: true })
     fs.writeFileSync(path.join(claudeDir, 'agents', 'code-reviewer.md'), AGENT_MD)
     fs.writeFileSync(path.join(claudeDir, 'commands', 'deploy.md'), COMMAND_MD)
-    fs.writeFileSync(path.join(claudeDir, 'output-modes', 'terse.md'), OUTPUT_MODE_MD)
+    fs.writeFileSync(path.join(claudeDir, 'output-styles', 'terse.md'), OUTPUT_MODE_MD)
   })
 
   afterEach(() => {

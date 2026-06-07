@@ -67,6 +67,13 @@ export function extractAtImports(content: string): string[] {
 // Skills (YAML frontmatter + Markdown)
 // ---------------------------------------------------------------------------
 
+function skillNameFromPath(filePath: string): string {
+  const base = path.basename(filePath, path.extname(filePath))
+  // For the canonical `<name>/SKILL.md` form the filename is meaningless; the
+  // skill's identity is its parent directory.
+  return base === 'SKILL' ? path.basename(path.dirname(filePath)) : base
+}
+
 export function parseSkill(filePath: string, scope: AssetScope): Asset {
   const raw = fs.readFileSync(filePath, 'utf-8')
   const { frontmatter, body } = splitFrontmatter(raw)
@@ -76,7 +83,7 @@ export function parseSkill(filePath: string, scope: AssetScope): Asset {
     category: 'instruction',
     type: 'skill',
     scope,
-    name: (frontmatter?.name as string) ?? path.basename(filePath, path.extname(filePath)),
+    name: (frontmatter?.name as string) ?? skillNameFromPath(filePath),
     path: filePath,
     meta: {
       ...(frontmatter ?? {}),
