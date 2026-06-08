@@ -7,6 +7,7 @@ import {
   parseCodexCustomAgent,
   parseCodexHooksJson
 } from '../../src/main/adapters/codex/parsers'
+import { dedupePathKey } from '../../src/shared/asset-dedupe'
 
 let tempDir: string | null = null
 
@@ -397,5 +398,42 @@ describe('Codex config parser', () => {
 
     expect(() => parseCodexConfig(configPath, 'user')).toThrow()
     expect(() => parseCodexCustomAgent(configPath, 'user')).toThrow()
+  })
+
+  it('stamps meta.sourceKey on every capability asset (GH-113 cap-0)', () => {
+    // applyFileChange evicts a changed file's old rows by meta.sourceKey; a row
+    // without it is never evicted → duplicate on re-derive. Each asset's key =
+    // dedupePathKey(its own source path).
+    const configPath = path.join(tempDir!, 'config.toml')
+    fs.writeFileSync(
+      configPath,
+      [
+        '[mcp_servers.github]',
+        'command = "gh"',
+        '[[hooks.PreToolUse]]',
+        'matcher = "Bash"',
+        '[[hooks.PreToolUse.hooks]]',
+        'type = "command"',
+        'command = "echo hi"',
+        '[tui]',
+        'status_line = ["current-dir"]'
+      ].join('\n')
+    )
+    const configAssets = parseCodexConfig(configPath, 'user')
+    expect(configAssets.length).toBeGreaterThan(0)
+    for (const a of configAssets) expect(a.meta.sourceKey).toBe(dedupePathKey(a.path))
+
+    const agentPath = path.join(tempDir!, 'reviewer.toml')
+    fs.writeFileSync(agentPath, 'name = "reviewer"\n')
+    expect(parseCodexCustomAgent(agentPath, 'project').meta.sourceKey).toBe(dedupePathKey(agentPath))
+
+    const hooksPath = path.join(tempDir!, 'standalone-hooks.json')
+    fs.writeFileSync(
+      hooksPath,
+      JSON.stringify({ hooks: { Stop: [{ hooks: [{ type: 'command', command: 'echo stop' }] }] } })
+    )
+    const hookAssets = parseCodexHooksJson(hooksPath, 'user')
+    expect(hookAssets.length).toBeGreaterThan(0)
+    for (const a of hookAssets) expect(a.meta.sourceKey).toBe(dedupePathKey(a.path))
   })
 })

@@ -19,10 +19,11 @@ import {
   parseHooks,
   parsePermissions,
   parseEnv,
-  parseStatuslinesFromSettings
+  parseStatuslinesFromSettings,
+  parseOutputMode
 } from '../../src/main/adapters/claude-code/parsers'
 import { parseCodexAgentsMd, parseCodexSkill } from '../../src/main/adapters/codex/parsers'
-import { assetEntityId } from '../../src/shared/asset-dedupe'
+import { assetEntityId, dedupePathKey } from '../../src/shared/asset-dedupe'
 import { normalizeProjectPathKey } from '../../src/shared/scope'
 
 const read = vi.mocked(fs.readFileSync)
@@ -124,5 +125,61 @@ describe('multi-asset files: entityKey disambiguates without collision', () => {
     expect(sl.find((s) => s.meta.settingKey === 'statusLine')?.id).toBe(
       assetEntityId('statusline', 'user', fp, 'statusLine')
     )
+  })
+})
+
+describe('every capability parser stamps meta.sourceKey for incremental folding (GH-113 cap-0)', () => {
+  // applyFileChange evicts a changed file's old rows by meta.sourceKey before
+  // re-adding the freshly derived ones. A capability asset without sourceKey
+  // (undefined !== the file's key) is never evicted → duplicate rows on every
+  // incremental re-derive. Each asset's sourceKey must equal dedupePathKey(its
+  // own path), so a sidecar hook keyed on entry.sourcePath stays correct —
+  // mirroring parseClaudeMd / parseAgentsMd.
+  it('claude single-asset parsers: skill / agent / command / output-mode', () => {
+    setContent('---\nname: x\n---\nbody')
+    for (const a of [
+      parseSkill('C:\\r\\.claude\\skills\\x\\SKILL.md', 'project'),
+      parseAgent('C:\\r\\.claude\\agents\\a.md', 'project'),
+      parseCommand('C:\\r\\.claude\\commands\\c.md', 'project'),
+      parseOutputMode('C:\\r\\.claude\\output-styles\\o.md', 'project')
+    ]) {
+      expect(a.meta.sourceKey).toBe(dedupePathKey(a.path))
+    }
+  })
+
+  it('claude multi-asset settings.json: every row shares the one file sourceKey', () => {
+    const fp = 'C:\\r\\.claude\\settings.json'
+    setContent(
+      JSON.stringify({
+        mcpServers: { g: { command: 'x' } },
+        hooks: { PreToolUse: [{ matcher: 'Bash', hooks: [{ type: 'command', command: 'echo a' }] }] },
+        permissions: { allow: ['Bash(x)'], deny: ['Bash(y)'] },
+        env: { A: '1' },
+        statusLine: { type: 'command', command: 's' }
+      })
+    )
+    const rows = [
+      ...parseMcpServers(fp, 'project'),
+      ...parseHooks(fp, 'project'),
+      ...parsePermissions(fp, 'project'),
+      ...parseEnv(fp, 'project'),
+      ...parseStatuslinesFromSettings(fp, 'project')
+    ]
+    expect(rows.length).toBeGreaterThan(0)
+    for (const a of rows) expect(a.meta.sourceKey).toBe(dedupePathKey(fp))
+  })
+
+  it('.mcp.json mcp rows are keyed on the .mcp.json path', () => {
+    const fp = 'C:\\r\\.mcp.json'
+    setContent(JSON.stringify({ mcpServers: { g: { command: 'x' }, h: { command: 'y' } } }))
+    const rows = parseMcpServers(fp, 'project')
+    expect(rows).toHaveLength(2)
+    for (const a of rows) expect(a.meta.sourceKey).toBe(dedupePathKey(fp))
+  })
+
+  it('codex parseCodexSkill stamps sourceKey', () => {
+    setContent('---\nname: s\n---\nbody')
+    const fp = 'C:\\r\\.agents\\skills\\s\\SKILL.md'
+    expect(parseCodexSkill(fp, 'project').meta.sourceKey).toBe(dedupePathKey(fp))
   })
 })

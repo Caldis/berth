@@ -10,6 +10,7 @@ import { buildHookHash, buildHookKey, buildHookScenarioHash } from '@shared/hook
 import { assetEntityId, dedupePathKey } from '@shared/asset-dedupe'
 import { normalizeProjectPathKey } from '@shared/scope'
 import { extractCommandEntryPaths } from '../command-entry-paths'
+import { stampSourceKey, stampSourceKeys } from '../source-key'
 import type { Asset, AssetScope } from '../types'
 
 // ---------------------------------------------------------------------------
@@ -83,7 +84,7 @@ function skillNameFromPath(filePath: string): string {
 export function parseSkill(filePath: string, scope: AssetScope): Asset {
   const raw = fs.readFileSync(filePath, 'utf-8')
   const { frontmatter, body } = splitFrontmatter(raw)
-  return {
+  return stampSourceKey({
     id: assetEntityId('skill', scope, filePath),
     agentId: 'claude-code',
     category: 'instruction',
@@ -96,7 +97,7 @@ export function parseSkill(filePath: string, scope: AssetScope): Asset {
       bodyLength: body.length
     },
     raw
-  }
+  })
 }
 
 // ---------------------------------------------------------------------------
@@ -111,7 +112,7 @@ export function parseAgent(filePath: string, scope: AssetScope): Asset {
       ...(frontmatter ?? {}),
       bodyLength: body.length
     }
-    return {
+    return stampSourceKey({
       id: assetEntityId('agent', scope, filePath),
       agentId: 'claude-code',
       category: 'instruction',
@@ -121,7 +122,7 @@ export function parseAgent(filePath: string, scope: AssetScope): Asset {
       path: filePath,
       meta,
       raw
-    }
+    })
   }
 
   let parsed: Record<string, unknown> = {}
@@ -130,7 +131,7 @@ export function parseAgent(filePath: string, scope: AssetScope): Asset {
   } catch {
     // malformed yaml — still return the asset with empty meta
   }
-  return {
+  return stampSourceKey({
     id: assetEntityId('agent', scope, filePath),
     agentId: 'claude-code',
     category: 'instruction',
@@ -139,7 +140,7 @@ export function parseAgent(filePath: string, scope: AssetScope): Asset {
     name: (parsed.name as string) ?? path.basename(filePath, path.extname(filePath)),
     path: filePath,
     meta: parsed
-  }
+  })
 }
 
 // ---------------------------------------------------------------------------
@@ -149,7 +150,7 @@ export function parseAgent(filePath: string, scope: AssetScope): Asset {
 export function parseCommand(filePath: string, scope: AssetScope): Asset {
   const raw = fs.readFileSync(filePath, 'utf-8')
   const name = path.basename(filePath, path.extname(filePath))
-  return {
+  return stampSourceKey({
     id: assetEntityId('command', scope, filePath),
     agentId: 'claude-code',
     category: 'instruction',
@@ -159,7 +160,7 @@ export function parseCommand(filePath: string, scope: AssetScope): Asset {
     path: filePath,
     meta: { lineCount: raw.split('\n').length },
     raw
-  }
+  })
 }
 
 // ---------------------------------------------------------------------------
@@ -169,7 +170,7 @@ export function parseCommand(filePath: string, scope: AssetScope): Asset {
 export function parseOutputMode(filePath: string, scope: AssetScope): Asset {
   const raw = fs.readFileSync(filePath, 'utf-8')
   const name = path.basename(filePath, path.extname(filePath))
-  return {
+  return stampSourceKey({
     id: assetEntityId('output-mode', scope, filePath),
     agentId: 'claude-code',
     category: 'instruction',
@@ -179,7 +180,7 @@ export function parseOutputMode(filePath: string, scope: AssetScope): Asset {
     path: filePath,
     meta: { lineCount: raw.split('\n').length },
     raw
-  }
+  })
 }
 
 // ---------------------------------------------------------------------------
@@ -214,7 +215,7 @@ export function parseMcpServers(
       meta: { serverConfig, source: filePath }
     })
   }
-  return assets
+  return stampSourceKeys(assets)
 }
 
 /**
@@ -356,7 +357,7 @@ export function parseHooks(filePath: string, scope: AssetScope, options: ParseHo
     }
   }
   appendDisabledClaudeHooks(assets, filePath, scope, options)
-  return Array.from(assets.values())
+  return stampSourceKeys(Array.from(assets.values()))
 }
 
 function appendDisabledClaudeHooks(
@@ -548,7 +549,7 @@ export function parsePermissions(filePath: string, scope: AssetScope): Asset[] {
       meta: { kind: 'deny', rules: perms.deny }
     })
   }
-  return assets
+  return stampSourceKeys(assets)
 }
 
 // ---------------------------------------------------------------------------
@@ -558,7 +559,7 @@ export function parsePermissions(filePath: string, scope: AssetScope): Asset[] {
 export function parseEnv(filePath: string, scope: AssetScope): Asset[] {
   const settings = readSettingsJson(filePath)
   if (!settings?.env || Object.keys(settings.env).length === 0) return []
-  return [
+  return stampSourceKeys([
     {
       id: assetEntityId('env', scope, filePath, 'env'),
       agentId: 'claude-code',
@@ -569,7 +570,7 @@ export function parseEnv(filePath: string, scope: AssetScope): Asset[] {
       path: filePath,
       meta: { keys: Object.keys(settings.env), count: Object.keys(settings.env).length }
     }
-  ]
+  ])
 }
 
 // ---------------------------------------------------------------------------
@@ -582,18 +583,20 @@ export function parseStatuslinesFromSettings(filePath: string, scope: AssetScope
 
   const raw = readRawFile(filePath)
   const disabledByDisableAllHooks = settings.disableAllHooks === true
-  return [
-    parseStatuslineSetting(filePath, scope, settings.statusLine, 'statusLine', 'main', disabledByDisableAllHooks, raw),
-    parseStatuslineSetting(
-      filePath,
-      scope,
-      settings.subagentStatusLine,
-      'subagentStatusLine',
-      'subagent',
-      disabledByDisableAllHooks,
-      raw
-    )
-  ].filter((asset): asset is Asset => asset != null)
+  return stampSourceKeys(
+    [
+      parseStatuslineSetting(filePath, scope, settings.statusLine, 'statusLine', 'main', disabledByDisableAllHooks, raw),
+      parseStatuslineSetting(
+        filePath,
+        scope,
+        settings.subagentStatusLine,
+        'subagentStatusLine',
+        'subagent',
+        disabledByDisableAllHooks,
+        raw
+      )
+    ].filter((asset): asset is Asset => asset != null)
+  )
 }
 
 function parseStatuslineSetting(

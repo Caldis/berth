@@ -6,6 +6,7 @@ import { emptyTokenUsage, normalizeTokenUsage } from '@shared/token-usage'
 import { buildHookHash, buildHookKey, buildHookScenarioHash } from '@shared/hook-identity'
 import { assetEntityId, dedupePathKey } from '@shared/asset-dedupe'
 import { extractCommandEntryPaths } from '../command-entry-paths'
+import { stampSourceKey, stampSourceKeys } from '../source-key'
 import type { Asset, AssetScope } from '../types'
 import type { TokenUsageBreakdown } from '@shared/types/asset'
 import type {
@@ -36,17 +37,17 @@ export function parseCodexToml(filePath: string): Record<string, unknown> {
 export function parseCodexConfig(filePath: string, scope: AssetScope): Asset[] {
   const config = parseCodexToml(filePath)
   const hookState = readCodexHookState(config)
-  return [
+  return stampSourceKeys([
     ...parseCodexMcpServers(filePath, scope, config),
     ...parseCodexHooks(filePath, scope, asRecord(config.hooks), hookState, filePath),
     ...parseCodexStatusLine(filePath, scope, config)
-  ]
+  ])
 }
 
 export function parseCodexCustomAgent(filePath: string, scope: AssetScope): Asset {
   const config = parseCodexToml(filePath)
   const name = readString(config, 'name') ?? path.basename(filePath, '.toml')
-  return {
+  return stampSourceKey({
     id: assetEntityId('agent', scope, filePath),
     agentId: 'codex',
     category: 'instruction',
@@ -55,7 +56,7 @@ export function parseCodexCustomAgent(filePath: string, scope: AssetScope): Asse
     name,
     path: filePath,
     meta: config
-  }
+  })
 }
 
 export function parseCodexHooksJson(
@@ -71,7 +72,7 @@ export function parseCodexHooksJson(
   const hooks = asRecord(root.hooks) ?? root
   const adjacentConfigPath = stateSourcePath ?? path.join(path.dirname(filePath), 'config.toml')
   const effectiveHookState = hookState ?? readCodexHookStateFromConfig(adjacentConfigPath)
-  return parseCodexHooks(filePath, scope, hooks, effectiveHookState, adjacentConfigPath)
+  return stampSourceKeys(parseCodexHooks(filePath, scope, hooks, effectiveHookState, adjacentConfigPath))
 }
 
 export function parseCodexAgentsMd(filePath: string, scope: AssetScope): Asset {
@@ -104,7 +105,7 @@ export function parseCodexSkill(filePath: string, scope: AssetScope): Asset {
   const raw = fs.readFileSync(filePath, 'utf-8')
   const { frontmatter, body } = splitFrontmatter(raw)
   const skillDir = path.basename(path.dirname(filePath))
-  return {
+  return stampSourceKey({
     id: assetEntityId('skill', scope, filePath),
     agentId: 'codex',
     category: 'instruction',
@@ -117,7 +118,7 @@ export function parseCodexSkill(filePath: string, scope: AssetScope): Asset {
       bodyLength: body.length
     },
     raw
-  }
+  })
 }
 
 interface MutableArtifacts {
