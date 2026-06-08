@@ -3,6 +3,7 @@ import * as fs from 'fs'
 import * as os from 'os'
 import * as path from 'path'
 import { deriveAssetsForPath } from '../../src/main/engine/assets/derive-asset'
+import { dedupePathKey } from '../../src/shared/asset-dedupe'
 
 // GH-113 I1: re-derive a single changed file's assets so the watcher can replace
 // just that file (no full rescan). This slice covers root-level convention files;
@@ -55,8 +56,58 @@ describe('deriveAssetsForPath (GH-113 I1)', () => {
     expect(deriveAssetsForPath(filePath, { projectRoots: [projectRoot] })![0].type).toBe('claude-md')
   })
 
-  it('returns null for file types not yet supported incrementally (caller falls back)', () => {
-    const filePath = write(path.join('.claude', 'settings.json'), '{}')
+  it('derives a multi-asset .claude/settings.json (mcp+hooks+permission+env+statusline), all one sourceKey', () => {
+    const filePath = write(
+      path.join('.claude', 'settings.json'),
+      JSON.stringify({
+        mcpServers: { g: { command: 'x' } },
+        hooks: { PreToolUse: [{ matcher: 'Bash', hooks: [{ type: 'command', command: 'echo a' }] }] },
+        permissions: { allow: ['Bash(x)'], deny: ['Bash(y)'] },
+        env: { A: '1' },
+        statusLine: { type: 'command', command: 's' }
+      })
+    )
+    const assets = deriveAssetsForPath(filePath, { projectRoots: [projectRoot] })
+    expect(assets).not.toBeNull()
+    expect(new Set(assets!.map((a) => a.type))).toEqual(
+      new Set(['mcp-server', 'hook', 'permission', 'env', 'statusline'])
+    )
+    expect(assets!.every((a) => a.scope === 'project')).toBe(true)
+    // every row keyed on the one file → applyFileChange replaces them all together
+    expect(assets!.every((a) => a.meta.sourceKey === dedupePathKey(filePath))).toBe(true)
+  })
+
+  it('derives mcp servers from a project .mcp.json', () => {
+    const filePath = write('.mcp.json', JSON.stringify({ mcpServers: { a: { command: 'x' }, b: { command: 'y' } } }))
+    const assets = deriveAssetsForPath(filePath, { projectRoots: [projectRoot] })
+    expect(assets).toHaveLength(2)
+    expect(assets!.every((a) => a.type === 'mcp-server' && a.scope === 'project')).toBe(true)
+  })
+
+  it('derives codex capability files: .codex/config.toml and .codex/hooks.json', () => {
+    const cfg = write(path.join('.codex', 'config.toml'), '[mcp_servers.docs]\ncommand = "x"\n')
+    const cfgAssets = deriveAssetsForPath(cfg, { projectRoots: [projectRoot] })
+    expect(cfgAssets).not.toBeNull()
+    expect(cfgAssets!.some((a) => a.type === 'mcp-server' && a.agentId === 'codex')).toBe(true)
+
+    const hooks = write(
+      path.join('.codex', 'hooks.json'),
+      JSON.stringify({ hooks: { Stop: [{ hooks: [{ type: 'command', command: 'echo s' }] }] } })
+    )
+    const hookAssets = deriveAssetsForPath(hooks, { projectRoots: [projectRoot] })
+    expect(hookAssets).not.toBeNull()
+    expect(hookAssets!.some((a) => a.type === 'hook' && a.agentId === 'codex')).toBe(true)
+  })
+
+  it('infers user scope for a settings.json outside the project roots', () => {
+    const filePath = write(path.join('.claude', 'settings.json'), JSON.stringify({ env: { A: '1' } }))
+    const assets = deriveAssetsForPath(filePath, { projectRoots: [path.join(os.tmpdir(), 'unrelated-xyz')] })
+    expect(assets!.length).toBeGreaterThan(0)
+    expect(assets!.every((a) => a.scope === 'user')).toBe(true)
+  })
+
+  it('still returns null for glob-class capability files not yet supported (→ cap-2)', () => {
+    const filePath = write(path.join('.claude', 'skills', 'x', 'SKILL.md'), '---\nname: x\n---\nbody')
     expect(deriveAssetsForPath(filePath, { projectRoots: [projectRoot] })).toBeNull()
   })
 

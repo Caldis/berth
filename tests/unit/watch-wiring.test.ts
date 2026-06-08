@@ -53,10 +53,25 @@ describe('applyWatchEvent (GH-113 I1 watcher wiring)', () => {
     expect(runtime.refresh).not.toHaveBeenCalled()
   })
 
-  it('falls back to a full refresh for file types not yet supported incrementally', () => {
+  it('folds a supported capability config (settings.json) incrementally (cap-1)', () => {
     const filePath = path.join(dir, '.claude', 'settings.json')
     fs.mkdirSync(path.dirname(filePath), { recursive: true })
-    fs.writeFileSync(filePath, '{}')
+    fs.writeFileSync(filePath, JSON.stringify({ mcpServers: { g: { command: 'x' } } }))
+    const runtime = fakeRuntime(dir)
+
+    applyWatchEvent(event('changed', filePath), runtime)
+
+    expect(runtime.applyFileChange).toHaveBeenCalledTimes(1)
+    const [sourceKey, derived] = runtime.applyFileChange.mock.calls[0]
+    expect(sourceKey).toBe(`key:${filePath}`)
+    expect((derived as { type: string }[]).some((a) => a.type === 'mcp-server')).toBe(true)
+    expect(runtime.refresh).not.toHaveBeenCalled()
+  })
+
+  it('falls back to a full refresh for glob-class capabilities not yet supported (→ cap-2)', () => {
+    const filePath = path.join(dir, '.claude', 'skills', 'x', 'SKILL.md')
+    fs.mkdirSync(path.dirname(filePath), { recursive: true })
+    fs.writeFileSync(filePath, '---\nname: x\n---\nbody')
     const runtime = fakeRuntime(dir)
 
     applyWatchEvent(event('changed', filePath), runtime)
