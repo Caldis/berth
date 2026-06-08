@@ -3,6 +3,11 @@ import type { Asset, AssetStats } from '../../src/shared/types/asset'
 import type { AgentScanSourceGroup, AssetSnapshot, ScanResult } from '../../src/shared/types/ipc'
 import { AgentAssetRuntime, type AssetRuntimeScanner } from '../../src/main/engine/assets/runtime'
 import { createProjectScopeCandidate, normalizeProjectPathKey } from '../../src/shared/scope'
+import { runHealthChecks } from '../../src/main/engine/health'
+
+// GH-113 T3: health is device-wide. Mock the checker so we can capture which assets
+// it receives and prove scope selection never narrows them.
+vi.mock('../../src/main/engine/health', () => ({ runHealthChecks: vi.fn(() => []) }))
 
 const emptyStats: AssetStats = {
   skills: 0,
@@ -405,6 +410,28 @@ describe('AgentAssetRuntime', () => {
     await runtime.refresh({ reason: 'startup', wait: true })
     expect(store.save).toHaveBeenCalledTimes(1)
     expect((store.save.mock.calls[0][0] as AssetSnapshot).assets.map((a) => a.id)).toEqual(['fresh'])
+  })
+
+  it('runs health checks over ALL assets regardless of scope — device-wide (GH-113 T3)', async () => {
+    // Health surfaces system-level problems; scope-filtering would hide issues
+    // outside the active project. So switching scope must NOT narrow the asset set
+    // the checker sees. (Confirmed product decision; mirrors the rationale comment.)
+    const hookAsset = (id: string, scope: Asset['scope']): Asset => ({
+      id, agentId: 'claude-code', category: 'capability', type: 'hook', scope, name: id, path: `/x/${id}`, meta: {}
+    })
+    const scanner = createScanner({ assets: [hookAsset('u', 'user'), hookAsset('p', 'project')], stats: emptyStats, errors: [] })
+    const runtime = createRuntime(scanner)
+    await runtime.refresh({ reason: 'startup', wait: true })
+
+    await runtime.getHealthChecks()
+    const seenGlobal = (vi.mocked(runHealthChecks).mock.calls.at(-1)![0] as { assets: Asset[] }).assets
+    expect(seenGlobal.map((a) => a.id).sort()).toEqual(['p', 'u']) // every asset, not scope-filtered
+
+    // Switch to project scope — the checker must STILL see every asset.
+    runtime.setScopeSelection({ mode: 'project', projectPath: '/repo/berth', projectPathKey: normalizeProjectPathKey('/repo/berth') })
+    await runtime.getHealthChecks()
+    const seenProject = (vi.mocked(runHealthChecks).mock.calls.at(-1)![0] as { assets: Asset[] }).assets
+    expect(seenProject.map((a) => a.id).sort()).toEqual(['p', 'u']) // unchanged — device-wide
   })
 })
 

@@ -303,6 +303,16 @@ export class AgentAssetRuntime {
     )
   }
 
+  /**
+   * Health checks are deliberately DEVICE-WIDE (GH-113 T3): they evaluate every
+   * asset in the snapshot, NOT the active scope selection. Health surfaces
+   * system-level problems (a broken `~/.claude/settings.json`, a hook conflict),
+   * so scope-filtering would HIDE issues outside the active project — contrary to
+   * "global = all device assets". The cache key is `snapshot.id` alone (scope-
+   * independent), and search's `assetMatchesAppScope` filter is intentionally NOT
+   * applied here. Confirmed product decision — do not "unify" this with scope; see
+   * the device-wide test in agent-asset-runtime.test.ts.
+   */
   async getHealthChecks(opts: HealthCheckRequest = {}): Promise<HealthCheck[]> {
     const snapshot = await this.ensureReady({ reason: 'manual', refresh: opts.refresh })
     return this.select(`health:${snapshot.id}`, () => runHealthChecks({
