@@ -136,10 +136,16 @@ if (!gotTheLock) {
 
     const mainWindow = createWindow({ openDevTools })
     // GH-113 I1: a file change re-derives just that file's assets and folds them
-    // into the live snapshot incrementally — no full rescan. The renderer is
-    // updated through the runtime's progress channel (the partial emitted by
-    // applyFileChange), so the raw 'assets:changed' push is retired.
-    watcher.setListener((event) => applyWatchEvent(event, getAssetRuntime()))
+    // into the live snapshot incrementally — no full rescan (applyWatchEvent). The
+    // primary update reaches the renderer via the progress channel (the partial
+    // emitted by applyFileChange). The 'assets:changed' signal additionally lets
+    // non-progress consumers — health checks + the snapshot-sync fallback — re-
+    // evaluate against the UPDATED snapshot with a SOFT refresh (no extra full
+    // rescan), which the incremental path would otherwise leave stale.
+    watcher.setListener((event) => {
+      applyWatchEvent(event, getAssetRuntime())
+      if (!mainWindow.isDestroyed()) mainWindow.webContents.send('assets:changed', event)
+    })
     watcher.start(projectDir)
 
     // Stream live scan status + already-scanned assets to the renderer (P4.6).

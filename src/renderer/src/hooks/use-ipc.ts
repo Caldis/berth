@@ -452,7 +452,10 @@ export function useHealthChecks(): {
       refresh({ force: false })
     }
     const unsubscribe = window.api?.assets?.onChanged?.(() => {
-      refresh({ force: true })
+      // Soft refresh (GH-113 I1): re-evaluate health against the snapshot the
+      // incremental indexer just updated — NOT force:true, which would trigger a
+      // full rescan and defeat the per-file incremental write.
+      refresh({ force: false })
     })
     return () => {
       mountedRef.current = false

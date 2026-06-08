@@ -56,7 +56,10 @@ describe('useHealthChecks', () => {
     })
 
     await waitFor(() => {
-      expect(window.api.assets.healthCheck).toHaveBeenLastCalledWith({ refresh: true })
+      // GH-113 I1: an assets:changed signal triggers a SOFT refresh (force:false) —
+      // re-evaluate health against the incrementally-updated snapshot without a full
+      // rescan, which would defeat the per-file incremental write.
+      expect(window.api.assets.healthCheck).toHaveBeenLastCalledWith({ refresh: false })
     })
 
     await waitFor(() => {
