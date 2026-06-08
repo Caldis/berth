@@ -24,16 +24,19 @@ describe('SidebarScanStatus (unified sidebar loading)', () => {
     useAppStore.setState({ assetRuntimeStatus: IDLE_ASSET_RUNTIME_STATUS, assetErrors: [] })
   })
 
-  it('is hidden in the steady ready state with no scan issues', () => {
+  it('renders a layout-neutral reserved slot when idle (no scan, no issues)', () => {
     useAppStore.setState({
       assetRuntimeStatus: { ...IDLE_ASSET_RUNTIME_STATUS, state: 'ready' },
       assetErrors: []
     })
     const { container } = renderStatus()
+    // No active status element, but a fixed-size slot stays mounted so toggling
+    // scan state never reflows the footer or the nav above it. (GH-113)
     expect(container.querySelector('[data-sidebar-scan-status]')).toBeNull()
+    expect(container.querySelector('[data-sidebar-scan-slot]')).not.toBeNull()
   })
 
-  it('shows a scanning indicator with progress', () => {
+  it('shows a scanning indicator with progress in its accessible label', () => {
     useAppStore.setState({
       assetRuntimeStatus: {
         ...IDLE_ASSET_RUNTIME_STATUS,
@@ -43,9 +46,11 @@ describe('SidebarScanStatus (unified sidebar loading)', () => {
       assetErrors: []
     })
     renderStatus()
+    // Icon-only footer presence: label + progress live in the accessible name and
+    // the hover panel, not as an inline text row that would shift layout.
     const status = screen.getByRole('status')
-    expect(status).toHaveTextContent('Scanning')
-    expect(status).toHaveTextContent('3/10')
+    expect(status).toHaveAttribute('aria-label', expect.stringContaining('Scanning'))
+    expect(status).toHaveAttribute('aria-label', expect.stringContaining('3/10'))
   })
 
   it('surfaces dropped scan errors when otherwise ready', () => {
@@ -57,7 +62,7 @@ describe('SidebarScanStatus (unified sidebar loading)', () => {
       ]
     })
     renderStatus()
-    expect(screen.getByRole('status')).toHaveTextContent('2 scan issues')
+    expect(screen.getByRole('status')).toHaveAttribute('aria-label', expect.stringContaining('2 scan issues'))
   })
 
   it('shows an error state', () => {
@@ -66,7 +71,7 @@ describe('SidebarScanStatus (unified sidebar loading)', () => {
       assetErrors: []
     })
     renderStatus()
-    expect(screen.getByRole('status')).toHaveTextContent('Scan error')
+    expect(screen.getByRole('status')).toHaveAttribute('aria-label', expect.stringContaining('Scan error'))
   })
 
   it('opens a progress popover visualizing per-category live counts (P4.6)', async () => {

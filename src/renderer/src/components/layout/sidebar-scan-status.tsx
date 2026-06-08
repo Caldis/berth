@@ -116,7 +116,7 @@ function ScanProgressPanel(): React.ReactElement {
   )
 }
 
-export function SidebarScanStatus({ collapsed }: { collapsed: boolean }): React.ReactElement | null {
+export function SidebarScanStatus({ collapsed }: { collapsed: boolean }): React.ReactElement {
   const { t } = useTranslation()
   const status = useAppStore((s) => s.assetRuntimeStatus)
   const errorCount = useAppStore((s) => s.assetErrors.length)
@@ -125,7 +125,13 @@ export function SidebarScanStatus({ collapsed }: { collapsed: boolean }): React.
   const stale = status.state === 'stale'
   const errored = status.state === 'error'
 
-  if (!scanning && !stale && !errored && errorCount === 0) return null
+  // Idle with no issues: keep a fixed-size, transparent slot in the footer instead
+  // of unmounting. The old conditional row in the top block unmounted on idle and
+  // remounted on every watcher rescan, jumping the whole nav list below it;
+  // reserving the slot here makes scan feedback layout-neutral. (GH-113)
+  if (!scanning && !stale && !errored && errorCount === 0) {
+    return <div data-sidebar-scan-slot className="h-8 w-8 shrink-0" aria-hidden="true" />
+  }
 
   const showSpinner = scanning || stale
   let label: string
@@ -148,9 +154,12 @@ export function SidebarScanStatus({ collapsed }: { collapsed: boolean }): React.
     <AlertTriangle className={cn('h-3.5 w-3.5 shrink-0', iconClass)} />
   )
 
-  const trigger = collapsed ? (
+  // A calm, icon-sized presence in the footer status row beside Settings; the label
+  // and per-category progress live in the hover panel. Same footprint as the idle
+  // slot above, so toggling scan state never reflows the footer or the nav.
+  const trigger = (
     <div
-      className="flex h-8 w-full cursor-default items-center justify-center"
+      className="flex h-8 w-8 shrink-0 cursor-default items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-sidebar-accent/10"
       data-sidebar-scan-status
       role="status"
       aria-live="polite"
@@ -159,22 +168,12 @@ export function SidebarScanStatus({ collapsed }: { collapsed: boolean }): React.
     >
       {icon}
     </div>
-  ) : (
-    <div
-      className="flex h-8 cursor-default items-center gap-2 rounded-md px-2.5 text-xs text-muted-foreground"
-      data-sidebar-scan-status
-      role="status"
-      aria-live="polite"
-    >
-      {icon}
-      <span className="min-w-0 flex-1 truncate">{label}</span>
-    </div>
   )
 
   return (
     <FloatingPopover
       trigger={trigger}
-      side="right"
+      side={collapsed ? 'right' : 'top'}
       align="end"
       role="dialog"
       triggerTestId="sidebar-scan-status-trigger"

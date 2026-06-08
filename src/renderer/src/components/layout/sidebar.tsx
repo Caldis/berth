@@ -116,7 +116,6 @@ export function Sidebar(): React.ReactElement {
                 </>
               )}
             </button>
-            <SidebarScanStatus collapsed={collapsed} />
           </div>
         </div>
 
@@ -189,6 +188,7 @@ export function Sidebar(): React.ReactElement {
               <SettingsIcon className="h-3.5 w-3.5 shrink-0" />
               {!collapsed && <span className="text-sm font-medium">{t('nav.settings')}</span>}
             </button>
+            <SidebarScanStatus collapsed={collapsed} />
             <button
               type="button"
               onClick={toggleSidebar}
