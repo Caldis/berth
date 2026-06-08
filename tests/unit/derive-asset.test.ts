@@ -131,8 +131,49 @@ describe('deriveAssetsForPath (GH-113 I1)', () => {
     expect(asset.scope).toBe('project')
   })
 
-  it('returns null for a truly unsupported file (plugin/session/plain — cap-3+)', () => {
+  it('derives enterprise-scoped capabilities from managed-settings.json (cap-3a)', () => {
+    const filePath = write(
+      'managed-settings.json',
+      JSON.stringify({ mcpServers: { g: { command: 'x' } }, permissions: { allow: ['Bash(x)'] }, env: { A: '1' } })
+    )
+    const assets = deriveAssetsForPath(filePath, { projectRoots: [projectRoot] })
+    expect(assets).not.toBeNull()
+    expect(assets!.length).toBeGreaterThan(0)
+    // scope is fixed enterprise regardless of where the file sits (basename uniquely
+    // identifies it) — not inferScope's project/user.
+    expect(assets!.every((a) => a.scope === 'enterprise')).toBe(true)
+    expect(assets!.every((a) => a.meta.sourceKey === dedupePathKey(filePath))).toBe(true)
+  })
+
+  it('derives enterprise mcp servers from managed-mcp.json (cap-3a)', () => {
+    const filePath = write('managed-mcp.json', JSON.stringify({ mcpServers: { a: { command: 'x' } } }))
+    const assets = deriveAssetsForPath(filePath, { projectRoots: [projectRoot] })
+    expect(assets!.length).toBeGreaterThan(0)
+    expect(assets!.every((a) => a.type === 'mcp-server' && a.scope === 'enterprise')).toBe(true)
+  })
+
+  it('returns null for a truly unsupported file (session/plain — cap-3+)', () => {
     const filePath = write('notes.txt', 'hello')
+    expect(deriveAssetsForPath(filePath, { projectRoots: [projectRoot] })).toBeNull()
+  })
+
+  it('returns null for plugin-bundled files so the full scan keeps their pluginId tagging (cap-3b)', () => {
+    // A plugin's .mcp.json would otherwise match the cap-1 .mcp.json rule and be
+    // derived WITHOUT meta.pluginId — corrupting the plugin asset on incremental replace.
+    const mcp = write(
+      path.join('plugins', 'cache', 'mp', 'p', '.mcp.json'),
+      JSON.stringify({ mcpServers: { a: { command: 'x' } } })
+    )
+    expect(deriveAssetsForPath(mcp, { projectRoots: [projectRoot] })).toBeNull()
+    const skill = write(
+      path.join('plugins', 'data', 'mp', 'p', 'skills', 'x', 'SKILL.md'),
+      '---\nname: x\ndescription: d\n---\nbody'
+    )
+    expect(deriveAssetsForPath(skill, { projectRoots: [projectRoot] })).toBeNull()
+  })
+
+  it('returns null for the hooks-state sidecar so a full refresh recomputes enabled states (sidecar)', () => {
+    const filePath = write(path.join('.berth', 'hooks-state.json'), JSON.stringify({ disabled: [] }))
     expect(deriveAssetsForPath(filePath, { projectRoots: [projectRoot] })).toBeNull()
   })
 

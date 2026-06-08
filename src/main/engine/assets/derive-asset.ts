@@ -75,6 +75,16 @@ const CAPABILITY_GLOB_DISPATCH: { dir: string; fileName?: string; ext?: string; 
   { dir: path.join('.codex', 'agents'), ext: '.toml', parse: parseCodexCustomAgent }
 ]
 
+// Enterprise (managed) capability configs (GH-113 cap-3a): their basename uniquely
+// identifies them and their scope is ALWAYS 'enterprise' (not inferScope's
+// project/user). managed-settings.json yields the full settings capability set;
+// managed-mcp.json yields mcp servers. The watcher only emits these from the real
+// managed dir, so a basename key is safe.
+const ENTERPRISE_DISPATCH: Record<string, (filePath: string) => Asset[]> = {
+  'managed-settings.json': (filePath) => settingsCapabilities(filePath, 'enterprise'),
+  'managed-mcp.json': (filePath) => parseMcpServers(filePath, 'enterprise')
+}
+
 /**
  * Re-derive the assets a single changed file produces (GH-113 I1), so a watcher
  * event can replace just that file's assets instead of triggering a full rescan.
@@ -87,6 +97,12 @@ const CAPABILITY_GLOB_DISPATCH: { dir: string; fileName?: string; ext?: string; 
  * glob-class capabilities (skills/agents/commands) are handled by later slices.
  */
 export function deriveAssetsForPath(filePath: string, ctx: DeriveContext): Asset[] | null {
+  // Plugin-bundled files (~/.claude/plugins/{cache,data}/…) get their pluginId/
+  // origin tagging only from the full scan's descendPluginComponents; re-deriving
+  // them per-file would drop it (e.g. a plugin's .mcp.json matching the cap-1
+  // rule → an mcp row without pluginId). Fall back to a full refresh. (cap-3b)
+  if (isUnderPluginsDir(filePath)) return null
+
   const conventionParsers = CONVENTION_DISPATCH[path.basename(filePath)]
   if (conventionParsers) {
     const scope = inferScope(filePath, ctx)
@@ -100,6 +116,16 @@ export function deriveAssetsForPath(filePath: string, ctx: DeriveContext): Asset
       }
     }
     return assets
+  }
+
+  const enterpriseParser = ENTERPRISE_DISPATCH[path.basename(filePath)]
+  if (enterpriseParser) {
+    try {
+      return enterpriseParser(filePath)
+    } catch {
+      // A deleted or mid-write managed config derives to [] (removing its assets).
+      return []
+    }
   }
 
   const capability = matchCapabilityFile(filePath)
@@ -157,6 +183,14 @@ function matchCapabilityGlob(filePath: string): ConventionParser | null {
 function normalizeForSuffix(p: string): string {
   const slashed = p.split('\\').join('/')
   return process.platform === 'win32' ? slashed.toLowerCase() : slashed
+}
+
+/** A plugin-bundled component file lives under a plugins cache/data dir. The full
+ * scan tags those with pluginId/origin, which a per-file re-derive can't
+ * reproduce — so they are never derived incrementally. (GH-113 cap-3b) */
+function isUnderPluginsDir(filePath: string): boolean {
+  const norm = normalizeForSuffix(filePath)
+  return norm.includes('/plugins/cache/') || norm.includes('/plugins/data/')
 }
 
 /** A file inside one of the active project's config roots is 'project'-scoped;
