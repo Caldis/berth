@@ -2,15 +2,25 @@ import * as path from 'path'
 import type { Asset, AssetScope } from '@shared/types/asset'
 import { dedupePathKey } from '@shared/asset-dedupe'
 import {
+  parseAgent,
   parseAgentsMd,
   parseClaudeMd,
+  parseCommand,
   parseEnv,
   parseHooks,
   parseMcpServers,
+  parseOutputMode,
   parsePermissions,
+  parseSkill,
   parseStatuslinesFromSettings
 } from '../../adapters/claude-code/parsers'
-import { parseCodexAgentsMd, parseCodexConfig, parseCodexHooksJson } from '../../adapters/codex/parsers'
+import {
+  parseCodexAgentsMd,
+  parseCodexConfig,
+  parseCodexCustomAgent,
+  parseCodexHooksJson,
+  parseCodexSkill
+} from '../../adapters/codex/parsers'
 
 export interface DeriveContext {
   /** Config roots of the active project. A file inside one is 'project'-scoped;
@@ -53,6 +63,18 @@ const CAPABILITY_FILE_DISPATCH: { suffix: string; parse: CapabilityParser }[] = 
   { suffix: path.join('.codex', 'hooks.json'), parse: (f, s) => parseCodexHooksJson(f, s) }
 ]
 
+// Glob-class capabilities (GH-113 cap-2): a single file under a known capability
+// directory, matched by dir segment + filename/extension, each producing ONE
+// asset. Mirrors the shallow scan's CAPABILITY_GLOBS but applied per-file.
+const CAPABILITY_GLOB_DISPATCH: { dir: string; fileName?: string; ext?: string; parse: ConventionParser }[] = [
+  { dir: path.join('.claude', 'skills'), fileName: 'SKILL.md', parse: parseSkill },
+  { dir: path.join('.claude', 'agents'), ext: '.md', parse: parseAgent },
+  { dir: path.join('.claude', 'commands'), ext: '.md', parse: parseCommand },
+  { dir: path.join('.claude', 'output-styles'), ext: '.md', parse: parseOutputMode },
+  { dir: path.join('.agents', 'skills'), fileName: 'SKILL.md', parse: parseCodexSkill },
+  { dir: path.join('.codex', 'agents'), ext: '.toml', parse: parseCodexCustomAgent }
+]
+
 /**
  * Re-derive the assets a single changed file produces (GH-113 I1), so a watcher
  * event can replace just that file's assets instead of triggering a full rescan.
@@ -91,6 +113,16 @@ export function deriveAssetsForPath(filePath: string, ctx: DeriveContext): Asset
     }
   }
 
+  const globParser = matchCapabilityGlob(filePath)
+  if (globParser) {
+    try {
+      return [globParser(filePath, inferScope(filePath, ctx))]
+    } catch {
+      // A deleted or mid-write capability file derives to [] (removing its asset).
+      return []
+    }
+  }
+
   return null
 }
 
@@ -101,6 +133,23 @@ function matchCapabilityFile(filePath: string): CapabilityParser | null {
   for (const entry of CAPABILITY_FILE_DISPATCH) {
     const suffix = normalizeForSuffix(entry.suffix)
     if (fileNorm === suffix || fileNorm.endsWith('/' + suffix)) return entry.parse
+  }
+  return null
+}
+
+/** Match a glob-class capability file (GH-113 cap-2) by capability dir segment +
+ * filename / extension, normalized like dedupePathKey. The capability dirs are
+ * distinct (skills/agents/commands/...), so a file matches at most one entry. */
+function matchCapabilityGlob(filePath: string): ConventionParser | null {
+  const fileNorm = normalizeForSuffix(filePath)
+  const baseNorm = normalizeForSuffix(path.basename(filePath))
+  for (const entry of CAPABILITY_GLOB_DISPATCH) {
+    if (!fileNorm.includes('/' + normalizeForSuffix(entry.dir) + '/')) continue
+    if (entry.fileName) {
+      if (baseNorm === normalizeForSuffix(entry.fileName)) return entry.parse
+    } else if (entry.ext && fileNorm.endsWith(entry.ext)) {
+      return entry.parse
+    }
   }
   return null
 }

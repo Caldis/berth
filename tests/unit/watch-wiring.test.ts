@@ -68,10 +68,24 @@ describe('applyWatchEvent (GH-113 I1 watcher wiring)', () => {
     expect(runtime.refresh).not.toHaveBeenCalled()
   })
 
-  it('falls back to a full refresh for glob-class capabilities not yet supported (→ cap-2)', () => {
+  it('folds a glob-class capability (SKILL.md) incrementally (cap-2)', () => {
     const filePath = path.join(dir, '.claude', 'skills', 'x', 'SKILL.md')
     fs.mkdirSync(path.dirname(filePath), { recursive: true })
-    fs.writeFileSync(filePath, '---\nname: x\n---\nbody')
+    fs.writeFileSync(filePath, '---\nname: x\ndescription: d\n---\nbody')
+    const runtime = fakeRuntime(dir)
+
+    applyWatchEvent(event('changed', filePath), runtime)
+
+    expect(runtime.applyFileChange).toHaveBeenCalledTimes(1)
+    const [, derived] = runtime.applyFileChange.mock.calls[0]
+    expect((derived as { type: string }[]).some((a) => a.type === 'skill')).toBe(true)
+    expect(runtime.refresh).not.toHaveBeenCalled()
+  })
+
+  it('still falls back to a full refresh for a genuinely unsupported file (session jsonl)', () => {
+    const filePath = path.join(dir, 'sessions', 'rollout-x.jsonl')
+    fs.mkdirSync(path.dirname(filePath), { recursive: true })
+    fs.writeFileSync(filePath, '{}')
     const runtime = fakeRuntime(dir)
 
     applyWatchEvent(event('changed', filePath), runtime)

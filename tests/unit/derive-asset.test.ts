@@ -106,8 +106,33 @@ describe('deriveAssetsForPath (GH-113 I1)', () => {
     expect(assets!.every((a) => a.scope === 'user')).toBe(true)
   })
 
-  it('still returns null for glob-class capability files not yet supported (→ cap-2)', () => {
-    const filePath = write(path.join('.claude', 'skills', 'x', 'SKILL.md'), '---\nname: x\n---\nbody')
+  it('derives glob-class claude capabilities: skill / agent / command / output-mode (cap-2)', () => {
+    const skill = write(path.join('.claude', 'skills', 'foo', 'SKILL.md'), '---\nname: foo\ndescription: d\n---\nbody')
+    expect(deriveAssetsForPath(skill, { projectRoots: [projectRoot] })![0]).toMatchObject({ type: 'skill', scope: 'project' })
+    const agent = write(path.join('.claude', 'agents', 'a.md'), '---\nname: a\ndescription: d\n---\nbody')
+    expect(deriveAssetsForPath(agent, { projectRoots: [projectRoot] })![0].type).toBe('agent')
+    const cmd = write(path.join('.claude', 'commands', 'c.md'), 'do a thing')
+    expect(deriveAssetsForPath(cmd, { projectRoots: [projectRoot] })![0].type).toBe('command')
+    const om = write(path.join('.claude', 'output-styles', 'o.md'), '---\nname: o\ndescription: d\n---\nbody')
+    expect(deriveAssetsForPath(om, { projectRoots: [projectRoot] })![0].type).toBe('output-mode')
+  })
+
+  it('derives glob-class codex capabilities: skill (.agents/skills) + custom agent (.codex/agents) (cap-2)', () => {
+    const skill = write(path.join('.agents', 'skills', 'cs', 'SKILL.md'), '---\nname: cs\ndescription: d\n---\nbody')
+    expect(deriveAssetsForPath(skill, { projectRoots: [projectRoot] })!.some((a) => a.type === 'skill' && a.agentId === 'codex')).toBe(true)
+    const agent = write(path.join('.codex', 'agents', 'ca.toml'), 'description = "d"\n')
+    expect(deriveAssetsForPath(agent, { projectRoots: [projectRoot] })!.some((a) => a.type === 'agent' && a.agentId === 'codex')).toBe(true)
+  })
+
+  it('stamps the per-file sourceKey on a glob-class derived asset, scope project (cap-2)', () => {
+    const skill = write(path.join('.claude', 'skills', 'foo', 'SKILL.md'), '---\nname: foo\ndescription: d\n---\nbody')
+    const asset = deriveAssetsForPath(skill, { projectRoots: [projectRoot] })![0]
+    expect(asset.meta.sourceKey).toBe(dedupePathKey(skill))
+    expect(asset.scope).toBe('project')
+  })
+
+  it('returns null for a truly unsupported file (plugin/session/plain — cap-3+)', () => {
+    const filePath = write('notes.txt', 'hello')
     expect(deriveAssetsForPath(filePath, { projectRoots: [projectRoot] })).toBeNull()
   })
 
