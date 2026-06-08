@@ -77,7 +77,8 @@
   - [ ] **T4 后置 (实测驱动)**: worker parse→changeset→main 单 writer (背压); sidecar 依赖图; parse-error 保留旧行 `source_status=error`; 单调 checkpoint。
 - [~] **T3 全局后台 + 纯过滤 + 完成度** (用户选 option-1, 部分落地)
   - [x] **全局=全部能力** (提交 4a17c54a): `scanProjectCapabilities` 后台索引非活动项目全部能力 (skill/agent/command/output-style/mcp/hook/permission/env/statusline), owner-tag; T3a 谓词 global 全显/project 过滤。**性能**: per-file 指纹缓存 (AssetFileCache<Asset[]>) worker↔main 往返, 跳过未变配置。tests: 单测 + e2e (global 命中其它项目 skill, 切项目过滤)。issue conventions-only RESOLVED。
-  - [ ] 余: setProjectDir→纯过滤统一谓词 (search 已统一, sessions/health/usage 待核); per-root 完成度状态 (空态不误导); 设备级统一 watcher; 删/降级 scanShallowConventions (现与 capabilities 并存, 待全量索引稳定后收敛)。
+  - [x] **纯过滤统一已核** (提交 9f808fb3): search/sessions/usage 已统一从全局 scope 派生 + shared `assetMatchesProjectPath` (`filterAssetsByProjectPath` 经查是 shared 谓词薄包装, 非重复实现); health **有意保持全设备** (不按 scope 过滤 — 发现系统级问题如 ~/.claude 配置坏/hook 冲突, scope 过滤会隐藏跨域问题; 用户确认产品决策) + getHealthChecks rationale 注释 + scope 无关性测试锁定。
+  - [ ] 余: per-root 完成度状态 (空态不误导); 设备级统一 watcher; 删/降级 scanShallowConventions (现与 capabilities 并存, 待全量索引稳定后收敛)。
 - [ ] **T4 后置 (实测规模驱动)**: delta partial / session byte-offset tail / FTS5 / SAB 取消 / AIMD / 长驻 worker 池 / 丰富 knob + 暂停-恢复 UI + 性能档位设置。
 
 ## 并行/顺序
