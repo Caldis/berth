@@ -40,6 +40,7 @@ export const LEGACY_ACTION_IDS = ['5.1-optimization']
 export const WORKFLOW_ACTIONS = [
   { id: '0.0-new', verb: 'new', title: '启动新任务' },
   { id: '0.1-continue', verb: 'continue', title: '继续已有任务' },
+  { id: '0.2-sync', verb: 'sync', title: '多设备同步续跑' },
   { id: '1.0-explore', verb: 'explore', title: '探索' },
   { id: '2.0-design', verb: 'design', title: '设计' },
   { id: '3.0-implement', verb: 'implement', title: '实现' },
