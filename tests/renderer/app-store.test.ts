@@ -191,4 +191,48 @@ describe('useAppStore scope state', () => {
     expect(useAppStore.getState().assets.map((a) => a.id)).toEqual(['existing'])
     expect(useAppStore.getState().assetRuntimeStatus.progress?.phase).toBe('indexing')
   })
+
+  it('keeps shallow (other-project) assets across a deep-only partial tick (GH-113 global flicker fix)', () => {
+    // The scanner streams deep-only partials; other projects' shallow conventions/
+    // capabilities arrive only in the final snapshot. A raw partial would drop them
+    // mid-scan and flicker the global scope in and out. Existing shallow assets must
+    // survive a partial that doesn't carry them.
+    useAppStore.setState({
+      assets: [
+        {
+          id: 'shallow-conv',
+          agentId: 'claude-code',
+          category: 'instruction',
+          type: 'claude-md',
+          scope: 'project',
+          name: 'CLAUDE.md',
+          path: '/other/CLAUDE.md',
+          meta: { scanDepth: 'shallow', projectPath: '/other' }
+        }
+      ]
+    })
+
+    useAppStore.getState().applyAssetProgress({
+      status: { state: 'scanning', reason: 'watcher', stale: false, progress: { phase: 'parsing', current: 1, total: 2 } },
+      partial: {
+        assets: [
+          {
+            id: 'skill-live',
+            agentId: 'claude-code',
+            category: 'instruction',
+            type: 'skill',
+            scope: 'user',
+            name: 'live',
+            path: '/x/SKILL.md',
+            meta: {}
+          }
+        ],
+        stats: { ...EMPTY_ASSET_STATS, skills: 1 }
+      }
+    })
+
+    const ids = useAppStore.getState().assets.map((a) => a.id)
+    expect(ids).toContain('skill-live')
+    expect(ids).toContain('shallow-conv')
+  })
 })

@@ -132,12 +132,27 @@ export const useAppStore = create<AppState>((set) => ({
   // cumulative assets/stats into the store so pages render already-scanned items.
   // Deliberately does NOT touch assetSnapshotId — that only changes on completion,
   // so id-keyed consumers (plugin list) don't re-fetch on every partial.
-  applyAssetProgress: (payload) => set((state) => ({
-    assetRuntimeStatus: payload.status,
-    scanning: payload.status.state === 'scanning',
-    lastAssetRefreshAt: payload.status.lastCompletedAt ?? state.lastAssetRefreshAt,
-    ...(payload.partial ? { assets: payload.partial.assets, stats: payload.partial.stats } : {})
-  })),
+  applyAssetProgress: (payload) =>
+    set((state) => {
+      const base = {
+        assetRuntimeStatus: payload.status,
+        scanning: payload.status.state === 'scanning',
+        lastAssetRefreshAt: payload.status.lastCompletedAt ?? state.lastAssetRefreshAt
+      }
+      if (!payload.partial) return base
+      // The scanner streams DEEP-only partials for fast first paint; other projects'
+      // shallow conventions/capabilities are appended ONLY to the final snapshot
+      // (scanner.ts appendShallowConventions, after the adapter loop). A raw partial
+      // therefore drops every other project's assets mid-scan — and since agents
+      // writing sessions trigger frequent rescans (watcher → refresh), the global
+      // scope flickered project assets in and out. Keep the shallow (other-project)
+      // assets we already have until the final snapshot replaces them wholesale, so a
+      // mid-scan partial only refreshes the deep set it actually carries. (GH-113)
+      const shallowKept = state.assets.filter((a) => a.meta?.scanDepth === 'shallow')
+      const assets =
+        shallowKept.length > 0 ? [...payload.partial.assets, ...shallowKept] : payload.partial.assets
+      return { ...base, assets, stats: payload.partial.stats }
+    }),
 
   recentSessions: [],
   setRecentSessions: (recentSessions) => set({ recentSessions }),
