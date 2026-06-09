@@ -11,6 +11,7 @@
 
 ## 仓库布局
 
+- `packages/` — pnpm workspace 成员包。`berth-scan-engine/` (`@berth/scan-engine`) 是可独立发布的扫描引擎 CLI; 当前经 `src/engine-bridge.ts` 反向复用 `src/main/engine` (P1.3 hybrid 临时态, 物理迁移计划见 `docs/issues/2026-06-09-IMPROVEMENT-engine-shared-core-package.md`)。
 - `assets/` — 仓库共享静态资产。README 直接引用; website 构建后由 `website/scripts/postbuild.mjs` 复制到 `website/dist/assets/`。
 - `docs/` — 冷文档与 harness 操作态: 架构、用户手册、PRD、issues、friction、works。这里不放官网入口 HTML 或共享图片资产。
 - `website/` — 官方网站源码, React SSG 多语言静态站。`website/index.html` 是官网入口; `website/public/` 放只属于官网发布的静态文件。
@@ -31,6 +32,8 @@
   - `watcher.ts` — chokidar 文件监听
   - `search.ts` — MiniSearch 全文索引
   - `relations.ts` — 资产关系解析
+  - `assets/snapshot-store.ts` / `assets/sqlite-snapshot-store.ts` — 资产快照持久层 (同 `SnapshotStore` 契约 drop-in): JSON store (单测注入目录) 与行级 SQLite store (`berth-index.db`, WAL, 一资产一行, 主进程注入 better-sqlite3); 冷启动从持久快照 SWR 恢复 (GH-113 I3)
+- `src/main/memory/` — 记忆聚合 (只读): `index.ts` `listMemory()` 跨源聚合; `sources/united-memory.ts` + `sources/claude-native.ts` 列出 United Memory 与 Claude 原生记忆 notes; 类型 `types.ts`
 - `src/main/agent-plugins/` — Agent 能力插件注册表:
   - `registry.ts` — 内置 capability plugin 与有效 manifest plugin 的统一列表
   - `manifest.ts` — plugin manifest 发现、校验与 `path + size + mtimeMs` 进程内缓存
@@ -67,8 +70,8 @@
 
 ## 安全约束 (硬边界)
 
-- 只读: v0.1 不写任何本地文件。
-- 缓存只在进程内存中保存, 不落到磁盘。
+- 只读用户配置: 不修改被扫描的 agent 配置/会话文件。唯一本地写入是 berth 自有的资产索引缓存 `berth-index.db` (SQLite 快照持久化, 支持冷启动 SWR; GH-113 I3), 不触及用户数据。
+- 进程内 file-cache (`assets/file-cache.ts`) 不落磁盘; 落盘的只有上述 berth 自有索引缓存。
 - 凭证隔离: OAuth token / API key 不进渲染进程, 仅探测存在性, 标记 `sensitive: true`。
 - 路径白名单: 扫描器仅访问预定义路径 (见 `adapters/claude-code/scanner.ts`)。
 - 无遥测: 数据不出本机。
