@@ -1,3 +1,7 @@
+# 解决 (RESOLVED 2026-06-08)
+- `scanProjectCapabilities` (提交 4a17c54a) 后台索引非活动项目的**全部能力** (skill/agent/command/output-style/mcp/hook/permission/env/statusline) + owner-tag 谓词; conventions-only 边界闭合。本 IMPROVEMENT 被 [[2026-06-07-FEATURE-background-progressive-asset-indexer]] 取代并落地。详见下方「# RESOLVED」。
+- 归档任务: `docs/works/_archive/2026-06-07-gh-113-scope-refactor-convergence/`。
+
 # 描述
 - GH-113 把"全局"重定义为"设备上所有可扫描资产", 并实现了**会话派生项目根级约定 (AGENTS.md/CLAUDE.md) 的浅索引** → 全局 [约定] 现显示所有项目的约定。
 - 但浅索引**仅覆盖约定 (instruction conventions), 不含能力 (skill/agent/command/hook/mcp/statusline 等)**。因此全局下 [技能]/[Hooks]/[MCP] 等能力页只显示**活动项目 + 用户级**, 不含其它项目的能力。

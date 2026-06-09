@@ -1,3 +1,7 @@
+# 解决 (RESOLVED 2026-06-07)
+- GH-113 Pre-T0 (提交 9d890f05 + 8f39175b) 全部清除 Claude `makeId(Date.now)`, 改 `assetEntityId(type, scope, sourcePath, entityKey)` 确定式 id; 多实体文件用 path+entityKey 复合键。详见下方「# 进展」。
+- 归档任务: `docs/works/_archive/2026-06-07-gh-113-scope-refactor-convergence/` (T1/Pre-T0)。
+
 # 描述
 - claude 适配器多数 parser 用 `makeId(type)` = `${type}-${Date.now()}-${n}` 生成 id (非确定式), 每次全量扫描同一文件得到不同 id。
 - id 被渲染层当不透明句柄消费 (选中态、raw 内容重取): 触发刷新/重扫后, 之前选中的资产 id 失效 → 选中丢失、`window.api.assets.get(id)` 取不到 → raw 面板空白。
