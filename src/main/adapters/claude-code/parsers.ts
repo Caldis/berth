@@ -9,6 +9,7 @@ import {
 import { buildHookHash, buildHookKey, buildHookScenarioHash } from '@shared/hook-identity'
 import { assetEntityId, dedupePathKey } from '@shared/asset-dedupe'
 import { samePath } from '@shared/path-utils'
+import { isRecord, readString, uniqueStrings } from '../_shared/parser-helpers'
 import { normalizeProjectPathKey } from '@shared/scope'
 import { extractCommandEntryPaths } from '../command-entry-paths'
 import { stampSourceKey, stampSourceKeys } from '../source-key'
@@ -1010,12 +1011,6 @@ export function parseCredential(filePath: string): Asset {
 // Helpers
 // ---------------------------------------------------------------------------
 
-function readString(record: unknown, key: string): string | undefined {
-  if (!isRecord(record)) return undefined
-  const value = record[key]
-  return typeof value === 'string' && value.trim() ? value : undefined
-}
-
 function readNumber(record: unknown, key: string): number | undefined {
   if (!isRecord(record)) return undefined
   const value = record[key]
@@ -1121,14 +1116,6 @@ function readRawFile(filePath: string): string | undefined {
   } catch {
     return undefined
   }
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return value != null && typeof value === 'object' && !Array.isArray(value)
-}
-
-function uniqueStrings(values: string[]): string[] {
-  return Array.from(new Set(values.filter((value) => value.trim().length > 0)))
 }
 
 function readStringArray(value: unknown): string[] | undefined {

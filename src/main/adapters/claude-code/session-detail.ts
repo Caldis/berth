@@ -9,6 +9,7 @@ import type {
   SessionToolEvent,
   SessionToolEventCategory
 } from '@shared/types/ipc'
+import { isRecord, readString, safeId, uniqueStrings } from '../_shared/parser-helpers'
 
 export interface ParsedSessionDetail {
   toolTimeline: SessionToolEvent[]
@@ -317,12 +318,6 @@ function firstString(record: Record<string, unknown>, keys: string[]): string | 
   return undefined
 }
 
-function readString(record: unknown, key: string): string | undefined {
-  if (!isRecord(record)) return undefined
-  const value = record[key]
-  return typeof value === 'string' && value.trim() ? value : undefined
-}
-
 function readNumber(record: unknown, key: string): number | undefined {
   if (!isRecord(record)) return undefined
   const value = record[key]
@@ -340,14 +335,3 @@ function truncate(value: string, maxLength: number): string | undefined {
   return value.length > maxLength ? `${value.slice(0, maxLength - 3)}...` : value
 }
 
-function uniqueStrings(values: string[]): string[] {
-  return Array.from(new Set(values.filter((value) => value.trim().length > 0)))
-}
-
-function safeId(value: string): string {
-  return value.replace(/[^a-z0-9_-]+/gi, '-').replace(/^-+|-+$/g, '').slice(0, 80) || 'unknown'
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return value != null && typeof value === 'object' && !Array.isArray(value)
-}
