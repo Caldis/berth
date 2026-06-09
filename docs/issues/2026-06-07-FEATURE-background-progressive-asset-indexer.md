@@ -24,7 +24,17 @@
 - 调研+映射 Workflow 已启动 (run wf_46cf319a-ea8)。设计产出写入 `docs/works/2026-06-07-gh-113-scope-refactor-convergence/`。
 - 关联性能后续: [[2026-06-07-IMPROVEMENT-scan-worker-long-lived]] (独立后台 worker, Codex B①) 并入本 FEATURE。
 
+# 进展 (2026-06-09, GH-113 归档)
+GH-113 已落地本 FEATURE 的地基与核心数据通路 (详见归档 INDEX「续跑指南」):
+- **全局=全设备全部资产 (含能力, 非仅约定)**: `scanProjectCapabilities` owner-tag, e2e `global-shallow-scope.e2e.ts` 验证 (提交 4a17c54a)。用户核心诉求**已功能达成 + e2e 验证**。
+- **持久化索引 + 冷启 SWR**: SQLite 行级真源 `SqliteSnapshotStore` drop-in 替 JSON (I3); 快照持久化 + restorePersistedSnapshot。
+- **实时增量写**: 约定 + 能力全类型 cap-0~4 走 sourceKey 增量折叠, 真实 chokidar e2e (见 [[2026-06-08-IMPROVEMENT-incremental-write-followups]])。
+- **可观测性 v1**: IndexHairline/IndexingInline/IndexPulse + useIndexActivity 局部 loading。
+- **确定式 id**: 全 parser `assetEntityId` ([[2026-06-07-BUG-claude-makeid-nondeterministic-selection-loss]] RESOLVED)。
+
+**仍 OPEN (本 FEATURE 主线剩余)**: T4 可暂停/可控 (协作式取消 worker checkpoint) + **设置中暴露扫描策略档位** (频率/并发/排除/重建) — 用户明确要, 最后做; 老用户 JSON→SQLite 迁移 ([[2026-06-08-IMPROVEMENT-json-to-sqlite-snapshot-migration]]); 调度/背压/限流优先级队列。cap-5 行级 delta 见 incremental-write-followups。
+
 # 来源 / 关联
 - 用户在 GH-113 收尾澄清 (2026-06-07): "全局意味着完全完整的扫描结果, 切换只是 narrow down; 启动即扫全部; conventions-only 是 BUG; 扫描应像 spotlight/windows 索引: 后台渐进增量可控可暂停 + 可配置"。
-- 关联 `docs/works/2026-06-07-gh-113-scope-refactor-convergence/`。
-- 状态: OPEN (主线进行中)。
+- 关联 `docs/works/_archive/2026-06-07-gh-113-scope-refactor-convergence/`。
+- 状态: OPEN (主线进行中; 地基/全局完整结果/增量写/SQLite 已落地, 余 T4 可暂停+设置档位+调度背压)。
