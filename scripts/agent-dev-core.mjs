@@ -179,6 +179,23 @@ export function safeRemove(context, target) {
   rmSync(target, { recursive: true, force: true })
 }
 
+// Best-effort variant for dirs that Windows may still lock right after the
+// Electron child exits (the profile under instanceDir holds a file lock →
+// EPERM/EBUSY). The process is already killed, so a failed rmdir must not fail
+// the whole stop: warn and leave the dir for later cleanup instead of throwing.
+export function safeRemoveBestEffort(context, target, deps = {}) {
+  if (!isInsideStateRoot(context, target)) {
+    throw new Error(`Refusing to remove path outside state root: ${target}`)
+  }
+  const rm = deps.rm || ((t) => rmSync(t, { recursive: true, force: true }))
+  const warn = deps.warn || ((msg) => process.stderr.write(`${msg}\n`))
+  try {
+    rm(target)
+  } catch (err) {
+    warn(`warning: could not remove ${target} (${err && err.code ? err.code : err}); leaving for later cleanup`)
+  }
+}
+
 export function readState(context, id) {
   const file = statePath(context, id)
   if (!existsSync(file)) return undefined
@@ -198,9 +215,12 @@ export function listStates(context) {
     .filter(Boolean)
 }
 
-export function cleanupState(context, state) {
+export function cleanupState(context, state, deps = {}) {
+  // The state file is the authoritative "is this instance tracked" record and is
+  // never locked, so its removal stays strict. The instance dir holds the
+  // possibly-locked Electron profile, so it is best-effort (see above).
   safeRemove(context, statePath(context, state.id))
-  safeRemove(context, instanceDir(context, state.id))
+  safeRemoveBestEffort(context, instanceDir(context, state.id), deps)
 }
 
 export function isPidRunning(pid) {
@@ -307,7 +327,7 @@ export async function start(options, context = createAgentDevContext(), deps = {
       }
       throw new Error(`Agent dev instance already running: ${id} (pid ${existing.pid})`)
     }
-    cleanupState(context, existing)
+    cleanupState(context, existing, deps)
   }
 
   mkdirSync(instanceDir(context, id), { recursive: true })
@@ -408,7 +428,7 @@ export async function stopOne(id, context = createAgentDevContext(), deps = {}) 
     }
   }
 
-  cleanupState(context, state)
+  cleanupState(context, state, deps)
   return { status: summary.stale ? 'cleaned-stale' : 'stopped', id, pid: state.pid }
 }
 

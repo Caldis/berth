@@ -143,6 +143,36 @@ describe('agent dev core', () => {
     ).rejects.toThrow(/Refusing to stop pid/)
   })
 
+  it('tolerates a locked profile dir on stop (best-effort cleanup, no throw)', async () => {
+    const context = makeContext()
+    writeState(context, {
+      id: 'agent-1',
+      pid: 123,
+      startedAt: '2026-05-31T00:00:00.000Z',
+      cwd: context.root,
+      profileDir: profileDir(context, 'agent-1'),
+      logPath: join(context.stateRoot, 'agent-1', 'electron-vite.log')
+    })
+
+    const warn = vi.fn()
+    // Simulate Windows holding the profile lock: instance dir removal throws EPERM.
+    const rm = vi.fn(() => {
+      throw Object.assign(new Error('EPERM: operation not permitted'), { code: 'EPERM' })
+    })
+
+    const result = await stopOne('agent-1', context, {
+      isPidRunning: () => false,
+      rm,
+      warn
+    })
+
+    // Process is already gone, so a locked dir must not fail the stop.
+    expect(result.status).toBe('cleaned-stale')
+    expect(warn).toHaveBeenCalledOnce()
+    // State file is authoritative and not locked → removed → next stop is "missing".
+    expect(readState(context, 'agent-1')).toBeUndefined()
+  })
+
   it('cleans stale state before reusing an id', async () => {
     const context = makeContext()
     const staleProfile = profileDir(context, 'agent-1')
