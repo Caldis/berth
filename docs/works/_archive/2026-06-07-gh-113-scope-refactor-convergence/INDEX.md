@@ -2,7 +2,7 @@
 task: 2026-06-07-gh-113-scope-refactor-convergence
 task_id: GH-113
 type: feature
-phase: implement
+phase: archive
 created: 2026-06-07
 priority: P1
 target_date:
@@ -23,14 +23,17 @@ debt:
     confidence: low
     rationale: "0.0-new 初始估算: 重定义三档 scope 语义 (全局=全设备所有项目+用户+企业, 需扫会话派生现存项目目录 → 性能) + 收敛分散 scope 逻辑到统一模块 + 修跨适配器同一物理文件重复扫描 (AGENTS.md)。跨 scanner/runtime/shared scope/switcher, scope=cross-process, risk high。Codex 两轮 review 守护。explore/design 后校准。"
   final:
-    incurred:
-    repaid:
-    net:
-    scope:
-    risk:
-    areas: []
-    confidence:
-    rationale:
+    incurred: 12
+    repaid: 9
+    net: 3
+    scope: cross-process
+    risk: medium
+    areas:
+      - architecture
+      - performance
+      - testability
+    confidence: medium
+    rationale: "最终落地远超初估 (SQLite 行级真源 drop-in + 实时增量写 cap-0~4 全资产类型 + scope 谓词统一/health 全设备固化 + observable verify 实践)。偿还显著: 修 makeid 非确定/全局 scope 闪烁×2 (含 verify 真跑发现的 setAssetSnapshot 时序闪烁)/health regression/plugin .mcp.json 误派生/harness fixture drift 多个潜伏 bug; 根治 fixture 派生 ACTION_IDS、foldKeepingShallow 统一两条写 assets 路径等脆弱点; 确定式回归测试 + CDP 真跑时序验证。新债明确且已记 issue (cap-5 行级 delta / T4 worker changeset+暂停档位 / JSON→SQLite 迁移 / dev:agent stop EPERM / macOS e2e)。risk high→medium (真跑暴露并修时序涌现 bug, 核心 e2e+observable 双验证); confidence low→medium; net 6→3 (repaid 随扎实验证上升)。"
   revisions:
     - phase: implement
       note: "T2 初版 naive 套 shared assetMatchesAppScope 破坏继承链可见 (project-scope.e2e 红); reframe 为 T3a owner-tagging 谓词 (显式 owner 过滤 + 无 owner=活动项目放行), 同时修继承链 bug 并完成 search/列表收敛。"
@@ -49,7 +52,7 @@ gh_project:
   project_number: 6
   project_url: https://github.com/users/Caldis/projects/6
   item_id: PVTI_lAHOADXbEs4BZHvQzgu9T4I
-  item_status: In Progress
+  item_status: Done
   project_id: PVT_kwHOADXbEs4BZHvQ
 artifacts:
   source: 00-PRD.md
