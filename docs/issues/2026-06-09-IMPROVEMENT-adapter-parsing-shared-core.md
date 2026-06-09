@@ -8,10 +8,14 @@
 - session artifact: `extractPaths` codex/parsers.ts:834 · claude/session-detail.ts:267; `parseMcpToolName` codex/parsers.ts:871 · session-detail.ts:301 — 完全复制。
 - session meta: `projectNameFromPath` claude/parsers.ts:1086 · codex/parsers.ts:1021; `parseSessionMeta` vs `parseCodexSessionMeta` 骨架同 (JSONL 迭代 + 字段聚合 + duration)。
 
+# 进展 (2026-06-10)
+- **标量 helper DONE**: `readString`/`isRecord`/`uniqueStrings`/`safeId` 三处字节相同复制 → `src/main/adapters/_shared/parser-helpers.ts` 单一真源; claude/parsers · codex/parsers · claude/session-detail 改 import。typecheck/lint/54 适配器测试/scan-engine 全绿。
+- **仍 OPEN**: markdown (`extractAtImports` 字面相同可抽; `splitFrontmatter` 两份实现已漂移——正则 vs indexOf, 需先核对语义再统一) + session-artifacts (`extractPaths`/`parseMcpToolName` 复制) + cost/token 字段别名表。
+
 # 预期 · 建议
 - 抽 `src/main/adapters/_shared/`: parser-helpers (标量)、markdown (extractAtImports/splitFrontmatter)、session-artifacts (extractPaths/upsertFile/parseMcpToolName)、cost/token 字段别名表; 各 agent 只写差异。
 - 该内聚同时是 2026-06-09-IMPROVEMENT-engine-shared-core-package.md 物理迁移的预演。
 
 # 来源 · 关联
 - 架构图绘制任务 (2026-06-09)。关联 2026-06-09-IMPROVEMENT-engine-shared-core-package.md、2026-06-09-IMPROVEMENT-shared-path-and-type-config.md。
-- 状态: OPEN。
+- 状态: OPEN (标量 helper 已抽; 余 markdown/session-artifacts/字段别名)。
