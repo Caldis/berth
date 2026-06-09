@@ -1351,6 +1351,15 @@
     "themeLight": "浅色",
     "themeDark": "深色",
     "themeSystem": "跟随系统",
+    "accentColor": "强调色",
+    "accent": {
+      "neutral": "中性",
+      "blue": "蓝",
+      "violet": "紫",
+      "emerald": "绿",
+      "amber": "琥珀",
+      "rose": "玫瑰"
+    },
     "language": "语言",
     "scanning": "扫描",
     "scanDirectories": "扫描目录",

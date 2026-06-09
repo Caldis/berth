@@ -1356,6 +1356,15 @@
     "themeLight": "Light",
     "themeDark": "Dark",
     "themeSystem": "System",
+    "accentColor": "Accent color",
+    "accent": {
+      "neutral": "Neutral",
+      "blue": "Blue",
+      "violet": "Violet",
+      "emerald": "Emerald",
+      "amber": "Amber",
+      "rose": "Rose"
+    },
     "language": "Language",
     "scanning": "Scanning",
     "scanDirectories": "Scan Directories",
