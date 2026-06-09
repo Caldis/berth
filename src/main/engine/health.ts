@@ -6,6 +6,7 @@ import { glob } from 'glob'
 import { parseCodexToml } from '../adapters/codex/parsers'
 import { resolveClaudeDirs, resolveCodexHomeDirs } from '../agent-homes'
 import type { Asset, AssetScope } from '@shared/types/asset'
+import { samePath } from '@shared/path-utils'
 import type {
   HealthCheck,
   HealthCheckCategory,
@@ -1438,12 +1439,6 @@ function looksWindowsSpecificCommand(command: string): boolean {
   )
 }
 
-function samePath(left: string, right: string): boolean {
-  const normalizedLeft = path.resolve(left)
-  const normalizedRight = path.resolve(right)
-  if (normalizedLeft === normalizedRight) return true
-  return process.platform === 'win32' && normalizedLeft.toLowerCase() === normalizedRight.toLowerCase()
-}
 
 function slug(value: string): string {
   return value.toLowerCase().replace(/[^a-z0-9_-]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 80) || 'unknown'

@@ -8,6 +8,7 @@ import {
 } from '@shared/token-usage'
 import { buildHookHash, buildHookKey, buildHookScenarioHash } from '@shared/hook-identity'
 import { assetEntityId, dedupePathKey } from '@shared/asset-dedupe'
+import { samePath } from '@shared/path-utils'
 import { normalizeProjectPathKey } from '@shared/scope'
 import { extractCommandEntryPaths } from '../command-entry-paths'
 import { stampSourceKey, stampSourceKeys } from '../source-key'
@@ -481,18 +482,6 @@ function parseClaudeDisabledHookEntry(value: unknown): ClaudeDisabledHookEntry |
       : 1,
     disabledAt: value.disabledAt
   }
-}
-
-/**
- * Path equality consistent with the filesystem's case semantics. Only fold case
- * on Windows (case-insensitive); case-sensitive filesystems must compare exactly.
- * Uses `toLowerCase` (not locale-aware `toLocaleLowerCase`, which mangles e.g.
- * the Turkish dotted-İ). Mirrors `normalizePath` in scanner.ts.
- */
-export function samePath(left: string, right: string, platform: NodeJS.Platform = process.platform): boolean {
-  const a = path.resolve(left)
-  const b = path.resolve(right)
-  return platform === 'win32' ? a.toLowerCase() === b.toLowerCase() : a === b
 }
 
 function readCommonHookConfig(hookRecord: Record<string, unknown>): Record<string, unknown> {

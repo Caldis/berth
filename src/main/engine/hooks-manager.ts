@@ -3,6 +3,7 @@ import * as os from 'os'
 import * as path from 'path'
 import { parse as parseToml, stringify as stringifyToml } from 'smol-toml'
 import { buildHookHash, buildHookScenarioHash } from '@shared/hook-identity'
+import { samePath } from '@shared/path-utils'
 import type {
   SetHookEnabledRequest,
   SetHookEnabledResult,
@@ -714,9 +715,6 @@ function cloneJson<T>(value: T): T {
   return JSON.parse(JSON.stringify(value)) as T
 }
 
-function samePath(left: string, right: string): boolean {
-  return path.resolve(left).toLocaleLowerCase() === path.resolve(right).toLocaleLowerCase()
-}
 
 function readBoolean(record: unknown, key: string): boolean | undefined {
   if (!isRecord(record)) return undefined

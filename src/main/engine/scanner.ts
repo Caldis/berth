@@ -2,6 +2,7 @@ import * as fs from 'fs'
 import * as path from 'path'
 import type { AgentAdapter, Asset, AssetStats } from '@shared/types/asset'
 import type { ScanRoot } from '@shared/types/asset'
+import { samePath } from '@shared/path-utils'
 import type { AgentScanSourceGroup, AssetScanPartial, AssetScanProgress, ScanResult } from '@shared/types/ipc'
 import type { ProjectScopeCandidate } from '@shared/scope'
 import { normalizeProjectPathKey } from '@shared/scope'
@@ -309,11 +310,6 @@ function isPathInside(candidate: string, parent: string): boolean {
   const normalizedCandidate = normalizePath(candidate)
   const normalizedParent = normalizePath(parent)
   return normalizedCandidate.startsWith(`${normalizedParent}${path.sep}`)
-}
-
-function samePath(a: string | undefined, b: string | undefined): boolean {
-  if (!a || !b) return false
-  return normalizePath(a) === normalizePath(b)
 }
 
 function normalizePath(filePath: string): string {
