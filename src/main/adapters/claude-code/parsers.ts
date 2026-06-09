@@ -10,6 +10,7 @@ import { buildHookHash, buildHookKey, buildHookScenarioHash } from '@shared/hook
 import { assetEntityId, dedupePathKey } from '@shared/asset-dedupe'
 import { samePath } from '@shared/path-utils'
 import { isRecord, readString, uniqueStrings } from '../_shared/parser-helpers'
+import { extractAtImports } from '../_shared/markdown'
 import { normalizeProjectPathKey } from '@shared/scope'
 import { extractCommandEntryPaths } from '../command-entry-paths'
 import { stampSourceKey, stampSourceKeys } from '../source-key'
@@ -60,17 +61,9 @@ export function parseAgentsMd(filePath: string, scope: AssetScope): Asset {
   }
 }
 
-export function extractAtImports(content: string): string[] {
-  const results: string[] = []
-  for (const line of content.split('\n')) {
-    const trimmed = line.trim()
-    // Matches @path references like @AGENTS.md, @./foo/bar.md
-    if (/^@[\w./\\]/.test(trimmed)) {
-      results.push(trimmed.slice(1).trim())
-    }
-  }
-  return results
-}
+// Re-exported from the shared markdown helper so existing importers of this
+// module (claude index, engine relations/health) keep working.
+export { extractAtImports }
 
 // ---------------------------------------------------------------------------
 // Skills (YAML frontmatter + Markdown)

@@ -8,6 +8,7 @@ import { assetEntityId, dedupePathKey } from '@shared/asset-dedupe'
 import { extractCommandEntryPaths } from '../command-entry-paths'
 import { stampSourceKey, stampSourceKeys } from '../source-key'
 import { isRecord, readString, safeId, uniqueStrings } from '../_shared/parser-helpers'
+import { extractAtImports } from '../_shared/markdown'
 import type { Asset, AssetScope } from '../types'
 import type { TokenUsageBreakdown } from '@shared/types/asset'
 import type {
@@ -378,17 +379,6 @@ function toSnakeCase(value: string): string {
     .replace(/([a-z0-9])([A-Z])/g, '$1_$2')
     .replace(/[-\s]+/g, '_')
     .toLowerCase()
-}
-
-function extractAtImports(content: string): string[] {
-  const results: string[] = []
-  for (const line of content.split('\n')) {
-    const trimmed = line.trim()
-    if (/^@[\w./\\]/.test(trimmed)) {
-      results.push(trimmed.slice(1).trim())
-    }
-  }
-  return results
 }
 
 function splitFrontmatter(raw: string): {
