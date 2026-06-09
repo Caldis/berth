@@ -1,7 +1,6 @@
 import type {
   AgentView,
   Asset,
-  AssetCategory,
   CostMode,
   AssetScope,
   PricingSourceName,
@@ -353,7 +352,6 @@ export interface IpcChannels {
   'project-scope:candidates': { args: []; result: ProjectScopeCandidate[] }
   'project-scope:activate': { args: [{ projectPath?: string }]; result: ProjectScopeActivationResult }
   'project-scope:set-scope': { args: [AppScopeSelection]; result: { applied: boolean } }
-  'assets:scan-category': { args: [AssetCategory]; result: Asset[] }
   'assets:get': { args: [string]; result: Asset | null }
   'assets:relations': { args: [string]; result: Relation[] }
   'assets:search': { args: [string]; result: SearchResult[] }
@@ -366,7 +364,6 @@ export interface IpcChannels {
   'memory:get': { args: [string]; result: MemoryNote | null }
   'mcp:merged': { args: []; result: MCPMergeInfo[] }
   'hooks:status': { args: [HooksAgentId]; result: HooksEnablementStatus }
-  'hooks:statuses': { args: [HooksAgentId]; result: HooksEnablementStatus[] }
   'hooks:set-enabled': { args: [SetHooksEnabledRequest]; result: SetHooksEnabledResult }
   'hooks:set-hook-enabled': { args: [SetHookEnabledRequest]; result: SetHookEnabledResult }
   'theme:get': { args: []; result: string }

@@ -3,7 +3,7 @@ import * as path from 'path'
 import * as fs from 'fs'
 import { BrowserWindow, ipcMain, nativeTheme, shell, app } from 'electron'
 import type { IpcMainInvokeEvent } from 'electron'
-import type { AgentView, Asset, AssetCategory, CostMode, Relation, SessionSummary, UsageSummary } from '@shared/types/asset'
+import type { AgentView, Asset, CostMode, Relation, SessionSummary, UsageSummary } from '@shared/types/asset'
 import type {
   PlatformInfo,
   AgentScanSourceGroup,
@@ -28,12 +28,10 @@ import type {
   SetHooksEnabledResult
 } from '@shared/types/ipc'
 import type { AgentCapabilityPluginListResult } from '@shared/types/agent-plugin'
-import { getScanner } from '../engine/scanner'
 import { getAssetRuntime } from '../engine/assets/runtime'
 import { normalizeTokenUsage } from '../../shared/token-usage'
 import {
   getAgentHooksStatus,
-  getAgentHooksStatuses,
   setAgentHooksEnabled,
   setHookEnabled
 } from '../engine/hooks-manager'
@@ -133,14 +131,6 @@ export function registerAssetHandlers(): void {
     return { applied: true }
   })
 
-  ipcMain.handle(
-    'assets:scan-category',
-    async (_event, category: AssetCategory): Promise<Asset[]> => {
-      const scanner = getScanner()
-      return scanner.scanCategory(category)
-    }
-  )
-
   ipcMain.handle('assets:get', (_event, id: string): Asset | null => {
     return getAssetRuntime().getAsset(id)
   })
@@ -226,10 +216,6 @@ export function registerAssetHandlers(): void {
 
   ipcMain.handle('hooks:status', (_event, agentId: HooksAgentId): HooksEnablementStatus => {
     return getAgentHooksStatus(agentId)
-  })
-
-  ipcMain.handle('hooks:statuses', (_event, agentId: HooksAgentId): HooksEnablementStatus[] => {
-    return getAgentHooksStatuses(agentId, undefined, getScanner().getProjectDir())
   })
 
   ipcMain.handle(

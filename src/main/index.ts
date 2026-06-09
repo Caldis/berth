@@ -2,7 +2,6 @@ import { app, BrowserWindow, shell } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { registerAllHandlers } from './ipc'
-import { initScanner } from './engine/scanner'
 import Database from 'better-sqlite3'
 import { getAssetRuntime, initAssetRuntime } from './engine/assets/runtime'
 import { createSqliteSnapshotStore } from './engine/assets/sqlite-snapshot-store'
@@ -123,7 +122,6 @@ if (!gotTheLock) {
 
     // Initialize the asset engine
     const projectDir = resolveDefaultProjectDir({ isDev: is.dev, cwd: process.cwd() })
-    initScanner(projectDir)
     // Seed the runtime with the persisted snapshot (GH-113 I3): cold start shows
     // the last result instantly from the on-disk SQLite index, then the renderer
     // triggers a background refresh (SWR). better-sqlite3's Electron-ABI binding

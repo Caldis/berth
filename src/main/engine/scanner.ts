@@ -1,6 +1,6 @@
 import * as fs from 'fs'
 import * as path from 'path'
-import type { AgentAdapter, Asset, AssetCategory, AssetStats } from '@shared/types/asset'
+import type { AgentAdapter, Asset, AssetStats } from '@shared/types/asset'
 import type { ScanRoot } from '@shared/types/asset'
 import type { AgentScanSourceGroup, AssetScanPartial, AssetScanProgress, ScanResult } from '@shared/types/ipc'
 import type { ProjectScopeCandidate } from '@shared/scope'
@@ -129,14 +129,6 @@ export class AssetScanner {
       stats: this.computeStats(merged),
       errors
     }
-  }
-
-  async scanCategory(category: AssetCategory): Promise<Asset[]> {
-    const assets: Asset[] = []
-    for (const adapter of this.adapters) {
-      assets.push(...(await adapter.scanAssets(category)))
-    }
-    return assets
   }
 
   getAsset(id: string): Asset | null {
@@ -433,16 +425,3 @@ function readString(record: Record<string, unknown>, key: string): string | unde
   return typeof value === 'string' && value.trim().length > 0 ? value : undefined
 }
 
-let _scannerInstance: AssetScanner | null = null
-
-export function getScanner(): AssetScanner {
-  if (!_scannerInstance) {
-    _scannerInstance = new AssetScanner(process.cwd())
-  }
-  return _scannerInstance
-}
-
-export function initScanner(projectDir?: string): AssetScanner {
-  _scannerInstance = new AssetScanner(projectDir)
-  return _scannerInstance
-}
