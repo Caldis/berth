@@ -102,12 +102,37 @@ function skillAsset(id: string, scope: Asset['scope'], path: string, projectPath
 describe('Instructions guidance surfaces', () => {
   beforeEach(() => {
     resetMemoryCacheForTests()
-    useAppStore.setState({ assets: [], agentView: 'all', scopeSelection: { mode: 'global' } })
+    useAppStore.setState({
+      assets: [],
+      agentView: 'all',
+      scopeSelection: { mode: 'global' },
+      scanning: false,
+      assetRuntimeStatus: { ...useAppStore.getState().assetRuntimeStatus, state: 'ready' }
+    })
     window.api.memory = {
       list: vi.fn(async () => ({ notes: [], sources: [] })),
       get: vi.fn(async () => null)
     }
     instructionsVirtuosoMock.scrollToIndex.mockClear()
+  })
+
+  it('shows a skeleton (not a misleading empty) when the skills tab is empty mid-scan (GH-113 A4)', () => {
+    // Partial scan: a hook已到达 but the skills category hasn't been reached yet.
+    useAppStore.setState({
+      assets: [
+        { id: 'h1', agentId: 'codex', category: 'capability', type: 'hook', scope: 'user', name: 'Stop', path: '/x/config.toml', meta: {} }
+      ],
+      scanning: true,
+      assetRuntimeStatus: { ...useAppStore.getState().assetRuntimeStatus, state: 'scanning' }
+    })
+    render(
+      <MemoryRouter initialEntries={['/instructions/skills']}>
+        <PageChromeProvider>
+          <Instructions activeSection="skills" />
+        </PageChromeProvider>
+      </MemoryRouter>
+    )
+    expect(screen.getByText(/Scanning/)).toBeTruthy()
   })
 
   it('shows a feature guide for the Memories tab before the memory list', async () => {

@@ -78,7 +78,8 @@
 - [~] **T3 全局后台 + 纯过滤 + 完成度** (用户选 option-1, 部分落地)
   - [x] **全局=全部能力** (提交 4a17c54a): `scanProjectCapabilities` 后台索引非活动项目全部能力 (skill/agent/command/output-style/mcp/hook/permission/env/statusline), owner-tag; T3a 谓词 global 全显/project 过滤。**性能**: per-file 指纹缓存 (AssetFileCache<Asset[]>) worker↔main 往返, 跳过未变配置。tests: 单测 + e2e (global 命中其它项目 skill, 切项目过滤)。issue conventions-only RESOLVED。
   - [x] **纯过滤统一已核** (提交 9f808fb3): search/sessions/usage 已统一从全局 scope 派生 + shared `assetMatchesProjectPath` (`filterAssetsByProjectPath` 经查是 shared 谓词薄包装, 非重复实现); health **有意保持全设备** (不按 scope 过滤 — 发现系统级问题如 ~/.claude 配置坏/hook 冲突, scope 过滤会隐藏跨域问题; 用户确认产品决策) + getHealthChecks rationale 注释 + scope 无关性测试锁定。
-  - [ ] 余: per-root 完成度状态 (空态不误导); 设备级统一 watcher; 删/降级 scanShallowConventions (现与 capabilities 并存, 待全量索引稳定后收敛)。
+  - [x] **空态不误导 (各页统一)**: capabilities/instructions 的 per-分类空态从"整快照空 (assets.length===0)"改为"当前分类空 + 仍在扫" (scanning, 或 idle 且全空) → 全量扫描进行中切到未扫到的分类显示 skeleton 而非误导性 EmptyState"没有" (SPEC A4 不误导虚假完整)。**一次性扫描架构下 per-root 退化为全局 scanning** (runRefresh→scanAll 扫所有 root 才 ready, 无前台 ready+后台慢补两阶段); 真 per-root 细粒度 (后台慢补 root 进度可见) 依赖 T3-orig 独立后台 worker (已降级未做)。tests: capabilities-scanning-empty(2) + instructions scanning-empty(1) + 修 instructions-guidance beforeEach scan-state 隔离; 全量 868 + typecheck + lint 绿。
+  - [ ] 余: per-root 细粒度完成度 (依赖后台 worker); 设备级统一 watcher; 删/降级 scanShallowConventions (现与 capabilities 并存, 待全量索引稳定后收敛)。
 - [ ] **T4 后置 (实测规模驱动)**: delta partial / session byte-offset tail / FTS5 / SAB 取消 / AIMD / 长驻 worker 池 / 丰富 knob + 暂停-恢复 UI + 性能档位设置。
 
 ## 并行/顺序

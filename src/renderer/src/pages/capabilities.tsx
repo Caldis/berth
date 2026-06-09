@@ -932,8 +932,6 @@ export function Capabilities({ activeSection }: { activeSection?: string } = {})
   const scopeSelection = useAppStore((s) => s.scopeSelection)
   const scanning = useAppStore((s) => s.scanning)
   const runtimeState = useAppStore((s) => s.assetRuntimeStatus.state)
-  // Initial scan still in flight (empty + scanning/idle): show a skeleton, not empty.
-  const snapshotLoading = assets.length === 0 && (scanning || runtimeState === 'idle')
   const { plugins } = useAgentCapabilityPlugins()
   const { isFocused } = useFocusTarget()
   const activeTab = normalizeCapabilityTab(activeSection)
@@ -973,7 +971,10 @@ export function Capabilities({ activeSection }: { activeSection?: string } = {})
   }, [activeTab, filteredAssets])
 
   const renderContent = (): React.ReactElement => {
-    if (snapshotLoading) {
+    // A full scan is still in flight and this tab's category hasn't been reached yet
+    // — show a skeleton, not a misleading "nothing here" (the snapshot is partial,
+    // not complete-and-empty). (GH-113 不误导虚假完整)
+    if (filteredAssets.length === 0 && (scanning || (runtimeState === 'idle' && assets.length === 0))) {
       return <LoadingState title={t('nav.scanStatus.scanning')} icon={tabIconMap[activeTab] ?? Plug} />
     }
     switch (activeTab) {

@@ -434,9 +434,6 @@ export function Instructions({ activeSection }: { activeSection?: string } = {})
   const scopeSelection = useAppStore((s) => s.scopeSelection)
   const scanning = useAppStore((s) => s.scanning)
   const runtimeState = useAppStore((s) => s.assetRuntimeStatus.state)
-  // The whole snapshot is still loading on the initial scan (empty + scanning/idle):
-  // show a skeleton instead of an empty state so the page does not look broken.
-  const snapshotLoading = assets.length === 0 && (scanning || runtimeState === 'idle')
   const { result: memoryResult } = useMemory()
   const activeTab = normalizeInstructionSection(activeSection)
   const [search, setSearch] = useState('')
@@ -539,7 +536,9 @@ export function Instructions({ activeSection }: { activeSection?: string } = {})
 
     if (filteredAssets.length === 0) {
       const Icon = tabIconMap[activeTab] ?? FileText
-      if (snapshotLoading) {
+      // Still scanning and this category hasn't been reached yet — skeleton, not a
+      // misleading empty (the snapshot is partial). (GH-113 不误导虚假完整)
+      if (scanning || (runtimeState === 'idle' && assets.length === 0)) {
         return <LoadingState title={t('nav.scanStatus.scanning')} icon={Icon} />
       }
       return <EmptyState fullHeight icon={Icon} message={t('common.empty')} />
