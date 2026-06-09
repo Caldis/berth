@@ -271,6 +271,22 @@ describe('HooksLifecycleView', () => {
     expect(screen.getAllByText('No hook is configured for this stage.').length).toBeGreaterThan(0)
   })
 
+  it('shows a globally disabled Claude hook as inactive (disableAllHooks)', async () => {
+    renderHooks('claude', [
+      hookAsset('claude-pre', 'claude-code', 'PreToolUse', {
+        enabled: true,
+        effectiveEnabled: false,
+        disabledByDisableAllHooks: true
+      })
+    ])
+    await waitForHookHealthIdle()
+
+    // The global disableAllHooks switch overrides individual enablement, so the
+    // badge must not read "Effective".
+    expect((await screen.findAllByText('Inactive')).length).toBeGreaterThan(0)
+    expect(screen.queryByText('Effective')).not.toBeInTheDocument()
+  })
+
   it('toggles a Claude user hook through Berth soft-disable', async () => {
     renderHooks('claude', [
       hookAsset('claude-stop', 'claude-code', 'Stop', {

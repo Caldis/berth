@@ -286,6 +286,10 @@ interface ClaudeDisabledHookEntry {
 
 export function parseHooks(filePath: string, scope: AssetScope, options: ParseHooksOptions = {}): Asset[] {
   const settings = readSettingsJson(filePath)
+  // settings.disableAllHooks is a global kill switch: individually-enabled hooks
+  // stay `enabled` but become ineffective. Without this, the UI shows globally
+  // disabled hooks as still effective.
+  const disableAllHooks = settings?.disableAllHooks === true
   const assets = new Map<string, Asset>()
   if (settings?.hooks) {
     for (const [event, handlers] of Object.entries(settings.hooks)) {
@@ -345,7 +349,8 @@ export function parseHooks(filePath: string, scope: AssetScope, options: ParseHo
               scenarioHash,
               hookHash,
               enabled: true,
-              effectiveEnabled: true,
+              effectiveEnabled: !disableAllHooks,
+              ...(disableAllHooks ? { disabledByDisableAllHooks: true } : {}),
               canToggleHook: scope === 'user',
               toggleStrategy: scope === 'user' ? 'soft-remove' : 'read-only',
               stateSourcePath: filePath,

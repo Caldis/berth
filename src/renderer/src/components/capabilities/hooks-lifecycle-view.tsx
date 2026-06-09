@@ -962,7 +962,7 @@ function HookAssetRow({
                 {t('capabilities.hooks.management.sourceCount', { count: equivalentSourceCount })}
               </span>
             )}
-            {equivalentSourceCount > 1 && (
+            {(equivalentSourceCount > 1 || hook.meta.disabledByDisableAllHooks === true) && (
               <span className={cn(
                 'rounded-md px-1.5 py-0.5 text-[10px] font-medium',
                 effectiveEnabled
@@ -1318,6 +1318,8 @@ function hookEquivalentSourcesTitle(
 }
 
 function hookEffectiveEnabledValue(hook: Asset, hookEnabled: boolean): boolean {
+  // The global disableAllHooks switch overrides individual enablement.
+  if (hook.meta.disabledByDisableAllHooks === true) return false
   if (hook.meta.effectiveEnabled === true) return true
   if (hook.meta.effectiveEnabled === false) return hookEnabled
   return hookEnabled

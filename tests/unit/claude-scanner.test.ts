@@ -80,6 +80,60 @@ describe('Claude Code scanner', () => {
     expect(hooks[0].meta.hookHash).toEqual(expect.any(String))
   })
 
+  it('marks hooks ineffective when settings.disableAllHooks is on', () => {
+    root = mkdtempSync(join(tmpdir(), 'berth-claude-hooks-disabled-all-'))
+    const settingsPath = join(root, 'settings.json')
+    writeFileSync(
+      settingsPath,
+      JSON.stringify({
+        disableAllHooks: true,
+        hooks: {
+          PreToolUse: [
+            {
+              matcher: 'Bash',
+              hooks: [{ type: 'command', command: 'echo pre-tool' }]
+            }
+          ]
+        }
+      })
+    )
+
+    const hooks = parseHooks(settingsPath, 'user')
+
+    expect(hooks).toHaveLength(1)
+    // The hook is individually present (enabled) but the global switch overrides it.
+    expect(hooks[0].meta).toMatchObject({
+      enabled: true,
+      effectiveEnabled: false,
+      disabledByDisableAllHooks: true
+    })
+  })
+
+  it('keeps hooks effective when settings.disableAllHooks is absent or false', () => {
+    root = mkdtempSync(join(tmpdir(), 'berth-claude-hooks-enabled-all-'))
+    const settingsPath = join(root, 'settings.json')
+    writeFileSync(
+      settingsPath,
+      JSON.stringify({
+        disableAllHooks: false,
+        hooks: {
+          PreToolUse: [
+            {
+              matcher: 'Bash',
+              hooks: [{ type: 'command', command: 'echo pre-tool' }]
+            }
+          ]
+        }
+      })
+    )
+
+    const hooks = parseHooks(settingsPath, 'user')
+
+    expect(hooks).toHaveLength(1)
+    expect(hooks[0].meta.effectiveEnabled).toBe(true)
+    expect(hooks[0].meta.disabledByDisableAllHooks).toBeUndefined()
+  })
+
   it('keeps Claude non-command hook configuration metadata', () => {
     root = mkdtempSync(join(tmpdir(), 'berth-claude-hook-http-'))
     const settingsPath = join(root, 'settings.json')
