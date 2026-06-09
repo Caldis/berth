@@ -1,3 +1,7 @@
+# 解决 (RESOLVED 2026-06-10, 选项 A)
+- 删除 `FilterBar` 函数 + `FilterBarProps` 接口 + 因此孤立的 `Search`(lucide)/`Input`(ui) 导入; 保留被 capabilities 使用的 `ScopeSelect` + `ScopeFilter` + `scopeOptions`。
+- 确认 src 与 tests 均无 `FilterBar` JSX 引用后删除; typecheck/lint/全量 test (873 passed) 通过。小改动豁免, 无单独 work。
+
 # 描述
 - `components/shared/filter-bar.tsx` 导出的 `FilterBar` 组合组件当前**全仓无任何引用** (grep `<FilterBar` / `FilterBar\b` 排除定义后为空); 只有同文件的 `ScopeSelect` 被 `pages/capabilities.tsx` 使用。
 - 发现于 GH-109 (审计手写控件迁 HeroUI) 实施 C4 时。GH-109 已把 `ScopeSelect` 与 `FilterBar` 内部控件都迁到 HeroUI Input/Select, 但未删除 `FilterBar` 本身 (共享工作区死代码按"只记录不删除"处理)。

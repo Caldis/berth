@@ -1,3 +1,7 @@
+# 解决 (RESOLVED 2026-06-10)
+- `scripts/agent-dev-core.mjs` 新增 `safeRemoveBestEffort`: 状态文件删除保持权威 (statePath 未锁, 删除即 → 下次 stop=missing); `instanceDir` (含被锁 profile) 删除降级 best-effort + stderr warning, 不再抛错。`cleanupState` 接受 deps 透传; `stopOne`/`start` 传入。进程 kill 成功即返回 stopped/cleaned-stale (退出 0)。
+- 测试 `tests/unit/agent-dev-core.test.ts` 新增用例: 注入 `deps.rm` 抛 EPERM, 断言 stopOne 仍返回 'cleaned-stale' + warn 调用 + 状态文件已删。22 用例全绿。retry-with-backoff 评估为非必要 (unique-id 目录残留无害, best-effort swallow 已根除误导退出码)。
+
 # 描述
 - `pnpm dev:agent stop <id>` 在 Windows **首次报 EPERM** (删 `%TEMP%\berth-agent-dev\<id>` profile 目录时撞 electron 退出的文件锁), 退出码 1, 误导"实例没停"。实际 electron 主进程已被 kill, 失败只在随后的 rmdir。
 

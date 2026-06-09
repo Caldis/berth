@@ -1,3 +1,7 @@
+# 解决 (RESOLVED 2026-06-10)
+- 在 `i18n/locales/{en,zh}.json` `settings` 下补 `accent.{neutral,blue,violet,emerald,amber,rose}` (zh: 中性/蓝/紫/绿/琥珀/玫瑰), 并一并补同 picker 缺失的 `settings.accentColor` (zh: 强调色)。settings.tsx 已用 `t()` 读取, 无需改组件。
+- 测试 `tests/renderer/settings-accent-i18n.test.ts`: 断言 6 名 + accentColor 在 en/zh 本地化 (缺 key 令 t() 回显 key, 故同时守 key 存在)。小改动豁免, 标准门禁验收, 无单独 work。
+
 # 描述
 settings picker 的 accent 颜色名 (Neutral / Blue / Violet / Emerald / Amber / Rose) 的 `aria-label` 全部走 `t('settings.accent.${id}', { defaultValue: label })` 的英文 defaultValue; i18n locales 无 `settings.accent.*` key。中文语言下这些 accent 名仍显示英文。
 

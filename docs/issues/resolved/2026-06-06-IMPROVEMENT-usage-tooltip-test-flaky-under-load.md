@@ -1,3 +1,7 @@
+# 解决 (RESOLVED 2026-06-10, 已修复漏归档)
+- 已由 GH-110 提交 `33751ce5` (test(renderer): 修复 hooks-lifecycle / usage-tooltip 高负载 flaky) 落地: 该用例加 per-test `}, 15000)` 超时 (option ①), 注释 "Usage page render is heavy; the 5s default flakes under parallel load"。
+- 本次 (2026-06-10) 全量 `pnpm test` 873 passed / 1 skipped / 0 failed 复核稳定。修复已提交但 issue 未及时移入 resolved/, 本轮补归档。
+
 # 描述
 - `tests/renderer/usage-tooltip-label.test.tsx > Usage daily cost tooltip label > localizes the daily cost series label` 在**整套 vitest 并行高负载**下偶发 `Test timed out in 5000ms` 失败, 但**单独运行稳定通过** (2026-06-06 实测隔离运行 2195ms)。
 - 该用例渲染 Recharts tooltip, 单测即接近 2.2s; vitest 默认 `testTimeout=5000ms` 在多文件并行 + 机器高负载 (本机多 Agent 并发, full-suite collect ~190s / environment ~240s) 下被击穿。
