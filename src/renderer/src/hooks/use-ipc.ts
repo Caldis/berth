@@ -8,20 +8,21 @@ import type {
 } from '@shared/types/agent-plugin'
 import { useAppStore } from '@/stores/app'
 import { sessionListSignature } from '@/lib/result-signature'
+import { CachedResource } from './cached-resource'
 
 const HEALTH_CHECK_CACHE_TTL_MS = 60_000
 export const SESSION_LIST_CACHE_TTL_MS = 30_000
 
-interface HealthCheckCache {
+interface HealthCheckValue {
   checks: HealthCheck[]
   lastCheckedAt: string
-  checkedAtMs: number
 }
 
-let healthCheckCache: HealthCheckCache | null = null
-let healthCheckInFlight: Promise<HealthCheckCache> | null = null
-let agentCapabilityPluginCache: AgentCapabilityPluginListResult | null = null
-let agentCapabilityPluginInFlight: Promise<AgentCapabilityPluginListResult> | null = null
+const healthResource = new CachedResource<HealthCheckValue>(HEALTH_CHECK_CACHE_TTL_MS)
+// Agent plugins are snapshot-triggered (no TTL freshness gate): ttl 0 means
+// peek() still serves the last value for instant display, but the hook always
+// refetches when assetSnapshotId changes.
+const agentPluginResource = new CachedResource<AgentCapabilityPluginListResult>(0)
 
 interface SessionListRequest {
   projectFilter?: string
@@ -30,54 +31,35 @@ interface SessionListRequest {
   agentView?: AgentView
 }
 
-interface SessionListCacheEntry {
+interface SessionListValue {
   sessions: SessionSummary[]
   totalCount: number
-  signature: string
-  updatedAtMs: number
 }
 
-const sessionListCache = new Map<string, SessionListCacheEntry>()
-const sessionListInFlight = new Map<string, Promise<SessionListCacheEntry>>()
+const sessionsResource = new CachedResource<SessionListValue>(
+  SESSION_LIST_CACHE_TTL_MS,
+  (value) => sessionListSignature(value.sessions, value.totalCount)
+)
 
-function isHealthCheckCacheFresh(cache: HealthCheckCache | null): cache is HealthCheckCache {
-  return cache != null && Date.now() - cache.checkedAtMs < HEALTH_CHECK_CACHE_TTL_MS
-}
-
-function requestHealthChecks(refresh: boolean): Promise<HealthCheckCache> {
-  if (healthCheckInFlight) return healthCheckInFlight
-
-  healthCheckInFlight = window.api.assets
-    .healthCheck({ refresh })
-    .then((result) => {
-      const snapshot = {
-        checks: result ?? [],
-        lastCheckedAt: new Date().toISOString(),
-        checkedAtMs: Date.now()
-      }
-      healthCheckCache = snapshot
-      return snapshot
-    })
-    .finally(() => {
-      healthCheckInFlight = null
-    })
-
-  return healthCheckInFlight
+function requestHealthChecks(refresh: boolean): Promise<HealthCheckValue> {
+  return healthResource.request('', () =>
+    window.api.assets.healthCheck({ refresh }).then((result) => ({
+      checks: result ?? [],
+      lastCheckedAt: new Date().toISOString()
+    }))
+  )
 }
 
 export function resetHealthCheckCacheForTests(): void {
-  healthCheckCache = null
-  healthCheckInFlight = null
+  healthResource.clear()
 }
 
 export function resetSessionsCacheForTests(): void {
-  sessionListCache.clear()
-  sessionListInFlight.clear()
+  sessionsResource.clear()
 }
 
 export function resetAgentCapabilityPluginCacheForTests(): void {
-  agentCapabilityPluginCache = null
-  agentCapabilityPluginInFlight = null
+  agentPluginResource.clear()
 }
 
 function createSessionListRequest(opts?: SessionListRequest): SessionListRequest {
@@ -98,68 +80,21 @@ function sessionListCacheKey(request: SessionListRequest): string {
   })
 }
 
-function isSessionListCacheFresh(cache: SessionListCacheEntry | undefined): cache is SessionListCacheEntry {
-  return cache != null && Date.now() - cache.updatedAtMs < SESSION_LIST_CACHE_TTL_MS
-}
-
-function createSessionListCacheEntry(
-  key: string,
-  sessions: SessionSummary[],
-  totalCount: number
-): SessionListCacheEntry {
-  const signature = sessionListSignature(sessions, totalCount)
-  const previous = sessionListCache.get(key)
-  const entry =
-    previous?.signature === signature
-      ? {
-          ...previous,
-          totalCount,
-          updatedAtMs: Date.now()
-        }
-      : {
-          sessions,
-          totalCount,
-          signature,
-          updatedAtMs: Date.now()
-        }
-  sessionListCache.set(key, entry)
-  return entry
-}
-
-function requestSessionsList(key: string, request: SessionListRequest): Promise<SessionListCacheEntry> {
-  const pending = sessionListInFlight.get(key)
-  if (pending) return pending
-
-  const next = window.api.sessions
-    .list(request)
-    .then((result) => {
-      return createSessionListCacheEntry(key, result?.sessions ?? [], result?.totalCount ?? 0)
-    })
-    .finally(() => {
-      sessionListInFlight.delete(key)
-    })
-  sessionListInFlight.set(key, next)
-  return next
+function requestSessionsList(key: string, request: SessionListRequest): Promise<SessionListValue> {
+  return sessionsResource.request(key, () =>
+    window.api.sessions
+      .list(request)
+      .then((result) => ({ sessions: result?.sessions ?? [], totalCount: result?.totalCount ?? 0 }))
+  )
 }
 
 function requestAgentCapabilityPlugins(): Promise<AgentCapabilityPluginListResult> {
-  if (agentCapabilityPluginInFlight) return agentCapabilityPluginInFlight
-
-  agentCapabilityPluginInFlight = window.api.agentPlugins
-    .list()
-    .then((result) => {
-      const entry = {
-        plugins: result?.plugins ?? [],
-        manifests: result?.manifests ?? []
-      }
-      agentCapabilityPluginCache = entry
-      return entry
-    })
-    .finally(() => {
-      agentCapabilityPluginInFlight = null
-    })
-
-  return agentCapabilityPluginInFlight
+  return agentPluginResource.request('', () =>
+    window.api.agentPlugins.list().then((result) => ({
+      plugins: result?.plugins ?? [],
+      manifests: result?.manifests ?? []
+    }))
+  )
 }
 
 export function useAssetRuntime(): {
@@ -261,9 +196,9 @@ export function useSessions(opts?: {
     [projectFilter, projectPath, limit, agentView]
   )
   const cacheKey = useMemo(() => sessionListCacheKey(request), [request])
-  const initialCache = sessionListCache.get(cacheKey)
+  const initialCache = sessionsResource.peek(cacheKey)
   const [sessions, setSessions] = useState<SessionSummary[]>(initialCache?.sessions ?? [])
-  const [loading, setLoading] = useState(initialCache == null)
+  const [loading, setLoading] = useState(initialCache === undefined)
   const [stale, setStale] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [reloadNonce, setReloadNonce] = useState(0)
@@ -271,8 +206,7 @@ export function useSessions(opts?: {
   // Retry: drop the cached entry + in-flight promise for this key so the effect
   // re-requests from scratch (a fresh cache would otherwise short-circuit it).
   const reload = useCallback(() => {
-    sessionListCache.delete(cacheKey)
-    sessionListInFlight.delete(cacheKey)
+    sessionsResource.invalidate(cacheKey)
     setReloadNonce((n) => n + 1)
   }, [cacheKey])
 
@@ -284,10 +218,10 @@ export function useSessions(opts?: {
     }
 
     let cancelled = false
-    const cached = sessionListCache.get(cacheKey)
+    const cached = sessionsResource.peek(cacheKey)
     if (cached) {
       setSessions((current) => (current === cached.sessions ? current : cached.sessions))
-      if (isSessionListCacheFresh(cached)) {
+      if (sessionsResource.isFresh(cacheKey)) {
         setLoading(false)
         setStale(false)
         setError(null)
@@ -406,10 +340,10 @@ export function useHealthChecks(): {
   lastCheckedAt: string | null
   refresh: (opts?: { force?: boolean }) => void
 } {
-  const cached = healthCheckCache
+  const cached = healthResource.peek()
   const mountedRef = useRef(false)
   const [checks, setChecks] = useState<HealthCheck[]>(cached?.checks ?? [])
-  const [loading, setLoading] = useState(cached == null)
+  const [loading, setLoading] = useState(cached === undefined)
   const [stale, setStale] = useState(false)
   const [lastCheckedAt, setLastCheckedAt] = useState<string | null>(cached?.lastCheckedAt ?? null)
 
@@ -419,13 +353,13 @@ export function useHealthChecks(): {
       setStale(false)
       return
     }
-    const previous = healthCheckCache
+    const previous = healthResource.peek()
     if (previous) {
       setChecks(previous.checks)
       setLastCheckedAt(previous.lastCheckedAt)
     }
     setLoading(true)
-    setStale(previous != null)
+    setStale(previous !== undefined)
     requestHealthChecks(opts.force === true)
       .then((snapshot) => {
         if (!mountedRef.current) return
@@ -442,8 +376,8 @@ export function useHealthChecks(): {
 
   useEffect(() => {
     mountedRef.current = true
-    const currentCache = healthCheckCache
-    if (isHealthCheckCacheFresh(currentCache)) {
+    const currentCache = healthResource.peek()
+    if (currentCache && healthResource.isFresh()) {
       setChecks(currentCache.checks)
       setLastCheckedAt(currentCache.lastCheckedAt)
       setLoading(false)
@@ -474,13 +408,13 @@ export function useAgentCapabilityPlugins(): {
   error: string | null
 } {
   const assetSnapshotId = useAppStore((s) => s.assetSnapshotId)
-  const initialCache = agentCapabilityPluginCache
+  const initialCache = agentPluginResource.peek()
   const [plugins, setPlugins] = useState<AgentCapabilityPlugin[]>(initialCache?.plugins ?? [])
   const [manifests, setManifests] = useState<AgentCapabilityPluginManifestEntry[]>(
     initialCache?.manifests ?? []
   )
   const [loading, setLoading] = useState(true)
-  const [stale, setStale] = useState(initialCache != null)
+  const [stale, setStale] = useState(initialCache !== undefined)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -492,7 +426,7 @@ export function useAgentCapabilityPlugins(): {
     }
 
     let cancelled = false
-    const cached = agentCapabilityPluginCache
+    const cached = agentPluginResource.peek()
     if (cached) {
       setPlugins(cached.plugins)
       setManifests(cached.manifests)
@@ -515,7 +449,7 @@ export function useAgentCapabilityPlugins(): {
       .catch((err) => {
         if (cancelled) return
         setError(err instanceof Error ? err.message : String(err))
-        const latestCache = agentCapabilityPluginCache
+        const latestCache = agentPluginResource.peek()
         if (latestCache) {
           setPlugins(latestCache.plugins)
           setManifests(latestCache.manifests)

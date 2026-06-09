@@ -1,57 +1,19 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import type { MemoryListResult } from '@shared/types/memory'
 import { memoryListSignature } from '@/lib/result-signature'
+import { CachedResource } from './cached-resource'
 
 const empty: MemoryListResult = { notes: [], sources: [] }
 export const MEMORY_LIST_CACHE_TTL_MS = 30_000
 
-interface MemoryListCacheEntry {
-  result: MemoryListResult
-  signature: string
-  updatedAtMs: number
-}
+const memoryResource = new CachedResource<MemoryListResult>(MEMORY_LIST_CACHE_TTL_MS, memoryListSignature)
 
-let memoryListCache: MemoryListCacheEntry | null = null
-let memoryListInFlight: Promise<MemoryListCacheEntry> | null = null
-
-function isMemoryListCacheFresh(cache: MemoryListCacheEntry | null): cache is MemoryListCacheEntry {
-  return cache != null && Date.now() - cache.updatedAtMs < MEMORY_LIST_CACHE_TTL_MS
-}
-
-function createMemoryListCacheEntry(result: MemoryListResult): MemoryListCacheEntry {
-  const signature = memoryListSignature(result)
-  const previous = memoryListCache
-  const entry =
-    previous?.signature === signature
-      ? {
-          ...previous,
-          updatedAtMs: Date.now()
-        }
-      : {
-          result,
-          signature,
-          updatedAtMs: Date.now()
-        }
-  memoryListCache = entry
-  return entry
-}
-
-function requestMemoryList(): Promise<MemoryListCacheEntry> {
-  if (memoryListInFlight) return memoryListInFlight
-
-  memoryListInFlight = window.api.memory
-    .list()
-    .then((result) => createMemoryListCacheEntry(result ?? empty))
-    .finally(() => {
-      memoryListInFlight = null
-    })
-
-  return memoryListInFlight
+function requestMemoryList(): Promise<MemoryListResult> {
+  return memoryResource.request('', () => window.api.memory.list().then((result) => result ?? empty))
 }
 
 export function resetMemoryCacheForTests(): void {
-  memoryListCache = null
-  memoryListInFlight = null
+  memoryResource.clear()
 }
 
 export function useMemory(): {
@@ -62,11 +24,11 @@ export function useMemory(): {
   refreshing: boolean
   refresh: () => void
 } {
-  const initialCache = memoryListCache
-  const [result, setResult] = useState<MemoryListResult>(initialCache?.result ?? empty)
-  const [loading, setLoading] = useState(initialCache == null)
+  const initialResult = memoryResource.peek()
+  const [result, setResult] = useState<MemoryListResult>(initialResult ?? empty)
+  const [loading, setLoading] = useState(initialResult === undefined)
   const [refreshing, setRefreshing] = useState(false)
-  const loadedRef = useRef(initialCache != null)
+  const loadedRef = useRef(initialResult !== undefined)
   const mountedRef = useRef(false)
 
   const load = useCallback((force: boolean) => {
@@ -76,11 +38,11 @@ export function useMemory(): {
       return
     }
 
-    const cached = memoryListCache
-    if (cached) {
-      setResult((current) => (current === cached.result ? current : cached.result))
+    const cached = memoryResource.peek()
+    if (cached !== undefined) {
+      setResult((current) => (current === cached ? current : cached))
       loadedRef.current = true
-      if (!force && isMemoryListCacheFresh(cached)) {
+      if (!force && memoryResource.isFresh()) {
         setLoading(false)
         setRefreshing(false)
         return
@@ -96,9 +58,9 @@ export function useMemory(): {
     }
 
     requestMemoryList()
-      .then((entry) => {
+      .then((value) => {
         if (!mountedRef.current) return
-        setResult((current) => (current === entry.result ? current : entry.result))
+        setResult((current) => (current === value ? current : value))
       })
       .catch(() => {})
       .finally(() => {
