@@ -23,6 +23,8 @@ import {
   checkWorkflowSources,
   checkEntryRules
 } from '../../scripts/harness-check.mjs'
+// @ts-expect-error mjs sin tipos
+import { ACTION_IDS } from '../../scripts/harness-lib.mjs'
 
 let root: string
 beforeEach(() => {
@@ -310,9 +312,9 @@ describe('checkFriction', () => {
     expect(errs.some((e: string) => e.includes('20260529-3.0-implement-foo'))).toBe(false)
   })
 
-  it('接受全部 10 个 action id 作为 action 段', () => {
+  it('接受全部 action id 作为 action 段', () => {
     mkdirSync(join(root, 'docs/friction'), { recursive: true })
-    const actions = ['0.0-new', '0.1-continue', '1.0-explore', '2.0-design', '3.0-implement', '3.1-polish', '4.0-verify', '5.0-archive', '5.1-friction', '5.2-issues']
+    const actions = ACTION_IDS
     for (const p of actions) writeFileSync(join(root, `docs/friction/20260530-${p}-sample.md`), 'x')
     expect(checkFriction(root)).toEqual([])
   })
@@ -365,7 +367,7 @@ describe('checkTemplates', () => {
 })
 
 describe('checkWorkflowSources', () => {
-  const ACTIONS = ['0.0-new', '0.1-continue', '1.0-explore', '2.0-design', '3.0-implement', '3.1-polish', '4.0-verify', '5.0-archive', '5.1-friction', '5.2-issues']
+  const ACTIONS = ACTION_IDS
   function writeWorkflow(empty: string[] = []): void {
     const dir = join(root, '.agents/workflow')
     mkdirSync(dir, { recursive: true })
