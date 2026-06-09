@@ -235,4 +235,61 @@ describe('useAppStore scope state', () => {
     expect(ids).toContain('skill-live')
     expect(ids).toContain('shallow-conv')
   })
+
+  it('keeps shallow assets when a mid-scan snapshot is read via syncSnapshot (GH-113 cap-4 flicker, setAssetSnapshot path)', () => {
+    // assets:changed (cap-4) → onChanged → syncSnapshot → setAssetSnapshot reads the
+    // MAIN snapshot, which mid-scan carries only the deep set (scanner appends other-
+    // project shallow to the FINAL snapshot). Without preserving shallow on this path
+    // too, the global scope flickers — same failure as the progress path, different route.
+    useAppStore.setState({
+      assets: [{
+        id: 'shallow-conv', agentId: 'claude-code', category: 'instruction', type: 'claude-md',
+        scope: 'project', name: 'CLAUDE.md', path: '/other/CLAUDE.md',
+        meta: { scanDepth: 'shallow', projectPath: '/other' }
+      }]
+    })
+
+    useAppStore.getState().setAssetSnapshot({
+      id: 'mid-scan',
+      assets: [{
+        id: 'skill-live', agentId: 'claude-code', category: 'capability', type: 'skill',
+        scope: 'project', name: 'live', path: '/active/skill.md', meta: {}
+      }],
+      stats: EMPTY_ASSET_STATS,
+      errors: [],
+      sources: [],
+      projectCandidates: [],
+      status: { state: 'scanning', reason: 'watcher', stale: true }
+    })
+
+    const ids = useAppStore.getState().assets.map((a) => a.id)
+    expect(ids).toContain('skill-live')
+    expect(ids).toContain('shallow-conv') // shallow survives a mid-scan deep-only read
+  })
+
+  it('replaces wholesale when a terminal snapshot already carries shallow (no stale shallow lingers)', () => {
+    useAppStore.setState({
+      assets: [{
+        id: 'old-shallow', agentId: 'claude-code', category: 'instruction', type: 'claude-md',
+        scope: 'project', name: 'CLAUDE.md', path: '/old/CLAUDE.md',
+        meta: { scanDepth: 'shallow', projectPath: '/old' }
+      }]
+    })
+
+    useAppStore.getState().setAssetSnapshot({
+      id: 'final',
+      assets: [
+        { id: 'deep-skill', agentId: 'claude-code', category: 'capability', type: 'skill', scope: 'project', name: 's', path: '/a/s.md', meta: {} },
+        { id: 'fresh-shallow', agentId: 'claude-code', category: 'instruction', type: 'claude-md', scope: 'project', name: 'CLAUDE.md', path: '/other/CLAUDE.md', meta: { scanDepth: 'shallow', projectPath: '/other' } }
+      ],
+      stats: EMPTY_ASSET_STATS,
+      errors: [],
+      sources: [],
+      projectCandidates: [],
+      status: { state: 'ready', stale: false, lastCompletedAt: '2026-06-09T00:00:00.000Z' }
+    })
+
+    const ids = useAppStore.getState().assets.map((a) => a.id).sort()
+    expect(ids).toEqual(['deep-skill', 'fresh-shallow']) // wholesale: stale shallow gone, no dup
+  })
 })

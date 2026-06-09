@@ -85,6 +85,19 @@ interface AppState {
   closeInspector: () => void
 }
 
+// During a scan, snapshots/partials carry only the deep (active-project) set; other
+// projects' shallow conventions/capabilities are appended to the FINAL snapshot
+// (scanner.ts appendShallowConventions). A read landing mid-scan — a deep-only partial
+// (progress channel) OR a deep-only snapshot via syncSnapshot (assets:changed → onChanged)
+// — would drop them and flicker the global scope. Keep existing shallow until an incoming
+// set actually carries shallow and replaces it wholesale. Both write paths use this so
+// they can't diverge. (GH-113)
+function foldKeepingShallow(incoming: Asset[], existing: Asset[]): Asset[] {
+  if (incoming.some((a) => a.meta?.scanDepth === 'shallow')) return incoming
+  const shallowKept = existing.filter((a) => a.meta?.scanDepth === 'shallow')
+  return shallowKept.length > 0 ? [...incoming, ...shallowKept] : incoming
+}
+
 export const useAppStore = create<AppState>((set) => ({
   sidebarCollapsed: false,
   sidebarWidth: SIDEBAR_DEFAULT_WIDTH,
@@ -119,7 +132,10 @@ export const useAppStore = create<AppState>((set) => ({
     lastAssetRefreshAt: assetRuntimeStatus.lastCompletedAt ?? state.lastAssetRefreshAt
   })),
   setAssetSnapshot: (snapshot) => set((state) => ({
-    assets: snapshot.assets,
+    // Keep shallow (other-project) assets if this snapshot was read mid-scan and
+    // carries only the deep set — e.g. syncSnapshot via assets:changed → onChanged
+    // landing during a refresh. Same guard as applyAssetProgress, shared. (GH-113)
+    assets: foldKeepingShallow(snapshot.assets, state.assets),
     stats: snapshot.stats,
     projectCandidates: mergeProjectScopeCandidates(snapshot.projectCandidates),
     assetRuntimeStatus: snapshot.status,
@@ -140,17 +156,7 @@ export const useAppStore = create<AppState>((set) => ({
         lastAssetRefreshAt: payload.status.lastCompletedAt ?? state.lastAssetRefreshAt
       }
       if (!payload.partial) return base
-      // The scanner streams DEEP-only partials for fast first paint; other projects'
-      // shallow conventions/capabilities are appended ONLY to the final snapshot
-      // (scanner.ts appendShallowConventions, after the adapter loop). A raw partial
-      // therefore drops every other project's assets mid-scan — and since agents
-      // writing sessions trigger frequent rescans (watcher → refresh), the global
-      // scope flickered project assets in and out. Keep the shallow (other-project)
-      // assets we already have until the final snapshot replaces them wholesale, so a
-      // mid-scan partial only refreshes the deep set it actually carries. (GH-113)
-      const shallowKept = state.assets.filter((a) => a.meta?.scanDepth === 'shallow')
-      const assets =
-        shallowKept.length > 0 ? [...payload.partial.assets, ...shallowKept] : payload.partial.assets
+      const assets = foldKeepingShallow(payload.partial.assets, state.assets)
       return { ...base, assets, stats: payload.partial.stats }
     }),
 
