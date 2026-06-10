@@ -4,7 +4,7 @@
 每批: 先写/更测试 → 实现 → `pnpm typecheck && pnpm lint && pnpm test` 绿 → 只暂存本批文件 `git diff --cached` 核对 → 提交。
 热点纪律: 触碰 verify 任务足迹文件前 `git log --since=2026-06-08 -- <file>` 确认近 48h 无并行写入; gh-103 足迹 (chart-colors/globals.css/overview.tsx/usage.tsx/token-usage-display) 一律延后到 T13 且仅限非 chart 段, 冲突则改 defer 声明。
 
-- [ ] T0 测试地基: tsconfig.test.json (tsc dry-run, >15 文件错误则按目录渐进 include) + 删 tests/unit/parsers.test.ts 假覆盖 + tests/unit/worker-artifact.test.ts + scripts/abi-smoke.mjs + CI e2e 矩阵加 macos-latest (project-scope e2e 红则按已立案 issue test.skip 交叉引用) + tests/renderer/status-line-redaction.test.tsx (capabilities.tsx 仅加 export 关键字)
+- [x] T0 测试地基 (2026-06-10 done: tsconfig.test.json 渐进纳管 109/133 文件, 24 文件 69 错进 exclude 账本; parsers.test.ts 假覆盖删除; worker-artifact 三方一致性测试; abi-smoke 本地跑通; CI 矩阵 +macos (project-scope e2e 按已知 issue 文件内 skip); redaction 枚举 5 用例绿。门禁: typecheck×3 + lint + vitest 全量绿 (4 个渲染测试在外部负载下 flaky, 默认隔离重跑 68/68 绿, 见 friction 20260610): tsconfig.test.json (tsc dry-run, >15 文件错误则按目录渐进 include) + 删 tests/unit/parsers.test.ts 假覆盖 + tests/unit/worker-artifact.test.ts + scripts/abi-smoke.mjs + CI e2e 矩阵加 macos-latest (project-scope e2e 红则按已立案 issue test.skip 交叉引用) + tests/renderer/status-line-redaction.test.tsx (capabilities.tsx 仅加 export 关键字)
   - files: tsconfig.test.json(新) tsconfig.json tests/unit/{parsers.test.ts删,worker-artifact.test.ts新} scripts/abi-smoke.mjs(新) .github/workflows/ci.yml tests/renderer/status-line-redaction.test.tsx(新) src/renderer/src/pages/capabilities.tsx(仅 export)
   - tests: 本批即测试; redaction 枚举 (env var / inline sk-key / url token / 纯命令 / 空)
   - verify: pnpm typecheck (含新 project) + pnpm test 全绿; abi-smoke 本地跑通; CI 双 OS 绿; capabilities.tsx 是 gh-104 足迹 → 仅 export 关键字一行, 提交注明

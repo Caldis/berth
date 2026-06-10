@@ -21,7 +21,7 @@
     "lint": "eslint . --ext .ts,.tsx",
     "typecheck:node": "tsc --noEmit -p tsconfig.node.json",
     "typecheck:web": "tsc --noEmit -p tsconfig.web.json",
-    "typecheck": "pnpm typecheck:node && pnpm typecheck:web",
+    "typecheck": "pnpm typecheck:node && pnpm typecheck:web && pnpm typecheck:test",
     "harness:sync": "node scripts/harness-sync.mjs",
     "harness:check": "node scripts/harness-check.mjs",
     "harness:ci:baseline": "node scripts/harness-ci-gate.mjs baseline",
@@ -30,7 +30,8 @@
     "harness:issues": "node scripts/harness-issues.mjs",
     "harness:projects:check": "node scripts/harness-projects.mjs check",
     "harness:prepush": "node scripts/harness-prepush.mjs",
-    "pricing:update": "node scripts/update-pricing-catalog.mjs"
+    "pricing:update": "node scripts/update-pricing-catalog.mjs",
+    "typecheck:test": "tsc --noEmit -p tsconfig.test.json"
   },
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.1",

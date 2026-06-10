@@ -9,7 +9,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-2022]
+        os: [ubuntu-latest, windows-2022, macos-latest] # macos: GH-115 T0 — 重构密集期补 mac 集成信号 (主开发平台)
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v5
@@ -30,4 +30,4 @@ jobs:
       - run: pnpm harness:check
       - run: pnpm build # smoke: production build must succeed
       - run: pnpm test:e2e
-        if: matrix.os == 'windows-2022'
+        if: matrix.os != 'ubuntu-latest' # ubuntu 无显示服务; project-scope e2e 在 mac 按已知 issue 文件内 skip

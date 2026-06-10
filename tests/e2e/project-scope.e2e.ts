@@ -7,6 +7,10 @@ let app: ElectronApplication
 let page: Page
 let tempDir: string
 
+// macOS 上「切到 session 派生 project」稳定失败 (与改动无关的既有平台差异),
+// 根因待定: docs/issues/2026-06-08-BUG-project-scope-e2e-macos.md (GH-115 T0 扩 e2e 矩阵时按该 issue 隔离)
+test.skip(process.platform === 'darwin', 'known macOS failure — docs/issues/2026-06-08-BUG-project-scope-e2e-macos.md')
+
 const projectScopeButton = (): Locator =>
   page.locator('aside').getByRole('button', { name: /^(Project scope|项目范围)$/ })
 

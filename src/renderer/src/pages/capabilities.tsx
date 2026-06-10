@@ -397,7 +397,8 @@ function buildStatusLineViewModels(assets: Asset[]): StatusLineViewModel[] {
   })
 }
 
-function redactStatusLineCommand(command: string): { value: string; redacted: boolean } {
+// GH-115 T0: export 仅为凭证脱敏枚举测试 ("凭证不进渲染进程"边界的回归网); 下沉 lib/ 归属 god-page issue。
+export function redactStatusLineCommand(command: string): { value: string; redacted: boolean } {
   const patterns: Array<[RegExp, string]> = [
     [
       /\b([A-Z0-9_]*(?:TOKEN|SECRET|PASSWORD|PASSWD|API_KEY|APIKEY|AUTHORIZATION|BEARER)[A-Z0-9_]*\s*=\s*)(?:"[^"]*"|'[^']*'|[^\s]+)/gi,

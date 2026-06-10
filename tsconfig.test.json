@@ -1,0 +1,51 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "useDefineForClassFields": true,
+    "types": ["vitest/globals", "node"],
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/renderer/src/*"],
+      "@shared/*": ["./src/shared/*"]
+    }
+  },
+  "include": ["tests/**/*", "src/preload/index.d.ts"],
+  // GH-115 T0 渐进纳管账本: 以下文件存量 mock 类型漂移 (共 69 错), 在对应重构批次烧账后逐个移出 exclude。
+  // 新增测试文件默认纳管 (不在此列表即受检)。烧账状态见 docs/works/2026-06-10-gh-115-architecture-refactor/03-PLAN.md。
+  "exclude": [
+    "tests/unit/engine-scanner.test.ts",
+    "tests/unit/agent-dev-core.test.ts",
+    "tests/unit/asset-worker-host.test.ts",
+    "tests/unit/agent-adapter-registry.test.ts",
+    "tests/harness/projects.test.ts",
+    "tests/harness/ci-gate.test.ts",
+    "tests/harness/check.test.ts",
+    "tests/harness/prepush.test.ts",
+    "tests/renderer/sessions-pages.test.tsx",
+    "tests/renderer/overview-health-checks.test.tsx",
+    "tests/renderer/virtual-grouped-list.test.tsx",
+    "tests/renderer/use-health-checks.test.tsx",
+    "tests/renderer/use-asset-runtime.test.tsx",
+    "tests/renderer/overview-redesign.test.tsx",
+    "tests/renderer/hooks-lifecycle-view.test.tsx",
+    "tests/renderer/capabilities-guidance.test.tsx",
+    "tests/renderer/use-sessions-swr.test.tsx",
+    "tests/renderer/usage-tooltip-label.test.tsx",
+    "tests/renderer/teams-page.test.tsx",
+    "tests/renderer/overview-performance-loading.test.tsx",
+    "tests/renderer/inspector-drawer.test.tsx",
+    "tests/renderer/capabilities-scanning-empty.test.tsx",
+    "tests/renderer/capabilities-plugins.test.tsx",
+    "tests/renderer/capabilities-plugin-nav.test.tsx"
+  ]
+}
