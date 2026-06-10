@@ -42,10 +42,17 @@
   - 内容: docs/ARCHITECTURE.md (engine 模块行补 session-replay; 例外行补 replay 解析)。偏差: 两个旁支点均已有归属 issue, 按"有则合并"增补而非新建 — ①worker 下沉/分块流式/缓存内存 → `2026-06-07-IMPROVEMENT-session-streaming-parse.md` GH-116 增补节; ②hover-popover → `2026-06-05-IMPROVEMENT-heroui-migration-followup.md` 增补行
   - tests: not needed - 纯文档; pnpm harness:check 过闸门
   - verify: harness:check 绿
-- [ ] T10 verify 阶段 (harness-4.0)
-  - 内容: pnpm harness:prepush 全绿; 真机 dev 运行: 真实 Claude+Codex 会话重放交互 (CDP 观察 payload 按需加载), 实测窗口坐标截图 (列表亮/暗、详情 replay、tabs) 留档任务目录
-  - tests: 全量门禁
-  - verify: AC1–AC9 逐条核对回写
+- [x] T10 verify 阶段 (harness-4.0) — 2026-06-11 通过
+  - 机械门禁: pnpm harness:prepush 145 文件 973 测试全绿; lint/typecheck 绿; 全部 6 个推送 SHA CI conclusion=success (harness:ci:wait)
+  - 真机验收 (agent-owned 实例 gh116-verify + CDP 9333, 真实数据 234 会话):
+    - 列表: agent 分段过滤 234→192 (Codex) 行集合实时变化; 平铺隐藏跳转导航; 费用排序生效; 模型多选/结果计数正常
+    - 重放 (Claude, 本会话自身 transcript): 977→989 条事件 (验收期间 transcript 增长, 指纹缓存失效重解析端到端正确); 事件可见 217ms; payload 按需 115ms (file-history-snapshot 原始 JSON 高亮正确); ↓ 键选中 L1B0→L6B0; scrubber 80% 点击 aria-valuenow 1→734 + 列表跳转; 类型过滤 989→270 (工具) aria-selected=true (首轮脚本 977/977 为弹层动画期点击的脚本时序伪影, 交互探查确认产品行为正确); 搜索正常
+    - 重放 (Codex 019ea7b4): 276 条事件, user_message/thinking 占位/shell_command 工具对/result/system 全类呈现, payload 面板正常 (AC5 双 agent)
+    - Tabs: solid 分段式 + 图标 + 计数 (重放计数惰性加载后出现), cursor 滑块存在且未隐藏
+    - 主题: 暗色列表+重放截图正常跟随; 真实窗口截图 (print-window, pid 39888) 留档
+    - 截图: %TEMP%\berth-gh116-shots\01-11 + real-window.png (系统临时目录, 按规不入项目)
+  - AC 核对: AC1✓(结构化筛选组合+计数) AC2✓(3 次交互可达+虚拟化) AC3✓(solid 原生+cursor+图标) AC4✓(七类事件+详情面板+scrubber+过滤搜索) AC5✓(双通道四方对账+双 agent) AC6✓(20k cap+双指纹缓存+按需 payload+虚拟化, 217ms/115ms) AC7✓(overview/artifacts 保留+行字段全保留) AC8✓(全状态+i18n 对称+prepush 绿) AC9✓(截图自验, 用户已授权自主)
+  - debt.final 已定稿 (8/3/5 cross-process high); harness:stats total=18 ok; projects check --strict 通过
 
 ## verify 回写
-verify 不通过项作为新任务追加于此, phase 退回 implement。
+verify 不通过项作为新任务追加于此, phase 退回 implement。(2026-06-11: 无不通过项)
