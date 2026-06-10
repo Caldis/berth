@@ -106,7 +106,6 @@
   },
   "search": {
     "placeholder": "Search assets...",
-    "shortcut": "⌘K",
     "noResults": "No results found.",
     "hint": "Search across all assets by name, type, or scope.",
     "loading": "Searching...",
@@ -164,12 +163,9 @@
     "openSessions": "Open sessions",
     "recentSessions": "Recent Sessions",
     "costLast7Days": "Cost (last 7 days)",
-    "rateLimits": "Rate Limits",
     "healthChecks": "Health Checks",
-    "noIssues": "All systems operational",
     "loadingAssets": "Loading asset metrics",
     "loadingUsage": "Loading usage chart",
-    "started": "Started",
     "scope": {
       "global": "All local data",
       "user": "User scope"
@@ -316,7 +312,6 @@
       "created": "Created",
       "lastActivity": "Last activity",
       "inboxMessages": "{{count}} inbox messages",
-      "directory": "Directory",
       "openLeadSession": "Open lead session",
       "leadSessionMissing": "Lead session transcript is not in the current scan",
       "membersTitle": "Members",
@@ -372,7 +367,6 @@
     "loadingList": "Loading sessions",
     "loadingListDescription": "Reading local transcript summaries for the current agent view.",
     "refreshing": "Updating sessions...",
-    "renderingRows": "Showing {{shown}} of {{total}} sessions",
     "loadingDetail": "Loading session detail",
     "loadingDetailDescription": "Reading transcript-derived tools, assets, and artifacts.",
     "emptyDetailTitle": "Session not found",
@@ -388,7 +382,6 @@
     },
     "project": "Project",
     "date": "Date",
-    "noSessions": "No sessions found.",
     "duration": "Duration",
     "cost": "Cost",
     "tokens": "Tokens",
@@ -403,8 +396,6 @@
     "todos": "Todos",
     "files": "Files",
     "checkpoints": "Checkpoints",
-    "fileHistory": "File history checkpoints",
-    "started": "Started",
     "time": "Time",
     "sessionOverview": "Run overview",
     "durationUnknown": "unknown",
@@ -595,7 +586,6 @@
     }
   },
   "instructions": {
-    "title": "Instructions",
     "tabs": {
       "memories": "Memories",
       "conventions": "Conventions",
@@ -604,17 +594,14 @@
       "commands": "Commands",
       "outputModes": "Output Modes"
     },
-    "groupNavigation": "Instruction groups",
     "scope": "Scope",
     "path": "Path",
     "trigger": "Trigger",
     "description": "Description",
-    "files": "Files",
     "tools": "Tools",
     "agents": "Agents",
     "model": "Model",
     "importChain": "Import chain",
-    "usedInSessions": "Used in sessions (last 30d)",
     "viewFile": "View File",
     "showInExplorer": "Show in Explorer",
     "guidance": {
@@ -725,7 +712,6 @@
     }
   },
   "capabilities": {
-    "title": "Capabilities",
     "tabs": {
       "mcp": "MCP",
       "hooks": "Hooks",
@@ -1322,7 +1308,6 @@
   "usage": {
     "title": "Usage",
     "subtitle": "Local token and cost data from scanned Claude Code and Codex sessions.",
-    "totalSpent": "Total Spent",
     "tokensUsed": "Tokens Used",
     "tokenUnit": "tok",
     "inputTokens": "Input",
@@ -1476,9 +1461,6 @@
     "agentPluginManifestErrorsTitle": "Validation errors",
     "agentPluginManifestNoErrors": "No validation errors.",
     "agentPluginManifestStatus": {
-      "valid": "Valid",
-      "invalid": "Invalid",
-      "incompatible": "Incompatible"
     },
     "agentPluginManifestReadinessTitle": "Activation readiness",
     "agentPluginManifestBlockedPermissions": "Blocked permissions",
@@ -1841,7 +1823,6 @@
     "back": "Back",
     "close": "Close",
     "viewRaw": "View Raw",
-    "sensitive": "Sensitive",
     "yes": "Yes",
     "no": "No"
   }

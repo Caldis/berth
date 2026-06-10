@@ -89,13 +89,13 @@
     "projects": "项目",
     "emptyProjects": "还没有发现项目候选。",
     "loadError": "无法刷新项目。",
-    "sourceCount": "{{count}} 个来源",
+    "sourceCount_other": "{{count}} 个来源",
     "projectSources": "项目来源",
     "projectSourcesHint": "选择项目后查看项目来源文件。",
     "projectSourcesLoading": "正在加载项目来源…",
     "projectSourcesError": "无法加载项目来源。",
     "projectSourcesEmpty": "这个项目没有发现项目级来源。",
-    "sessionCount": "{{count}} 个会话",
+    "sessionCount_other": "{{count}} 个会话",
     "sources": {
       "current": "当前目录",
       "session": "会话历史",
@@ -104,7 +104,6 @@
   },
   "search": {
     "placeholder": "搜索资产…",
-    "shortcut": "⌘K",
     "noResults": "未找到结果。",
     "hint": "按名称、类型或作用域搜索所有资产。",
     "loading": "正在搜索…",
@@ -162,12 +161,9 @@
     "openSessions": "打开会话",
     "recentSessions": "最近会话",
     "costLast7Days": "近 7 天费用",
-    "rateLimits": "速率限制",
     "healthChecks": "健康检查",
-    "noIssues": "所有系统运行正常",
     "loadingAssets": "正在加载资产指标",
     "loadingUsage": "正在加载用量图表",
-    "started": "开始时间",
     "scope": {
       "global": "全部本地数据",
       "user": "用户级范围"
@@ -208,9 +204,9 @@
       "error": "请先修复错误项。"
     },
     "healthCount": {
-      "error": "{{count}} 个错误",
-      "warning": "{{count}} 个警告",
-      "info": "{{count}} 条信息"
+      "error_other": "{{count}} 个错误",
+      "warning_other": "{{count}} 个警告",
+      "info_other": "{{count}} 条信息"
     },
     "timeRange": {
       "7d": "近 7 天",
@@ -310,7 +306,6 @@
       "created": "创建于",
       "lastActivity": "最近活动",
       "inboxMessages": "{{count}} 条信箱消息",
-      "directory": "目录",
       "openLeadSession": "打开 lead 会话",
       "leadSessionMissing": "lead 会话记录不在当前扫描中",
       "membersTitle": "成员",
@@ -366,7 +361,6 @@
     "loadingList": "正在加载会话",
     "loadingListDescription": "正在读取当前 Agent 视角下的本地 transcript 摘要。",
     "refreshing": "正在更新会话…",
-    "renderingRows": "正在显示 {{shown}} / {{total}} 个会话",
     "loadingDetail": "正在加载会话详情",
     "loadingDetailDescription": "正在读取 transcript 推导出的工具、资产和产物。",
     "emptyDetailTitle": "未找到会话",
@@ -382,7 +376,6 @@
     },
     "project": "项目",
     "date": "日期",
-    "noSessions": "未找到会话。",
     "duration": "时长",
     "cost": "费用",
     "tokens": "Token",
@@ -397,8 +390,6 @@
     "todos": "待办",
     "files": "文件",
     "checkpoints": "Checkpoints",
-    "fileHistory": "文件历史检查点",
-    "started": "开始时间",
     "time": "时间",
     "sessionOverview": "运行概览",
     "durationUnknown": "未知",
@@ -589,7 +580,6 @@
     }
   },
   "instructions": {
-    "title": "指令",
     "tabs": {
       "memories": "记忆",
       "conventions": "约定",
@@ -598,17 +588,14 @@
       "commands": "命令",
       "outputModes": "输出模式"
     },
-    "groupNavigation": "指令分组",
     "scope": "作用域",
     "path": "路径",
     "trigger": "触发条件",
     "description": "描述",
-    "files": "文件",
     "tools": "工具",
     "agents": "代理",
     "model": "模型",
     "importChain": "导入链",
-    "usedInSessions": "近 30 天使用会话",
     "viewFile": "查看文件",
     "showInExplorer": "在资源管理器中显示",
     "guidance": {
@@ -719,7 +706,6 @@
     }
   },
   "capabilities": {
-    "title": "能力",
     "tabs": {
       "mcp": "MCP",
       "hooks": "Hooks",
@@ -1316,7 +1302,6 @@
   "usage": {
     "title": "用量",
     "subtitle": "来自本地 Claude Code 和 Codex 会话扫描的 token 与费用数据。",
-    "totalSpent": "总花费",
     "tokensUsed": "Token 用量",
     "tokenUnit": "tok",
     "inputTokens": "输入",
@@ -1446,18 +1431,18 @@
     "agentPluginNotDetected": "无本地数据",
     "agentPluginVersion": "v{{version}}",
     "agentPluginTarget": "目标: {{agent}}",
-    "agentPluginCapabilityCount": "{{count}} 项能力",
+    "agentPluginCapabilityCount_other": "{{count}} 项能力",
     "agentPluginPermissionsTitle": "权限",
     "agentPluginSourcesTitle": "来源",
     "agentPluginCapabilitiesTitle": "能力",
     "agentPluginReferencesTitle": "参考",
-    "agentPluginSourceTotal": "{{count}} 个来源",
+    "agentPluginSourceTotal_other": "{{count}} 个来源",
     "agentPluginSourceSummary": "{{scanned}} 已扫描 · {{missing}} 缺失 · {{notScanned}} 未扫描",
     "agentPluginManifest": "Manifest",
     "agentPluginReadOnly": "只读",
     "agentPluginManifestUnknown": "未知 Manifest",
     "agentPluginManifestVersionRange": "范围: {{range}}",
-    "agentPluginManifestErrorCount": "{{count}} 个错误",
+    "agentPluginManifestErrorCount_other": "{{count}} 个错误",
     "agentPluginManifestDetailsTitle": "Manifest 详情",
     "agentPluginManifestPath": "路径",
     "agentPluginManifestTarget": "目标",
@@ -1467,9 +1452,6 @@
     "agentPluginManifestErrorsTitle": "校验错误",
     "agentPluginManifestNoErrors": "没有校验错误。",
     "agentPluginManifestStatus": {
-      "valid": "有效",
-      "invalid": "无效",
-      "incompatible": "不兼容"
     },
     "agentPluginManifestReadinessTitle": "启用准备状态",
     "agentPluginManifestBlockedPermissions": "受限权限",
@@ -1722,7 +1704,7 @@
     },
     "localSources": "本地来源",
     "localSourcesEmpty": "未发现支持的本地来源。",
-    "sourceCount": "{{count}} 个来源",
+    "sourceCount_other": "{{count}} 个来源",
     "sourceNotFound": "未发现本地数据来源",
     "sourceNotFoundDesc": "没有发现这个 Agent 支持的用户级或项目级来源。",
     "sourceSummary": "这里显示 Berth 实际读取的目录和文件。",
@@ -1831,7 +1813,6 @@
     "back": "返回",
     "close": "关闭",
     "viewRaw": "查看原始文件",
-    "sensitive": "敏感",
     "yes": "是",
     "no": "否"
   }
