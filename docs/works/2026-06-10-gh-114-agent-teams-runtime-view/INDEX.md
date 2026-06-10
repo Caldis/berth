@@ -2,7 +2,7 @@
 task: 2026-06-10-gh-114-agent-teams-runtime-view
 task_id: GH-114
 type: feature
-phase: explore
+phase: design
 created: 2026-06-10
 priority: P2
 target_date: 
@@ -20,8 +20,8 @@ debt:
     areas:
       - ui-ux
       - architecture
-    confidence: low
-    rationale: "0.0-new 初始估算; 预计新增 teams 运行时读取 (main) + IPC 通道 + renderer 视图三层, incurred 含实验性功能维护线与新数据源; repaid 为关闭 issue 残余 UX 缺口 (用户对本机 team 运行态零可见)。explore/design 后校准, 含'不展示'结论的可能 (届时 incurred 大幅下调)。"
+    confidence: medium
+    rationale: "explore 校准: 官方契约 (experimental/存储路径/生命周期) 与本机数据形态 (config/inboxes/tasks schema) 已实测钉死; 新增面与 asset model 完全隔离 (memory/ 同型只读 IPC 域), 回归面仅 redirect 一处。incurred 含新 IPC 域 + 页面 + 实验性表面维护线; repaid 为关闭 issue 残余 UX 缺口。"
   final:
     incurred:
     repaid:
@@ -31,7 +31,12 @@ debt:
     areas: []
     confidence:
     rationale:
-  revisions: []
+  revisions:
+    - phase: explore
+      date: 2026-06-10
+      from: { incurred: 5, repaid: 2, net: 3, confidence: low }
+      to: { incurred: 5, repaid: 2, net: 3, confidence: medium }
+      reason: "数字不变, confidence 上调: 官方文档与本机样本把数据契约钉死, 架构落点 (memory/ 同型只读 IPC 域) 明确, 不确定性集中在 UI 细节。"
 issue:
   number: 114
   repo: Caldis/berth
@@ -59,7 +64,7 @@ artifacts:
 
 ## 产物
 - [x] 00-PRD.md — 原始输入快照
-- [ ] 01-ANALYSIS.md — Explore 产物
+- [x] 01-ANALYSIS.md — Explore 产物
 - [ ] 02-SPEC.md — Design 产物
 - [ ] 03-PLAN.md — 活任务清单
 - [ ] 04-POLISH.md — 可选抛光记录
