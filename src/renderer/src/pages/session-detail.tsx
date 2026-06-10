@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { Tabs, Tab } from '@/components/ui'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
@@ -20,12 +20,8 @@ import {
   ChevronDown,
   ChevronRight,
   AlertTriangle,
-  Wrench,
-  CheckCircle2,
-  XCircle,
-  Circle,
-  Info,
-  SlidersHorizontal
+  ListVideo,
+  Info
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import {
@@ -42,11 +38,12 @@ import { ErrorState } from '@/components/shared/error-state'
 import { LoadingState } from '@/components/shared/loading-state'
 import { TokenUsageDisplay } from '@/components/shared/token-usage-display'
 import { usePageChrome, type PageChromeConfig } from '@/components/layout/page-chrome'
+import { SessionReplay, type SessionReplayViewState } from '@/components/sessions/session-replay'
 import type { SessionArtifacts, SessionDetailResult, SessionToolEvent } from '@shared/types/ipc'
 
 type Translate = ReturnType<typeof useTranslation>['t']
-type SessionDetailTab = 'overview' | 'timeline' | 'artifacts'
-type SessionTabCounts = Record<SessionDetailTab, number>
+type SessionDetailTab = 'overview' | 'replay' | 'artifacts'
+type SessionTabCounts = Record<SessionDetailTab, number | null>
 
 export function SessionDetail(): React.ReactElement {
   const { id } = useParams<{ id: string }>()
@@ -58,6 +55,14 @@ export function SessionDetail(): React.ReactElement {
     new Set(['tools', 'skills', 'mcp', 'hooks', 'plans', 'todos', 'files', 'checkpoints'])
   )
   const [activeTab, setActiveTab] = useState<SessionDetailTab>('overview')
+  // 重放视图状态提升到页面层 — HeroUI Tabs 默认销毁非活动 panel, 切 tab 不丢选中/过滤。
+  const [replayViewState, setReplayViewState] = useState<SessionReplayViewState>({
+    selectedEventId: null,
+    kindFilter: null,
+    searchQuery: ''
+  })
+  const [replayCount, setReplayCount] = useState<number | null>(null)
+  const handleReplayLoadedCount = useCallback((count: number | null) => setReplayCount(count), [])
 
   const toggleSection = (key: string): void => {
     setExpandedSections((prev) => {
@@ -90,7 +95,6 @@ export function SessionDetail(): React.ReactElement {
   // Group hooks by event
   const hooksByEvent = detail?.hooksFired ?? []
   const artifacts = detail?.artifacts ?? emptyArtifacts()
-  const toolTimeline = detail?.toolTimeline ?? []
   const signals = useMemo(() => detail ? buildSessionSignals(detail) : null, [detail])
   const loadedAssetCount = detail
     ? detail.skillsUsed.length + detail.mcpServers.length + hooksByEvent.length
@@ -99,7 +103,7 @@ export function SessionDetail(): React.ReactElement {
   const artifactCount = artifacts.plans.length + artifacts.todos.length + artifacts.files.length + checkpointCount
   const tabCounts: SessionTabCounts = {
     overview: loadedAssetCount + countSignalHighlights(signals),
-    timeline: toolTimeline.length,
+    replay: replayCount,
     artifacts: artifactCount
   }
 
@@ -156,8 +160,13 @@ export function SessionDetail(): React.ReactElement {
               onToggleSection={toggleSection}
             />
           </Tab>
-          <Tab key="timeline" title={<SessionTabTitle item={sessionTabMeta(t, tabCounts).timeline} />}>
-            <SessionTimelineTab events={toolTimeline} />
+          <Tab key="replay" title={<SessionTabTitle item={sessionTabMeta(t, tabCounts).replay} />}>
+            <SessionReplay
+              sessionId={detail.summary.id}
+              viewState={replayViewState}
+              onViewStateChange={setReplayViewState}
+              onLoadedCount={handleReplayLoadedCount}
+            />
           </Tab>
           <Tab key="artifacts" title={<SessionTabTitle item={sessionTabMeta(t, tabCounts).artifacts} />}>
             <SessionArtifactsTab
@@ -189,7 +198,7 @@ interface SessionTabMetaItem {
   value: SessionDetailTab
   label: string
   description: string
-  count: number
+  count: number | null
   icon: React.ComponentType<{ className?: string }>
 }
 
@@ -205,12 +214,12 @@ function sessionTabMeta(
       count: counts.overview,
       icon: Activity
     },
-    timeline: {
-      value: 'timeline',
-      label: t('sessions.tabs.timeline', { defaultValue: 'Timeline' }),
-      description: t('sessions.tabs.timelineDescription', { defaultValue: 'Tool calls, filters, and latency' }),
-      count: counts.timeline,
-      icon: Wrench
+    replay: {
+      value: 'replay',
+      label: t('sessions.tabs.replay', { defaultValue: 'Replay' }),
+      description: t('sessions.tabs.replayDescription', { defaultValue: 'Full conversation replay with raw records' }),
+      count: counts.replay,
+      icon: ListVideo
     },
     artifacts: {
       value: 'artifacts',
@@ -235,9 +244,11 @@ function SessionTabTitle({ item }: { item: SessionTabMetaItem }): React.ReactEle
       <span className="min-w-0 flex-1">
         <span className="flex min-w-0 items-center justify-between gap-2">
           <span className="truncate text-sm font-semibold text-card-foreground">{item.label}</span>
-          <span className="shrink-0 rounded-md bg-muted px-1.5 py-0.5 text-[11px] font-medium tabular-nums text-muted-foreground group-data-[selected=true]:bg-primary/10 group-data-[selected=true]:text-primary">
-            {formatNumber(item.count)}
-          </span>
+          {item.count != null && (
+            <span className="shrink-0 rounded-md bg-muted px-1.5 py-0.5 text-[11px] font-medium tabular-nums text-muted-foreground group-data-[selected=true]:bg-primary/10 group-data-[selected=true]:text-primary">
+              {formatNumber(item.count)}
+            </span>
+          )}
         </span>
         <span className="mt-0.5 hidden truncate text-xs text-muted-foreground md:block">
           {item.description}
@@ -408,27 +419,6 @@ function LoadedAssetsPanel({
         )}
       </CollapsibleSection>
     </div>
-  )
-}
-
-function SessionTimelineTab({ events }: { events: SessionToolEvent[] }): React.ReactElement {
-  const { t } = useTranslation()
-
-  return (
-    <section data-testid="session-timeline-tab" className="min-w-0 space-y-3">
-      <div className="flex flex-col gap-2 border-b border-border pb-3 sm:flex-row sm:items-end sm:justify-between">
-        <div className="min-w-0">
-          <h2 className="text-base font-semibold tracking-tight text-card-foreground">{t('sessions.toolTimeline')}</h2>
-          <p className="mt-1 max-w-2xl text-xs text-muted-foreground">
-            {t('sessions.toolTimelineDescription')}
-          </p>
-        </div>
-        <span className="inline-flex w-fit items-center rounded-md bg-muted px-2 py-1 text-xs font-medium tabular-nums text-muted-foreground">
-          {formatNumber(events.length)}
-        </span>
-      </div>
-      <ToolTimeline events={events} />
-    </section>
   )
 }
 
@@ -1150,249 +1140,6 @@ function CheckpointMetric({
   )
 }
 
-function ToolTimeline({ events }: { events: SessionToolEvent[] }): React.ReactElement {
-  const { t } = useTranslation()
-  const [durationThresholdMs, setDurationThresholdMs] = useState(0)
-  const [statusFilter, setStatusFilter] = useState<'all' | 'failed'>('all')
-  const durationRange = useMemo(() => buildDurationFilterRange(events), [events])
-  const activeThresholdMs = Math.min(durationThresholdMs, durationRange.maxMs)
-  const failedEvents = useMemo(() => events.filter((event) => event.status === 'error'), [events])
-  const filteredEvents = useMemo(() => {
-    return events.filter((event) => {
-      if (statusFilter === 'failed' && event.status !== 'error') return false
-      if (activeThresholdMs <= 0) return true
-      const durationMs = getToolDurationMs(event)
-      return durationMs != null && durationMs >= activeThresholdMs
-    })
-  }, [activeThresholdMs, events, statusFilter])
-  const durationProgress = durationRange.maxMs > 0
-    ? `${Math.min(100, (activeThresholdMs / durationRange.maxMs) * 100)}%`
-    : '0%'
-
-  if (events.length === 0) {
-    return (
-      <SectionEmpty
-        title={t('sessions.emptyStates.toolTimeline.title')}
-        description={t('sessions.emptyStates.toolTimeline.description')}
-      />
-    )
-  }
-
-  return (
-    <div className="min-w-0">
-      <div className="border-b border-border bg-background/80 py-3">
-        <div className="flex flex-col gap-3">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-              <span className="inline-flex items-center gap-1.5">
-                <SlidersHorizontal className="h-3.5 w-3.5" />
-                {t('sessions.toolFilter.showing', {
-                  shown: filteredEvents.length,
-                  total: events.length
-                })}
-              </span>
-              {activeThresholdMs > 0 && (
-                <span className="rounded-md bg-primary/10 px-1.5 py-0.5 font-medium tabular-nums text-primary">
-                  {t('sessions.toolFilter.minDuration', {
-                    duration: formatDurationMs(activeThresholdMs)
-                  })}
-                </span>
-              )}
-            </div>
-            <div className="inline-flex rounded-lg border border-border bg-background p-0.5 text-xs">
-              <button
-                type="button"
-                aria-pressed={statusFilter === 'all'}
-                onClick={() => setStatusFilter('all')}
-                className={cn(
-                  'inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 font-medium transition-colors',
-                  statusFilter === 'all'
-                    ? 'bg-card text-card-foreground shadow-sm'
-                    : 'text-muted-foreground hover:text-card-foreground'
-                )}
-              >
-                {t('sessions.toolFilter.allStatuses', { defaultValue: 'All' })}
-                <span className="tabular-nums text-muted-foreground">{events.length}</span>
-              </button>
-              <button
-                type="button"
-                aria-pressed={statusFilter === 'failed'}
-                onClick={() => setStatusFilter('failed')}
-                className={cn(
-                  'inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 font-medium transition-colors',
-                  statusFilter === 'failed'
-                    ? 'bg-destructive/10 text-destructive'
-                    : 'text-muted-foreground hover:text-card-foreground'
-                )}
-              >
-                {t('sessions.toolFilter.failedOnly', { defaultValue: 'Failed' })}
-                <span className="tabular-nums text-muted-foreground">{failedEvents.length}</span>
-              </button>
-            </div>
-          </div>
-
-          <label className="grid gap-2 text-xs text-muted-foreground">
-            <span className="flex items-center justify-between">
-              <span>{t('sessions.toolFilter.label')}</span>
-              <span className="font-medium tabular-nums text-card-foreground">
-                {formatDurationThreshold(activeThresholdMs, t)}
-              </span>
-            </span>
-            <div className="flex items-center gap-3">
-              <span className="w-5 shrink-0 tabular-nums text-muted-foreground">0</span>
-              <input
-                aria-label={t('sessions.toolFilter.ariaLabel')}
-                type="range"
-                min={0}
-                max={durationRange.maxMs}
-                step={durationRange.stepMs}
-                value={activeThresholdMs}
-                disabled={durationRange.maxMs === 0}
-                onChange={(event) => setDurationThresholdMs(Number(event.target.value))}
-                style={{ '--duration-filter-progress': durationProgress } as React.CSSProperties & Record<string, string>}
-                className="duration-filter-range min-w-0 flex-1 disabled:cursor-not-allowed disabled:opacity-50"
-              />
-              <span className="w-12 shrink-0 text-right tabular-nums text-card-foreground">
-                {durationRange.maxMs <= 0 ? '—' : formatDurationMs(durationRange.maxMs)}
-              </span>
-            </div>
-          </label>
-        </div>
-      </div>
-
-      {filteredEvents.length === 0 ? (
-        <SectionEmpty
-          title={t('sessions.toolFilter.emptyTitle')}
-          description={t('sessions.toolFilter.emptyDescription')}
-        />
-      ) : (
-        <div data-testid="tool-timeline-scroll" className="min-h-[420px] max-h-[calc(100vh-17rem)] overflow-y-auto overflow-x-hidden overscroll-contain pr-2 [scrollbar-gutter:stable]">
-          <div className="relative min-w-0">
-            <span className="absolute bottom-0 left-[18px] top-0 w-px bg-border" aria-hidden="true" />
-            {filteredEvents.map((event) => {
-              const durationMs = getToolDurationMs(event)
-              const toolTip = getToolTip(event, t)
-              const evidence = getToolEvidence(event)
-              return (
-                <div
-                  key={event.id}
-                  className="relative grid min-h-8 grid-cols-[1.25rem_minmax(0,1fr)_minmax(3.5rem,4rem)] items-center gap-2 px-2 py-1.5 text-xs transition-colors hover:bg-accent/5 sm:grid-cols-[1.25rem_minmax(0,11rem)_minmax(0,1fr)_minmax(3.75rem,4.5rem)_minmax(3.5rem,4.25rem)]"
-                >
-                  <span className="relative z-10 flex h-5 w-5 items-center justify-center rounded-full bg-background">
-                    <TimelineStatusIcon status={event.status} />
-                  </span>
-                  <div className="min-w-0">
-                    <div className="flex min-w-0 items-center gap-1.5">
-                      <span className="truncate font-medium text-card-foreground" title={event.name}>
-                        {event.name}
-                      </span>
-                      <ToolTipButton toolName={event.name} tip={toolTip} />
-                    </div>
-                    <div className="mt-0.5 flex items-center gap-1.5">
-                      <span className="rounded bg-muted px-1 py-0.5 text-[10px] leading-none text-muted-foreground">
-                        {event.category}
-                      </span>
-                      {event.mcpServer && (
-                        <span className="truncate rounded bg-green-500/10 px-1 py-0.5 text-[10px] leading-none text-green-600 dark:text-green-400">
-                          {event.mcpServer}
-                        </span>
-                      )}
-                      {event.skillName && (
-                        <span className="truncate rounded bg-blue-500/10 px-1 py-0.5 text-[10px] leading-none text-blue-600 dark:text-blue-400">
-                          {event.skillName}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  <span className="hidden min-w-0 truncate text-muted-foreground sm:block" title={evidence}>
-                    {evidence}
-                  </span>
-                  <span className="hidden text-right tabular-nums text-muted-foreground sm:block">
-                    {formatOptionalRelativeTime(event.startedAt)}
-                  </span>
-                  <span className="min-w-0 rounded-md bg-primary/10 px-1.5 py-0.5 text-right font-medium tabular-nums text-primary">
-                    {durationMs == null ? t('sessions.durationUnknown') : formatDurationMs(durationMs)}
-                  </span>
-                </div>
-              )
-            })}
-          </div>
-        </div>
-      )}
-    </div>
-  )
-}
-
-function buildDurationFilterRange(events: SessionToolEvent[]): { maxMs: number; stepMs: number } {
-  const maxDuration = events.reduce((max, event) => {
-    const durationMs = getToolDurationMs(event)
-    return durationMs == null ? max : Math.max(max, durationMs)
-  }, 0)
-  if (maxDuration <= 0) return { maxMs: 0, stepMs: 1 }
-  if (maxDuration <= 1000) return { maxMs: Math.ceil(maxDuration / 100) * 100, stepMs: 50 }
-  if (maxDuration <= 10_000) return { maxMs: Math.ceil(maxDuration / 500) * 500, stepMs: 250 }
-  if (maxDuration <= 60_000) return { maxMs: Math.ceil(maxDuration / 1000) * 1000, stepMs: 1000 }
-  return { maxMs: Math.ceil(maxDuration / 10_000) * 10_000, stepMs: 5000 }
-}
-
-function getToolEvidence(event: SessionToolEvent): string {
-  if (event.summary) return event.summary
-  if (event.filePaths.length > 0) return event.filePaths.map((filePath) => truncatePath(filePath, 96)).join(', ')
-  if (event.skillName) return event.skillName
-  if (event.mcpServer) return event.mcpServer
-  return '—'
-}
-
-function getToolTip(event: SessionToolEvent, t: Translate): string {
-  return t(`sessions.toolTips.${getToolTipKey(event)}`)
-}
-
-function getToolTipKey(event: SessionToolEvent): string {
-  const name = event.name.toLowerCase()
-  if (name === 'askuserquestion') return 'askUser'
-  if (name === 'agent' || name === 'task') return 'agent'
-  if (name === 'skill') return 'skill'
-  if (name === 'bash' || name === 'powershell' || name.includes('shell') || name.includes('exec')) return 'shell'
-  if (name === 'read' || name === 'ls' || name.includes('readmcpresource')) return 'fileRead'
-  if (name === 'edit' || name === 'multiedit' || name === 'write' || name === 'notebookedit') return 'fileWrite'
-  if (name === 'grep' || name === 'glob' || name === 'lsp' || name.includes('search_openai_docs')) return 'fileSearch'
-  if (name === 'webfetch' || name === 'websearch' || name === 'web_search' || name.includes('fetch_openai_doc')) return 'web'
-  if (name.startsWith('task') || name === 'todowrite' || name === 'update_plan') return 'tasks'
-  if (name === 'apply_patch' || name === 'patch_apply') return 'patch'
-  if (event.category === 'mcp' || name.includes('mcp') || name.startsWith('mcp__')) return 'mcp'
-  if (name.startsWith('browser_') || name.includes('playwright')) return 'browser'
-  if (name === 'view_image' || name === 'senduserfile') return 'image'
-  if (name === 'load_workspace_dependencies') return 'workspace'
-  if (name === 'spawn_agent' || name === 'wait_agent' || name === 'close_agent') return 'multiAgent'
-  if (name.includes('hook')) return 'hook'
-  if (name.includes('planmode')) return 'plan'
-  return 'generic'
-}
-
-function ToolTipButton({
-  toolName,
-  tip
-}: {
-  toolName: string
-  tip: string
-}): React.ReactElement {
-  return (
-    <span className="group relative inline-flex">
-      <button
-        type="button"
-        aria-label={`${toolName}: ${tip}`}
-        title={`${toolName}: ${tip}`}
-        className="flex h-4 w-4 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-accent/10 hover:text-card-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-      >
-        <Info className="h-3 w-3" />
-      </button>
-      <span className="pointer-events-none absolute left-0 top-5 z-20 hidden w-72 rounded-lg border border-border bg-popover px-3 py-2 text-xs leading-5 text-popover-foreground shadow-lg group-hover:block group-focus-within:block">
-        {tip}
-      </span>
-    </span>
-  )
-}
-
 function buildSessionSignals(detail: SessionDetailResult): SessionSignals {
   const durations = detail.toolTimeline
     .map((event) => ({ event, durationMs: getToolDurationMs(event) }))
@@ -1467,10 +1214,6 @@ function formatDurationMs(value: number): string {
   return `${Number.isInteger(minutes) ? minutes.toFixed(0) : minutes.toFixed(1)}m`
 }
 
-function formatDurationThreshold(value: number, t: Translate): string {
-  return value <= 0 ? t('sessions.toolFilter.allDurations') : formatDurationMs(value)
-}
-
 function formatRate(value: number): string {
   return Number.isInteger(value) ? formatNumber(value) : value.toFixed(1)
 }
@@ -1510,17 +1253,6 @@ function SectionEmpty({
       <p className="mt-1 max-w-[70ch] text-xs leading-5 text-muted-foreground/75">{description}</p>
     </div>
   )
-}
-
-function TimelineStatusIcon({
-  status
-}: {
-  status: SessionToolEvent['status']
-}): React.ReactElement {
-  if (status === 'success') return <CheckCircle2 className="h-4 w-4 text-green-500" />
-  if (status === 'error') return <XCircle className="h-4 w-4 text-destructive" />
-  if (status === 'pending') return <Circle className="h-4 w-4 text-yellow-500" />
-  return <Wrench className="h-4 w-4 text-muted-foreground" />
 }
 
 function MetaItem({

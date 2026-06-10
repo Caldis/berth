@@ -11,7 +11,7 @@ import { TopNavigation } from '../../src/renderer/src/components/layout/top-navi
 import { PageChromeProvider } from '../../src/renderer/src/components/layout/page-chrome'
 import { SearchDialog } from '../../src/renderer/src/components/layout/search-dialog'
 import type { Asset, SessionSummary, UsageSummary } from '../../src/shared/types/asset'
-import type { SessionActivityMetrics } from '../../src/shared/types/ipc'
+import type { SessionActivityMetrics, SessionReplayResult } from '../../src/shared/types/ipc'
 import { normalizeTokenUsage } from '../../src/shared/token-usage'
 import { useAppStore } from '../../src/renderer/src/stores/app'
 
@@ -35,8 +35,34 @@ const sessionsVirtuosoMock = vi.hoisted(() => ({
   scrollToIndex: vi.fn()
 }))
 
+type MockVirtuosoProps = {
+  data?: unknown[]
+  computeItemKey?: (index: number, item: unknown) => React.Key
+  itemContent: (index: number, item: unknown) => React.ReactNode
+}
+
 vi.mock('react-virtuoso', async () => {
   const ReactModule = await import('react')
+
+  // Flat Virtuoso mock (GH-116 replay event list): render all rows eagerly.
+  const Virtuoso = ReactModule.forwardRef<MockGroupedVirtuosoHandle, MockVirtuosoProps>(
+    function MockVirtuoso(props, ref) {
+      ReactModule.useImperativeHandle(ref, () => ({
+        scrollToIndex: () => {}
+      }))
+      return ReactModule.createElement(
+        'div',
+        { 'data-testid': 'replay-mock-virtuoso' },
+        (props.data ?? []).map((item, index) =>
+          ReactModule.createElement(
+            'div',
+            { key: props.computeItemKey?.(index, item) ?? index },
+            props.itemContent(index, item)
+          )
+        )
+      )
+    }
+  )
 
   const GroupedVirtuoso = ReactModule.forwardRef<MockGroupedVirtuosoHandle, MockGroupedVirtuosoProps>(function MockGroupedVirtuoso(props, ref) {
     sessionsVirtuosoMock.props = props
@@ -84,7 +110,7 @@ vi.mock('react-virtuoso', async () => {
     )
   })
 
-  return { GroupedVirtuoso }
+  return { GroupedVirtuoso, Virtuoso }
 })
 
 const summary: SessionSummary = {
@@ -235,6 +261,59 @@ function mockSessionApis(session: SessionSummary = summary): void {
     rateLimits: []
   }))
   window.api.assets.healthCheck = vi.fn(async () => [])
+  window.api.sessions.events = vi.fn(async () => sessionReplay(session.id))
+  window.api.sessions.eventPayload = vi.fn(async (_id: string, eventId: string) => ({
+    id: eventId,
+    json: '{"type":"assistant","message":{"content":[{"type":"tool_use","name":"Bash"}]}}'
+  }))
+}
+
+function sessionReplay(sessionId: string): SessionReplayResult {
+  return {
+    sessionId,
+    agentId: 'claude-code',
+    startedAt: '2026-05-30T01:00:00.000Z',
+    endedAt: '2026-05-30T01:05:00.000Z',
+    totalEvents: 5,
+    truncated: false,
+    events: [
+      {
+        id: 'L0B0',
+        kind: 'user',
+        timestamp: '2026-05-30T01:00:00.000Z',
+        summary: 'start working on the fix'
+      },
+      {
+        id: 'L1B0',
+        kind: 'thinking',
+        timestamp: '2026-05-30T01:00:05.000Z',
+        summary: 'planning the fix'
+      },
+      {
+        id: 'L1B1',
+        kind: 'tool',
+        timestamp: '2026-05-30T01:02:00.000Z',
+        summary: '{"command":"pnpm test"}',
+        toolName: 'Bash',
+        status: 'error'
+      },
+      {
+        id: 'L2B0',
+        kind: 'result',
+        timestamp: '2026-05-30T01:02:02.000Z',
+        summary: 'FAIL tests/unit/sample.test.ts',
+        toolName: 'Bash',
+        status: 'error'
+      },
+      {
+        id: 'L3B0',
+        kind: 'model',
+        timestamp: '2026-05-30T01:02:03.000Z',
+        summary: '10 in → 325 out',
+        tokens: { input: 10, output: 325 }
+      }
+    ]
+  }
 }
 
 function selectSessionDetailTab(label: RegExp): void {
@@ -639,14 +718,17 @@ describe('session pages', () => {
     expect(screen.getByText('Stop')).toBeInTheDocument()
     expect(screen.getByText('2x')).toBeInTheDocument()
     expect(screen.getByRole('tab', { name: /Overview/ })).toHaveAttribute('aria-selected', 'true')
-    expect(screen.getByRole('tab', { name: /Timeline/ })).toHaveTextContent('2')
+    expect(screen.getByRole('tab', { name: /Replay/ })).toBeInTheDocument()
     expect(screen.getByRole('tab', { name: /Artifacts/ })).toHaveTextContent('3')
-    expect(screen.queryByText('Edit')).not.toBeInTheDocument()
+    expect(screen.queryByText('start working on the fix')).not.toBeInTheDocument()
     expect(screen.queryByText('Verify UI')).not.toBeInTheDocument()
 
-    selectSessionDetailTab(/Timeline/)
-    expect(screen.getByText('Edit')).toBeInTheDocument()
-    expect(screen.getAllByText('2s').length).toBeGreaterThan(0)
+    selectSessionDetailTab(/Replay/)
+    expect(await screen.findByText('start working on the fix')).toBeInTheDocument()
+    expect(screen.getByText('planning the fix')).toBeInTheDocument()
+    // offsets are rendered relative to session start in h:mm:ss
+    expect(screen.getByText('0:02:00')).toBeInTheDocument()
+    expect(screen.getByText('5 / 5 events')).toBeInTheDocument()
 
     selectSessionDetailTab(/Artifacts/)
     expect(screen.getByText('Verify UI')).toBeInTheDocument()
@@ -664,38 +746,54 @@ describe('session pages', () => {
     expect(screen.queryByText('Loading...')).not.toBeInTheDocument()
   })
 
-  it('filters session detail tools by minimum duration', async () => {
+  it('replays session events with selection, payload panel, search, and kind filter', async () => {
     mockSessionApis()
 
     renderSessionDetailPage()
 
     expect(await screen.findByRole('heading', { name: 'Fix session metadata' })).toBeInTheDocument()
-    selectSessionDetailTab(/Timeline/)
-    expect(screen.getByText('Edit')).toBeInTheDocument()
-    const timelineTab = screen.getByTestId('session-timeline-tab')
-    expect(timelineTab).not.toHaveClass('rounded-xl')
-    expect(timelineTab).not.toHaveClass('border')
-    expect(timelineTab).not.toHaveClass('bg-card')
-    expect(screen.getByTestId('tool-timeline-scroll')).toHaveClass('overflow-x-hidden')
+    selectSessionDetailTab(/Replay/)
+    expect(await screen.findByText('start working on the fix')).toBeInTheDocument()
+    expect(screen.getByTestId('replay-scrubber')).toBeInTheDocument()
+    expect(screen.queryByTestId('replay-detail-panel')).not.toBeInTheDocument()
 
-    fireEvent.click(screen.getByRole('button', { name: /Failed/ }))
-    expect(screen.queryByText('Edit')).not.toBeInTheDocument()
-    expect(screen.getAllByText('Bash').length).toBeGreaterThan(0)
-    expect(screen.getByText('Showing 1 of 2')).toBeInTheDocument()
+    // 点选事件 → 详情面板出现, 原始 payload 按需取数并语法着色
+    fireEvent.click(screen.getByTestId('replay-event-L1B1'))
+    expect(await screen.findByTestId('replay-detail-panel')).toBeInTheDocument()
+    expect(window.api.sessions.eventPayload).toHaveBeenCalledWith('session-session-abc', 'L1B1')
+    expect(await screen.findByTestId('replay-payload-json')).toHaveTextContent('"tool_use"')
+    expect(within(screen.getByTestId('replay-detail-panel')).getByText('L1B1')).toBeInTheDocument()
 
-    fireEvent.click(screen.getByRole('button', { name: /All/ }))
-    expect(screen.getByText('Edit')).toBeInTheDocument()
+    // 键盘 ↓ 在事件流中移动选中
+    fireEvent.keyDown(screen.getByTestId('replay-event-list'), { key: 'ArrowDown' })
+    expect(screen.getByTestId('replay-event-L2B0')).toHaveAttribute('aria-selected', 'true')
 
-    fireEvent.change(screen.getByLabelText('Minimum tool duration'), {
-      target: { value: '1500' }
+    // 搜索过滤摘要与工具名
+    fireEvent.change(screen.getByTestId('replay-search'), { target: { value: 'pnpm' } })
+    expect(screen.queryByText('start working on the fix')).not.toBeInTheDocument()
+    expect(screen.getByText('1 / 5 events')).toBeInTheDocument()
+    fireEvent.change(screen.getByTestId('replay-search'), { target: { value: '' } })
+
+    // 类型多选过滤 (事件行也是 role=option, 必须限定在 Select 弹层的 listbox 里取选项)
+    fireEvent.click(screen.getByTestId('replay-kind-filter'))
+    const kindListbox = await screen.findByRole('listbox', { name: 'Event types' })
+    fireEvent.click(within(kindListbox).getByRole('option', { name: /User/ }))
+    expect(screen.getByText('start working on the fix')).toBeInTheDocument()
+    expect(screen.queryByText('planning the fix')).not.toBeInTheDocument()
+    expect(screen.getByText('1 / 5 events')).toBeInTheDocument()
+    // 选中事件被类型过滤滤掉时, 详情面板随之收起
+    expect(screen.queryByTestId('replay-detail-panel')).not.toBeInTheDocument()
+
+    // 重新点选可见事件 → 面板出现, 关闭按钮收起
+    fireEvent.click(screen.getByTestId('replay-event-L0B0'))
+    const closeButton = within(await screen.findByTestId('replay-detail-panel')).getByRole('button', {
+      name: 'Close event detail'
     })
-
-    expect(screen.queryByText('Edit')).not.toBeInTheDocument()
-    expect(screen.getAllByText('Bash').length).toBeGreaterThan(0)
-    expect(screen.getByText('Showing 1 of 2')).toBeInTheDocument()
+    fireEvent.click(closeButton)
+    expect(screen.queryByTestId('replay-detail-panel')).not.toBeInTheDocument()
   })
 
-  it('summarizes empty checkpoints and explains long-running built-in tools', async () => {
+  it('summarizes empty checkpoints without per-checkpoint placeholders', async () => {
     mockSessionApis()
     window.api.sessions.get = vi.fn(async () => ({
       summary,
@@ -751,13 +849,10 @@ describe('session pages', () => {
     expect(screen.getByText(/Checkpoints are file-history snapshots/)).toBeInTheDocument()
     expect(screen.getByText('Missing details')).toBeInTheDocument()
     expect(screen.queryByText('File history checkpoint')).not.toBeInTheDocument()
-
-    selectSessionDetailTab(/Timeline/)
-    expect(screen.getByText(/Runs a subagent in a separate context/)).toBeInTheDocument()
-    expect(screen.getByText(/waits for your answer/)).toBeInTheDocument()
   })
 
   it('uses explanatory section empty states in session detail', async () => {
+    window.api.sessions.events = vi.fn(async () => null)
     window.api.sessions.get = vi.fn(async () => ({
       summary,
       activityMetrics: {
@@ -792,8 +887,8 @@ describe('session pages', () => {
     expect(screen.getByText('Not calculated')).toBeInTheDocument()
     expect(screen.getByTestId('token-consumption-rate-explanation')).toHaveTextContent('Formula unavailable')
     expect(screen.queryByText('7.6 tok/min')).not.toBeInTheDocument()
-    selectSessionDetailTab(/Timeline/)
-    expect(screen.getByText('No tool events recorded')).toBeInTheDocument()
+    selectSessionDetailTab(/Replay/)
+    expect(await screen.findByText('No replay events')).toBeInTheDocument()
     selectSessionDetailTab(/Artifacts/)
     expect(screen.getByText('No artifacts recorded')).toBeInTheDocument()
     expect(screen.queryAllByText('Nothing here yet')).toHaveLength(0)
