@@ -74,6 +74,17 @@ describe('SidebarScanStatus (unified sidebar loading)', () => {
     expect(screen.getByRole('status')).toHaveAttribute('aria-label', expect.stringContaining('Scan error'))
   })
 
+  it('renders the scan failure message inside the progress panel (GH-115 T6: status.error 不再零渲染)', () => {
+    useAppStore.setState({
+      assetRuntimeStatus: { ...IDLE_ASSET_RUNTIME_STATUS, state: 'error', error: 'ENOENT: scan worker missing' },
+      assetErrors: []
+    })
+    renderStatus()
+
+    fireEvent.click(screen.getByTestId('sidebar-scan-status-trigger'))
+    expect(screen.getByTestId('scan-status-error-message')).toHaveTextContent('ENOENT: scan worker missing')
+  })
+
   it('opens a progress popover visualizing per-category live counts (P4.6)', async () => {
     useAppStore.setState({
       assetRuntimeStatus: {

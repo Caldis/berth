@@ -1,4 +1,5 @@
 import * as fs from 'fs'
+import { getMainLog } from '../../log'
 import * as path from 'path'
 import type { Asset } from '@shared/types/asset'
 import type { AssetSnapshot } from '@shared/types/ipc'
@@ -55,7 +56,8 @@ export function createSqliteSnapshotStore(dir: string, openDatabase: OpenSqliteD
       const opened = openDatabase(file)
       ensureSchema(opened)
       db = opened
-    } catch {
+    } catch (err) {
+      getMainLog().log('sqlite-snapshot-store', err)
       db = null // give up permanently for this store; persistence is best-effort
     }
     return db
@@ -74,7 +76,8 @@ export function createSqliteSnapshotStore(dir: string, openDatabase: OpenSqliteD
         const rows = handle.prepare('SELECT payload_json FROM asset ORDER BY ord').all() as { payload_json: string }[]
         const assets = rows.map((r) => JSON.parse(r.payload_json) as Asset)
         return { ...envelope, assets } // row-level assets override the envelope's emptied list
-      } catch {
+      } catch (err) {
+        getMainLog().log('sqlite-snapshot-store', err)
         return null
       }
     },
@@ -92,8 +95,9 @@ export function createSqliteSnapshotStore(dir: string, openDatabase: OpenSqliteD
           upsertMeta.run(ENVELOPE_KEY, JSON.stringify(envelope))
         })
         writeAll(lean, envelopeOf(snapshot))
-      } catch {
+      } catch (err) {
         // persistence is best-effort
+        getMainLog().log('sqlite-snapshot-store', err)
       }
     }
   }

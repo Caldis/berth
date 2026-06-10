@@ -112,6 +112,13 @@ function ScanProgressPanel(): React.ReactElement {
       {errorCount > 0 && (
         <span className="text-xs text-amber-500">{t('nav.scanStatus.issues', { count: errorCount })}</span>
       )}
+
+      {/* GH-115 T6: 扫描故障消息此前全 renderer 零渲染 — 故障链最后一跳接到 UI */}
+      {status.state === 'error' && status.error && (
+        <span data-testid="scan-status-error-message" className="break-all text-xs text-red-500">
+          {status.error}
+        </span>
+      )}
     </div>
   )
 }

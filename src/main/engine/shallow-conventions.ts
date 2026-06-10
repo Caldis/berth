@@ -22,6 +22,7 @@ import {
   parseCodexSkill
 } from '../adapters/codex/parsers'
 import type { AssetFileCache } from './assets/file-cache'
+import { getMainLog } from '../log'
 
 /** Both agents read AGENTS.md, so a shallow-indexed one is visible in either view. */
 const SHARED_AGENT_READERS = ['claude-code', 'codex']
@@ -68,8 +69,9 @@ export function scanShallowConventions(projectDir: string, cache?: AssetFileCach
         return [asset]
       }
       assets.push(...(cache ? cache.getOrParse(filePath, produce) : produce()))
-    } catch {
+    } catch (err) {
       // A convention file we cannot read is simply absent from the shallow index.
+      getMainLog().log('shallow-conventions', err)
     }
   }
   return assets
@@ -127,8 +129,9 @@ export function scanProjectCapabilities(projectRoot: string, cache?: AssetFileCa
     try {
       const produce = (): Asset[] => ownerTag(parse(file), projectRoot)
       out.push(...(cache ? cache.getOrParse(file, produce) : produce()))
-    } catch {
+    } catch (err) {
       // An unreadable/parse-failing config is simply absent from the index.
+      getMainLog().log('shallow-capabilities', err)
     }
   }
 

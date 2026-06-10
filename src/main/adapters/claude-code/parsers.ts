@@ -200,12 +200,9 @@ export function parseMcpServers(
   scope: AssetScope
 ): Asset[] {
   const assets: Asset[] = []
-  let config: McpConfig
-  try {
-    config = JSON.parse(fs.readFileSync(filePath, 'utf-8')) as McpConfig
-  } catch {
-    return assets
-  }
+  // GH-115 T6: 不在此吞 parse 错误 — 调用方已用 safeScan 包裹 (existsSync 先行),
+  // malformed JSON 必须上抛进 ScanError 记账, 否则坏文件 = 资产无声消失。
+  const config = JSON.parse(fs.readFileSync(filePath, 'utf-8')) as McpConfig
   const servers = config.mcpServers ?? {}
   for (const [name, serverConfig] of Object.entries(servers)) {
     assets.push({
@@ -229,12 +226,9 @@ export function parseMcpServers(
  */
 export function parseClaudeJsonProjectMcp(filePath: string): Asset[] {
   const assets: Asset[] = []
-  let config: { projects?: Record<string, { mcpServers?: Record<string, Record<string, unknown>> }> }
-  try {
-    config = JSON.parse(fs.readFileSync(filePath, 'utf-8'))
-  } catch {
-    return assets
-  }
+  // 同 parseMcpServers: malformed 上抛给 safeScan 记账 (GH-115 T6)。
+  const config: { projects?: Record<string, { mcpServers?: Record<string, Record<string, unknown>> }> } =
+    JSON.parse(fs.readFileSync(filePath, 'utf-8'))
   const projects = config.projects ?? {}
   for (const [projectPath, projectConfig] of Object.entries(projects)) {
     const servers = projectConfig?.mcpServers ?? {}

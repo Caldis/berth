@@ -37,6 +37,21 @@ describe('Claude Code scanner', () => {
     expect(sessions[0].name).toBe('Parent session')
   })
 
+  it('records a ScanError instead of silently dropping MCP servers when .claude.json is malformed (GH-115 T6)', () => {
+    root = mkdtempSync(join(tmpdir(), 'berth-claude-scanner-'))
+    const claudeDir = join(root, '.claude')
+    mkdirSync(claudeDir, { recursive: true })
+    // 坏 JSON: 此前 parseMcpServers 内层 catch 先行吞错, safeScan 永远收不到 throw,
+    // 用户写坏一个配置文件 → MCP server 从所有页面无声消失且计数为 0。
+    writeFileSync(join(root, '.claude.json'), '{ "mcpServers": { broken')
+
+    const errors: { path: string; type: string; message: string }[] = []
+    const assets = scanCapabilities({ claudeDir, errors })
+
+    expect(assets.filter((a) => a.type === 'mcp-server')).toHaveLength(0)
+    expect(errors.some((e) => e.path.endsWith('.claude.json'))).toBe(true)
+  })
+
   it('flattens Claude hook entries by event type', () => {
     root = mkdtempSync(join(tmpdir(), 'berth-claude-hooks-'))
     const settingsPath = join(root, 'settings.json')

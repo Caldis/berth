@@ -1,4 +1,5 @@
 import * as fs from 'fs'
+import { getMainLog } from '../log'
 import * as path from 'path'
 import type { AgentAdapter, Asset, AssetStats } from '@shared/types/asset'
 import type { ScanRoot } from '@shared/types/asset'
@@ -185,7 +186,9 @@ export class AssetScanner {
           roots: result.paths,
           sources: sourceCoverage
         })
-      } catch {
+      } catch (err) {
+        // GH-115 T6: detect 异常 ≠ 未安装, 至少留痕 (renderer 级区分随 adapter 契约扩展)。
+        getMainLog().log('scan-sources-detect', err)
         groups.push({
           agentId: adapter.id,
           agentName: adapter.displayName,

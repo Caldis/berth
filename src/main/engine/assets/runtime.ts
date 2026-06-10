@@ -1,4 +1,5 @@
 import type { AgentView, Asset, AssetStats, CostMode, SessionSummary, UsageSummary } from '@shared/types/asset'
+import { getMainLog } from '../../log'
 import type {
   AgentScanSourceGroup,
   AssetScanPartial,
@@ -412,6 +413,8 @@ export class AgentAssetRuntime {
       // refresh() reply microtask, leaving the UI stuck at scanning (P4.6 fix).
       this.progressListener?.({ status })
     } catch (error) {
+      // GH-115 T6: 这是全部扫描故障的汇聚点, 也是 stack 此前永久丢失处 — 先落盘再转 status。
+      getMainLog().log('asset-runtime', error)
       // A scan whose project was switched away mid-flight must not mark the
       // newly-selected project as errored. (GH-111 R4)
       if (!isCurrent()) return

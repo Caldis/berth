@@ -1,4 +1,5 @@
 import * as path from 'path'
+import { getMainLog } from '../../log'
 import type { Asset, AssetScope } from '@shared/types/asset'
 import { dedupePathKey } from '@shared/asset-dedupe'
 import {
@@ -110,9 +111,10 @@ export function deriveAssetsForPath(filePath: string, ctx: DeriveContext): Asset
     for (const parse of conventionParsers) {
       try {
         assets.push(parse(filePath, scope))
-      } catch {
+      } catch (err) {
         // The file was deleted or is mid-write/unreadable — omit its row. A removed
         // convention file derives to [], which removes its assets from the snapshot.
+        getMainLog().log('derive-asset', err)
       }
     }
     return assets
@@ -122,8 +124,9 @@ export function deriveAssetsForPath(filePath: string, ctx: DeriveContext): Asset
   if (enterpriseParser) {
     try {
       return enterpriseParser(filePath)
-    } catch {
+    } catch (err) {
       // A deleted or mid-write managed config derives to [] (removing its assets).
+      getMainLog().log('derive-asset', err)
       return []
     }
   }
