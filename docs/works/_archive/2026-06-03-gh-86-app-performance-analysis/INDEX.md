@@ -2,7 +2,7 @@
 task: 2026-06-03-gh-86-app-performance-analysis
 task_id: GH-86
 type: maintenance
-phase: verify
+phase: archive
 created: 2026-06-03
 priority: P2
 target_date: 
@@ -93,7 +93,7 @@ gh_project:
   project_url: https://github.com/users/Caldis/projects/6
   project_id: PVT_kwHOADXbEs4BZHvQ
   item_id: PVTI_lAHOADXbEs4BZHvQzgujhu4
-  item_status: In Progress
+  item_status: Done
 artifacts:
   source: 00-PRD.md
   analysis: 01-ANALYSIS.md
