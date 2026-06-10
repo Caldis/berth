@@ -9,6 +9,7 @@ import { isMacPlatform } from '@/lib/platform'
 import { SettingsDialog } from './settings-dialog'
 import { ProjectScopeSwitcher } from './project-scope-switcher'
 import { SidebarScanStatus } from './sidebar-scan-status'
+import appIconUrl from '../../../../../assets/icon/app_icon.png'
 
 export function Sidebar(): React.ReactElement {
   const { t } = useTranslation()
@@ -82,9 +83,7 @@ export function Sidebar(): React.ReactElement {
 
         <div className="titlebar-drag flex h-14 shrink-0 items-center gap-2 px-4">
           <div className="titlebar-no-drag flex min-w-0 items-center gap-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary text-primary-foreground text-xs font-bold">
-              B
-            </div>
+            <img src={appIconUrl} alt="" aria-hidden="true" className="h-7 w-7 shrink-0 rounded-md" />
             {!collapsed && (
               <span className="text-sm font-semibold text-sidebar-foreground">
                 {t('app.name')}

@@ -15,9 +15,7 @@ export function Footer() {
       <div className="container-page grid gap-10 py-14 md:grid-cols-[1.6fr_1fr_1fr_auto]">
         <div className="max-w-xs">
           <div className="flex items-center gap-2.5">
-            <span className="grid h-7 w-7 place-items-center rounded-xl bg-ink font-display text-sm font-bold text-paper">
-              B
-            </span>
+            <img src="/icon.png" alt="" aria-hidden="true" className="h-7 w-7 rounded-xl" />
             <span className="font-display text-lg font-semibold">Berth</span>
           </div>
           <p className="mt-3 text-sm leading-relaxed text-muted">{t('footer.tagline')}</p>

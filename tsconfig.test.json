@@ -19,7 +19,7 @@
       "@shared/*": ["./src/shared/*"]
     }
   },
-  "include": ["tests/**/*", "src/preload/index.d.ts"],
+  "include": ["tests/**/*", "src/preload/index.d.ts", "src/renderer/src/env.d.ts"],
   // GH-115 T0 渐进纳管账本: 以下文件存量 mock 类型漂移 (共 69 错), 在对应重构批次烧账后逐个移出 exclude。
   // 新增测试文件默认纳管 (不在此列表即受检)。烧账状态见 docs/works/2026-06-10-gh-115-architecture-refactor/03-PLAN.md。
   "exclude": [

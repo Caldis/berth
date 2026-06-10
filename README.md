@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/logo-placeholder.svg" width="80" height="80" alt="Berth logo" />
+  <img src="assets/icon/app_icon.png" width="96" height="96" alt="Berth logo" />
 </p>
 
 <h1 align="center">Berth</h1>

@@ -11,6 +11,7 @@ import { resolveDefaultProjectDir } from './project-dir'
 import { configureAgentDevProfile, shouldRequestSingleInstanceLock } from './dev-instance'
 import { shouldAutoOpenDevTools } from './devtools'
 import { createLogWriter, getMainLog, setMainLogWriter } from './log'
+import appIcon from '../../assets/icon/app_icon.png?asset'
 
 // GH-115 T5: 进程级兜底 — 打包应用 (无终端) 的故障此前零痕迹。日志仅落
 // userData/logs 本地滚动文件 (无遥测硬边界); uncaughtException 弹框告知后不强退
@@ -44,6 +45,8 @@ function createWindow(options: CreateWindowOptions = {}): BrowserWindow {
     minHeight: 600,
     show: false,
     autoHideMenuBar: true,
+    // 窗口/任务栏图标 (win 生效, linux 必需; mac 忽略 — 包图标走 electron-builder mac.icon)
+    ...(isMacOS ? {} : { icon: appIcon }),
     ...(isWindows
       ? {
           frame: false,

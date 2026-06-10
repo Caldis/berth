@@ -11,9 +11,7 @@ import { ThemeToggle } from './ThemeToggle'
 function Wordmark({ to }: { to: string }) {
   return (
     <Link to={to} className="flex items-center gap-2.5">
-      <span className="grid h-8 w-8 place-items-center rounded-xl bg-ink font-display text-base font-bold text-paper">
-        B
-      </span>
+      <img src="/icon.png" alt="" aria-hidden="true" className="h-8 w-8 rounded-xl" />
       <span className="font-display text-lg font-semibold tracking-tight">Berth</span>
     </Link>
   )

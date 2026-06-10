@@ -11,6 +11,7 @@ files:
   - 'LICENSE'
 win:
   executableName: berth
+  icon: assets/icon/app_icon.png
   sign: false
   target:
     - nsis
@@ -25,6 +26,7 @@ nsis:
 # 配置而阻断打包。改为签名发布时: 补 build/entitlements.mac.plist + 证书配置, 移除 identity。
 mac:
   identity: null
+  icon: assets/icon/app_icon.png
   target:
     - dmg
     - zip
@@ -32,6 +34,7 @@ mac:
 dmg:
   artifactName: ${name}-${version}.${ext}
 linux:
+  icon: assets/icon/app_icon.png
   target:
     - AppImage
     - deb
