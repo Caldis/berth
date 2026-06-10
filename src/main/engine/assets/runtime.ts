@@ -1,4 +1,4 @@
-import type { AgentView, Asset, AssetStats, CostMode, SessionSummary, UsageSummary } from '@shared/types/asset'
+import type { AgentView, Asset, AssetStats, CostMode, UsageSummary } from '@shared/types/asset'
 import { getMainLog } from '../../log'
 import type {
   AgentScanSourceGroup,
@@ -15,13 +15,14 @@ import type {
 } from '@shared/types/ipc'
 import type { AppScopeSelection, ProjectScopeCandidate } from '@shared/scope'
 import { assetMatchesAppScope, DEFAULT_SCOPE_SELECTION, normalizeProjectPathKey, normalizeScopeSelection } from '@shared/scope'
-import { normalizeTokenUsage } from '@shared/token-usage'
 import { assetMatchesProjectPath } from '../../project-scope'
 import { runHealthChecks } from '../health'
 import { getSearch } from '../search'
 import { buildUsageSummary } from '../usage'
 import { WorkerAssetScanner } from './worker-host'
 import { mergeSharedConventions } from '../scanner'
+import { toSessionSummary } from '../session-detail'
+import { readString } from '@shared/object-guards'
 import type { SnapshotStore } from './snapshot-store'
 
 export interface AssetRuntimeScanOptions {
@@ -560,27 +561,6 @@ function createDefaultSnapshotId(): string {
   return `snapshot-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
 }
 
-function toSessionSummary(asset: Asset): SessionSummary {
-  const tokenUsage = normalizeTokenUsage(asset.meta.tokenUsage ?? asset.meta)
-  return {
-    id: asset.id,
-    agentId: asset.agentId,
-    title: asset.name,
-    project: readString(asset.meta, 'project') ?? '',
-    projectPath: readString(asset.meta, 'projectPath') ?? '',
-    transcriptPath: readString(asset.meta, 'transcriptPath') ?? asset.path,
-    startedAt: readString(asset.meta, 'startedAt') ?? null,
-    endedAt: readString(asset.meta, 'endedAt') ?? null,
-    duration: readNumber(asset.meta, 'duration') ?? null,
-    cost: readNumber(asset.meta, 'totalCost') ?? null,
-    tokens: tokenUsage.totalTokens,
-    tokenUsage,
-    model: readString(asset.meta, 'model') ?? '',
-    skillsUsed: readStringArray(asset.meta, 'skillsUsed'),
-    mcpServers: readStringArray(asset.meta, 'mcpServers'),
-    hooksFired: readNumber(asset.meta, 'hooksFired') ?? 0
-  }
-}
 
 function sessionMatchesAgentView(asset: Asset, view: AgentView | undefined): boolean {
   if (!view || view === 'all') return true
@@ -607,18 +587,4 @@ function getSessionSortTime(asset: Asset): number {
   return 0
 }
 
-function readString(record: Record<string, unknown>, key: string): string | undefined {
-  const value = record[key]
-  return typeof value === 'string' && value.trim() ? value : undefined
-}
-
-function readNumber(record: Record<string, unknown>, key: string): number | undefined {
-  const value = record[key]
-  return typeof value === 'number' && Number.isFinite(value) ? value : undefined
-}
-
-function readStringArray(record: Record<string, unknown>, key: string): string[] {
-  const value = record[key]
-  if (!Array.isArray(value)) return []
-  return value.filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
-}
+// GH-115 T10: 本地标量守卫副本随 toSessionSummary 单源化移除, readString 改 @shared (T7 单源)。

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { toSessionActivityMetrics } from '../../src/main/ipc/session-activity'
+import { toSessionActivityMetrics } from '../../src/main/engine/session-activity'
 import { normalizeTokenUsage } from '../../src/shared/token-usage'
 
 describe('toSessionActivityMetrics', () => {
