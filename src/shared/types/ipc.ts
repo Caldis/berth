@@ -8,7 +8,8 @@ import type {
   ScanRoot,
   SessionSummary,
   UsageSummary,
-  Relation
+  Relation,
+  WatchEvent
 } from './asset'
 import type { MemoryListResult, MemoryNote } from './memory'
 import type { AgentCapabilityPluginListResult } from './agent-plugin'
@@ -385,6 +386,10 @@ export interface AgentTeamListResult {
 /**
  * IPC Channel definitions — the contract between main and renderer.
  * Main process implements handlers; preload exposes typed wrappers.
+ *
+ * GH-115 T1: 本表是四方对账真源 (tests/unit/ipc-contract.test.ts):
+ * handlers 注册 == preload invoke == 本表键集 == tests/setup.ts mock。
+ * 通道增删必须四方同批; 表内容照实登记 (含 T2 待删死通道, 见对账测试白名单)。
  */
 export interface IpcChannels {
   'window:minimize': { args: []; result: void }
@@ -394,6 +399,9 @@ export interface IpcChannels {
   'window:set-always-on-top': { args: [boolean]; result: void }
   'window:is-always-on-top': { args: []; result: boolean }
   'platform:info': { args: []; result: PlatformInfo }
+  'assets:snapshot': { args: []; result: AssetSnapshot }
+  'assets:status': { args: []; result: AssetRuntimeStatus }
+  'assets:refresh': { args: [{ wait?: boolean }?]; result: AssetRuntimeStatus }
   'assets:scan-all': { args: []; result: ScanResult }
   'assets:scan-sources': { args: []; result: AgentScanSourceGroup[] }
   'agent-plugins:list': { args: []; result: AgentCapabilityPluginListResult }
@@ -421,11 +429,14 @@ export interface IpcChannels {
   'shell:openExternal': { args: [string]; result: void }
 }
 
-/** Events pushed from main → renderer */
+/** Events pushed from main → renderer。payload 照实: assets:changed 实发 WatchEvent (src/main/index.ts:145)。 */
 export interface IpcEvents {
   'window:maximized-change': { maximized: boolean }
-  'assets:changed': { type: 'added' | 'changed' | 'removed'; assetId: string; asset?: Asset }
-  'scan:progress': { phase: string; current: number; total: number }
+  'assets:changed': WatchEvent
   /** Live scan status + cumulative partial assets pushed during a scan (P4.6). */
   'assets:progress': { status: AssetRuntimeStatus; partial?: AssetScanPartial }
 }
+
+/** Typed helper aliases — preload 的 invoke 包装与未来 handlers 类型化共用。 */
+export type IpcChannelArgs<C extends keyof IpcChannels> = IpcChannels[C]['args']
+export type IpcChannelResult<C extends keyof IpcChannels> = IpcChannels[C]['result']

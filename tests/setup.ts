@@ -32,8 +32,10 @@ const idleAssetRuntimeStatus = {
   stale: false
 }
 
-// Mock window.api for renderer tests
-const mockApi = {
+// Mock window.api for renderer tests。
+// GH-115 T1: 导出供 tests/unit/ipc-contract.test.ts 做形状对账 (mock ⊇ preload api 方法);
+// T2 清理 phantom (assets.scan / hooks.statuses) 后收紧为 satisfies BerthAPI 全等。
+export const mockApi = {
   window: {
     minimize: async () => {},
     toggleMaximize: async () => {},
@@ -89,7 +91,8 @@ const mockApi = {
         errors: []
       },
       candidates: []
-    })
+    }),
+    setScope: async () => ({ applied: true })
   },
   sessions: {
     list: async () => ({ sessions: [], totalCount: 0 }),
@@ -97,6 +100,10 @@ const mockApi = {
   },
   teams: {
     list: async () => ({ teams: [] })
+  },
+  memory: {
+    list: async () => ({ notes: [], sources: [] }),
+    get: async () => null
   },
   usage: {
     summary: async () => ({
