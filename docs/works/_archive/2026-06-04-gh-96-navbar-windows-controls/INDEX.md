@@ -2,7 +2,7 @@
 task: 2026-06-04-gh-96-navbar-windows-controls
 task_id: GH-96
 type: feature
-phase: verify
+phase: archive
 created: 2026-06-04
 priority: P2
 target_date: 
@@ -59,7 +59,7 @@ gh_project:
   status: tracked
   project_number: 6
   project_url: https://github.com/users/Caldis/projects/6
-  item_status: In Progress
+  item_status: Done
   project_id: PVT_kwHOADXbEs4BZHvQ
   item_id: PVTI_lAHOADXbEs4BZHvQzguoiT8
 artifacts:
