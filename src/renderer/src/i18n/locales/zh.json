@@ -305,7 +305,7 @@
       "recentlyActive": "近期活跃"
     },
     "card": {
-      "members": "{{count}} 名成员",
+      "members_other": "{{count}} 名成员",
       "lead": "Lead",
       "created": "创建于",
       "lastActivity": "最近活动",

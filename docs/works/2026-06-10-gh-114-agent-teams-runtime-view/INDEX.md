@@ -2,7 +2,7 @@
 task: 2026-06-10-gh-114-agent-teams-runtime-view
 task_id: GH-114
 type: feature
-phase: implement
+phase: verify
 created: 2026-06-10
 priority: P2
 target_date: 
@@ -23,20 +23,27 @@ debt:
     confidence: medium
     rationale: "explore 校准: 官方契约 (experimental/存储路径/生命周期) 与本机数据形态 (config/inboxes/tasks schema) 已实测钉死; 新增面与 asset model 完全隔离 (memory/ 同型只读 IPC 域), 回归面仅 redirect 一处。incurred 含新 IPC 域 + 页面 + 实验性表面维护线; repaid 为关闭 issue 残余 UX 缺口。"
   final:
-    incurred:
-    repaid:
-    net:
-    scope:
-    risk:
-    areas: []
-    confidence:
-    rationale:
+    incurred: 4
+    repaid: 2
+    net: 2
+    scope: cross-process
+    risk: low
+    areas:
+      - ui-ux
+      - architecture
+    confidence: high
+    rationale: "verify 校准: 实际 diff 完全隔离 (新 reader 模块 + 单 IPC + 单页面 + 导航/redirect 两处既有文件小改), 不触 asset model/scanner; 27 个新测试 (9 reader + 9 页面 + 既有钉点更新) + 真机四态/暗色/guide 截图验收; incurred 较估算下调 1 (无 watcher/缓存复杂度, 页面单文件); 剩余风险为官方 schema 实验性漂移 (容错已钉)。"
   revisions:
     - phase: explore
       date: 2026-06-10
       from: { incurred: 5, repaid: 2, net: 3, confidence: low }
       to: { incurred: 5, repaid: 2, net: 3, confidence: medium }
       reason: "数字不变, confidence 上调: 官方文档与本机样本把数据契约钉死, 架构落点 (memory/ 同型只读 IPC 域) 明确, 不确定性集中在 UI 细节。"
+    - phase: verify
+      date: 2026-06-10
+      from: { incurred: 5, repaid: 2, net: 3, risk: medium, confidence: medium }
+      to: { incurred: 4, repaid: 2, net: 2, risk: low, confidence: high }
+      reason: "实现面比估算薄: 无 watcher/SWR 复杂度, 页面单文件; 测试 27 例 + 真机截图验收后剩余风险仅为实验性 schema 漂移。"
 issue:
   number: 114
   repo: Caldis/berth

@@ -18,7 +18,7 @@
 - [x] T5 卡片明细 UI: Accordion 卡片 (标题行 chips: 成员数/lead 模型/近期活跃≤5min; 相对时间+title 绝对时间) + 展开区 (描述/创建/dirPath mono/inbox 统计 → 成员列表: color dot/agentType chip/model/backend chip/prompt line-clamp-2 展开按钮 → 任务列表: 状态 chip/owner/blockedBy 提示/缺失说明文案) + lead session 跳转按钮 (leadSessionAvailable 才渲染)
   - tests: teams-page.test.tsx 补卡片断言 — 成员/任务渲染、recentlyActive 阈值 (新旧 lastActivityAt 两例)、lead 跳转按钮有无两例、prompt 展开/收起、aria-expanded/title 属性
   - verify: 测试绿 + 界面验收项: 密度对齐 sessions 卡片、chip 语义色、Accordion 键盘可达、无 disabled 死按钮 (AC7, AC8, 可访问性行)
-- [ ] T6 verify 收口: 全量 gates (typecheck/lint/test) + Electron 实测截图 (列表态 + HOME 覆写空态) + 验收标准 AC1–AC11 逐条核对 + ARCHITECTURE.md 补 agent-teams 模块条目
+- [x] T6 verify 收口: 全量 gates (typecheck/lint/test) + Electron 实测截图 (列表态 + HOME 覆写空态) + 验收标准 AC1–AC11 逐条核对 + ARCHITECTURE.md 补 agent-teams 模块条目
   - tests: pnpm test 全量
   - verify: AC 全过 + 截图留档 docs/works/{task}/assets/ + harness:check
 
@@ -30,3 +30,10 @@ verify 不通过项作为新任务追加于此, phase 退回 implement。
 - Accordion 触发按钮可访问名为标题行全文 (HeroUI 不把 AccordionItem aria-label 透传到 trigger), 测试用正则按 team 名匹配。
 - 测试 JSX 在 vitest 管线为 classic 转换, 测试文件须显式 `import React` (与 app-routing 等既有文件一致)。
 - sidebar-agent-view.test 的 GH-94 钉点 ("Agent Teams 不出现在侧边栏") 按 GH-114 产品决策更新为 "出现在 WORK 区"。
+
+## verify 记录 (2026-06-10)
+- 机械门禁: typecheck / lint / 917 测试全绿; harness:prepush 通过; CI run 27250934918 success (61ad473)。
+- AC 逐条: AC1 ✓ (reader 仅 fs 两点, 无写入/watcher/asset model — 见 agent-teams/index.ts 头注); AC2 ✓ (teams:list + preload + d.ts); AC3 ✓ (inbox-only 目录 f618f03e 实测被跳过, 真机 4/5 入列); AC4 ✓ (work 区入口 + /teams + redirect 改向, 不进搜索索引); AC5 ✓ (四态 + empty 三件事, 真机空 HOME 实例截图); AC6 ✓ (subtitle/guide 标注, 近期活跃≤5min 弱信号, 真机 0 recently active); AC7 ✓ (卡片信息架构 + 任务缺失说明文案, 真机展开截图); AC8 ✓ (真机 1 个 lead 可跳 + 测试钉 unavailable 不渲染死链); AC9 ✓ (en/zh 全键 + 复数修正 members_one/_other, 真机 "1 member"); AC10 ✓ (9 reader + 9 页面 + routing/sidebar 钉点更新); AC11 ✓ (assets/ 6 张: list/expanded/prompt/dark/empty/guide)。
+- 视觉验收 (用户已委托自主): 密度对齐 sessions、chip 语义色、暗色正常、Accordion 原生 aria-expanded、相对时间带 title 绝对值。
+- 真机发现并当场修复: en 复数 "1 members" → members_one/_other (zh 用 _other)。
+- 验证方法记录: contextIsolation 下 CDP 无法 stub contextBridge 的 window.api (静默失败), 空态验证改用 HOME=mktemp 的第二 agent 实例 (dev:agent start --id gh114-empty)。

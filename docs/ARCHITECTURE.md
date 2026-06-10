@@ -34,6 +34,7 @@
   - `relations.ts` — 资产关系解析
   - `assets/snapshot-store.ts` / `assets/sqlite-snapshot-store.ts` — 资产快照持久层 (同 `SnapshotStore` 契约 drop-in): JSON store (单测注入目录) 与行级 SQLite store (`berth-index.db`, WAL, 一资产一行, 主进程注入 better-sqlite3); 冷启动从持久快照 SWR 恢复 (GH-113 I3)
 - `src/main/memory/` — 记忆聚合 (只读): `index.ts` `listMemory()` 跨源聚合; `sources/united-memory.ts` + `sources/claude-native.ts` 列出 United Memory 与 Claude 原生记忆 notes; 类型 `types.ts`
+- `src/main/agent-teams/` — Agent Teams 运行时协作记录 (只读, GH-114): `listAgentTeams()` 解析 `~/.claude/teams/{name}/` (config.json + inboxes) 与 `~/.claude/tasks/{name}/`; 与 memory/ 同型的按需 IPC 域 (`teams:list`), 刻意不进 asset model / scanner / watcher / search — teams 目录是 Claude Code 运行时生成、cleanup 即删的状态, UI 以"协作记录"口径呈现, 不声称实时
 - `src/main/agent-plugins/` — Agent 能力插件注册表:
   - `registry.ts` — 内置 capability plugin 与有效 manifest plugin 的统一列表
   - `manifest.ts` — plugin manifest 发现、校验与 `path + size + mtimeMs` 进程内缓存
