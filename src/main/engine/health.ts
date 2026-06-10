@@ -1,4 +1,5 @@
 import * as fs from 'fs'
+import { extractAtImports } from '@shared/object-guards'
 import * as os from 'os'
 import * as path from 'path'
 import * as yaml from 'js-yaml'
@@ -1221,14 +1222,6 @@ function readMarkdownFrontmatter(filePath: string): {
   }
 }
 
-function extractAtImports(content: string): string[] {
-  const results: string[] = []
-  for (const line of content.split('\n')) {
-    const trimmed = line.trim()
-    if (/^@[\w./\\]/.test(trimmed)) results.push(trimmed.slice(1).trim())
-  }
-  return results
-}
 
 type NormalizedHealthCheckOptions =
   Required<Pick<HealthCheckOptions, 'homeDir' | 'platform' | 'env'>> &

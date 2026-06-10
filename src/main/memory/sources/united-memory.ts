@@ -1,6 +1,7 @@
 import * as fs from 'fs'
 import * as os from 'os'
 import * as path from 'path'
+import { isPathInside } from '@shared/path-utils'
 import * as yaml from 'js-yaml'
 import type {
   MemoryImportance,
@@ -83,10 +84,9 @@ function isSafeLocalId(value: string): boolean {
   return value.length > 0 && value !== '.' && value !== '..' && !hasPathSeparator(value) && path.basename(value) === value
 }
 
+// GH-115 T7: 收敛到 @shared/path-utils.isPathInside (equal 算 inside, win32 折叠修复)
 function isInsidePath(parent: string, candidate: string): boolean {
-  const root = path.resolve(parent)
-  const target = path.resolve(candidate)
-  return target === root || target.startsWith(root + path.sep)
+  return isPathInside(candidate, parent, { includeEqual: true })
 }
 
 async function fileExists(filePath: string): Promise<boolean> {

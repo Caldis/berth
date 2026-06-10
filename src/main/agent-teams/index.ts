@@ -10,7 +10,7 @@
 import * as fs from 'fs'
 import * as os from 'os'
 import * as path from 'path'
-import { isRecord, readNumber, readString } from '../adapters/_shared/parser-helpers'
+import { isRecord, readNumber, readString } from '@shared/object-guards'
 import type { AgentTeamMember, AgentTeamSummary, AgentTeamTask } from '@shared/types/ipc'
 
 const TASK_STATUSES = new Set(['pending', 'in_progress', 'completed'])

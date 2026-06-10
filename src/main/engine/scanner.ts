@@ -1,9 +1,8 @@
 import * as fs from 'fs'
 import { getMainLog } from '../log'
-import * as path from 'path'
 import type { AgentAdapter, Asset, AssetStats } from '@shared/types/asset'
 import type { ScanRoot } from '@shared/types/asset'
-import { samePath } from '@shared/path-utils'
+import { isPathInside, samePath } from '@shared/path-utils'
 import type { AgentScanSourceGroup, AssetScanPartial, AssetScanProgress, ScanResult } from '@shared/types/ipc'
 import type { ProjectScopeCandidate } from '@shared/scope'
 import { normalizeProjectPathKey } from '@shared/scope'
@@ -305,19 +304,8 @@ function resolvedRootKey(dir?: string): string {
 function sourceListContainsProject(sources: ScanRoot[], projectPath: string): boolean {
   return sources.some((source) => {
     if (source.scope !== 'project') return false
-    return samePath(source.path, projectPath) || isPathInside(source.path, projectPath)
+    return isPathInside(source.path, projectPath, { includeEqual: true })
   })
-}
-
-function isPathInside(candidate: string, parent: string): boolean {
-  const normalizedCandidate = normalizePath(candidate)
-  const normalizedParent = normalizePath(parent)
-  return normalizedCandidate.startsWith(`${normalizedParent}${path.sep}`)
-}
-
-function normalizePath(filePath: string): string {
-  const resolved = path.resolve(filePath)
-  return process.platform === 'win32' ? resolved.toLowerCase() : resolved
 }
 
 /** Drop the heavy `raw` body for partial streaming; identity-preserving when

@@ -32,18 +32,5 @@ export function splitFrontmatter(raw: string): {
   }
 }
 
-/**
- * Extract `@path` import references (e.g. `@AGENTS.md`, `@./foo/bar.md`) from
- * instruction file content, one per line. Returns the paths without the `@`.
- */
-export function extractAtImports(content: string): string[] {
-  const results: string[] = []
-  for (const line of content.split('\n')) {
-    const trimmed = line.trim()
-    // Matches @path references like @AGENTS.md, @./foo/bar.md
-    if (/^@[\w./\\]/.test(trimmed)) {
-      results.push(trimmed.slice(1).trim())
-    }
-  }
-  return results
-}
+// GH-115 T7: extractAtImports 已下沉 @shared/object-guards (engine/health 依层规则不能进 adapters/_shared)。
+export { extractAtImports } from '@shared/object-guards'

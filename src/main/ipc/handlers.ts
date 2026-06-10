@@ -22,6 +22,7 @@ import type {
 import type { AgentCapabilityPluginListResult } from '@shared/types/agent-plugin'
 import { getAssetRuntime } from '../engine/assets/runtime'
 import { normalizeTokenUsage } from '../../shared/token-usage'
+import { isRecord, readNumber, readString, readStringArray, safeId } from '@shared/object-guards'
 import { setHookEnabled } from '../engine/hooks-manager'
 import { parseClaudeSessionDetail } from '../adapters/claude-code/session-detail'
 import { parseCodexSessionDetail } from '../adapters/codex/parsers'
@@ -374,7 +375,7 @@ function resolveSessionNamedAssets(
     if (existing) return existing
 
     return {
-      id: `${session.id}-${type}-${slugId(name)}`,
+      id: `${session.id}-${type}-${safeId(name)}`,
       agentId: session.agentId,
       category: type === 'skill' ? 'instruction' : 'capability',
       type,
@@ -427,26 +428,3 @@ function parseSessionExecutionDetail(asset: Asset): {
   }
 }
 
-function readString(record: Record<string, unknown>, key: string): string | undefined {
-  const value = record[key]
-  return typeof value === 'string' && value.trim() ? value : undefined
-}
-
-function readNumber(record: Record<string, unknown>, key: string): number | undefined {
-  const value = record[key]
-  return typeof value === 'number' && Number.isFinite(value) ? value : undefined
-}
-
-function readStringArray(record: Record<string, unknown>, key: string): string[] {
-  const value = record[key]
-  if (!Array.isArray(value)) return []
-  return value.filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return value != null && typeof value === 'object' && !Array.isArray(value)
-}
-
-function slugId(value: string): string {
-  return value.replace(/[^a-z0-9_-]+/gi, '-').replace(/^-+|-+$/g, '').slice(0, 80) || 'unknown'
-}
