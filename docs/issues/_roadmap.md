@@ -1,6 +1,10 @@
 # 重构路线图 / Issue 收敛地图
 
-## 进度 (2026-06-10, 全部已推送 + CI 绿)
+## 进度 (2026-06-10 晚, GH-115 架构重构后更新)
+- **GH-115 (架构全面重构, T0-T13 已落地)**: IPC 契约单源派生+四方对账 ✅ · IPC/渲染层/引擎死面整链清除 (~1.5k 行) ✅ · adapters↔agent-plugins 解环+契约收紧 ✅ · 扫描源声明式单表+agent-capabilities 漏斗 ✅ (= engine-shared-core-package 的逻辑前置全铺) · session 域逻辑出 IPC 层 ✅ · 多 home 契约修复 (teams/memory) ✅ · 主进程可观测性地基+吞错簇修复 ✅ · store 单写不变量类型化+全路由错误兜底 ✅ · 打包白名单+deps 归位 (asar -67%) ✅ · i18n 死 key 19×2+复数收敛 ✅。分层规则+例外清单已入 docs/ARCHITECTURE.md。
+- **本批新立/增补 issue**: 新立 9 (expandable-asset-card / window-hardening / health-restructure-and-message-contract (R15+R20 合立) / god-pages / session-id / dir-semantics / gh115-residuals / activate-stale-push-listeners (BUG) / settings-advanced-mode-inert); 增补 4 (engine-shared-core-package / renderer-cached-resource-hook / shared-path-and-type-config / heroui-followup)。
+
+## 进度 (2026-06-10 早, 全部已推送 + CI 绿)
 - **Phase A 全部 DONE (5)**: accent-names-i18n · unused-filterbar-component · architecture-doc-drift · devagent-stop-tolerate-profile-eperm · usage-tooltip-test-flaky (已归档 resolved/)。
 - **Phase B 全部 DONE (3)**: hook-disable-all ✅ (parser+UI+测试) · legacy-scanner-stale ✅ (退役死通道) · **agent-teams ✅ RESOLVED** (用户委托 UX 决策 → GH-114 运行时协作记录视图 `/teams` 落地, 已归档 resolved/; 导航级 Codex 隐藏挂新 issue agent-view-store-vestige)。
 - **Phase C (1 DONE + 1 部分)**: **adapter-parsing-shared-core ✅ RESOLVED** (标量+markdown+session-artifacts+session-meta+token 别名全抽; cost 无重复不抽; memory 2 份 splitFrontmatter 变体转 engine-shared-core-package, 已归档 resolved/); shared-path-and-type-config — 路径统一 ✅, 余 asset-type 配置表/signature; renderer-cached-resource-hook ⏳ 未启动。

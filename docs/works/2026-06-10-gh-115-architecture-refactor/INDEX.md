@@ -2,7 +2,7 @@
 task: 2026-06-10-gh-115-architecture-refactor
 task_id: GH-115
 type: maintenance
-phase: implement
+phase: verify
 created: 2026-06-10
 priority: P1
 target_date: 
@@ -32,6 +32,11 @@ debt:
     confidence:
     rationale:
   revisions:
+    - phase: implement
+      date: 2026-06-10
+      from: "confidence medium"
+      to: "confidence high (T0-T14 全部落地, 14 批小步提交, CI 全绿)"
+      reason: "实施完成度核实: 主题 1-5 核心项全落地 + 主题 6 的 R6/R7; deferred 14 项全部显式立案/增补 (9 新立 + 4 增补 + 2 旁支)。repaid 12 估算由实际批次支撑。"
     - phase: explore
       date: 2026-06-10
       from: "incurred 2 / repaid 8 / net -6 / confidence low"

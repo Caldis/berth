@@ -27,3 +27,8 @@
 # 进展
 - GH-109 (docs/works/_archive/2026-06-06-gh-109-heroui-handwritten-controls) 已兑现"手写控件"长尾的控件子集: header 搜索 Input、usage cost-mode Select、hooks HookActions Dropdown、memory 标签筛选 Input、filter-bar ScopeSelect/FilterBar Select+Input、agent-plugin 本地 Badge + memory 状态徽标 → Chip; sessions 分组切换器 → Tabs (commit c27c446d)。
 - 仍待: section 卡片 → Card、复杂浮层 (search-dialog/file-viewer-drawer) → Modal/Drawer、重复折叠 → Accordion、交互筛选 pill、project-scope/session-detail tags → Chip、settings 其余面板、bundle 按需 import。
+
+# 追记 (GH-115 量化, 2026-06-10)
+- ui barrel 63 导出仅 20 被消费 (68% 死面), motion.ts 整模块零引用; Card 全家零消费而页面手搓 33+ 处卡片壳; Switch 零消费而 settings 手搓 role=switch; Tooltip 零消费而 session-detail 3 处 group-hover 手搓 CSS tooltip (与 FloatingPopover/HeroUI Tooltip 三方并存)。
+- chevron 折叠实为 8 处 (修正本 issue 原 4 处口径); 节标签 33 处 9 种写法散落 13 文件; 指标瓷砖 6 实现并存; outline 小按钮串 10 处; "在访达中显示" 8 文件重复 → 微 primitive 建议: StatTile/SectionLabel/ActionChipButton/ShowInExplorerButton (01-ANALYSIS R24/R25)。
+- 关联新立: 2026-06-10-IMPROVEMENT-expandable-asset-card-convergence.md (资产卡 4 克隆, 与本 issue chevron 项合并执行)。

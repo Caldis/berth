@@ -15,3 +15,9 @@
 # 来源 · 关联
 - 架构图绘制任务 (2026-06-09)。关联 2026-06-09-IMPROVEMENT-architecture-doc-drift.md、2026-06-09-IMPROVEMENT-asset-runtime-collaborators-split.md。
 - 状态: OPEN。
+
+# 追记 (GH-115 前置已铺, 2026-06-10)
+- T8: adapters↔agent-plugins 唯一值依赖环已解 (descriptor 数据下沉 adapter 侧); AgentAdapter 3 死方法已删。
+- T9: per-agent 扫描源声明 (adapters/<agent>/sources.ts) + engine/agent-capabilities 单点漏斗已建, shallow/derive/watcher 三方 mirror 表已收敛; 等价钉测 (asset-sources-equivalence) 可作迁移红绿网。
+- T10: session 域逻辑已离开 ipc 层进 engine (session-detail/session-activity), 与包切线对齐。
+- 仍属本 issue: engine 物理迁包 (闭包 30 文件)、adapter scanAll 接 sources 表 (settings.local.json 2/5-parser 分叉届时定案)、conventions 双表收敛讨论、memory splitFrontmatter ×2 收敛 (characterization 已钉, tests/unit/memory-frontmatter-characterization.test.ts)、session 解析进 capability map 契约、watcher resolveClaudeManagedDir 中立化、engine-bridge/cli typecheck 盲区、tsup cjs-only/publishConfig、project-scope*.ts 归位 (R33)。

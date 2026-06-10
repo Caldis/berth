@@ -18,3 +18,7 @@
 # 来源 · 关联
 - 架构图绘制任务 (2026-06-09)。关联 2026-06-09-IMPROVEMENT-adapter-parsing-shared-core.md、2026-06-09-IMPROVEMENT-renderer-cached-resource-hook.md。
 - 状态: OPEN (路径统一已完成; 仅余 asset-type 配置表 + signature 收敛)。
+
+# 追记 (GH-115 进展+新证据, 2026-06-10)
+- **isPathInside 收敛 DONE** (T7): shared/path-utils 增 isPathInside({includeEqual,platform}), memory ×2 与 engine/scanner 三处互相矛盾的包含判定收敛, win32 折叠对齐 samePath 先例。
+- R30 新证据: normalizeProjectPath 双实现 Windows 盘根分叉 ('X:' vs 'X:/', sessions 分组键 vs scope 过滤键不等); 签名习语两侧独立 (result-signature vs search, main 侧不转义有伪相等风险); engine/usage 私有重定义 emptyUsageSummary/costSourceToFormula。仍 OPEN: asset-type 配置表、signature 收敛、盘根 canonical 定案 — session-location-groups/result-signature 是 gh-98 verify 足迹, 待收口。

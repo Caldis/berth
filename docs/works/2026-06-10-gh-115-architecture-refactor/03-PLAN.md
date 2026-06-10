@@ -48,7 +48,15 @@
 - [x] T13 长尾孤儿收尾 (2026-06-10 done: 死导出清除 — parsePlugin/parseStatusline (claude parsers)/codex resolveCodexHomeDir 转发 shim (连带 import-rename 收口)/useMemoryNote/flattenNavItems/AppScopeMode/tokenUsageTotal (含测试断言降级)/ExitCode (scan-engine); assetProjectPath 实勘修正 — 孤儿面仅 project-scope 的 re-export 名, 函数本体 scope.ts+project-scope 双内部消费, 只摘 re-export; JSON createSnapshotStore 删除 (生产无条件 sqlite, 自身单测保活) + snapshot-store.test.ts 删, SnapshotStore 契约与 stripRaw 保留 (sqlite 生产消费)。**defer 声明**: globals.css 死 token + tailwind accordion keyframes + theme-palette 行为断言改写 — gh-103 仍 implement, 足迹避让, 移交收尾 issue。门禁: tc 0/lint 0/vitest 941 + 包 24 全绿): 死导出 9 处 (tokenUsageTotal 在 **src/shared/token-usage.ts** 路径修正, 测试降级; assetProjectPath 仅摘名; codex shim 连带 import-rename) + JSON createSnapshotStore (stripRaw 原位保留) + getAgentHooksStatuses 残段若 T2 未尽 + **globals.css 死 token + tailwind keyframes: 仅当 gh-103 已收口** (届时 theme-palette.test 整体改写为行为断言 — C 嫁接; 否则 defer 声明留 T14 issue)
   - tests: 连带测试/mock 同步; vitest 全量
   - verify: grep 零残留; pnpm build
-- [ ] T14 收尾与沉淀: deferred 14 项立案/增补 (新立: health-restructure-and-message-contract / window-hardening / god-pages / session-id-contract / expandable-asset-card / renderer-dir-semantics / app-icon-decision; 增补: engine-shared-core-package / renderer-cached-resource-hook / shared-path-and-type-config / heroui-followup / macos-signing); docs/ARCHITECTURE.md 更新 (分层表 + 12 规则 + 例外清单含 health 直连过渡态); _roadmap.md 同步; INDEX debt.final 回填
+- [x] T14 收尾与沉淀 (2026-06-10 done: 新立 7 issue (expandable-asset-card / window-hardening / health-restructure-and-message-contract / god-pages-logic-sink / session-id-contract / renderer-dir-semantics / gh115-residuals) + 增补 4 已立案 (engine-shared-core-package 前置进展 / cached-resource-hook 扩面 / path-and-type-config isPathInside DONE / heroui-followup 量化); docs/ARCHITECTURE.md 更新 (模块新件 + IPC 单源派生段 + 分层 8 层表 + 10 规则 + 7 项例外清单); _roadmap 进度同步。harness:check + harness:issues 全绿)
+
+## verify 阶段待办 (harness-0.2-sync 续跑入口)
+- [ ] CDP 真跑四场景 (memory: runtime-behavior-needs-real-run; 配方见 memory berth-ui-visual-verify-on-mac): ① 项目切换无 shallow 资产瞬时丢失/闪烁 (T4 fold 单写) ② 手工写坏 ~/.claude.json 观察 ScanError 记账 + sidebar 错误消息渲染, 恢复后消失 (T6) ③ 新建 ~/.claude/skills/test-skill 观察 watch→derive→UI 增量全链 (T9) ④ session-detail 页打开真实会话核对 modelInfo/timeline (T10)
+- [ ] 触及页截图四态+暗色不回归 (instructions/capabilities/settings/sessions/session-detail/overview); 错误边界人为抛错 → 兜底+返回总览动作可用 (T4)
+- [ ] 双语启动冒烟 (T12 死 key 删除后 en/zh 页面无 raw key 直出)
+- [ ] 验收标准 AC-1~AC-11 逐条核对 (01-ANALYSIS); 04 章节 verify 不通过项回写本清单
+- [ ] INDEX debt.final 回填 (estimate: incurred 3 / repaid 12 / net -9) + harness-projects ensure 同步
+- [ ] 5.0-archive: 全局 harness:check + projects done + 移 _archive: deferred 14 项立案/增补 (新立: health-restructure-and-message-contract / window-hardening / god-pages / session-id-contract / expandable-asset-card / renderer-dir-semantics / app-icon-decision; 增补: engine-shared-core-package / renderer-cached-resource-hook / shared-path-and-type-config / heroui-followup / macos-signing); docs/ARCHITECTURE.md 更新 (分层表 + 12 规则 + 例外清单含 health 直连过渡态); _roadmap.md 同步; INDEX debt.final 回填
   - tests: pnpm harness:check + harness:issues
   - verify: 全部 issue 过闸门; ARCHITECTURE 与代码实况一致 (抽查 import)
 

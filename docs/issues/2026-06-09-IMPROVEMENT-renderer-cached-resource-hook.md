@@ -12,3 +12,8 @@
 # 来源 · 关联
 - 架构图绘制任务 (2026-06-09)。关联 2026-06-09-IMPROVEMENT-shared-path-and-type-config.md。
 - 状态: OPEN。
+
+# 追记 (GH-115 范围扩大证据, 2026-06-10)
+- 第 5 份副本已出现 (GH-114 的 use-agent-teams), 各份失效策略已分叉 (teams 无 TTL / plugins 靠 snapshotId / sessions TTL+signature / health TTL 无 signature)。
+- 必须同时带上: 错误维度 (同层 7 hook 中 8 处 .catch 吞掉, 最重者 use-ipc 初始 status/snapshot 失败整应用停 idle 静默空转)、normalize 单点 (usage.summary 双轨: 页面内联过 normalizeUsageSummary 而 hook 版裸用)、统一 resetAllCachesForTests (现 4 个分散 reset; singleFork 跨文件污染已实证, 见 friction 20260610-vitest-flaky)。
+- 动手前先写 5 份副本行为差异表并逐差异补钉测; 以 use-agent-teams (最简形) 为首个迁移对象。(01-ANALYSIS R13)
