@@ -136,6 +136,17 @@ html[data-accent='rose'] {
   --heroui-focus: 350 89% 60%;
 }
 
+/* Orange accent sampled from the app icon (assets/icon/app_icon.png ≈ #FB5C1D). */
+html[data-accent='orange'] {
+  --primary: 17 96% 55%;
+  --primary-foreground: 0 0% 100%;
+  --ring: 17 96% 59%;
+  --heroui-primary: 17 96% 55%;
+  --heroui-primary-500: 17 96% 55%;
+  --heroui-primary-foreground: 0 0% 100%;
+  --heroui-focus: 17 96% 55%;
+}
+
 /* Neutral accent (GH-106 default). Unlike the 5 hues, neutral needs light/dark
    branches: light = near-black, dark = near-white, mirroring the legacy --accent
    contrast token but now driving --primary so the whole UI follows the picker. */

@@ -11,7 +11,7 @@ describe('SettingsContent accent picker (GH-105)', () => {
     document.documentElement.removeAttribute('data-accent')
   })
 
-  it('renders six accent swatches with neutral selected by default', () => {
+  it('renders seven accent swatches with neutral selected by default', () => {
     render(
       <ThemeProvider>
         <SettingsContent showTitle={false} />
@@ -19,8 +19,21 @@ describe('SettingsContent accent picker (GH-105)', () => {
     )
     const group = screen.getByRole('radiogroup', { name: 'Accent color' })
     const swatches = within(group).getAllByRole('radio')
-    expect(swatches).toHaveLength(6)
+    expect(swatches).toHaveLength(7)
     expect(within(group).getByRole('radio', { name: 'Neutral' })).toHaveAttribute('aria-checked', 'true')
+  })
+
+  it('offers the icon-derived orange accent and applies it', () => {
+    render(
+      <ThemeProvider>
+        <SettingsContent showTitle={false} />
+      </ThemeProvider>
+    )
+    const group = screen.getByRole('radiogroup', { name: 'Accent color' })
+    fireEvent.click(within(group).getByRole('radio', { name: /Orange/ }))
+
+    expect(document.documentElement.getAttribute('data-accent')).toBe('orange')
+    expect(localStorage.getItem('berth-accent')).toBe('orange')
   })
 
   it('switching accent updates selection and documentElement data-accent', () => {

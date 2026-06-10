@@ -2,9 +2,9 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from '
 
 type Theme = 'dark' | 'light' | 'system'
 
-export type Accent = 'neutral' | 'blue' | 'violet' | 'emerald' | 'amber' | 'rose'
+export type Accent = 'neutral' | 'blue' | 'violet' | 'emerald' | 'amber' | 'rose' | 'orange'
 
-export const ACCENTS: Accent[] = ['neutral', 'blue', 'violet', 'emerald', 'amber', 'rose']
+export const ACCENTS: Accent[] = ['neutral', 'blue', 'violet', 'emerald', 'amber', 'rose', 'orange']
 
 interface ThemeContextValue {
   theme: Theme

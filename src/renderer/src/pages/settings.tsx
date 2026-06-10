@@ -97,7 +97,8 @@ export function SettingsContent({
     { id: 'violet', label: 'Violet', color: 'hsl(262 83% 58%)' },
     { id: 'emerald', label: 'Emerald', color: 'hsl(160 84% 39%)' },
     { id: 'amber', label: 'Amber', color: 'hsl(38 92% 50%)' },
-    { id: 'rose', label: 'Rose', color: 'hsl(350 89% 60%)' }
+    { id: 'rose', label: 'Rose', color: 'hsl(350 89% 60%)' },
+    { id: 'orange', label: 'Orange', color: 'hsl(17 96% 55%)' }
   ]
 
   return (
