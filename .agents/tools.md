@@ -24,6 +24,9 @@ berth 项目自用工具 (不含企业内部设施)。Agent 据此主动获取�
 - `pnpm harness:prepush` — 代码类提交的 push 前本地门禁: lint / typecheck / test / harness:check / Actions baseline 并行执行, 任一失败即失败。
 - 非本地门禁可由子代理执行: `pnpm harness:ci:wait` 和 GitHub Project 同步属于远端等待任务; 主 Agent 必须消费成功结果后才能声明阶段通过、archive 或完成。
 - `pnpm harness:stats` — 只读统计 works/friction/issues/debt pool/distribution; 达到维护阈值时输出 Agent 可直接使用的 `maintenance=<subtype>:<score>` 推荐。
+- **harness:check ≠ harness 单测**: `harness:check` 过不代表 `tests/harness/` 过 — 测试 fixture 与 `WORKFLOW_ACTIONS`/`ACTION_IDS` 会静默漂移。改 harness 体系 (workflow 清单、脚本、action id) 后, 提交前门禁必须含 `pnpm test` (至少 tests/harness), 不止 harness:check (friction 20260609-fixture-drift)。
+- **Windows spawn 故障辨析**: `harness:prepush` 报 `spawn EINVAL` 是 Node 24 + `pnpm.cmd` 的 spawn 启动失败, 不是应用代码检查失败 — 逐项单独运行 lint/typecheck/test 定位 (friction 20260603-prepush-spawn)。`pnpm install` postinstall 因 esbuild optionalDependencies 未物化而 ENOENT 时, 不阻塞 dev/test/typecheck/build 链路; 打包用 `--ignore-scripts` 跳过后针对性重建原生模块 (friction 20260606-esbuild-postinstall)。
+- **codex exec 大模块审查**: 禁 web_search、限定文件清单、要求简洁输出、多轮用摘要回灌; 官方文档核验留给主 Agent (friction 20260607-codex-context-exhaustion)。
 - `node scripts/harness-projects.mjs fields ensure` — 创建或确认 GitHub Project 自定义字段: Task Type / Priority / Start date / Target date / Archived at / debt / scope / risk / confidence / areas / maintenance subtype / source kind。
 - `pnpm harness:projects:check` — 只读审计 GitHub Project 状态; `node scripts/harness-projects.mjs check --strict` 额外检查字段定义和可读字段值; archive 阶段用 `node scripts/harness-projects.mjs done <task-dir>` 强制置 Done 并回读确认。
 - `harness-projects` 的 `done` / `ensure` / `fields ensure` 是多字段顺序 GraphQL 写入且非幂等续传 (失败从头重写整组)。GitHub API 抖动时常见 `unexpected EOF` / `net/http: TLS handshake timeout`, 且失败字段会漂移; 这是可重试网络错误, 不是缺 scope / 字段非法, 也不等于 archive 阻塞。处置: 有界退避重试 (可后台执行, 主 Agent 消费成功结果后再推进), 不手敲反复重试; archive 必须回读确认远端 Done 后才移动目录。
