@@ -12,6 +12,8 @@ import type {
   HealthCheckRequest,
   SessionListResult,
   SessionDetailResult,
+  SessionReplayResult,
+  SessionReplayEventPayload,
   AgentTeamListResult,
   SetHookEnabledRequest,
   SetHookEnabledResult
@@ -20,6 +22,7 @@ import type { AgentCapabilityPluginListResult } from '@shared/types/agent-plugin
 import { getAssetRuntime } from '../engine/assets/runtime'
 import { setHookEnabled } from '../engine/hooks-manager'
 import { buildSessionDetail } from '../engine/session-detail'
+import { buildSessionReplay, readSessionReplayEventPayload } from '../engine/session-replay'
 import { listMemory, readMemory } from '../memory'
 import { listAgentTeams, markLeadSessionAvailability } from '../agent-teams'
 import { listAgentCapabilityPlugins } from '../agent-plugins/registry'
@@ -157,6 +160,28 @@ export function registerSessionHandlers(): void {
       const asset = runtime.getAsset(id)
       if (!asset || asset.type !== 'session') return null
       return buildSessionDetail(asset, runtime.getAssets())
+    }
+  )
+
+  ipcMain.handle(
+    'sessions:events',
+    async (_event, id: string): Promise<SessionReplayResult | null> => {
+      const runtime = getAssetRuntime()
+      await runtime.ensureReady({ reason: 'manual' })
+      const asset = runtime.getAsset(id)
+      if (!asset || asset.type !== 'session') return null
+      return buildSessionReplay(asset)
+    }
+  )
+
+  ipcMain.handle(
+    'sessions:event-payload',
+    async (_event, id: string, eventId: string): Promise<SessionReplayEventPayload | null> => {
+      const runtime = getAssetRuntime()
+      await runtime.ensureReady({ reason: 'manual' })
+      const asset = runtime.getAsset(id)
+      if (!asset || asset.type !== 'session') return null
+      return readSessionReplayEventPayload(asset, eventId)
     }
   )
 

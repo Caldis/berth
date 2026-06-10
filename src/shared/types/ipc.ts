@@ -430,6 +430,8 @@ export interface IpcChannels {
   'assets:health-check': { args: [HealthCheckRequest?]; result: HealthCheck[] }
   'sessions:list': { args: [{ projectFilter?: string; projectPath?: string; limit?: number; agentView?: AgentView }]; result: SessionListResult }
   'sessions:get': { args: [string]; result: SessionDetailResult | null }
+  'sessions:events': { args: [string]; result: SessionReplayResult | null }
+  'sessions:event-payload': { args: [string, string]; result: SessionReplayEventPayload | null }
   'usage:summary': { args: [{ days: number; agentView?: AgentView; costMode?: CostMode; projectPath?: string }]; result: UsageSummary }
   'memory:list': { args: []; result: MemoryListResult }
   'memory:get': { args: [string]; result: MemoryNote | null }

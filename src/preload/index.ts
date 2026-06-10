@@ -59,7 +59,9 @@ const api = {
   },
   sessions: {
     list: (opts: IpcChannelArgs<'sessions:list'>[0]) => invoke('sessions:list', opts),
-    get: (id: string) => invoke('sessions:get', id)
+    get: (id: string) => invoke('sessions:get', id),
+    events: (id: string) => invoke('sessions:events', id),
+    eventPayload: (id: string, eventId: string) => invoke('sessions:event-payload', id, eventId)
   },
   usage: {
     summary: (opts: IpcChannelArgs<'usage:summary'>[0]) => invoke('usage:summary', opts)

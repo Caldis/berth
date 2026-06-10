@@ -93,7 +93,9 @@ export const mockApi = {
   },
   sessions: {
     list: async () => ({ sessions: [], totalCount: 0 }),
-    get: async () => null
+    get: async () => null,
+    events: async () => null,
+    eventPayload: async () => null
   },
   teams: {
     list: async () => ({ teams: [] })
