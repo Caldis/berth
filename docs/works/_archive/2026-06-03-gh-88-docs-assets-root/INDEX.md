@@ -2,7 +2,7 @@
 task: 2026-06-03-gh-88-docs-assets-root
 task_id: GH-88
 type: maintenance
-phase: verify
+phase: archive
 created: 2026-06-03
 priority: P2
 target_date: 
@@ -45,7 +45,7 @@ gh_project:
   status: tracked
   project_number: 6
   project_url: https://github.com/users/Caldis/projects/6
-  item_status: In Progress
+  item_status: Done
   project_id: PVT_kwHOADXbEs4BZHvQ
   item_id: PVTI_lAHOADXbEs4BZHvQzgukht0
 artifacts:
