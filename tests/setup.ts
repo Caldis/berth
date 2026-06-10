@@ -145,6 +145,8 @@ beforeEach(async () => {
   resetSessionsCacheForTests()
   const { resetAgentTeamsCacheForTests } = await import('../src/renderer/src/hooks/use-agent-teams')
   resetAgentTeamsCacheForTests()
+  const { resetMemoryCacheForTests } = await import('../src/renderer/src/hooks/use-memory')
+  resetMemoryCacheForTests()
 })
 
 if (hasDomEnvironment) {

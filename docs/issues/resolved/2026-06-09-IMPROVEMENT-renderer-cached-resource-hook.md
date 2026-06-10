@@ -21,7 +21,13 @@
 
 # 来源 · 关联
 - 架构图绘制任务 (2026-06-09)。关联 2026-06-09-IMPROVEMENT-shared-path-and-type-config.md。
-- 状态: OPEN。
+
+# 终态 (2026-06-10, RESOLVED)
+- 核心交付: `hooks/cached-resource.ts` 无 React 的 `CachedResource<T>` 原语 (TTL 新鲜判定 / in-flight 去重 / signature 身份保持 / invalidate / clear), **5/5 份手写缓存全部迁移完成**:
+  - 4 份 (use-ipc sessions/health/plugins + use-memory) — 提交 e37eaf53;
+  - 第 5 份 use-agent-teams (ttl=0 表达"每次挂载必刷新, 缓存只供即时首绘") — 本日完成。
+- 追记各项归宿: ① 5 份副本 ✓ 全迁; ② 错误维度 → sessions/session-detail 已由 GH-110 解决, 其余拆出 [[2026-06-10-IMPROVEMENT-renderer-swallowed-error-channels]] 独立跟踪; ③ normalize 双轨 → 代码实况 grep 零命中, 已被 GH-115 清除, 不复存在; ④ 统一 reset → tests/setup.ts 全局 beforeEach 现重置全部 5 个缓存。
+- 验证: 5 个 SWR 测试套件 + 全量 940 测试绿, typecheck/lint 绿。
 
 # 追记 (GH-115 范围扩大证据, 2026-06-10)
 - 第 5 份副本已出现 (GH-114 的 use-agent-teams), 各份失效策略已分叉 (teams 无 TTL / plugins 靠 snapshotId / sessions TTL+signature / health TTL 无 signature)。

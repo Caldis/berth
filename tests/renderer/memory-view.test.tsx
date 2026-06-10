@@ -94,7 +94,9 @@ const memoryState = vi.hoisted(() => ({
 }))
 
 vi.mock('../../src/renderer/src/hooks/use-memory', () => ({
-  useMemory: () => memoryState
+  useMemory: () => memoryState,
+  // setup.ts 的全局 beforeEach 会调用该 reset; mock 模块需提供同名导出
+  resetMemoryCacheForTests: () => {}
 }))
 
 function expectImportanceBadge(label: string, title: string): void {

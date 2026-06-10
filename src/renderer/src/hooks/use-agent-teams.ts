@@ -1,29 +1,18 @@
 import { useCallback, useEffect, useState } from 'react'
 import type { AgentTeamSummary } from '@shared/types/ipc'
+import { CachedResource } from './cached-resource'
 
-// Module-level cache: team records are tiny (single-digit dirs) and change only
-// when a team runs, so we show the last result instantly and refresh on mount.
-let agentTeamsCache: AgentTeamSummary[] | null = null
-let agentTeamsInFlight: Promise<AgentTeamSummary[]> | null = null
+// Team records are tiny (single-digit dirs) and change only when a team runs,
+// so we show the last result instantly and refresh on mount (ttl 0 = never
+// fresh, every mount revalidates; the cache only serves the instant paint).
+const teamsResource = new CachedResource<AgentTeamSummary[]>(0)
 
 function requestAgentTeams(): Promise<AgentTeamSummary[]> {
-  if (agentTeamsInFlight) return agentTeamsInFlight
-  agentTeamsInFlight = window.api.teams
-    .list()
-    .then((result) => {
-      const teams = result?.teams ?? []
-      agentTeamsCache = teams
-      return teams
-    })
-    .finally(() => {
-      agentTeamsInFlight = null
-    })
-  return agentTeamsInFlight
+  return teamsResource.request('', () => window.api.teams.list().then((result) => result?.teams ?? []))
 }
 
 export function resetAgentTeamsCacheForTests(): void {
-  agentTeamsCache = null
-  agentTeamsInFlight = null
+  teamsResource.clear()
 }
 
 export function useAgentTeams(): {
@@ -33,7 +22,7 @@ export function useAgentTeams(): {
   error: string | null
   reload: () => void
 } {
-  const initialCache = agentTeamsCache
+  const initialCache = teamsResource.peek()
   const [teams, setTeams] = useState<AgentTeamSummary[]>(initialCache ?? [])
   const [loading, setLoading] = useState(initialCache == null)
   const [stale, setStale] = useState(false)
@@ -41,8 +30,7 @@ export function useAgentTeams(): {
   const [reloadNonce, setReloadNonce] = useState(0)
 
   const reload = useCallback(() => {
-    agentTeamsCache = null
-    agentTeamsInFlight = null
+    teamsResource.invalidate()
     setReloadNonce((n) => n + 1)
   }, [])
 
@@ -53,7 +41,7 @@ export function useAgentTeams(): {
     }
 
     let cancelled = false
-    const cached = agentTeamsCache
+    const cached = teamsResource.peek()
     if (cached) {
       setTeams((current) => (current === cached ? current : cached))
       setLoading(true)
