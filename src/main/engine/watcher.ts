@@ -12,10 +12,12 @@ import { resolveClaudeDirs, resolveCodexHomeDirs } from '../agent-homes'
 import { resolveProjectConfigRoots } from '../project-config-roots'
 
 export type AssetWatchListener = (event: WatchEvent) => void
+export type AssetWatchErrorListener = (err: unknown) => void
 
 export class AssetWatcher {
   private watcher: FSWatcher | null = null
   private listener: AssetWatchListener | null = null
+  private errorListener: AssetWatchErrorListener | null = null
 
   /**
    * Register the change listener. Kept Electron-free: the host (Electron main,
@@ -24,6 +26,12 @@ export class AssetWatcher {
    */
   setListener(listener: AssetWatchListener | null): void {
     this.listener = listener
+  }
+
+  /** GH-115 T5: chokidar 'error' 与 listener 抛错的统一出口 — 此前 emit('error') 无监听者
+   * 会直冲 uncaughtException 且 live 更新静默失效。宿主接到 log seam, 不在此决定策略。 */
+  setErrorListener(listener: AssetWatchErrorListener | null): void {
+    this.errorListener = listener
   }
 
   start(projectDir?: string): void {
@@ -36,6 +44,7 @@ export class AssetWatcher {
     this.watcher.on('add', (filePath) => this.notifyChange('added', filePath))
     this.watcher.on('change', (filePath) => this.notifyChange('changed', filePath))
     this.watcher.on('unlink', (filePath) => this.notifyChange('removed', filePath))
+    this.watcher.on('error', (err) => this.errorListener?.(err))
   }
 
   async stop(): Promise<void> {
@@ -51,9 +60,14 @@ export class AssetWatcher {
     this.start(projectDir)
   }
 
-  /** Dispatch a filesystem change to the registered listener. Public for testing. */
+  /** Dispatch a filesystem change to the registered listener. Public for testing.
+   * Listener 抛错走 errorListener (单文件事件失败不拖垮 watch 管线)。 */
   notifyChange(type: WatchEvent['type'], filePath: string): void {
-    this.listener?.(buildWatchEvent(type, filePath))
+    try {
+      this.listener?.(buildWatchEvent(type, filePath))
+    } catch (err) {
+      this.errorListener?.(err)
+    }
   }
 }
 

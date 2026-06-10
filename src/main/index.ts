@@ -1,4 +1,4 @@
-import { app, BrowserWindow, shell } from 'electron'
+import { app, BrowserWindow, dialog, shell } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { registerAllHandlers } from './ipc'
@@ -10,6 +10,24 @@ import { getWatcher } from './engine/watcher'
 import { resolveDefaultProjectDir } from './project-dir'
 import { configureAgentDevProfile, shouldRequestSingleInstanceLock } from './dev-instance'
 import { shouldAutoOpenDevTools } from './devtools'
+import { createLogWriter, getMainLog, setMainLogWriter } from './log'
+
+// GH-115 T5: 进程级兜底 — 打包应用 (无终端) 的故障此前零痕迹。日志仅落
+// userData/logs 本地滚动文件 (无遥测硬边界); uncaughtException 弹框告知后不强退
+// (只读查看器, 残余状态无写副作用风险)。
+function installProcessGuards(): void {
+  setMainLogWriter(createLogWriter(join(app.getPath('userData'), 'logs')))
+  process.on('uncaughtException', (err) => {
+    getMainLog().log('uncaught-exception', err)
+    dialog.showErrorBox('Berth encountered an error', err?.stack ?? String(err))
+  })
+  process.on('unhandledRejection', (reason) => {
+    getMainLog().log('unhandled-rejection', reason)
+  })
+  app.on('render-process-gone', (_event, _contents, details) => {
+    getMainLog().log('render-process-gone', `${details.reason} (exitCode=${details.exitCode})`)
+  })
+}
 
 type CreateWindowOptions = {
   openDevTools?: boolean
@@ -111,6 +129,8 @@ if (!gotTheLock) {
     }
   })
 
+  installProcessGuards()
+
   app.whenReady().then(() => {
     electronApp.setAppUserModelId('com.berth.app')
 
@@ -140,6 +160,10 @@ if (!gotTheLock) {
     // non-progress consumers — health checks + the snapshot-sync fallback — re-
     // evaluate against the UPDATED snapshot with a SOFT refresh (no extra full
     // rescan), which the incremental path would otherwise leave stale.
+    watcher.setErrorListener((err) => {
+      // chokidar 'error' 此前无监听者: 直冲 uncaughtException 且 live 更新静默失效 (GH-115 T5)
+      getMainLog().log('watcher', err)
+    })
     watcher.setListener((event) => {
       applyWatchEvent(event, getAssetRuntime())
       if (!mainWindow.isDestroyed()) mainWindow.webContents.send('assets:changed', event)
@@ -155,6 +179,11 @@ if (!gotTheLock) {
     app.on('activate', () => {
       if (BrowserWindow.getAllWindows().length === 0) createWindow({ openDevTools })
     })
+  }).catch((err: unknown) => {
+    // 启动期 throw 此前表现为 dock 图标出现但永远无窗口、零诊断 (GH-115 T5)
+    getMainLog().log('startup', err)
+    dialog.showErrorBox('Berth failed to start', err instanceof Error ? (err.stack ?? err.message) : String(err))
+    app.exit(1)
   })
 
   app.on('window-all-closed', () => {

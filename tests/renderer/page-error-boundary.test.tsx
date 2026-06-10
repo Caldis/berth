@@ -1,7 +1,7 @@
 import React from 'react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { fireEvent, render, screen } from '@testing-library/react'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import '../../src/renderer/src/i18n'
 import { PageErrorBoundary } from '../../src/renderer/src/components/layout/page-error-boundary'
 
@@ -23,8 +23,17 @@ function renderWithRouter(ui: React.ReactElement, initialPath = '/broken'): Retu
   )
 }
 
+// React 19 在并发渲染中遇 throw 会"恢复并同步重渲", 恢复错误以 window error 事件逃逸 —
+// 不拦截则 vitest 记为 Unhandled Error (用例全过但 run 失败)。boundary 类测试标准处理。
+const swallowRecoveredRenderError = (e: ErrorEvent): void => e.preventDefault()
+
 describe('PageErrorBoundary', () => {
+  beforeEach(() => {
+    window.addEventListener('error', swallowRecoveredRenderError)
+  })
+
   afterEach(() => {
+    window.removeEventListener('error', swallowRecoveredRenderError)
     shouldThrow = true
     vi.restoreAllMocks()
   })
