@@ -1,0 +1,384 @@
+{
+  "hotspots": [
+    {
+      "path": "src/renderer/src/lib/chart-colors.ts",
+      "taskRef": "gh-103",
+      "phase": "implement",
+      "risk": "high",
+      "note": "gh-103 任务1 新建的配色真源 (CHART_SERIES_FILL/CHART_CATEGORICAL/TOKEN_SEGMENT_COLOR_VAR); 任务6 门禁+视觉收口未完成, 随时回改。gh-105 P6.7 明确声明不碰此文件, 但 usage 页 recharts 主题对齐会消费它。"
+    },
+    {
+      "path": "src/renderer/src/styles/globals.css",
+      "taskRef": "gh-103, gh-105",
+      "phase": "implement",
+      "risk": "high",
+      "note": "gh-103 任务2 已改 --chart-1~5 (light/dark) 为统一语义色板, 收口未完。gh-105 P2.1 (verify) 已改 --primary/--ring/--radius/dark 分层与 accent 块, 同文件不同变量段, 双任务叠加改动。"
+    },
+    {
+      "path": "src/renderer/src/pages/overview.tsx",
+      "taskRef": "gh-103, gh-105",
+      "phase": "implement",
+      "risk": "high",
+      "note": "gh-103 任务3 近7天费用柱状图单色化 (去 Cell 循环→CHART_SERIES_FILL), 视觉收口未完成可能微调。gh-105 P6.2 (overview ui/card 迁移) 未勾, 已声明转 follow-up issue。"
+    },
+    {
+      "path": "src/renderer/src/pages/usage.tsx",
+      "taskRef": "gh-103, gh-105",
+      "phase": "implement",
+      "risk": "high",
+      "note": "gh-103 任务4 删本地 CHART_COLORS 改 import 真源, 每日花费→CHART_SERIES_FILL、breakdown→CHART_CATEGORICAL; 收口未完。gh-105 P6.7 (tabs/select/alert ui 化) 未勾, 转 follow-up issue。"
+    },
+    {
+      "path": "src/renderer/src/components/shared/token-usage-display.tsx",
+      "taskRef": "gh-103",
+      "phase": "implement",
+      "risk": "high",
+      "note": "gh-103 任务5 SEGMENT_CLASS Tailwind 硬编码改为 TOKEN_SEGMENT_COLOR_VAR inline style; 任务6 截图验收 (亮/暗 token 条) 未完成, 可能回改。"
+    },
+    {
+      "path": "src/renderer/src/components/layout/top-navigation.tsx",
+      "taskRef": "gh-87, gh-90, gh-96, gh-105",
+      "phase": "verify",
+      "risk": "medium",
+      "note": "全仓最拥挤文件 (近7天 16 commits, 4 任务汇聚)。gh-87 空 breadcrumb 渲染; gh-90 新结构/guide hover 浮层/持久导航; gh-96 首页共享导航栏+Windows pr-52 避让; gh-105 P6.1 layout shell ui 化未勾 (转 follow-up)。任一任务 verify 回退都会改它。"
+    },
+    {
+      "path": "src/renderer/src/components/layout/app-layout.tsx",
+      "taskRef": "gh-90, gh-96, gh-105",
+      "phase": "verify",
+      "risk": "medium",
+      "note": "gh-90 滚动分离 (内容 scroll container 独立+导航高度 scroll padding); gh-96 首页顶部 offset 与导航栏共享; gh-105 P6.1 未勾。近7天 10 commits。"
+    },
+    {
+      "path": "src/renderer/src/components/layout/window-controls.tsx",
+      "taskRef": "gh-96",
+      "phase": "verify",
+      "risk": "medium",
+      "note": "gh-96 任务2/4: Windows 控制键按 96px 导航高度居中, 按钮 h-9 w-9, 图标 stroke 1.8, close hover destructive/10。已按用户截图反馈调过一轮, verify 再回退概率存在。"
+    },
+    {
+      "path": "src/renderer/src/components/layout/page-chrome.tsx",
+      "taskRef": "gh-90",
+      "phase": "verify",
+      "risk": "medium",
+      "note": "gh-90 任务2 新建 PageChromeProvider, 各页面顶部 chrome (title/filter/search/help) 注入机制的载体, 页面迁移类任务都会消费其 API。"
+    },
+    {
+      "path": "src/renderer/src/components/layout/sidebar.tsx",
+      "taskRef": "gh-105",
+      "phase": "verify",
+      "risk": "medium",
+      "note": "gh-105 P6.1 layout shell (sidebar 含) ui 化未勾, 转 follow-up; 近7天 7 commits (含 GH-114 work 区导航改动)。"
+    },
+    {
+      "path": "src/renderer/src/pages/sessions.tsx",
+      "taskRef": "gh-90, gh-98, gh-105",
+      "phase": "verify",
+      "risk": "medium",
+      "note": "gh-90 任务3 顶部标题/筛选/toolbar status 迁移到 nav; gh-98 任务3/8/10 react-virtuoso 虚拟化+项目类目聚合 (父级标题+项目项); gh-105 P6.3 (分组卡 ui/card+chip) 未勾转 follow-up。近7天 11 commits。"
+    },
+    {
+      "path": "src/renderer/src/pages/instructions.tsx",
+      "taskRef": "gh-90, gh-94, gh-98, gh-105",
+      "phase": "verify",
+      "risk": "medium",
+      "note": "4 任务汇聚。gh-90 任务4 title/filter/scope 迁移; gh-94 任务2 删 agent-teams tab 入口+redirect 到 subagents; gh-98 任务6 skills/conventions 共用 VirtualGroupedList; gh-105 P6.5 未勾转 follow-up。近7天 11 commits。"
+    },
+    {
+      "path": "src/renderer/src/pages/capabilities.tsx",
+      "taskRef": "gh-90, gh-105",
+      "phase": "verify",
+      "risk": "medium",
+      "note": "gh-90 任务4 title/filter 迁移 (permissions tab 不显示 filter); gh-105 P6.6 (卡/KPI/chip + native select→ui) 未勾转 follow-up。"
+    },
+    {
+      "path": "src/renderer/src/pages/session-detail.tsx",
+      "taskRef": "gh-90, gh-95, gh-105",
+      "phase": "verify",
+      "risk": "medium",
+      "note": "gh-90 任务5 返回按钮/breadcrumb 上移 nav; gh-95 任务4/5 token 消耗速率改名+hover 公式+最终屏蔽为 placeholder (暂不计算); gh-105 P4.1 已完成 Radix Tabs→HeroUI Tabs (SessionDetailTabs 重构), P6.4 未勾转 follow-up。"
+    },
+    {
+      "path": "src/renderer/src/pages/settings.tsx",
+      "taskRef": "gh-105",
+      "phase": "verify",
+      "risk": "medium",
+      "note": "gh-105 P6.8 标记进行中: accent 5 色板 radiogroup 已落地, 其余面板/toggle/折叠 ui 化未完成 — verify 阶段此页仍可能继续改。"
+    },
+    {
+      "path": "src/renderer/src/components/memory/memory-view.tsx",
+      "taskRef": "gh-90, gh-97, gh-98",
+      "phase": "verify",
+      "risk": "medium",
+      "note": "gh-90 任务3 Memories 搜索输入迁移到顶部导航+Ctrl/⌘K 聚焦; gh-97 任务2/3 标签筛选一行+hover 浮层、查看原始文件复用通用按钮; gh-98 任务5 virtuoso 虚拟化 (80 notes→20 mounted)。近7天 11 commits。"
+    },
+    {
+      "path": "src/renderer/src/components/capabilities/hooks-lifecycle-view.tsx",
+      "taskRef": "gh-90, gh-104, gh-105",
+      "phase": "verify",
+      "risk": "medium",
+      "note": "gh-90 任务13 当前项 bg-foreground 反色+hover:bg-muted/70; gh-104 任务2 删左侧 hook-recovery-center rail, 行内 Disabled tag+Enable 恢复; gh-105 P6.6 未勾转 follow-up。近7天 15 commits。"
+    },
+    {
+      "path": "src/renderer/src/components/shared/category-jump-nav.tsx",
+      "taskRef": "gh-98, gh-105",
+      "phase": "verify",
+      "risk": "medium",
+      "note": "gh-98 任务2/8/10 新建跳转导航 (active group/scrollToGroup/父级小标题层级); gh-105 P4.2 已完成 NavigationMenu→原生 nav/ul/li 改写。注意 gh-98 任务8 verify 写明保留 Radix NavigationMenu, gh-105 P4.2 又把它移除 — 两任务对同文件方向相反, gh-98 若回退会撞 gh-105 已完成项。近7天 10 commits。"
+    },
+    {
+      "path": "src/renderer/src/components/shared/virtual-grouped-list.tsx",
+      "taskRef": "gh-98",
+      "phase": "verify",
+      "risk": "medium",
+      "note": "gh-98 任务2 新建共享虚拟列表 (react-virtuoso 封装, stable key/groupCounts/scrollToGroup), Sessions/Memories/Instructions 三页共用, 改动波及面大。"
+    },
+    {
+      "path": "src/renderer/src/hooks/use-app-scroll-parent.ts",
+      "taskRef": "gh-98",
+      "phase": "verify",
+      "risk": "medium",
+      "note": "gh-98 任务2 新建, 虚拟列表挂接 AppLayout 滚动容器的 hook。"
+    },
+    {
+      "path": "src/renderer/src/lib/virtual-list-model.ts",
+      "taskRef": "gh-98",
+      "phase": "verify",
+      "risk": "medium",
+      "note": "gh-98 任务2/8/10 虚拟列表 view model (分组/group key/父级标题行), 类目层级两轮返工后的产物。"
+    },
+    {
+      "path": "src/renderer/src/lib/session-location-groups.ts",
+      "taskRef": "gh-98",
+      "phase": "verify",
+      "risk": "medium",
+      "note": "gh-98 任务8/10 Sessions 项目类目聚合 (/ 置顶、父目录合并、最后一级项目名为可选项)。"
+    },
+    {
+      "path": "src/renderer/src/hooks/use-ipc.ts",
+      "taskRef": "gh-86, gh-98",
+      "phase": "verify",
+      "risk": "medium",
+      "note": "gh-86 任务6/8/13 runtime hook + sessions stale-while-refresh + capability plugins SWR 均落在此文件 (useAssetRuntime 实现处); gh-98 任务4 Sessions refresh cache (fresh 不重拉/same-result 引用复用)。"
+    },
+    {
+      "path": "src/renderer/src/hooks/use-memory.ts",
+      "taskRef": "gh-98",
+      "phase": "verify",
+      "risk": "medium",
+      "note": "gh-98 任务4 Memory refresh cache 同款 SWR 策略。"
+    },
+    {
+      "path": "src/renderer/src/lib/result-signature.ts",
+      "taskRef": "gh-98",
+      "phase": "verify",
+      "risk": "medium",
+      "note": "gh-98 任务4 新建, same-result refresh 复用旧引用的签名比对。"
+    },
+    {
+      "path": "src/renderer/src/stores/app.ts",
+      "taskRef": "gh-86",
+      "phase": "verify",
+      "risk": "medium",
+      "note": "gh-86 任务1 新增 runtime 契约对应的 store 状态字段 (idle/scanning/ready/stale/error)。"
+    },
+    {
+      "path": "src/renderer/src/App.tsx",
+      "taskRef": "gh-94, gh-105",
+      "phase": "verify",
+      "risk": "medium",
+      "note": "gh-94 任务2 删 teams 路由+/instructions/agent-teams redirect; gh-105 P1.3 注入 HeroUIProvider (navigate/locale/reducedMotion)。注意已归档 GH-114 又在此加回 /teams 路由。"
+    },
+    {
+      "path": "src/renderer/src/components/layout/nav-config.ts",
+      "taskRef": "gh-94",
+      "phase": "verify",
+      "risk": "medium",
+      "note": "gh-94 任务2 删侧边栏 Agent Teams 导航项; GH-114 已加回 work 区 teams 导航, gh-94 残留断言若重跑会撞。"
+    },
+    {
+      "path": "src/renderer/src/components/layout/search-dialog.tsx",
+      "taskRef": "gh-94, gh-105",
+      "phase": "verify",
+      "risk": "medium",
+      "note": "gh-94 任务2 搜索不再生成 Agent Teams 路由; gh-105 P5.1 显式 defer (复杂键盘 nav, 不冒回归风险, 记 issue 跟进)。"
+    },
+    {
+      "path": "src/renderer/src/lib/feature-guidance.ts",
+      "taskRef": "gh-94",
+      "phase": "verify",
+      "risk": "medium",
+      "note": "gh-94 任务2 删 agent-teams guide 文案。"
+    },
+    {
+      "path": "src/renderer/src/lib/asset-guidance.ts",
+      "taskRef": "gh-94",
+      "phase": "verify",
+      "risk": "medium",
+      "note": "gh-94 任务2 删 team asset guide 文案。"
+    },
+    {
+      "path": "src/renderer/src/i18n/locales/en.json",
+      "taskRef": "gh-94, gh-98, gh-104",
+      "phase": "verify",
+      "risk": "medium",
+      "note": "近7天 churn 第一 (23 commits)。gh-94 删 teams 文案; gh-98 任务3/5/8 虚拟化/类目 i18n key; gh-104 任务3 删恢复中心文案。几乎所有 UI 任务都要碰, JSON 合并冲突高发, 重构期改 key 结构需先广播。"
+    },
+    {
+      "path": "src/renderer/src/i18n/locales/zh.json",
+      "taskRef": "gh-94, gh-98, gh-104",
+      "phase": "verify",
+      "risk": "medium",
+      "note": "同 en.json (23 commits), 双语成对改动, 同样的冲突高发面。"
+    },
+    {
+      "path": "src/shared/types/asset.ts",
+      "taskRef": "gh-94",
+      "phase": "verify",
+      "risk": "medium",
+      "note": "gh-94 任务1 删共享 team/teams 契约 (type: team, stats 无 teams)。跨 main/renderer 的契约文件, 改动两端连锁。"
+    },
+    {
+      "path": "src/shared/types/ipc.ts",
+      "taskRef": "gh-86, gh-104",
+      "phase": "verify",
+      "risk": "medium",
+      "note": "gh-86 任务1 新增 AssetRuntimeStatus 等 runtime 契约; gh-104 任务3 删 HookRecovery/hooks:recoveries 类型。GH-114 又加了 teams IPC 契约。近7天 8 commits, 契约层多任务叠加。"
+    },
+    {
+      "path": "src/main/adapters/claude-code/scanner.ts",
+      "taskRef": "gh-94, gh-104",
+      "phase": "verify",
+      "risk": "medium",
+      "note": "gh-94 任务1 删 team 扫描产出; gh-104 任务1 补 settings 缺失但 sidecar 存在时的 disabled Hook 行。近7天 7 commits。"
+    },
+    {
+      "path": "src/main/adapters/claude-code/parsers.ts",
+      "taskRef": "gh-94",
+      "phase": "verify",
+      "risk": "medium",
+      "note": "gh-94 任务1 删 parseTeam。近7天 16 commits — churn 远超其 PLAN footprint, 多半来自 GH-114 等后续改动; gh-94 的 type:'team' 残留扫描模式与现状已不完全一致。"
+    },
+    {
+      "path": "src/main/ipc/handlers.ts",
+      "taskRef": "gh-86, gh-95, gh-104",
+      "phase": "verify",
+      "risk": "medium",
+      "note": "3 任务汇聚的 IPC 实现层。gh-86 任务5 迁移到 runtime selectors; gh-95 任务2 sessions:get 接 session-activity 纯函数; gh-104 任务3 删 hooks:recoveries handler。近7天 7 commits。"
+    },
+    {
+      "path": "src/main/ipc/session-activity.ts",
+      "taskRef": "gh-95",
+      "phase": "verify",
+      "risk": "medium",
+      "note": "gh-95 任务1/3/5 token rate 纯函数: 短窗口 unavailable→活动窗口分段→最终整体屏蔽只留 placeholder。当前为'暂不计算'态, 后续解除屏蔽会再改。"
+    },
+    {
+      "path": "src/preload/index.ts",
+      "taskRef": "gh-104",
+      "phase": "verify",
+      "risk": "medium",
+      "note": "gh-104 任务3 删恢复中心 preload surface (window.api.hooks.recoveries); GH-114 又加 window.api.teams。preload 是窄面, 任何 IPC 增删都过这里。"
+    },
+    {
+      "path": "src/main/engine/hooks-manager.ts",
+      "taskRef": "gh-104",
+      "phase": "verify",
+      "risk": "medium",
+      "note": "gh-104 任务3 删恢复中心 manager surface (clearRecovery 等), 保留 sidecar disable/restore。"
+    },
+    {
+      "path": "src/main/engine/assets/",
+      "taskRef": "gh-86",
+      "phase": "verify",
+      "risk": "medium",
+      "note": "gh-86 任务2/3/4 核心产物目录: runtime.ts (中心运行时, 近7天 13 commits)、worker-host.ts/worker.ts (扫描移出 main loop)、file-cache.ts (fingerprint cache)。verify 全勾但性能类任务回退概率不低; worker.ts 还是独立构建入口。"
+    },
+    {
+      "path": "src/main/engine/scanner.ts",
+      "taskRef": "gh-86, gh-94",
+      "phase": "verify",
+      "risk": "medium",
+      "note": "gh-86 任务11 AssetScanner 改经 adapter registry 构造; gh-94 任务1 scanner 派生层删 team。近7天 11 commits。"
+    },
+    {
+      "path": "src/main/agent-plugins/",
+      "taskRef": "gh-86",
+      "phase": "verify",
+      "risk": "medium",
+      "note": "gh-86 任务10-12 产物: manifest.ts (manifest 缓存)、registry.ts (capability plugin)、adapter-registry.ts (runtime adapter registry)、descriptors.ts (source coverage 声明真源+drift 测试)。"
+    },
+    {
+      "path": "src/renderer/src/components/ui/",
+      "taskRef": "gh-105",
+      "phase": "verify",
+      "risk": "medium",
+      "note": "gh-105 P3.1 新建 (index.ts barrel/motion.ts/chip.tsx); P3.2 声明 composite 随逐页迁移'长进这层'— 此目录是 GH-105 设计系统规则的唯一 primitive 入口, 后续任何 ui 收敛都会增改。"
+    },
+    {
+      "path": "src/renderer/src/components/theme-provider.tsx",
+      "taskRef": "gh-105",
+      "phase": "verify",
+      "risk": "medium",
+      "note": "gh-105 P2.3 增 accent/setAccent/ACCENTS, 持久化 berth-accent, data-accent 切换。"
+    },
+    {
+      "path": "src/renderer/src/components/layout/settings-dialog.tsx",
+      "taskRef": "gh-105",
+      "phase": "verify",
+      "risk": "medium",
+      "note": "gh-105 P5.1 已完成: 手搓 focus-trap → HeroUI Modal (删 ~50 行)。"
+    },
+    {
+      "path": "src/renderer/src/components/shared/scope-badge.tsx",
+      "taskRef": "gh-105",
+      "phase": "verify",
+      "risk": "medium",
+      "note": "gh-105 P5.3 已完成: 改 Chip(tone=neutral) 去类别色。"
+    },
+    {
+      "path": "src/renderer/src/components/shared/cost-source-badge.tsx",
+      "taskRef": "gh-105",
+      "phase": "verify",
+      "risk": "medium",
+      "note": "gh-105 P5.3 已完成: 改 Chip 语义 tone 映射, 去硬编码 emerald/sky/amber。"
+    },
+    {
+      "path": "src/renderer/src/components/layout/inspector-drawer.tsx",
+      "taskRef": "gh-97",
+      "phase": "verify",
+      "risk": "medium",
+      "note": "gh-97 任务1 抽出的共享文件查看器抽屉 (Windows 窗口按钮层级/macOS traffic-light 命中区/copy/Escape/resize)。gh-105 P5.1 将 file-viewer drawer 收敛列为 deferred issue。"
+    },
+    {
+      "path": "src/renderer/src/components/shared/view-raw-button.tsx",
+      "taskRef": "gh-97",
+      "phase": "verify",
+      "risk": "medium",
+      "note": "gh-97 任务1/3 通用'查看原始文件'按钮, 记忆条目与资产原文入口复用。"
+    }
+  ],
+  "recentChurn": [
+    "src/renderer/src/i18n/locales/zh.json (23)",
+    "src/renderer/src/i18n/locales/en.json (23)",
+    "src/renderer/src/components/layout/top-navigation.tsx (16)",
+    "src/main/adapters/claude-code/parsers.ts (16)",
+    "src/renderer/src/components/capabilities/hooks-lifecycle-view.tsx (15)",
+    "src/main/engine/assets/runtime.ts (13)",
+    "src/renderer/src/pages/sessions.tsx (11)",
+    "src/renderer/src/pages/instructions.tsx (11)",
+    "src/renderer/src/components/memory/memory-view.tsx (11)",
+    "src/main/engine/scanner.ts (11)",
+    "src/renderer/src/components/shared/category-jump-nav.tsx (10)",
+    "src/renderer/src/components/layout/app-layout.tsx (10)",
+    "src/main/adapters/codex/parsers.ts (9)",
+    "src/shared/types/ipc.ts (8)",
+    "src/renderer/src/pages/capabilities.tsx (7)",
+    "src/renderer/src/components/layout/sidebar.tsx (7)",
+    "src/main/ipc/handlers.ts (7)",
+    "src/main/index.ts (7)",
+    "src/main/adapters/claude-code/scanner.ts (7)",
+    "src/renderer/src/styles/globals.css (6)"
+  ],
+  "summary": "13 个在途任务中仅 gh-103 (unify-chart-colors) 处于 implement, 其余 12 个全部 verify; gh-88 (docs/assets) 与 gh-93 (harness 脚本) 不触碰 src/packages, 不产生热点。最高风险集中在 gh-103 的 5 个文件 (chart-colors.ts / globals.css / overview.tsx / usage.tsx / token-usage-display.tsx) — 其任务 6 全局门禁+亮暗双套截图收口未完成, 这些文件随时会被再次修改, 且其中 3 个 (globals.css / overview / usage) 与 gh-105 HeroUI 迁移的足迹直接重叠。多任务汇聚密度最高的避撞点: top-navigation.tsx (gh-87/90/96/105 四任务, 16 commits)、i18n locales en/zh.json (gh-94/98/104 三任务, 各 23 commits 居 churn 榜首, 重构期改 key 结构前必须先确认无人并行写入)、instructions.tsx (四任务)、session-detail.tsx / hooks-lifecycle-view.tsx / memory-view.tsx / handlers.ts (各三任务)。两个跨任务矛盾需注意: 一是 gh-98 任务 8 verify 断言保留 Radix NavigationMenu 而 gh-105 P4.2 已将其改为原生 nav, category-jump-nav.tsx 上两任务方向相反; 二是 gh-94 (删 agent-teams) 的残留扫描模式 (teams: / agent-teams) 已被后续归档的 GH-114 teams 运行时页重新引入的代码打破, gh-94 若重跑残留检查会误报, 涉及 App.tsx / nav-config.ts / parsers.ts / preload。gh-105 虽为 verify 但 PLAN 中 P5.2/P6 大部分/P7/P8 未勾 — 已声明转 follow-up issue, 不会在本任务内推进, 其 medium 风险集中在已完成项 (ui/ 目录、theme-provider、settings-dialog、settings.tsx 的 P6.8 仍标进行中) 的 verify 回退。packages/ (berth-scan-engine) 不在任何在途任务计划与近期 churn 中, 重构可放心触碰。"
+}

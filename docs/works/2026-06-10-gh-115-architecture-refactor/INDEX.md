@@ -2,7 +2,7 @@
 task: 2026-06-10-gh-115-architecture-refactor
 task_id: GH-115
 type: maintenance
-phase: explore
+phase: design
 created: 2026-06-10
 priority: P1
 target_date: 
@@ -13,15 +13,15 @@ source:
   refs: []
 debt:
   estimate:
-    incurred: 2
-    repaid: 8
-    net: -6
+    incurred: 3
+    repaid: 12
+    net: -9
     scope: global
     risk: high
     areas:
       - architecture
-    confidence: low
-    rationale: "0.0-new 初始估算: 全局架构重构, 目标偿还 architecture area debt (当前 27); 重构本身有引入回归的 churn 风险, 计 incurred 2。explore/design 后校准。"
+    confidence: medium
+    rationale: "explore 校准: ULTRACODE 分析实测 34 项问题 (high 10) / 6 主题 / 20 项已验证孤儿; 预计偿还引擎域/IPC 契约/渲染层复用/孤儿四条主线 (architecture area debt 27 的主要部分); 批次多且触及契约/打包配置, incurred 上调至 3。"
   final:
     incurred:
     repaid:
@@ -31,7 +31,12 @@ debt:
     areas: []
     confidence:
     rationale:
-  revisions: []
+  revisions:
+    - phase: explore
+      date: 2026-06-10
+      from: "incurred 2 / repaid 8 / net -6 / confidence low"
+      to: "incurred 3 / repaid 12 / net -9 / confidence medium"
+      reason: "ULTRACODE 全量分析落地: 106 findings → 34 问题 (high 10) + 20 已验证孤儿, 影响面与可偿还量均高于初估; 触及 IPC/打包契约使 churn 风险上调。"
 issue:
   number: 115
   repo: Caldis/berth
@@ -58,7 +63,7 @@ artifacts:
 
 ## 产物
 - [x] 00-PRD.md — 原始输入快照
-- [ ] 01-ANALYSIS.md — Explore 产物
+- [x] 01-ANALYSIS.md — Explore 产物 (34 问题 / 6 主题 / 20 孤儿 / 11 风险, 证据见 assets/)
 - [ ] 02-SPEC.md — Design 产物
 - [ ] 03-PLAN.md — 活任务清单
 
