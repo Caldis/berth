@@ -20,5 +20,9 @@
 - 推送改 `BrowserWindow.getAllWindows()` 广播, 或抽接线函数供首建与 activate 复用; 修复后 mac 真机验证 activate 后增量推送可达。
 
 # 来源 · 关联
-- GH-115 架构全面分析 (2026-06-10) 旁支发现。关联 docs/works/2026-06-10-gh-115-architecture-refactor/。
-- 状态: OPEN。
+- GH-115 架构全面分析 (2026-06-10) 旁支发现。关联 docs/works/_archive/2026-06-10-gh-115-architecture-refactor/。
+
+# 终态 (2026-06-10, RESOLVED)
+- 修复: `src/main/index.ts` 两个推送监听器 (`assets:changed` / `assets:progress`) 由闭包单播首窗口改为 `BrowserWindow.getAllWindows()` 广播 (含 isDestroyed 守卫), activate 重建的新窗口天然可达, 无需重绑。
+- 验证: typecheck/lint 绿; `pnpm build` + `tests/e2e/incremental-watch.e2e.ts` 通过 (单窗口推送链路无回归)。macOS Dock 重建多窗口场景为平台特有, Windows 无法真机复现, 广播语义静态自证 (getAllWindows 含新建窗口)。
+- 关联 commit: 见本文件移入 resolved 的同一提交。

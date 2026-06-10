@@ -152,7 +152,7 @@ if (!gotTheLock) {
     })
     const watcher = getWatcher()
 
-    const mainWindow = createWindow({ openDevTools })
+    createWindow({ openDevTools })
     // GH-113 I1: a file change re-derives just that file's assets and folds them
     // into the live snapshot incrementally — no full rescan (applyWatchEvent). The
     // primary update reaches the renderer via the progress channel (the partial
@@ -164,16 +164,22 @@ if (!gotTheLock) {
       // chokidar 'error' 此前无监听者: 直冲 uncaughtException 且 live 更新静默失效 (GH-115 T5)
       getMainLog().log('watcher', err)
     })
+    // Push channels broadcast to every live window: a closure over the first
+    // window goes stale after macOS dock re-activate recreates it (the new
+    // window would silently miss incremental updates).
     watcher.setListener((event) => {
       applyWatchEvent(event, getAssetRuntime())
-      if (!mainWindow.isDestroyed()) mainWindow.webContents.send('assets:changed', event)
+      for (const win of BrowserWindow.getAllWindows()) {
+        if (!win.isDestroyed()) win.webContents.send('assets:changed', event)
+      }
     })
     watcher.start(projectDir)
 
     // Stream live scan status + already-scanned assets to the renderer (P4.6).
     getAssetRuntime().setProgressListener((payload) => {
-      if (mainWindow.isDestroyed()) return
-      mainWindow.webContents.send('assets:progress', payload)
+      for (const win of BrowserWindow.getAllWindows()) {
+        if (!win.isDestroyed()) win.webContents.send('assets:progress', payload)
+      }
     })
 
     app.on('activate', () => {
