@@ -26,3 +26,9 @@
 - 调整资产模型: 如果继续展示 Agent Teams, 将其从 `instruction` 静态资产迁到 runtime/state 类别, 并按官方 `config.json` / task list 结构读取。
 - 调整文案: 明确 Agent Teams 是 Claude Code 实验性运行时功能, 不建议手写 team config。
 - 调整测试: 增加 Codex 视角下不显示不适用入口的覆盖, 并覆盖 Claude Code runtime team state 的展示口径。
+
+# 终态 (2026-06-10)
+- **GH-94** (docs/works/_archive/2026-06-04-gh-94-remove-agent-teams/): 移除错误的静态 instruction 资产建模 — scanner / AssetType / 导航入口 / 文案 / 测试全清。
+- **GH-114** (docs/works/_archive/2026-06-10-gh-114-agent-teams-runtime-view/): 用户委托 UX 决策后落地运行时口径 — `src/main/agent-teams/` 只读 reader (config.json + inboxes + tasks, memory/ 同型按需 IPC 域, 不回灌 asset model) + `/teams` 协作记录视图 (work 区, 实验性/勿手写标注, 近期活跃≤5min 弱信号, lead session 跳转) + `/instructions/agent-teams` redirect 改指 /teams。解决方案四条全部落地: 信息架构 (work 区运行时入口) / 资产模型 (runtime 记录不进 asset) / 文案 (experimental + runtime-generated + Codex 不适用) / 测试 (27 例 + 真机截图)。
+- "Codex 视角条件显示入口"受 agentView 切换器空挂限制, 以页面级标注落实; 导航级隐藏挂 2026-06-10-IMPROVEMENT-agent-view-store-vestige.md。
+- 状态: RESOLVED (2026-06-10, GH-94 + GH-114; 提交 97de4aa · e25ffe5 · 61ad473 · 123a28e)。
