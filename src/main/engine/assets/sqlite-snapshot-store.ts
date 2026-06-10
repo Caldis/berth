@@ -43,6 +43,9 @@ export type OpenSqliteDatabase = (file: string) => SqliteDatabase
 
 const SCHEMA_VERSION = 1
 const FILE_NAME = 'berth-index.db'
+// Pre-GH-113 JSON backend file: the reader was removed (GH-115 T13), so the
+// leftover can never be consumed again — clean it up once SQLite is live.
+const LEGACY_JSON_FILE = 'berth-snapshot.json'
 const ENVELOPE_KEY = 'envelope'
 
 export function createSqliteSnapshotStore(dir: string, openDatabase: OpenSqliteDatabase): SnapshotStore {
@@ -56,6 +59,13 @@ export function createSqliteSnapshotStore(dir: string, openDatabase: OpenSqliteD
       const opened = openDatabase(file)
       ensureSchema(opened)
       db = opened
+      try {
+        // Isolated: a cleanup failure must not be mistaken for an open failure
+        // (the outer catch would permanently disable persistence).
+        fs.rmSync(path.join(dir, LEGACY_JSON_FILE), { force: true })
+      } catch (err) {
+        getMainLog().log('sqlite-snapshot-store', err)
+      }
     } catch (err) {
       getMainLog().log('sqlite-snapshot-store', err)
       db = null // give up permanently for this store; persistence is best-effort

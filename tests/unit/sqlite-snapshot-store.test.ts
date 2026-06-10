@@ -120,6 +120,15 @@ describe('createSqliteSnapshotStore', () => {
     expect(createSqliteSnapshotStore(dir, openFakeDatabase).load()).toBeNull()
   })
 
+  it('cleans up the legacy pre-GH-113 JSON snapshot once SQLite opens', () => {
+    const legacy = path.join(dir, 'berth-snapshot.json')
+    fs.writeFileSync(legacy, '{"assets":[]}')
+    const store = createSqliteSnapshotStore(dir, openFakeDatabase)
+    expect(fs.existsSync(legacy)).toBe(true) // open is lazy — untouched until first use
+    store.load()
+    expect(fs.existsSync(legacy)).toBe(false) // removed after a successful open
+  })
+
   it('round-trips a snapshot, preserves order + envelope, and strips heavy raw bodies', () => {
     const store = createSqliteSnapshotStore(dir, openFakeDatabase)
     store.save(snapshot([asset('a', { raw: 'A HUGE RAW BODY' }), asset('b')]))

@@ -12,5 +12,9 @@
 - 权衡: berth 扫描秒级, 退化轻微可逆, 故降级为可选改进, 未在 I3 接线本轮做。
 
 # 来源 / 关联
-- GH-113 SQLite I3 接线 (提交 85e24875)。关联 `docs/works/2026-06-07-gh-113-scope-refactor-convergence/` (03-PLAN T2)。
-- 状态: OPEN。
+- GH-113 SQLite I3 接线 (提交 85e24875)。关联 `docs/works/_archive/2026-06-07-gh-113-scope-refactor-convergence/` (03-PLAN T2)。
+
+# 终态 (2026-06-10, RESOLVED — 按建议分支 (b) 清理落地)
+- 迁移分支 (a) 已失效不选: JSON 读取器在 GH-115 T13 删除, 且 I3 上线 3 天后存量用户 SQLite 早已填充 — 一次性退化已消化, 迁移价值归零。
+- 落地分支 (b): `createSqliteSnapshotStore` 在首次成功打开 DB 后 best-effort 删除 userData 残留 `berth-snapshot.json` (独立 try 隔离, 清理失败不会误判为 open 失败禁用持久化)。
+- 验证: tests/unit/sqlite-snapshot-store.test.ts 新增懒打开+清理用例, 7/7 绿; typecheck/lint 绿。
