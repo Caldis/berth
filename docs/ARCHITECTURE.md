@@ -26,7 +26,8 @@
   - `codex/index.ts` / `codex/parsers.ts` — Codex config、hooks、agents、skills、rollout session 解析
 - `src/main/engine/` — 资产引擎:
   - `agent-capabilities.ts` — engine 消费 per-agent 知识的单一漏斗 (GH-115): 聚合各 adapter 的 `sources.ts` 项目级扫描源声明; shallow-conventions / derive-asset / watcher 由其派生表, 不再各自维护 mirror。接入新 agent: 建 `adapters/<agent>/sources.ts` + 此处登记一行
-  - `session-detail.ts` — session/模型推断域逻辑 (GH-115 自 ipc/handlers 迁入): `buildSessionDetail` 编排 + `toSessionSummary` 单源 + `KNOWN_MODEL_METADATA` 模型知识库 (新模型补条目)
+  - `session-detail.ts` — session/模型推断域逻辑 (GH-115 自 ipc/handlers 迁入): `buildSessionDetail` 编排 + `toSessionSummary` 单源 + `KNOWN_MODEL_METADATA` 模型知识库 (新模型补条目); detail 解析按文件指纹缓存 (GH-116)
+  - `session-replay.ts` — 会话重放编排 (GH-116): `buildSessionReplay` (per-agent `adapters/*/session-replay.ts` 解析 + AssetFileCache 指纹缓存 + 20k 事件 cap) + `readSessionReplayEventPayload` (事件 id→JSONL 行按需反查, 正文不全量过 IPC)
   - `session-activity.ts` — session 活动指标纯函数
   - `assets/runtime.ts` — 中心资产运行时, 维护 `AssetSnapshot`、`AssetRuntimeStatus`、in-flight refresh 与 selector cache; IPC 派生数据经此读取
   - `assets/worker-host.ts` / `assets/worker.ts` — main process 的 worker_threads 边界; 大文件枚举、JSONL parse 与 adapter `scanAll()` 在 worker 中执行
@@ -108,7 +109,7 @@
 | 例外 | 内容 | 收口 issue |
 |---|---|---|
 | engine→adapters 直连 (conventions) | shallow-conventions 与 derive-asset 的 conventions 解析 (有意的表示模型分叉: shallow 单资产+readByAgentIds vs derive 双 agent 双资产) | engine-shared-core-package |
-| engine→adapters 直连 (session 解析) | engine/session-detail → 两家 session parser (capability map 的 parseSessionDetail 维度待契约化) | engine-shared-core-package |
+| engine→adapters 直连 (session 解析) | engine/session-detail → 两家 session parser; engine/session-replay → 两家 session-replay parser (GH-116, 同族; capability map 的 parseSessionDetail/Replay 维度待契约化) | engine-shared-core-package |
 | engine→adapters 直连 (health/watcher) | health → parseCodexToml; watcher → resolveClaudeManagedDir | health-restructure / engine 包切线 |
 | adapter scanAll 散落调用 | claude scanner 未接 sources 单表 (settings.local.json 2/5-parser 分叉如实保留) | engine-shared-core-package |
 | hooks-manager 写能力 | engine 唯一合法写者 (用户 hook 开关), 与包 read-only 承诺冲突 | engine 成包时留宿主 |

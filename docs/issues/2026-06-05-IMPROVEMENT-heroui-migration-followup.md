@@ -6,6 +6,7 @@
 - 密集页 section 卡片仍为手搓 `rounded-* border bg-card` 面板, 未统一到 HeroUI Card/CardHeader/CardBody: `pages/overview.tsx`、`pages/usage.tsx`、`pages/capabilities.tsx`、`pages/session-detail.tsx`、`pages/settings.tsx`。
 - 原生控件未替换: `components/shared/filter-bar.tsx` 的 ScopeSelect `<select>`; `components/capabilities/hooks-lifecycle-view.tsx` 的 HookActions `<details>` 菜单 → 应迁 HeroUI Select / Dropdown。
 - 复杂浮层未收敛: `components/layout/search-dialog.tsx` (命令面板键盘 nav) 与 `components/shared/file-viewer-drawer.tsx` (drag-resize) 仍为手搓 focus-trap → 可迁 HeroUI Modal / Drawer (保留键盘逻辑与拖拽)。
+- 手写 hover-popover 未收敛 (GH-116 增补 2026-06-11): `pages/session-detail.tsx` 的 ModelBadge 模型信息卡与 SignalMetric explanation 提示仍为 group-hover CSS 浮层 (无 focus 管理/碰撞翻转) → 迁 HeroUI Tooltip (富内容) / Popover; 原 ToolTimeline 的 ToolTipButton 已随 GH-116 重放重构删除。
 - 重复折叠未统一: local-sources-section / agent-capability-plugins-section / session-detail CollapsibleSection / memory NoteCard 各自手搓 chevron 折叠 → 统一 HeroUI Accordion。
 - 本地 Badge / 内联 pill 仍散落 (agent-capability-plugins-section 的本地 Badge、project-scope-switcher 状态 pill、session-detail tags 等) → 统一到 `ui/Chip`。
 - 微排版残留: 多页仍有 `text-[10px]`/`text-[11px]` → 收敛到 ≥text-xs。

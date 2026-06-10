@@ -38,8 +38,8 @@
   - 内容: components/sessions/session-filter-bar.tsx (agent Tabs+model Select 多选+排序 Select+分组 Tabs(项目/时间/平铺)+结果计数) + session-row.tsx 两行制; lib/session-list-filters.ts (过滤/排序/日期分桶 today/yesterday/thisWeek/thisMonth/earlier); pages/sessions.tsx 接线 (none 模式隐藏 jump nav); i18n sessions.filters.*/dateBuckets.* (en+zh)
   - tests: tests/renderer/session-list-filters.test.ts (新, 注入 now); tests/renderer/sessions-pages.test.tsx 更新 (筛选条交互/行两行渲染/三分组模式/筛选无结果态/计数)
   - verify: 目标测试绿; 界面验收项: 筛选组合即时生效+计数、行信息密度 (字段全保留 AC7)、无结果态区分空库、响应式列隐藏
-- [ ] T9 文档收尾 + 旁支 issues
-  - 内容: docs/ARCHITECTURE.md (engine 模块行补 session-replay; 例外行补 replay 解析); docs/issues 新增: ①重放/详情解析 worker 下沉+分块流式 (IMPROVEMENT) ②详情页手写 hover-popover 迁 HeroUI Tooltip (IMPROVEMENT)
+- [x] T9 文档收尾 + 旁支 issues
+  - 内容: docs/ARCHITECTURE.md (engine 模块行补 session-replay; 例外行补 replay 解析)。偏差: 两个旁支点均已有归属 issue, 按"有则合并"增补而非新建 — ①worker 下沉/分块流式/缓存内存 → `2026-06-07-IMPROVEMENT-session-streaming-parse.md` GH-116 增补节; ②hover-popover → `2026-06-05-IMPROVEMENT-heroui-migration-followup.md` 增补行
   - tests: not needed - 纯文档; pnpm harness:check 过闸门
   - verify: harness:check 绿
 - [ ] T10 verify 阶段 (harness-4.0)
