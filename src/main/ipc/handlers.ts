@@ -16,6 +16,7 @@ import type {
   ImportChainNode,
   SessionListResult,
   SessionDetailResult,
+  AgentTeamListResult,
   SessionModelInfo,
   MCPMergeInfo,
   SessionArtifacts,
@@ -40,6 +41,7 @@ import { parseMcpServers } from '../adapters/claude-code/parsers'
 import { parseClaudeSessionDetail } from '../adapters/claude-code/session-detail'
 import { parseCodexSessionDetail } from '../adapters/codex/parsers'
 import { listMemory, readMemory } from '../memory'
+import { listAgentTeams, markLeadSessionAvailability } from '../agent-teams'
 import { resolveModelPricing } from '../engine/pricing/catalog'
 import { listAgentCapabilityPlugins } from '../agent-plugins/registry'
 import { activateProjectScope } from '../project-scope-runtime'
@@ -205,6 +207,13 @@ export function registerAssetHandlers(): void {
       return getAssetRuntime().getUsageSummary(opts)
     }
   )
+
+  ipcMain.handle('teams:list', async (): Promise<AgentTeamListResult> => {
+    const runtime = getAssetRuntime()
+    await runtime.ensureReady({ reason: 'manual' })
+    const teams = markLeadSessionAvailability(listAgentTeams(), (assetId) => runtime.getAsset(assetId))
+    return { teams }
+  })
 
   ipcMain.handle('memory:list', () => listMemory())
 

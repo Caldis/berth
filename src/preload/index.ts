@@ -65,6 +65,9 @@ const api = {
     list: () => ipcRenderer.invoke('memory:list'),
     get: (id: string) => ipcRenderer.invoke('memory:get', id)
   },
+  teams: {
+    list: () => ipcRenderer.invoke('teams:list')
+  },
   hooks: {
     status: (agentId: string) => ipcRenderer.invoke('hooks:status', agentId),
     setEnabled: (request: { agentId: string; scope: string; enabled: boolean }) =>

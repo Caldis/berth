@@ -6,7 +6,7 @@
 - [x] T1 共享契约 + reader: `src/shared/types/ipc.ts` 新增 AgentTeam* 类型与 `teams:list` 契约; 新建 `src/main/agent-teams/index.ts` (listAgentTeams + leadSessionAvailable 富化函数 markLeadSessionAvailability)
   - tests: tests/unit/agent-teams-reader.test.ts — 字段映射 / 跳过缺 config 与坏 JSON / teams 根缺失→[] / tasks 容错 / inbox 统计 / lastActivityAt=max(mtime) / 降序 null 殿后 / backend 归一 / 富化函数
   - verify: pnpm vitest run tests/unit/agent-teams-reader.test.ts + pnpm typecheck (非 UI 项, 界面验收不适用)
-- [ ] T2 IPC + preload: handlers.ts 注册 `teams:list` (reader + runtime.getAsset 富化); preload index.ts + index.d.ts 暴露 window.api.teams.list
+- [x] T2 IPC + preload: handlers.ts 注册 `teams:list` (reader + runtime.getAsset 富化); preload index.ts + index.d.ts 暴露 window.api.teams.list
   - tests: 契约由 typecheck 把关 (SPEC 测试策略表已声明理由: handler 为一行注册, 富化函数已在 T1 单测)
   - verify: pnpm typecheck + pnpm lint (非 UI 项, 界面验收不适用)
 - [ ] T3 renderer 数据层 + 页面四态: use-agent-teams.ts hook (模块缓存 + mount 刷新); pages/teams.tsx 骨架 (PageChrome title/subtitle/guide + loading/empty/error/数据四态); feature-guidance.ts teamsGuide; i18n en/zh 键

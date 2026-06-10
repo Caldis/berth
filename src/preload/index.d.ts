@@ -1,6 +1,7 @@
 import { ElectronAPI } from '@electron-toolkit/preload'
 import type {
   AgentScanSourceGroup,
+  AgentTeamListResult,
   AssetRuntimeStatus,
   AssetScanPartial,
   AssetSnapshot,
@@ -79,6 +80,9 @@ interface BerthAPI {
   memory: {
     list: () => Promise<MemoryListResult>
     get: (id: string) => Promise<MemoryNote | null>
+  }
+  teams: {
+    list: () => Promise<AgentTeamListResult>
   }
   hooks: {
     status: (agentId: HooksAgentId) => Promise<HooksEnablementStatus>
