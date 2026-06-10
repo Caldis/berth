@@ -1825,6 +1825,7 @@
     "loading": "加载中…",
     "error": "出了点问题",
     "retry": "重试",
+    "backToOverview": "返回总览",
     "empty": "暂无内容",
     "unknown": "未知",
     "back": "返回",

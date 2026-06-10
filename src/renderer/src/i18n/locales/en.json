@@ -1835,6 +1835,7 @@
     "loading": "Loading...",
     "error": "Something went wrong",
     "retry": "Retry",
+    "backToOverview": "Back to overview",
     "empty": "Nothing here yet",
     "unknown": "Unknown",
     "back": "Back",

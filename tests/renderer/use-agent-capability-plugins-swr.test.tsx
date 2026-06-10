@@ -65,8 +65,6 @@ describe('useAgentCapabilityPlugins', () => {
       assetRuntimeStatus: IDLE_ASSET_RUNTIME_STATUS,
       assetSnapshotId: null,
       assetErrors: [],
-      lastAssetRefreshAt: null,
-      scanning: false
     })
   })
 

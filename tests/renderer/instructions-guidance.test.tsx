@@ -106,7 +106,6 @@ describe('Instructions guidance surfaces', () => {
       assets: [],
       agentView: 'all',
       scopeSelection: { mode: 'global' },
-      scanning: false,
       assetRuntimeStatus: { ...useAppStore.getState().assetRuntimeStatus, state: 'ready' }
     })
     window.api.memory = {
@@ -122,7 +121,6 @@ describe('Instructions guidance surfaces', () => {
       assets: [
         { id: 'h1', agentId: 'codex', category: 'capability', type: 'hook', scope: 'user', name: 'Stop', path: '/x/config.toml', meta: {} }
       ],
-      scanning: true,
       assetRuntimeStatus: { ...useAppStore.getState().assetRuntimeStatus, state: 'scanning' }
     })
     render(

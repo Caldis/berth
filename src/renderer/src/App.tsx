@@ -42,6 +42,8 @@ export default function App(): React.ReactElement {
     <ThemeProvider defaultTheme="system">
       <HeroUIProvider navigate={navigate} locale={i18n.language} reducedMotion="user">
         <AppLayout>
+          {/* GH-115 T4: 全路由默认错误兜底 — 任意页面渲染异常不再整窗白屏; /usage 保留专属文案的内层 boundary */}
+          <PageErrorBoundary>
           <Routes>
             <Route path="/" element={<Overview />} />
             <Route path="/sessions" element={<Sessions />} />
@@ -75,6 +77,7 @@ export default function App(): React.ReactElement {
               }
             />
           </Routes>
+          </PageErrorBoundary>
         </AppLayout>
       </HeroUIProvider>
     </ThemeProvider>

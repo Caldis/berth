@@ -6,7 +6,7 @@ import {
   type AppScopeSelection,
   type ProjectScopeCandidate
 } from '@shared/scope'
-import type { AgentView, Asset, AssetStats, SessionSummary, UsageSummary } from '@shared/types/asset'
+import type { AgentView, Asset, AssetStats } from '@shared/types/asset'
 import type { AssetRuntimeStatus, AssetScanPartial, AssetSnapshot, ScanError } from '@shared/types/ipc'
 
 export const SIDEBAR_COLLAPSED_WIDTH = 64
@@ -52,31 +52,17 @@ interface AppState {
   setScopeSelection: (selection: Partial<AppScopeSelection>) => void
   setProjectCandidates: (candidates: ProjectScopeCandidate[]) => void
 
+  // GH-115 T4: 资产快照唯一写落点是 setAssetSnapshot / applyAssetProgress (foldKeepingShallow
+  // 不变量); 裸替换 action (setAssets/setStats) 已删除, 使不变量在类型层不可绕过。
   assets: Asset[]
-  setAssets: (assets: Asset[]) => void
-
   stats: AssetStats
-  setStats: (stats: AssetStats) => void
 
   assetRuntimeStatus: AssetRuntimeStatus
   assetSnapshotId: string | null
   assetErrors: ScanError[]
-  lastAssetRefreshAt: string | null
   setAssetRuntimeStatus: (status: AssetRuntimeStatus) => void
   setAssetSnapshot: (snapshot: AssetSnapshot) => void
   applyAssetProgress: (payload: { status: AssetRuntimeStatus; partial?: AssetScanPartial }) => void
-
-  recentSessions: SessionSummary[]
-  setRecentSessions: (sessions: SessionSummary[]) => void
-
-  usageSummary: UsageSummary | null
-  setUsageSummary: (usage: UsageSummary) => void
-
-  scanning: boolean
-  setScanning: (scanning: boolean) => void
-
-  agentDetected: boolean
-  setAgentDetected: (detected: boolean) => void
 
   inspectorOpen: boolean
   inspectorPath: string | null
@@ -117,20 +103,12 @@ export const useAppStore = create<AppState>((set) => ({
   setProjectCandidates: (projectCandidates) => set({ projectCandidates: mergeProjectScopeCandidates(projectCandidates) }),
 
   assets: [],
-  setAssets: (assets) => set({ assets }),
-
   stats: EMPTY_ASSET_STATS,
-  setStats: (stats) => set({ stats }),
 
   assetRuntimeStatus: IDLE_ASSET_RUNTIME_STATUS,
   assetSnapshotId: null,
   assetErrors: [],
-  lastAssetRefreshAt: null,
-  setAssetRuntimeStatus: (assetRuntimeStatus) => set((state) => ({
-    assetRuntimeStatus,
-    scanning: assetRuntimeStatus.state === 'scanning',
-    lastAssetRefreshAt: assetRuntimeStatus.lastCompletedAt ?? state.lastAssetRefreshAt
-  })),
+  setAssetRuntimeStatus: (assetRuntimeStatus) => set({ assetRuntimeStatus }),
   setAssetSnapshot: (snapshot) => set((state) => ({
     // Keep shallow (other-project) assets if this snapshot was read mid-scan and
     // carries only the deep set — e.g. syncSnapshot via assets:changed → onChanged
@@ -140,9 +118,7 @@ export const useAppStore = create<AppState>((set) => ({
     projectCandidates: mergeProjectScopeCandidates(snapshot.projectCandidates),
     assetRuntimeStatus: snapshot.status,
     assetSnapshotId: snapshot.id,
-    assetErrors: snapshot.errors,
-    scanning: snapshot.status.state === 'scanning',
-    lastAssetRefreshAt: snapshot.status.lastCompletedAt ?? state.lastAssetRefreshAt
+    assetErrors: snapshot.errors
   })),
   // Live scan tick (P4.6): update status and, when a partial is present, fold the
   // cumulative assets/stats into the store so pages render already-scanned items.
@@ -150,27 +126,11 @@ export const useAppStore = create<AppState>((set) => ({
   // so id-keyed consumers (plugin list) don't re-fetch on every partial.
   applyAssetProgress: (payload) =>
     set((state) => {
-      const base = {
-        assetRuntimeStatus: payload.status,
-        scanning: payload.status.state === 'scanning',
-        lastAssetRefreshAt: payload.status.lastCompletedAt ?? state.lastAssetRefreshAt
-      }
+      const base = { assetRuntimeStatus: payload.status }
       if (!payload.partial) return base
       const assets = foldKeepingShallow(payload.partial.assets, state.assets)
       return { ...base, assets, stats: payload.partial.stats }
     }),
-
-  recentSessions: [],
-  setRecentSessions: (recentSessions) => set({ recentSessions }),
-
-  usageSummary: null,
-  setUsageSummary: (usageSummary) => set({ usageSummary }),
-
-  scanning: false,
-  setScanning: (scanning) => set({ scanning }),
-
-  agentDetected: false,
-  setAgentDetected: (agentDetected) => set({ agentDetected }),
 
   inspectorOpen: false,
   inspectorPath: null,

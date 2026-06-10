@@ -14,9 +14,7 @@ describe('useAppStore scope state', () => {
       stats: EMPTY_ASSET_STATS,
       assetRuntimeStatus: IDLE_ASSET_RUNTIME_STATUS,
       assetSnapshotId: null,
-      assetErrors: [],
-      lastAssetRefreshAt: null,
-      scanning: false
+      assetErrors: []
     })
   })
 
@@ -56,11 +54,9 @@ describe('useAppStore scope state', () => {
     })
     expect(state.assetSnapshotId).toBeNull()
     expect(state.assetErrors).toEqual([])
-    expect(state.lastAssetRefreshAt).toBeNull()
-    expect(state.scanning).toBe(false)
   })
 
-  it('stores asset runtime status and mirrors active scanning for legacy callers', () => {
+  it('stores asset runtime status; scanning is derived from status.state at read sites (GH-115 T4)', () => {
     useAppStore.getState().setAssetRuntimeStatus({
       state: 'scanning',
       reason: 'startup',
@@ -83,7 +79,7 @@ describe('useAppStore scope state', () => {
         total: 10
       }
     })
-    expect(useAppStore.getState().scanning).toBe(true)
+    expect(useAppStore.getState().assetRuntimeStatus.state === 'scanning').toBe(true)
 
     useAppStore.getState().setAssetRuntimeStatus({
       state: 'ready',
@@ -91,8 +87,7 @@ describe('useAppStore scope state', () => {
       lastCompletedAt: '2026-06-03T00:00:01.000Z'
     })
 
-    expect(useAppStore.getState().scanning).toBe(false)
-    expect(useAppStore.getState().lastAssetRefreshAt).toBe('2026-06-03T00:00:01.000Z')
+    expect(useAppStore.getState().assetRuntimeStatus.state === 'scanning').toBe(false)
   })
 
   it('stores asset snapshot metadata with assets, stats, errors, and candidates', () => {
@@ -134,7 +129,6 @@ describe('useAppStore scope state', () => {
     expect(useAppStore.getState().stats.sessions).toBe(1)
     expect(useAppStore.getState().assetErrors).toEqual(snapshot.errors)
     expect(useAppStore.getState().projectCandidates).toHaveLength(1)
-    expect(useAppStore.getState().lastAssetRefreshAt).toBe('2026-06-03T00:00:02.000Z')
   })
 
   it('folds a partial scan tick into assets/stats without bumping the snapshot id (P4.6)', () => {
@@ -163,7 +157,7 @@ describe('useAppStore scope state', () => {
       }
     })
 
-    expect(useAppStore.getState().scanning).toBe(true)
+    expect(useAppStore.getState().assetRuntimeStatus.state).toBe('scanning')
     expect(useAppStore.getState().assets.map((a) => a.id)).toEqual(['skill-live'])
     expect(useAppStore.getState().stats.skills).toBe(1)
     // Snapshot id stays frozen during the scan so plugin consumers don't re-fetch.

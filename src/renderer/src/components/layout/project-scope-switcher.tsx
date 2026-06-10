@@ -42,8 +42,6 @@ export function ProjectScopeSwitcher({ collapsed }: ProjectScopeSwitcherProps): 
   const setScopeSelection = useAppStore((s) => s.setScopeSelection)
   const candidates = useAppStore((s) => s.projectCandidates)
   const setProjectCandidates = useAppStore((s) => s.setProjectCandidates)
-  const setAssets = useAppStore((s) => s.setAssets)
-  const setStats = useAppStore((s) => s.setStats)
   const setAssetSnapshot = useAppStore((s) => s.setAssetSnapshot)
   const currentProject = useMemo(
     () => currentProjectCandidate(scopeSelection, candidates),
@@ -119,8 +117,8 @@ export function ProjectScopeSwitcher({ collapsed }: ProjectScopeSwitcherProps): 
     setError(null)
     try {
       const result = await window.api.projectScope.activate({ projectPath: selection.projectPath })
-      setAssets(result.scanResult.assets ?? [])
-      setStats(result.scanResult.stats)
+      // GH-115 T4: 资产只走 setAssetSnapshot 单写落点 (fold 不变量), 不再裸替换 —
+      // activate 的 scanResult 由随后的快照读取覆盖, 此处只更新候选列表。
       setProjectCandidates(result.candidates ?? [])
       if (window.api?.assets?.snapshot) {
         setAssetSnapshot(await window.api.assets.snapshot())

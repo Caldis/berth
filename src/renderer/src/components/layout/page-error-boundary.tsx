@@ -1,4 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { AlertTriangle } from 'lucide-react'
 
@@ -12,6 +13,8 @@ interface PageErrorBoundaryInnerProps extends PageErrorBoundaryProps {
   title: string
   body: string
   retryLabel: string
+  homeLabel: string
+  onGoHome: () => void
 }
 
 interface PageErrorBoundaryState {
@@ -36,6 +39,12 @@ class PageErrorBoundaryInner extends Component<
     this.setState({ error: null })
   }
 
+  // 桌面应用无浏览器刷新入口: 错误兜底必须提供脱困动作, 否则用户只能重启 (GH-115 T4)。
+  private goHome = (): void => {
+    this.setState({ error: null })
+    this.props.onGoHome()
+  }
+
   render(): ReactNode {
     if (!this.state.error) return this.props.children
 
@@ -47,13 +56,22 @@ class PageErrorBoundaryInner extends Component<
             <div>
               <h1 className="text-base font-semibold">{this.props.title}</h1>
               <p className="mt-1 text-sm text-muted-foreground">{this.props.body}</p>
-              <button
-                type="button"
-                onClick={this.retry}
-                className="mt-4 rounded-md border border-border bg-background px-3 py-1.5 text-sm font-medium hover:bg-muted"
-              >
-                {this.props.retryLabel}
-              </button>
+              <div className="mt-4 flex gap-2">
+                <button
+                  type="button"
+                  onClick={this.retry}
+                  className="rounded-md border border-border bg-background px-3 py-1.5 text-sm font-medium hover:bg-muted"
+                >
+                  {this.props.retryLabel}
+                </button>
+                <button
+                  type="button"
+                  onClick={this.goHome}
+                  className="rounded-md border border-border bg-background px-3 py-1.5 text-sm font-medium hover:bg-muted"
+                >
+                  {this.props.homeLabel}
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -68,12 +86,15 @@ export function PageErrorBoundary({
   bodyKey
 }: PageErrorBoundaryProps): React.ReactElement {
   const { t } = useTranslation()
+  const navigate = useNavigate()
 
   return (
     <PageErrorBoundaryInner
       title={titleKey ? t(titleKey) : t('common.error')}
       body={bodyKey ? t(bodyKey) : t('common.error')}
       retryLabel={t('common.retry')}
+      homeLabel={t('common.backToOverview')}
+      onGoHome={() => navigate('/')}
     >
       {children}
     </PageErrorBoundaryInner>

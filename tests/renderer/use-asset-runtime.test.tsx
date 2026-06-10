@@ -77,8 +77,6 @@ describe('useAssetRuntime', () => {
       assetRuntimeStatus: IDLE_ASSET_RUNTIME_STATUS,
       assetSnapshotId: null,
       assetErrors: [],
-      lastAssetRefreshAt: null,
-      scanning: false
     })
   })
 
@@ -139,6 +137,6 @@ describe('useAssetRuntime', () => {
       expect(useAppStore.getState().assets[0]?.name).toBe('runtime-skill')
     })
     // Partial stream keeps the store in the scanning state.
-    expect(useAppStore.getState().scanning).toBe(true)
+    expect(useAppStore.getState().assetRuntimeStatus.state).toBe('scanning')
   })
 })
