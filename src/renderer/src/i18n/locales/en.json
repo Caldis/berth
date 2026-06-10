@@ -1724,8 +1724,6 @@
     "automatic": "Automatic",
     "fileWatching": "File Watching",
     "fileWatchingDesc": "Detected source folders are watched automatically while Berth is running",
-    "advancedMode": "Advanced Mode",
-    "advancedModeDesc": "Show ephemeral, debug, and cache assets",
     "about": "About",
     "version": "Version",
     "reportIssue": "Report Issue"

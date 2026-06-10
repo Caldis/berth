@@ -46,38 +46,6 @@ function handleRadioKeyDown(
   radioButtons?.[nextIndex]?.focus()
 }
 
-function Toggle({
-  enabled,
-  onToggle,
-  ariaLabel
-}: {
-  enabled: boolean
-  onToggle: (v: boolean) => void
-  ariaLabel: string
-}): React.ReactElement {
-  return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={enabled}
-      aria-label={ariaLabel}
-      title={ariaLabel}
-      onClick={() => onToggle(!enabled)}
-      className={cn(
-        'relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full transition-colors',
-        enabled ? 'bg-primary' : 'bg-muted'
-      )}
-    >
-      <span
-        className={cn(
-          'pointer-events-none block h-4 w-4 rounded-full bg-background shadow-sm ring-1 ring-border transition-transform',
-          enabled ? 'translate-x-[18px]' : 'translate-x-[2px]'
-        )}
-      />
-    </button>
-  )
-}
-
 interface SettingsContentProps {
   showTitle?: boolean
   className?: string
@@ -89,7 +57,6 @@ export function SettingsContent({
 }: SettingsContentProps): React.ReactElement {
   const { t, i18n } = useTranslation()
   const { theme, setTheme, accent, setAccent } = useTheme()
-  const [advancedMode, setAdvancedMode] = useState(false)
   const {
     plugins: agentPlugins,
     manifests: agentPluginManifests,
@@ -104,14 +71,8 @@ export function SettingsContent({
   } | null>(null)
 
   useEffect(() => {
-    setAdvancedMode(localStorage.getItem('berth-advanced-mode') === 'true')
     window.api?.platform.info().then(setPlatformInfo).catch(() => {})
   }, [])
-
-  const handleAdvancedMode = (v: boolean): void => {
-    setAdvancedMode(v)
-    localStorage.setItem('berth-advanced-mode', String(v))
-  }
 
   const selectLanguage = (language: string): void => {
     void i18n.changeLanguage(language)
@@ -290,17 +251,6 @@ export function SettingsContent({
             <span className="rounded-md border border-border px-2 py-1 text-xs text-muted-foreground">
               {t('settings.automatic')}
             </span>
-          </div>
-          <div className="flex items-center justify-between border-t border-border p-4">
-            <div>
-              <p className="text-sm font-medium">{t('settings.advancedMode')}</p>
-              <p className="text-xs text-muted-foreground">{t('settings.advancedModeDesc')}</p>
-            </div>
-            <Toggle
-              enabled={advancedMode}
-              onToggle={handleAdvancedMode}
-              ariaLabel={t('settings.advancedMode')}
-            />
           </div>
         </div>
       </section>

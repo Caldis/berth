@@ -1714,8 +1714,6 @@
     "automatic": "自动",
     "fileWatching": "文件监听",
     "fileWatchingDesc": "Berth 运行时会自动监听已发现的来源目录",
-    "advancedMode": "高级模式",
-    "advancedModeDesc": "显示临时、调试和缓存资产",
     "about": "关于",
     "version": "版本",
     "reportIssue": "报告问题"

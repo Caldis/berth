@@ -53,23 +53,15 @@ describe('SettingsContent page chrome', () => {
     expect(screen.getByRole('button', { name: 'GitHub' })).toBeInTheDocument()
   })
 
-  it('exposes the advanced mode switch with an accessible name and state', async () => {
+  it('does not render the inert advanced mode switch (issue settings-advanced-mode-inert)', async () => {
     renderSettingsContent()
 
     await waitForSettingsAsyncSections()
 
-    const advancedModeSwitch = screen.getByRole('switch', { name: 'Advanced Mode' })
-
-    expect(advancedModeSwitch).toHaveAttribute('aria-checked', 'false')
-    expect(advancedModeSwitch).toHaveAttribute('title', 'Advanced Mode')
-
-    fireEvent.click(advancedModeSwitch)
-
-    expect(advancedModeSwitch).toHaveAttribute('aria-checked', 'true')
-    expect(localStorage.getItem('berth-advanced-mode')).toBe('true')
+    expect(screen.queryByRole('switch')).not.toBeInTheDocument()
   })
 
-  it('localizes the advanced mode switch name in Chinese', async () => {
+  it('localizes the plugin registry copy in Chinese', async () => {
     await i18n.changeLanguage('zh')
 
     renderSettingsContent()
@@ -77,8 +69,6 @@ describe('SettingsContent page chrome', () => {
     await screen.findByText('插件注册表当前不可用。')
     expect(screen.queryByText('未发现支持的本地来源。')).not.toBeInTheDocument()
     expect(window.api.assets.scanSources).not.toHaveBeenCalled()
-
-    expect(screen.getByRole('switch', { name: '高级模式' })).toBeInTheDocument()
   })
 
   it('exposes appearance choices as named radio groups', async () => {
