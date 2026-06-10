@@ -135,19 +135,15 @@ export function SessionDetail(): React.ReactElement {
           />
         </div>
       ) : (
+        // GH-116: HeroUI 原生 solid 分段式 (cursor 滑动动画), 每个 tab 带图标 (用户要求)。
         <Tabs
           aria-label={t('sessions.tabs.label', { defaultValue: 'Session detail sections' })}
           selectedKey={activeTab}
           onSelectionChange={(key) => setActiveTab(key as SessionDetailTab)}
-          variant="light"
+          variant="solid"
+          size="md"
           classNames={{
-            base: 'w-full',
-            tabList:
-              'grid w-full gap-2 rounded-xl border border-border bg-card/80 p-2 shadow-sm sm:grid-cols-3',
-            tab: 'group h-auto justify-start rounded-lg border border-transparent px-3 py-3 data-[selected=true]:border-border data-[selected=true]:bg-background data-[selected=true]:shadow-sm',
-            tabContent: 'w-full',
-            cursor: 'hidden',
-            panel: 'pt-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
+            panel: 'px-0 pt-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
           }}
         >
           <Tab key="overview" title={<SessionTabTitle item={sessionTabMeta(t, tabCounts).overview} />}>
@@ -231,29 +227,19 @@ function sessionTabMeta(
   }
 }
 
-// Rich tab-button content for the HeroUI Tab `title` slot. The enclosing Tab
-// carries `group` + `data-selected`, so active styling keys off
-// group-data-[selected=true] (replaces the former Radix data-[state=active]).
+// HeroUI Tab `title` slot 内容: 图标 + 标签 + 计数 (GH-116 用户要求每个 tab 带图标)。
+// 外层 Tab 自带 `group` + `data-selected`, 计数徽章随选中态着色; 描述降级为 title 提示。
 function SessionTabTitle({ item }: { item: SessionTabMetaItem }): React.ReactElement {
   const Icon = item.icon
   return (
-    <span className="flex min-w-0 items-center gap-3 text-left">
-      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground transition-colors group-data-[selected=true]:bg-primary/10 group-data-[selected=true]:text-primary">
-        <Icon className="h-4 w-4" />
-      </span>
-      <span className="min-w-0 flex-1">
-        <span className="flex min-w-0 items-center justify-between gap-2">
-          <span className="truncate text-sm font-semibold text-card-foreground">{item.label}</span>
-          {item.count != null && (
-            <span className="shrink-0 rounded-md bg-muted px-1.5 py-0.5 text-[11px] font-medium tabular-nums text-muted-foreground group-data-[selected=true]:bg-primary/10 group-data-[selected=true]:text-primary">
-              {formatNumber(item.count)}
-            </span>
-          )}
+    <span className="flex items-center gap-1.5" title={item.description}>
+      <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
+      <span className="font-medium">{item.label}</span>
+      {item.count != null && (
+        <span className="rounded-md bg-default-200/70 px-1.5 py-0.5 text-[11px] font-medium tabular-nums text-muted-foreground transition-colors group-data-[selected=true]:bg-primary/10 group-data-[selected=true]:text-primary">
+          {formatNumber(item.count)}
         </span>
-        <span className="mt-0.5 hidden truncate text-xs text-muted-foreground md:block">
-          {item.description}
-        </span>
-      </span>
+      )}
     </span>
   )
 }

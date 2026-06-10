@@ -720,6 +720,13 @@ describe('session pages', () => {
     expect(screen.getByRole('tab', { name: /Overview/ })).toHaveAttribute('aria-selected', 'true')
     expect(screen.getByRole('tab', { name: /Replay/ })).toBeInTheDocument()
     expect(screen.getByRole('tab', { name: /Artifacts/ })).toHaveTextContent('3')
+    // GH-116 T7: HeroUI 原生 solid 分段式 — 每个 tab 带图标, cursor 滑块未被隐藏
+    for (const tabName of [/Overview/, /Replay/, /Artifacts/]) {
+      expect(screen.getByRole('tab', { name: tabName }).querySelector('svg')).toBeTruthy()
+    }
+    const tabCursor = document.querySelector('[data-slot="cursor"]')
+    expect(tabCursor).toBeTruthy()
+    expect(tabCursor).not.toHaveClass('hidden')
     expect(screen.queryByText('start working on the fix')).not.toBeInTheDocument()
     expect(screen.queryByText('Verify UI')).not.toBeInTheDocument()
 
