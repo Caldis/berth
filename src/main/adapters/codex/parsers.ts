@@ -651,7 +651,7 @@ function readJsonLines(filePath: string): Record<string, unknown>[] {
   return records
 }
 
-function isCodexToolCall(itemType: string | undefined): boolean {
+export function isCodexToolCall(itemType: string | undefined): boolean {
   return (
     itemType === 'function_call' ||
     itemType === 'custom_tool_call' ||
@@ -660,7 +660,7 @@ function isCodexToolCall(itemType: string | undefined): boolean {
   )
 }
 
-function isCodexToolOutput(itemType: string | undefined): boolean {
+export function isCodexToolOutput(itemType: string | undefined): boolean {
   return (
     itemType === 'function_call_output' ||
     itemType === 'custom_tool_call_output' ||
@@ -702,7 +702,7 @@ function readNonNegativeFiniteNumber(
   return value
 }
 
-function readToolName(payload: Record<string, unknown>, itemType: string | undefined): string {
+export function readToolName(payload: Record<string, unknown>, itemType: string | undefined): string {
   return (
     firstString(payload, ['name', 'tool_name', 'toolName', 'callable_name', 'callableName']) ??
     itemType ??
@@ -710,7 +710,7 @@ function readToolName(payload: Record<string, unknown>, itemType: string | undef
   )
 }
 
-function readToolArguments(payload: Record<string, unknown>): Record<string, unknown> {
+export function readToolArguments(payload: Record<string, unknown>): Record<string, unknown> {
   for (const key of ['arguments', 'args', 'input']) {
     const value = payload[key]
     if (isRecord(value)) return value
