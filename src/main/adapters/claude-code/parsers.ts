@@ -639,52 +639,11 @@ function parseStatuslineSetting(
 // Plugins
 // ---------------------------------------------------------------------------
 
-export function parsePlugin(filePath: string): Asset {
-  const dirName = path.basename(filePath)
-  let meta: Record<string, unknown> = { directory: filePath }
-  const manifestPath = path.join(filePath, 'package.json')
-  if (fs.existsSync(manifestPath)) {
-    try {
-      const pkg = JSON.parse(fs.readFileSync(manifestPath, 'utf-8'))
-      meta = { ...meta, name: pkg.name, version: pkg.version, description: pkg.description }
-    } catch {
-      // ignore
-    }
-  }
-  return {
-    id: assetEntityId('plugin', 'user', filePath),
-    agentId: 'claude-code',
-    category: 'capability',
-    type: 'plugin',
-    scope: 'user',
-    name: (meta.name as string) ?? dirName,
-    path: filePath,
-    meta
-  }
-}
 
 // ---------------------------------------------------------------------------
 // Statusline scripts
 // ---------------------------------------------------------------------------
 
-export function parseStatusline(filePath: string, scope: AssetScope): Asset {
-  const raw = readRawFile(filePath)
-  return {
-    id: assetEntityId('statusline', scope, filePath, 'legacy'),
-    agentId: 'claude-code',
-    category: 'capability',
-    type: 'statusline',
-    scope,
-    name: path.basename(filePath),
-    path: filePath,
-    meta: {
-      provider: 'claude-code',
-      legacyFile: true,
-      source: filePath
-    },
-    raw
-  }
-}
 
 // ---------------------------------------------------------------------------
 // Sessions (metadata-only from JSONL)

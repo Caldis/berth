@@ -14,7 +14,6 @@ import {
   parseCodexSkill
 } from './parsers'
 import {
-  resolveCodexHomeDir as resolvePrimaryCodexHomeDir,
   resolveCodexHomeDirs
 } from '../../agent-homes'
 import { resolveProjectConfigRoots } from '../../project-config-roots'
@@ -268,12 +267,6 @@ export class CodexAdapter implements AgentAdapter {
   }
 }
 
-export function resolveCodexHomeDir(
-  homeDir = os.homedir(),
-  env: NodeJS.ProcessEnv = process.env
-): string {
-  return resolvePrimaryCodexHomeDir(homeDir, env)
-}
 
 function addRoot(
   roots: ScanRoot[],

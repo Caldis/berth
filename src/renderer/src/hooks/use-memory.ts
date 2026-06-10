@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
-import type { MemoryListResult, MemoryNote } from '@shared/types/memory'
+import type { MemoryListResult } from '@shared/types/memory'
 import { memoryListSignature } from '@/lib/result-signature'
 
 const empty: MemoryListResult = { notes: [], sources: [] }
@@ -124,25 +124,3 @@ export function useMemory(): {
   return { result, loading, refreshing, refresh }
 }
 
-export function useMemoryNote(id: string | null): {
-  note: MemoryNote | null
-  loading: boolean
-} {
-  const [note, setNote] = useState<MemoryNote | null>(null)
-  const [loading, setLoading] = useState(false)
-
-  useEffect(() => {
-    if (!id || !window.api?.memory?.get) {
-      setNote(null)
-      return
-    }
-    setLoading(true)
-    window.api.memory
-      .get(id)
-      .then((r) => setNote(r ?? null))
-      .catch(() => {})
-      .finally(() => setLoading(false))
-  }, [id])
-
-  return { note, loading }
-}

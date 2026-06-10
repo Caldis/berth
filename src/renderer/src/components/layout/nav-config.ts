@@ -166,9 +166,6 @@ export const navSections: NavSection[] = [
   }
 ]
 
-export function flattenNavItems(): NavItem[] {
-  return navSections.flatMap((section) => section.items)
-}
 
 export function navItemMatchesLocation(item: NavItem, pathname: string, search = ''): boolean {
   const current = `${pathname}${search}`

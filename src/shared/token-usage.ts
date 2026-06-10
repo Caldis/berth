@@ -121,9 +121,6 @@ export function addTokenUsage(
   })
 }
 
-export function tokenUsageTotal(value: unknown): number {
-  return normalizeTokenUsage(value).totalTokens
-}
 
 export function tokenUsageSegments(usage: TokenUsageBreakdown): TokenUsageSegment[] {
   const segments: Omit<TokenUsageSegment, 'percentage'>[] = [

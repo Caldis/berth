@@ -7,7 +7,7 @@ import {
   type ProjectScopeCandidate
 } from '@shared/scope'
 
-export { assetProjectPath, assetMatchesProjectPath }
+export { assetMatchesProjectPath }
 
 export function filterAssetsByProjectPath(assets: Asset[], projectPath: string | undefined): Asset[] {
   if (!projectPath) return assets

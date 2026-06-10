@@ -5,8 +5,7 @@ import {
   normalizeTokenUsage,
   TOKEN_BREAKDOWN_ALIAS_KEYS,
   tokenUsageCacheDetails,
-  tokenUsageSegments,
-  tokenUsageTotal
+  tokenUsageSegments
 } from '../../src/shared/token-usage'
 
 describe('token usage helpers', () => {
@@ -87,7 +86,6 @@ describe('token usage helpers', () => {
       totalTokens: 27,
       hasBreakdown: true
     })
-    expect(tokenUsageTotal(total)).toBe(27)
   })
 
   it('derives display segments from the token breakdown', () => {

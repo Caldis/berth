@@ -14,7 +14,6 @@ export const EXIT = {
   ATTENTION: 3
 } as const
 
-export type ExitCode = (typeof EXIT)[keyof typeof EXIT]
 
 const BOOLEAN_FLAGS = new Set([
   'json',

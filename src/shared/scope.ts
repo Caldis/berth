@@ -1,6 +1,5 @@
 import type { Asset } from './types/asset'
 
-export type AppScopeMode = 'global' | 'user' | 'project'
 
 export type ProjectScopeCandidateSource = 'current' | 'session' | 'scan-source'
 
