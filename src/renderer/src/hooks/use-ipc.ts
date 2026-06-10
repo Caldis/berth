@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import type { AgentView, Asset, AssetStats, SessionSummary, UsageSummary } from '@shared/types/asset'
-import type { SessionDetailResult, HealthCheck } from '@shared/types/ipc'
+import type { SessionDetailResult, SessionReplayResult, HealthCheck } from '@shared/types/ipc'
 import type {
   AgentCapabilityPlugin,
   AgentCapabilityPluginListResult,
@@ -12,6 +12,7 @@ import { CachedResource } from './cached-resource'
 
 const HEALTH_CHECK_CACHE_TTL_MS = 60_000
 export const SESSION_LIST_CACHE_TTL_MS = 30_000
+export const SESSION_REPLAY_CACHE_TTL_MS = 60_000
 
 interface HealthCheckValue {
   checks: HealthCheck[]
@@ -41,6 +42,11 @@ const sessionsResource = new CachedResource<SessionListValue>(
   (value) => sessionListSignature(value.sessions, value.totalCount)
 )
 
+// GH-116: 重放事件按 session id 缓存 — tab 来回切换不重复走 IPC/解析。
+const sessionReplayResource = new CachedResource<SessionReplayResult | null>(
+  SESSION_REPLAY_CACHE_TTL_MS
+)
+
 function requestHealthChecks(refresh: boolean): Promise<HealthCheckValue> {
   return healthResource.request('', () =>
     window.api.assets.healthCheck({ refresh }).then((result) => ({
@@ -56,6 +62,7 @@ export function resetHealthCheckCacheForTests(): void {
 
 export function resetSessionsCacheForTests(): void {
   sessionsResource.clear()
+  sessionReplayResource.clear()
 }
 
 export function resetAgentCapabilityPluginCacheForTests(): void {
@@ -301,6 +308,66 @@ export function useSessionDetail(id: string): {
   }, [id, reloadNonce])
 
   return { detail, loading, error, reload }
+}
+
+export function useSessionReplay(id: string): {
+  replay: SessionReplayResult | null
+  loading: boolean
+  error: string | null
+  reload: () => void
+} {
+  const initialCache = id ? sessionReplayResource.peek(id) : undefined
+  const [replay, setReplay] = useState<SessionReplayResult | null>(initialCache ?? null)
+  const [loading, setLoading] = useState(initialCache === undefined)
+  const [error, setError] = useState<string | null>(null)
+  const [reloadNonce, setReloadNonce] = useState(0)
+
+  const reload = useCallback(() => {
+    sessionReplayResource.invalidate(id)
+    setReloadNonce((n) => n + 1)
+  }, [id])
+
+  useEffect(() => {
+    if (!id || !window.api?.sessions?.events) {
+      setLoading(false)
+      return
+    }
+    let cancelled = false
+    const cached = sessionReplayResource.peek(id)
+    if (cached !== undefined) {
+      setReplay(cached)
+      if (sessionReplayResource.isFresh(id)) {
+        setLoading(false)
+        setError(null)
+        return
+      }
+    } else {
+      setReplay(null)
+    }
+    setLoading(true)
+    setError(null)
+
+    sessionReplayResource
+      .request(id, () => window.api.sessions.events(id).then((result) => result ?? null))
+      .then((result) => {
+        if (cancelled) return
+        setReplay(result)
+        setError(null)
+      })
+      .catch((err) => {
+        if (cancelled) return
+        setError(err instanceof Error ? err.message : String(err))
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [id, reloadNonce])
+
+  return { replay, loading, error, reload }
 }
 
 export function useUsageSummary(days: number, agentView?: AgentView, projectPath?: string): {
