@@ -2,6 +2,7 @@ import type { ComponentType } from 'react'
 import {
   LayoutDashboard,
   MessageSquare,
+  UsersRound,
   FileText,
   Plug,
   BarChart3,
@@ -137,7 +138,16 @@ export const navSections: NavSection[] = [
   {
     id: 'work',
     labelKey: 'nav.sections.work',
-    items: [{ id: 'sessions', labelKey: 'nav.sessions', icon: MessageSquare, path: '/sessions' }]
+    items: [
+      { id: 'sessions', labelKey: 'nav.sessions', icon: MessageSquare, path: '/sessions' },
+      {
+        id: 'teams',
+        labelKey: 'nav.teams',
+        icon: UsersRound,
+        path: '/teams',
+        legacyPaths: ['/instructions/agent-teams']
+      }
+    ]
   },
   {
     id: 'instructions',

@@ -95,6 +95,9 @@ const mockApi = {
     list: async () => ({ sessions: [], totalCount: 0 }),
     get: async () => null
   },
+  teams: {
+    list: async () => ({ teams: [] })
+  },
   usage: {
     summary: async () => ({
       totalCost: 0,
@@ -175,6 +178,8 @@ beforeEach(async () => {
   resetAgentCapabilityPluginCacheForTests()
   resetHealthCheckCacheForTests()
   resetSessionsCacheForTests()
+  const { resetAgentTeamsCacheForTests } = await import('../src/renderer/src/hooks/use-agent-teams')
+  resetAgentTeamsCacheForTests()
 })
 
 if (hasDomEnvironment) {

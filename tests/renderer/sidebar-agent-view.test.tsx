@@ -127,6 +127,9 @@ describe('Sidebar', () => {
     expect(screen.getByRole('button', { name: 'Hooks - Lifecycle automation' })).toBeInTheDocument()
     expect(screen.getByText('Reusable workflows')).toBeInTheDocument()
     expect(screen.getByText('Permission boundaries')).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: /Agent Teams|Agent orchestration/ })).not.toBeInTheDocument()
+    // GH-94 removed Agent Teams as a misclassified *instruction* entry; GH-114
+    // reintroduced it as runtime collaboration records under the WORK section.
+    expect(screen.getByRole('button', { name: 'Agent Teams' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Agent orchestration/ })).not.toBeInTheDocument()
   })
 })

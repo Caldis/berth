@@ -6,6 +6,7 @@
   "nav": {
     "overview": "总览",
     "sessions": "会话",
+    "teams": "Agent 团队",
     "sessionDetail": "会话详情",
     "configuration": "配置",
     "instructions": "指令",
@@ -281,6 +282,80 @@
         "session": "会话",
         "skill": "Skill",
         "statusline": "状态栏"
+      }
+    }
+  },
+  "teams": {
+    "title": "Agent 团队",
+    "subtitle": "Claude Code 实验性功能 — 运行时生成的协作记录, 只读",
+    "loadingList": "加载团队记录",
+    "loadingListDescription": "正在读取 ~/.claude/teams 下的运行时团队状态。",
+    "errorTitle": "团队记录加载失败",
+    "errorDescription": "读取 ~/.claude/teams 失败。请重试, 或检查文件权限。",
+    "empty": {
+      "title": "未找到团队记录",
+      "description": "Agent 团队是 Claude Code 的实验性功能: 一个 lead 会话通过共享任务列表与信箱协调多个 teammate 会话。Berth 展示团队在本机留下的记录。该功能默认关闭, 仅 Claude Code 可用 (Codex 不适用)。",
+      "enableHint": "在 settings.json 中启用后, 在 Claude Code 对话里发起团队:",
+      "requirement": "需要 Claude Code v2.1.32+。团队目录在 cleanup 时会被移除。"
+    },
+    "recentlyActive": "近期活跃",
+    "evidence": {
+      "teams": "团队记录",
+      "members": "成员",
+      "recentlyActive": "近期活跃"
+    },
+    "card": {
+      "members": "{{count}} 名成员",
+      "lead": "Lead",
+      "created": "创建于",
+      "lastActivity": "最近活动",
+      "inboxMessages": "{{count}} 条信箱消息",
+      "directory": "目录",
+      "openLeadSession": "打开 lead 会话",
+      "leadSessionMissing": "lead 会话记录不在当前扫描中",
+      "membersTitle": "成员",
+      "tasksTitle": "共享任务",
+      "noTasks": "该团队没有遗留任务文件 — 任务列表随团队移除, 或从未写入。",
+      "promptShow": "展开 prompt",
+      "promptHide": "收起 prompt",
+      "taskStatus": {
+        "pending": "待领取",
+        "in_progress": "进行中",
+        "completed": "已完成",
+        "unknown": "未知"
+      },
+      "blockedBy": "被 {{ids}} 阻塞"
+    },
+    "guidance": {
+      "docs": {
+        "agentTeams": "Agent Teams 文档"
+      },
+      "index": {
+        "title": "运行时协作记录",
+        "summary": "Agent 团队是 Claude Code 的实验性功能: lead 会话通过共享任务列表与信箱协调多个 teammate 会话。Berth 读取 ~/.claude/teams 与 ~/.claude/tasks 下的记录 — 它们是 Claude Code 运行时生成的状态, 不是你编写的资产。",
+        "points": {
+          "role": "一份团队 config 记录 lead、各 teammate 及其模型与派生 prompt。",
+          "scope": "按用户存放于 ~/.claude/teams/{name} — 不存在项目级团队配置。",
+          "review": "记录只保留到 cleanup 为止; 把它当作一次运行的痕迹, 而非实时仪表盘。"
+        },
+        "providers": {
+          "claude": "Claude Code 在运行时生成并更新团队状态; 不要手工编辑这些文件。",
+          "codex": "Codex 没有 Agent 团队的对应物 — 纯 Codex 环境下此视图保持为空。"
+        },
+        "insights": {
+          "records": {
+            "title": "是记录, 不是实时状态",
+            "body": "团队目录本应在 cleanup 时移除, 但经常遗留下来。Berth 按最近文件活动排序, 并且从不声称某个团队正在运行。"
+          },
+          "runtime": {
+            "title": "运行时生成",
+            "body": "config.json 保存由 Claude Code 管理的 session id 与 pane id。手写修改会被覆盖; 可复用角色应放入 subagent 定义。"
+          },
+          "claudeOnly": {
+            "title": "仅 Claude Code",
+            "body": "Agent 团队需要 CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1 且 Claude Code v2.1.32+。Codex 会话不会产生团队记录。"
+          }
+        }
       }
     }
   },

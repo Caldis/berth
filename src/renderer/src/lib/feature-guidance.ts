@@ -67,6 +67,7 @@ const CODEX_MCP_URL = 'https://developers.openai.com/codex/mcp'
 const CODEX_PERMISSIONS_URL = 'https://developers.openai.com/codex/permissions'
 const CODEX_SECURITY_URL = 'https://developers.openai.com/codex/agent-approvals-security'
 const CODEX_CLI_URL = 'https://developers.openai.com/codex/cli'
+const CLAUDE_AGENT_TEAMS_URL = 'https://code.claude.com/docs/en/agent-teams'
 const MCP_INTRO_URL = 'https://modelcontextprotocol.io/docs/getting-started/intro'
 const MCP_TOOLS_SPEC_URL = 'https://modelcontextprotocol.io/specification/2025-06-18/server/tools'
 
@@ -218,10 +219,22 @@ export const sessionGuide: FeatureGuideDefinition = guide('sessions.index', 'ses
   { titleKey: 'sessions.guidance.index.insights.local.title', bodyKey: 'sessions.guidance.index.insights.local.body' }
 ])
 
+export const teamsGuide: FeatureGuideDefinition = guide('teams.index', 'teams.guidance.index', [
+  { labelKey: 'teams.guidance.docs.agentTeams', url: CLAUDE_AGENT_TEAMS_URL }
+], [
+  provider('teams.guidance.index', 'Claude Code', '~/.claude/teams runtime state'),
+  provider('teams.guidance.index', 'Codex', 'not applicable')
+], [
+  { titleKey: 'teams.guidance.index.insights.records.title', bodyKey: 'teams.guidance.index.insights.records.body' },
+  { titleKey: 'teams.guidance.index.insights.runtime.title', bodyKey: 'teams.guidance.index.insights.runtime.body' },
+  { titleKey: 'teams.guidance.index.insights.claudeOnly.title', bodyKey: 'teams.guidance.index.insights.claudeOnly.body' }
+])
+
 export const allFeatureGuides = [
   ...Object.values(instructionGuideMap),
   ...Object.values(capabilityGuideMap),
-  sessionGuide
+  sessionGuide,
+  teamsGuide
 ]
 
 export function buildFeatureGuideEvidence(assets: { agentId: string; path: string }[], riskCount = 0): FeatureGuideEvidence[] {

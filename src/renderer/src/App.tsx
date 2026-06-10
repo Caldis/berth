@@ -6,6 +6,7 @@ import { AppLayout } from '@/components/layout/app-layout'
 import { Overview } from '@/pages/overview'
 import { Sessions } from '@/pages/sessions'
 import { SessionDetail } from '@/pages/session-detail'
+import { Teams } from '@/pages/teams'
 import { Instructions } from '@/pages/instructions'
 import { Capabilities } from '@/pages/capabilities'
 import { Usage } from '@/pages/usage'
@@ -26,8 +27,12 @@ export function LegacyCapabilitiesRedirect(): React.ReactElement {
   return <Navigate to={capabilityLegacyTabRoutes[tab] ?? '/capabilities/mcp'} replace />
 }
 
-export function RemovedAgentTeamsInstructionRedirect(): React.ReactElement {
-  return <Navigate to="/instructions/subagents" replace />
+/**
+ * GH-94 removed the misclassified "Agent Teams as instruction asset" page;
+ * GH-114 restores the path's intent by pointing it at the runtime records view.
+ */
+export function AgentTeamsLegacyRedirect(): React.ReactElement {
+  return <Navigate to="/teams" replace />
 }
 
 export default function App(): React.ReactElement {
@@ -41,6 +46,7 @@ export default function App(): React.ReactElement {
             <Route path="/" element={<Overview />} />
             <Route path="/sessions" element={<Sessions />} />
             <Route path="/sessions/:id" element={<SessionDetail />} />
+            <Route path="/teams" element={<Teams />} />
             <Route path="/instructions" element={<Navigate to="/instructions/skills" replace />} />
             <Route path="/instructions/memories" element={<Instructions activeSection="memories" />} />
             <Route path="/instructions/conventions" element={<Instructions activeSection="conventions" />} />
@@ -48,7 +54,7 @@ export default function App(): React.ReactElement {
             <Route path="/instructions/subagents" element={<Instructions activeSection="subagents" />} />
             <Route path="/instructions/commands" element={<Instructions activeSection="commands" />} />
             <Route path="/instructions/output-modes" element={<Instructions activeSection="outputModes" />} />
-            <Route path="/instructions/agent-teams" element={<RemovedAgentTeamsInstructionRedirect />} />
+            <Route path="/instructions/agent-teams" element={<AgentTeamsLegacyRedirect />} />
             <Route path="/instructions/*" element={<Navigate to="/instructions/skills" replace />} />
             <Route path="/capabilities" element={<Navigate to="/capabilities/mcp" replace />} />
             <Route path="/capabilities/mcp" element={<Capabilities activeSection="mcp" />} />
