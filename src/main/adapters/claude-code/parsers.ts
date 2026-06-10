@@ -10,7 +10,7 @@ import { buildHookHash, buildHookKey, buildHookScenarioHash } from '@shared/hook
 import { assetEntityId, dedupePathKey } from '@shared/asset-dedupe'
 import { samePath } from '@shared/path-utils'
 import { isRecord, readString, uniqueStrings } from '../_shared/parser-helpers'
-import { extractAtImports } from '../_shared/markdown'
+import { extractAtImports, splitFrontmatter } from '../_shared/markdown'
 import { normalizeProjectPathKey } from '@shared/scope'
 import { extractCommandEntryPaths } from '../command-entry-paths'
 import { stampSourceKey, stampSourceKeys } from '../source-key'
@@ -1079,20 +1079,6 @@ function calculateDurationSeconds(
   const end = new Date(endedAt).getTime()
   if (Number.isNaN(start) || Number.isNaN(end)) return null
   return Math.max(0, Math.round((end - start) / 1000))
-}
-
-function splitFrontmatter(content: string): {
-  frontmatter: Record<string, unknown> | null
-  body: string
-} {
-  const match = content.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n([\s\S]*)$/)
-  if (!match) return { frontmatter: null, body: content }
-  try {
-    const fm = yaml.load(match[1]) as Record<string, unknown>
-    return { frontmatter: fm, body: match[2] }
-  } catch {
-    return { frontmatter: null, body: content }
-  }
 }
 
 function readSettingsJson(filePath: string): SettingsJson | null {

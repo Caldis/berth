@@ -1,6 +1,5 @@
 import * as fs from 'fs'
 import * as path from 'path'
-import * as yaml from 'js-yaml'
 import { parse as parseToml } from 'smol-toml'
 import { emptyTokenUsage, normalizeTokenUsage } from '@shared/token-usage'
 import { buildHookHash, buildHookKey, buildHookScenarioHash } from '@shared/hook-identity'
@@ -8,7 +7,7 @@ import { assetEntityId, dedupePathKey } from '@shared/asset-dedupe'
 import { extractCommandEntryPaths } from '../command-entry-paths'
 import { stampSourceKey, stampSourceKeys } from '../source-key'
 import { isRecord, readString, safeId, uniqueStrings } from '../_shared/parser-helpers'
-import { extractAtImports } from '../_shared/markdown'
+import { extractAtImports, splitFrontmatter } from '../_shared/markdown'
 import type { Asset, AssetScope } from '../types'
 import type { TokenUsageBreakdown } from '@shared/types/asset'
 import type {
@@ -379,26 +378,6 @@ function toSnakeCase(value: string): string {
     .replace(/([a-z0-9])([A-Z])/g, '$1_$2')
     .replace(/[-\s]+/g, '_')
     .toLowerCase()
-}
-
-function splitFrontmatter(raw: string): {
-  frontmatter: Record<string, unknown> | null
-  body: string
-} {
-  if (!raw.startsWith('---')) return { frontmatter: null, body: raw }
-  const end = raw.indexOf('\n---', 3)
-  if (end === -1) return { frontmatter: null, body: raw }
-  const yamlText = raw.slice(3, end).trim()
-  const body = raw.slice(end + 4)
-  try {
-    const parsed = yaml.load(yamlText)
-    return {
-      frontmatter: isRecord(parsed) ? parsed : null,
-      body
-    }
-  } catch {
-    return { frontmatter: null, body }
-  }
 }
 
 export function parseCodexSessionMeta(filePath: string): Asset {
