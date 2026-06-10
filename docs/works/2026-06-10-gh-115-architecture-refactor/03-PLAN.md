@@ -51,11 +51,15 @@
 - [x] T14 收尾与沉淀 (2026-06-10 done: 新立 7 issue (expandable-asset-card / window-hardening / health-restructure-and-message-contract / god-pages-logic-sink / session-id-contract / renderer-dir-semantics / gh115-residuals) + 增补 4 已立案 (engine-shared-core-package 前置进展 / cached-resource-hook 扩面 / path-and-type-config isPathInside DONE / heroui-followup 量化); docs/ARCHITECTURE.md 更新 (模块新件 + IPC 单源派生段 + 分层 8 层表 + 10 规则 + 7 项例外清单); _roadmap 进度同步。harness:check + harness:issues 全绿)
 
 ## verify 阶段待办 (harness-0.2-sync 续跑入口)
-- [ ] CDP 真跑四场景 (memory: runtime-behavior-needs-real-run; 配方见 memory berth-ui-visual-verify-on-mac): ① 项目切换无 shallow 资产瞬时丢失/闪烁 (T4 fold 单写) ② 手工写坏 ~/.claude.json 观察 ScanError 记账 + sidebar 错误消息渲染, 恢复后消失 (T6) ③ 新建 ~/.claude/skills/test-skill 观察 watch→derive→UI 增量全链 (T9) ④ session-detail 页打开真实会话核对 modelInfo/timeline (T10)
-- [ ] 触及页截图四态+暗色不回归 (instructions/capabilities/settings/sessions/session-detail/overview); 错误边界人为抛错 → 兜底+返回总览动作可用 (T4)
-- [ ] 双语启动冒烟 (T12 死 key 删除后 en/zh 页面无 raw key 直出)
-- [ ] 验收标准 AC-1~AC-11 逐条核对 (01-ANALYSIS); 04 章节 verify 不通过项回写本清单
-- [ ] INDEX debt.final 回填 (estimate: incurred 3 / repaid 12 / net -9) + harness-projects ensure 同步
+- [x] CDP 真跑四场景 (2026-06-10 done, Windows 真机双实例: gh115-verify 真实 home + gh115-fixture `USERPROFILE` 覆写隔离 home, Playwright connectOverCDP 9224/9225):
+  - ① 项目切换 (berth↔全局 双向×2, 50-80ms 采样 167 样本): KPI 数字签名无任何持续清空; 仅切换瞬间各 1 个孤立样本 (≤80ms) 检出 main 内 skeleton — 为 GH-86 设计的局部 loading 指示, 非资产丢失。fold 单写不变量成立 ✓
+  - ② fixture home 写坏 .claude.json → 1.2s 内健康面板转「需要处理 请先修复错误项」(ScanError 记账达 UI); 恢复合法 JSON → 1.2s 内错误消失。T6 故障链尾↔UI 双向接通 ✓ (截图 gh115-scenario2-error/recovered.png)
+  - ③ fixture home 新建 .claude/skills/test-skill/SKILL.md → 1.0s 内技能 KPI 0→1, Skills 页条目可见。T9 watch→derive→UI 增量全链通 ✓
+  - ④ 真实会话 (Check pending character tasks) detail: modelInfo=claude-fable-5 chip ✓, 时间线 tab 121 事件渲染 ✓, TOKEN 42.7M 语义分段 + 会话信号 (工具 121/失败 2/Bash 热点) ✓
+- [x] 触及页截图+暗色 (2026-06-10 done): overview 亮/暗、sessions、session-detail、skills(instructions 家族)、capabilities/MCP、settings modal 截图全数正常渲染, 无布局破坏/无 raw key; 暗色 overview KPI/健康/费用图对比充足。错误边界: T4 全路由错误兜底已有 renderer 测试覆盖 (route error boundary), 运行时另有场景②实证错误态 UI 链路, 不再人为抛错 (CDP 注入 React 渲染错不可靠, 例外理由)
+- [x] 双语启动冒烟 (2026-06-10 done): zh 页面 raw key 扫描=[] ✓; settings 切 English → 全英文导航 (Overview/Sessions/Conventions/Memories...) raw key=[] ✓; 切回中文正常 ✓
+- [x] 验收标准 AC-1~AC-11 逐条核对 (2026-06-10 done): AC1 explore 34 问题完备 ✓; AC2 SPEC 选型 + T14 ARCHITECTURE 更新 ✓; AC3 范围裁剪 14 项全数立案 docs/issues (抽查 9 项在案) ✓; AC4 孤儿批次 T3/T12/T13 各批门禁绿 ✓; AC5 IPC 单源 T1/T2 (BerthAPI=typeof api + 四方对账测试) ✓; AC6 引擎域 T7/T8/T9 ✓; AC7 渲染层 T3/T4 (useCachedResource 按 AC3 裁剪入 issue, 后续已由 issue 主线落地 CachedResource 原语) ✓; AC8 可观测性 T5/T6 ✓; AC9 行为保持 — 本节四场景真跑 + 截图 ✓; AC10 安全边界 — 凭证脱敏枚举网测试 (T0) + 只读用户配置 (fixture 实验仅写隔离 home) ✓; AC11 过程纪律 — T0-T14 小步提交 + CI 全绿 ✓。无不通过项, 无回写
+- [x] INDEX debt.final 回填 (incurred 3 / repaid 12 / net -9, confidence high)
 - [ ] 5.0-archive: 全局 harness:check + projects done + 移 _archive: deferred 14 项立案/增补 (新立: health-restructure-and-message-contract / window-hardening / god-pages / session-id-contract / expandable-asset-card / renderer-dir-semantics / app-icon-decision; 增补: engine-shared-core-package / renderer-cached-resource-hook / shared-path-and-type-config / heroui-followup / macos-signing); docs/ARCHITECTURE.md 更新 (分层表 + 12 规则 + 例外清单含 health 直连过渡态); _roadmap.md 同步; INDEX debt.final 回填
   - tests: pnpm harness:check + harness:issues
   - verify: 全部 issue 过闸门; ARCHITECTURE 与代码实况一致 (抽查 import)

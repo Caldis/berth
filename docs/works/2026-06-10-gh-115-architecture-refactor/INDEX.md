@@ -23,14 +23,15 @@ debt:
     confidence: medium
     rationale: "explore 校准: ULTRACODE 分析实测 34 项问题 (high 10) / 6 主题 / 20 项已验证孤儿; 预计偿还引擎域/IPC 契约/渲染层复用/孤儿四条主线 (architecture area debt 27 的主要部分); 批次多且触及契约/打包配置, incurred 上调至 3。"
   final:
-    incurred:
-    repaid:
-    net:
-    scope:
-    risk:
-    areas: []
-    confidence:
-    rationale:
+    incurred: 3
+    repaid: 12
+    net: -9
+    scope: global
+    risk: medium
+    areas:
+      - architecture
+    confidence: high
+    rationale: "T0-T14 全部落地 (IPC 单源/引擎域收敛/孤儿清除/可观测性/i18n/打包面), 14 批小步提交 CI 全绿; verify 真机四场景 (项目切换无丢失/坏配置错误链 1.2s 双向/skill watch 链 1.0s/会话详情 modelInfo+timeline) + 6 页亮暗截图 + 双语冒烟全通过; deferred 14 项全数立案; risk 由 high 降 medium (行为保持已实证)。"
   revisions:
     - phase: implement
       date: 2026-06-10
