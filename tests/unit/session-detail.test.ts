@@ -1,4 +1,7 @@
-import { describe, expect, it } from 'vitest'
+import * as fs from 'fs'
+import * as os from 'os'
+import * as path from 'path'
+import { afterEach, describe, expect, it } from 'vitest'
 import type { Asset } from '../../src/shared/types/asset'
 import { buildSessionDetail, toSessionSummary } from '../../src/main/engine/session-detail'
 
@@ -94,5 +97,48 @@ describe('buildSessionDetail', () => {
     expect(detail.toolTimeline).toEqual([])
     expect(detail.artifacts).toEqual({ plans: [], todos: [], files: [], checkpoints: [] })
     expect(detail.modelInfo!.provider).toBeNull()
+  })
+})
+
+describe('execution detail fingerprint cache (GH-116)', () => {
+  let tempDir: string | null = null
+
+  afterEach(() => {
+    if (tempDir) {
+      fs.rmSync(tempDir, { recursive: true, force: true })
+      tempDir = null
+    }
+  })
+
+  const toolUseLine = (command: string): string =>
+    JSON.stringify({
+      type: 'assistant',
+      timestamp: '2026-06-11T06:00:00.000Z',
+      message: {
+        role: 'assistant',
+        content: [{ type: 'tool_use', id: 'call-1', name: 'Bash', input: { command } }]
+      }
+    })
+
+  it('reuses parsed detail until the transcript fingerprint changes', () => {
+    tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'berth-detail-cache-'))
+    const filePath = path.join(tempDir, 'session.jsonl')
+    fs.writeFileSync(filePath, toolUseLine('pnpm aa'))
+    // 钉整毫秒 mtime — utimesSync 只有 Date (ms) 精度, 还原 statSync 的亚毫秒 mtime 不可行
+    const fixed = new Date('2026-06-11T00:00:00.000Z')
+    fs.utimesSync(filePath, fixed, fixed)
+    const asset = sessionAsset({ id: 'session-detail-cache', path: filePath })
+
+    expect(buildSessionDetail(asset, []).toolTimeline[0].summary).toBe('pnpm aa')
+
+    // 同字节长 + 同 mtime → 指纹相同 → 命中缓存 (返回旧解析)
+    fs.writeFileSync(filePath, toolUseLine('pnpm bb'))
+    fs.utimesSync(filePath, fixed, fixed)
+    expect(buildSessionDetail(asset, []).toolTimeline[0].summary).toBe('pnpm aa')
+
+    // 追加内容改变指纹 → 重新解析
+    fs.appendFileSync(filePath, '\n')
+    fs.writeFileSync(filePath, toolUseLine('pnpm ccc'))
+    expect(buildSessionDetail(asset, []).toolTimeline[0].summary).toBe('pnpm ccc')
   })
 })

@@ -6,6 +6,7 @@ import { resolveModelPricing } from './pricing'
 import { parseClaudeSessionDetail } from '../adapters/claude-code/session-detail'
 import { parseCodexSessionDetail } from '../adapters/codex/parsers'
 import { toSessionActivityMetrics } from './session-activity'
+import { AssetFileCache } from './assets/file-cache'
 
 // GH-115 T10: session/模型推断域逻辑自 ipc/handlers.ts 迁入 (~276 行) — IPC 层回归薄门面,
 // 域逻辑落 engine 可被 vitest 直测 (handlers 顶层 import electron 致其不可加载)。
@@ -237,16 +238,31 @@ function toHookEvents(asset: Asset): { event: string; count: number }[] {
   return hooksFired > 0 ? [{ event: 'Stop', count: hooksFired }] : []
 }
 
-function parseSessionExecutionDetail(asset: Asset): {
+interface ParsedExecutionDetail {
   toolTimeline: SessionToolEvent[]
   artifacts: SessionArtifacts
-} {
-  if (asset.agentId === 'codex') {
-    return parseCodexSessionDetail(asset.path)
-  }
-  if (asset.agentId === 'claude-code' || asset.agentId === 'claude') {
-    return parseClaudeSessionDetail(asset.path)
-  }
+}
+
+// GH-116: detail 解析按文件指纹缓存 — 重复打开同一会话不再整文件重解析。
+const executionDetailCache = new AssetFileCache<ParsedExecutionDetail>()
+
+function parseSessionExecutionDetail(asset: Asset): ParsedExecutionDetail {
+  const parse = executionDetailParserFor(asset.agentId)
+  if (!parse) return emptyExecutionDetail()
+  const result = executionDetailCache.read(asset.path, () => parse(asset.path))
+  if (result.status === 'hit' || result.status === 'miss') return result.value
+  return emptyExecutionDetail()
+}
+
+function executionDetailParserFor(
+  agentId: string
+): ((filePath: string) => ParsedExecutionDetail) | null {
+  if (agentId === 'codex') return parseCodexSessionDetail
+  if (agentId === 'claude-code' || agentId === 'claude') return parseClaudeSessionDetail
+  return null
+}
+
+function emptyExecutionDetail(): ParsedExecutionDetail {
   return {
     toolTimeline: [],
     artifacts: {
