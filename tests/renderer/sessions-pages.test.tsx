@@ -590,6 +590,70 @@ describe('session pages', () => {
     expect(group0Header).not.toHaveClass('border-x')
   })
 
+  it('filters by agent, sorts in flat mode, and reports result counts (GH-116 T8)', async () => {
+    const sessions = [
+      { ...summary, id: 's-claude', title: 'Claude work', agentId: 'claude-code', cost: 0.5, startedAt: '2026-05-30T01:00:00.000Z' },
+      { ...summary, id: 's-codex', title: 'Codex work', agentId: 'codex', model: 'gpt-5.3-codex', cost: 2, startedAt: '2026-05-31T01:00:00.000Z' }
+    ]
+    window.api.sessions.list = vi.fn(async () => ({ sessions, totalCount: sessions.length }))
+
+    renderSessionsPage()
+
+    expect(await screen.findByText('Claude work')).toBeInTheDocument()
+    expect(screen.getByTestId('session-filter-bar')).toBeInTheDocument()
+    expect(screen.getByTestId('session-filter-results')).toHaveTextContent('2 / 2')
+
+    // agent 分段过滤 (带计数)
+    const codexTab = screen.getByRole('tab', { name: /Codex/ })
+    expect(codexTab).toHaveTextContent('1')
+    fireEvent.mouseDown(codexTab)
+    fireEvent.click(codexTab)
+    expect(screen.queryByText('Claude work')).not.toBeInTheDocument()
+    expect(screen.getByText('Codex work')).toBeInTheDocument()
+    expect(screen.getByTestId('session-filter-results')).toHaveTextContent('1 / 2')
+
+    // 回到全部, 切平铺分组: 跳转导航隐藏, 无组头
+    const allTab = screen.getByRole('tab', { name: /All/ })
+    fireEvent.mouseDown(allTab)
+    fireEvent.click(allTab)
+    const flatTab = screen.getByRole('tab', { name: 'Flat' })
+    fireEvent.mouseDown(flatTab)
+    fireEvent.click(flatTab)
+    expect(screen.queryByTestId('sessions-category-jump-nav')).not.toBeInTheDocument()
+    // 平铺模式下项目名进入行内 (两条会话同项目)
+    expect(screen.getAllByText('berth').length).toBeGreaterThanOrEqual(2)
+
+    // 排序: 费用降序 → Codex (2) 在 Claude (0.5) 前
+    fireEvent.click(screen.getByTestId('session-sort-select'))
+    fireEvent.click(await screen.findByRole('option', { name: 'Cost' }))
+    const rows = screen.getAllByTestId(/^session-row-/)
+    expect(rows[0]).toHaveAttribute('data-testid', 'session-row-s-codex')
+    expect(rows[1]).toHaveAttribute('data-testid', 'session-row-s-claude')
+
+    // 模型多选过滤
+    fireEvent.click(screen.getByTestId('session-model-filter'))
+    const modelListbox = await screen.findByRole('listbox', { name: 'Model' })
+    fireEvent.click(within(modelListbox).getByRole('option', { name: 'gpt-5.3-codex' }))
+    expect(screen.queryByText('Claude work')).not.toBeInTheDocument()
+    expect(screen.getByText('Codex work')).toBeInTheDocument()
+    expect(screen.getByTestId('session-filter-results')).toHaveTextContent('1 / 2')
+  })
+
+  it('shows the filtered empty state when structured filters match nothing', async () => {
+    const codexOnly = [{ ...summary, id: 'only-codex', agentId: 'codex', title: 'Codex only' }]
+    window.api.sessions.list = vi.fn(async () => ({ sessions: codexOnly, totalCount: 1 }))
+
+    renderSessionsPage()
+
+    expect(await screen.findByText('Codex only')).toBeInTheDocument()
+    const claudeTab = screen.getByRole('tab', { name: /Claude/ })
+    fireEvent.mouseDown(claudeTab)
+    fireEvent.click(claudeTab)
+
+    expect(screen.getByText('No matching sessions')).toBeInTheDocument()
+    expect(screen.getByTestId('session-filter-bar')).toBeInTheDocument()
+  })
+
   it('passes selected project scope to the sessions list', async () => {
     mockSessionApis()
     act(() => {

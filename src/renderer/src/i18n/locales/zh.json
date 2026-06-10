@@ -371,6 +371,28 @@
     "errorDetailDescription": "读取该 transcript 失败。请重试, 或从会话列表重新打开。",
     "groupBy": "分组",
     "groupNavigation": "会话分组",
+    "filters": {
+      "label": "会话筛选",
+      "agent": "Agent",
+      "agentAll": "全部",
+      "model": "模型",
+      "modelAll": "全部模型",
+      "sort": "排序",
+      "sortRecent": "最近",
+      "sortDuration": "时长",
+      "sortCost": "费用",
+      "sortTokens": "Token",
+      "flat": "平铺",
+      "results": "{{shown}} / {{total}}"
+    },
+    "dateBuckets": {
+      "today": "今天",
+      "yesterday": "昨天",
+      "thisWeek": "本周",
+      "thisMonth": "本月",
+      "earlier": "更早",
+      "unknown": "未知"
+    },
     "location": {
       "root": "根目录 /"
     },

@@ -377,6 +377,28 @@
     "errorDetailDescription": "Reading this transcript failed. Retry, or reopen from the session list.",
     "groupBy": "Group by",
     "groupNavigation": "Session groups",
+    "filters": {
+      "label": "Session filters",
+      "agent": "Agent",
+      "agentAll": "All",
+      "model": "Model",
+      "modelAll": "All models",
+      "sort": "Sort",
+      "sortRecent": "Recent",
+      "sortDuration": "Duration",
+      "sortCost": "Cost",
+      "sortTokens": "Tokens",
+      "flat": "Flat",
+      "results": "{{shown}} / {{total}}"
+    },
+    "dateBuckets": {
+      "today": "Today",
+      "yesterday": "Yesterday",
+      "thisWeek": "This week",
+      "thisMonth": "This month",
+      "earlier": "Earlier",
+      "unknown": "Unknown"
+    },
     "location": {
       "root": "Root /"
     },
