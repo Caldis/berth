@@ -2,6 +2,7 @@ import * as path from 'path'
 import * as os from 'os'
 import * as fs from 'fs'
 import { watch } from 'chokidar'
+import { projectWatchTargets } from './agent-capabilities'
 import type { FSWatcher } from 'chokidar'
 import type { WatchEvent } from '@shared/types/asset'
 import { dedupePathKey } from '@shared/asset-dedupe'
@@ -115,13 +116,11 @@ export function getAssetWatchPaths(
 ): string[] {
   const watchPaths = [...resolveClaudeDirs(homeDir, env)]
 
+  // GH-115 T9: 项目级监听目标从 agent-capabilities 单源取 (per-agent 声明在 adapter 侧)
   for (const projectRoot of resolveProjectConfigRoots(projectDir)) {
-    watchPaths.push(path.join(projectRoot, '.claude'))
-    watchPaths.push(path.join(projectRoot, '.mcp.json'))
-    watchPaths.push(path.join(projectRoot, 'CLAUDE.md'))
-    watchPaths.push(path.join(projectRoot, 'AGENTS.md'))
-    watchPaths.push(path.join(projectRoot, '.codex'))
-    watchPaths.push(path.join(projectRoot, '.agents', 'skills'))
+    for (const target of projectWatchTargets()) {
+      watchPaths.push(path.join(projectRoot, target))
+    }
   }
 
   watchPaths.push(path.join(homeDir, '.claude.json'))

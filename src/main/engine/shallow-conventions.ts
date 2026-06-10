@@ -2,25 +2,11 @@ import * as fs from 'fs'
 import * as path from 'path'
 import { glob } from 'glob'
 import type { Asset, AssetScope } from '@shared/types/asset'
-import {
-  parseAgent,
-  parseAgentsMd,
-  parseClaudeMd,
-  parseCommand,
-  parseEnv,
-  parseHooks,
-  parseMcpServers,
-  parseOutputMode,
-  parsePermissions,
-  parseSkill,
-  parseStatuslinesFromSettings
-} from '../adapters/claude-code/parsers'
-import {
-  parseCodexConfig,
-  parseCodexCustomAgent,
-  parseCodexHooksJson,
-  parseCodexSkill
-} from '../adapters/codex/parsers'
+// conventions (CLAUDE.md/AGENTS.md) 仍直连两个 parser — 与 derive 的 CONVENTION_DISPATCH
+// 是有意的表示模型分叉 (shallow: 单资产+readByAgentIds; derive: 双 agent 双资产), 不并入
+// capability 单源表; 收敛讨论归 engine-shared-core-package issue。
+import { parseAgentsMd, parseClaudeMd } from '../adapters/claude-code/parsers'
+import { projectCapabilitySources } from './agent-capabilities'
 import type { AssetFileCache } from './assets/file-cache'
 import { getMainLog } from '../log'
 
@@ -81,36 +67,17 @@ export function scanShallowConventions(projectDir: string, cache?: AssetFileCach
  * single multi-asset config file (settings.json / config.toml). */
 type CapabilityParser = (filePath: string) => Asset[]
 
-const CLAUDE = (p: string): string => path.join('.claude', p)
+// GH-115 T9: 项目级 capability 面从 engine/agent-capabilities 单源派生 (shallow 恒
+// scope='project'), 不再本地维护 mirror 表。
+const CAPABILITY_GLOBS: { dir: string; pattern: string; parse: CapabilityParser }[] =
+  projectCapabilitySources()
+    .filter((rule) => rule.kind === 'glob')
+    .map((rule) => ({ dir: rule.dir!, pattern: rule.pattern!, parse: (f: string) => rule.parse(f, 'project') }))
 
-// Per-project capability surface, mirroring the adapters' project-level scanning
-// (claude scanner.ts / codex index.ts) but for a NON-active project — root-level
-// only, no deep nested glob, no user-level. Owner-tagged so global shows them and
-// project mode filters to the active project. (GH-113 global=all-capabilities)
-const CAPABILITY_GLOBS: { dir: string; pattern: string; parse: CapabilityParser }[] = [
-  { dir: CLAUDE('skills'), pattern: '**/SKILL.md', parse: (f) => [parseSkill(f, 'project')] },
-  { dir: CLAUDE('agents'), pattern: '**/*.md', parse: (f) => [parseAgent(f, 'project')] },
-  { dir: CLAUDE('commands'), pattern: '**/*.md', parse: (f) => [parseCommand(f, 'project')] },
-  { dir: CLAUDE('output-styles'), pattern: '**/*.md', parse: (f) => [parseOutputMode(f, 'project')] },
-  { dir: path.join('.agents', 'skills'), pattern: '**/SKILL.md', parse: (f) => [parseCodexSkill(f, 'project')] },
-  { dir: path.join('.codex', 'agents'), pattern: '**/*.toml', parse: (f) => [parseCodexCustomAgent(f, 'project')] }
-]
-
-const SETTINGS_PARSER: CapabilityParser = (f) => [
-  ...parseMcpServers(f, 'project'),
-  ...parseHooks(f, 'project'),
-  ...parsePermissions(f, 'project'),
-  ...parseEnv(f, 'project'),
-  ...parseStatuslinesFromSettings(f, 'project')
-]
-
-const CAPABILITY_FILES: { file: string; parse: CapabilityParser }[] = [
-  { file: '.mcp.json', parse: (f) => parseMcpServers(f, 'project') },
-  { file: CLAUDE('settings.json'), parse: SETTINGS_PARSER },
-  { file: CLAUDE('settings.local.json'), parse: SETTINGS_PARSER },
-  { file: path.join('.codex', 'config.toml'), parse: (f) => parseCodexConfig(f, 'project') },
-  { file: path.join('.codex', 'hooks.json'), parse: (f) => parseCodexHooksJson(f, 'project') }
-]
+const CAPABILITY_FILES: { file: string; parse: CapabilityParser }[] =
+  projectCapabilitySources()
+    .filter((rule) => rule.kind === 'file')
+    .map((rule) => ({ file: rule.file!, parse: (f: string) => rule.parse(f, 'project') }))
 
 /**
  * Scan a NON-active project's CAPABILITIES (skills/agents/commands/mcp/hooks/...)

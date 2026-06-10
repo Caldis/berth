@@ -2,26 +2,11 @@ import * as path from 'path'
 import { getMainLog } from '../../log'
 import type { Asset, AssetScope } from '@shared/types/asset'
 import { dedupePathKey } from '@shared/asset-dedupe'
-import {
-  parseAgent,
-  parseAgentsMd,
-  parseClaudeMd,
-  parseCommand,
-  parseEnv,
-  parseHooks,
-  parseMcpServers,
-  parseOutputMode,
-  parsePermissions,
-  parseSkill,
-  parseStatuslinesFromSettings
-} from '../../adapters/claude-code/parsers'
-import {
-  parseCodexAgentsMd,
-  parseCodexConfig,
-  parseCodexCustomAgent,
-  parseCodexHooksJson,
-  parseCodexSkill
-} from '../../adapters/codex/parsers'
+// conventions 仍直连 (CONVENTION_DISPATCH 与 shallow 是有意分叉, 见 shallow-conventions.ts 注)
+import { parseAgentsMd, parseClaudeMd, parseMcpServers } from '../../adapters/claude-code/parsers'
+import { parseCodexAgentsMd } from '../../adapters/codex/parsers'
+import { claudeSettingsCapabilities } from '../../adapters/claude-code/sources'
+import { projectCapabilitySources } from '../agent-capabilities'
 
 export interface DeriveContext {
   /** Config roots of the active project. A file inside one is 'project'-scoped;
@@ -41,40 +26,26 @@ const CONVENTION_DISPATCH: Record<string, ConventionParser[]> = {
   'AGENTS.md': [parseAgentsMd, parseCodexAgentsMd]
 }
 
-// One settings.json yields several capability assets (mcp/hooks/permission/env/
-// statusline); they share the file's sourceKey (cap-0) so applyFileChange replaces
-// them as a unit. Mirrors the adapters' project-level scan combination.
-const settingsCapabilities: CapabilityParser = (filePath, scope) => [
-  ...parseMcpServers(filePath, scope),
-  ...parseHooks(filePath, scope),
-  ...parsePermissions(filePath, scope),
-  ...parseEnv(filePath, scope),
-  ...parseStatuslinesFromSettings(filePath, scope)
-]
+// GH-115 T9: cap-1 (单文件多资产) 与 cap-2 (glob 类单文件) 两张表从
+// engine/agent-capabilities 单源派生 (此前注释自认 Mirrors 且已实际分叉)。
+const CAPABILITY_FILE_DISPATCH: { suffix: string; parse: CapabilityParser }[] =
+  projectCapabilitySources()
+    .filter((rule) => rule.kind === 'file')
+    .map((rule) => ({ suffix: rule.file!, parse: rule.parse }))
 
-// Single-file, multi-asset capability configs (GH-113 cap-1), matched by normalized
-// path suffix — basename alone is ambiguous (settings.json under .claude, config.toml
-// under .codex). Glob-class capabilities (skills/agents/commands/output-modes) are
-// cap-2; anything unmatched returns null → caller does a full refresh.
-const CAPABILITY_FILE_DISPATCH: { suffix: string; parse: CapabilityParser }[] = [
-  { suffix: '.mcp.json', parse: (f, s) => parseMcpServers(f, s) },
-  { suffix: path.join('.claude', 'settings.json'), parse: settingsCapabilities },
-  { suffix: path.join('.claude', 'settings.local.json'), parse: settingsCapabilities },
-  { suffix: path.join('.codex', 'config.toml'), parse: (f, s) => parseCodexConfig(f, s) },
-  { suffix: path.join('.codex', 'hooks.json'), parse: (f, s) => parseCodexHooksJson(f, s) }
-]
-
-// Glob-class capabilities (GH-113 cap-2): a single file under a known capability
-// directory, matched by dir segment + filename/extension, each producing ONE
-// asset. Mirrors the shallow scan's CAPABILITY_GLOBS but applied per-file.
-const CAPABILITY_GLOB_DISPATCH: { dir: string; fileName?: string; ext?: string; parse: ConventionParser }[] = [
-  { dir: path.join('.claude', 'skills'), fileName: 'SKILL.md', parse: parseSkill },
-  { dir: path.join('.claude', 'agents'), ext: '.md', parse: parseAgent },
-  { dir: path.join('.claude', 'commands'), ext: '.md', parse: parseCommand },
-  { dir: path.join('.claude', 'output-styles'), ext: '.md', parse: parseOutputMode },
-  { dir: path.join('.agents', 'skills'), fileName: 'SKILL.md', parse: parseCodexSkill },
-  { dir: path.join('.codex', 'agents'), ext: '.toml', parse: parseCodexCustomAgent }
-]
+const CAPABILITY_GLOB_DISPATCH: { dir: string; fileName?: string; ext?: string; parse: ConventionParser }[] =
+  projectCapabilitySources()
+    .filter((rule) => rule.kind === 'glob')
+    .map((rule) => ({
+      dir: rule.dir!,
+      fileName: rule.fileName,
+      ext: rule.ext,
+      parse: (f: string, s: Parameters<typeof rule.parse>[1]) => {
+        const produced = rule.parse(f, s)
+        if (produced.length !== 1) throw new Error(`glob capability rule for ${rule.dir} must yield exactly one asset`)
+        return produced[0]
+      }
+    }))
 
 // Enterprise (managed) capability configs (GH-113 cap-3a): their basename uniquely
 // identifies them and their scope is ALWAYS 'enterprise' (not inferScope's
@@ -82,7 +53,7 @@ const CAPABILITY_GLOB_DISPATCH: { dir: string; fileName?: string; ext?: string; 
 // managed-mcp.json yields mcp servers. The watcher only emits these from the real
 // managed dir, so a basename key is safe.
 const ENTERPRISE_DISPATCH: Record<string, (filePath: string) => Asset[]> = {
-  'managed-settings.json': (filePath) => settingsCapabilities(filePath, 'enterprise'),
+  'managed-settings.json': (filePath) => claudeSettingsCapabilities(filePath, 'enterprise'),
   'managed-mcp.json': (filePath) => parseMcpServers(filePath, 'enterprise')
 }
 
