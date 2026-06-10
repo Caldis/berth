@@ -2,7 +2,7 @@
 task: 2026-06-03-gh-87-navigation-title-duplication
 task_id: GH-87
 type: bug
-phase: verify
+phase: archive
 created: 2026-06-03
 priority: P2
 target_date:
@@ -70,7 +70,7 @@ gh_project:
   status: tracked
   project_number: 6
   project_url: https://github.com/users/Caldis/projects/6
-  item_status: In Progress
+  item_status: Done
   project_id: PVT_kwHOADXbEs4BZHvQ
   item_id: PVTI_lAHOADXbEs4BZHvQzgujiF4
 artifacts:
