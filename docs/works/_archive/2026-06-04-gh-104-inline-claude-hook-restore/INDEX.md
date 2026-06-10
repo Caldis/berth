@@ -2,7 +2,7 @@
 task: 2026-06-04-gh-104-inline-claude-hook-restore
 task_id: GH-104
 type: feature
-phase: verify
+phase: archive
 created: 2026-06-04
 priority: P1
 target_date:
@@ -51,7 +51,7 @@ gh_project:
   project_number: 6
   project_url: https://github.com/users/Caldis/projects/6
   item_id: PVTI_lAHOADXbEs4BZHvQzguvUhs
-  item_status: In Progress
+  item_status: Done
   project_id: PVT_kwHOADXbEs4BZHvQ
 artifacts:
   source: 00-PRD.md
