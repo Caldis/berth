@@ -3,9 +3,9 @@
 ## 进度 (2026-06-10, 全部已推送 + CI 绿)
 - **Phase A 全部 DONE (5)**: accent-names-i18n · unused-filterbar-component · architecture-doc-drift · devagent-stop-tolerate-profile-eperm · usage-tooltip-test-flaky (已归档 resolved/)。
 - **Phase B (2/3 DONE)**: hook-disable-all ✅ (parser+UI+测试) · legacy-scanner-stale ✅ (退役死通道) · **agent-teams ⏸ 待产品决策** (移除入口 vs 重分类运行时 vs 运行时态展示 — 需用户定, 未动)。
-- **Phase C (2 项部分)**: shared-path-and-type-config — 路径统一 ✅, 余 asset-type 配置表/signature; adapter-parsing-shared-core — 标量 helper ✅, 余 markdown(splitFrontmatter 漂移)/session-artifacts; renderer-cached-resource-hook ⏳ 未启动。
+- **Phase C (1 DONE + 1 部分)**: **adapter-parsing-shared-core ✅ RESOLVED** (标量+markdown+session-artifacts+session-meta+token 别名全抽; cost 无重复不抽; memory 2 份 splitFrontmatter 变体转 engine-shared-core-package, 已归档 resolved/); shared-path-and-type-config — 路径统一 ✅, 余 asset-type 配置表/signature; renderer-cached-resource-hook ⏳ 未启动。
 - **Phase D-F 未启动**: engine-shared-core-package · asset-runtime-collaborators-split · scan-worker-long-lived · FEATURE-asset-indexer T4 · json-to-sqlite-migration · incremental-write cap-5 · session-streaming-parse · heroui-followup · sessions-virtualization · macos-signing · project-scope-e2e-macos。
-- 已解决计数: active 22 → 15, resolved → 57 (Phase A 5 + Phase B 2 归档 = 7; path-utils/adapter 2 项部分仍 OPEN)。
+- 已解决计数: active 22 → 14, resolved → 58 (Phase A 5 + Phase B 2 + Phase C adapter-parsing 归档 = 8; path-utils 1 项部分仍 OPEN)。
 - **下一步建议**: renderer-cached-resource-hook (有界, 自主安全) → 然后 agent-teams 需你决策 → Phase D 引擎重构建议有 review checkpoint。
 
 ---
