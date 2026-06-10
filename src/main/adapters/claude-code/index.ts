@@ -1,16 +1,7 @@
 import * as fs from 'fs'
 import * as path from 'path'
 import * as os from 'os'
-import type {
-  AgentAdapter,
-  Asset,
-  AssetCategory,
-  DetectResult,
-  Relation,
-  ScanRoot,
-  WatchEvent
-} from '../types'
-import { extractAtImports } from './parsers'
+import type { AgentAdapter, Asset, DetectResult, ScanRoot } from '../types'
 import type { ScanError } from '@shared/types/ipc'
 import {
   scanInstructions,
@@ -23,7 +14,8 @@ import {
 import { resolveClaudeDirs } from '../../agent-homes'
 import { resolveProjectConfigRoots } from '../../project-config-roots'
 import type { AssetFileCache } from '../../engine/assets/file-cache'
-import { CLAUDE_SOURCE_DESCRIPTORS, scanRootFromDescriptor } from '../../agent-plugins/descriptors'
+import { CLAUDE_SOURCE_DESCRIPTORS } from './descriptors'
+import { scanRootFromDescriptor } from '../_shared/source-descriptors'
 
 interface ClaudeCodeAdapterOptions {
   managedDir?: string
@@ -115,28 +107,6 @@ export class ClaudeCodeAdapter implements AgentAdapter {
     return sources
   }
 
-  async scanAssets(category: AssetCategory): Promise<Asset[]> {
-    const errors: ScanError[] = []
-    const contexts = this.createContexts(errors)
-    const assets: Asset[] = []
-    switch (category) {
-      case 'instruction':
-        for (const ctx of contexts) assets.push(...scanInstructions(ctx))
-        return assets
-      case 'capability':
-        for (const ctx of contexts) assets.push(...scanCapabilities(ctx))
-        return assets
-      case 'state':
-        for (const ctx of contexts) assets.push(...scanState(ctx))
-        return assets
-      case 'observability':
-        for (const ctx of contexts) assets.push(...scanObservability(ctx))
-        return assets
-      case 'integration':
-        for (const ctx of contexts) assets.push(...scanIntegration(ctx))
-        return assets
-    }
-  }
 
   async scanAll(): Promise<{ assets: Asset[]; errors: ScanError[] }> {
     const errors: ScanError[] = []
@@ -153,33 +123,6 @@ export class ClaudeCodeAdapter implements AgentAdapter {
     return { assets, errors }
   }
 
-  watchAssets(callback: (event: WatchEvent) => void): { dispose(): void } {
-    // Watching is handled by the engine watcher — this is a no-op stub.
-    // The adapter just needs to satisfy the interface.
-    void callback
-    return { dispose(): void {} }
-  }
-
-  async resolveRelations(asset: Asset): Promise<Relation[]> {
-    const relations: Relation[] = []
-
-    // @path import resolution for claude-md and agents-md
-    if (asset.type === 'claude-md' || asset.type === 'agents-md') {
-      const imports = (asset.meta.imports as string[]) ?? []
-      if (asset.raw) {
-        const freshImports = extractAtImports(asset.raw)
-        for (const imp of freshImports) {
-          if (!imports.includes(imp)) imports.push(imp)
-        }
-      }
-      for (const imp of imports) {
-        const resolved = path.resolve(path.dirname(asset.path), imp)
-        relations.push({ from: asset.id, to: resolved, kind: 'imports' })
-      }
-    }
-
-    return relations
-  }
 
   private createContexts(errors: ScanError[]): ScanContext[] {
     return this.claudeDirs.map((claudeDir, index) => ({

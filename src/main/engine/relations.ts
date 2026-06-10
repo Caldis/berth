@@ -2,7 +2,7 @@ import * as fs from 'fs'
 import * as path from 'path'
 import type { Asset, Relation } from '@shared/types/asset'
 import type { ImportChainNode } from '@shared/types/ipc'
-import { extractAtImports } from '../adapters/claude-code/parsers'
+import { extractAtImports } from '@shared/object-guards'
 
 /**
  * Resolve all relations for a given asset.

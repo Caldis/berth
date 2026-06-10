@@ -3,15 +3,7 @@ import * as os from 'os'
 import * as path from 'path'
 import { glob } from 'glob'
 import { parse as parseToml } from 'smol-toml'
-import type {
-  AgentAdapter,
-  Asset,
-  AssetCategory,
-  DetectResult,
-  Relation,
-  ScanRoot,
-  WatchEvent
-} from '../types'
+import type { AgentAdapter, Asset, DetectResult, ScanRoot } from '../types'
 import type { ScanError } from '@shared/types/ipc'
 import {
   parseCodexAgentsMd,
@@ -27,7 +19,8 @@ import {
 } from '../../agent-homes'
 import { resolveProjectConfigRoots } from '../../project-config-roots'
 import type { AssetFileCache } from '../../engine/assets/file-cache'
-import { CODEX_SOURCE_DESCRIPTORS, scanRootFromDescriptor } from '../../agent-plugins/descriptors'
+import { CODEX_SOURCE_DESCRIPTORS } from './descriptors'
+import { scanRootFromDescriptor } from '../_shared/source-descriptors'
 
 export class CodexAdapter implements AgentAdapter {
   readonly id = 'codex'
@@ -87,13 +80,6 @@ export class CodexAdapter implements AgentAdapter {
     return roots
   }
 
-  async scanAssets(category: AssetCategory): Promise<Asset[]> {
-    const errors: ScanError[] = []
-    if (category === 'instruction') return this.scanInstructions(errors)
-    if (category === 'capability') return this.scanCapabilities(errors)
-    if (category === 'state') return this.scanSessions(errors)
-    return []
-  }
 
   async scanAll(): Promise<{ assets: Asset[]; errors: ScanError[] }> {
     const errors: ScanError[] = []
@@ -175,14 +161,6 @@ export class CodexAdapter implements AgentAdapter {
     return assets
   }
 
-  watchAssets(callback: (event: WatchEvent) => void): { dispose(): void } {
-    void callback
-    return { dispose(): void {} }
-  }
-
-  async resolveRelations(_asset: Asset): Promise<Relation[]> {
-    return []
-  }
 
   private scanInstructions(errors: ScanError[]): Asset[] {
     const assets: Asset[] = []

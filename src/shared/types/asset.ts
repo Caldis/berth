@@ -131,10 +131,9 @@ export interface AgentAdapter {
   scanRoots(): Promise<ScanRoot[]>
   scanSourceCoverage?(): Promise<ScanRoot[]>
   scanAll(): Promise<{ assets: Asset[]; errors: { path: string; type: string; message: string }[] }>
-  scanAssets(category: AssetCategory): Promise<Asset[]>
-  watchAssets(callback: (event: WatchEvent) => void): { dispose(): void }
-  resolveRelations(asset: Asset): Promise<Relation[]>
 }
+// GH-115 T8: scanAssets/watchAssets/resolveRelations 三方法零调用 (实现全带桩), 已从契约删除。
+// 真实缺口 (per-file 派生 / session 解析 / health / watch 路径) 的契约化随 engine 成包 issue 扩展。
 
 export interface AssetStats {
   skills: number
