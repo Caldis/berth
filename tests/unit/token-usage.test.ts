@@ -3,6 +3,7 @@ import {
   addTokenUsage,
   emptyTokenUsage,
   normalizeTokenUsage,
+  TOKEN_BREAKDOWN_ALIAS_KEYS,
   tokenUsageCacheDetails,
   tokenUsageSegments,
   tokenUsageTotal
@@ -20,6 +21,23 @@ describe('token usage helpers', () => {
       totalTokens: 0,
       hasBreakdown: false
     })
+  })
+
+  it('exposes breakdown alias keys for nested collectors, excluding totals', () => {
+    for (const key of [
+      'input_tokens',
+      'inputTokens',
+      'output_tokens',
+      'cached_input_tokens',
+      'cache_read_input_tokens',
+      'cache_creation_input_tokens',
+      'reasoning_output_tokens'
+    ]) {
+      expect(TOKEN_BREAKDOWN_ALIAS_KEYS).toContain(key)
+    }
+    for (const totalKey of ['totalTokens', 'total_tokens', 'tokens']) {
+      expect(TOKEN_BREAKDOWN_ALIAS_KEYS).not.toContain(totalKey)
+    }
   })
 
   it('normalizes snake_case and camelCase token fields', () => {

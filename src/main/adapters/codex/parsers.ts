@@ -1,7 +1,11 @@
 import * as fs from 'fs'
 import * as path from 'path'
 import { parse as parseToml } from 'smol-toml'
-import { emptyTokenUsage, normalizeTokenUsage } from '@shared/token-usage'
+import {
+  emptyTokenUsage,
+  normalizeTokenUsage,
+  TOKEN_BREAKDOWN_ALIAS_KEYS
+} from '@shared/token-usage'
 import { buildHookHash, buildHookKey, buildHookScenarioHash } from '@shared/hook-identity'
 import { assetEntityId, dedupePathKey } from '@shared/asset-dedupe'
 import { extractCommandEntryPaths } from '../command-entry-paths'
@@ -871,16 +875,12 @@ function readTokenUsage(payload: Record<string, unknown>): TokenUsageBreakdown {
 
 function readNestedTokenRecord(record: Record<string, unknown>): Record<string, number> {
   const result: Record<string, number> = {}
-  const tokenKeys = [
-    'input_tokens',
-    'output_tokens',
-    'cached_input_tokens',
-    'cache_read_input_tokens',
-    'cache_creation_input_tokens',
-    'reasoning_output_tokens'
-  ]
   for (const [key, value] of Object.entries(record)) {
-    if (typeof value === 'number' && tokenKeys.includes(key) && Number.isFinite(value)) {
+    if (
+      typeof value === 'number' &&
+      TOKEN_BREAKDOWN_ALIAS_KEYS.includes(key) &&
+      Number.isFinite(value)
+    ) {
       result[key] = (result[key] ?? 0) + value
     } else if (isRecord(value)) {
       const nested = readNestedTokenRecord(value)

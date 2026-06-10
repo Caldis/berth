@@ -51,6 +51,14 @@ const FIELD_ALIASES: Record<TokenField, string[]> = {
 
 const TOTAL_ALIASES = ['totalTokens', 'total_tokens', 'tokens']
 
+/**
+ * Flat list of every accepted alias spelling of the breakdown fields, for
+ * collectors that scan nested payloads for token fields (e.g. codex
+ * token_count events). Deliberately excludes total aliases so collectors do
+ * not sum totals into breakdown values.
+ */
+export const TOKEN_BREAKDOWN_ALIAS_KEYS: readonly string[] = Object.values(FIELD_ALIASES).flat()
+
 export function emptyTokenUsage(): TokenUsageBreakdown {
   return {
     inputTokens: 0,
