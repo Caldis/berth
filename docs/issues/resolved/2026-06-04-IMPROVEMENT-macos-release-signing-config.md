@@ -22,3 +22,8 @@
 - 本机钥匙串存在签名身份时, electron-builder 自动发现并尝试签名, 撞上 `entitlementsInherit: build/entitlements.mac.plist` 指向的不存在文件 → `cannot read entitlement data`, 打包直接失败。inert 配置不只是"跳过", 在有身份的机器上是**阻断项**。
 - 临时旁路: `CSC_IDENTITY_AUTO_DISCOVERY=false pnpm package:mac`。
 - 关联: GH-115 01-ANALYSIS R31 (fuses/ABI 守卫同批)。
+
+# 终态 (2026-06-10, RESOLVED — 按本 issue 解决方案的未签名分支落地)
+- `electron-builder.yml`: 删除悬空 `entitlementsInherit` (根因), `mac.identity: null` 把「禁用签名自动发现」从环境变量旁路固化进配置 — 等效 `CSC_IDENTITY_AUTO_DISCOVERY=false`, 有钥匙串身份的机器默认 `pnpm package:mac` 也产未签名 dmg/zip。
+- 证据链: 2026-06-04 实测该旁路可产出发布资产; identity null 为 electron-builder 官方禁签语义; YAML 解析校验通过。下次 macOS 真机发布即全链验证 (Windows 本机无法跑 package:mac, 已在注释中写明转签名发布时的恢复步骤)。
+- 后续若做签名发布 → 按 [[2026-06-04-IMPROVEMENT-macos-release-signing-config]] 注释指引补 entitlements + 证书, 属新需求另立案。

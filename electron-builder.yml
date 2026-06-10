@@ -20,8 +20,11 @@ nsis:
   shortcutName: ${productName}
   uninstallDisplayName: ${productName}
   createDesktopShortcut: always
+# 未签名发布策略 (issue macos-release-signing-config): identity null 固定禁用签名
+# 自动发现 — 钥匙串有身份的机器上, 自动签名会撞曾指向不存在 entitlements 文件的
+# 配置而阻断打包。改为签名发布时: 补 build/entitlements.mac.plist + 证书配置, 移除 identity。
 mac:
-  entitlementsInherit: build/entitlements.mac.plist
+  identity: null
   target:
     - dmg
     - zip
