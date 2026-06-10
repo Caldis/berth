@@ -90,7 +90,7 @@ pnpm package
 ```
 ┌─────────────────────────────────────────┐
 │ Renderer (React + TypeScript)           │
-│  • shadcn/ui + Tailwind CSS             │
+│  • HeroUI v2 + Tailwind CSS             │
 │  • Zustand state management             │
 │  • react-router-dom navigation          │
 │  • recharts for data visualization      │
@@ -167,7 +167,7 @@ After cloning, the distribution (symlinks + stubs) is already committed and work
 |-----------|-----------|
 | Framework | Electron 33 (electron-vite 5) |
 | Frontend | React 19 + TypeScript 5.9 |
-| UI | shadcn/ui + Tailwind CSS 3.4 |
+| UI | HeroUI v2 + Tailwind CSS 3.4 |
 | State | Zustand 5 |
 | Router | react-router-dom 7 |
 | Charts | Recharts 2 |

@@ -17,3 +17,8 @@
 
 # 解决方案
 - 明确 macOS 发布策略: 未签名发布时将打包脚本固定为禁用签名自动发现; 签名发布时补齐 `build/entitlements.mac.plist` 和证书配置说明。
+
+# 追记 (GH-115 T11 实证, 2026-06-10)
+- 本机钥匙串存在签名身份时, electron-builder 自动发现并尝试签名, 撞上 `entitlementsInherit: build/entitlements.mac.plist` 指向的不存在文件 → `cannot read entitlement data`, 打包直接失败。inert 配置不只是"跳过", 在有身份的机器上是**阻断项**。
+- 临时旁路: `CSC_IDENTITY_AUTO_DISCOVERY=false pnpm package:mac`。
+- 关联: GH-115 01-ANALYSIS R31 (fuses/ABI 守卫同批)。

@@ -2,18 +2,13 @@ appId: com.berth.app
 productName: Berth
 directories:
   buildResources: build
+# GH-115 T11: 加法白名单 — 黑名单模式自脚手架后未维护, 曾把 website 源码/.agents/.claude
+# 内部工作流配置/lock 文件全部打进分发包 (信息外泄 + 16% 体积), 且维护成本随仓库增长。
+# better-sqlite3 原生模块由 electron-builder smartUnpack 自动处理, 无需 asarUnpack 配置。
 files:
-  - '!**/.vscode/*'
-  - '!src/*'
-  - '!electron.vite.config.*'
-  - '!{.eslintignore,.eslintrc.cjs,.prettierrc,.editorconfig}'
-  - '!{tsconfig.json,tsconfig.node.json,tsconfig.web.json}'
-  - '!{CLAUDE.md,AGENTS.md}'
-  - '!docs/*'
-  - '!tests/*'
-  - '!PLANS/*'
-asarUnpack:
-  - resources/**
+  - 'out/**'
+  - 'package.json'
+  - 'LICENSE'
 win:
   executableName: berth
   sign: false
@@ -39,6 +34,3 @@ linux:
     - deb
   category: Utility
 npmRebuild: false
-publish:
-  provider: generic
-  url: https://example.com/auto-updates
