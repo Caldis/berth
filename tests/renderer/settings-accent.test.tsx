@@ -3,7 +3,7 @@ import React from 'react'
 import { beforeEach, describe, expect, it } from 'vitest'
 import '../../src/renderer/src/i18n'
 import { ThemeProvider } from '../../src/renderer/src/components/theme-provider'
-import { SettingsContent } from '../../src/renderer/src/pages/settings'
+import { SettingsContent } from '../../src/renderer/src/components/settings/settings-content'
 
 describe('SettingsContent accent picker (GH-105)', () => {
   beforeEach(() => {

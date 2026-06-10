@@ -2,7 +2,7 @@ import React from 'react'
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import '../../src/renderer/src/i18n'
-import { TokenSparkBar } from '@/components/shared/token-spark-bar'
+import { TokenSparkBar } from '@/components/sessions/token-spark-bar'
 import { normalizeTokenUsage } from '../../src/shared/token-usage'
 
 const breakdown = normalizeTokenUsage({

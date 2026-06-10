@@ -3,7 +3,7 @@ import { render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { HeroUIProvider } from '@heroui/react'
 import { Sparkles } from 'lucide-react'
-import { AssetCountChip } from '@/components/shared/asset-count-chip'
+import { AssetCountChip } from '@/components/sessions/asset-count-chip'
 
 function renderChip(ui: React.ReactElement): ReturnType<typeof render> {
   return render(<HeroUIProvider>{ui}</HeroUIProvider>)

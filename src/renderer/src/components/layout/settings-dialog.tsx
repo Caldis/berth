@@ -2,7 +2,7 @@ import { type RefObject } from 'react'
 import { useTranslation } from 'react-i18next'
 import { X } from 'lucide-react'
 import { Modal, ModalContent, ModalHeader, ModalBody, Button } from '@/components/ui'
-import { SettingsContent } from '@/pages/settings'
+import { SettingsContent } from '@/components/settings/settings-content'
 
 interface SettingsDialogProps {
   open: boolean

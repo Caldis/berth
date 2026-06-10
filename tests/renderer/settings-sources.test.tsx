@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react'
 import React from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import '../../src/renderer/src/i18n'
-import { SettingsContent } from '../../src/renderer/src/pages/settings'
+import { SettingsContent } from '../../src/renderer/src/components/settings/settings-content'
 
 describe('SettingsContent source placement', () => {
   beforeEach(() => {

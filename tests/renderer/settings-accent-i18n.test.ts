@@ -1,7 +1,7 @@
 import { describe, expect, it, afterAll } from 'vitest'
 import i18n from '../../src/renderer/src/i18n'
 
-// Accent ids mirror the `accents` picker list in src/renderer/src/pages/settings.tsx.
+// Accent ids mirror the `accents` picker list in src/renderer/src/components/settings/settings-content.tsx.
 const ACCENT_IDS = ['neutral', 'blue', 'violet', 'emerald', 'amber', 'rose'] as const
 
 const EN: Record<(typeof ACCENT_IDS)[number], string> = {

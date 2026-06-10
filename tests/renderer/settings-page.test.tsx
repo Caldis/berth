@@ -3,7 +3,7 @@ import React from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import i18n from '../../src/renderer/src/i18n'
 import { ThemeProvider } from '../../src/renderer/src/components/theme-provider'
-import { SettingsContent } from '../../src/renderer/src/pages/settings'
+import { SettingsContent } from '../../src/renderer/src/components/settings/settings-content'
 
 describe('SettingsContent page chrome', () => {
   beforeEach(async () => {
