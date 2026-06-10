@@ -2,7 +2,7 @@
 task: 2026-06-10-gh-115-architecture-refactor
 task_id: GH-115
 type: maintenance
-phase: design
+phase: implement
 created: 2026-06-10
 priority: P1
 target_date: 
@@ -64,7 +64,7 @@ artifacts:
 ## 产物
 - [x] 00-PRD.md — 原始输入快照
 - [x] 01-ANALYSIS.md — Explore 产物 (34 问题 / 6 主题 / 20 孤儿 / 11 风险, 证据见 assets/)
-- [ ] 02-SPEC.md — Design 产物
-- [ ] 03-PLAN.md — 活任务清单
+- [x] 02-SPEC.md — Design 产物 (多宿主端口-适配器 + 派生单源契约; panel 裁决见 assets/design-panel.json)
+- [x] 03-PLAN.md — 活任务清单 (T0-T14 顺序执行)
 
 ## 待澄清 (blocked 时填)

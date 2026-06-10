@@ -1,15 +1,55 @@
 # 任务清单 (Design 产物 / 活清单)
 
-从 02-SPEC 拆解。每任务可独立执行与验证, 顺序确定。implement 阶段维护此清单。
-每个实现项必须有测试证据或明确例外理由。
-实现中若发现 debt 初估不准, 更新 INDEX.md `debt.estimate`, 并追加 `debt.revisions[]`。
+从 02-SPEC 拆解。**主 Agent 主循环顺序执行** (订阅额度触顶, 不 fan-out 子代理); 顺序即依赖序。
+每批: 先写/更测试 → 实现 → `pnpm typecheck && pnpm lint && pnpm test` 绿 → 只暂存本批文件 `git diff --cached` 核对 → 提交。
+热点纪律: 触碰 verify 任务足迹文件前 `git log --since=2026-06-08 -- <file>` 确认近 48h 无并行写入; gh-103 足迹 (chart-colors/globals.css/overview.tsx/usage.tsx/token-usage-display) 一律延后到 T13 且仅限非 chart 段, 冲突则改 defer 声明。
 
-- [ ] 任务 1:
-  - tests:
-  - verify: 包含界面质量与交互验收项; 非 UI 任务写“不适用”
-- [ ] 任务 2:
-  - tests:
-  - verify: 包含界面质量与交互验收项; 非 UI 任务写“不适用”
+- [ ] T0 测试地基: tsconfig.test.json (tsc dry-run, >15 文件错误则按目录渐进 include) + 删 tests/unit/parsers.test.ts 假覆盖 + tests/unit/worker-artifact.test.ts + scripts/abi-smoke.mjs + CI e2e 矩阵加 macos-latest (project-scope e2e 红则按已立案 issue test.skip 交叉引用) + tests/renderer/status-line-redaction.test.tsx (capabilities.tsx 仅加 export 关键字)
+  - files: tsconfig.test.json(新) tsconfig.json tests/unit/{parsers.test.ts删,worker-artifact.test.ts新} scripts/abi-smoke.mjs(新) .github/workflows/ci.yml tests/renderer/status-line-redaction.test.tsx(新) src/renderer/src/pages/capabilities.tsx(仅 export)
+  - tests: 本批即测试; redaction 枚举 (env var / inline sk-key / url token / 纯命令 / 空)
+  - verify: pnpm typecheck (含新 project) + pnpm test 全绿; abi-smoke 本地跑通; CI 双 OS 绿; capabilities.tsx 是 gh-104 足迹 → 仅 export 关键字一行, 提交注明
+- [ ] T1 IPC 契约单源派生 + 四方对账网: preload export type BerthAPI = typeof api; index.d.ts 改派生; IpcChannels/IpcEvents 表修正为真实集合 (现役 35 通道 + knownDead 白名单钉脏现状); tests/setup.ts mock 加 satisfies; tests/unit/ipc-contract.test.ts 四方对账 (handlers==preload==IpcChannels==mock)
+  - tests: ipc-contract.test.ts 先行; 自证: 临时注入未注册通道确认变红后撤销 (verify 记录输出)
+  - verify: 对账绿 + 自证红样本留存 plan 注记; window.api 运行时形状零变化 (grep diff)
+- [ ] T2 IPC 死面整链删除 (knownDead 白名单清零驱动): theme:get / hooks:status / hooks:set-enabled / assets:scan-all 全链 (handler+preload+d.ts+mock) + phantom assets.scan + handler-only assets:relations / assets:import-chain / mcp:merged (删 handler + computeMcpMerged + MCPMergeInfo; **relations.ts 本体保留** — cli-args.ts:26 manifest 守卫触发, packages 测试在用) + hooks 复数残段 (getAgentHooksStatuses + d.ts statuses + mock + hooks-lifecycle-view 幻影断言 + projectReadOnly key) + PlatformInfo 收敛 (删 claudeDir)
+  - tests: 白名单清零断言 (T1 网先红后绿); hooks-lifecycle-view.test 同步
+  - verify: 全量绿 + 通道名字符串 grep 零残留; handlers/preload/ipc.ts 是 gh-86/95/104 足迹 → 触碰前 git log 确认
+- [ ] T3 渲染层死纵切片删除: components/shared/{asset-card,stat-card,tab-group}.tsx + asset-guide-panel.tsx + lib/asset-guidance.ts + 保活测试 (asset-guide-panel.test.tsx / asset-guidance.test.ts) + settings/local-sources-section.tsx + useScanSources (use-ipc.ts:469) + local-source-copy.ts 迁 layout/ + 独占 i18n key 家族 (settings.sourceCategories/sourceScopes/scanDirectories/sourceDetected + instructions.guidance.docs.codexConfig)
+  - tests: 删保活测试; settings 页既有测试确认 LocalSources 不再被引用; vitest 全量
+  - verify: grep 零残留 (裸名+路径+@/ 别名); assets:scan-sources 通道保留 (scope-switcher 在用); lib/asset-guidance 是 gh-94 足迹 → git log 确认; 截图: settings 页前后 diff
+- [ ] T4 store 死字段 + fold 单写路径 + 全局错误边界: 删 recentSessions/usageSummary/agentDetected/setScanning/lastAssetRefreshAt (agentView 不动, 已立案待产品决策); selectScope 删 setAssets/setStats 裸写改单走 setAssetSnapshot 并删两 action; AppLayout 全路由 PageErrorBoundary + "返回 Overview" 动作 + en/zh boundary key (B 嫁接: 仅 boundary 前缀, 与 verify 任务写入面零交集)
+  - tests: app-store.test 收缩 + selectScope 单写断言; page-error-boundary.test 扩全路由+动作; capabilities-plugins/scanning-empty 测试 setState 字面量同步
+  - verify: CDP 真跑项目切换 — 观察无 shallow 资产瞬时丢失/闪烁 (fold 不变量); 人为抛渲染错误 → 边界呈现 + 返回动作可用; 暗色截图
+- [ ] T5 主进程可观测性地基: src/main/log.ts (userData/logs 滚动 ~50 行, 无网络出口) + uncaughtException/unhandledRejection/render-process-gone 钩子 + whenReady .catch + dialog.showErrorBox + watcher.on('error') + applyWatchEvent try/catch
+  - tests: tests/unit/main-log.test.ts (滚动/格式); watcher error 监听单测 (mock emitter)
+  - verify: pnpm build 冒烟 (装配段) + dev 启动看 logs 目录落盘; index.ts 是 gh-96 足迹 → git log 确认
+- [ ] T6 吞错簇修复 (热点批, 串行最后置于引擎批前): 删 parsers 内层裸 catch (parseMcpServers 等) 让 safeScan 记账接管 + detect 异常 push ScanError (区分未安装/检测失败) + runtime catch 接 log seam + sidebar-scan-status 渲染 status.error + sqlite 首败日志; **不含 pricing/catalog.ts** (评审证伪其失败路径)
+  - tests: 坏 .mcp.json fixture → ScanError 记账断言 (先红后绿); detect 异常用例; codex 侧不改记账语义 (R17 deferred)
+  - verify: 真跑手工写坏 ~/.mcp.json 观察 UI 记账提示恢复后消失; parsers/scanner/runtime 三热点 → git log 确认 + 单独提交
+- [ ] T7 纯助手单源化: src/shared/object-guards.ts (isRecord/readString/readNumber/safeId/extractAtImports) + parser-helpers 改 re-export + health/memory/agent-teams 副本改 import + path-utils 增 isPathInside({includeEqual})/dedupePaths 收敛 4 套 (per-call-site 保现行为) + memory 两份 splitFrontmatter **只钉 characterization 不收敛**
+  - tests: object-guards.test 新 + path-utils.test 扩矩阵 + memory splitFrontmatter characterization ×2 (含 5 点差异钉死)
+  - verify: 全量绿; 行为零变化 (纯 import 重定向)
+- [ ] T8 adapter 契约收紧 + capability map + descriptors 解环: 删 AgentAdapter 3 死方法 + 两实现桩; per-agent descriptors 数据下沉 adapters/{claude-code,codex}/descriptors.ts, agent-plugins 聚合 re-export (解值依赖环); 新建 engine/agent-capabilities.ts 单点 map, engine 7 处直连 (health/shallow-conventions/derive-asset/watcher/relations/handlers) 改经 map (直连降为 1 处)
+  - tests: agent-capabilities.test 新 (两 agent 全能力分发等价); adapter/registry 既有测试收缩; descriptors drift 既有测试迁移
+  - verify: 全量绿 + import 方向 grep (adapters 零 import agent-plugins); scan 输出 snapshot 等价
+- [ ] T9 扫描源声明式单表: adapters/{claude-code,codex}/sources.ts 声明; shallow-conventions CAPABILITY_GLOBS / derive-asset DISPATCH / watcher getAssetWatchPaths 三方接表; settings.local.json 分叉 per-consumer 如实建模不选边; scanner scanAll 不动
+  - tests: asset-sources.test 新 — 接表前后三方枚举输出 diff 为空 (等价钉测先行)
+  - verify: 真跑新建 ~/.claude/skills/test-skill 观察 watch→derive→UI 增量全链 (CDP); 全量绿
+- [ ] T10 handlers 瘦身 + home 归一: engine/session-detail.ts 迁入模型知识库与 sessions:get 编排 (golden 钉测先行); toSessionSummary 收敛 runtime 单实现; 注册按域拆分 (registerAssetHandlers → 域函数); memory/agent-teams/handlers 的 os.homedir 拼接改 resolveClaudeDirs (BERTH_EXTRA_CLAUDE_DIRS 契约修复, 构造参数保留); handlers 薄注册测试 (vi.mock electron); pricing 深路径 import 收回 barrel
+  - tests: session-detail.test golden 先行; memory/teams 测试扩 EXTRA_DIRS 用例 (先红后绿); ipc-registration.test 新
+  - verify: sessions:get 输出字节级等价 (golden diff); CDP session-detail/teams 页; handlers 是 gh-86/95/104 足迹 → git log 确认
+- [ ] T11 打包面收敛: 7 renderer 库移 devDependencies; electron-builder files 改加法白名单 ['out/**','package.json','LICENSE']; 删死配置簇 (asarUnpack resources / publish 占位 / !PLANS / 死排除条目); components.json 删 + README shadcn 两处修正; app icons 不动 (T14 立 issue 决策接线或删)
+  - tests: worker-artifact.test (T0 已建) 守 build 产物; asar list 前后 diff 留档 plan 注记
+  - verify: pnpm package:mac 本地打包 + asar list 对比 (死包消失/必需保留) + 产物启动冒烟
+- [ ] T12 i18n 死 key + zh 复数收敛 (末位, churn 榜首避撞): 24 死 key 按前缀分 3 commit 删 (en/zh 双份); zh 复数 9 组收敛 _other; i18n-plural-convention.test.ts 新
+  - tests: plural-convention 结构断言; 每 commit 前该前缀 grep 零引用 + git log 确认无并行写入
+  - verify: 双语启动冒烟 + 全量绿
+- [ ] T13 长尾孤儿收尾: 死导出 9 处 (tokenUsageTotal 在 **src/shared/token-usage.ts** 路径修正, 测试降级; assetProjectPath 仅摘名; codex shim 连带 import-rename) + JSON createSnapshotStore (stripRaw 原位保留) + getAgentHooksStatuses 残段若 T2 未尽 + **globals.css 死 token + tailwind keyframes: 仅当 gh-103 已收口** (届时 theme-palette.test 整体改写为行为断言 — C 嫁接; 否则 defer 声明留 T14 issue)
+  - tests: 连带测试/mock 同步; vitest 全量
+  - verify: grep 零残留; pnpm build
+- [ ] T14 收尾与沉淀: deferred 14 项立案/增补 (新立: health-restructure-and-message-contract / window-hardening / god-pages / session-id-contract / expandable-asset-card / renderer-dir-semantics / app-icon-decision; 增补: engine-shared-core-package / renderer-cached-resource-hook / shared-path-and-type-config / heroui-followup / macos-signing); docs/ARCHITECTURE.md 更新 (分层表 + 12 规则 + 例外清单含 health 直连过渡态); _roadmap.md 同步; INDEX debt.final 回填
+  - tests: pnpm harness:check + harness:issues
+  - verify: 全部 issue 过闸门; ARCHITECTURE 与代码实况一致 (抽查 import)
 
 ## verify 回写
 verify 不通过项作为新任务追加于此, phase 退回 implement。

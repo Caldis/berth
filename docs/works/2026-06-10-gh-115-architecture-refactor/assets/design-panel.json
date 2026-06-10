@@ -1,0 +1,2226 @@
+{
+  "proposals": [
+    {
+      "lens": "incremental-pragmatic — 风险最小化: 每步取当下净收益最大且回归面最小的改动; 纯减法 (20 项已验证孤儿) 与有测试网区域优先; 无网区域 (ipc/preload 零直测) 先建网再动; 大迁移 (engine 成包 / runtime 拆分 / 巨石页重构) 一律延后到独立 issue, 本任务只做低风险铺路步。",
+      "patternName": "缝合优先的端口—适配器内核 + 派生契约 IPC 门面 + 分层薄页渲染器 (Seam-Hardened Ports & Adapters with Derived-Contract Facade)",
+      "patternRationale": "选型依据是 15 条现状底图而非教科书: 底图 1/3/6 表明宏观形状已经正确 — 三进程拓扑、96 行纯透传 preload 窄桥、electron 值依赖仅 3 文件、better-sqlite3 经工厂注入、renderer 六层 import 实测无环仅 3 条反向边。berth 不缺架构, 缺的是对既有架构的强制力: 底图 4/5 显示端口 (AgentAdapter) 与门面 (IPC) 都已存在, 但端口契约与真实消费面错位 (三方法零调用、四类真实需求缺位致 7 处绕行)、门面契约以四份手工副本存在且漂移无机制拦截 (IpcChannels 表 0 引用、phantom 方法、mock 强化错误契约); 底图 9 显示 per-agent 知识未归位 adapter 侧而以操作性代码散布 5+ 模块且已分叉; 底图 8 显示渲染层第一代 shared 抽象死亡后断代是重复与孤儿沉积主因。因此模式选择是补完并钉住既有半成形模式, 而不是引入新模式: 端口收紧到实际消费面 (删零调用方法、解 descriptors 值依赖环, 为已立案 engine 成包铺路而不抢跑); IPC 门面从实现派生类型 (BerthAPI = typeof api) 并以四方对账测试强制一致 (底图 10 指出 ipc/preload 是零直测区, 必须先建网再动 handlers); 渲染层维持现有分层, 本任务只做减法 (死纵切片/死 store 字段) 与不变量修复 (fold 单写路径、错误边界), 结构性组件收敛延后。明确拒绝重型新模式 (DDD 全量分桶/事件总线/一次性拆包): 底图 15 的 13 个在途任务共享 master 工作区, 大迁移的协调成本与回归面在当前窗口不可控; 底图 14 证明小步收敛先例 (shared/path-utils 的 samePath 四副本收敛) 已在本仓验证可行, 本提案复制该先例的节奏而非赌一次性重写。",
+      "targetArchitecture": {
+        "layers": [
+          {
+            "name": "shared (src/shared)",
+            "contains": "跨进程纯类型与纯函数: asset model、IPC 契约表 (IpcChannels 对账真源)、scope、path-utils、object-guards (新, isRecord/readString/extractAtImports 等守卫单源)",
+            "mayDependOn": []
+          },
+          {
+            "name": "main-adapters (src/main/adapters)",
+            "contains": "per-agent 知识: claude-code/codex 的 scanner/parsers/descriptors (扫描源声明数据归此侧) + _shared (有 node 依赖且仅 adapters 域内复用的助手)",
+            "mayDependOn": [
+              "shared"
+            ]
+          },
+          {
+            "name": "main-agent-plugins (src/main/agent-plugins)",
+            "contains": "registry/manifest/adapter-registry + descriptors 聚合 re-export (数据本体在 adapters 侧, 解除唯一值依赖环后方向单向)",
+            "mayDependOn": [
+              "shared",
+              "main-adapters"
+            ]
+          },
+          {
+            "name": "main-engine (src/main/engine)",
+            "contains": "领域核心: assets/runtime、scanner 编排、watcher、search、health、pricing、usage、session-detail (新, 自 handlers 迁入)、asset-sources (新, 扫描源单表); hooks-manager 留宿主 (唯一合法写者)",
+            "mayDependOn": [
+              "shared",
+              "main-agent-plugins",
+              "main-adapters (存量 7 处直连冻结: 不新增, 消减随 engine-shared-core-package)"
+            ]
+          },
+          {
+            "name": "main-domains (src/main/memory, src/main/agent-teams)",
+            "contains": "按需只读 IPC 域, 不进 asset/scanner/watcher 管线; home 解析统一走根级 agent-homes",
+            "mayDependOn": [
+              "shared",
+              "main 根级中立件 (agent-homes/project-config-roots)"
+            ]
+          },
+          {
+            "name": "main-ipc (src/main/ipc)",
+            "contains": "薄注册与序列化门面: typed handle helper + 按域注册; 域逻辑禁止驻留 (session 推断已迁 engine/session-detail)",
+            "mayDependOn": [
+              "electron",
+              "main-engine",
+              "main-domains",
+              "main-agent-plugins",
+              "shared"
+            ]
+          },
+          {
+            "name": "main-composition (src/main/index.ts, dev-instance.ts, log.ts)",
+            "contains": "组合根: electron 装配、进程级钩子、log(scope,err) seam (userData/logs 本地滚动, 无遥测); electron 值依赖白名单层",
+            "mayDependOn": [
+              "electron",
+              "全部 main 模块"
+            ]
+          },
+          {
+            "name": "preload (src/preload)",
+            "contains": "contextBridge 窄桥; BerthAPI = typeof api 是 window.api 类型唯一来源 (手写 d.ts 方法签名废止)",
+            "mayDependOn": [
+              "electron",
+              "shared (仅类型)"
+            ]
+          },
+          {
+            "name": "renderer (src/renderer/src)",
+            "contains": "lib(纯逻辑,直测) → stores(Zustand, setAssetSnapshot 唯一资产写落点) → hooks → components/ui(HeroUI 唯一入口) → components/shared(≥2 页消费准入)+components/{feature} → pages(薄)+App/layout(全局 PageErrorBoundary 兜底)",
+            "mayDependOn": [
+              "shared",
+              "preload (window.api 类型)"
+            ]
+          }
+        ],
+        "rules": [
+          "IPC 四方同步规则: 通道增删必须同批更新 handlers 注册、preload wrapper、shared/types/ipc.ts 的 IpcChannels 表、tests/setup.ts mock; tests/unit/ipc-contract.test.ts 四集合对账不一致即 CI 红。",
+          "window.api 类型唯一来源是 preload 的 export type BerthAPI = typeof api; 禁止在 index.d.ts 手写方法签名。",
+          "electron 值 import 白名单: src/main/index.ts、dev-instance.ts、src/main/ipc/ 下文件; engine/adapters/memory/agent-teams/agent-plugins 出现 import 'electron' 即违规。",
+          "main 依赖方向: agent-plugins → adapters → shared 单向; adapters 禁止 import engine 与 agent-plugins; engine 对 adapter 的新访问一律经 registry, 存量直连只减不增。",
+          "跨模块纯函数归属: 无 node 依赖 → src/shared; 有 node 依赖且仅 adapters 域内 → adapters/_shared; 非 adapters 模块禁止 import adapters/_shared, 需要的助手先升 src/shared。",
+          "renderer 准入: @heroui/react 仅 components/ui 可 import; components/shared 准入条件为 ≥2 页面消费, 单页专属件住 components/{feature}/; 页面内联无 React 依赖纯逻辑超 ~50 行必须下沉 lib/ 并配直测。",
+          "store 写路径: 资产快照唯一写落点 setAssetSnapshot (foldKeepingShallow 不变量); 禁止新增裸替换 action。",
+          "错误处理: 禁止裸 catch 吞错 — catch 必须转 ScanError/HealthCheck 记账或调用 log(scope, err); 日志仅写 app.getPath('userData')/logs, 禁止任何网络出口 (无遥测边界)。",
+          "删除纪律: 删代码必须同批连带专属测试、tests/setup.ts mock 键、i18n key、README 声明; 触碰被源码文本断言钉住的文件时, 同批将该断言改写为行为断言。",
+          "打包语义: electron-builder files 维持加法白名单; dependencies 仅放 main/preload 运行时依赖, renderer-only 库一律 devDependencies。",
+          "安全四边界 (不可破坏): 只读用户配置 (hooks-manager 是唯一合法写者且永留 src/main 宿主); 凭证不进渲染进程 (redaction 枚举测试为回归网); 扫描路径白名单; 无遥测。"
+        ],
+        "moduleMoves": [
+          "agent-plugins/descriptors.ts 的 CLAUDE_SOURCE_DESCRIPTORS / CODEX_SOURCE_DESCRIPTORS / scanRootFromDescriptor → adapters/claude-code/descriptors.ts + adapters/codex/descriptors.ts (agent-plugins/descriptors.ts 改聚合 re-export, 解唯一值依赖环) [B11]",
+          "src/main/ipc/handlers.ts 的 ~276 行 session/模型推断域逻辑 (KNOWN_MODEL_METADATA / inferModelProvider / sessions:get 编排) → src/main/engine/session-detail.ts (新建, 与 engine 成包切线对齐) [B03]",
+          "toSessionSummary: handlers.ts 字节级副本删除 → engine/assets/runtime.ts 单实现 export [B03]",
+          "无 node 依赖纯守卫 (isRecord/readString/readNumber/safeId/extractAtImports) → src/shared/object-guards.ts; adapters/_shared/parser-helpers.ts 改 re-export 保持 import 面 [B10]",
+          "扫描源映射三处操作性副本 (shallow-conventions CAPABILITY_GLOBS、derive-asset DISPATCH 表、watcher getAssetWatchPaths) → src/main/engine/asset-sources.ts 声明式单表 [B12]",
+          "src/renderer/src/components/settings/local-source-copy.ts → components/layout/ (唯一消费者旁) [B04]",
+          "src/preload/index.d.ts 手写方法签名 → 删除, 改为 import BerthAPI 派生声明 [B02]",
+          "snapshot-store.ts: JSON 版 createSnapshotStore 删除, stripRaw 原位保留 (sqlite store 生产消费) [B05]",
+          "不迁移声明: agent-homes.ts / project-config-roots 维持 main 根级中立位 (adapters 与 engine 双侧消费, 移动会制造 adapters→engine 边); project-scope*.ts 迁移随 engine-shared-core-package 切线一并定 (R33 deferred)"
+        ]
+      },
+      "scopeCut": {
+        "inTask": [
+          {
+            "problemId": "adapter-contract-mismatch",
+            "why": "限定低风险半幅: 删三个零调用契约方法 (纯减法, adapter 双测试在网) + SOURCE_DESCRIPTORS 数据下沉 adapters 侧解唯一值依赖环 (为已立案 engine 成包铺路, drift 测试在网)。契约扩展 (deriveAssetsForFile/parseSessionDetail/healthChecks/watchTargets 经 registry 分发) 是大迁移, 留给 engine-shared-core-package issue 在包切线上一次定型。"
+          },
+          {
+            "problemId": "ipc-second-business-layer",
+            "why": "session-activity.ts 先例证明抽离即可测; 迁出后 handlers 回到薄门面, 是 IPC 主题根治的核心步; 先写 session-detail.test.ts 钉行为再搬, 黄金输出 diff 验收。"
+          },
+          {
+            "problemId": "ipc-contract-unenforced",
+            "why": "这是全任务的安全网构建步: BerthAPI = typeof api + 四方对账测试让所有后续 IPC 改动有编译期与测试拦截; 不做它, B01/B03 的删改无防复发机制。"
+          },
+          {
+            "problemId": "scan-source-table-pentaplication",
+            "why": "限定半幅: 只收编已几乎同形的 shallow/derive 两表 + watcher 路径, 三方既有测试齐全; 已知 settings.local.json parser 数分叉如实保留 (行为保持), adapter scanAll 散落调用不动 — 全量统一随 engine 包 issue。"
+          },
+          {
+            "problemId": "zero-observability-main",
+            "why": "单点落地 (~50 行自写 writer, 零新依赖), 不碰业务路径, 是 B09 吞错修复的前置 seam; 打包应用故障无痕迹是当前最大的不可诊断面。"
+          },
+          {
+            "problemId": "renderer-deps-misplaced",
+            "why": "1 个文件的纯配置减法, 阻断下次打包 ≥20MB (实算 77.5MB 闭包) 膨胀; asar list diff 验收确定性高; 无任何在途任务碰 deps 段。"
+          },
+          {
+            "problemId": "builder-files-blacklist-stale",
+            "why": "白名单 3 行一次性终结腐蚀模式, 同时消除 website/.agents/.claude 进分发包的信息外泄; 与 R6 同文件同验收方法, 合并一批。"
+          },
+          {
+            "problemId": "renderer-dead-vertical-slices",
+            "why": "~900 行已对抗验证死代码 + 保活测试, 纯减法且消除'共享实现存在'的误导; 连带同步细节 (scan-sources 通道保活/local-source-copy 迁移) 已核实。"
+          },
+          {
+            "problemId": "dead-ipc-surface",
+            "why": "纯减法且全部经对抗验证; 必须先于 B02 对账测试落地 (对账要钉干净集合); relations/import-chain/mcp:merged 按 GH-112 归档证据选择删除, engine/relations.ts 保留 (packages 测试在用, 归属随 engine 包 issue)。"
+          },
+          {
+            "problemId": "main-pure-helper-copies",
+            "why": "限定半幅: 逐字符等价副本 (isRecord/extractAtImports 等) 下沉 shared + path-utils isPathInside 收敛, parser-helpers 改 re-export 使源改动面最小; splitFrontmatter 5 点语义差不收敛 (钉现行为测试), 收敛已记录在 engine-shared-core-package。"
+          },
+          {
+            "problemId": "claude-home-resolution-bypass",
+            "why": "BERTH_EXTRA_CLAUDE_DIRS 声明行为未被 memory/teams 执行, 属硬约束 2 允许的契约漂移修复; 改动为默认值改遍历 resolveClaudeDirs, 构造参数保留, memory/agent-teams 测试在网。"
+          },
+          {
+            "problemId": "error-silencing-cluster",
+            "why": "硬约束 2 明文允许的吞错修复: 删内层 catch 让既有 safeScan 记账接管是减法式修复; scanner.ts:60 自家注释反对现状; 排最后梯队 + diff 限定 catch 块以避让 parsers/runtime 热点。"
+          },
+          {
+            "problemId": "store-dead-fields",
+            "why": "纯减法, 动态路径已排除, app-store.test 在网; 与 set-assets-fold-bypass 同文件合批减少对 gh-86 足迹的触碰次数。"
+          },
+          {
+            "problemId": "i18n-dead-keys",
+            "why": "24 个 key 经三通道对抗验证; 按硬约束 8 前缀分批 + grep 门控执行; B01/B04 删除产生的连带死 key 一并收口, 排最后给 verify 任务收口时间。"
+          },
+          {
+            "problemId": "pricing-convert-orphan-twin",
+            "why": "单测守护死代码是最危险的孤儿形态 (假安全感); 选删除路线 (TS 三函数删 + 测试改校验 catalog.generated schema) 而非脚本改造, 回归面更小。"
+          },
+          {
+            "problemId": "set-assets-fold-bypass",
+            "why": "store 自我声明不变量被唯一调用方绕过, 属契约漂移修复; 删两行 + 删 action 使类型层封死; CDP 真跑项目切换验收 (memory: runtime-behavior-needs-real-run)。"
+          },
+          {
+            "problemId": "error-boundary-single-route",
+            "why": "通用 boundary 已存在, 推广仅是包装位置 (~5 行); 桌面应用白屏无刷新入口, 错误路径专属改动不影响正常行为。"
+          },
+          {
+            "problemId": "test-net-unevenness",
+            "why": "网先行是本视角核心: e2e 扩 macos 给 B06/B08 装配类批次集成信号; redaction 枚举测试是凭证边界回归网与 R16 下沉前置; parsers.test.ts 假覆盖删除; 已知 project-scope.e2e macOS 红按已立案 issue 隔离不阻塞。"
+          },
+          {
+            "problemId": "long-tail-orphan-inventory",
+            "why": "全部 20 项经对抗验证, 纯减法; stripRaw/tokenUsageTotal/assetProjectPath 三处不能整删细节与连带测试/README 同步已写入批次 goal; 分散到 B01 (hooks 残段)、B05 (主体)、B06 (builder 死配置)。"
+          }
+        ],
+        "deferred": [
+          {
+            "problemId": "expandable-asset-card-clones",
+            "disposition": "issue-existing",
+            "why": "instructions/capabilities 是 4 任务 verify 足迹汇聚面, 分析风险 3 明确建议排在 12 个 verify 任务关闭后; 并入 2026-06-05-IMPROVEMENT-heroui-migration-followup (其 chevron 项同区域, 合并避免二次重构), 附 4 克隆/scope badge 漂移证据。"
+          },
+          {
+            "problemId": "electron-window-hardening",
+            "disposition": "issue-new",
+            "why": "exploit 链已被对抗验证证伪 (降级 low/medium), 属 defense-in-depth 而非在火漏洞; sandbox/will-navigate/permission handler 是行为变更需全平台真跑验证, 不符合行为保持约束; 新立 electron-window-hardening issue (sandbox:true + url-guard.ts + will-navigate + permission deny + CSP 次级指令)。"
+          },
+          {
+            "problemId": "engine-package-migration-scope",
+            "disposition": "issue-existing",
+            "why": "硬约束 7 默认不做大爆炸迁移; 工料细化 (4 缺口) 回写 2026-06-09-IMPROVEMENT-engine-shared-core-package; 本任务以 B11 (解环)、B12 (源表)、B03 (session-detail 落 engine)、B05 (tsup/publishConfig 修正) 完成全部低风险铺路步。"
+          },
+          {
+            "problemId": "swr-hook-convergence-scope",
+            "disposition": "issue-existing",
+            "why": "use-ipc/use-memory 是 gh-86/98 verify 足迹, 且收敛属数据流时序改动需真跑验证、5 份副本策略差异表先行; 范围扩大证据 (第 5 份副本/错误维度/normalize/统一 reset) 已由分析附到 2026-06-09-IMPROVEMENT-renderer-cached-resource-hook, 按路线图独立推进。"
+          },
+          {
+            "problemId": "main-monolith-data-files",
+            "disposition": "issue-new",
+            "why": "health.ts 1453 行拆分是多文件结构重组, 与 R20 messageKey 化同区域同批成本最低, 合立一个新 issue (health-restructure-and-message-contract, 含 registry.ts 静态数据拆分); 路由三处硬编码部分与已立案 shared-path-and-type-config 交叉引用。"
+          },
+          {
+            "problemId": "renderer-god-pages",
+            "disposition": "issue-new",
+            "why": "session-detail/capabilities 是 3-4 任务 verify 足迹, 分析风险 3 建议 verify 关闭后再动; 新立 renderer-god-pages-decomposition issue; 其安全前置 (redaction 枚举测试) 已拉入本任务 B14 先行落网。"
+          },
+          {
+            "problemId": "session-id-implicit-contract",
+            "disposition": "issue-new",
+            "why": "claude/codex parsers.ts 各 16/9 commits churn 且 gh-94 残留模式未对齐; codex 补坏行记账是错误可见性变更需独立验收; 新立 session-id-contract-and-jsonl-parity issue (sessionAssetId 单点 + readJsonLines 提升 + codex 记账对等)。"
+          },
+          {
+            "problemId": "health-i18n-string-contract",
+            "disposition": "issue-new",
+            "why": "messageKey 迁移触 health.ts (1453 行) 与 locales (churn 榜首, 3 任务在写) 两个高风险面, 且分析明示与 health 拆分同批做成本最低 — 与 R15 合入同一新 issue (health-restructure-and-message-contract)。"
+          },
+          {
+            "problemId": "design-system-adoption-gap",
+            "disposition": "issue-existing",
+            "why": "分析建议明文'并入已立案 #6 执行'; barrel 收缩与 tooltip/Switch 替换是 UI 行为面改动, 与 heroui-migration-followup 的逐页迁移节奏天然同轨; 量化证据 (68% 死面/motion 零引用) 已附该 issue。"
+          },
+          {
+            "problemId": "micro-primitives-missing",
+            "disposition": "issue-existing",
+            "why": "StatTile/SectionLabel 的主要替换面 usage/overview 是 gh-103 implement 足迹 (全仓最高风险热点), 必须等其收口; 与 R8/R24 同属渲染层二代抽象建设, 并入 heroui-migration-followup 统一排期。"
+          },
+          {
+            "problemId": "set-assets-fold-bypass-placeholder",
+            "disposition": "skip",
+            "why": "占位防误删 — 实际该问题 (set-assets-fold-bypass) 已列 inTask, 本条不存在; 见 inTask 清单。"
+          },
+          {
+            "problemId": "activate-stale-push-listeners",
+            "disposition": "issue-existing",
+            "why": "产品 bug 非重构范畴 (硬约束 2), explore 阶段已按项目惯例新立 docs/issues/2026-06-10-BUG-activate-stale-push-listeners.md 并亲自核验 index.ts:143-157; B08 触碰 index.ts 时明确避开该区段不顺手修。"
+          },
+          {
+            "problemId": "shared-pure-logic-forks",
+            "disposition": "issue-existing",
+            "why": "normalizeProjectPath 盘根分叉与 signature 习语涉及 session-location-groups.ts/result-signature.ts — 均为 gh-98 verify 足迹; 路线图中 shared-path-and-type-config 本就余留 signature/类型表两项, 新证据 (盘根 'X:' vs 'X:/' 分叉) 已由分析附入, 随该 issue 一并做。"
+          },
+          {
+            "problemId": "distribution-hardening-inert",
+            "disposition": "issue-existing",
+            "why": "签名链/fuses/ABI 冒烟属分发期工程, 依赖 Apple 证书等外部输入; 并入已立案 macos-release-signing-config 并扩面 (fuses 关 RunAsNode/NODE_OPTIONS + OnlyLoadAppFromAsar + ABI 冒烟脚本 + npmRebuild 链路写入 AGENTS.md BUILD_ENV)。"
+          },
+          {
+            "problemId": "renderer-dir-semantics-misplaced",
+            "disposition": "issue-new",
+            "why": "settings.tsx (gh-105 P6.8 进行中)/memory-view (3 任务 verify) 全在热点上, 且收益是检索性而非正确性; 新立 renderer-dir-semantics issue (SettingsContent 归位/memory-view chrome 上提/local-source-copy 字典并 i18n/sessions 三件归位); 其中 local-source-copy 文件位置迁移已随 B04 顺带完成。"
+          },
+          {
+            "problemId": "root-scope-files-misplaced",
+            "disposition": "issue-existing",
+            "why": "分析建议明文'与 engine 迁包切线一并定' (两文件都在 CLI 闭包内), 单独移动会让包迁移二次改 import; 并入 engine-shared-core-package。"
+          }
+        ]
+      },
+      "batches": [
+        {
+          "id": "B01-ipc-dead-surface",
+          "title": "IPC 死面整链删除 (7 通道 + phantom + hooks 残段 + 死字段)",
+          "goal": "按链路整删: theme:get / hooks:status / hooks:set-enabled / assets:scan-all 四个全链死通道 (handler+preload+d.ts); assets:relations / assets:import-chain / mcp:merged 三个 handler-only 不可达通道, 连带 computeMcpMerged 38 行与 MCPMergeInfo 类型 (同时消灭一处 ~/.claude 硬编码绕行); preload phantom assets.scan; d.ts 幻影 hooks.statuses; getAgentHooksStatuses 引擎残段 (a471ed2 退役残留, 无需再议产品意图); PlatformInfo.claudeDir 死字段。engine/relations.ts 保留 (packages/berth-scan-engine/tests/plugin-relations.test.ts 在测, 归属随 engine-shared-core-package 决策)。连带死 i18n key (projectReadOnly 等) 留给 B13 统一收口。",
+          "problemIds": [
+            "dead-ipc-surface",
+            "long-tail-orphan-inventory"
+          ],
+          "files": [
+            "src/shared/types/ipc.ts",
+            "src/preload/index.ts",
+            "src/preload/index.d.ts",
+            "src/main/ipc/handlers.ts",
+            "src/main/engine/hooks-manager.ts",
+            "tests/setup.ts",
+            "tests/renderer/hooks-lifecycle-view.test.tsx",
+            "tests/renderer/platform.test.ts",
+            "tests/unit/hooks-manager.test.ts"
+          ],
+          "tests": "纯减法批不写新测试: 同步收缩 tests/setup.ts mock 键、tests/renderer/hooks-lifecycle-view.test.tsx 幻影 statuses 断言、tests/renderer/platform.test.ts claudeDir 断言、tests/unit/hooks-manager.test.ts statuses 用例; 防复发网由 B02 四方对账测试接管。",
+          "verify": "pnpm typecheck + lint + vitest 全量绿; 7 个通道名字符串全仓 grep 零残留; pnpm dev 启动冒烟确认主题切换与 hook 启停 (hooks:set-hook-enabled) 路径仍工作; git diff --cached 核对仅含本批文件。",
+          "dependsOn": [],
+          "parallelGroup": "P1",
+          "hotspotNote": "handlers.ts (gh-86/95/104)、preload/index.ts (gh-104)、shared/types/ipc.ts (gh-86/104)、hooks-manager.ts (gh-104) 均为 verify 足迹。避撞策略: 改动为纯删除且对象全部经对抗验证为死面; 鉴于 GH-114 曾回加 teams 通道的先例, 动手前对 7 个通道名重跑 grep + git log -7d 确认无新增消费; works INDEX 声明足迹; hooks-lifecycle-view.test.tsx (gh-90/104/105 足迹) 仅删幻影 mock 断言行。"
+        },
+        {
+          "id": "B02-ipc-contract-derivation",
+          "title": "IPC 契约单源派生 + 四方对账测试 (建网)",
+          "goal": "preload 导出 export type BerthAPI = typeof api 成为 window.api 类型唯一来源, index.d.ts 改派生声明 (消灭手写镜像); IpcChannels 表补齐 assets:snapshot/status/refresh 三现役通道、删幽灵事件 scan:progress、修正 assets:changed payload 为 WatchEvent, 升格为对账真源; handlers 经 typed handle helper 注册; tests/setup.ts mockApi 标 satisfies BerthAPI 并纳入 typecheck 射程。",
+          "problemIds": [
+            "ipc-contract-unenforced",
+            "test-net-unevenness"
+          ],
+          "files": [
+            "src/preload/index.ts",
+            "src/preload/index.d.ts",
+            "src/shared/types/ipc.ts",
+            "src/main/ipc/handlers.ts",
+            "tests/setup.ts",
+            "tests/unit/ipc-contract.test.ts",
+            "tsconfig.web.json"
+          ],
+          "tests": "先写 tests/unit/ipc-contract.test.ts: handlers 注册通道集合 == preload invoke 通道集合 == IpcChannels 键集合 == tests/setup.ts mock 键集合, 四方对账 (初始红: 表缺 3 通道) → 修表实现 → 绿; setup.ts mockApi 加 satisfies BerthAPI。typecheck 纳入范围限定 setup.ts + 本测试 (全量 tests/ 纳入先跑 tsc 错误量探针, 量大另立 issue, 防批次爆炸)。",
+          "verify": "门禁全绿; 自证网有效性: 临时注入一个未注册通道确认对账测试变红后撤销; pnpm dev 冒烟确认 window.api 全方法可调。",
+          "dependsOn": [
+            "B01-ipc-dead-surface"
+          ],
+          "parallelGroup": "P2",
+          "hotspotNote": "与 B01 同一组热点文件 (handlers/preload/ipc.ts), 通过 dependsOn 串行化消除批间冲突; 对在途任务为类型层加严, 不改任何通道行为; gh-86/104 若 verify 回退新增通道, 对账测试会显式红而非静默漂移 — 这正是本批的价值。"
+        },
+        {
+          "id": "B03-handlers-thinning-home-fix",
+          "title": "handlers 域逻辑迁 engine/session-detail + 多 home 契约漂移修复",
+          "goal": "handlers.ts 内 ~276 行 session/模型推断域逻辑 (KNOWN_MODEL_METADATA、inferModelProvider、sessions:get 厚编排) 迁入新建 src/main/engine/session-detail.ts (与 engine 成包切线对齐), sessions:get 压成单调用; toSessionSummary 收敛为 runtime.ts 单实现 export, 删 handlers 字节级副本; memory/claude-native 与 agent-teams 默认 home 由硬拼 os.homedir()/.claude 改遍历 resolveClaudeDirs (修复 BERTH_EXTRA_CLAUDE_DIRS 契约漂移, 构造参数保留供测试注入)。",
+          "problemIds": [
+            "ipc-second-business-layer",
+            "claude-home-resolution-bypass"
+          ],
+          "files": [
+            "src/main/ipc/handlers.ts",
+            "src/main/engine/session-detail.ts",
+            "src/main/engine/assets/runtime.ts",
+            "src/main/memory/sources/claude-native.ts",
+            "src/main/agent-teams/index.ts",
+            "src/main/agent-homes.ts",
+            "tests/unit/session-detail.test.ts",
+            "tests/unit/memory-claude-native.test.ts",
+            "tests/unit/agent-teams-reader.test.ts"
+          ],
+          "tests": "先写 tests/unit/session-detail.test.ts 钉迁移前行为 (模型推断/元数据库/会话详情组装, 以 handlers 现行输出为黄金基线) 再搬移; tests/unit/memory-claude-native.test.ts 与 tests/unit/agent-teams-reader.test.ts 补 BERTH_EXTRA_CLAUDE_DIRS 多 home 用例 (第二 home 中的笔记/teams 可见)。",
+          "verify": "门禁全绿; sessions:get 迁移前后对同一 fixture 输出 diff 为空; CDP 真跑 session 详情页与 teams 页 (数据流改动按 memory 配方实测); handlers.ts 行数显著下降且 registerAssetHandlers 内无内联模型知识。",
+          "dependsOn": [
+            "B02-ipc-contract-derivation"
+          ],
+          "parallelGroup": "P3",
+          "hotspotNote": "handlers.ts 三任务 verify 足迹 + runtime.ts 13 commits (gh-86): runtime 仅加单行 export 关键字; session-activity.ts 是 gh-95 足迹, 本批不动只消费; agent-teams/index.ts 的 GH-114 已归档但其 session-${id} 反查逻辑不动 (R17 deferred)。动手前查 gh-86/95 INDEX, 声明足迹。"
+        },
+        {
+          "id": "B04-renderer-dead-slices",
+          "title": "渲染层死纵切片删除 (~900 行 + 保活测试)",
+          "goal": "删除四件零引用第一代 shared 抽象与换代遗留: components/shared/{asset-card,stat-card,tab-group}.tsx (148 行)、asset-guide-panel.tsx + lib/asset-guidance.ts 整簇 (~319 行, 被 feature-guidance 取代)、components/settings/local-sources-section.tsx (295 行, GH-85 归档 SPEC 明确计划移除) + hooks/use-ipc.ts 的 useScanSources; 删保活测试 asset-guidance.test.ts / asset-guide-panel.test.tsx; local-source-copy.ts 迁 components/layout/ (唯一消费者旁)。边界遵守: assets:scan-sources 通道本体保留 (project-scope-switcher.tsx:74 直调); 独占 i18n key 家族留 B13。",
+          "problemIds": [
+            "renderer-dead-vertical-slices"
+          ],
+          "files": [
+            "src/renderer/src/components/shared/asset-card.tsx",
+            "src/renderer/src/components/shared/stat-card.tsx",
+            "src/renderer/src/components/shared/tab-group.tsx",
+            "src/renderer/src/components/shared/asset-guide-panel.tsx",
+            "src/renderer/src/lib/asset-guidance.ts",
+            "src/renderer/src/components/settings/local-sources-section.tsx",
+            "src/renderer/src/components/settings/local-source-copy.ts",
+            "src/renderer/src/hooks/use-ipc.ts",
+            "tests/renderer/asset-guidance.test.ts",
+            "tests/renderer/asset-guide-panel.test.tsx",
+            "tests/renderer/settings-sources.test.tsx",
+            "tests/renderer/settings-page.test.tsx"
+          ],
+          "tests": "纯减法不写新测试: 删两个保活测试文件, 更新 settings-sources.test.tsx / settings-page.test.tsx (移除对死组件的引用断言); 删除前对 LocalSourcesSection/useScanSources/AssetCard/StatCard/TabGroup 裸符号重跑 grep 复证零引用。",
+          "verify": "vitest 全量 + typecheck + lint 绿; grep 零引用复证; pnpm dev settings 页与 instructions 页冒烟 (guidance 面板仍由 feature-guide-panel 渲染); harness:check 绿。",
+          "dependsOn": [],
+          "parallelGroup": "P1",
+          "hotspotNote": "use-ipc.ts 是 gh-86/98 verify 足迹 — 仅删 useScanSources 导出块, 不触 SWR 缓存区段; asset-guidance.ts 是 gh-94 足迹 (其任务 2 删过 team 文案) — 整文件删除前查 gh-94 INDEX 终态, 若未收口则该文件延后单独提交并声明; 删除批例外上限 20 文件内 (本批 12)。"
+        },
+        {
+          "id": "B05-longtail-orphans",
+          "title": "长尾孤儿清理 (死导出/JSON store/CSS token/图标/配置/假覆盖测试)",
+          "goal": "按 01-ANALYSIS 孤儿清单 #9/10/12/14/15/16/18/20 执行: pricing/convert.ts 三函数删除 (测试改校验 catalog.generated.ts schema, 终结'单测守护死代码'); JSON 版 createSnapshotStore 删除但 stripRaw 原位保留 (sqlite store 生产消费, 不能整文件删); 9 处死导出 (parsePlugin/parseStatusline/resolveCodexHomeDir shim 连带 import-rename/useMemoryNote/flattenNavItems/AppScopeMode/tokenUsageTotal 降内部并同步降级其测试/ExitCode/assetProjectPath 仅摘名 — 同行 assetMatchesProjectPath 有活消费者); globals.css 死 token (--secondary 对/--sidebar-accent-foreground) + tailwind radix keyframes 删除并同步删 theme-palette.test.ts 对死变量的字符串断言; assets/icon 3.56MB 双图标删除 (builder 无 icon 接线); components.json 删除并修正 README.md:93/:170 两处 shadcn 过时声明; tsup 配置修正 (cli 入口仅 cjs/关 sourcemap/补 publishConfig access public, 消灭 1.55MB 死产物对); 删 tests/unit/parsers.test.ts (196 行假覆盖, 真 parser 已有四套直测)。",
+          "problemIds": [
+            "long-tail-orphan-inventory",
+            "pricing-convert-orphan-twin",
+            "test-net-unevenness"
+          ],
+          "files": [
+            "src/main/engine/pricing/convert.ts",
+            "tests/unit/pricing.test.ts",
+            "src/main/engine/assets/snapshot-store.ts",
+            "tests/unit/snapshot-store.test.ts",
+            "src/main/adapters/claude-code/parsers.ts",
+            "src/main/adapters/codex/index.ts",
+            "src/renderer/src/hooks/use-memory.ts",
+            "src/renderer/src/components/layout/nav-config.ts",
+            "src/shared/scope.ts",
+            "src/renderer/src/lib/token-usage.ts",
+            "tests/unit/token-usage.test.ts",
+            "src/main/project-scope.ts",
+            "src/renderer/src/styles/globals.css",
+            "tailwind.config.ts",
+            "tests/renderer/theme-palette.test.ts",
+            "assets/icon/app_icon.png",
+            "assets/icon/app_icon_v2.png",
+            "components.json",
+            "README.md",
+            "packages/berth-scan-engine/tsup.config.ts",
+            "packages/berth-scan-engine/package.json",
+            "tests/unit/parsers.test.ts"
+          ],
+          "tests": "连带同步即本批测试工作: tests/unit/pricing.test.ts 重写为 catalog.generated.ts schema 校验 + estimate 行为保留; tests/unit/token-usage.test.ts 降级 tokenUsageTotal 断言; tests/renderer/theme-palette.test.ts 删死变量断言行 (源码文本断言地雷); tests/unit/snapshot-store.test.ts 收缩到 stripRaw 行为; 删 tests/unit/parsers.test.ts。每项删除前裸符号 grep 复证。",
+          "verify": "vitest 全量 + typecheck + lint + pnpm build 绿; packages 侧 pnpm -F @berth/scan-engine build + test 绿且 dist 无 cli.js(esm)/无 .map; harness:check 绿; 按前缀分多次小步提交 (engine 孤儿/renderer 孤儿/css+config/packages 各一 commit)。",
+          "dependsOn": [],
+          "parallelGroup": "P1",
+          "hotspotNote": "globals.css 是 gh-103(implement)+gh-105 双足迹最高危文件 — 仅删 --secondary 对与 --sidebar-accent-foreground, 距 --chart-* (gh-103) 与 --primary/accent 块 (gh-105) 均为不同变量段, 提交前 git diff --cached 逐行核对; claude parsers.ts (16 commits, gh-94) 与 nav-config.ts (gh-94) 仅删与其任务无交集的死导出, 删前 re-grep; packages/ 不在任何在途足迹 (底图 15), 可放心触碰; 删除批文件数 22 略超 20 上限, 以多 commit 切分对冲。"
+        },
+        {
+          "id": "B06-packaging-slim",
+          "title": "打包面收敛: deps 语义归位 + files 白名单",
+          "goal": "7 个纯 renderer 库 (@heroui/react/framer-motion/i18next/react-i18next/react-markdown/remark-gfm/zustand) 移 devDependencies, dependencies 收敛为 main/preload 运行时最小集 8 包 (vite 全量 bundle 行为不变, 阻断下次打包 77.5MB 闭包入 asar); electron-builder files 由黑名单改加法白名单 ['out/**','package.json','LICENSE'], 终结 website/scripts/.agents/.claude 进分发包的信息外泄; 同批删 builder 死配置簇 (asarUnpack resources/**、publish 占位块 https://example.com、!PLANS/* 死条目)。",
+          "problemIds": [
+            "renderer-deps-misplaced",
+            "builder-files-blacklist-stale",
+            "long-tail-orphan-inventory"
+          ],
+          "files": [
+            "package.json",
+            "pnpm-lock.yaml",
+            "electron-builder.yml"
+          ],
+          "tests": "not needed - 纯构建配置无单元可测面, 运行时行为由打包产物核查验证 (vite bundle 闭包不受 dep 分类影响, react 本体已在 devDependencies 且应用正常运行是既有反证)。",
+          "verify": "pnpm build 绿 + 本地 electron-builder --dir 打包 + npx @electron/asar list 对比 0.1.1 基线: website/scripts/.agents/.claude/98 死包消失、8 包运行时闭包完整 (better-sqlite3 等); 打包产物 mac 启动冒烟 (窗口出现 + 扫描完成); 显式标注硬约束 6 风险: 触打包配置, windows e2e CI 必须绿后才合入; smartUnpack 对 better-sqlite3 的默认行为不受 asarUnpack 删除影响 (已对抗验证)。",
+          "dependsOn": [],
+          "parallelGroup": "P1",
+          "hotspotNote": "无在途任务触碰 package.json deps 段与 electron-builder.yml; pnpm-lock 重算与他批零交集; 唯一注意: 提交前确认无并行任务正在加依赖 (git log package.json -7d)。"
+        },
+        {
+          "id": "B07-renderer-invariant-seams",
+          "title": "渲染层不变量修复: store 单写路径 + 死字段 + 全局错误边界",
+          "goal": "删 stores/app.ts 五处死状态 (recentSessions/usageSummary/agentDetected/setScanning/lastAssetRefreshAt, AppState 虚胖 ~24%), scanning 改读处派生 (sidebar-scan-status 已示范规范形式); project-scope-switcher selectScope 删 setAssets/setStats 裸写两行只走 setAssetSnapshot 单落点, 随后从 AppState 删除这两个 action 使 foldKeepingShallow 不变量在类型层不可绕过 (修复声明不变量被唯一调用方绕过的契约漂移); AppLayout children 外加默认 PageErrorBoundary 整窗兜底 (含'返回 Overview'动作避免死局), /usage 现有逐路由细化保留。",
+          "problemIds": [
+            "store-dead-fields",
+            "set-assets-fold-bypass",
+            "error-boundary-single-route"
+          ],
+          "files": [
+            "src/renderer/src/stores/app.ts",
+            "src/renderer/src/components/layout/project-scope-switcher.tsx",
+            "src/renderer/src/components/layout/app-layout.tsx",
+            "src/renderer/src/components/layout/page-error-boundary.tsx",
+            "tests/renderer/app-store.test.ts",
+            "tests/renderer/project-scope-switcher.test.tsx",
+            "tests/renderer/app-layout.test.tsx",
+            "tests/renderer/page-error-boundary.test.tsx",
+            "tests/renderer/capabilities-plugins.test.tsx",
+            "tests/renderer/capabilities-scanning-empty.test.tsx"
+          ],
+          "tests": "先写: tests/renderer/project-scope-switcher.test.tsx 新断言 selectScope 激活仅产生 setAssetSnapshot 单写 (无裸替换); tests/renderer/app-layout.test.tsx 新断言子组件抛错被 boundary 接住渲染 fallback; 然后实现。同步收缩 tests/renderer/app-store.test.ts 与 capabilities-plugins/capabilities-scanning-empty 两测试的 setState 字面量。",
+          "verify": "vitest 全量绿; CDP 真跑项目切换观察 deep-only 集无瞬时 shallow 资产丢失 (memory: runtime-behavior-needs-real-run, 静态绿不充分); 触发一次人造渲染异常确认 boundary 兜底 + 返回动作可用; 四态截图不回归。",
+          "dependsOn": [],
+          "parallelGroup": "P1",
+          "hotspotNote": "stores/app.ts 是 gh-86 verify 足迹 (其新增 runtime 状态字段) — 本批删除的是另一组字段, 区段正交; app-layout.tsx (gh-90/96/105, 10 commits) 仅外包一层 boundary (~5 行); project-scope-switcher 无在途足迹但有自有测试。动手前查 gh-86/90/96 INDEX, works INDEX 声明足迹; 与已立案 agent-view-store-vestige (需产品决策) 同性质但不替它做决定。"
+        },
+        {
+          "id": "B08-main-observability",
+          "title": "主进程可观测性地基: log seam + 进程钩子 + watcher error",
+          "goal": "新建 src/main/log.ts (~50 行自写滚动文件 writer, 零新增依赖): log(scope, err) seam 落 app.getPath('userData')/logs (守住无遥测边界, 只落本地); index.ts 单点接入 uncaughtException/unhandledRejection/render-process-gone 三钩子 + whenReady 链补 .catch + dialog.showErrorBox (消除'dock 图标出现但永无窗口'的零诊断故障); watcher 补 on('error') 监听 (当前 emit('error') 无监听者直接 throw 进 uncaughtException 且 live 更新静默失效); watch-wiring 的 applyWatchEvent 回调包 try/catch 接 log。明确不动 index.ts:143-157 stale-listener 区段 (R28 已立案独立修)。",
+          "problemIds": [
+            "zero-observability-main"
+          ],
+          "files": [
+            "src/main/index.ts",
+            "src/main/log.ts",
+            "src/main/engine/watcher.ts",
+            "src/main/engine/assets/watch-wiring.ts",
+            "tests/unit/main-log.test.ts",
+            "tests/unit/watcher.test.ts",
+            "tests/unit/watch-wiring.test.ts"
+          ],
+          "tests": "先写 tests/unit/main-log.test.ts (临时目录: 写入格式/滚动切换/容量上限/目录自创建, log.ts 设计为不依赖 electron 以可直测 — 路径经参数注入); tests/unit/watcher.test.ts 补 error 事件被监听不致进程崩溃且转记账; tests/unit/watch-wiring.test.ts 补 listener 抛错不中断后续事件折叠。",
+          "verify": "门禁全绿 + pnpm build 本地冒烟 (硬约束 6: 触主进程装配, index.ts 是双构建入口之一); 真跑确认 userData/logs 文件生成、人为制造 watcher error (删除监听目录) 观察日志落盘且应用不崩; 确认零网络出口 (代码评审 + 无新依赖)。",
+          "dependsOn": [],
+          "parallelGroup": "P1",
+          "hotspotNote": "index.ts 近 7 天 7 commits 但不在任何任务足迹清单; watcher.ts 与 B12 重叠 — 已通过 B12 dependsOn 本批串行化; 改动以新增为主, 装配段 diff 小; R28 stale-listener 区段显式避开不顺手修。"
+        },
+        {
+          "id": "B09-error-silencing-fix",
+          "title": "吞错簇修复: 内层 catch 删除 + detect 记账 + status.error 渲染",
+          "goal": "纯删代码级修复 (硬约束 2 明文允许的吞错修复): 删 parseMcpServers 等内层裸 catch 让 throw 上抛给已包好的 safeScan — 坏 .mcp.json 从'资产无声消失'恢复为 ScanError 记账 (scanner.ts:60 自家注释明文反对现状); getScanSourceGroups 对 detect() 异常 push ScanError 区分'未安装/检测失败' (消除肯定性错误结论); runtime catch 处接 B08 的 log(scope,err) 单点覆盖全部扫描故障 stack; sidebar-scan-status/ScanProgressPanel 渲染 status.error (故障链最后一跳接通); pricing catalog 解析失败由静默归零升级为记账。",
+          "problemIds": [
+            "error-silencing-cluster"
+          ],
+          "files": [
+            "src/main/adapters/claude-code/parsers.ts",
+            "src/main/adapters/claude-code/scanner.ts",
+            "src/main/engine/scanner.ts",
+            "src/main/engine/assets/runtime.ts",
+            "src/main/engine/pricing/catalog.ts",
+            "src/renderer/src/components/layout/sidebar-scan-status.tsx",
+            "tests/unit/claude-scanner.test.ts",
+            "tests/unit/engine-scanner.test.ts",
+            "tests/unit/agent-asset-runtime.test.ts",
+            "tests/renderer/sidebar-scan-status.test.tsx"
+          ],
+          "tests": "先写红测试: tests/unit/claude-scanner.test.ts '单个坏 .mcp.json 产生 ScanError 且其余资产不丢' (当前红: 静默 return []); tests/unit/engine-scanner.test.ts 'detect throw 产生检测失败记账而非 installed:false'; tests/renderer/sidebar-scan-status.test.tsx 'status.error 文本可见'; tests/unit/agent-asset-runtime.test.ts 补 catch 处 log 调用断言 (runtime 24 用例网是全仓最强, 改动有兜底)。",
+          "verify": "门禁全绿; CDP 真跑: 手工写坏一个 .mcp.json 观察 UI 出现错误记账而非资产静默消失, 修复文件后恢复; verify 截图标注'新错误可见性'为吞错修复例外而非视觉回归 (验收标准 9); 全程只删 catch 与单行注入, 不重排逻辑。",
+          "dependsOn": [
+            "B03-handlers-thinning-home-fix",
+            "B05-longtail-orphans",
+            "B08-main-observability"
+          ],
+          "parallelGroup": "P4",
+          "hotspotNote": "本任务风险最高批, 排最后梯队: claude parsers.ts (16 commits, gh-94)/engine scanner.ts (11, gh-86/94)/runtime.ts (13, gh-86) 全是 verify 足迹。避撞: dependsOn 已与 B03/B05 在 parsers/runtime 上串行化; 动手前对三文件 git log -7d + 在途 INDEX 复查, 任何并行回改迹象即暂停本批并declare; diff 严格限定 catch 块与单行 log 注入。"
+        },
+        {
+          "id": "B10-pure-helper-sink",
+          "title": "纯助手单源化: object-guards 下沉 shared + path-utils 收敛",
+          "goal": "无 node 依赖纯守卫 (isRecord/readString/readNumber/safeId/extractAtImports) 下沉新建 src/shared/object-guards.ts; adapters/_shared/parser-helpers.ts 改 re-export 保持 import 面 (源改动面最小); health.ts 的逐字符等价副本 (extractAtImports 已验证等价) 与 memory 两 sources 的本地 isRecord 族替换为 shared 引用; agent-teams 跨模块 import adapters/_shared 改 import shared (将唯一违例合法化, 使'非 adapters 不依赖 _shared'升格为可执行规则); shared/path-utils 增 isPathInside({includeEqual}) 与 dedupePaths, 按 samePath 先例收敛 4 套 2 算法语义矛盾的包含判定。splitFrontmatter 5 点语义差不收敛 — 仅钉现行为测试 (收敛已记录在 engine-shared-core-package, 强行统一是行为变更)。",
+          "problemIds": [
+            "main-pure-helper-copies"
+          ],
+          "files": [
+            "src/shared/object-guards.ts",
+            "src/shared/path-utils.ts",
+            "src/main/adapters/_shared/parser-helpers.ts",
+            "src/main/engine/health.ts",
+            "src/main/memory/sources/united-memory.ts",
+            "src/main/memory/sources/claude-native.ts",
+            "src/main/agent-teams/index.ts",
+            "tests/unit/shared-guards.test.ts",
+            "tests/unit/parser-path-equality.test.ts",
+            "tests/unit/memory-united-memory.test.ts",
+            "tests/unit/memory-claude-native.test.ts",
+            "tests/unit/health-check.test.ts"
+          ],
+          "tests": "先写 tests/unit/shared-guards.test.ts: 对 _shared 版与 health 本地版逐一行为等价枚举 (含 extractAtImports 边界), 等价证明通过后才替换; tests/unit/parser-path-equality.test.ts 扩 isPathInside includeEqual/win32 大小写矩阵 (现状 4 套答案互相矛盾, 测试先把目标语义钉死); memory 两测试补 splitFrontmatter 5 边界差异的现行为钉位用例 (空 frontmatter/EOF fence/非 record YAML)。",
+          "verify": "门禁全绿; grep 确认 isRecord 本地副本数 7→0 (定义仅 shared 一处); 非 adapters 模块对 adapters/_shared 的 import 零残留; vitest 全量 (memory/health/parsers 既有断言不变 = 行为保持证明)。",
+          "dependsOn": [
+            "B03-handlers-thinning-home-fix"
+          ],
+          "parallelGroup": "P4",
+          "hotspotNote": "claude-native.ts/agent-teams/index.ts 与 B03 重叠, dependsOn 串行化; health.ts (1453 行) 无在途足迹, 仅做副本替换不拆分 (拆分在 deferred R15); 文件数 12 (7 源 + 5 测试) 略超 ~10, 以 re-export 策略压低净改动行数并分两 commit (guards 下沉 / path-utils 收敛)。"
+        },
+        {
+          "id": "B11-adapter-contract-slim",
+          "title": "AgentAdapter 契约收紧 + descriptors 值依赖环解除",
+          "goal": "删 AgentAdapter 契约三个零调用方法 (scanAssets/watchAssets/resolveRelations) 及两家实现的桩 — 契约收紧到真实消费面 detect/scanAll/scanSourceCoverage (scanner.ts:9 是 createAgentAdapters 全仓唯一消费者); SOURCE_DESCRIPTORS 数据 + scanRootFromDescriptor 下沉 adapters/{claude-code,codex}/descriptors.ts, agent-plugins/descriptors.ts 改聚合 re-export — 解除 adapters→agent-plugins 唯一模块级值依赖环, 打通 engine 成包切线 (铺路步, 硬约束 7 允许); 不做契约扩展 (deriveAssetsForFile 等四类能力随 engine-shared-core-package 在包切线上定型)。",
+          "problemIds": [
+            "adapter-contract-mismatch"
+          ],
+          "files": [
+            "src/shared/types/asset.ts",
+            "src/main/adapters/claude-code/index.ts",
+            "src/main/adapters/claude-code/descriptors.ts",
+            "src/main/adapters/codex/index.ts",
+            "src/main/adapters/codex/descriptors.ts",
+            "src/main/agent-plugins/descriptors.ts",
+            "tests/unit/claude-code-adapter.test.ts",
+            "tests/unit/codex-adapter.test.ts",
+            "tests/unit/agent-adapter-registry.test.ts",
+            "tests/unit/scan-coverage.test.ts"
+          ],
+          "tests": "先更新 tests/unit/claude-code-adapter.test.ts / codex-adapter.test.ts 断言契约面恰为三活方法 (类型编译期收紧 + 运行时无桩残留); tests/unit/scan-coverage.test.ts (descriptors drift 测试, gh-86 产物) 改指向 adapters 侧数据源并断言 agent-plugins 聚合 re-export 与原表逐项等价 — 等价断言绿即数据迁移零漂移证明。",
+          "verify": "门禁全绿; grep 确认 src/main/adapters/**/* 对 agent-plugins 的 import 边消失 (值环归零); packages/berth-scan-engine 24 用例绿 (engine-bridge 消费面未破); pnpm build 绿 (worker 入口含 adapter 构造链)。",
+          "dependsOn": [
+            "B05-longtail-orphans"
+          ],
+          "parallelGroup": "P2",
+          "hotspotNote": "shared/types/asset.ts 是 gh-94 verify 足迹 (team 契约删除) — 本批删的是 AgentAdapter 接口方法签名, 不同 section, 动手前查 gh-94 INDEX; adapters/{cc,codex}/index.ts 是 gh-94/104 足迹且与 B05 重叠 (codex shim 删除), dependsOn B05 串行化; agent-plugins/ 是 gh-86 足迹 — descriptors.ts 改为纯 re-export, registry 消费面不变。"
+        },
+        {
+          "id": "B12-asset-source-table",
+          "title": "扫描源声明式单表 (shallow/derive/watcher 三方收编)",
+          "goal": "新建 src/main/engine/asset-sources.ts 声明式单表 {agentId, scope, pattern, kind, parserKey, watch}, 收编已验证几乎同形的 shallow-conventions CAPABILITY_GLOBS 与 derive-asset DISPATCH 表 + watcher getAssetWatchPaths 三方消费 (消灭 'Mirrors ...' 自认注释); 行为保持关键细节: settings.local.json 在 scanner(2 parser) 与 shallow/derive(5 parser) 的已知语义分叉如实按 per-consumer 字段建模, 不顺手统一 (统一是行为变更, 决策留给 engine 包 issue); 与 B11 落位后的 adapters descriptors 建 drift 一致性测试; adapter scanAll 散落调用与 codex index 不动 (随包迁移收编, 表本身无 Electron 依赖与迁包兼容)。",
+          "problemIds": [
+            "scan-source-table-pentaplication"
+          ],
+          "files": [
+            "src/main/engine/asset-sources.ts",
+            "src/main/engine/shallow-conventions.ts",
+            "src/main/engine/assets/derive-asset.ts",
+            "src/main/engine/watcher.ts",
+            "tests/unit/asset-sources.test.ts",
+            "tests/unit/shallow-conventions.test.ts",
+            "tests/unit/derive-asset.test.ts",
+            "tests/unit/asset-watcher.test.ts",
+            "tests/unit/watcher.test.ts"
+          ],
+          "tests": "先写 tests/unit/asset-sources.test.ts: 表 schema 校验 + 与旧三表逐项等价快照 (迁移零漂移证明) + 与 adapters descriptors 的 drift 一致性; 替换实现后 tests/unit/shallow-conventions.test.ts / derive-asset.test.ts / asset-watcher.test.ts 既有断言一字不改全绿 — 这是行为保持的最强证据。",
+          "verify": "门禁全绿; grep 'Mirrors' 注释零残留 (derive-asset.ts:45/68); CDP 真跑增量链路: 新建一个 skill 文件观察 watch→derive→UI 出现 (数据流时序按 memory 配方实测); 新增一种资产目录的改动点从 5 文件降为 1 表项 (在批内 README/ARCHITECTURE 注明)。",
+          "dependsOn": [
+            "B08-main-observability",
+            "B11-adapter-contract-slim"
+          ],
+          "parallelGroup": "P3",
+          "hotspotNote": "watcher.ts 与 B08 重叠 (error 监听), dependsOn 串行化; derive-asset.ts 属 engine/assets/ (gh-86 verify 足迹, 性能任务回退概率不低) — 动手前查 gh-86 INDEX, 既有测试断言不改是回退冲突时的快速仲裁基准; shallow-conventions 无在途足迹。"
+        },
+        {
+          "id": "B13-i18n-dead-keys",
+          "title": "i18n 死 key 删除 (前缀分批) + zh 复数收敛",
+          "goal": "删 24 个已对抗验证死 key 双份 (nav.configuration/instructions.title/capabilities.title/usage.totalSpent/sessions.noSessions/settings.agentPluginManifestStatus 族/common.sensitive 等) + B01/B04 删除连带的死 key (hooks projectReadOnly/guidance codexConfig/settings.sourceCategories-sourceScopes-scanDirectories-sourceDetected 家族); zh 复数混用 9 组收敛到 _other 单一约定; 把 replace('.evidence.','.evidenceHelp.') 类隐式推导列入巡检豁免说明 (评注形式)。",
+          "problemIds": [
+            "i18n-dead-keys"
+          ],
+          "files": [
+            "src/renderer/src/i18n/locales/en.json",
+            "src/renderer/src/i18n/locales/zh.json"
+          ],
+          "tests": "not needed - 纯 JSON 减法: 回归网为 vitest 全量 (live key 缺失会在渲染测试以 raw key 形式暴露, 死 key 删除不触发) + 每前缀删除前全仓 grep key 字面量与 50 个动态模板前缀复核 (evidenceHelp 假阳性教训已内化)。",
+          "verify": "vitest 全量 + harness:check 绿; 每前缀一个 commit, git diff --cached 核对仅含目标前缀行 (硬约束 8 小步要求); zh 复数收敛单独 commit 且渲染测试绿。",
+          "dependsOn": [
+            "B01-ipc-dead-surface",
+            "B04-renderer-dead-slices"
+          ],
+          "parallelGroup": "sequential",
+          "hotspotNote": "locales 是 churn 榜首 (en/zh 各 23 commits, gh-94/98/104 三个 verify 任务在写, 硬约束 8 点名): 执行前逐一检查三任务 works INDEX 是否收口 + git log locales -7d 确认无并行写入; 未收口则仅删与其足迹 key 零交集的前缀并当轮声明, zh 复数收敛若有任何并行写入迹象整体延后到任务尾部重试; 排全计划最后梯队即为给 verify 任务最大收口窗口。"
+        },
+        {
+          "id": "B14-test-net-expansion",
+          "title": "测试网扩面: e2e macos 矩阵 + 凭证 redaction 枚举测试 + CI 缺口",
+          "goal": "ci.yml 矩阵 (现 ubuntu-latest+windows-2022, e2e 仅 windows) 增 macos-latest 且 test:e2e 条件扩到 macos — 重构密集期为主开发平台 (mac) 提供主进程装配集成信号 (每 OS ~1-2 分钟, B06/B08 的直接受益网); 新写凭证 redaction 枚举测试 (token/api-key/bearer/URL 内嵌凭证样例 → 渲染输出无明文), 这是'凭证不进渲染进程'边界的回归网与 R16 巨石页下沉的强制前置 (风险 10); deploy-website.yml 补 vitest 步 (website 2 测试当前无任何 CI 入口); 3 个根级 .ts 配置 (vitest/playwright/tailwind) 纳入 tsconfig.node.json include; 附带探针: tsc --noEmit -p packages/berth-scan-engine 错误量评估 (R12 缺口 2), 量大则当轮立 issue 不强行纳入。",
+          "problemIds": [
+            "test-net-unevenness"
+          ],
+          "files": [
+            ".github/workflows/ci.yml",
+            ".github/workflows/deploy-website.yml",
+            "tests/renderer/status-line-redaction.test.tsx",
+            "tsconfig.node.json",
+            "src/renderer/src/pages/capabilities.tsx"
+          ],
+          "tests": "新写 tests/renderer/status-line-redaction.test.tsx: 优先以组件渲染断言实现 (零源码改动); 若 redactStatusLineCommand (位于 src/renderer/src/pages/capabilities.tsx 内联) 不可达, 仅加 export 关键字一行并在 works INDEX 声明足迹。本批其余为 CI/tsconfig 配置, 由 CI 自身验证。",
+          "verify": "推送后 CI 三 OS 矩阵绿; 已知风险预案: project-scope.e2e 在 macOS 红是已立案 issue (project-scope-e2e-macos, 根因待定) — macos job 首跑若红, 按该 issue 隔离该 spec (test.skip + 交叉引用) 不阻塞, 其余 e2e 必须绿; deploy-website workflow 手动触发验证 vitest 步执行; typecheck 含 3 个根配置。",
+          "dependsOn": [],
+          "parallelGroup": "P1",
+          "hotspotNote": "ci.yml/deploy-website.yml/tsconfig.node.json 无任何在途足迹; capabilities.tsx 是 gh-90/105 verify 足迹 — 仅可能加 1 行 export (优先零改动方案), 声明即可; 本批是网先行原则的落点, 排首波与 B01 并行。"
+        }
+      ],
+      "risks": [
+        "在途 verify 任务回退撞车 (最高风险): 12 个 verify 态任务的足迹覆盖 handlers/preload/ipc.ts/parsers/runtime/app-layout/App/locales 等本计划必经文件。对冲: 每 batch 动手前查对应任务 works INDEX + git log -7d 足迹文件; 任何并行回改迹象即暂停该批并在当轮声明; 全部写操作限自己处理过的文件 + git diff --cached 核对 (AGENTS.md 既定纪律)。",
+        "B09 吞错修复改变错误可见性: 坏配置文件从静默消失变为 UI 错误记账, 用户可感知。属硬约束 2 允许的吞错修复例外, 但 verify 截图必须显式标注为'恢复声明行为'而非回归; 真跑 (CDP) 是唯一有效验收, 静态绿不充分 (memory: runtime-behavior-needs-real-run)。",
+        "B02 类型派生可能暴露存量 mock 类型错: tests/ 从未参与 typecheck, satisfies BerthAPI 与 tests 纳管可能炸出大量既有漂移。对冲: 分级纳管 (首批仅 setup.ts + 契约测试), 全量 tests/ 先跑 tsc 错误量探针, 超阈值另立 issue 而不在本批硬啃。",
+        "B06 白名单可能漏掉运行时必需文件导致打包产物损坏: 对冲: 本地 electron-builder --dir + asar list 对比 + 产物启动冒烟 (窗口 + 扫描完成) 双保险; windows e2e CI 绿后才合入; B14 先行扩 macos e2e 提供第二平台信号。",
+        "globals.css 三任务同文件叠加 (gh-103 implement + gh-105 verify): B05 死 token 删除严格限定非 chart-*/非 accent 变量段, 提交前逐行核对 git diff --cached; 若 gh-103 任务 6 收口期间有任何 globals.css 回改, B05 的 css 部分单独延后。",
+        "i18n locales 并行写入冲突 (churn 榜首 23 commits, 3 任务在写): B13 排最后梯队 + 前缀分批 + 每批前 grep 与 INDEX 检查; zh 复数收敛遇并行写入整体延后 — 宁可不做不撞。",
+        "孤儿删除的连带遗漏使 CI 假绿或误删活代码: 全部删除批以 01-ANALYSIS 孤儿清单的连带同步细节为 checklist (stripRaw 不能整删/tokenUsageTotal 测试降级/assetProjectPath 仅摘名/theme-palette 断言行/README shadcn 声明/setup.ts mock 键); 每项删除前重跑裸符号 grep 复证 (分析距执行存在时间差, GH-114 回加 teams 通道是前车之鉴)。",
+        "e2e 仅 windows 与主开发机脱节 (硬约束 6): B06/B08/B12 触主进程装配或打包配置, 全部要求本地 pnpm build 冒烟; B14 的 macos e2e 矩阵排首波落地以使后续装配批有本机集成信号; macos 首跑可能暴露 project-scope.e2e 已立案红, 按 issue 隔离不扩散。",
+        "parsers.ts/runtime.ts 多批次序触碰 (B03/B05/B09/B10 链): 已用 dependsOn 串行化消除批间冲突, 但拉长了对热点文件的暴露窗口; 若执行中段有任务从 verify 回退到 implement, 后续批 (尤其 B09) 主动降级为延后, 在 works INDEX 记录而非强推。",
+        "范围裁剪的机会成本: 渲染层结构性收敛 (R8/R24/R25) 全部延后到 heroui-migration-followup, 本任务对诉求 (c) 的回应以减法 (死抽象删除) 与准入规则落档为主 — 这是 lens 的明确取舍: 在 4 任务汇聚的页面上做组件收敛, 撞车概率高于收益; 已通过 deferred 处置显式记录, 不算静默丢弃。"
+      ],
+      "archDocChanges": [
+        "IPC 契约节重写: 删除 'assets:scan-all 兼容旧调用' 行 (B01 后过时); 替换 '修改 ipc handler 须同步更新 ipc.ts' 为四方同步规则 (handlers/preload/IpcChannels 表/setup.ts mock + tests/unit/ipc-contract.test.ts 对账强制); 声明 BerthAPI = typeof api 是 window.api 类型唯一来源 (随 B02 落地同步)。",
+        "新增 '分层与依赖规则' 节: main 依赖方向 (agent-plugins→adapters→shared 单向; adapters 禁 import engine/agent-plugins; electron 值依赖白名单 index.ts/dev-instance.ts/ipc/) + 纯函数归属 (无 node 依赖→src/shared, adapters 域内→_shared, 非 adapters 禁 import _shared) + renderer 准入 (ui 唯一 @heroui 入口/shared ≥2 消费者/页面纯逻辑 >50 行下沉 lib 直测) — 即 targetArchitecture.rules 全文落档 (随 B10/B11 落地)。",
+        "主进程模块节更新: engine 增 session-detail.ts (会话详情域逻辑, 自 handlers 迁入) 与 asset-sources.ts (扫描源声明式单表, shallow/derive/watcher 三方消费); agent-plugins/descriptors.ts 条目改为 '聚合 re-export, 数据本体在 adapters/{agent}/descriptors.ts' (随 B03/B11/B12 落地)。",
+        "新增 '错误处理与日志' 节: status-as-data 模型 (runtime 永不 reject, stale-while-error) + 三套记账机制 (ScanError/HealthCheck/manifest.errors) + log(scope,err) seam 落 userData/logs 本地滚动 + 进程级钩子; 重申禁止裸 catch 吞错与无遥测边界 (随 B08/B09 落地)。",
+        "新增 '打包与依赖语义' 节: electron-builder files 白名单模式; dependencies 仅 main/preload 运行时依赖 (最小集 8 包), renderer 库一律 devDependencies; 与 AGENTS.md BUILD_ENV 交叉引用 (随 B06 落地)。",
+        "渲染进程模块节更新: stores/app.ts 条目删除已清理的兼容字段描述, 增 'setAssetSnapshot 是资产快照唯一写落点 (foldKeepingShallow 不变量)' ; 增全局 PageErrorBoundary 兜底说明 (随 B07 落地)。",
+        "安全约束节增补: '无遥测' 条目下注明新日志仅落 userData 本地; '凭证隔离' 条目下注明 redaction 枚举测试 (tests/renderer/status-line-redaction.test.tsx) 是该边界的回归网 (随 B08/B14 落地)。",
+        "更新时机纪律: 以上各条随对应 batch 同批提交 (代码落地时同步产出文档是项目既定规则), 不留到归档一次性补写; deferred 的 5 个 issue-new (electron-window-hardening / health-restructure-and-message-contract / renderer-god-pages-decomposition / session-id-contract-and-jsonl-parity / renderer-dir-semantics) 与 4 个 issue-existing 增量回写在 design 收口时经 harness:check 落 docs/issues/。"
+      ]
+    },
+    {
+      "lens": "target-state-first — 先以 15 条现状底图为约束画出 berth 理想终态 (六边形扫描内核 + 三条边界的单源派生契约 + 薄宿主壳 + 渲染层 curated composite), 再反推 14 个严格单调逼近终态的最短安全步; 与终态方向矛盾的局部优化 (如在旧契约上修补 d.ts、在黑名单模式上删死条目) 一律拒绝或分流。",
+      "patternName": "六边形扫描内核 × 单源派生契约 (Hexagonal scan-core with derived single-source contracts; shell 持副作用, renderer 维持分层 + curated composite kit)",
+      "patternRationale": "选型结论: 主进程按六边形 (ports & adapters) 收敛为纯净扫描内核, 三条边界 (IPC 跨进程、agent 扩展轴、扫描源知识) 全部改为\"从实现/声明派生的单源契约 + 对账测试\", 副作用 (日志、进程钩子、窗口装配、唯一写者 hooks-manager) 归宿主壳, 渲染层维持既有分层只补二代 composite 准入规则。论据全部来自底图而非教科书: 底图 3 证明内核纯净已是既成事实 — electron 值依赖仅 3 文件、better-sqlite3 经工厂注入、CLI 闭包 30 文件零宿主依赖, 本任务是把这条预制缝制度化为规则与测试, 而不是新建结构; 底图 4 与 9 证明扩展轴在 agent 维度, 现行 port 与真实消费面错位 (契约三方法零调用、per-file 派生/会话解析/health/watch 四类真实能力缺位) 是 7 处绕行直连与 5+ 份源表镜像的共同根因, 把 port 按真实消费面重切并以声明式单表承载 per-agent 知识, 是 ports-adapters 在此形态下的正确用法; 底图 14 的两个已落地先例 (descriptors.ts 声明真源、shared/path-utils samePath 收敛) 证明声明式单表与中立共享层在本仓可行且被自然采纳, isRecord 七副本恰是中立层缺位的反面证据; 底图 5 证明\"手工维护对照表\"式契约已失败 (IpcChannels 零引用且漂移、四副本互相掩盖), 跨进程契约唯一可持续形式是 BerthAPI = typeof api 派生 + handlers/preload/契约表/mock 四方对账测试; 底图 6/7/8 证明渲染层 import 方向健康、无环、仅 3 条反向边, 问题集中在抽象断代, 分层本身不必动, 故渲染层不套六边形, 只立 shared/ 准入与 store 单写落点规则; 底图 11/13 把日志与安全四边界的执行点统一放在壳层, 与\"无遥测、日志只落本地\"的硬边界同位。该模式还适配执行形态: 多 Agent 共享 master、13 任务在途 (底图 15), 六边形 + 单源契约的收敛单元天然是小步 (一张表、一个派生类型、一个对账测试), 每个 batch 独立可验证且单调逼近终态; 同时它为 roadmap Phase D 的 engine-shared-core-package 完成全部逻辑前置 (解 adapters↔agent-plugins 环、源表单源化、纯助手下沉 shared), 与既定依赖序无冲突。",
+      "targetArchitecture": {
+        "layers": [
+          {
+            "name": "shared-contracts (src/shared)",
+            "contains": "跨进程纯类型与纯逻辑: asset model、IPC payload 类型、scope/path-utils/usage-summary/signature/parse-guards。禁 electron、node 副作用 API、react。",
+            "mayDependOn": []
+          },
+          {
+            "name": "engine-core (src/main/{engine, adapters, agent-plugins, memory, agent-teams})",
+            "contains": "扫描/派生/健康/搜索/用量/会话域逻辑 + port 定义 (AgentAdapter 按真实消费面、SnapshotStore 工厂、per-agent asset-source 声明表) + claude-code/codex 两家 adapter 实现 + agent-plugins 注册与聚合。内部方向: adapters → {shared-contracts, adapters/_shared}; agent-plugins → adapters (单向, 解 SOURCE_DESCRIPTORS 环); engine 服务 → agent-plugins 聚合点 (registry / asset-sources), 不直连 adapter 具体实现。已声明例外: hooks-manager 是唯一写能力模块 (engine 成包时留宿主); health.ts 直连两家 adapter 维持到 health-split issue 收口。",
+            "mayDependOn": [
+              "shared-contracts"
+            ]
+          },
+          {
+            "name": "host-shell (src/main/index.ts, src/main/ipc/, src/main/log.ts, dev-instance.ts, devtools.ts, project-scope-runtime.ts)",
+            "contains": "Electron 装配: 窗口/单实例/进程级钩子 (uncaughtException/unhandledRejection/render-process-gone)/日志落地 (仅 userData/logs 本地滚动文件)/better-sqlite3 与 worker 路径注入/薄 IPC 注册 — handler 体只做通道到 engine 调用的映射 (约 ≤10 行), 域逻辑一律住 engine。",
+            "mayDependOn": [
+              "engine-core",
+              "shared-contracts"
+            ]
+          },
+          {
+            "name": "preload-bridge (src/preload)",
+            "contains": "contextBridge 纯透传桥。BerthAPI = typeof api 从实现派生, 全仓唯一 window.api 类型来源, 禁止手写 d.ts 镜像。",
+            "mayDependOn": [
+              "shared-contracts"
+            ]
+          },
+          {
+            "name": "renderer (src/renderer/src)",
+            "contains": "保持现有健康方向: lib → stores → hooks → ui → shared(composite) → pages。ui/ 是 @heroui/react 唯一入口; shared/ 准入 = 2+ 页面消费者 (单页专属住 components/<page>/); store 只存资产快照 + 全局 UI 态, 资产写入唯一落点 setAssetSnapshot (fold 不变量); 列表数据走 hooks 缓存层。",
+            "mayDependOn": [
+              "shared-contracts",
+              "preload-bridge"
+            ]
+          }
+        ],
+        "rules": [
+          "src/shared 不得 import electron / react / node 副作用 API; 只放跨进程纯类型与纯函数。",
+          "src/main/adapters/** 不得 import src/main/agent-plugins 或 src/main/engine (方向单向: agent-plugins→adapters, engine→agent-plugins); per-agent 扫描源知识 (目录/文件→parser/scope/watch) 只声明在 adapters/<agent>/asset-sources.ts 一张表, 其余位置出现该映射即违规。",
+          "engine 服务 (scanner/shallow-conventions/derive-asset/watcher/health/session-detail) 不得直连 adapter 具体实现, 只经 agent-plugins 的 registry 与 asset-sources 聚合点分发; 现存例外 (health.ts) 必须在 ARCHITECTURE.md 例外清单登记并附收口 issue。",
+          "src/main 内只有 host-shell 文件 (index.ts / dev-instance.ts / ipc/handlers.ts) 允许 import electron; 新增 electron import 必须同步登记 ARCHITECTURE.md 例外清单。",
+          "ipc/handlers.ts 不写业务逻辑: handler 体超过通道到 engine 调用映射的范围 (参考 ~10 行) 即迁 engine; 先例为 ipc/session-activity.ts 与 engine/session-detail.ts。",
+          "IPC 契约单源: window.api 类型 = preload 实现派生 (export type BerthAPI = typeof api); 通道字符串只出现在 preload 与 handlers 两处, 且必须保持 tests/unit/ipc-contract-reconciliation.test.ts 四方对账 (handlers 注册集 == preload invoke 集 == IpcChannels 键集 == tests/setup.ts mock 键集) 绿; 增删通道四处同批改。",
+          "renderer: 只有 components/ui/** 可 import @heroui/react; components/shared/** 准入 = 2+ 页面消费者, 不满足即移入 components/<page>/; pages 不被任何层反向 import。",
+          "renderer store: 资产数据唯一写落点 setAssetSnapshot (foldKeepingShallow 不变量); 禁止新增绕行写 action; 列表型数据不进 store。",
+          "主进程错误处理: 任何 catch 必须 log(scope, err) (src/main/log.ts seam, 只落 userData 本地) 或转 ScanError/HealthCheck 记账, 禁止裸吞; parser 内层不 catch, 上抛给 safeScan 边界统一记账。",
+          "安全四边界为 shell 不变量: 只读用户配置 (hooks-manager 唯一合法写者) / 凭证不进渲染进程 / 扫描路径白名单 / 无遥测 (日志不出网); 任何 batch 触及四边界相关文件必须在 PLAN 中声明。"
+        ],
+        "moduleMoves": [
+          "src/main/ipc/handlers.ts 的 ~276 行 session/模型推断域逻辑 (KNOWN_MODEL_METADATA / inferModelProvider / agentId switch) → 新建 src/main/engine/session-detail.ts (B04)",
+          "handlers.ts 的 toSessionSummary 逐字副本 → 删除, 收敛到 engine 单实现并导出 (B04)",
+          "agent-plugins/descriptors.ts 的 SOURCE_DESCRIPTORS 数据 → 下沉 src/main/adapters/{claude-code,codex}/ 侧, descriptors.ts 改为聚合 re-export, 依赖方向翻转为 agent-plugins→adapters (B05)",
+          "shallow-conventions.ts 的 CAPABILITY_GLOBS + derive-asset.ts 的 DISPATCH 表 + watcher.ts 的 getAssetWatchPaths + claude scanner / codex index 的源枚举 → adapters/<agent>/asset-sources.ts 单张声明表 (经 agent-plugins/asset-sources.ts 聚合供 engine 消费) (B06+B07)",
+          "isRecord/readString/readNumber/safeId/splitFrontmatter/extractAtImports 七处副本 → 新建 src/shared/parse-guards.ts; adapters/_shared/parser-helpers.ts 改 re-export 保持 import 面 (B08)",
+          "safeScan/safeGlob/scanDir/tagPluginComponent 双侧同构骨架 → 新建 src/main/adapters/_shared/scan-helpers.ts (B07)",
+          "engine/usage.ts 私有 emptyUsageSummary/costSourceToFormula → src/shared/usage-summary.ts 单源 (B09)",
+          "main/renderer 两侧签名指纹习语 → 新建 src/shared/signature.ts, lib/result-signature.ts 与 engine/search.ts 改消费 (B09)",
+          "components/settings/local-source-copy.ts → components/layout/ (唯一存活消费者 project-scope-switcher 旁) (B13)",
+          "删除: engine/relations.ts (随 handler-only 死通道, B03) · engine/pricing/convert.ts 三函数 (生产真源是 scripts/update-pricing-catalog.mjs, B14) · JSON 版 createSnapshotStore (stripRaw 保留迁移, B14) · 第一代 shared 抽象 asset-card/stat-card/tab-group + asset-guidance 旧簇 + LocalSourcesSection (B13)",
+          "暂不动 (defer 到对应 issue): project-scope.ts/project-scope-runtime.ts → engine/ (随 engine-shared-core-package 切线) · pages/settings.tsx → components/settings/ + memory-view chrome 上提 (随 renderer-dir-semantics issue, 等 verify 任务收口) · health.ts 按 agent 拆 provider (health-split issue)"
+        ]
+      },
+      "scopeCut": {
+        "inTask": [
+          {
+            "problemId": "adapter-contract-mismatch",
+            "why": "终态 port 形状的定义性问题: 不先删零调用死方法并解 adapters↔agent-plugins 环, 后续所有 engine 收敛都在对错位契约编程; 也是 engine 成包 (roadmap Phase D) 的硬前置。"
+          },
+          {
+            "problemId": "ipc-second-business-layer",
+            "why": "handlers.ts 是终态'薄宿主壳'最大偏差 (276 行域逻辑 + 零直测); session-activity.ts 先例证明抽离即可测, 行为保持。"
+          },
+          {
+            "problemId": "ipc-contract-unenforced",
+            "why": "单源派生契约是整个边界机制的钥匙批: 不落 typeof api + 四方对账测试, 后续每个 IPC 批都会继续漂移; 测试 mock 正在主动强化错误契约, 必须先纠。"
+          },
+          {
+            "problemId": "scan-source-table-pentaplication",
+            "why": "per-agent 知识单表化 = port 重切的数据面; 两处已实际分叉 (computeMcpMerged / settings.local.json), 是'新增 agent 改 6+ 处'的直接成因。"
+          },
+          {
+            "problemId": "zero-observability-main",
+            "why": "壳层职责缺位, log seam 是吞错簇修复 (B11) 的前置; 文件集独立、~50 行自写、守住无遥测边界。"
+          },
+          {
+            "problemId": "renderer-dead-vertical-slices",
+            "why": "纯减法, 终态不含死纵切片; 保活测试退场使测试网恢复真实 (死代码有绿测试是最隐蔽的失真)。"
+          },
+          {
+            "problemId": "dead-ipc-surface",
+            "why": "IPC 面失真 (28/35 活跃) 直接妨碍对账基线成立; 与 B02 的一致性测试同任务落地防复发。"
+          },
+          {
+            "problemId": "main-pure-helper-copies",
+            "why": "中立共享层 (shared/parse-guards) 是消除 7 处 isRecord 复制的结构解, 也是 engine 成包前置; memory splitFrontmatter 5 点语义差先 characterization 再收敛。"
+          },
+          {
+            "problemId": "claude-home-resolution-bypass",
+            "why": "'claude 配置根'单源解析协议的契约漂移修复 (恢复 BERTH_EXTRA_CLAUDE_DIRS 声明行为), 文件少、可测。"
+          },
+          {
+            "problemId": "error-silencing-cluster",
+            "why": "恢复既有三套记账机制的声明行为 (scanner.ts:60 自家注释明文反对现状), 删代码型修复, 依赖 B10 log seam。"
+          },
+          {
+            "problemId": "store-dead-fields",
+            "why": "纯减法且与 set-assets 绕行同文件 (stores/app.ts), 同批清理收缩 AppState ~24% 虚胖。"
+          },
+          {
+            "problemId": "i18n-dead-keys",
+            "why": "纯减法; locales 是 churn 榜首所以更要按前缀分小步、grep 先行、单独成批清掉 24 对死 key 与 zh 复数混用。"
+          },
+          {
+            "problemId": "pricing-convert-orphan-twin",
+            "why": "单测守护死代码是测试网失真; 选删除项 (TS 三函数 + 测试改校验 catalog.generated schema), 单实现归生成脚本。"
+          },
+          {
+            "problemId": "set-assets-fold-bypass",
+            "why": "store 自声明不变量 ('Both write paths…') 的契约漂移修复, 是终态'单写落点'规则的落地样板; 需 CDP 真跑验收。"
+          },
+          {
+            "problemId": "error-boundary-single-route",
+            "why": "桌面应用白屏即死局; 通用 boundary 已存在, 推广成本仅包装位置 + 返回动作, 改动小收益高。"
+          },
+          {
+            "problemId": "test-net-unevenness",
+            "why": "安全网先行是其余 13 批的执行条件: tests/ 纳 typecheck 让 satisfies BerthAPI 生效、删 parsers.test 假覆盖、e2e 扩 macos 给装配类改动本地平台信号; 10 个零直测组件的补测按'触碰前补'分摊进各批, 不整体铺开。"
+          },
+          {
+            "problemId": "shared-pure-logic-forks",
+            "why": "shared 单源层收口 + 已立案 shared-path-and-type-config 余项 (signature) 闭环; Windows 盘根 canonical 分叉是跨体系等值判断不一致的真 bug (契约漂移修复); 页面格式化器迁移子项因落点是 gh-103 足迹随 heroui-followup issue 走。"
+          },
+          {
+            "problemId": "long-tail-orphan-inventory",
+            "why": "纯减法收尾批; 严守三处'不能整删'细节 (stripRaw 迁移 / tokenUsageTotal 测试降级 / assetProjectPath 摘名); globals.css 死 token 与 electron-builder 死配置两子项因 gh-103 足迹与白名单改造分流至对应 issue, 其余 18 项全清。"
+          }
+        ],
+        "deferred": [
+          {
+            "problemId": "renderer-deps-misplaced",
+            "disposition": "issue-new",
+            "why": "与 R7 合立一个 issue 'packaging-dependencies-and-files-whitelist': explore 未决问题 1 已倾向主题 6 独立推进; 7 包移 devDependencies + asar list 验证是独立可验收快赢, 但需要打包链验证面 (windows e2e + 实打包), 与本任务架构主线无依赖, 不占 14 批预算。"
+          },
+          {
+            "problemId": "builder-files-blacklist-stale",
+            "disposition": "issue-new",
+            "why": "并入上一条同一 issue: files 改加法白名单一次性终结黑名单腐蚀模式; 本任务 B14 刻意不删 builder 死条目 (白名单落地后该工作自动作废, 删了是与终态矛盾的局部优化)。"
+          },
+          {
+            "problemId": "expandable-asset-card-clones",
+            "disposition": "issue-existing",
+            "why": "并入 2026-06-05-IMPROVEMENT-heroui-migration-followup: 分析执行风险 #3 明确建议排在 12 个 verify 任务关闭之后 (instructions/capabilities 是 3-4 任务汇聚面); 且建议与该 issue 的 chevron 8 处项同区域合并执行避免二次重构。"
+          },
+          {
+            "problemId": "electron-window-hardening",
+            "disposition": "issue-new",
+            "why": "新立 'electron-window-hardening' issue: exploit 链已被对抗验证证伪 (manifest 强制 https、evidence URL 闭集), 降级为 defense-in-depth; sandbox/url-guard/will-navigate/permission handler 与 B10 同落 index.ts, 叠加会超批规模且属安全加固而非行为保持重构。"
+          },
+          {
+            "problemId": "engine-package-migration-scope",
+            "disposition": "issue-existing",
+            "why": "已立案 2026-06-09-IMPROVEMENT-engine-shared-core-package: 物理成包按 roadmap Phase D 独立推进; 本任务 B05-B08 完成其全部逻辑前置 (解环/源表单源/纯助手下沉), 工料细化 (hooks-manager 留宿主 / typecheck 盲区 / CLI manifest / 运行时三风险) 已写入该 issue。"
+          },
+          {
+            "problemId": "swr-hook-convergence-scope",
+            "disposition": "issue-existing",
+            "why": "已立案 2026-06-09-IMPROVEMENT-renderer-cached-resource-hook 且 roadmap 列为下一步首选独立任务; use-ipc/use-memory 是 gh-86/98 verify 足迹; 本分析的扩面证据 (第 5 份副本/错误维度/normalize 单点/统一 reset) 并入该 issue 描述。"
+          },
+          {
+            "problemId": "main-monolith-data-files",
+            "disposition": "issue-new",
+            "why": "新立 'health-provider-split-and-builtin-data' issue (与 R20 同 issue): health.ts 1453 行按 agent 拆 provider + registry.ts 870 行静态数据拆文件, 超本任务批规模; 路由三处硬编码子项交叉引用已立案 shared-path-and-type-config 的 asset-type 配置表余项一并做。"
+          },
+          {
+            "problemId": "renderer-god-pages",
+            "disposition": "issue-new",
+            "why": "新立 'god-page-logic-extraction' issue: 执行风险 #3 明确建议等 12 个 verify 任务关闭 (session-detail/capabilities 各 3 任务汇聚); issue 第一步固定为 redactStatusLineCommand 凭证脱敏正则的枚举测试 (安全边界, 测试先行后才许迁移)。"
+          },
+          {
+            "problemId": "session-id-implicit-contract",
+            "disposition": "issue-new",
+            "why": "新立 'session-id-single-point-and-jsonl-reader' issue: claude parsers.ts 是 16-commit churn + gh-94 足迹; sessionAssetId 单点函数 + readJsonLines(onMalformed) 提升 + codex 坏行记账补齐独立可验收, 不阻塞本任务任何批。"
+          },
+          {
+            "problemId": "health-i18n-string-contract",
+            "disposition": "issue-new",
+            "why": "并入 'health-provider-split-and-builtin-data' 同一 issue: 分析建议 messageKey 契约改造与 health 按 agent 拆分同批做成本最低; 单独做会两次重写同一文件。"
+          },
+          {
+            "problemId": "design-system-adoption-gap",
+            "disposition": "issue-existing",
+            "why": "分析建议原文'并入已立案 heroui-migration-followup 执行': ui barrel 收缩、CSS tooltip 三方并存收敛、Toggle→Switch 首例都属该 issue 的设计系统采纳主题。"
+          },
+          {
+            "problemId": "micro-primitives-missing",
+            "disposition": "issue-existing",
+            "why": "并入 heroui-migration-followup: StatTile/SectionLabel/ActionChipButton 的最大落点 usage/overview 是 gh-103 implement 足迹 (高风险随时回改), 必须等其收口; 与节标签 102 处残留收敛同属 #6 主题。"
+          },
+          {
+            "problemId": "activate-stale-push-listeners",
+            "disposition": "issue-existing",
+            "why": "explore 轮已立案 docs/issues/2026-06-10-BUG-activate-stale-push-listeners.md: 产品 bug 非行为保持重构; B10 触 index.ts 时刻意不抢修此项 (只包钩子不重绑监听), 避免越界。"
+          },
+          {
+            "problemId": "distribution-hardening-inert",
+            "disposition": "issue-existing",
+            "why": "并入 roadmap Phase F 已立案 macos-release-signing-config 并扩面: 签名链对齐事实 + fuses (RunAsNode/NODE_OPTIONS/asar 完整性) + ABI 冒烟脚本; 全部是分发链加固, 依赖打包验证面, 与架构主线无依赖。"
+          },
+          {
+            "problemId": "renderer-dir-semantics-misplaced",
+            "disposition": "issue-new",
+            "why": "新立 'renderer-dir-semantics' issue: settings.tsx 是 gh-105 P6.8 标注进行中的足迹, memory-view 3 任务汇聚, 现在动撞车概率最高而收益最低 (low 级); 本任务仅在 B13 顺带完成 local-source-copy 物理迁移, 伪页面/chrome 上提/字典→i18n/sessions 三件迁移随 issue 等 verify 收口。"
+          },
+          {
+            "problemId": "root-scope-files-misplaced",
+            "disposition": "issue-existing",
+            "why": "并入 engine-shared-core-package: 分析建议原文'与 engine 迁包切线一并定' (两文件都在 CLI 闭包内, 迁移时顺带消歧命名成本最低, 现在单独搬动是重复劳动)。"
+          }
+        ]
+      },
+      "batches": [
+        {
+          "id": "B01",
+          "title": "测试地基: tests 纳管 typecheck + 假覆盖清除 + e2e 矩阵扩 macos",
+          "goal": "让安全网先于重构成立: tests/ 进 tsconfig project (mock 漂移对 typecheck 可见, 为 B02 的 satisfies BerthAPI 铺路); 删除 196 行假覆盖 parsers.test.ts; e2e 矩阵加 macos-latest 使主进程装配类改动在主开发平台有 CI 集成信号; website 测试接入 CI; 3 个根级 .ts 配置纳入 tsconfig.node.json。",
+          "problemIds": [
+            "test-net-unevenness"
+          ],
+          "files": [
+            "tsconfig.test.json (新建)",
+            "tsconfig.node.json",
+            "package.json (typecheck script 接线)",
+            ".github/workflows/ci.yml",
+            ".github/workflows/deploy-website.yml",
+            "tests/unit/parsers.test.ts (删除)"
+          ],
+          "tests": "删 tests/unit/parsers.test.ts (全部断言针对测试内联副本, 真 parser 已由 claude-scanner/codex-config-parser/codex-session-parser/session-meta-parser 四套测试直测); tests/ 纳管后修复暴露的存量类型漂移 (预先 tsc dry-run 估量, >15 文件错误则按目录渐进 include)。",
+          "verify": "pnpm typecheck (含新 test project) + lint + vitest 全量 917+ 用例绿; 推送后 ci:wait 确认 windows+macos e2e 双矩阵绿; deploy-website 路径跑通 vitest 步。",
+          "dependsOn": [],
+          "parallelGroup": "W1",
+          "hotspotNote": "none — 不触任何 src 文件; CI yml 与 tsconfig 不在任何在途任务足迹。"
+        },
+        {
+          "id": "B02",
+          "title": "IPC 契约单源: BerthAPI = typeof api + 四方对账测试",
+          "goal": "消灭四份手工副本机制: preload 导出 BerthAPI = typeof api, index.d.ts 重写为派生引用 (删 hooks.statuses 幻影声明); 摘除 preload assets.scan phantom (index.ts:30, 调用必 reject 的契约漂移); IpcChannels 表补齐 3 个现役通道 (snapshot/status/refresh)、删幽灵事件 scan:progress、修正 assets:changed payload, 使其与注册现实一致; setup.ts mockApi 标 satisfies BerthAPI; 落四方对账测试使漂移从此编译期+测试期双重可见。",
+          "problemIds": [
+            "ipc-contract-unenforced"
+          ],
+          "files": [
+            "src/preload/index.ts",
+            "src/preload/index.d.ts",
+            "src/shared/types/ipc.ts",
+            "tests/setup.ts",
+            "tests/renderer/hooks-lifecycle-view.test.tsx",
+            "tests/unit/ipc-contract-reconciliation.test.ts (新建)"
+          ],
+          "tests": "先写 tests/unit/ipc-contract-reconciliation.test.ts (vi.mock('electron') 捕获 handlers 注册集, 断言 == preload invoke 集 == IpcChannels 键集 == setup.ts mock 键集); tests/setup.ts 加 satisfies BerthAPI; 同步修 tests/renderer/hooks-lifecycle-view.test.tsx 对幻影 statuses 的断言 (测试基础设施正在强化错误契约, 必纠)。",
+          "verify": "typecheck (satisfies 生效, d.ts 派生无手写残留) + vitest 全量 + 对账测试绿; grep 确认 renderer 全部 window.api 类型引用指向 BerthAPI。",
+          "dependsOn": [
+            "B01"
+          ],
+          "parallelGroup": "W2",
+          "hotspotNote": "preload/index.ts (gh-104 verify, GH-114 加过 teams) + shared/types/ipc.ts (gh-86/104, 近7天 8 commits): 本批通道语义零变更、以类型派生与 phantom 摘除为主; 任务态声明足迹; 若 gh-86/104 verify 回退, 在途任务优先、本批 rebase。"
+        },
+        {
+          "id": "B03",
+          "title": "IPC 死面整删: 4 全链死通道 + 3 handler-only + relations.ts 归档",
+          "goal": "IPC 面回归真实 (35→28): 按链路整删 theme:get / hooks:status / hooks:set-enabled / assets:scan-all (handler+preload+契约表+mock 四处同批); 删 handler-only 不可达的 assets:relations / assets:import-chain / mcp:merged 及连带 computeMcpMerged 38 行与 MCPMergeInfo 类型 (computeMcpMerged 的多 home 漂移随之消灭); engine/relations.ts 生产路径仅剩死通道消费, 随批删除 (未决问题 2 定案: GH-112 归档佐证渲染层已改客户端过滤)。",
+          "problemIds": [
+            "dead-ipc-surface"
+          ],
+          "files": [
+            "src/main/ipc/handlers.ts",
+            "src/preload/index.ts",
+            "src/shared/types/ipc.ts",
+            "tests/setup.ts",
+            "src/main/engine/relations.ts (删除)",
+            "tests/unit/scope-dedupe.test.ts (relations 引用处置)",
+            "packages/berth-scan-engine/tests/plugin-relations.test.ts (处置)",
+            "tests/unit/ipc-contract-reconciliation.test.ts (期望集合收缩)"
+          ],
+          "tests": "先更新 ipc-contract-reconciliation.test.ts 期望集合 (写红再删); relations 两个测试文件 (scope-dedupe.test.ts / scan-engine 包 plugin-relations.test.ts) 的有价值断言迁移或随删, scan-engine 包 24 用例基线同步; 执行前核对 scan-engine CLI manifest — 若其声明 relations 命令则改判保留并上抛决策。",
+          "verify": "typecheck + vitest 全量 + packages/berth-scan-engine 包内测试绿 + 对账测试绿; grep 七个通道名全仓零残留 (docs 历史文档除外)。",
+          "dependsOn": [
+            "B02"
+          ],
+          "parallelGroup": "W3",
+          "hotspotNote": "handlers.ts 是 gh-86/95/104 三任务 verify 足迹: 本批为纯删除且七个死通道与三任务足迹通道 (runtime selectors / sessions:get / hooks:recoveries-已删) 无交集; 声明 + 小步提交。relations.ts 不在任何在途足迹。"
+        },
+        {
+          "id": "B04",
+          "title": "handlers 域逻辑撤离: engine/session-detail.ts + claude home 单源 (teams/handlers 侧)",
+          "goal": "壳层薄化: sessions:get 的 ~276 行模型知识库与 agentId 分发迁入新建 engine/session-detail.ts (复制 session-activity.ts 先例), handlers 压成单调用; toSessionSummary 与 runtime.ts:560 的字节级重复收敛为 engine 单实现; handlers.ts:45 pricing 深路径 import 收回 barrel; agent-teams 与 handlers 残余的 os.homedir()/.claude 硬拼改走 resolveClaudeDirs (恢复 BERTH_EXTRA_CLAUDE_DIRS 声明行为)。",
+          "problemIds": [
+            "ipc-second-business-layer",
+            "claude-home-resolution-bypass"
+          ],
+          "files": [
+            "src/main/ipc/handlers.ts",
+            "src/main/engine/session-detail.ts (新建)",
+            "src/main/engine/assets/runtime.ts",
+            "src/main/agent-teams/index.ts",
+            "tests/unit/session-detail.test.ts (新建)",
+            "tests/unit/agent-teams-reader.test.ts",
+            "tests/unit/session-activity.test.ts (回归核对)"
+          ],
+          "tests": "先写 tests/unit/session-detail.test.ts 钉死模型推断知识库 (KNOWN_MODEL_METADATA/inferModelProvider) 与 toSessionSummary 行为, 红→迁移→绿; tests/unit/agent-teams-reader.test.ts 补 resolveClaudeDirs 注入用例 (构造参数保留供测试)。",
+          "verify": "typecheck + vitest 全量; 真跑应用抽查 sessions 列表与 session 详情页数据一致 (toSessionSummary 单源后列表/详情不分叉); BERTH_EXTRA_CLAUDE_DIRS 设第二 home 验证 teams 可见。",
+          "dependsOn": [
+            "B03"
+          ],
+          "parallelGroup": "W4",
+          "hotspotNote": "handlers.ts (3 任务 verify) — 迁移型删除, sessions:get 语义零变更, 声明足迹; runtime.ts (gh-86, 13 commits) 仅触 toSessionSummary 导出段; agent-teams/index.ts 无在途足迹 (GH-114 已归档)。"
+        },
+        {
+          "id": "B05",
+          "title": "Adapter port 重切 (一): 删零调用死方法 + 解 adapters↔agent-plugins 环",
+          "goal": "port 对齐真实消费面第一步: 从 AgentAdapter (shared/types/asset.ts) 删除 scanAssets/watchAssets/resolveRelations 三个零调用方法及两家 adapter 的桩实现; SOURCE_DESCRIPTORS 数据下沉 adapters 侧、agent-plugins/descriptors.ts 改聚合 re-export, 消灭全仓唯一模块级值依赖环, 使依赖方向为 agent-plugins→adapters 单向 — 这是 engine 成包切线的硬前置。",
+          "problemIds": [
+            "adapter-contract-mismatch"
+          ],
+          "files": [
+            "src/shared/types/asset.ts",
+            "src/main/adapters/claude-code/index.ts",
+            "src/main/adapters/codex/index.ts",
+            "src/main/agent-plugins/descriptors.ts",
+            "tests/unit/agent-adapter-registry.test.ts",
+            "tests/unit/claude-code-adapter.test.ts",
+            "tests/unit/codex-adapter.test.ts",
+            "tests/unit/scan-coverage.test.ts"
+          ],
+          "tests": "先改 agent-adapter-registry / claude-code-adapter / codex-adapter 三测试移除死方法断言 (红→实现→绿); scan-coverage.test.ts 的 descriptor drift 断言改向 adapters 侧新数据源, 钉住聚合等价。",
+          "verify": "typecheck + vitest 全量 + packages/berth-scan-engine 包测试 (shared/types 变更波及包闭包); madge 或 grep 验证 adapters/** 零 import agent-plugins。",
+          "dependsOn": [],
+          "parallelGroup": "W1",
+          "hotspotNote": "shared/types/asset.ts 是 gh-94 verify 足迹 (删 teams 契约已落地): 本批仅删 3 个零调用方法, 不触 team 相关段; 任务态声明。adapters/*/index.ts 与 descriptors.ts 仅 gh-86 历史产物, 已 verify 全勾。"
+        },
+        {
+          "id": "B06",
+          "title": "扫描源单表 (一): shallow + derive 两份镜像合并为声明表",
+          "goal": "建立 per-agent asset-source 声明表 ({scope, pattern, kind, parser, watch}): adapters/<agent>/asset-sources.ts 承载数据, agent-plugins/asset-sources.ts 聚合供 engine 消费 (方向与 B05 一致); 第一步先吸收注释自认 mirror 且几乎同形的两份 — shallow-conventions 的 CAPABILITY_GLOBS 与 derive-asset 的 DISPATCH 表, 行为严格保持 (两表彼此语义一致, 无决策点)。",
+          "problemIds": [
+            "scan-source-table-pentaplication",
+            "adapter-contract-mismatch"
+          ],
+          "files": [
+            "src/main/adapters/claude-code/asset-sources.ts (新建)",
+            "src/main/adapters/codex/asset-sources.ts (新建)",
+            "src/main/agent-plugins/asset-sources.ts (新建聚合)",
+            "src/main/engine/shallow-conventions.ts",
+            "src/main/engine/assets/derive-asset.ts",
+            "tests/unit/asset-sources.test.ts (新建)",
+            "tests/unit/shallow-conventions.test.ts",
+            "tests/unit/derive-asset.test.ts"
+          ],
+          "tests": "合并前先在 shallow-conventions.test.ts 与 derive-asset.test.ts 各补一组'当前行为快照'钉测 (两表对同一路径集的产出), 换表后必须原样绿; 新建 asset-sources.test.ts 校验表 schema 与两 agent 条目完备性。",
+          "verify": "typecheck + vitest 全量 + scan-engine 包测试 (表无 Electron 依赖, 与迁包兼容); derive-asset.ts:45/68 的 'Mirrors ...' 注释随批删除。",
+          "dependsOn": [
+            "B05"
+          ],
+          "parallelGroup": "W2",
+          "hotspotNote": "derive-asset.ts 位于 gh-86 verify 足迹目录 (engine/assets/), gh-86 全勾、回退概率低; 声明足迹; 不触同目录 runtime.ts/worker*。"
+        },
+        {
+          "id": "B07",
+          "title": "扫描源单表 (二): watcher + 两家 scanner 接表 + scan-helpers 收敛",
+          "goal": "源表覆盖剩余消费方: watcher.getAssetWatchPaths 与 claude scanner 源枚举、codex index 扫描根全部改读聚合表 (watch 字段补全); settings.local.json 的 2-parser vs 5-parser 分叉在此定案并钉测 (SPEC 决策记录); 同时把双侧同构的 safeScan/safeGlob/scanDir/tagPluginComponent 抽到 adapters/_shared/scan-helpers.ts — 至此新增一种资产目录只改一张表, R1 的 derive/watch/shallow 绕行直连全部经表收口。",
+          "problemIds": [
+            "scan-source-table-pentaplication",
+            "main-pure-helper-copies",
+            "adapter-contract-mismatch"
+          ],
+          "files": [
+            "src/main/engine/watcher.ts",
+            "src/main/adapters/claude-code/scanner.ts",
+            "src/main/adapters/codex/index.ts",
+            "src/main/adapters/_shared/scan-helpers.ts (新建)",
+            "src/main/adapters/claude-code/asset-sources.ts",
+            "src/main/adapters/codex/asset-sources.ts",
+            "src/main/agent-plugins/asset-sources.ts",
+            "tests/unit/watcher.test.ts",
+            "tests/unit/claude-scanner.test.ts",
+            "tests/unit/codex-adapter.test.ts"
+          ],
+          "tests": "先在 watcher.test.ts 补 watch 路径集合钉测 (换源前后等价); claude-scanner.test.ts 写 settings.local.json 语义决策钉测 (定案跑 5 parser 或维持 2, 以 SPEC 决策为准, 先红后绿); codex-adapter.test.ts 回归扫描根。",
+          "verify": "typecheck + vitest 全量 + scan-engine 包测试; 真跑应用确认 watch 增量更新正常 (改一个 ~/.claude 文件观察 assets:changed 推送)。",
+          "dependsOn": [
+            "B06",
+            "B08"
+          ],
+          "parallelGroup": "W3",
+          "hotspotNote": "claude scanner.ts 是 gh-94/104 verify 足迹 (7 commits): 限定源枚举段, 不触 gh-104 的 disabled Hook 行逻辑; 声明足迹。codex/index.ts、watcher.ts 无在途足迹。"
+        },
+        {
+          "id": "B08",
+          "title": "纯助手单源化: shared/parse-guards + path-utils 扩展 + memory 分叉收敛 + memory home 单源",
+          "goal": "补齐中立共享层: isRecord/readString/readNumber/safeId/splitFrontmatter/extractAtImports 七处副本收敛到新建 src/shared/parse-guards.ts (parser-helpers 改 re-export 保持 import 面, 消灭 'agent-teams 跨模块借用 adapters/_shared' 的潜规则二义); shared/path-utils 增 isPathInside({includeEqual}) 与 dedupePaths 终结 4 套 2 算法语义矛盾; memory 两份 splitFrontmatter 5 点语义差先 characterization 后收敛; claude-native 默认目录改遍历 resolveClaudeDirs (R18 memory 侧)。",
+          "problemIds": [
+            "main-pure-helper-copies",
+            "claude-home-resolution-bypass"
+          ],
+          "files": [
+            "src/shared/parse-guards.ts (新建)",
+            "src/shared/path-utils.ts",
+            "src/main/adapters/_shared/parser-helpers.ts",
+            "src/main/engine/health.ts",
+            "src/main/memory/sources/united-memory.ts",
+            "src/main/memory/sources/claude-native.ts",
+            "tests/unit/parse-guards.test.ts (新建)",
+            "tests/unit/parser-path-equality.test.ts",
+            "tests/unit/memory-united-memory.test.ts",
+            "tests/unit/memory-claude-native.test.ts"
+          ],
+          "tests": "先为 memory 两份 splitFrontmatter 的 5 个分歧点 (空 frontmatter/EOF fence/非 record YAML 等) 写 characterization 测试, 据此决定收敛语义并记录 SPEC; 新建 parse-guards.test.ts; parser-path-equality.test.ts 扩'等值算 inside / win32 大小写'矛盾案例钉单一答案; memory-claude-native.test.ts 补多 home 注入用例。",
+          "verify": "typecheck + vitest 全量; health.ts 仅 import 换源段 (extractAtImports/frontmatter 第 4 变体退场), 行为由 health-check.test.ts 回归。",
+          "dependsOn": [],
+          "parallelGroup": "W2",
+          "hotspotNote": "全部文件不在任何在途任务足迹; claude-native 的 R18 修复使 BERTH_EXTRA_CLAUDE_DIRS 对 memory 生效, 属恢复声明行为, 在 verify 记录中主动声明该可见面变化。"
+        },
+        {
+          "id": "B09",
+          "title": "shared 分叉归一: 盘根 canonical + signature.ts + usage 纯函数单源",
+          "goal": "shared 单源用尽: normalizeProjectPath 双实现的 Windows 盘根分叉以 shared/scope.ts 为准定 canonical ('X:/') 并修正 session-location-groups 侧 (修复'同一项目跨体系比较不等'的契约漂移); 新建 src/shared/signature.ts 收敛两侧指纹习语并修 main 侧不转义伪相等; engine/usage.ts 私有 emptyUsageSummary/costSourceToFormula 删除改用 shared (同文件已 import shared, 零障碍); 闭环已立案 shared-path-and-type-config 的 signature 余项。",
+          "problemIds": [
+            "shared-pure-logic-forks"
+          ],
+          "files": [
+            "src/shared/scope.ts",
+            "src/shared/signature.ts (新建)",
+            "src/shared/usage-summary.ts",
+            "src/renderer/src/lib/session-location-groups.ts",
+            "src/renderer/src/lib/result-signature.ts",
+            "src/main/engine/search.ts",
+            "src/main/engine/usage.ts",
+            "tests/unit/scope.test.ts",
+            "tests/unit/signature.test.ts (新建)",
+            "tests/renderer/session-location-groups.test.ts",
+            "tests/unit/usage-summary.test.ts"
+          ],
+          "tests": "先在 scope.test.ts 与 session-location-groups.test.ts 写 Windows 盘根 canonical 双侧一致钉测 ('X:' 项目两体系产出同形, 先红); 新建 signature.test.ts 含 main 侧转义伪相等反例; usage-summary.test.ts 补参数化 catalog 用例。",
+          "verify": "typecheck + vitest 全量; usage/search 行为由既有 usage-summary.test/search.test 回归; 不触任何页面文件。",
+          "dependsOn": [],
+          "parallelGroup": "W1",
+          "hotspotNote": "session-location-groups.ts 与 result-signature.ts 是 gh-98 verify 足迹 (新建产物): 改前 grep gh-98 残留断言, 限定收敛段, 任务态声明; 刻意不动 usage.tsx/overview.tsx (gh-103 implement 足迹) — 页面格式化器迁移已整体分流。"
+        },
+        {
+          "id": "B10",
+          "title": "宿主壳可观测性: log seam + 进程钩子 + watcher error 监听",
+          "goal": "壳层补齐副作用职责: 新建 src/main/log.ts (~50 行自写滚动文件, 仅落 userData/logs, 守住无遥测边界, sink 可注入测试); index.ts 落 uncaughtException/unhandledRejection/render-process-gone 钩子 + whenReady().catch + dialog.showErrorBox; watcher 补 on('error') (当前 emit 无监听者直接 throw 进 uncaughtException 且 live 更新静默失效); watch-wiring 回调包 try/catch 注入 log。打包应用故障从此有痕迹。",
+          "problemIds": [
+            "zero-observability-main"
+          ],
+          "files": [
+            "src/main/index.ts",
+            "src/main/log.ts (新建)",
+            "src/main/engine/watcher.ts",
+            "src/main/engine/assets/watch-wiring.ts",
+            "tests/unit/log.test.ts (新建)",
+            "tests/unit/watcher.test.ts",
+            "tests/unit/watch-wiring.test.ts"
+          ],
+          "tests": "先写 tests/unit/log.test.ts (tmp 目录滚动/scope 前缀/sink 注入); watcher.test.ts 补 error 事件有监听且记账; watch-wiring.test.ts 补回调抛错不致命且落日志。index.ts 本身零直测 (顶层 import electron), 以构建冒烟 + e2e 兜底。",
+          "verify": "typecheck + vitest 全量 + 本地 pnpm build 冒烟 (硬约束 6: 触主进程装配); 推送后 windows+macos e2e 双矩阵绿 (B01 已扩); 真跑确认 userData/logs 生成且无网络出口。",
+          "dependsOn": [
+            "B07"
+          ],
+          "parallelGroup": "W4",
+          "hotspotNote": "src/main/index.ts (近7天 7 commits, 无任务级足迹): 与已立案 BUG-activate-stale-push-listeners 同文件 — 本批只包进程钩子与 whenReady catch, 刻意不重绑推送监听器 (不抢修该 issue); watcher.ts 在 B07 后串行执行避免同文件并发。"
+        },
+        {
+          "id": "B11",
+          "title": "吞错簇修复: 删内层 catch 让记账接管 + 故障落日志",
+          "goal": "恢复三套记账机制声明行为: 删 parseMcpServers 等 parser 内层裸 catch, throw 上抛给已包好的 safeScan (坏 .mcp.json 从'资产无声消失'回归 ScanError 记账, scanner.ts:60 自家注释佐证此为声明行为); getScanSourceGroups 把 detect() 异常与'未安装'区分并 push ScanError; runtime catch 处接 log(scope, err) 保留 stack (单点覆盖全部扫描故障); sqlite 首败与 pricing catalog 解析失败落日志/记账, 不再静默降级。",
+          "problemIds": [
+            "error-silencing-cluster"
+          ],
+          "files": [
+            "src/main/adapters/claude-code/parsers.ts",
+            "src/main/adapters/claude-code/scanner.ts",
+            "src/main/engine/scanner.ts",
+            "src/main/engine/assets/runtime.ts",
+            "src/main/engine/assets/sqlite-snapshot-store.ts",
+            "src/main/engine/pricing/catalog.ts",
+            "tests/unit/claude-scanner.test.ts",
+            "tests/unit/engine-scanner.test.ts",
+            "tests/unit/agent-asset-runtime.test.ts",
+            "tests/unit/sqlite-snapshot-store.test.ts",
+            "tests/unit/pricing.test.ts"
+          ],
+          "tests": "先写红: claude-scanner.test.ts 加'坏 .mcp.json → ScanError 记账且其余资产计数不变'; engine-scanner.test.ts 加'detect 抛错 ≠ installed:false, 产生检测失败记账'; agent-asset-runtime.test.ts 断言 catch 路径调用注入 log 且 status.error 保留信息; sqlite-snapshot-store.test.ts 首败日志; pricing.test.ts catalog 解析失败记账不归零静默。",
+          "verify": "typecheck + vitest 全量; 真跑: 手工写坏一个 .mcp.json, 验证 UI 错误面板出现 ScanError 而资产列表不静默缺失 (行为保持例外: 恢复声明记账行为, 在 verify 截图标注)。",
+          "dependsOn": [
+            "B04",
+            "B07",
+            "B10"
+          ],
+          "parallelGroup": "W5",
+          "hotspotNote": "claude parsers.ts (gh-94 足迹, 16 commits churn) 限定内层 catch 段; runtime.ts (gh-86, 13 commits) 限定 catch/log 注入点; 两文件均在依赖批后串行触碰且任务态声明。"
+        },
+        {
+          "id": "B12",
+          "title": "渲染层契约修复: store 单写路径 + 默认错误边界 + status.error 呈现",
+          "goal": "渲染侧三处契约回正: 删 stores/app.ts 五处死字段与 setScanning, selectScope 删 setAssets/setStats 裸写只走 setAssetSnapshot 单落点并从 AppState 删除这两个 action (类型层不可绕过, 修复 store 自声明 fold 不变量的唯一绕行); App.tsx 给全部路由包默认 PageErrorBoundary (含'返回 Overview'动作, 避免桌面应用白屏死局), 不触 app-layout.tsx; sidebar-scan-status 渲染 status.error 终结'故障链最后一跳零渲染'。",
+          "problemIds": [
+            "store-dead-fields",
+            "set-assets-fold-bypass",
+            "error-boundary-single-route",
+            "error-silencing-cluster"
+          ],
+          "files": [
+            "src/renderer/src/stores/app.ts",
+            "src/renderer/src/components/layout/project-scope-switcher.tsx",
+            "src/renderer/src/App.tsx",
+            "src/renderer/src/components/layout/page-error-boundary.tsx",
+            "src/renderer/src/components/layout/sidebar-scan-status.tsx",
+            "src/renderer/src/i18n/locales/en.json (仅新增 boundary 动作 key)",
+            "src/renderer/src/i18n/locales/zh.json (同)",
+            "tests/renderer/app-store.test.ts",
+            "tests/renderer/project-scope-switcher.test.tsx",
+            "tests/renderer/page-error-boundary.test.tsx",
+            "tests/renderer/sidebar-scan-status.test.tsx",
+            "tests/renderer/capabilities-plugins.test.tsx",
+            "tests/renderer/capabilities-scanning-empty.test.tsx"
+          ],
+          "tests": "先收缩 app-store.test.ts 与 capabilities-plugins/capabilities-scanning-empty 两测试的 setState 字面量 (死字段退场); project-scope-switcher.test.tsx 断言切换仅经 setAssetSnapshot 单落点; page-error-boundary.test.tsx 补默认包裹 + 抛错页渲染 fallback + 返回 Overview 动作; sidebar-scan-status.test.tsx 补 status.error 文案渲染。",
+          "verify": "typecheck + vitest 全量之外必须 CDP 真跑 (memory: runtime-behavior-needs-real-run): 项目切换观察无 shallow 资产瞬时丢失/闪烁, 扫描进度推送正常, 人为抛错页面进 boundary 且可返回; 四态 + 暗色截图对比。",
+          "dependsOn": [
+            "B13"
+          ],
+          "parallelGroup": "W5",
+          "hotspotNote": "stores/app.ts (gh-86 verify 足迹) 与 App.tsx (gh-94/105 足迹, 不触路由段以免撞 gh-94 teams 残留检查误报面); locales 仅新增 boundary 前缀 key, 与 3 个 verify 任务写入面无交集, 改前 grep + git log 复核; 在 B13 之后串行触 locales 与 project-scope-switcher。"
+        },
+        {
+          "id": "B13",
+          "title": "渲染层死纵切片 + i18n 死 key 清除 (纯减法)",
+          "goal": "删第一代死抽象与改版遗留整链: asset-card/stat-card/tab-group (148 行, 零引用)、asset-guide-panel + asset-guidance 旧簇 (~319 行, 仅靠 2 个测试保活)、LocalSourcesSection (295 行, GH-85 归档 SPEC 明确计划移除) + useScanSources 导出; local-source-copy.ts 迁至唯一存活消费者旁 (components/layout/); 同批清 R22 的 24 对死 key + R9 独占 key 家族 + zh 复数收敛 _other 单一约定。边界: assets:scan-sources 通道本体保留 (scope-switcher 直调)。",
+          "problemIds": [
+            "renderer-dead-vertical-slices",
+            "i18n-dead-keys"
+          ],
+          "files": [
+            "src/renderer/src/components/shared/asset-card.tsx (删)",
+            "src/renderer/src/components/shared/stat-card.tsx (删)",
+            "src/renderer/src/components/shared/tab-group.tsx (删)",
+            "src/renderer/src/components/shared/asset-guide-panel.tsx (删)",
+            "src/renderer/src/lib/asset-guidance.ts (删)",
+            "src/renderer/src/components/settings/local-sources-section.tsx (删)",
+            "src/renderer/src/hooks/use-ipc.ts (仅摘 useScanSources)",
+            "src/renderer/src/components/settings/local-source-copy.ts → components/layout/ (迁移)",
+            "src/renderer/src/components/layout/project-scope-switcher.tsx (仅 import 行)",
+            "src/renderer/src/i18n/locales/en.json",
+            "src/renderer/src/i18n/locales/zh.json",
+            "tests/renderer/asset-guide-panel.test.tsx (删)",
+            "tests/renderer/asset-guidance.test.ts (删)",
+            "tests/renderer/settings-sources.test.tsx (同步)",
+            "tests/renderer/settings-page.test.tsx (如引用, 同步)"
+          ],
+          "tests": "保活测试随死代码同批退场 (asset-guide-panel.test.tsx / asset-guidance.test.ts); settings-sources.test.tsx 改断言 LocalSourcesSection 不存在/不渲染; i18n 删除依据 01-ANALYSIS 孤儿 #13 的三通道穷尽验证 (全 key 字面量 + 50 个动态前缀 + replace 推导), 删后 vitest 全量验无 missing key; evidenceHelp replace 推导豁免规则写入巡检脚本注释。",
+          "verify": "typecheck + lint + vitest 全量 + pnpm harness:check; grep 五个组件符号 + useScanSources + 24 key 全仓零残留; 删除批按 i18n 前缀 / 组件簇分 2-3 个小 commit。",
+          "dependsOn": [],
+          "parallelGroup": "W1",
+          "hotspotNote": "locales 是 churn 榜首 (各 23 commits, gh-94/98/104 三 verify 任务在写): 删除前对每个目标 key 前缀 grep + git log -7d 确认无并行写入 (硬约束 8); use-ipc.ts (gh-86/98 足迹) 限定 useScanSources 导出段; asset-guidance.ts 是 gh-94 足迹但本批整文件删除且 gh-94 改动已落地, 任务态声明防 verify 重跑误报。"
+        },
+        {
+          "id": "B14",
+          "title": "长尾孤儿收尾 (纯减法, 删除批): 死导出 + JSON store + hooks 残段 + 资源/配置孤儿",
+          "goal": "清 01-ANALYSIS 孤儿清单长尾: 9 处死导出 (parsePlugin/parseStatusline/resolveCodexHomeDir shim/useMemoryNote/flattenNavItems/AppScopeMode/tokenUsageTotal/ExitCode/assetProjectPath 摘名)、JSON 版 createSnapshotStore (stripRaw 迁出保留, 不整删文件)、getAgentHooksStatuses 复数残段 (a471ed2 退役残留, 含死 i18n key projectReadOnly)、pricing convert.ts 三函数 (测试改校验 catalog.generated schema, 单实现归生成脚本)、assets/icon 3.56MB 未接线图标、components.json + README.md 两处过时 shadcn 声明修正。globals.css/tailwind 死 token 与 electron-builder 死配置簇两子项已分流 (gh-103 足迹 / packaging issue), 本批不触。",
+          "problemIds": [
+            "long-tail-orphan-inventory",
+            "pricing-convert-orphan-twin"
+          ],
+          "files": [
+            "src/main/adapters/claude-code/parsers.ts",
+            "src/main/adapters/codex/index.ts",
+            "src/main/engine/assets/snapshot-store.ts",
+            "src/main/engine/hooks-manager.ts",
+            "src/main/engine/pricing/convert.ts",
+            "src/main/project-scope.ts",
+            "src/renderer/src/hooks/use-memory.ts",
+            "src/renderer/src/components/layout/nav-config.ts",
+            "src/renderer/src/lib/token-usage.ts",
+            "src/shared/scope.ts",
+            "packages/berth-scan-engine/src/cli-args.ts",
+            "assets/icon/app_icon.png (删)",
+            "assets/icon/app_icon_v2.png (删)",
+            "components.json (删)",
+            "README.md",
+            "src/renderer/src/i18n/locales/en.json (仅 projectReadOnly)",
+            "src/renderer/src/i18n/locales/zh.json (同)",
+            "tests/unit/pricing.test.ts",
+            "tests/unit/snapshot-store.test.ts",
+            "tests/unit/token-usage.test.ts",
+            "tests/unit/hooks-manager.test.ts"
+          ],
+          "tests": "遵守三处'不能整删'细节: snapshot-store.test.ts 改 stripRaw 行为测试 (sqlite store 仍消费); token-usage.test.ts 将 tokenUsageTotal 断言降级为内部 helper; assetProjectPath 同行活符号只摘名; pricing.test.ts 重写为 catalog.generated.ts schema 校验 (终结'单测守护没人运行的版本'); hooks-manager.test.ts 删复数版断言 (d.ts 幻影与 setup mock 已在 B02 清除)。",
+          "verify": "typecheck + lint + vitest 全量 + pnpm build 冒烟 (main 模块多处删除) + pnpm harness:check (README 修正); grep 九个死导出符号零残留; git log 确认 icons 唯一提交 07d3556 后零接线再删。",
+          "dependsOn": [
+            "B07",
+            "B09",
+            "B11",
+            "B12",
+            "B13"
+          ],
+          "parallelGroup": "sequential",
+          "hotspotNote": "parsers.ts/codex/index.ts/scope.ts/locales 全部在各依赖批之后串行触碰; nav-config.ts (gh-94 足迹, GH-114 加回 teams 导航) 仅摘 flattenNavItems 死导出不触导航项; use-memory.ts (gh-98 足迹) 仅摘 useMemoryNote; 刻意不触 globals.css/tailwind.config.ts (gh-103 implement 足迹) 与 electron-builder.yml (白名单 issue 将整体重写)。"
+        }
+      ],
+      "risks": [
+        "verify 足迹回退冲突 (最高频): B02-B04 触 handlers/preload/ipc.ts (gh-86/95/104), B12/B13 触 app.ts/use-ipc/locales (gh-86/94/98/104)。缓解: 全部批次通道与组件语义零变更 (纯迁移/纯删除/类型派生), 每批在任务态声明足迹, 冲突时在途任务优先、本批 rebase; ExpandableAssetCard 与 god-page 两个最重撞车项已整体分流出本任务。",
+        "B01 tests/ 纳管 typecheck 可能暴露超预期存量类型漂移导致批膨胀。缓解: 先 tsc dry-run 估量, 错误面 >15 文件则按目录渐进 include 分两 commit, 不阻塞后续批 (satisfies BerthAPI 只依赖 setup.ts 所在 include)。",
+        "两个分叉收敛是行为决策点: B07 settings.local.json (2 vs 5 parser) 与 B08 memory splitFrontmatter (5 点语义差) 的选边会改变边缘资产呈现。缓解: characterization 测试先行 + SPEC 记录决策依据 + 真跑抽查; 选边原则是'对用户数据更不丢失'的一侧。",
+        "B12 数据流/时序改动静态绿不充分 (memory: runtime-behavior-needs-real-run): setAssets 绕行删除与 boundary 推广必须 CDP 真跑项目切换、扫描进度推送、人为抛错三场景, 四态 + 暗色截图对比, 不以 vitest 绿替代。",
+        "locales 三批触及 (B13 删 / B12 增 / B14 删 projectReadOnly) 且 churn 榜首 3 个 verify 任务在写: 每批前对目标 key 前缀 grep + git log 复核无并行写入, 按前缀分小 commit, 三批之间 dependsOn 强制串行, 永不并行触 locales。",
+        "B10/B14 触主进程装配与 main 模块而 e2e 仅 windows CI (硬约束 6): 缓解 = B01 先行扩 macos e2e 矩阵提供本地平台 CI 信号 + 每批本地 pnpm build 冒烟; 残余 windows 特有路径风险 (worker 产物路径) 显式标注且本任务不触 worker 入口。",
+        "gh-103 在 implement, 其 5 文件足迹 (chart-colors/globals.css/overview/usage/token-usage-display) 全程禁入: css 死 token、StatTile、页面格式化器收敛已全部分流至 issue; 即使 gh-103 中途收口也不回收范围, 防计划漂移。",
+        "relations/import-chain/mcp:merged 定案删除 (未决问题 2): scan-engine 包 plugin-relations.test.ts 受影响, 执行 B03 前核对 CLI manifest — 若声明 relations 命令则改判保留并上抛; 恢复锚点 = GH-112 归档 + git 历史, 已写入批说明。",
+        "批规模贴上限 (B11 净 6 源文件 + 5 测试, B12 净 7+6, B14 计 21 含删除): 任一膨胀按预定降级序裁剪 — B14 长尾子项可再分流至已立 issue, B12 boundary 返回动作可简化为复用现有 key; 不突破 ~10/删除批 ~20 约束, 总批数钉死 14 不再增。",
+        "并行 wave 仅是'文件集不相交'的可行性声明, 共享 master 多 Agent 下执行者可整体降级为顺序执行 (dependsOn 已构成完整偏序); locales/setup.ts/handlers.ts 所在批一律不与任何批并行触同文件; engine-bridge 反向 import src/main/engine 的包闭包在每个 ENG 批跑 scan-engine 包测试兜底。"
+      ],
+      "archDocChanges": [
+        "新增'分层与依赖规则'章节: 五层定义 (shared-contracts / engine-core / host-shell / preload-bridge / renderer) + mayDependOn 表 + 可执行规则 10 条 (即本提案 targetArchitecture.rules) + 例外清单 (hooks-manager 唯一写者、health.ts 直连过渡期及收口 issue 链接、electron import 白名单三文件)。",
+        "IPC 契约章节重写: 删除'修改 ipc handler 须同步更新 src/shared/types/ipc.ts'的手工同步指引, 改为'BerthAPI = typeof api 派生 + 通道增删必须过 tests/unit/ipc-contract-reconciliation.test.ts 四方对账'; 删除 assets:scan-all 兼容通道等已退役条目的描述 (B03 后失实)。",
+        "主进程模块章节更新: 新增 engine/session-detail.ts (会话详情域逻辑)、adapters/<agent>/asset-sources.ts 声明表与 agent-plugins/asset-sources.ts 聚合点、adapters/_shared/scan-helpers.ts、src/main/log.ts (本地日志 seam); 删除 engine/relations.ts 行; descriptors.ts 描述改为'聚合 adapters 侧声明'方向; snapshot-store 行改为 sqlite 单后端 + stripRaw 工具说明 (JSON store 已删)。",
+        "渲染进程章节更新: 补 shared/ 准入规则 (2+ 页面消费者, 单页专属住 components/<page>/)、store 资产写入唯一落点 setAssetSnapshot 不变量、全路由默认 PageErrorBoundary; 移除 LocalSourcesSection 相关描述; local-source-copy 归属 components/layout/。",
+        "安全约束章节增补: '无遥测'条目明确为'主进程日志仅落 userData/logs 本地滚动文件, 不出网'; 注明 hooks-manager 是唯一合法写者 (engine 成包时留宿主侧); 错误处理规约 (catch 必 log/记账, parser 内层不 catch) 落入此节或紧邻新节。",
+        "shared 章节扩写: src/shared 现含 parse-guards.ts / signature.ts / path-utils (isPathInside/dedupePaths) / usage-summary 参数化, 并写明'无 electron/node 副作用/react'准入约束。",
+        "测试与 CI 说明更新: tests/ 已纳入 tsconfig.test.json (mock 漂移 typecheck 可见); e2e 矩阵 windows-2022 + macos-latest; website 测试在 deploy-website.yml 执行; 源码文本断言类测试 (theme-palette) 触碰对应文件时必须改写为行为断言的纪律。",
+        "与 roadmap 衔接说明: 注明本任务完成 engine-shared-core-package 的全部逻辑前置 (adapters↔agent-plugins 环已解 / 源表单源 / 纯助手下沉 shared), 包切线 = engine 全量除 hooks-manager; README.md:93/:170 的 shadcn/ui 过时声明随 B14 修正为 HeroUI v2 体系。"
+      ]
+    },
+    {
+      "lens": "product-trajectory — 以三条产品演化轴 (接入第 N 个 agent / CLI 独立发布 / 可分发桌面成熟度) 为优先序: agent 扩展轴的契约与单源表最先, CLI 与分发就绪其次, 与三轴无关的渲染层美化整体延后落 issue",
+      "patternName": "双宿主端口-适配器 (Dual-Host Ports & Adapters): 可移植扫描引擎核 + 声明式 Agent Descriptor 注册 + 窄派生 IPC 契约",
+      "patternRationale": "这个模式不是引入新架构, 是把 berth 已长成的形状正式化为规则。论据全部来自现状底图: 底图 3 证明引擎核与宿主的解耦缝已预制 — electron 值依赖仅 3 文件, better-sqlite3 经工厂注入, CLI 最小集 30 文件实测 0 处 import electron/better-sqlite3/worker_threads; 底图 1 证明引擎已在第二执行环境运行 (worker_threads 双构建入口, worker 闭包对 electron 干净); 底图 12 证明 CLI 已是事实上的第二宿主 (tsup 独立构建)。所以「一核两宿主」是既成事实, 缺的是把它写成依赖规则并消除三处违例。底图 4 和底图 9 指出端口画错了位置: AgentAdapter 契约声明的三方法零调用, 而 per-file 派生/会话解析/health/watch 四类真实需求不在契约内, 导致 7 处绕行直连两家 adapter 实现; 同时声明式 descriptor 形态已存在 (agent-plugins/descriptors.ts) 但只覆盖 source coverage 一个消费方, 扫描源知识以操作性代码散布 5+ 模块且已分叉。修复路径因此明确: 按真实消费面重定义端口 + per-agent sources 单源表下沉 adapters 侧 (顺带解掉底图 2 指出的唯一模块级值依赖环), 让「接入第 N 个 agent」收敛为「新建一个 adapter 目录 + 注册一处」— 这直接命中产品轨迹第一轴。底图 5 证明 IPC 已是窄桥 (preload 96 行纯透传, 读路径统一经 runtime 单例), 缺的只是从实现派生类型的强制机制, 不需要重设计。底图 6/7 证明 renderer 分层 import 实测健康、无循环依赖 — UI 层不需要架构级重组, 这是把主题 4 大部分延后的依据。底图 14 (samePath 收敛先例成立、adapters/_shared 被跨模块借用) 证明缺的是「中立 helper 层」这条归属规则而非新抽象。对三条轨迹逐轴核算: 端口重定义 + 单源表使第三 agent 接入从改 6+ 处降为注册一处; engine 域纯化 (session-detail 下沉/typecheck 纳管/ABI 与 worker 冒烟) 使 engine-shared-core-package 的物理迁包从冒险变机械; 可观测性 seam + deps/files 白名单 + 对账测试使 0.1.x 分发产物从脚手架态进入可交付态。",
+      "targetArchitecture": {
+        "layers": [
+          {
+            "name": "shared-contracts",
+            "contains": "src/shared/ — 跨进程纯类型 (asset/ipc/agent-plugin) 与无 node/electron 依赖纯函数 (scope, path-utils, parse-guards[新], asset-dedupe, usage-summary, token-usage, hook-identity)",
+            "mayDependOn": []
+          },
+          {
+            "name": "agent-adapters",
+            "contains": "src/main/adapters/{claude-code,codex,_shared} — per-agent 全部知识的唯一归属地: sources.ts 扫描源单源表[新]、parsers、session id 格式、scan 骨架; _shared 仅放 adapter 专属助手",
+            "mayDependOn": [
+              "shared-contracts"
+            ]
+          },
+          {
+            "name": "engine-core",
+            "contains": "src/main/engine/ — scanner 编排/assets runtime/derive/shallow/health/search/usage/watcher/pricing/session-detail[新]/agent-capabilities[新]; 禁 electron/better-sqlite3/worker_threads 值依赖 (经工厂注入); hooks-manager 是唯一写副作用例外, 物理迁包时留宿主",
+            "mayDependOn": [
+              "shared-contracts",
+              "agent-adapters"
+            ]
+          },
+          {
+            "name": "plugin-registry",
+            "contains": "src/main/agent-plugins/ — manifest 发现/校验/缓存, adapter-registry 装配入口, builtin-claude-code.ts/builtin-codex.ts 静态数据[拆出], descriptors.ts 改聚合 re-export",
+            "mayDependOn": [
+              "agent-adapters",
+              "engine-core",
+              "shared-contracts"
+            ]
+          },
+          {
+            "name": "host-electron",
+            "contains": "src/main/index.ts + ipc/ + memory/ + agent-teams/ + project-scope-runtime + log.ts[新] + dev-instance/devtools — electron 值依赖唯一合法层; IPC 薄注册; memory/agent-teams 保持按需读取 IPC 域不进扫描管线",
+            "mayDependOn": [
+              "engine-core",
+              "agent-adapters",
+              "plugin-registry",
+              "shared-contracts"
+            ]
+          },
+          {
+            "name": "preload-bridge",
+            "contains": "src/preload/index.ts — contextBridge 纯透传, window.api 类型唯一真源 (export type BerthAPI = typeof api)",
+            "mayDependOn": [
+              "shared-contracts"
+            ]
+          },
+          {
+            "name": "renderer",
+            "contains": "src/renderer/src/ — 内部序 lib→stores→hooks→ui→shared→pages 维持现状 (import 实测健康, 不做架构级重组)",
+            "mayDependOn": [
+              "shared-contracts",
+              "preload-bridge"
+            ]
+          },
+          {
+            "name": "host-cli",
+            "contains": "packages/berth-scan-engine/ — 第二宿主 (engine-bridge + cli); 本任务纳入根 typecheck 与发布就绪修正, 物理迁包由 engine-shared-core-package issue 承载",
+            "mayDependOn": [
+              "engine-core",
+              "agent-adapters",
+              "shared-contracts"
+            ]
+          }
+        ],
+        "rules": [
+          "engine 与 adapters 层禁止 import electron / better-sqlite3 / worker_threads; 宿主能力 (sqlite 构造、workerPath、日志落点) 一律由装配根 (src/main/index.ts / engine/assets/worker.ts / CLI 入口) 工厂注入。",
+          "per-agent 知识 (扫描源路径表 / parser 分发 / session id 格式 / health 检查 / watch 目标) 唯一归属 src/main/adapters/{agentId}/; engine 与 ipc 不得出现 switch(agentId) 或 agent 专属路径字面量, 统一经 engine/agent-capabilities 查表分发。",
+          "接入新 agent 的标准动作 = 新建 src/main/adapters/{agentId}/ (index + sources + parsers) 并在 adapter-registry 与 agent-capabilities 注册一处; 不允许为此修改 engine 既有文件。",
+          "IPC 契约单源: window.api 类型从 src/preload/index.ts 的 typeof api 派生, 禁止手写镜像 d.ts; 通道增删必须同步 handlers 注册 / preload wrapper / IpcChannels 表 / tests/setup.ts mock 四处, 由 tests/unit/ipc-contract-alignment.test.ts 集合对账强制。",
+          "src/shared 只收无 node/electron 依赖的纯类型与纯函数; 非 adapters 模块禁止 import src/main/adapters/_shared — 跨模块需要的中立助手必须下沉 src/shared。",
+          "依赖单向: agent-plugins → adapters → shared; adapters 禁止反向 import agent-plugins (descriptor 数据放 adapters 侧)。",
+          "主进程任何 catch 必须二选一: 转入 ScanError/HealthCheck/manifest.errors 既有记账, 或调用 log(scope, err) seam; 禁止裸吞。日志仅落 userData/logs 本地滚动文件, 不出网 (无遥测边界)。",
+          "用户配置写操作唯一合法者是 engine/hooks-manager; 其余模块对扫描目标只读 (安全四边界之一, engine 物理迁包时 hooks-manager 留宿主)。",
+          "package.json dependencies 仅含 main/preload 运行时依赖; renderer 库一律 devDependencies (vite 全量 bundle 行为不变)。electron-builder files 维持加法白名单, 新增打包内容显式声明。",
+          "renderer 内部: 页面与 shared 领域组件只从 @/components/ui import primitive (GH-105 纪律); components/shared 准入 = 2+ 页面消费者, 单页专属件放对应 feature 目录。"
+        ],
+        "moduleMoves": [
+          "src/main/ipc/handlers.ts 的 session/模型推断域逻辑 ~276 行 (KNOWN_MODEL_METADATA/inferModelProvider/resolveSessionNamedAssets 等) → src/main/engine/session-detail.ts (B07; 同时是 engine 迁包闭包成员, 为 CLI 轴铺路)",
+          "SOURCE_DESCRIPTORS 数据: src/main/agent-plugins/descriptors.ts → src/main/adapters/claude-code/sources.ts 与 src/main/adapters/codex/sources.ts; descriptors.ts 改聚合 re-export, 解 adapters↔agent-plugins 唯一值依赖环 (B05)",
+          "shallow-conventions 的 CAPABILITY_GLOBS、derive-asset 的三张 DISPATCH 表、watcher 的 getAssetWatchPaths → 全部改由 adapters/*/sources.ts 单源表生成 (B05/B06)",
+          "isRecord/readString/readNumber/safeId/splitFrontmatter/extractAtImports 纯守卫 → src/shared/parse-guards.ts; adapters/_shared/parser-helpers.ts 改 re-export 保持 import 面; memory 两份变体与 health 副本切换到单源 (B09)",
+          "src/main/engine/health.ts (1453 行) → src/main/engine/health/{index,claude-checks,codex-checks,cross-checks}.ts, import 路径经目录 index 保持不变 (B10)",
+          "src/main/agent-plugins/registry.ts 静态描述符 ~870 行 → agent-plugins/{builtin-claude-code,builtin-codex}.ts, registry.ts 留逻辑 (B10)",
+          "toSessionSummary: 删 handlers.ts 逐字副本, 收敛 runtime.ts 单实现导出 (B07)",
+          "src/renderer/src/components/settings/local-source-copy.ts → components/layout/ 唯一消费者旁 (B12)",
+          "删除: src/main/engine/relations.ts (生产路径仅剩死通道)、engine/assets/snapshot-store.ts JSON store (stripRaw 先迁 sqlite 侧)、components/shared 三孤儿、asset-guidance 整簇、local-sources-section、tests/unit/parsers.test.ts (B02/B12/B13)",
+          "不在本任务: engine 物理迁包 packages/ 与 project-scope 两文件迁 engine (随 engine-shared-core-package 切线一并定, R33 已并入该 issue)"
+        ]
+      },
+      "scopeCut": {
+        "inTask": [
+          {
+            "problemId": "adapter-contract-mismatch",
+            "why": "agent 扩展轴第一根因: 契约死方法 + 7 处绕行直连 + 唯一值依赖环; 修完它第三 agent 接入点从 6+ 处收敛为注册一处 (B05 解环 + B06 修剪契约/收敛 dispatch)"
+          },
+          {
+            "problemId": "scan-source-table-pentaplication",
+            "why": "扩展轴单源表主线: 5+ 副本已分叉, 新增资产目录要改 5 文件; 表无 Electron 依赖与迁包兼容 (B05/B06)"
+          },
+          {
+            "problemId": "ipc-contract-unenforced",
+            "why": "所有后续 IPC 改动的安全网, 必须最先落地; typeof api + 四方对账测试成本低杠杆最高 (B01)"
+          },
+          {
+            "problemId": "ipc-second-business-layer",
+            "why": "session 域逻辑下沉 engine 同时服务扩展轴 (消 agentId switch) 与 CLI 轴 (session-detail.ts 在迁包闭包内), 且消除全仓最大零直测块 (B07)"
+          },
+          {
+            "problemId": "dead-ipc-surface",
+            "why": "死面使 IPC 真实大小失真, 必须在契约对账测试落地后立刻清掉, 否则白名单永久化 (B02)"
+          },
+          {
+            "problemId": "zero-observability-main",
+            "why": "可分发成熟度轴硬缺口: 打包应用故障零痕迹; log seam 是 error-silencing 修复的前置 (B03)"
+          },
+          {
+            "problemId": "error-silencing-cluster",
+            "why": "既有三套记账机制被内层 catch 架空, 修复是删代码级且属恢复声明行为的合法例外 (B04)"
+          },
+          {
+            "problemId": "error-boundary-single-route",
+            "why": "桌面应用白屏即死局; 通用 boundary 已存在, 推广成本仅是包装位置 (B04 并入)"
+          },
+          {
+            "problemId": "renderer-deps-misplaced",
+            "why": "分发轴出血点: 下次打包死重 ≥77.5MB 闭包; 7 包移位 vite 行为不变, 零撞车 (B11)"
+          },
+          {
+            "problemId": "builder-files-blacklist-stale",
+            "why": "website 源码与内部 AI 工作流配置进分发包属信息外泄, 白名单一次性终结腐蚀模式 (B11)"
+          },
+          {
+            "problemId": "engine-package-migration-scope",
+            "why": "仅做约束 7 允许的低风险前置: packages typecheck 纳管 + tsup cjs/sourcemap/publishConfig 修正 + worker 产物断言 + ABI 冒烟; 物理迁移仍由 engine-shared-core-package issue 承载 (B01/B11)"
+          },
+          {
+            "problemId": "main-pure-helper-copies",
+            "why": "中立落点缺位是 7 份 isRecord 副本的结构性成因, 也是分层规则 5/6 成立的前提; scan-helpers 双侧骨架子项延后随迁包 issue 整理 (B09)"
+          },
+          {
+            "problemId": "claude-home-resolution-bypass",
+            "why": "扩展轴契约漂移: claude 配置根在主进程内存在两种解析协议; 修复=改 4 处默认值走 resolveClaudeDirs, 行为变化显式声明 (B09)"
+          },
+          {
+            "problemId": "main-monolith-data-files",
+            "why": "health 双体系与 registry 数据混居直接挡第三方 manifest agent 同路径; 路由三处硬编码子项不做, 归 shared-path-and-type-config issue 的 asset-type 配置表 (B10)"
+          },
+          {
+            "problemId": "session-id-implicit-contract",
+            "why": "id 格式是跨模块隐式契约且 agent-teams 硬编码反查, 第三 agent 会复制此模式; sessionAssetId 单点 + readJsonLines 收敛 + codex 记账补齐 (B08)"
+          },
+          {
+            "problemId": "renderer-dead-vertical-slices",
+            "why": "~900 行死纵切片由绿测试保活, 误导贡献者; 纯减法批, 全部已对抗验证 (B12)"
+          },
+          {
+            "problemId": "store-dead-fields",
+            "why": "AppState 虚胖 24%, 与 set-assets 绕行同文件同批清理 (B12)"
+          },
+          {
+            "problemId": "set-assets-fold-bypass",
+            "why": "恢复 store 自我声明的 GH-113 fold 不变量并在类型层封死, 改动两行级但需真跑验收 (B12)"
+          },
+          {
+            "problemId": "i18n-dead-keys",
+            "why": "24 key 双份 + zh 复数 9 组不对称; 按约束 8 单独成批、按前缀小步、排全序列最后 (B14)"
+          },
+          {
+            "problemId": "pricing-convert-orphan-twin",
+            "why": "单测守护死代码而生产走脚本副本且已分叉, 属 CLI 轴 (pricing 在 engine 闭包) 与发布工程; mjs 增强合回 TS 后脚本直 import 单源 (B11)"
+          },
+          {
+            "problemId": "test-net-unevenness",
+            "why": "e2e 扩 macos + tests 纳 typecheck + 删 parsers.test 假覆盖 + 配置 include 是重构密集期的信号基建 (B01/B13); 10 个零直测组件补测子项随 deferred 的组件收敛 issue 走"
+          },
+          {
+            "problemId": "long-tail-orphan-inventory",
+            "why": "已对抗验证纯减法, 连带同步细节 (stripRaw/tokenUsageTotal/assetProjectPath/theme-palette 断言) 已知; hooks 残段随 B02 死通道同链删, builder 死配置随 B11 白名单顺带, 图标项并入 macos-release-signing-config (B02/B11/B13)"
+          }
+        ],
+        "deferred": [
+          {
+            "problemId": "expandable-asset-card-clones",
+            "disposition": "issue-existing",
+            "why": "并入 2026-06-05-IMPROVEMENT-heroui-migration-followup: 落点 instructions/capabilities 是 4 任务 verify 足迹汇聚页, 撞车面全仓最大; 对三条产品轨迹无直接贡献; 01-ANALYSIS 本就建议与该 issue 的 chevron 项合并执行避免同区域两次重构"
+          },
+          {
+            "problemId": "design-system-adoption-gap",
+            "disposition": "issue-existing",
+            "why": "并入 heroui-migration-followup (01-ANALYSIS 原话'并入已立案 #6 执行'); ui barrel 收缩与 tooltip 三方并存收敛是设计系统任务不是架构任务"
+          },
+          {
+            "problemId": "micro-primitives-missing",
+            "disposition": "issue-existing",
+            "why": "并入 heroui-migration-followup; StatTile/SectionLabel 落点 usage/overview 是 gh-103 implement 足迹 (最高风险热点), 必须等其收口"
+          },
+          {
+            "problemId": "swr-hook-convergence-scope",
+            "disposition": "issue-existing",
+            "why": "已立案 2026-06-09-IMPROVEMENT-renderer-cached-resource-hook 且 01-ANALYSIS 已把范围扩大证据 (第 5 份副本/错误维度/normalize/测试 reset) 写入对应表; use-ipc/use-memory 是 gh-86/98 verify 足迹, 数据流改动需真跑, 独立任务推进更稳"
+          },
+          {
+            "problemId": "renderer-god-pages",
+            "disposition": "issue-new",
+            "why": "新立 issue (renderer-god-pages-logic-descent): session-detail/capabilities 是 3 任务 verify 足迹; 纯渲染层内部质量对三轴贡献低; redactStatusLineCommand 凭证脱敏正则的枚举测试列为该 issue 第一步 (安全边界, 动前必测)"
+          },
+          {
+            "problemId": "renderer-dir-semantics-misplaced",
+            "disposition": "issue-new",
+            "why": "新立 issue (renderer-dir-semantics): settings.tsx 是 gh-105 P6.8 标记进行中的足迹, memory-view 是 3 任务足迹; low 级语义整理不值得在 verify 密集期触碰; advancedMode 子项已有 settings-advanced-mode-inert issue 交叉引用"
+          },
+          {
+            "problemId": "health-i18n-string-contract",
+            "disposition": "issue-new",
+            "why": "新立 issue (health-check-message-key-contract): 修复需向 en/zh.json 注入 ~30 组 key 而 locales 是 churn 榜首且 3 个 verify 任务在写; 依赖 B10 health 拆分先行成本才最低; 对扩展轴重要 (第三方 agent prose 必然击穿逐字匹配) 但顺序在本任务收尾之后"
+          },
+          {
+            "problemId": "activate-stale-push-listeners",
+            "disposition": "issue-existing",
+            "why": "已立案 2026-06-10-BUG-activate-stale-push-listeners (explore 轮新立); 01-ANALYSIS 明确划为旁支产品问题不进主线; 修复涉及 index.ts 推送接线段, 与 B03 仅加钩子的段位刻意隔开"
+          },
+          {
+            "problemId": "shared-pure-logic-forks",
+            "disposition": "issue-existing",
+            "why": "并入 2026-06-09-IMPROVEMENT-shared-path-and-type-config (01-ANALYSIS 对应表已带盘根分叉/签名伪相等新证据); session-location-groups.ts 与 result-signature.ts 都是 gh-98 verify 足迹, 等收口后随该 issue 一并做"
+          },
+          {
+            "problemId": "electron-window-hardening",
+            "disposition": "issue-new",
+            "why": "新立 issue (electron-window-hardening): url-guard 高危 exploit 链已被对抗验证证伪 (降级 low/medium), 余项全是 defense-in-depth; sandbox:true 触主进程装配而 e2e 仅 windows, 在 B01 把 macos e2e 落地、12 个 verify 任务收口后独立推进风险更低; 01-ANALYSIS 未决问题 1 也倾向主题 6 落 issue"
+          },
+          {
+            "problemId": "distribution-hardening-inert",
+            "disposition": "issue-existing",
+            "why": "并入 2026-06-04-IMPROVEMENT-macos-release-signing-config 并扩展其范围至 fuses/afterPack/inert 配置清理/app icon 接线: 签名链与 fuses 是同一条发布前清单, 须真打包验证, 与签名工作天然同批; ABI 冒烟已在 B11 先行落地"
+          },
+          {
+            "problemId": "root-scope-files-misplaced",
+            "disposition": "issue-existing",
+            "why": "并入 2026-06-09-IMPROVEMENT-engine-shared-core-package: 01-ANALYSIS 建议本就是'与 engine 迁包切线一并定' (两文件都在 CLI 闭包内), 单独迁移会让迁包脚本二次处理同一批 import; 其 assetProjectPath 死导出摘名仍在 B13 长尾批处理"
+          }
+        ]
+      },
+      "batches": [
+        {
+          "id": "B01",
+          "title": "IPC 契约单源化 + 测试信号基建",
+          "goal": "preload 导出 export type BerthAPI = typeof api 取代手写镜像 d.ts (index.d.ts 改为基于 BerthAPI 的 global 声明); IpcChannels/IpcEvents 表对齐现实 (补 assets:snapshot/status/refresh 三现役通道, 死通道暂以显式 knownDead 白名单标注待 B02); 新建四方集合对账测试; tests 渐进纳入 typecheck (新 tsconfig.test.json, 起步 include setup.ts + 对账测试), mockApi 标 satisfies BerthAPI; ci.yml e2e matrix 增 macos-latest (与主开发平台对齐); vitest/playwright/tailwind 三个根级配置纳入 tsconfig.node.json include; deploy-website.yml 补 vitest 步。R12 的 repo typecheck 纳管 packages 项放 B11 (避免与本批同碰根 tsconfig 的并行冲突)。",
+          "problemIds": [
+            "ipc-contract-unenforced",
+            "test-net-unevenness"
+          ],
+          "files": [
+            "src/preload/index.ts",
+            "src/preload/index.d.ts",
+            "src/shared/types/ipc.ts",
+            "tests/setup.ts",
+            "tests/unit/ipc-contract-alignment.test.ts (新)",
+            "tsconfig.test.json (新)",
+            "tsconfig.json",
+            "tsconfig.node.json",
+            ".github/workflows/ci.yml",
+            ".github/workflows/deploy-website.yml"
+          ],
+          "tests": "先写 tests/unit/ipc-contract-alignment.test.ts: 断言 handlers 注册集合 == preload invoke 集合 == IpcChannels 键集合 == tests/setup.ts mock 键集合, 首跑红 (暴露 3 缺失通道/3 死通道/phantom), 以显式 knownDead/knownPhantom 白名单钉住现状转绿; tests/setup.ts mockApi 加 satisfies BerthAPI 钉 mock 漂移",
+          "verify": "pnpm typecheck (含新 test project) + lint + vitest 全量; 推送后 ci:wait 确认 macos e2e job 跑通 (新增矩阵腿首次验证)",
+          "dependsOn": [],
+          "parallelGroup": "wave-1",
+          "hotspotNote": "preload/index.ts 是 gh-104 verify 足迹 (recoveries 删除已完成) — 本批仅加类型导出不改 API 形状; shared/types/ipc.ts 是 gh-86/104 足迹 (8 commits) — 仅增表条目不动 AssetRuntimeStatus 等 runtime 契约段; 均当轮声明"
+        },
+        {
+          "id": "B02",
+          "title": "IPC 死面整删 + hooks 退役残段清理",
+          "goal": "按链路整删: theme:get / hooks:status / hooks:set-enabled / assets:scan-all 四个全链死通道 (handler+preload+d.ts 派生+IpcChannels+mock); assets:relations / assets:import-chain / mcp:merged 三个 handler-only 不可达通道及连带 computeMcpMerged 38 行与 MCPMergeInfo 类型 (采纳 01-ANALYSIS 未决问题 2 的'删'方案, GH-112 归档佐证渲染层已改客户端过滤); phantom window.api.assets.scan; engine/relations.ts 生产路径仅剩死通道, 随批删除; runtime 的 legacy-scan-all 入口若随通道死亡一并退役; hooks-manager 复数版 getAgentHooksStatuses (a471ed2 退役残留) 与 hooks-lifecycle-view 测试的幻影 statuses mock 同链清理; 对账测试 knownDead 白名单清零。i18n key projectReadOnly 留 B14 统一处理。",
+          "problemIds": [
+            "dead-ipc-surface",
+            "long-tail-orphan-inventory"
+          ],
+          "files": [
+            "src/main/ipc/handlers.ts",
+            "src/preload/index.ts",
+            "src/preload/index.d.ts",
+            "src/shared/types/ipc.ts",
+            "tests/setup.ts",
+            "src/main/engine/relations.ts (删)",
+            "src/main/engine/hooks-manager.ts",
+            "src/main/engine/assets/runtime.ts",
+            "tests/unit/hooks-manager.test.ts",
+            "tests/unit/scope-dedupe.test.ts",
+            "tests/unit/agent-asset-runtime.test.ts",
+            "tests/renderer/hooks-lifecycle-view.test.tsx",
+            "tests/unit/ipc-contract-alignment.test.ts"
+          ],
+          "tests": "先更新 tests/unit/ipc-contract-alignment.test.ts 把 knownDead/knownPhantom 白名单清零作为目标断言 (红→删干净→绿); hooks-lifecycle-view.test.tsx 删幻影 statuses 断言; hooks-manager.test.ts 删复数版用例; agent-asset-runtime.test.ts 同步 legacy 入口退役; scope-dedupe.test.ts 调整 relations 引用",
+          "verify": "typecheck + lint + vitest 全量; grep 验证 7 个通道字符串全仓零残留; 真跑 app 冒烟确认现役页面全部正常 (renderer 零调用已对抗验证, 风险低)",
+          "dependsOn": [
+            "B01"
+          ],
+          "parallelGroup": "wave-2",
+          "hotspotNote": "handlers.ts 是 gh-86/95/104 三任务 verify 足迹 — 仅删除独立注册块不碰 sessions/usage 现役段; hooks-manager.ts 是 gh-104 足迹 — 删 a471ed2 残留复数版, 与 gh-104 的 sidecar disable/restore 段不同段; 不替 gh-94 处理 teams 残留误报 (works-hotspots 已知矛盾)"
+        },
+        {
+          "id": "B03",
+          "title": "主进程可观测性 seam",
+          "goal": "新建 src/main/log.ts (~50 行自写滚动文件日志, 落 app.getPath('userData')/logs, 零第三方依赖守住无遥测边界, 导出 log(scope, err) seam); index.ts 补 uncaughtException/unhandledRejection/render-process-gone 钩子 + whenReady().catch(dialog.showErrorBox); watcher.on('error') 接 log (消除 emit('error') 直通 uncaughtException); watch-wiring applyWatchEvent 回调包 try/catch 接 log。",
+          "problemIds": [
+            "zero-observability-main"
+          ],
+          "files": [
+            "src/main/log.ts (新)",
+            "src/main/index.ts",
+            "src/main/engine/watcher.ts",
+            "src/main/engine/assets/watch-wiring.ts",
+            "tests/unit/log.test.ts (新)",
+            "tests/unit/watcher.test.ts",
+            "tests/unit/watch-wiring.test.ts"
+          ],
+          "tests": "先写 tests/unit/log.test.ts (落盘路径注入/滚动上限/写失败自身不抛); tests/unit/watcher.test.ts 补 chokidar error 事件不致进程崩溃用例; tests/unit/watch-wiring.test.ts 补 listener throw 不中断后续事件用例",
+          "verify": "typecheck + lint + vitest 全量 + pnpm build 冒烟 (触主进程装配, 约束 6); 真跑 dev 确认 userData/logs 文件生成且应用行为无变化",
+          "dependsOn": [],
+          "parallelGroup": "wave-1",
+          "hotspotNote": "index.ts 无在途任务足迹 (仅 7 commits churn); 刻意不碰 whenReady 内的窗口/推送 listener 接线段 — 那是已立案 activate-stale-push-listeners issue 的范围, 本批只加钩子与 catch; watcher.ts 与 B06 重叠由 wave 顺序解决"
+        },
+        {
+          "id": "B04",
+          "title": "吞错簇修复 + 错误可达 UI",
+          "goal": "删 claude parsers 内层裸 catch (parseMcpServers 等) 让 throw 上抛给已包好的 safeScan 记账 (坏 .mcp.json 从无声消失变 ScanError 可见 — 恢复声明行为, scanner.ts:60 自家注释佐证); engine/scanner getScanSourceGroups 把 detect() 异常 push ScanError 区分'检测失败/未安装'; runtime catch 处接 log seam (stack 不再一跳即丢); sqlite-snapshot-store 首败落日志; pricing catalog 解析失败升级为记账; sidebar-scan-status 渲染 status.error 消息 (故障链最后一跳补全); AppLayout children 外加默认 PageErrorBoundary (带'返回 Overview'动作避免死局), /usage 既有细化路由保持。若实施超 10 文件上限, sqlite+pricing 两项拆顺延小批。",
+          "problemIds": [
+            "error-silencing-cluster",
+            "error-boundary-single-route"
+          ],
+          "files": [
+            "src/main/adapters/claude-code/parsers.ts",
+            "src/main/engine/scanner.ts",
+            "src/main/engine/assets/runtime.ts",
+            "src/main/engine/assets/sqlite-snapshot-store.ts",
+            "src/main/engine/pricing/catalog.ts",
+            "src/renderer/src/components/layout/sidebar-scan-status.tsx",
+            "src/renderer/src/components/layout/app-layout.tsx",
+            "src/renderer/src/components/layout/page-error-boundary.tsx",
+            "tests/unit/claude-scanner.test.ts",
+            "tests/unit/engine-scanner.test.ts",
+            "tests/renderer/sidebar-scan-status.test.tsx",
+            "tests/renderer/page-error-boundary.test.tsx"
+          ],
+          "tests": "先写 tests/unit/claude-scanner.test.ts 用例: 损坏 .mcp.json 产出 ScanError 且其余资产不受影响 (当前红); tests/unit/engine-scanner.test.ts: detect throw → ScanError 而非 installed:false; tests/renderer/sidebar-scan-status.test.tsx: status.error 文案渲染; tests/renderer/page-error-boundary.test.tsx: 子组件 throw 不白屏 + 返回 Overview 动作",
+          "verify": "typecheck + lint + vitest 全量; CDP 真跑: 手工写坏 ~/.mcp.json 类文件观察 UI 错误可见与恢复 (runtime-behavior-needs-real-run); 行为变化 (错误从静默到可见) 在 02-SPEC 显式声明为契约漂移修复",
+          "dependsOn": [
+            "B03"
+          ],
+          "parallelGroup": "wave-2",
+          "hotspotNote": "claude parsers.ts 是 gh-94 足迹 (16 commits churn) — 严格限定内层 catch 段, 不碰 team 残留扫描模式; runtime.ts 是 gh-86 足迹 (13 commits) — 仅 catch 处行级加日志; app-layout.tsx 是 gh-90/96/105 足迹 — 仅 children 包装行级; 全部当轮声明"
+        },
+        {
+          "id": "B05",
+          "title": "扫描源单源表 + descriptors 解环",
+          "goal": "per-agent 扫描源单源表落地: 新建 adapters/claude-code/sources.ts 与 adapters/codex/sources.ts ({code, scope, kind, categories, pathPattern, parser 接线, watch 标记}); SOURCE_DESCRIPTORS 数据下沉 adapters 侧, agent-plugins/descriptors.ts 改聚合 re-export — 解除 adapters→agent-plugins 唯一模块级值依赖环, 依赖单向化 (engine 迁包切线障碍移除); shallow-conventions 的 CAPABILITY_GLOBS 与 derive-asset 的三张 DISPATCH 表改由单源表生成。行为保持铁律: 已知分叉点 (scanner 对 settings.local.json 跑 2 parser 而 shallow/derive 跑 5 个) 按各消费方现状建模并在表上注释显式标记, 分叉修复不在本批 (避免隐性行为变化, 修复决策留 02-SPEC 单列)。",
+          "problemIds": [
+            "scan-source-table-pentaplication",
+            "adapter-contract-mismatch"
+          ],
+          "files": [
+            "src/main/adapters/claude-code/sources.ts (新)",
+            "src/main/adapters/codex/sources.ts (新)",
+            "src/main/agent-plugins/descriptors.ts",
+            "src/main/adapters/claude-code/index.ts",
+            "src/main/adapters/codex/index.ts",
+            "src/main/engine/shallow-conventions.ts",
+            "src/main/engine/assets/derive-asset.ts",
+            "tests/unit/scan-coverage.test.ts",
+            "tests/unit/shallow-conventions.test.ts",
+            "tests/unit/derive-asset.test.ts"
+          ],
+          "tests": "先写 drift 等价测试: 表驱动生成的 glob/dispatch 集合与现状字面量逐项相等 (钉行为保持), 扩展 tests/unit/scan-coverage.test.ts 既有 drift 模式 + shallow-conventions.test.ts/derive-asset.test.ts 黄金断言; 等价测试先绿再切换消费方",
+          "verify": "typecheck + lint + vitest 全量 (含 scan-engine 包 24 用例 — descriptors re-export 面不破坏 engine-bridge); 真跑一次全量扫描对比资产计数不变",
+          "dependsOn": [],
+          "parallelGroup": "wave-1",
+          "hotspotNote": "agent-plugins/ 目录是 gh-86 verify 足迹 (descriptors.ts 自带 drift 测试) — re-export 保持既有 import 面与 gh-86 已验收行为; adapters/*/index.ts 不在足迹; 与 B04 同 wave 不冲突 (B04 碰 parsers.ts 非 index/sources)"
+        },
+        {
+          "id": "B06",
+          "title": "AgentAdapter 契约修剪 + capability 单点分发",
+          "goal": "按真实消费面修剪契约: 删 shared/types/asset.ts 的 scanAssets/watchAssets/resolveRelations 三个零调用方法及两 adapter 桩实现; watcher getAssetWatchPaths 改由 B05 单源表驱动 (第 4 消费方接入, mirror 注释删除); 新建 engine/agent-capabilities.ts 把 health/derive/watch 的 agentId→实现 dispatch 收敛为单一查表入口 (engine 内 7 处直连降为 1 处), health.ts 与 derive-asset.ts 的 agent switch 改查表 — 第三 agent 接入点收敛为 adapters 目录 + 注册一处, 直接命中扩展轴。",
+          "problemIds": [
+            "adapter-contract-mismatch",
+            "scan-source-table-pentaplication"
+          ],
+          "files": [
+            "src/shared/types/asset.ts",
+            "src/main/adapters/claude-code/index.ts",
+            "src/main/adapters/codex/index.ts",
+            "src/main/engine/watcher.ts",
+            "src/main/engine/agent-capabilities.ts (新)",
+            "src/main/engine/health.ts",
+            "src/main/engine/assets/derive-asset.ts",
+            "tests/unit/claude-code-adapter.test.ts",
+            "tests/unit/codex-adapter.test.ts",
+            "tests/unit/agent-adapter-registry.test.ts",
+            "tests/unit/asset-watcher.test.ts"
+          ],
+          "tests": "先更新 tests/unit/claude-code-adapter.test.ts 与 codex-adapter.test.ts 删除死方法断言并补 capability map 查表行为用例; tests/unit/asset-watcher.test.ts 钉 watch 路径集合与现状逐项相等 (表驱动前后等价); agent-adapter-registry.test.ts 钉 registry 构造面不变",
+          "verify": "typecheck + lint + vitest 全量; 真跑确认 watcher 增量更新正常 (改文件触发 assets:changed)",
+          "dependsOn": [
+            "B03",
+            "B05"
+          ],
+          "parallelGroup": "wave-3",
+          "hotspotNote": "shared/types/asset.ts 是 gh-94 verify 足迹 (跨进程契约文件) — 仅删三个零调用方法声明, 不碰 type:'team' 相关残留段; watcher.ts 在 B03 加过 error 监听, 顺序依赖已排; health.ts 仅动 dispatch 行, 大拆分在 B10"
+        },
+        {
+          "id": "B07",
+          "title": "session 域逻辑下沉 engine",
+          "goal": "handlers.ts 的 ~276 行 session/模型推断域逻辑 (KNOWN_MODEL_METADATA 知识库/inferModelProvider/resolveSessionNamedAssets/parseSessionExecutionDetail/toHookEvents 等) 整体迁入新建 src/main/engine/session-detail.ts, sessions:get 压成单调用; toSessionSummary 删 handlers 逐字副本收敛 runtime 单实现导出 (列表/详情页分叉风险消除); handlers.ts 回归薄注册职责。13 域注册拆文件刻意不做 — 在 3 任务 verify 足迹上做美化性拆分不值得冲突风险。session-detail.ts 是 engine 迁包闭包成员 (R12 明示随包迁), 本批同时为 CLI 轴铺路。",
+          "problemIds": [
+            "ipc-second-business-layer"
+          ],
+          "files": [
+            "src/main/ipc/handlers.ts",
+            "src/main/engine/session-detail.ts (新)",
+            "src/main/engine/assets/runtime.ts",
+            "tests/unit/session-detail.test.ts (新)",
+            "tests/unit/session-activity.test.ts"
+          ],
+          "tests": "先写 tests/unit/session-detail.test.ts: 迁移前按现 handlers 行为产出黄金断言 (模型推断矩阵/named assets 解析/execution detail/hook events), 迁移后保持绿 — 复制 session-activity.ts 抽离先例 (01-ANALYSIS 认证'抽离即可测'); toSessionSummary 单源后补列表/详情一致性断言",
+          "verify": "typecheck + lint + vitest 全量; 真跑 session 列表与详情页对比迁移前后字段一致 (CDP 截图)",
+          "dependsOn": [
+            "B02",
+            "B04"
+          ],
+          "parallelGroup": "wave-3",
+          "hotspotNote": "handlers.ts 三任务 verify 足迹 (gh-86/95/104) — 域逻辑段为独立函数群整体剪切 + import, sessions:get 注册行仅改调用体; gh-95 的 session-activity.ts 接线保持不动; runtime.ts 仅加 export; 当轮声明"
+        },
+        {
+          "id": "B08",
+          "title": "session id 契约显式化 + JSONL 解析收敛",
+          "goal": "sessionAssetId(agentId, sessionId, filePath) 单点函数落 shared/asset-dedupe.ts, claude/codex parsers 与 agent-teams 的字符串拼接反查 (`session-${leadSessionId}`) 改调用 — id 字节格式不变 (行为保持), 隐式契约变显式可检索; readJsonLines 提升 adapters/_shared/session-artifacts.ts (带 onMalformed 回调) 替换三处手写迭代习语; codex 补 malformedLineCount 记账 (恢复与 claude 对等的数据质量可见性 — 行为变化, 02-SPEC 显式声明为记账对等修复)。",
+          "problemIds": [
+            "session-id-implicit-contract"
+          ],
+          "files": [
+            "src/shared/asset-dedupe.ts",
+            "src/main/adapters/_shared/session-artifacts.ts",
+            "src/main/adapters/claude-code/parsers.ts",
+            "src/main/adapters/codex/parsers.ts",
+            "src/main/agent-teams/index.ts",
+            "tests/unit/asset-dedupe.test.ts",
+            "tests/unit/adapter-shared-session-artifacts.test.ts",
+            "tests/unit/session-meta-parser.test.ts",
+            "tests/unit/codex-session-parser.test.ts",
+            "tests/unit/agent-teams-reader.test.ts"
+          ],
+          "tests": "先写 sessionAssetId 等价测试 (tests/unit/asset-dedupe.test.ts: 现 id 字面 == 函数产出, 三种格式矩阵); adapter-shared-session-artifacts.test.ts 补 readJsonLines onMalformed 用例; codex-session-parser.test.ts 补坏行计数断言 (当前红); agent-teams-reader.test.ts 改经单点函数反查",
+          "verify": "typecheck + lint + vitest 全量; 真跑 sessions 页与 teams 页确认会话链接不断 (id 不变的回归点)",
+          "dependsOn": [
+            "B04"
+          ],
+          "parallelGroup": "wave-3",
+          "hotspotNote": "claude parsers.ts 二次触碰 (gh-94 足迹, 16 commits) — 限定 session id 构造与 JSONL 迭代段; codex parsers.ts (9 commits churn) 同段; agent-teams/index.ts 与 B09 的触碰由 wave 顺序隔开"
+        },
+        {
+          "id": "B09",
+          "title": "中立纯助手单源化 + claude home 解析归一",
+          "goal": "isRecord/readString/readNumber/safeId/splitFrontmatter/extractAtImports 下沉新建 src/shared/parse-guards.ts (无 node 依赖), adapters/_shared/parser-helpers.ts 改 re-export 保持 import 面 — 消除'非 adapters 模块不依赖 adapters'潜规则的两种执行结果; memory 两份 splitFrontmatter 变体 (5 点语义差) 与 health 的 extractAtImports 逐字副本切换单源, 语义差异点逐一行为测试钉死后按 _shared 版收敛; shared/path-utils.ts 增 isPathInside({includeEqual}) 与 dedupePaths 按 samePath 先例收敛 4 套语义矛盾实现; R18: memory/claude-native、agent-teams、handlers 两处的 os.homedir()/.claude 硬编码改经 agent-homes.resolveClaudeDirs (BERTH_EXTRA_CLAUDE_DIRS 对 memory/teams/platform 生效 — 契约漂移修复, 显式声明)。scan-helpers 双侧骨架子项延后随 engine-shared-core-package 迁包整理 (见 scopeCut)。",
+          "problemIds": [
+            "main-pure-helper-copies",
+            "claude-home-resolution-bypass"
+          ],
+          "files": [
+            "src/shared/parse-guards.ts (新)",
+            "src/shared/path-utils.ts",
+            "src/main/adapters/_shared/parser-helpers.ts",
+            "src/main/memory/sources/united-memory.ts",
+            "src/main/memory/sources/claude-native.ts",
+            "src/main/engine/health.ts",
+            "src/main/agent-teams/index.ts",
+            "src/main/ipc/handlers.ts",
+            "tests/unit/parse-guards.test.ts (新)",
+            "tests/unit/parser-path-equality.test.ts",
+            "tests/unit/memory-claude-native.test.ts",
+            "tests/unit/memory-united-memory.test.ts",
+            "tests/unit/agent-teams-reader.test.ts"
+          ],
+          "tests": "先写 tests/unit/parse-guards.test.ts 含 memory 变体 5 点语义差矩阵 (空 frontmatter/EOF fence/非 record YAML), 以现行 _shared 行为为准绳钉死; parser-path-equality.test.ts 扩 isPathInside 等值/win32 大小写矩阵; memory-claude-native.test.ts 与 agent-teams-reader.test.ts 补 BERTH_EXTRA_CLAUDE_DIRS 多 home 用例 (当前红)",
+          "verify": "typecheck + lint + vitest 全量; 设 BERTH_EXTRA_CLAUDE_DIRS 真跑验证 memory/teams 列出第二 home 数据 (行为变化的真跑验收); 文件数贴上限, 实施按 guards→path-utils→home 三个 commit 推进, 超限即拆",
+          "dependsOn": [
+            "B06",
+            "B07",
+            "B08"
+          ],
+          "parallelGroup": "wave-4",
+          "hotspotNote": "handlers.ts 三次触碰 — 仅 2 处 home 解析 import 行级; agent-teams/index.ts 与 B08 经 wave 顺序隔开; health.ts 与 B06/B10 经依赖序隔开 (本批仅替换 helper import 与副本函数体)"
+        },
+        {
+          "id": "B10",
+          "title": "main 巨石拆分: health 按 agent 分拆 + registry 数据外置",
+          "goal": "health.ts (1453 行 ≥6 类职责) 拆为 engine/health/{index.ts (编排+check 基建), claude-checks.ts, codex-checks.ts, cross-checks.ts} — 纯文件拆分行为保持, 检查函数签名与输出 prose 不变 (避免击穿 health-i18n 逐字契约 — R20 已 deferred, 本批不碰文案); per-agent 检查族经 B06 agent-capabilities 的 healthChecks 端口注册, 为内置与 manifest healthCheckDescriptors 长期同路径预留接口不改行为; registry.ts 的 ~870 行静态描述符拆 agent-plugins/{builtin-claude-code.ts, builtin-codex.ts}, registry.ts 留逻辑; import 路径经目录 index 解析保持 importer 零改动。HEALTH_TARGET_ROUTES 路由硬编码收敛不做 — 归 shared-path-and-type-config issue 的 asset-type 配置表。",
+          "problemIds": [
+            "main-monolith-data-files"
+          ],
+          "files": [
+            "src/main/engine/health.ts (→ engine/health/index.ts)",
+            "src/main/engine/health/claude-checks.ts (新)",
+            "src/main/engine/health/codex-checks.ts (新)",
+            "src/main/engine/health/cross-checks.ts (新)",
+            "src/main/agent-plugins/registry.ts",
+            "src/main/agent-plugins/builtin-claude-code.ts (新)",
+            "src/main/agent-plugins/builtin-codex.ts (新)",
+            "tests/unit/health-check.test.ts",
+            "tests/unit/agent-capability-plugins.test.ts"
+          ],
+          "tests": "先跑 tests/unit/health-check.test.ts 全绿基线并补齐拆分目标的分组断言 (claude/codex/cross 三族计数与 prose 不变), 拆后保持; tests/unit/agent-capability-plugins.test.ts 加 registry 输出快照对比 (builtin 数据外置前后逐字段相等)",
+          "verify": "typecheck + lint + vitest 全量; 真跑 overview health worklist 与 capabilities 页对比拆分前后检查项一致",
+          "dependsOn": [
+            "B06",
+            "B09"
+          ],
+          "parallelGroup": "sequential",
+          "hotspotNote": "agent-plugins/ 是 gh-86 verify 足迹 (registry.ts) — 纯数据移动以 snapshot 测试钉不变; health 输出 prose 一字不动 (renderer EXACT_TEXT_KEYS 逐字契约在 R20 修复前是脆弱面, 本批刻意绕开)"
+        },
+        {
+          "id": "B11",
+          "title": "发布与打包就绪: deps 语义 + files 白名单 + packages 发布性 + pricing 单源",
+          "goal": "分发轴与 CLI 轴的发布工程批: (1) package.json 7 个 renderer 库 (@heroui/react/framer-motion/i18next/react-i18next/react-markdown/remark-gfm/zustand) 移 devDependencies, dependencies 收敛 main/preload 运行时最小集 (vite bundle 行为不变); (2) electron-builder.yml files 改加法白名单 ['out/**','package.json','LICENSE'], 删 4 个死排除条目 + asarUnpack resources + publish 占位簇 (R34 builder 死配置子项, app-update.yml 占位不再写入); (3) packages/berth-scan-engine 纳根 typecheck (composite + 根 tsconfig reference, 消除 engine-bridge/cli/cli-bin 三文件盲区), tsup 改 cjs-only + 关 sourcemap (发布体积 -70%) + 补 publishConfig {access:'public'}; (4) scripts/abi-smoke.mjs (项目 electron 加载 better-sqlite3 + new Database(':memory:'), ~10 行) 挂 build script 前; (5) tests/unit/worker-artifact.test.ts 断言 build 产物含 out/main/asset-worker.js (R12 三个运行时风险点的本地网); (6) R23: mjs 脚本的 builtInAliases/toLowerCase 增强合回 TS 版 convert.ts, scripts/update-pricing-catalog.mjs 经 node24 type stripping 直 import TS 实现消除副本, catalog.generated.ts 重生成 diff 验证零语义漂移。app icon 接线不做 — 随 macos-release-signing-config issue。",
+          "problemIds": [
+            "engine-package-migration-scope",
+            "renderer-deps-misplaced",
+            "builder-files-blacklist-stale",
+            "pricing-convert-orphan-twin",
+            "long-tail-orphan-inventory"
+          ],
+          "files": [
+            "package.json",
+            "electron-builder.yml",
+            "tsconfig.json",
+            "packages/berth-scan-engine/tsconfig.json",
+            "packages/berth-scan-engine/package.json",
+            "packages/berth-scan-engine/tsup.config.ts",
+            "scripts/abi-smoke.mjs (新)",
+            "tests/unit/worker-artifact.test.ts (新)",
+            "src/main/engine/pricing/convert.ts",
+            "scripts/update-pricing-catalog.mjs",
+            "tests/unit/pricing.test.ts"
+          ],
+          "tests": "先写 tests/unit/worker-artifact.test.ts (build 产物存在性, 配 build 后执行守卫); tests/unit/pricing.test.ts 改断言合一后的 TS 单源 (补 builtInAliases/toLowerCase 用例, 当前对 TS 版红); packages 既有 24 用例随 typecheck 纳管回归",
+          "verify": "pnpm build 全量冒烟 + electron-builder --dir 后 npx asar list 黄金对比 (98 死包→0, website/.agents/.claude 零残留) + abi-smoke 通过 + pnpm pricing:update 重生成 catalog diff 为空 + CI 绿 (约束 6: 触打包配置必须本地冒烟)",
+          "dependsOn": [
+            "B01"
+          ],
+          "parallelGroup": "wave-2",
+          "hotspotNote": "none — packages/berth-scan-engine 不在任何在途任务足迹 (works-hotspots summary 明示可放心触碰); package.json/electron-builder.yml/scripts 无任务交集; 与 B01 的根 tsconfig.json 重叠经 dependsOn 串行化"
+        },
+        {
+          "id": "B12",
+          "title": "渲染层死纵切片删除 + store 收敛 + 写路径归一",
+          "goal": "纯减法 + 不变量恢复: 删 components/shared/{asset-card,stat-card,tab-group}.tsx (148 行第一代孤儿, orphans#1) 与 asset-guide-panel.tsx + lib/asset-guidance.ts 整簇 (~319 行, orphans#2, 含保活测试) 与 settings/local-sources-section.tsx (295 行 GH-85 遗留, orphans#3) + use-ipc.ts 的 useScanSources; local-source-copy.ts 迁 components/layout/ 消费者旁; stores/app.ts 删 recentSessions/usageSummary/agentDetected/setScanning/lastAssetRefreshAt 五处死字段 (orphans#4, scanning 改读处派生, sidebar-scan-status 已示范); R26: project-scope-switcher selectScope 删 setAssets/setStats 裸写改单走 setAssetSnapshot, 随后从 AppState 删除两 action 使 GH-113 fold 不变量类型层不可绕过。边界遵守: assets:scan-sources 通道本体保留 (scope-switcher 直调, orphans#3 已验证); 全部独占 i18n key 留 B14。",
+          "problemIds": [
+            "renderer-dead-vertical-slices",
+            "store-dead-fields",
+            "set-assets-fold-bypass"
+          ],
+          "files": [
+            "src/renderer/src/components/shared/asset-card.tsx (删)",
+            "src/renderer/src/components/shared/stat-card.tsx (删)",
+            "src/renderer/src/components/shared/tab-group.tsx (删)",
+            "src/renderer/src/components/shared/asset-guide-panel.tsx (删)",
+            "src/renderer/src/lib/asset-guidance.ts (删)",
+            "src/renderer/src/components/settings/local-sources-section.tsx (删)",
+            "src/renderer/src/components/settings/local-source-copy.ts (迁 components/layout/)",
+            "src/renderer/src/hooks/use-ipc.ts",
+            "src/renderer/src/stores/app.ts",
+            "src/renderer/src/components/layout/project-scope-switcher.tsx",
+            "tests/renderer/asset-guidance.test.ts (删)",
+            "tests/renderer/asset-guide-panel.test.tsx (删)",
+            "tests/renderer/settings-sources.test.tsx",
+            "tests/renderer/app-store.test.ts",
+            "tests/renderer/project-scope-switcher.test.tsx",
+            "tests/renderer/capabilities-plugins.test.tsx",
+            "tests/renderer/capabilities-scanning-empty.test.tsx"
+          ],
+          "tests": "先写 tests/renderer/project-scope-switcher.test.tsx 的单写路径用例: selectScope 仅经 setAssetSnapshot, deep-only 快照不瞬时丢 shallow 资产 (当前红, 钉 R26); app-store.test.ts 收缩 setState 字面量并断言死字段不存在; 保活测试 (asset-guidance/asset-guide-panel) 随删; settings-sources/capabilities-* 的 setState 字面量同步",
+          "verify": "typecheck + lint + vitest 全量 + harness:check; CDP 真跑项目切换观察无闪烁/无资产瞬时消失 (runtime-behavior-needs-real-run, 静态绿不充分); grep 确认被删符号全仓零残留",
+          "dependsOn": [],
+          "parallelGroup": "wave-1",
+          "hotspotNote": "use-ipc.ts 是 gh-86/98 verify 足迹 — 仅删 useScanSources 独立导出段 (orphans#3 验证全仓 1 命中); stores/app.ts 是 gh-86 足迹 — 删除字段与其新增 runtime 字段不同段; 删除批改动段独立可先行, 但任一相关任务 verify 回退时以在途任务为先, 当轮声明 staged 集合"
+        },
+        {
+          "id": "B13",
+          "title": "长尾孤儿清理 (死导出/JSON store/CSS token/配置残留/假覆盖测试)",
+          "goal": "orphans 清单长尾纯减法 (引用 01-ANALYSIS orphansConfirmed 连带细节): 死导出 9 处摘除 — parsePlugin/parseStatusline (claude parsers.ts:648/676)、resolveCodexHomeDir 转发 shim (codex/index.ts:293, 连带 import-rename 清理)、useMemoryNote (use-memory.ts:127)、flattenNavItems (nav-config.ts:169)、AppScopeMode (scope.ts:3)、tokenUsageTotal (token-usage.ts:124, 测试同步降级为内部 helper)、ExitCode (scan-engine cli-args.ts:17)、assetProjectPath 摘名 (project-scope.ts:10, 同行 assetMatchesProjectPath 有活消费者只摘名不删行); JSON 版 createSnapshotStore 删除 (orphans#10, stripRaw 被 sqlite store 生产消费必须先迁不可整文件删); globals.css 死 token (--secondary 对/--sidebar-accent-foreground) + tailwind accordion keyframes/boxShadow card (orphans#15, radix 遗留) — 同步删 theme-palette.test.ts:29 死变量断言并按约束 4 将该源码文本断言测试改写为行为断言; components.json 删 + README.md 两处 shadcn 过时声明修正 (orphans#16); tests/unit/parsers.test.ts 196 行假覆盖删除 (orphans#20, 真 parser 已有四套直测)。app_icon*.png 不删不接 (随 macos-release-signing-config 处置)。",
+          "problemIds": [
+            "long-tail-orphan-inventory",
+            "test-net-unevenness"
+          ],
+          "files": [
+            "src/main/adapters/claude-code/parsers.ts",
+            "src/main/adapters/codex/index.ts",
+            "src/renderer/src/hooks/use-memory.ts",
+            "src/renderer/src/components/layout/nav-config.ts",
+            "src/shared/scope.ts",
+            "src/shared/token-usage.ts",
+            "packages/berth-scan-engine/src/cli-args.ts",
+            "src/main/project-scope.ts",
+            "src/main/engine/assets/snapshot-store.ts (删, stripRaw 迁出)",
+            "src/main/engine/assets/sqlite-snapshot-store.ts",
+            "src/renderer/src/styles/globals.css",
+            "tailwind.config.ts",
+            "tests/renderer/theme-palette.test.ts",
+            "components.json (删)",
+            "README.md",
+            "tests/unit/parsers.test.ts (删)",
+            "tests/unit/snapshot-store.test.ts",
+            "tests/unit/token-usage.test.ts"
+          ],
+          "tests": "theme-palette.test.ts 改写为行为断言 (活 token 经渲染断言) 或降级删除死断言行; token-usage.test.ts 将 tokenUsageTotal 降级为内部 helper 测试; snapshot-store.test.ts 收缩为 stripRaw 单测 (迁移后新位置); parsers.test.ts 整删 (假覆盖, 无断言迁移价值 — 真实现已有 claude-scanner/codex-*/session-meta-parser 四套直测); 全量 vitest 回归兜底",
+          "verify": "typecheck + lint + vitest 全量 + pnpm build + harness:check; grep 逐项验证摘除符号零残留; README 修正后人工复读",
+          "dependsOn": [
+            "B06",
+            "B08"
+          ],
+          "parallelGroup": "wave-4",
+          "hotspotNote": "globals.css 是 gh-103/105 双任务 high 热点 — css 子项执行前检查 gh-103 任务 6 是否收口, 未收口则严格限定非 chart 变量段 (--secondary/--sidebar-accent-foreground 不属 chart 段) 并当轮声明, 仍有顾虑则该子项单独顺延; claude parsers.ts 第三次触碰 (gh-94 足迹) 限定两个死导出行; nav-config.ts (gh-94 足迹) 仅 flattenNavItems 行级"
+        },
+        {
+          "id": "B14",
+          "title": "i18n 死 key 清理 + zh 复数约定收敛",
+          "goal": "locales 终批 (排全序列最后): 删 24 个已对抗验证死 key 双份 (nav.configuration/instructions.title/capabilities.title/usage.totalSpent/sessions.noSessions/settings.agentPluginManifestStatus.{valid,invalid,incompatible}/common.sensitive 等, orphans#13); B12 删除组件的独占 key 家族 (settings.sourceCategories/sourceScopes/scanDirectories/sourceDetected + instructions.guidance.docs.codexConfig); B02 连带 projectReadOnly; zh 复数混用 9 组收敛到 _other 单一约定; 隐式 key 推导 (replace('.evidence.','.evidenceHelp.')) 写入豁免说明防未来误删。执行纪律 (约束 8): 按前缀分 3 个 commit (settings.* / 页面 title+nav / 复数组), 每前缀删除前 grep 全仓零引用 + git log -7d 确认 gh-94/98/104 无并行写入该前缀段。",
+          "problemIds": [
+            "i18n-dead-keys"
+          ],
+          "files": [
+            "src/renderer/src/i18n/locales/en.json",
+            "src/renderer/src/i18n/locales/zh.json",
+            "tests/renderer/i18n-plural-convention.test.ts (新)"
+          ],
+          "tests": "先写 tests/renderer/i18n-plural-convention.test.ts 钉 zh 复数 key 全走 _other 约定 (结构断言, 防再混用); 死 key 删除本身 not needed 专测 — 由全量 vitest (i18n-initial-language 等既有测试) + 三通道 grep 证据 (字面量/动态前缀/replace 推导) 兜底, 01-ANALYSIS 已对抗验证",
+          "verify": "vitest 全量 + typecheck + lint; 真跑双语切换抽查触及前缀的页面文案无回退英文; 每 commit 用 git diff --cached 核对仅含本前缀段",
+          "dependsOn": [
+            "B02",
+            "B12"
+          ],
+          "parallelGroup": "sequential",
+          "hotspotNote": "en/zh.json 是 churn 榜首 (各 23 commits, gh-94/98/104 三个 verify 任务在写) — 本批刻意排全序列最后等收口; 每前缀执行前并行写入检查是硬前置, 检测到写入即顺延该前缀; 多 Agent 共享工作区下 locales 是最高冲突面, staged 集合核对逐 commit 执行"
+        }
+      ],
+      "risks": [
+        "tests/ 纳入 typecheck (B01) 可能暴露未知规模的 mock 类型错误: tsconfig.test.json 采用渐进 include (setup.ts + 对账测试起步), satisfies BerthAPI 是首要钉子; 若全量纳管失控, 余量拆顺延 commit, 不阻塞 B02。",
+        "B05 源表统一存在已验证的行为分叉点 (scanner 对 settings.local.json 跑 2 parser 而 shallow/derive 跑 5 个): 单源表必须按各消费方现状建模 + drift 等价测试先绿再切换, 分叉修复单独决策留 02-SPEC, 否则构成隐性行为变化违反约束 2。",
+        "claude-code/parsers.ts 被 B04/B08/B13 三批触碰且是 gh-94 verify 足迹 (16 commits churn 榜第四): 每批严格限定段 (内层 catch 段 / session id+JSONL 段 / 两个死导出行), 逐批 git diff --cached 核对; 不替 gh-94 修 team 残留误报 (works-hotspots 已知 GH-114 回加矛盾); gh-94 verify 回退时本任务相关批暂停 rebase。",
+        "globals.css/theme-palette (B13 css 子项) 撞 gh-103 implement 态足迹 (唯一 implement 任务, 随时回改): 执行前检查 gh-103 任务 6 收口状态, 未收口则仅动非 chart 变量段并当轮声明, 或将 css 子项单独顺延 — B13 其余子项不受牵连。",
+        "handlers.ts/runtime.ts/use-ipc.ts/stores/app.ts/app-layout.tsx/asset.ts/ipc.ts 均为 verify 态足迹: 所有触碰批行级限定 + 当轮声明 staged 集合; 12 个 verify 任务任一回退优先于本任务, 冲突即停。",
+        "e2e 仅 windows CI 的装配盲区: B03 (index.ts/watcher) 与 B11 (打包配置) 触主进程装配, 本地 pnpm build 冒烟强制 (约束 6); B01 把 macos-latest e2e 腿最先落地, 使后续所有装配批获得与主开发平台一致的集成信号 — 这是 B01 排 wave-1 的顺序价值。",
+        "行为保持例外清单必须在 02-SPEC 显式声明并逐项真跑验收 (memory: runtime-behavior-needs-real-run): R18 多 home 生效 (memory/teams 数据可能变多)、R19 错误从静默到可见 (坏 .mcp.json 入 ScanError 面板)、codex malformedLineCount 记账补齐、B02 删 7 个 IPC 通道 (renderer 零调用已对抗验证); 静态绿与单测绿不构成验收。",
+        "安全清单未在本任务闭环的两块已显式落 issue 不静默: window-hardening (sandbox/url-guard/will-navigate/permission handler) 新立 issue, fuses/签名/icon 并入 macos-release-signing-config — 0.1.x 对外分发前这两个 issue 必须完成, ARCHITECTURE.md 更新点中标注'分发前置'。",
+        "B09 (~13 文件) 与 B13 (~18 文件) 贴近规模上限: B09 按 guards→path-utils→home 三 commit 推进, B13 按死导出→store/css→配置/README 分 commit; 实施中超限立即按 commit 边界拆为顺延 batch, 不得单批吞。",
+        "B12 删 LocalSourcesSection 后 assets:scan-sources 通道必须保留 (project-scope-switcher 直调, orphans#3 边界已验证): B01 对账测试会把误删钉成红灯, 这是对账测试先行的另一重价值。",
+        "i18n 三个 verify 任务 (gh-94/98/104) 在写 locales: B14 排全序列最后且每前缀执行前 grep + git log -7d 并行写入检查, 检测到写入即顺延该前缀; 这是约束 8 的执行化。"
+      ],
+      "archDocChanges": [
+        "新增'分层与依赖规则'章节: 8 层定义 (shared-contracts / agent-adapters / engine-core / plugin-registry / host-electron / preload-bridge / renderer / host-cli) + 10 条可执行规则 (engine 禁 electron 值依赖经工厂注入、per-agent 知识唯一归属 adapters/{agentId}、接入新 agent 标准动作、IPC 四方对账、shared 准入、adapters/_shared 禁跨模块、catch 必经记账或 log seam、hooks-manager 唯一写者、deps 语义、builder 白名单), 形式为未来 Agent 可逐条核验的约束句。",
+        "'主进程模块'章节更新: 补 engine/session-detail.ts (session 域逻辑与模型知识库)、engine/health/ 目录拆分结构、engine/agent-capabilities.ts (per-agent 能力查表入口)、adapters/{claude-code,codex}/sources.ts (扫描源单源表, 取代 5+ 处 mirror 副本的声明)、agent-plugins/builtin-*.ts 数据外置、main/log.ts (userData/logs 本地滚动日志 seam); 删除 relations.ts 条目与 snapshot-store JSON 版描述 (sqlite 为唯一持久层, stripRaw 迁移注记)。",
+        "'IPC 契约'章节重写: window.api 类型从 preload typeof api 派生 (BerthAPI), 手写 index.d.ts 镜像废止; 通道清单真实化 (35→28, 死通道与 phantom 已清); 通道增删流程 = handlers/preload/IpcChannels/setup.ts mock 四处同步 + ipc-contract-alignment.test.ts 对账强制 — 替换现行'修改 ipc handler 须同步更新 ipc.ts'单句。",
+        "'安全约束 (硬边界)'章节扩充: 新增主进程日志落点 (userData/logs, 仅本地滚动文件, 无遥测边界重申); hooks-manager 唯一合法写者从描述升格为分层规则引用; 标注 window-hardening 与 distribution-hardening (fuses/签名/icon) 两个分发前置 issue 的交叉引用, 声明当前 sandbox:false 等已知缺口及其去向。",
+        "'仓库布局'与'技术栈'章节更新: packages/berth-scan-engine 纳入根 typecheck (engine-bridge/cli 盲区消除) 与发布就绪状态 (cjs-only/publishConfig); 双宿主定位声明 (Electron 与 CLI 共享 engine-core, 物理迁包由 engine-shared-core-package issue 承载); dependencies 语义规则 (main/preload 运行时依赖) 与 electron-builder 加法白名单模式; abi-smoke 与 worker-artifact 断言两道装配冒烟入口。",
+        "'渲染进程模块'章节更新: stores/app.ts 字段口径 (五处死字段删除后的真实 AppState); 资产写路径单一不变量 (setAssetSnapshot 唯一落点, setAssets/setStats 已从类型层移除); AppLayout 默认 PageErrorBoundary 全路由兜底 + /usage 细化先例; components/shared 准入注记 (2+ 消费者) 与已删孤儿清单 (asset-card/stat-card/tab-group/asset-guide-panel/local-sources-section)。",
+        "'进程边界'图更新: 标注 worker 双构建入口与 CLI 第二宿主; descriptor/sources 数据流向 (adapters 声明 → agent-plugins 聚合 re-export → engine 经 agent-capabilities 查表消费), 体现依赖单向化后的拓扑。"
+      ]
+    }
+  ],
+  "judges": [
+    {
+      "grafts": [
+        {
+          "from": "product-trajectory (C) B01/B02",
+          "what": "对账测试的 knownDead/knownPhantom 显式白名单机制: 四方对账测试先落地并把当前死面钉进白名单, 死面删除批的目标断言改为'白名单清零' (红→删→绿)",
+          "why": "修复 A 唯一的结构性顺序缺陷 — A 的 B01 (IPC 死面删除) 在 B02 对账网之前执行, 删除批本身无网; A 的理由'对账要钉干净集合'被 C 的白名单模式直接证伪。GH-114 曾回加 teams 通道的先例说明分析时点的 grep 在执行时点可能失效, 红测试比 re-grep 纪律更可靠。"
+        },
+        {
+          "from": "target-state-first (B) B01",
+          "what": "新建专用 tsconfig.test.json 测试 project (替代 A 的 tsconfig.web.json 方案), 并采用 B 的渐进纳管阈值: tsc dry-run 估量, 错误面 >15 文件则按目录渐进 include",
+          "why": "A 的 B02 把 setup.ts + 契约测试塞进 tsconfig.web.json 是错误的 project 形状 — 对账测试必须 import src/main/ipc/handlers.ts (main 进程代码), 而 tsconfig.web.json include 仅 src/renderer + shared + preload d.ts (已核实), main 代码进 web project 必炸。B/C 的独立 test project 结构正确, B 的 >15 文件阈值让探针决策可机械执行。"
+        },
+        {
+          "from": "product-trajectory (C) B11",
+          "what": "scripts/abi-smoke.mjs (~10 行, 项目 electron 加载 better-sqlite3 + new Database(':memory:')) 挂 build 前 + tests/unit/worker-artifact.test.ts (断言 out/main/asset-worker.js 产物存在), 嫁接进 A 的 B06 打包批",
+          "why": "A 的 B06 重写 electron-builder files 白名单 + deps 语义, 正是 01-ANALYSIS 风险 7 点名的'worker 产物路径 / SQLite ABI 在单测射程外、仅 windows e2e 接住'的改动类别; A 的 B06 验收只有 asar list + 启动冒烟, 这两个本地网成本极低且不依赖 windows CI, C 是唯一补齐风险 7 全部三个网的提案。"
+        },
+        {
+          "from": "product-trajectory (C) B14",
+          "what": "tests/renderer/i18n-plural-convention.test.ts 结构断言 (zh 复数 key 全走 _other 约定), 嫁接进 A 的 B13",
+          "why": "A 的 B13 对 zh 复数 9 组收敛标注 'not needed' 无任何新测试 — 但复数收敛是 key 重命名类改动, 若某 key 被无 count 调用点消费, 改名即 raw key 直出; 结构测试既验收迁移完成态又防未来再混用, 是该批唯一可机械化的回归网。"
+        },
+        {
+          "from": "target-state-first (B) B12",
+          "what": "B 对 PageErrorBoundary '返回 Overview' 动作的 locale 处理: en/zh.json 仅新增 boundary 前缀 key 并声明与 3 个 verify 任务写入面零交集, 嫁接进 A 的 B07 文件集",
+          "why": "已核实 page-error-boundary.tsx 现状只有 titleKey/bodyKey (fallback common.error), 无任何 action — A 的 B07 要加'返回 Overview'动作却没把 en/zh.json 列入文件集, 文件集不完整; B 是三份提案中唯一发现并声明这个连带改动的。"
+        },
+        {
+          "from": "product-trajectory (C) B13",
+          "what": "theme-palette.test.ts 的处置方式: 按硬约束 4 '改写为行为断言' 而非仅删死变量断言行",
+          "why": "A 的 B05 只计划'删死变量断言行', 但该测试通体是 readFileSync + toContain 源码文本断言 (已核实, 且断言对象含 gh-105 verify 足迹的 --accent 系变量), 触碰 globals.css 时硬约束 4 要求改写为行为断言; C 是唯一按约束原文执行的提案, 此嫁接同时消解对 A-B05 的 veto。"
+        }
+      ],
+      "judgeLens": "regression-safety — 回归风险与可验证性。检查口径: (1) 每个 batch 是否行为保持, 例外是否限于契约漂移/吞错修复; (2) 测试先行是否可执行 — 声称的测试文件是否存在、无网区域 (ipc/preload 零直测) 是否先建网再动; (3) 热点避撞是否真实 — 声称并行的 batch 文件集是否真不相交, 触热点文件是否有显式策略; (4) 数据流/时序改动是否安排真跑 (CDP) 验证; (5) 对照 01-ANALYSIS 11 条执行风险逐条核对。事实核查手段: 只读核实了 relations.ts 三个消费方 (handlers.ts:39 / scope-dedupe.test.ts:21 / plugin-relations.test.ts:7)、root vitest include 仅 tests/** (vitest.config.ts:10)、scan-engine CLI 声明 relations flag (cli-args.ts:26)、token-usage.ts 实际位于 src/shared/、pricing/catalog.ts 74 行零 catch 零解析、PageErrorBoundary 无 action 仅 titleKey/bodyKey、CI 矩阵 ubuntu+windows 且 e2e 仅 windows、gh-103 INDEX 仍 phase: implement、stores/app.ts 死字段与 setAssets/setStats 实存、preload:32 assets.scan phantom 实存、tsconfig.web.json include 不含 tests 与 src/main。",
+      "ranking": [
+        "incremental-pragmatic (提案A)",
+        "target-state-first (提案B)",
+        "product-trajectory (提案C)"
+      ],
+      "scores": [
+        {
+          "proposal": "incremental-pragmatic (提案A)",
+          "score": 8,
+          "strengths": [
+            "热点时序最优: 全仓风险最高的 B09 (吞错修复, 触 parsers.ts 16-commit / runtime.ts 13-commit / scanner.ts 11-commit 三热点) 排最后梯队且 dependsOn B03/B05/B08 三重串行; i18n (churn 榜首, 3 个 verify 任务在写) 排 sequential 末位 + 前缀分批 + grep/INDEX 门控, 与分析风险 1/2/3 的处置建议逐条对齐",
+            "真跑验证纪律最完整 (分析风险 11 / memory: runtime-behavior-needs-real-run): B03 session/teams 页 CDP、B07 项目切换 fold 不变量 CDP、B09 手工写坏 .mcp.json 观察记账、B12 新建 skill 文件观察 watch→derive→UI 全链 — 每个数据流/时序批都有具体的真跑场景而非泛泛'真跑确认'",
+            "唯一对'网本身'做有效性自证的提案: B02 验收含'临时注入未注册通道确认对账测试变红后撤销', 防止建了一张假网",
+            "行为保持最纯: settings.local.json 2/5-parser 分叉与 memory splitFrontmatter 5 点语义差均只钉现行为测试不收敛 (收敛显式记录到 engine 包 issue), 是三份中唯一零'选边'决策的提案; relations.ts 保留的判断经核实正确 (plugin-relations.test.ts:7 与 scope-dedupe.test.ts:21 实际在消费, CLI cli-args.ts:26 还声明了 relations flag)",
+            "唯一把凭证 redaction 枚举测试拉进本任务的提案 (B14, 优先零源码改动方案且已核实 redactStatusLineCommand 确在 capabilities.tsx:400 内联未导出) — '凭证不进渲染进程'边界从此有常设回归网, 不等 god-page issue",
+            "已知 e2e 风险有预案: project-scope.e2e macOS 红按已立案 issue 隔离 (test.skip + 交叉引用) 不阻塞, 是三份中对 macos 矩阵首跑失败唯一给出具体处置的"
+          ],
+          "weaknesses": [
+            "结构性顺序缺陷: B01 (IPC 死面删除, 触 handlers/preload/ipc.ts 三个 verify 足迹文件) 在 B02 对账网之前执行, 删除批本身无网兜底, 仅靠 re-grep 纪律; C 的 knownDead 白名单模式证明'先建网后删除'完全可行, A 的'对账要钉干净集合'理由不成立",
+            "B05 文件数 22 超删除批 ~20 上限 (自我承认, 以多 commit 对冲 — 但 commit 切分不降低批的验证粒度), 且同批触 globals.css (gh-103 implement 态最高危热点) 排在首波 P1, 虽有段限定 + 延后 fallback, 仍是三份中唯一首波就碰 gh-103 足迹的",
+            "B02 把 setup.ts + 契约测试纳入 tsconfig.web.json — 契约测试需 import src/main/ipc/handlers.ts, 而 tsconfig.web.json include 仅 renderer/shared (已核实), project 形状错误, 落地时必须改为独立 test project",
+            "B07 文件集缺 en/zh.json: '返回 Overview' 动作需新 i18n key (已核实 boundary 现状无 action), 文件集不完整",
+            "B09 列 pricing/catalog.ts 为吞错修复对象但该文件 74 行纯静态 import + 零 catch 零解析 (已核实), 不存在可升级为记账的失败路径, 且 B09 tests 字段未列任何 pricing 测试 — 该子项既目标错位又无测试先行",
+            "deferred 清单含一条自述'本条不存在'的占位假条目 (set-assets-fold-bypass-placeholder), 产物自检不严"
+          ]
+        },
+        {
+          "proposal": "target-state-first (提案B)",
+          "score": 7.2,
+          "strengths": [
+            "建网顺序最严格: B01 纯基建零 src 文件 (tsconfig.test.json + e2e macos + 删假覆盖) → B02 对账网 → B03 死面删除 (写红再删), 是'无网区域先补网'原则的教科书执行; tests 纳管有 >15 文件错误的显式降级阈值",
+            "gh-103 足迹处置最保守: 5 文件全程禁入且'即使中途收口也不回收范围', css 死 token 整体分流出任务 — 对分析风险 1 的回应最彻底, 也因此完全没有 theme-palette 改写义务",
+            "relations.ts 删除是三份中唯一处置完整的: 文件集同时列入 tests/unit/scope-dedupe.test.ts 与 packages/berth-scan-engine/tests/plugin-relations.test.ts 两个消费测试, 且带 manifest 守卫'声明 relations 命令则改判保留并上抛' — 已核实 cli-args.ts:26 确实声明 relations flag, 该守卫会真实触发, 证明其防御是必要而非装饰",
+            "行为保持例外集中管理: risks 第 7 条把 R18 多 home / R19 错误可见 / codex 记账 / 死通道删除列成显式清单并逐项要求真跑验收, 验收口径最清晰",
+            "B10 health 1453 行拆分以'输出 prose 一字不动'钉死 R20 逐字契约脆弱面, 拆分前后 golden/snapshot 等价 — 大文件重组的行为保持论证最扎实"
+          ],
+          "weaknesses": [
+            "B13 把 i18n 死 key 删除 + zh 复数收敛 + ~900 行组件删除排在 wave-1 (全计划最早窗口), 而 locales 是 churn 榜首且 gh-94/98/104 三个 verify 任务在写 — 守住了硬约束 8 的字面 (前缀 grep + git log 门控) 但选了碰撞窗口最大的时点, A/C 都选择排最后给 verify 收口时间",
+            "B07 settings.local.json 分叉'定案'是计划内行为变更 (见 vetoes), 自家 risks 承认'选边会改变边缘资产呈现' — 超出硬约束 2 例外范围",
+            "B09 把 shared-pure-logic-forks 拉回任务内且排 wave-1: session-location-groups.ts 与 result-signature.ts 均为 gh-98 verify 足迹 (works-hotspots 已确认), 而 01-ANALYSIS 对应表明确把 R30 路由到已立案 shared-path-and-type-config issue ('等收口后随该 issue 一并做'), 逆分析建议提前触碰 gh-98 足迹",
+            "B08 memory splitFrontmatter 5 点语义差'按 _shared 版收敛'是边缘行为变更 (空 frontmatter/EOF fence/非 record YAML 的 memory 呈现会变), 虽有 characterization 先行 + mirror 注释可作'恢复声明行为'的弱锚, 仍比 A 的钉测不收敛激进",
+            "B14 文件集含不存在路径 src/renderer/src/lib/token-usage.ts (实际 src/shared/token-usage.ts, ls 已核实)",
+            "范围最重: B10 (health 1453 行 + registry 870 行重组) 在同样 14 批预算内把行为保持验证面拉到三份最大, snapshot 等价测试可控但 churn 与 review 面显著高于 A/C"
+          ]
+        },
+        {
+          "proposal": "product-trajectory (提案C)",
+          "score": 6.7,
+          "strengths": [
+            "测试先行机制最精巧: B01 对账测试以 knownDead/knownPhantom 白名单钉住脏现状 (首跑红→白名单转绿), B02 删除批的目标断言即'白名单清零' — 死面删除从 grep 信任升级为红绿循环, 三份中唯一把删除本身变成 test-first 的",
+            "验证基建最完整: abi-smoke.mjs + worker-artifact.test.ts + packages 纳根 typecheck 一次补齐 01-ANALYSIS 风险 7 点名的全部三个运行时盲区; i18n-plural-convention.test.ts 给复数收敛配了结构网; i18n 排 sequential 末位 + 前缀 3-commit 纪律与 A 同水位",
+            "pricing 单源走'mjs 增强合回 TS + 脚本直 import + catalog 重生成 diff 为空'路线 (B11), 是三份中唯一让生产转换逻辑获得测试覆盖的方案 (A 的删除路线让生产逻辑继续无测试), 零漂移证明手段具体",
+            "session-id 契约 (B08) 以'现 id 字面 == 函数产出'的字节等价矩阵钉行为不变, 隐式契约显式化的验证设计扎实",
+            "B12 (store 单写路径) 的 CDP 真跑场景具体 (项目切换无 shallow 瞬时丢失/闪烁), 守住 memory 规则"
+          ],
+          "weaknesses": [
+            "B02 删 relations.ts 但文件集漏列 packages/berth-scan-engine/tests/plugin-relations.test.ts (该文件 :7 直接 import resolveRelations, 已核实), 且 root vitest include 仅 tests/** — 批验收'vitest 全量'根本跑不到被打破的包测试套件, 形成假绿 (见 vetoes); 也无 B 那样的 manifest 守卫, 而 cli-args.ts:26 实际声明了 relations flag",
+            "wave-2 并行声明事实性失真: B02 与 B04 文件集都含 src/main/engine/assets/runtime.ts 且互无 dependsOn (见 vetoes) — gh-86 13-commit 热点被两个'并行'批同时写",
+            "B04 把主进程吞错修复 (parsers/scanner/runtime 三热点) + 渲染层 boundary + status.error 捆成一批排 wave-2 早期, 12 文件贴上限 — A 把同等内容排最后梯队三重串行, C 的碰撞窗口显著更大; 且 B04 改 pricing/catalog.ts 行为却未列任何 pricing 测试 (catalog.ts 实际零 catch 零解析, 双重失真)",
+            "B02 'runtime 的 legacy-scan-all 入口退役'与代码不符: handlers.ts:102 的 assets:scan-all 只是调用通用 runtime.refresh({reason:'legacy-scan-all'}), runtime 不存在独立 legacy 入口 (已核实) — 基于不精确认知触碰 runtime.ts 热点",
+            "B12 删 lib/asset-guidance.ts (works-hotspots 列明的 gh-94 verify 足迹) 但 hotspotNote 只声明了 use-ipc/stores, 漏标该文件的足迹避撞策略, 不满足硬约束 1 '显式标注'要求 (B 的同等批有声明, A 还给了未收口则延后的 fallback)",
+            "B09 splitFrontmatter 收敛与 B 同样存在边缘行为变更问题"
+          ]
+        }
+      ],
+      "vetoes": [
+        {
+          "proposal": "product-trajectory (提案C)",
+          "target": "B02 删除 src/main/engine/relations.ts 的文件集与验收",
+          "reason": "事实错误 + 违反硬约束 1/5。已核实 packages/berth-scan-engine/tests/plugin-relations.test.ts:7 直接 `import { resolveRelations } from '../../../src/main/engine/relations'`, 而 C 的 B02 files 数组不含该文件 (仅列 tests/unit/scope-dedupe.test.ts); 同时 vitest.config.ts:10 include 仅 ['tests/**/*.test.ts','tests/**/*.test.tsx'], B02 验收'vitest 全量'跑不到 scan-engine 包 24 用例 — 删除落地后包测试套件 import 失败而批验收照常全绿, 违反'每 batch 独立可验证'。另: cli-args.ts:26 BOOLEAN_FLAGS 实际声明 'relations' (capabilities.ts:21 inspect 命令自述 'resolved relations'), 即 B 提案同款守卫'CLI manifest 声明则改判保留并上抛'会真实触发, C 无条件删除且无守卫。"
+        },
+        {
+          "proposal": "product-trajectory (提案C)",
+          "target": "wave-2 并行组: B02 与 B04 文件集重叠",
+          "reason": "违反硬约束 1 (文件集必须明确且并行批不冲突)。B02 files 含 'src/main/engine/assets/runtime.ts' (legacy-scan-all 退役 + tests/unit/agent-asset-runtime.test.ts), B04 files 亦含 'src/main/engine/assets/runtime.ts' (catch 处接 log seam); 两批同为 parallelGroup wave-2, dependsOn 分别为 [B01] 与 [B03], 互不依赖 — 按声明并行执行即两个 Agent 同时写 runtime.ts (gh-86 verify 足迹, 近 7 天 13 commits 全仓第六热点)。多 Agent 共享 master 工作区下这是实打实的写冲突。"
+        },
+        {
+          "proposal": "product-trajectory (提案C)",
+          "target": "B04 对 src/main/engine/pricing/catalog.ts 的吞错修复子项",
+          "reason": "事实错误 + 违反硬约束 4 (测试先行)。已核实 catalog.ts 全文 74 行: 静态 import PRICING_CATALOG_SNAPSHOT from './catalog.generated' + 纯函数匹配, grep catch 零命中, 无 fs 读取无 JSON.parse — 不存在'解析失败静默归零'可升级为记账的路径 (R19 的文件清单也不含 catalog.ts); 且 B04 tests 字段未列任何 pricing 测试, 该行为改动无测试先行。(A 的 B09 同样列了 catalog.ts 且同样无 pricing 测试, 同此证据; B 的 B11 虽同样误指 catalog.ts 但至少列了 tests/unit/pricing.test.ts 的失败记账用例, 红测试不可写时会迫使实现者重定位, 降一级为弱点。)"
+        },
+        {
+          "proposal": "target-state-first (提案B)",
+          "target": "B07 'settings.local.json 的 2-parser vs 5-parser 分叉在此定案并钉测 (先红后绿)'",
+          "reason": "违反硬约束 2 (行为保持, 例外仅限已确认契约漂移/吞错修复)。scanner 跑 2 parser 与 shallow/derive 跑 5 parser 的分叉没有任何一侧是'声明行为' (无契约/注释声明 scanner 应跑 5 个, 区别于 splitFrontmatter 的 mirror 注释锚), '定案'+'先红后绿'意味着对选定方向写新行为测试 = 计划内行为变更; B 自己的 risks 承认'选边会改变边缘资产呈现...选边原则是对用户数据更不丢失的一侧' — 这是产品决策不是漂移修复。对照: A 与 C 的同名批都按各消费方现状建模、显式标注分叉、把统一决策留给 engine 包 issue, 证明行为保持的做法在同一张表上完全可行。"
+        },
+        {
+          "proposal": "incremental-pragmatic (提案A)",
+          "target": "B05 对 tests/renderer/theme-palette.test.ts 的处置 ('删死变量断言行')",
+          "reason": "违反硬约束 4 第三句: '源码文本断言类测试 (theme-palette 等) 在触碰对应文件时改写为行为断言'。A 的 B05 触碰 globals.css (删 --secondary 对与 --sidebar-accent-foreground), 但 tests 字段只写'tests/renderer/theme-palette.test.ts 删死变量断言行 (源码文本断言地雷)' — 已核实该测试通体为 readFileSync + expect(globalsCss).toContain(...) 源码文本断言 (含对 --accent / --sidebar-accent 等 gh-105 verify 足迹活变量的逐字断言), 仅删死变量行后地雷原样保留, 不构成'改写为行为断言'。C 的 B13 同场景明确'按约束 4 将该源码文本断言测试改写为行为断言', 证明合规做法存在。"
+        },
+        {
+          "proposal": "incremental-pragmatic (提案A)",
+          "target": "B05 文件集条目 'src/renderer/src/lib/token-usage.ts'",
+          "reason": "事实错误: 该路径不存在。已核实 `ls src/renderer/src/lib/token-usage.ts` → No such file or directory; tokenUsageTotal 实际定义于 src/shared/token-usage.ts:124。死导出摘除目标文件写错路径, 文件集作为避撞声明的基准失真 (B 提案 B14 同款条目同错, 见下; C 的 B13 路径正确)。"
+        },
+        {
+          "proposal": "target-state-first (提案B)",
+          "target": "B14 文件集条目 'src/renderer/src/lib/token-usage.ts'",
+          "reason": "事实错误, 同 A-B05: 该路径不存在, tokenUsageTotal 在 src/shared/token-usage.ts:124 (已核实)。低严重度 (符号唯一, 实现时可自纠), 但文件集是硬约束 1 避撞声明的事实基线, 写错路径即基线失真。"
+        }
+      ]
+    },
+    {
+      "judgeLens": "architecture-quality — 架构质量与边界清晰度: 以 15 条现状底图为事实基线, 核查选型论证是否贴合 berth 形态 (本地只读扫描器 + main/worker/CLI 三消费方内核 + 桌面 UI), 分层规则是否可 grep/可测试地执行, 方案是否消除 6 大主题根因而非症状缓解, 与 roadmap 既定依赖序 (adapter-parsing DONE → engine-shared-core-package → asset-runtime-collaborators-split) 是否同向, moduleMoves 是否制造新的归属错位。事实核查先行: 对三提案声称的文件集、测试引用、删除链完整性做了只读抽查 (relations 包测试 import、token-usage 路径、platform.test 内容、scan-all 链路、值依赖环、双副本、store 绕行写)。",
+      "scores": [
+        {
+          "proposal": "incremental-pragmatic",
+          "score": 7.2,
+          "strengths": [
+            "分层定义全场最精确: memory/agent-teams 单列 main-domains 层, 与底图 2 '刻意隔离的按需读取 IPC 域'的现状语义一致; electron 值依赖白名单逐模块点名违规面 (engine/adapters/memory/agent-teams/agent-plugins 出现 import electron 即违规), 是三家中唯一把 memory 域零 electron 现状写成可 grep 规则的方案; '存量 7 处直连冻结只减不增'把过渡态变成可核查基线。",
+            "行为保持纪律最严且与 roadmap 处置零冲突: settings.local.json 分叉如实按 per-consumer 建模、splitFrontmatter 5 点语义差仅钉现行为测试不收敛 — 与 roadmap Phase C 明文'memory 2 份 splitFrontmatter 变体转 engine-shared-core-package'的既定归属完全一致。",
+            "deferred 处置完备: 16 项逐一给出 issue-new/issue-existing 去向与理由, 满足硬约束 7 的显式处置要求; B11 解环/B12 源表/B03 session-detail 落 engine/B05 tsup 修正构成 engine 成包的低风险铺路步且不抢跑包切线。",
+            "对账测试自验证设计 (B02: 临时注入未注册通道确认测试变红后撤销) 是三家唯一对安全网本身做有效性自证的细节。",
+            "i18n 批 (B13) 排全计划最后梯队 + 'zh 复数收敛遇并行写入整体延后'的退让策略, 对硬约束 8 的执行化最稳。"
+          ],
+          "weaknesses": [
+            "R4 的 moduleMoves 制造新错位: per-agent 源表放 engine/asset-sources.ts 而 descriptors 数据下沉 adapters 侧, 两张同性质 per-agent 声明表分居两层、还需新建 drift 一致性测试对账 — 等于把 R4 要消灭的 mirror 模式制度化为双真源, 且与其自身 patternRationale ('per-agent 知识未归位 adapter 侧'是底图 9 的问题陈述) 直接矛盾; 第三个 agent 接入仍要改 engine 文件。",
+            "R1 根因处置全场最薄: 只删 3 个死方法 + 解值依赖环, 连 01-ANALYSIS R1 建议的'短期最低限度 capability map'(engine 内 dispatch 单点收敛) 都未做, 7 处直连以'冻结'处置 — 主题 1 (9 问题/2 high, 六主题之首) 的根因在任务结束后原样存在, 这是症状止血不是根因消除。",
+            "文件集事实错误两处: B05 列 src/renderer/src/lib/token-usage.ts (实测全仓唯一 token-usage.ts 在 src/shared/); B01 列 tests/renderer/platform.test.ts 并声称收缩'claudeDir 断言' (实测该文件测 navigator UA 探测, claudeDir 0 命中)。",
+            "B01 先删死面、B02 后建对账网的顺序让删除批裸奔; 其'对账要钉干净集合'的排序理由被 product-trajectory 的 knownDead 白名单方案证伪 — 对账测试完全可以先钉脏集合再随删除收敛清零。",
+            "产出卫生: deferred 列表含 set-assets-fold-bypass-placeholder 占位垃圾条目 (自述'本条不存在'); B05 删除批 22 文件超约束 ~20 上限 (虽自我声明多 commit 切分对冲)。"
+          ]
+        },
+        {
+          "proposal": "target-state-first",
+          "score": 6.6,
+          "strengths": [
+            "终态治理机制最完整: 10 条规则 + '现存例外必须在 ARCHITECTURE.md 例外清单登记并附收口 issue'(health.ts 直连过渡期、electron 白名单变更登记) — 在多 Agent 共享工作区下, 例外可检索可收口是规则不腐化的关键机制, 三家唯一。",
+            "relations.ts 删除链全场唯一完整: 同时列出 tests/unit/scope-dedupe.test.ts 与 packages/berth-scan-engine/tests/plugin-relations.test.ts 两个测试处置 (实测后者 :7 直接 import '../../../src/main/engine/relations', 不处置必炸包测试), 并带'执行前核对 CLI manifest, 声明 relations 命令则改判保留并上抛'的回退条款。",
+            "扫描源表布局正确: adapters/<agent>/asset-sources.ts 声明 + agent-plugins 聚合, 与 descriptors 下沉后同侧同构, per-agent 知识归属一致; B05→B06→B07 渐进接表序合理, 每步带等价钉测。",
+            "B01 纯测试地基批零 src 触碰, 与 B02 契约批的边界切分干净; boundary 新增 i18n key 显式列入 B12 文件集 (locales 仅 boundary 前缀), 是三家唯一把错误边界文案来源写清的。"
+          ],
+          "weaknesses": [
+            "B07 settings.local.json '定案'预设行为变更: tests 字段写'定案跑 5 parser 或维持 2…先红后绿'(维持现状测试不会先红) + risks 写'选边原则是对用户数据更不丢失的一侧'= 预设改 5 parser, settings.local.json 将开始产出新资产 — 01-ANALYSIS R4 只认定副本间不一致, 无任何声明认定 5-parser 侧是声明行为, 不在硬约束 2 的'已确认契约漂移'例外内。",
+            "B08 splitFrontmatter '按 _shared 版收敛'同为预设行为变更 (memory 笔记 frontmatter 5 个边缘 case 解析行为改变), 且 roadmap Phase C 明文已将该项'转 engine-shared-core-package'— 拉回本任务并选边, 既违反行为保持又推翻既定 issue 归属。",
+            "主题 6 (4 问题/3 high) 全部 deferred: deps 7 包移位是 1 文件、works-hotspots 确认零撞车、阻断 77.5MB 闭包入包的快赢 (A/C 都拉入且给了本地 asar list 验收路径), '需要打包链验证面'的推迟理由不成立 — 6 大主题实质只覆盖 5 个, 对'全面架构重构'的回应有缺口。",
+            "engine-core 层把 memory/agent-teams 与 engine/adapters/agent-plugins 同层混装, 与底图 2 的隔离语义冲突且对未来包切线有误导 (memory/agent-teams 不在 CLI 闭包 30 文件内); 虽有 electron 三文件白名单规则兜底, 层语义本身错位。",
+            "B13 (i18n 24 key 删除) 排 wave-1, 在 12 个 verify 任务收口前的最早窗口触碰 churn 榜首文件 — 合规于硬约束 8 字面 (grep + git log 前置) 但避撞时机全场最激进; css 死 token 的 deferred 去向仅写'分流至对应 issue'未指名, 处置模糊。"
+          ]
+        },
+        {
+          "proposal": "product-trajectory",
+          "score": 8,
+          "strengths": [
+            "根因消除全场最彻底: R1 做满分析建议 — B05 解环 + B06 agent-capabilities 查表把 engine 7 处直连降为 1 处 (三家唯一落实'短期最低限度 capability map'建议的), '接入新 agent = 新建 adapters 目录 + 注册一处'直接达成主题 1 的反根因目标; R4 是真单表 (一张 adapters/<agent>/sources.ts 生成 descriptors/CAPABILITY_GLOBS/DISPATCH/watch 四类消费), 不留双真源。",
+            "选型论证与 berth 形态契合最具体: 双宿主 ports-adapters 把 worker.ts 列为第三装配根 ('宿主能力由 index.ts/worker.ts/CLI 入口工厂注入'), 与底图 1/3/12 的三消费方内核事实吻合; 三条产品轴逐 batch 核算归属, 渲染层美化整体分流的裁剪逻辑自洽。",
+            "与 roadmap 衔接最厚: B11 完成 R12 建议的全部工程前置 (packages 纳根 typecheck 消除 engine-bridge/cli 盲区 + tsup cjs-only/publishConfig + ABI 冒烟脚本 + worker-artifact 断言), 物理迁包从冒险变机械; 逻辑前置 (解环/源表/纯助手下沉) 同步齐备。",
+            "对账测试顺序设计最优: B01 以 knownDead/knownPhantom 白名单先钉脏现状转绿, B02 以白名单清零为目标断言驱动删除 — 删除批全程有网, 优于 A 的先删后建网; B14 的 i18n-plural-convention.test.ts 结构断言是三家唯一的复数约定防复发网。",
+            "行为变更处置规矩: settings.local.json 按各消费方现状建模并在表上显式标记分叉、修复决策留 02-SPEC 单列; codex malformedLineCount 补齐明确归类吞错例外并要求 SPEC 声明 + 真跑验收 — 与硬约束 2 的例外边界对齐。"
+          ],
+          "weaknesses": [
+            "B02 删 relations.ts 的删除链不完整: 文件集与 tests 处置均缺 packages/berth-scan-engine/tests/plugin-relations.test.ts (实测 :7 直接相对路径 import src/main/engine/relations), 删除即令 scan-engine 包测试编译失败, 而 B02 verify 只承诺根 vitest + 通道名 grep — 与其自身 B05/B06 verify 都跑包测试的标准不一致。",
+            "提案内部自相矛盾: risks 第 7 条声称 gh-103 五文件足迹'全程禁入, css 死 token…已全部分流至 issue', 而 B13 goal/files 明确包含 globals.css 死 token (--secondary 对/--sidebar-accent-foreground) 与 tailwind.config.ts 删除 (附条件避撞) — 同一子项一处说做一处说不做, 留执行歧义。",
+            "范围 22 项 inTask、14 批顶格: health 1453 行 + registry 870 行双巨石拆分 (B10) 与 session-id 契约 (B08) 都拉入, 13 任务在途窗口下执行压力全场最大; 且 health 拆分进任务而 messageKey 另立 issue, 同一文件两轮重写, 与 01-ANALYSIS R20 '与 health 拆分同批做成本最低'的结论相悖。",
+            "claude parsers.ts (16 commits churn 第四 + gh-94 verify 足迹) 被 B04/B08/B13 三批先后触碰, 热点暴露窗口全场最长 (A 两批、B 两批)。",
+            "memory/agent-teams 划入 host-electron 层, 而 electron 禁令规则只覆盖 engine 与 adapters 两层 — memory 域 import electron 在其规则体系下不构成违规, 边界比现状 (memory 零 electron 依赖) 松弛, 是分层上唯一比 A 倒退的点。",
+            "'runtime 的 legacy-scan-all 入口若随通道死亡一并退役'与代码不符: 实测 handlers.ts:104 只是 refresh({reason:'legacy-scan-all'}) 的 reason 字符串, runtime 无独立入口 — B02 文件集多列 runtime.ts 与 agent-asset-runtime.test.ts (无害但暴露对该链路的理解偏差)。"
+          ]
+        }
+      ],
+      "ranking": [
+        "product-trajectory",
+        "incremental-pragmatic",
+        "target-state-first"
+      ],
+      "grafts": [
+        {
+          "from": "target-state-first",
+          "what": "relations.ts 删除链的完整处置: 把 packages/berth-scan-engine/tests/plugin-relations.test.ts 与 tests/unit/scope-dedupe.test.ts 显式列入删除批文件集, 并保留'执行前核对 scan-engine CLI manifest, 若声明 relations 命令则改判保留并上抛决策'的回退条款。",
+          "why": "修复第一名 product-trajectory B02 的硬缺漏: 实测 plugin-relations.test.ts:7 直接 import '../../../src/main/engine/relations', 不处置该文件删除批无法做到包测试绿 (硬约束 5); B 是三家唯一列全两个测试受害者并给回退条款的。"
+        },
+        {
+          "from": "incremental-pragmatic",
+          "what": "分层定义采用 A 的 main-domains 独立层 (memory/agent-teams 按需只读 IPC 域, 不进 asset/scanner/watcher 管线) + electron 值依赖白名单逐模块点名违规 ('engine/adapters/memory/agent-teams/agent-plugins 出现 import electron 即违规'), 替换 C 把 memory/agent-teams 并入 host-electron 的划分。",
+          "why": "C 的规则体系下 memory import electron 不构成违规, 比现状 (memory 零 electron 依赖, 底图 3 实测 electron 值依赖仅 3 文件) 松弛; A 的点名式白名单是可 grep 执行的最强形式, 且 main-domains 层与底图 2 的隔离语义、未来包切线 (memory/teams 不在 CLI 闭包) 都对齐。"
+        },
+        {
+          "from": "incremental-pragmatic",
+          "what": "对账测试的有效性自证步骤: 落地后临时注入一个未注册通道, 确认四方对账测试变红, 再撤销。写入对账批的 verify 标准。",
+          "why": "对账测试是后续所有 IPC 批的唯一防复发网, 网本身必须被证明会响; A 是三家唯一写了网自证的, C 的 knownDead 白名单设计虽优但缺这一步。"
+        },
+        {
+          "from": "target-state-first",
+          "what": "ARCHITECTURE.md 例外清单登记机制: 分层规则的每个现存违例 (health.ts 直连两家 adapter 的过渡态、hooks-manager 唯一写者、electron 白名单成员变更) 必须在例外清单登记并附收口 issue 链接。",
+          "why": "C 的 10 条规则缺例外治理 — 多 Agent 共享工作区下, 无登记机制的规则例外会静默繁殖 (底图 14 的 'adapters/_shared 被跨模块借用'正是惯例无登记的后果); B 的这套机制让例外可检索、可收口、可审计。"
+        },
+        {
+          "from": "incremental-pragmatic",
+          "what": "health 双巨石的处置改用 A 的合并 issue 方案: 把 C-B10 (health 拆 4 文件 + registry 数据外置) 撤出本任务, 与 R20 messageKey 契约改造合立单个 issue (如 health-restructure-and-message-contract), 在 verify 任务收口后一次做完。",
+          "why": "01-ANALYSIS R20 明文'messageKey 改造与 health 按 agent 拆分同批做成本最低'; C 拆分进任务、messageKey 留 issue 的切法让 1453 行文件被两轮重写, 且为顶格的 14 批盘子释放预算、降低 13 任务在途窗口的执行压力 — B10 是 C 范围里收益最可延迟的一批 (health.ts 无在途足迹, 何时做都不撞车)。"
+        }
+      ],
+      "vetoes": [
+        {
+          "proposal": "target-state-first",
+          "target": "B07 — settings.local.json 2-parser vs 5-parser 分叉'在此定案并钉测'",
+          "reason": "预设行为变更, 违反硬约束 2 (行为保持, 例外仅限已确认契约漂移/吞错)。证据: B07 tests 字段写'定案跑 5 parser 或维持 2, 以 SPEC 决策为准, 先红后绿'— 维持现状测试不会先红, 红测试前提即改 5; 其 risks 第 3 条进一步写明'选边原则是对用户数据更不丢失的一侧'= 选 5 parser, settings.local.json 将开始产出 hooks/permissions 等新资产 (用户可见行为变化)。01-ANALYSIS R4 的对抗验证结论只是'副本间语义已不一致', 不存在任何声明文档认定 5-parser 侧为声明行为, 故不构成'已确认的契约漂移'。对照: A 明确'如实按 per-consumer 字段建模不顺手统一', C 明确'按各消费方现状建模显式标记, 分叉修复不在本批'— 两家都识别出这是行为决策而非重构。"
+        },
+        {
+          "proposal": "target-state-first",
+          "target": "B08 — memory 两份 splitFrontmatter '语义差异点逐一行为测试钉死后按 _shared 版收敛'",
+          "reason": "双重违规。其一, 预设选边 (_shared 版) 的行为变更: memory 笔记 frontmatter 的 5 个边缘 case (空 frontmatter/EOF fence/非 record YAML) 解析行为将改变, 不属硬约束 2 例外。其二, 与既定 issue 归属冲突: docs/issues/_roadmap.md Phase C 明文记录'memory 2 份 splitFrontmatter 变体转 engine-shared-core-package'(adapter-parsing-shared-core 归档时的显式处置), B08 将其拉回本任务并直接收敛, 推翻已归档任务的范围决策。对照: A 的 B10 明确'splitFrontmatter 5 点语义差不收敛, 仅钉现行为测试, 收敛已记录在 engine-shared-core-package', 与 roadmap 一致。"
+        },
+        {
+          "proposal": "product-trajectory",
+          "target": "B02 — 删除 src/main/engine/relations.ts 的文件集与测试处置",
+          "reason": "删除链不完整, 违反硬约束 5 (每 batch 独立可验证、过全量测试) 与硬约束 1 (文件集必须明确)。证据: 实测 packages/berth-scan-engine/tests/plugin-relations.test.ts:7 为 import { resolveRelations } from '../../../src/main/engine/relations' (直接相对路径越包引用), B02 的 files 列表 (13 项) 与 tests 字段均未包含该文件, 删除 relations.ts 即令 scan-engine 包测试编译失败; B02 verify 只承诺'typecheck + lint + vitest 全量 + grep 通道名零残留', 未含包测试处置 — 而同提案 B05/B06 的 verify 都显式跑 scan-engine 包 24 用例, 标准自相不一致。该缺漏可机械修复 (补列文件 + 处置该测试), 但按提交稿执行该批必红。"
+        },
+        {
+          "proposal": "incremental-pragmatic",
+          "target": "B05 与 B01 的文件集事实错误 (两处)",
+          "reason": "违反硬约束 1 (batch 文件集必须明确) 的事实错误。证据一: B05 files 列 'src/renderer/src/lib/token-usage.ts' (tokenUsageTotal 死导出降级), 实测 find src -name token-usage.ts 全仓唯一命中 src/shared/token-usage.ts, renderer/lib 下无此文件 — C 的 B13 列的是正确路径。证据二: B01 files 列 tests/renderer/platform.test.ts 且 tests 字段声称同步收缩其 'claudeDir 断言', 实测该文件 grep claudeDir 为 0 命中, 其内容是 navigator userAgentData/userAgent 平台探测测试 (import 自 renderer lib/platform), 与 PlatformInfo IPC 形状无关 — 真正含 platform.info mock 的是 tests/setup.ts (B01 已另列)。两处均为机械可修复错误, 不否决批目标本身, 但说明文件集未经核实。"
+        },
+        {
+          "proposal": "product-trajectory",
+          "target": "risks 第 7 条与 B13 goal 的自相矛盾 (globals.css 死 token)",
+          "reason": "提案内部事实不一致, 留执行歧义。证据: risks 第 7 条写 'gh-103 在 implement, 其 5 文件足迹 (chart-colors/globals.css/overview/usage/token-usage-display) 全程禁入: css 死 token、StatTile、页面格式化器收敛已全部分流至 issue; 即使 gh-103 中途收口也不回收范围', 而 B13 goal 明确包含 'globals.css 死 token (--secondary 对/--sidebar-accent-foreground) + tailwind accordion keyframes/boxShadow card (orphans#15) — 同步删 theme-palette.test.ts:29 死变量断言', files 列表含 globals.css 与 tailwind.config.ts。同一子项在同一提案内同时被声明'全程禁入已分流'与'本批执行(条件避撞)', 执行者无所适从; 若按 B13 执行则与 risks 的承诺直接冲突。"
+        }
+      ]
+    }
+  ]
+}
