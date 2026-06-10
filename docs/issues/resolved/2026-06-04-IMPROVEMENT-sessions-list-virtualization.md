@@ -29,6 +29,11 @@
 - 默认项目分组下, group header、row button、lucide icon、`TokenUsageDisplay` 与 i18n/formatter 在 800+ 行上累积渲染成本。
 - `MemoryView` 的搜索、source/importance/tag 筛选在数据量放大后也会产生相同风险, 当前没有跨列表可复用的虚拟化和刷新限流约束。
 
+# 终态 (2026-06-10, RESOLVED)
+- 已由 GH-98 (docs/works/_archive/2026-06-04-gh-98-list-virtualization-refresh-performance/) 全量落地并 verify 通过归档: 共享 `VirtualGroupedList` (react-virtuoso GroupedVirtuoso) + `CategoryJumpNav` + Sessions/Memories/Instructions 三页迁移 + 刷新限流缓存强化。
+- 代码实况复核 (2026-06-10): `pages/sessions.tsx` 已用 VirtualGroupedList + useDeferredValue, 真机实测 130 行仅挂载 ~30 行 (GH-98 verify 记录); 本会话 GH-115 verify 复测 sessions 页 97 会话挂载 31 行。
+- 归档佐证: commit b0c2901f (GH-98 归档)。
+
 # 解决方案
 - 引入成熟第三方虚拟列表组件, 优先评估 `react-virtuoso` 的 `GroupedVirtuoso`; 备选为 `@tanstack/react-virtual`。
 - 提取共享 `VirtualGroupedList` 基础组件: group header 与 item row 合并为稳定 row 模型, 使用稳定 item id 作为 key, 只渲染视口内 row 加 overscan。

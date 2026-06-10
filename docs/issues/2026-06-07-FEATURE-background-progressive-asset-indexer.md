@@ -32,7 +32,7 @@ GH-113 已落地本 FEATURE 的地基与核心数据通路 (详见归档 INDEX�
 - **可观测性 v1**: IndexHairline/IndexingInline/IndexPulse + useIndexActivity 局部 loading。
 - **确定式 id**: 全 parser `assetEntityId` ([[2026-06-07-BUG-claude-makeid-nondeterministic-selection-loss]] RESOLVED)。
 
-**仍 OPEN (本 FEATURE 主线剩余)**: T4 可暂停/可控 (协作式取消 worker checkpoint) + **设置中暴露扫描策略档位** (频率/并发/排除/重建) — 用户明确要, 最后做; 老用户 JSON→SQLite 迁移 ([[2026-06-08-IMPROVEMENT-json-to-sqlite-snapshot-migration]]); 调度/背压/限流优先级队列。cap-5 行级 delta 见 incremental-write-followups。
+**仍 OPEN (本 FEATURE 主线剩余)**: T4 可暂停/可控 (协作式取消 worker checkpoint) + **设置中暴露扫描策略档位** (频率/并发/排除/重建) — 用户明确要, 最后做; 老用户 JSON→SQLite 迁移 ([[2026-06-08-IMPROVEMENT-json-to-sqlite-snapshot-migration]]); 调度/背压/限流优先级队列。cap-5 行级 SQLite delta (SqliteSnapshotStore.replaceBySourceKey, 低优先) — 自 incremental-write-followups (2026-06-10 RESOLVED) 并入本主线。
 
 # 来源 / 关联
 - 用户在 GH-113 收尾澄清 (2026-06-07): "全局意味着完全完整的扫描结果, 切换只是 narrow down; 启动即扫全部; conventions-only 是 BUG; 扫描应像 spotlight/windows 索引: 后台渐进增量可控可暂停 + 可配置"。

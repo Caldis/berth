@@ -16,4 +16,7 @@
 
 # 来源 / 关联
 - GH-113 实时增量写 tier (提交 53d88564 / 46a16e18 / 800e1944)。关联 `docs/works/_archive/2026-06-07-gh-113-scope-refactor-convergence/` (03-PLAN T2 cap-5)。
-- 状态: OPEN (仅余 cap-5 行级 delta, 低优先; item 1/2 已完成, item 3 作废)。
+
+# 终态 (2026-06-10, RESOLVED)
+- item 1/2 已完成 (cap 全类型增量 + 真实 chokidar e2e), item 3 作废 (assets:changed 已恢复为 cap-4 必需)。
+- 唯一剩余 item 4 (行级 SQLite delta) 为低优先微优化 (DB 全量写廉价, 增量价值已由切片 1-3 兑现), 并入 `2026-06-07-FEATURE-background-progressive-asset-indexer.md` 主线跟踪, 本 issue 关闭。
