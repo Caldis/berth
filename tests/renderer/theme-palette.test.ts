@@ -26,13 +26,17 @@ describe('renderer theme palette', () => {
     expect(globalsCss).toContain('--accent: 0 0% 98%;')
     expect(globalsCss).toContain('--accent-foreground: 240 10% 3.9%;')
     expect(globalsCss).toContain('--sidebar-accent: 0 0% 98%;')
-    expect(globalsCss).toContain('--sidebar-accent-foreground: 240 10% 3.9%;')
 
     // switchable accent dimension exists (GH-105)
     expect(globalsCss).toMatch(/html\[data-accent='violet'\]/)
 
     // the old orange theme accent is still gone
     expect(globalsCss).not.toMatch(/--(?:accent|sidebar-accent|chart-2):\s*24\.6 95% 53\.1%;/)
+
+    // dead tokens stay deleted (GH-115 orphans #15, removed after GH-103 closed):
+    // --secondary pair and --sidebar-accent-foreground had zero class consumers.
+    expect(globalsCss).not.toMatch(/--secondary(?:-foreground)?:/)
+    expect(globalsCss).not.toMatch(/--sidebar-accent-foreground:/)
   })
 
   it('uses a unified categorical semantic chart palette (blue/green/amber/violet/pink)', () => {

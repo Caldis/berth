@@ -21,10 +21,6 @@ const config: Config = {
           DEFAULT: 'hsl(var(--primary))',
           foreground: 'hsl(var(--primary-foreground))'
         },
-        secondary: {
-          DEFAULT: 'hsl(var(--secondary))',
-          foreground: 'hsl(var(--secondary-foreground))'
-        },
         destructive: {
           DEFAULT: 'hsl(var(--destructive))',
           foreground: 'hsl(var(--destructive-foreground))'
@@ -49,7 +45,6 @@ const config: Config = {
           DEFAULT: 'hsl(var(--sidebar))',
           foreground: 'hsl(var(--sidebar-foreground))',
           accent: 'hsl(var(--sidebar-accent))',
-          'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
           border: 'hsl(var(--sidebar-border))',
           ring: 'hsl(var(--sidebar-ring))'
         }
@@ -58,12 +53,6 @@ const config: Config = {
         lg: 'var(--radius)',
         md: 'calc(var(--radius) - 2px)',
         sm: 'calc(var(--radius) - 4px)'
-      },
-      boxShadow: {
-        // Soft elevation for the HeroUI dashboard look: subtle on light, a
-        // faint ring highlight on dark so cards lift off the near-black canvas.
-        card: '0 1px 2px 0 hsl(240 10% 2% / 0.06), 0 2px 8px -2px hsl(240 10% 2% / 0.08)',
-        'card-dark': '0 1px 2px 0 hsl(0 0% 0% / 0.4), 0 4px 16px -4px hsl(0 0% 0% / 0.45)'
       },
       fontFamily: {
         sans: [
@@ -76,20 +65,6 @@ const config: Config = {
           'sans-serif'
         ],
         mono: ['SF Mono', 'Cascadia Code', 'Consolas', 'monospace']
-      },
-      keyframes: {
-        'accordion-down': {
-          from: { height: '0' },
-          to: { height: 'var(--radix-accordion-content-height)' }
-        },
-        'accordion-up': {
-          from: { height: 'var(--radix-accordion-content-height)' },
-          to: { height: '0' }
-        }
-      },
-      animation: {
-        'accordion-down': 'accordion-down 0.2s ease-out',
-        'accordion-up': 'accordion-up 0.2s ease-out'
       }
     }
   },
