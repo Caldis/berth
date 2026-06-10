@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import type { AgentView, Asset, AssetStats, SessionSummary, UsageSummary } from '@shared/types/asset'
-import type { AgentScanSourceGroup, SessionDetailResult, HealthCheck } from '@shared/types/ipc'
+import type { SessionDetailResult, HealthCheck } from '@shared/types/ipc'
 import type {
   AgentCapabilityPlugin,
   AgentCapabilityPluginListResult,
@@ -464,31 +464,6 @@ export function useHealthChecks(): {
   }, [refresh])
 
   return { checks, loading, stale, lastCheckedAt, refresh }
-}
-
-export function useScanSources(): {
-  groups: AgentScanSourceGroup[]
-  loading: boolean
-} {
-  const [groups, setGroups] = useState<AgentScanSourceGroup[]>([])
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    if (!window.api?.assets?.scanSources) {
-      setLoading(false)
-      return
-    }
-    setLoading(true)
-    window.api.assets
-      .scanSources()
-      .then((result) => {
-        setGroups(result ?? [])
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false))
-  }, [])
-
-  return { groups, loading }
 }
 
 export function useAgentCapabilityPlugins(): {

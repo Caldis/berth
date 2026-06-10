@@ -17,7 +17,7 @@ import {
   formatScanSourceStatusCount,
   getScanSourceCopy,
   getScanSourceStatusLabel
-} from '@/components/settings/local-source-copy'
+} from '@/components/layout/local-source-copy'
 
 const SOURCE_STATUS_ORDER: ScanSourceStatus[] = ['scanned', 'not-scanned', 'missing']
 
