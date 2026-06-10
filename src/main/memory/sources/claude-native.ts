@@ -1,6 +1,6 @@
 import * as fs from 'fs'
-import * as os from 'os'
 import * as path from 'path'
+import { resolveClaudeDirs } from '../../agent-homes'
 import { isPathInside } from '@shared/path-utils'
 import * as yaml from 'js-yaml'
 import type { MemoryNote, MemorySourceStatus } from '@shared/types/memory'
@@ -132,68 +132,74 @@ export function parseNativeNote(
 export class ClaudeNativeSource implements MemorySource {
   readonly id = SOURCE_ID
   readonly label = SOURCE_LABEL
-  private readonly projectsRoot: string
+  private readonly projectsRoots: string[]
   private readonly projectFilter?: string
 
   /**
    * @param projectDir Optional project slug to restrict scanning to one project.
-   * @param projectsRoot Override the projects root (defaults to ~/.claude/projects).
+   * @param projectsRoot Override the projects root(s); 默认遍历 resolveClaudeDirs()
+   *   (GH-115 T10b: BERTH_EXTRA_CLAUDE_DIRS 契约修复 — 此前只看主 home)。
    */
-  constructor(projectDir?: string, projectsRoot?: string) {
-    this.projectsRoot = projectsRoot ?? path.join(os.homedir(), '.claude', 'projects')
+  constructor(projectDir?: string, projectsRoot?: string | string[]) {
+    this.projectsRoots = projectsRoot
+      ? Array.isArray(projectsRoot) ? projectsRoot : [projectsRoot]
+      : resolveClaudeDirs().map((dir) => path.join(dir, 'projects'))
     this.projectFilter = projectDir
   }
 
-  private memoryDir(slug: string): string {
-    return path.join(this.projectsRoot, slug, 'memory')
+  private memoryDir(root: string, slug: string): string {
+    return path.join(root, slug, 'memory')
   }
 
-  private notePath(slug: string, filename: string): string | null {
+  private notePath(root: string, slug: string, filename: string): string | null {
     if (!isSafePathSegment(slug) || !isSafeNoteFilename(filename)) return null
-    const dir = this.memoryDir(slug)
+    const dir = this.memoryDir(root, slug)
     const filePath = path.resolve(dir, filename)
     return isInsidePath(dir, filePath) ? filePath : null
   }
 
-  private parseLocalId(localId: string): { slug: string; filename: string } | null {
+  /** localId 保持 `slug/filename`; 多根下按根顺序首个命中 (同 slug 跨 home 冲突取主 home)。 */
+  private parseLocalId(localId: string): { root: string; slug: string; filename: string } | null {
     const parts = localId.split('/')
     if (parts.length !== 2) return null
     const [slug, filename] = parts
-    return this.notePath(slug, filename) ? { slug, filename } : null
+    for (const root of this.projectsRoots) {
+      if (this.notePath(root, slug, filename)) return { root, slug, filename }
+    }
+    return null
   }
 
-  /** Resolve the project slugs whose memory/ dir exists. */
-  private async resolveSlugs(): Promise<string[]> {
-    let candidates: string[]
-    if (this.projectFilter) {
-      candidates = [this.projectFilter]
-    } else {
-      try {
-        const dirents = await fs.promises.readdir(this.projectsRoot, {
-          withFileTypes: true
-        })
-        candidates = dirents.filter((d) => d.isDirectory()).map((d) => d.name)
-      } catch {
-        return []
+  /** Resolve (root, slug) pairs whose memory/ dir exists, across all roots. */
+  private async resolveSlugs(): Promise<{ root: string; slug: string }[]> {
+    const pairs: { root: string; slug: string }[] = []
+    for (const root of this.projectsRoots) {
+      let candidates: string[]
+      if (this.projectFilter) {
+        candidates = [this.projectFilter]
+      } else {
+        try {
+          const dirents = await fs.promises.readdir(root, { withFileTypes: true })
+          candidates = dirents.filter((d) => d.isDirectory()).map((d) => d.name)
+        } catch {
+          continue
+        }
+      }
+      for (const slug of candidates) {
+        try {
+          const stat = await fs.promises.stat(this.memoryDir(root, slug))
+          if (stat.isDirectory()) pairs.push({ root, slug })
+        } catch {
+          // memory dir absent for this project; skip
+        }
       }
     }
-
-    const slugs: string[] = []
-    for (const slug of candidates) {
-      try {
-        const stat = await fs.promises.stat(this.memoryDir(slug))
-        if (stat.isDirectory()) slugs.push(slug)
-      } catch {
-        // memory dir absent for this project; skip
-      }
-    }
-    return slugs
+    return pairs
   }
 
   /** List note .md files (excluding the MEMORY.md index) in a memory dir. */
-  private async noteFiles(slug: string): Promise<string[]> {
+  private async noteFiles(root: string, slug: string): Promise<string[]> {
     try {
-      const names = await fs.promises.readdir(this.memoryDir(slug))
+      const names = await fs.promises.readdir(this.memoryDir(root, slug))
       return names.filter(
         (n) => n.toLowerCase().endsWith('.md') && n !== INDEX_FILE
       )
@@ -202,9 +208,9 @@ export class ClaudeNativeSource implements MemorySource {
     }
   }
 
-  private async indexEntries(slug: string): Promise<NativeIndexEntry[] | null> {
+  private async indexEntries(root: string, slug: string): Promise<NativeIndexEntry[] | null> {
     try {
-      const md = await fs.promises.readFile(path.join(this.memoryDir(slug), INDEX_FILE), 'utf-8')
+      const md = await fs.promises.readFile(path.join(this.memoryDir(root, slug), INDEX_FILE), 'utf-8')
       const entries = parseMemoryIndex(md)
       return entries.length > 0 ? entries : null
     } catch {
@@ -212,12 +218,12 @@ export class ClaudeNativeSource implements MemorySource {
     }
   }
 
-  private async listFromIndex(slug: string): Promise<MemoryNote[] | null> {
-    const entries = await this.indexEntries(slug)
+  private async listFromIndex(root: string, slug: string): Promise<MemoryNote[] | null> {
+    const entries = await this.indexEntries(root, slug)
     if (!entries) return null
     try {
       const notes = await Promise.all(entries.map(async (entry): Promise<MemoryNote | null> => {
-        const filePath = this.notePath(slug, entry.file)
+        const filePath = this.notePath(root, slug, entry.file)
         if (!filePath) return null
         const exists = await fileExists(filePath)
         return {
@@ -247,16 +253,16 @@ export class ClaudeNativeSource implements MemorySource {
       id: this.id,
       label: this.label,
       available: false,
-      rootPath: this.projectsRoot,
+      rootPath: this.projectsRoots[0],
       noteCount: 0
     }
     const slugs = await this.resolveSlugs()
     if (slugs.length === 0) return base
 
     let count = 0
-    for (const slug of slugs) {
-      const indexed = await this.indexEntries(slug)
-      count += indexed ? indexed.length : (await this.noteFiles(slug)).length
+    for (const { root, slug } of slugs) {
+      const indexed = await this.indexEntries(root, slug)
+      count += indexed ? indexed.length : (await this.noteFiles(root, slug)).length
     }
     return { ...base, available: count > 0, noteCount: count }
   }
@@ -264,15 +270,15 @@ export class ClaudeNativeSource implements MemorySource {
   async list(): Promise<MemoryNote[]> {
     const slugs = await this.resolveSlugs()
     const notes: MemoryNote[] = []
-    for (const slug of slugs) {
-      const indexed = await this.listFromIndex(slug)
+    for (const { root, slug } of slugs) {
+      const indexed = await this.listFromIndex(root, slug)
       if (indexed) {
         notes.push(...indexed)
         continue
       }
-      const files = await this.noteFiles(slug)
+      const files = await this.noteFiles(root, slug)
       for (const filename of files) {
-        const filePath = this.notePath(slug, filename)
+        const filePath = this.notePath(root, slug, filename)
         if (!filePath) continue
         try {
           const md = await fs.promises.readFile(filePath, 'utf-8')
@@ -293,8 +299,8 @@ export class ClaudeNativeSource implements MemorySource {
   async read(localId: string): Promise<MemoryNote | null> {
     const parsed = this.parseLocalId(localId)
     if (!parsed) return null
-    const { slug, filename } = parsed
-    const filePath = this.notePath(slug, filename)
+    const { root, slug, filename } = parsed
+    const filePath = this.notePath(root, slug, filename)
     if (!filePath) return null
     try {
       const md = await fs.promises.readFile(filePath, 'utf-8')

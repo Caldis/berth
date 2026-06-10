@@ -26,7 +26,10 @@ import { listAgentCapabilityPlugins } from '../agent-plugins/registry'
 import { activateProjectScope } from '../project-scope-runtime'
 import type { AppScopeSelection } from '@shared/scope'
 
-export function registerAssetHandlers(): void {
+// GH-115 T10b: 注册按域拆分 — 单函数 35 通道混居 (名实分离的 registerAssetHandlers)
+// 改为五个域函数, ipc/index.ts 统一装配。各 handler 保持薄读: 域逻辑住 engine。
+
+export function registerWindowHandlers(): void {
   ipcMain.handle('window:minimize', (event: IpcMainInvokeEvent): void => {
     BrowserWindow.fromWebContents(event.sender)?.minimize()
   })
@@ -57,6 +60,9 @@ export function registerAssetHandlers(): void {
     return BrowserWindow.fromWebContents(event.sender)?.isAlwaysOnTop() ?? false
   })
 
+}
+
+export function registerSystemHandlers(): void {
   ipcMain.handle('platform:info', (): PlatformInfo => ({
     platform: process.platform,
     arch: process.arch,
@@ -64,6 +70,20 @@ export function registerAssetHandlers(): void {
     version: app.getVersion()
   }))
 
+  ipcMain.handle('theme:set', (_event, theme: 'light' | 'dark' | 'system') => {
+    nativeTheme.themeSource = theme
+  })
+
+  ipcMain.handle('shell:openPath', (_event, p: string) => {
+    shell.showItemInFolder(p)
+  })
+
+  ipcMain.handle('shell:openExternal', (_event, url: string) => {
+    shell.openExternal(url)
+  })
+}
+
+export function registerAssetHandlers(): void {
   ipcMain.handle('assets:snapshot', async (): Promise<AssetSnapshot> => {
     return getAssetRuntime().getSnapshot()
   })
@@ -116,6 +136,9 @@ export function registerAssetHandlers(): void {
     return getAssetRuntime().getHealthChecks(opts)
   })
 
+}
+
+export function registerSessionHandlers(): void {
   ipcMain.handle(
     'sessions:list',
     async (
@@ -144,6 +167,9 @@ export function registerAssetHandlers(): void {
     }
   )
 
+}
+
+export function registerDomainHandlers(): void {
   ipcMain.handle('teams:list', async (): Promise<AgentTeamListResult> => {
     const runtime = getAssetRuntime()
     await runtime.ensureReady({ reason: 'manual' })
@@ -163,16 +189,4 @@ export function registerAssetHandlers(): void {
       return result
     }
   )
-
-  ipcMain.handle('theme:set', (_event, theme: 'light' | 'dark' | 'system') => {
-    nativeTheme.themeSource = theme
-  })
-
-  ipcMain.handle('shell:openPath', (_event, p: string) => {
-    shell.showItemInFolder(p)
-  })
-
-  ipcMain.handle('shell:openExternal', (_event, url: string) => {
-    shell.openExternal(url)
-  })
 }

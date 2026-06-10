@@ -97,10 +97,21 @@ afterEach(() => {
 })
 
 describe('listAgentTeams', () => {
+  it('aggregates teams across multiple claude dirs (BERTH_EXTRA_CLAUDE_DIRS 契约, GH-115 T10b)', () => {
+    const homeA = makeHome()
+    const homeB = makeHome()
+    writeTeam(homeA, 'team-a', { ...BASE_CONFIG, name: 'team-a' })
+    writeTeam(homeB, 'team-b', { ...BASE_CONFIG, name: 'team-b' })
+
+    const teams = listAgentTeams([path.join(homeA, '.claude'), path.join(homeB, '.claude')])
+
+    expect(teams.map((t) => t.name).sort()).toEqual(['team-a', 'team-b'])
+  })
+
   it('maps config fields, normalizes member backend, lead has none', () => {
     const home = makeHome()
     writeTeam(home, 'review-squad', BASE_CONFIG)
-    const teams = listAgentTeams(home)
+    const teams = listAgentTeams([path.join(home, '.claude')])
     expect(teams).toHaveLength(1)
     const team = teams[0]
     expect(team.name).toBe('review-squad')
@@ -125,13 +136,13 @@ describe('listAgentTeams', () => {
     writeTeam(home, 'good', { ...BASE_CONFIG, name: 'good' })
     writeTeam(home, 'inbox-only', null, { inboxes: { lead: [] } })
     writeTeam(home, 'broken', '{ not json')
-    const teams = listAgentTeams(home)
+    const teams = listAgentTeams([path.join(home, '.claude')])
     expect(teams.map((t) => t.name)).toEqual(['good'])
   })
 
   it('returns [] when the teams root does not exist', () => {
     const home = makeHome()
-    expect(listAgentTeams(home)).toEqual([])
+    expect(listAgentTeams([path.join(home, '.claude')])).toEqual([])
   })
 
   it('parses tasks, tolerates unknown statuses, ignores non-task files, missing dir → []', () => {
@@ -153,7 +164,7 @@ describe('listAgentTeams', () => {
       }
     })
     writeTeam(home, 'taskless', { ...BASE_CONFIG, name: 'taskless' })
-    const teams = listAgentTeams(home)
+    const teams = listAgentTeams([path.join(home, '.claude')])
     const squad = teams.find((t) => t.name === 'review-squad')!
     expect(squad.tasks.map((t) => t.id)).toEqual(['1', '2'])
     expect(squad.tasks[0].status).toBe('completed')
@@ -179,7 +190,7 @@ describe('listAgentTeams', () => {
     fs.mkdirSync(path.join(broken, 'inboxes'), { recursive: true })
     fs.writeFileSync(path.join(broken, 'inboxes', 'x.json'), '{ nope')
 
-    const teams = listAgentTeams(home)
+    const teams = listAgentTeams([path.join(home, '.claude')])
     const squad = teams.find((t) => t.name === 'review-squad')!
     expect(squad.inboxMessageCount).toBe(3)
     expect(squad.lastInboxMessageAt).toBe(Date.parse('2026-06-03T00:00:00.000Z'))
@@ -197,7 +208,7 @@ describe('listAgentTeams', () => {
     fs.utimesSync(path.join(oldDir, 'config.json'), oldTime, oldTime)
     fs.utimesSync(path.join(newDir, 'config.json'), newTime, newTime)
 
-    const teams = listAgentTeams(home)
+    const teams = listAgentTeams([path.join(home, '.claude')])
     expect(teams.map((t) => t.name)).toEqual(['new-team', 'old-team'])
     expect(teams[0].lastActivityAt).toBe(newTime.getTime())
     expect(teams[1].lastActivityAt).toBe(oldTime.getTime())
@@ -208,7 +219,7 @@ describe('listAgentTeams', () => {
     const rest: Record<string, unknown> = { ...BASE_CONFIG }
     delete rest.name
     writeTeam(home, 'dir-named', rest)
-    const teams = listAgentTeams(home)
+    const teams = listAgentTeams([path.join(home, '.claude')])
     expect(teams[0].name).toBe('dir-named')
   })
 })

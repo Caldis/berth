@@ -8,27 +8,31 @@
 // deliberately stays out of the asset model / scanner / watcher / search.
 
 import * as fs from 'fs'
-import * as os from 'os'
 import * as path from 'path'
 import { isRecord, readNumber, readString } from '@shared/object-guards'
+import { resolveClaudeDirs } from '../agent-homes'
 import type { AgentTeamMember, AgentTeamSummary, AgentTeamTask } from '@shared/types/ipc'
 
 const TASK_STATUSES = new Set(['pending', 'in_progress', 'completed'])
 
-export function listAgentTeams(homeDir: string = os.homedir()): AgentTeamSummary[] {
-  const teamsRoot = path.join(homeDir, '.claude', 'teams')
-  let entries: fs.Dirent[]
-  try {
-    entries = fs.readdirSync(teamsRoot, { withFileTypes: true })
-  } catch {
-    return []
-  }
-
+// GH-115 T10b: 默认遍历 resolveClaudeDirs (BERTH_EXTRA_CLAUDE_DIRS 契约修复 — 此前
+// 自拼 os.homedir()/.claude, 资产/健康检查能看到第二 home 而 teams 看不到)。
+// 参数保留注入口供测试: 传 claude 目录数组 (非 home)。
+export function listAgentTeams(claudeDirs: string[] = resolveClaudeDirs()): AgentTeamSummary[] {
   const teams: AgentTeamSummary[] = []
-  for (const entry of entries) {
-    if (!entry.isDirectory()) continue
-    const team = readTeam(homeDir, path.join(teamsRoot, entry.name), entry.name)
-    if (team) teams.push(team)
+  for (const claudeDir of claudeDirs) {
+    const teamsRoot = path.join(claudeDir, 'teams')
+    let entries: fs.Dirent[]
+    try {
+      entries = fs.readdirSync(teamsRoot, { withFileTypes: true })
+    } catch {
+      continue
+    }
+    for (const entry of entries) {
+      if (!entry.isDirectory()) continue
+      const team = readTeam(claudeDir, path.join(teamsRoot, entry.name), entry.name)
+      if (team) teams.push(team)
+    }
   }
   teams.sort((a, b) => (b.lastActivityAt ?? -Infinity) - (a.lastActivityAt ?? -Infinity))
   return teams
@@ -50,7 +54,7 @@ export function markLeadSessionAvailability(
   })
 }
 
-function readTeam(homeDir: string, teamDir: string, dirName: string): AgentTeamSummary | null {
+function readTeam(claudeDir: string, teamDir: string, dirName: string): AgentTeamSummary | null {
   const configPath = path.join(teamDir, 'config.json')
   let config: Record<string, unknown>
   try {
@@ -66,7 +70,7 @@ function readTeam(homeDir: string, teamDir: string, dirName: string): AgentTeamS
 
   const name = readString(config, 'name') ?? dirName
   const inbox = readInboxes(path.join(teamDir, 'inboxes'), mtimes)
-  const tasks = readTasks(path.join(homeDir, '.claude', 'tasks', name), mtimes)
+  const tasks = readTasks(path.join(claudeDir, 'tasks', name), mtimes)
 
   return {
     name,
