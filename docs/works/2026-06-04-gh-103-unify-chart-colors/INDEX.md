@@ -24,14 +24,15 @@ debt:
     confidence: medium
     rationale: "explore 校准: 新增集中配色真源 + 改 5 处使用点 (近7天费用/每日花费/token条/byModel/byProject) + 暗色模式校准 (incurred 3); 消除分散硬编码与两套并存色板 (repaid 2)。纯视觉无数据/IPC 变更, risk low。"
   final:
-    incurred:
-    repaid:
-    net:
-    scope:
-    risk:
-    areas: []
-    confidence:
-    rationale:
+    incurred: 3
+    repaid: 2
+    net: 1
+    scope: module
+    risk: low
+    areas:
+      - ui-ux
+    confidence: high
+    rationale: "5 处图表使用点配色统一到 chart-colors.ts 单一真源 + globals.css 暗色段语义色板校准; 真机亮暗验收: overview/usage 费用柱单色 hsl(var(--primary))、byModel/byProject breakdown 用 --chart-1..5 语义色板、token 条蓝绿橙紫暗色自适应 (chart-1 dark=213 94% 68%); typecheck/lint/test/e2e/build 全绿 + 四态截图。"
   revisions:
     - phase: explore
       date: 2026-06-04

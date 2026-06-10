@@ -27,9 +27,10 @@
   - tests: `tests/renderer/token-usage-display.test.ts` ✓ 2 passed (源码文本断言: 不含 bg-blue/emerald/amber/violet-500、引用 chart-colors 真源)。jsdom 对 hsl(var()) 颜色不可靠故用文本断言, 与 theme-palette 同模式。`pnpm typecheck` ✓。
   - verify: 截图会话详情页 + 用量页 token 条颜色(亮)与现状一致、暗色自适应变亮; 分段与图例点同色; unknown 段仍中性半透。验收标准 1/3。
 
-- [ ] 任务 6: 全局门禁 + 视觉收口
+- [x] 任务 6: 全局门禁 + 视觉收口
   - tests: `pnpm harness:prepush` (typecheck/lint/test/e2e/build) 全绿。
   - verify: 实测 electron 窗口坐标裁剪截图, 亮 + 暗 各一组, 覆盖首页近7天费用 / 用量页每日花费+token条+breakdown / 会话详情 token 条; 逐项核对 01-ANALYSIS「界面质量与交互验收」与验收标准 1-6。
+  - ✓ 完成 (2026-06-10, gh103-verify 实例 CDP `connectOverCDP`): 机械门禁 typecheck/lint/test/e2e/build 全绿 (e2e 后台 exit 0)。真机亮暗各一组截图: overview「近7天费用」3 柱 fill=`hsl(var(--primary))` 单色 (标准2); usage「每日花费」柱同单色; byModel/byProject breakdown 色标=`hsl(var(--chart-1..5))` 统一真源 (标准4); token 条蓝绿橙紫语义色亮/暗均清晰可辨, 暗色 chart-1=`213 94% 68%`、chart-2=`160 65% 52%` 自适应变亮 (标准3/5); session-detail token 条复用同组件 token-usage-display 同源配色 (01-ANALYSIS 已锚定); 单一真源 chart-colors.ts 经单测 (标准1); 纯配色无逻辑/IPC 变更 (标准6)。验收标准 1-6 全通过。
 
 ## verify 回写
 verify 不通过项作为新任务追加于此, phase 退回 implement。
