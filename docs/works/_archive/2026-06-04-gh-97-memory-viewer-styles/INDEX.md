@@ -2,7 +2,7 @@
 task: 2026-06-04-gh-97-memory-viewer-styles
 task_id: GH-97
 type: bug
-phase: verify
+phase: archive
 created: 2026-06-04
 priority: P1
 target_date: 
@@ -67,7 +67,7 @@ gh_project:
   project_number: 6
   project_url: https://github.com/users/Caldis/projects/6
   item_id: PVTI_lAHOADXbEs4BZHvQzguokG4
-  item_status: In Progress
+  item_status: Done
 artifacts:
   source: 00-BUG.md
   analysis: 01-ANALYSIS.md
