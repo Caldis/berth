@@ -3,7 +3,7 @@
 从 02-SPEC 拆解。顺序执行 (单链路: 类型 → main → IPC → renderer → 验收; 文件依赖前后衔接, 不并行)。
 实现中若发现 debt 初估不准, 更新 INDEX.md `debt.estimate`, 并追加 `debt.revisions[]`。
 
-- [ ] T1 共享契约 + reader: `src/shared/types/ipc.ts` 新增 AgentTeam* 类型与 `teams:list` 契约; 新建 `src/main/agent-teams/index.ts` (listAgentTeams + leadSessionAvailable 富化函数 markLeadSessionAvailability)
+- [x] T1 共享契约 + reader: `src/shared/types/ipc.ts` 新增 AgentTeam* 类型与 `teams:list` 契约; 新建 `src/main/agent-teams/index.ts` (listAgentTeams + leadSessionAvailable 富化函数 markLeadSessionAvailability)
   - tests: tests/unit/agent-teams-reader.test.ts — 字段映射 / 跳过缺 config 与坏 JSON / teams 根缺失→[] / tasks 容错 / inbox 统计 / lastActivityAt=max(mtime) / 降序 null 殿后 / backend 归一 / 富化函数
   - verify: pnpm vitest run tests/unit/agent-teams-reader.test.ts + pnpm typecheck (非 UI 项, 界面验收不适用)
 - [ ] T2 IPC + preload: handlers.ts 注册 `teams:list` (reader + runtime.getAsset 富化); preload index.ts + index.d.ts 暴露 window.api.teams.list

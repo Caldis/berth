@@ -334,6 +334,54 @@ export interface ImportChainNode {
   errors?: string[]
 }
 
+// ── Agent Teams (Claude Code experimental runtime collaboration state) ──
+// Read-only records parsed from `~/.claude/teams/{name}/` + `~/.claude/tasks/{name}/`.
+// Not part of the asset model: team dirs are runtime-generated, expected to be
+// removed on cleanup, and routinely left behind — presented as collaboration
+// records, never as live state.
+
+export interface AgentTeamMember {
+  name: string
+  agentId: string
+  agentType: string
+  model?: string
+  /** Normalized from backendType / tmuxPaneId; undefined for the lead (runs in the user's own terminal). */
+  backend?: 'in-process' | 'tmux'
+  prompt?: string
+  color?: string
+  joinedAt?: number
+}
+
+export interface AgentTeamTask {
+  id: string
+  subject: string
+  description?: string
+  status: 'pending' | 'in_progress' | 'completed' | 'unknown'
+  owner?: string
+  blockedBy: string[]
+}
+
+export interface AgentTeamSummary {
+  name: string
+  description?: string
+  dirPath: string
+  createdAt: number | null
+  /** max mtime across config / inbox / task files — recency signal, not a liveness claim. */
+  lastActivityAt: number | null
+  leadAgentId?: string
+  leadSessionId?: string
+  /** True when the lead session's transcript is present in the current asset snapshot. */
+  leadSessionAvailable: boolean
+  members: AgentTeamMember[]
+  tasks: AgentTeamTask[]
+  inboxMessageCount: number
+  lastInboxMessageAt: number | null
+}
+
+export interface AgentTeamListResult {
+  teams: AgentTeamSummary[]
+}
+
 /**
  * IPC Channel definitions — the contract between main and renderer.
  * Main process implements handlers; preload exposes typed wrappers.
@@ -362,6 +410,7 @@ export interface IpcChannels {
   'usage:summary': { args: [{ days: number; agentView?: AgentView; costMode?: CostMode; projectPath?: string }]; result: UsageSummary }
   'memory:list': { args: []; result: MemoryListResult }
   'memory:get': { args: [string]; result: MemoryNote | null }
+  'teams:list': { args: []; result: AgentTeamListResult }
   'mcp:merged': { args: []; result: MCPMergeInfo[] }
   'hooks:status': { args: [HooksAgentId]; result: HooksEnablementStatus }
   'hooks:set-enabled': { args: [SetHooksEnabledRequest]; result: SetHooksEnabledResult }
