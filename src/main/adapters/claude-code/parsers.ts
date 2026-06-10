@@ -9,8 +9,17 @@ import {
 import { buildHookHash, buildHookKey, buildHookScenarioHash } from '@shared/hook-identity'
 import { assetEntityId, dedupePathKey } from '@shared/asset-dedupe'
 import { samePath } from '@shared/path-utils'
-import { isRecord, readString, uniqueStrings } from '../_shared/parser-helpers'
+import {
+  isRecord,
+  readBoolean,
+  readNumber,
+  readString,
+  readValidDateString,
+  uniqueStrings
+} from '../_shared/parser-helpers'
 import { extractAtImports, splitFrontmatter } from '../_shared/markdown'
+import { parseMcpToolName } from '../_shared/session-artifacts'
+import { calculateDurationSeconds, projectNameFromPath } from '../_shared/session-meta'
 import { normalizeProjectPathKey } from '@shared/scope'
 import { extractCommandEntryPaths } from '../command-entry-paths'
 import { stampSourceKey, stampSourceKeys } from '../source-key'
@@ -788,7 +797,7 @@ export function parseSessionMeta(filePath: string, projectName: string): Asset {
           const skillName = readString(input, 'skill')
           if (skillName) skillsUsed.add(skillName)
         }
-        const mcpServer = extractMcpServerName(toolName)
+        const mcpServer = parseMcpToolName(toolName)?.server
         if (mcpServer) mcpServers.add(mcpServer)
       }
 
@@ -1004,24 +1013,6 @@ export function parseCredential(filePath: string): Asset {
 // Helpers
 // ---------------------------------------------------------------------------
 
-function readNumber(record: unknown, key: string): number | undefined {
-  if (!isRecord(record)) return undefined
-  const value = record[key]
-  return typeof value === 'number' && Number.isFinite(value) ? value : undefined
-}
-
-function readBoolean(record: unknown, key: string): boolean | undefined {
-  if (!isRecord(record)) return undefined
-  const value = record[key]
-  return typeof value === 'boolean' ? value : undefined
-}
-
-function readValidDateString(record: unknown, key: string): string | undefined {
-  const value = readString(record, key)
-  if (!value) return undefined
-  return Number.isNaN(new Date(value).getTime()) ? undefined : value
-}
-
 function readExplicitCost(record: Record<string, unknown>): number | undefined {
   const direct =
     readNumber(record, 'costUSD') ??
@@ -1042,14 +1033,6 @@ function readExplicitCost(record: Record<string, unknown>): number | undefined {
   return undefined
 }
 
-function extractMcpServerName(toolName: string): string | undefined {
-  if (!toolName.startsWith('mcp__')) return undefined
-  const rest = toolName.slice('mcp__'.length)
-  const separator = rest.indexOf('__')
-  if (separator <= 0) return undefined
-  return rest.slice(0, separator)
-}
-
 function addHookCount(counts: Map<string, number>, event: string, count: number): void {
   counts.set(event, (counts.get(event) ?? 0) + count)
 }
@@ -1063,22 +1046,6 @@ function decodeClaudeProjectDir(projectName: string): string {
     return `/${projectName.slice(1).split('-').filter(Boolean).join('/')}`
   }
   return projectName
-}
-
-function projectNameFromPath(projectPath: string, fallback: string): string {
-  const trimmed = projectPath.replace(/[\\/]+$/, '')
-  return path.win32.basename(trimmed) || path.posix.basename(trimmed) || fallback
-}
-
-function calculateDurationSeconds(
-  startedAt: string | undefined,
-  endedAt: string | undefined
-): number | null {
-  if (!startedAt || !endedAt) return null
-  const start = new Date(startedAt).getTime()
-  const end = new Date(endedAt).getTime()
-  if (Number.isNaN(start) || Number.isNaN(end)) return null
-  return Math.max(0, Math.round((end - start) / 1000))
 }
 
 function readSettingsJson(filePath: string): SettingsJson | null {

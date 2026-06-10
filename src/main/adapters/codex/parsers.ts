@@ -6,9 +6,19 @@ import { buildHookHash, buildHookKey, buildHookScenarioHash } from '@shared/hook
 import { assetEntityId, dedupePathKey } from '@shared/asset-dedupe'
 import { extractCommandEntryPaths } from '../command-entry-paths'
 import { stampSourceKey, stampSourceKeys } from '../source-key'
-import { isRecord, readString, safeId, uniqueStrings } from '../_shared/parser-helpers'
+import {
+  firstString,
+  isRecord,
+  readBoolean,
+  readNumber,
+  readString,
+  readValidDateString,
+  safeId,
+  uniqueStrings
+} from '../_shared/parser-helpers'
 import { extractAtImports, splitFrontmatter } from '../_shared/markdown'
 import { extractPaths, parseMcpToolName, upsertFile } from '../_shared/session-artifacts'
+import { calculateDurationSeconds, projectNameFromPath } from '../_shared/session-meta'
 import type { Asset, AssetScope } from '../types'
 import type { TokenUsageBreakdown } from '@shared/types/asset'
 import type {
@@ -880,50 +890,6 @@ function readNestedTokenRecord(record: Record<string, unknown>): Record<string, 
     }
   }
   return result
-}
-
-function firstString(record: Record<string, unknown>, keys: string[]): string | undefined {
-  for (const key of keys) {
-    const value = record[key]
-    if (typeof value === 'string' && value.trim()) return value
-  }
-  return undefined
-}
-
-
-function readNumber(record: unknown, key: string): number | undefined {
-  if (!isRecord(record)) return undefined
-  const value = record[key]
-  return typeof value === 'number' && Number.isFinite(value) ? value : undefined
-}
-
-function readBoolean(record: unknown, key: string): boolean | undefined {
-  if (!isRecord(record)) return undefined
-  const value = record[key]
-  return typeof value === 'boolean' ? value : undefined
-}
-
-function readValidDateString(record: unknown, key: string): string | undefined {
-  const value = readString(record, key)
-  if (!value) return undefined
-  return Number.isNaN(new Date(value).getTime()) ? undefined : value
-}
-
-function calculateDurationSeconds(
-  startedAt: string | undefined,
-  endedAt: string | undefined
-): number | null {
-  if (!startedAt || !endedAt) return null
-  const start = new Date(startedAt).getTime()
-  const end = new Date(endedAt).getTime()
-  if (Number.isNaN(start) || Number.isNaN(end)) return null
-  return Math.max(0, Math.round((end - start) / 1000))
-}
-
-function projectNameFromPath(projectPath: string, fallback: string): string {
-  if (!projectPath) return fallback
-  const trimmed = projectPath.replace(/[\\/]+$/, '')
-  return path.win32.basename(trimmed) || path.posix.basename(trimmed) || fallback
 }
 
 function parseMaybeJson(value: string): unknown {

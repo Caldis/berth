@@ -9,7 +9,15 @@ import type {
   SessionToolEvent,
   SessionToolEventCategory
 } from '@shared/types/ipc'
-import { isRecord, readString, safeId, uniqueStrings } from '../_shared/parser-helpers'
+import {
+  firstString,
+  isRecord,
+  readNumber,
+  readString,
+  readValidDateString,
+  safeId,
+  uniqueStrings
+} from '../_shared/parser-helpers'
 import { extractPaths, parseMcpToolName, upsertFile } from '../_shared/session-artifacts'
 
 export interface ParsedSessionDetail {
@@ -248,26 +256,6 @@ function materializeArtifacts(artifacts: MutableArtifacts): SessionArtifacts {
     files: Array.from(artifacts.files.values()),
     checkpoints: artifacts.checkpoints
   }
-}
-
-function firstString(record: Record<string, unknown>, keys: string[]): string | undefined {
-  for (const key of keys) {
-    const value = record[key]
-    if (typeof value === 'string' && value.trim()) return value
-  }
-  return undefined
-}
-
-function readNumber(record: unknown, key: string): number | undefined {
-  if (!isRecord(record)) return undefined
-  const value = record[key]
-  return typeof value === 'number' && Number.isFinite(value) ? value : undefined
-}
-
-function readValidDateString(record: unknown, key: string): string | undefined {
-  const value = readString(record, key)
-  if (!value) return undefined
-  return Number.isNaN(new Date(value).getTime()) ? undefined : value
 }
 
 function truncate(value: string, maxLength: number): string | undefined {
