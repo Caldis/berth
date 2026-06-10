@@ -216,6 +216,59 @@ export interface SessionDetailResult {
   fileHistoryCount: number
 }
 
+// ── Session replay (GH-116) ──
+// Full per-event view of one transcript for the detail-page replay tab.
+// Event metas stay light (bounded summaries); raw record payloads are fetched
+// per event via `sessions:event-payload` so multi-MB transcripts never cross
+// IPC wholesale.
+
+export type SessionReplayEventKind =
+  | 'user'
+  | 'assistant'
+  | 'thinking'
+  | 'tool'
+  | 'result'
+  | 'model'
+  | 'system'
+
+export interface SessionReplayTokens {
+  input?: number
+  output?: number
+  cacheRead?: number
+  cacheCreation?: number
+}
+
+export interface SessionReplayEvent {
+  /** `L{line}B{n}` — line index keys the raw-payload lookup. */
+  id: string
+  kind: SessionReplayEventKind
+  timestamp: string | null
+  /** Single-line summary, bounded by REPLAY_SUMMARY_MAX (shared/session-replay.ts). */
+  summary: string
+  toolName?: string
+  status?: 'success' | 'error'
+  tokens?: SessionReplayTokens
+  /** Claude isSidechain — event originated in a subagent thread. */
+  sidechain?: boolean
+}
+
+export interface SessionReplayResult {
+  sessionId: string
+  agentId: string
+  startedAt: string | null
+  endedAt: string | null
+  events: SessionReplayEvent[]
+  /** Real event count before the cap; events holds the most recent slice when truncated. */
+  totalEvents: number
+  truncated: boolean
+}
+
+export interface SessionReplayEventPayload {
+  id: string
+  /** Raw JSONL line the event was parsed from. */
+  json: string
+}
+
 export interface SearchResult {
   id: string
   asset: Asset
