@@ -154,7 +154,6 @@ export function TopNavigation({ isWindows }: TopNavigationProps): React.ReactEle
               <FeatureGuidePanel
                 guide={pageChrome.guide.definition}
                 evidence={pageChrome.guide.evidence}
-                agentView={pageChrome.guide.agentView}
                 className="shadow-[0_18px_45px_-20px_hsl(var(--foreground)/0.35)]"
               />
             </FloatingPopover>

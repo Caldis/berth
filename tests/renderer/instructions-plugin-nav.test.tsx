@@ -74,7 +74,7 @@ function renderSkills(focusAssetId?: string): void {
 describe('Instructions plugin-origin badge + focus (GH-112 P3)', () => {
   beforeEach(() => {
     resetMemoryCacheForTests()
-    useAppStore.setState({ assets: [pluginSkill(), builtinSkill()], agentView: 'all', scopeSelection: { mode: 'global' } })
+    useAppStore.setState({ assets: [pluginSkill(), builtinSkill()], scopeSelection: { mode: 'global' } })
     window.api.memory = { list: vi.fn(async () => ({ notes: [], sources: [] })), get: vi.fn(async () => null) }
   })
 
@@ -89,7 +89,6 @@ describe('Instructions plugin-origin badge + focus (GH-112 P3)', () => {
   it('does not duplicate the scope label in the group header (badge + text)', async () => {
     useAppStore.setState({
       assets: [{ ...builtinSkill(), scope: 'project' }],
-      agentView: 'all',
       scopeSelection: { mode: 'global' }
     })
     renderSkills()

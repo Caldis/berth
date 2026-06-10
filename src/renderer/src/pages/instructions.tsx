@@ -15,7 +15,6 @@ import {
   Hash
 } from 'lucide-react'
 import { truncatePath, cn } from '@/lib/utils'
-import { filterAssetsByAgentView } from '@/lib/agent-view'
 import { useAppStore } from '@/stores/app'
 import { type ScopeFilter } from '@/components/shared/filter-bar'
 import { DetailRow } from '@/components/shared/detail-row'
@@ -33,7 +32,7 @@ import {
   type FeatureGuideEvidence,
   type InstructionGuideId
 } from '@/lib/feature-guidance'
-import type { AgentView, Asset } from '@shared/types/asset'
+import type { Asset } from '@shared/types/asset'
 import { filterAssetsByAppScope } from '@shared/scope'
 import { MemoryView } from '@/components/memory/memory-view'
 import { useMemory } from '@/hooks/use-memory'
@@ -346,14 +345,12 @@ function buildInstructionGroups(
 
 function InstructionPageChrome({
   activeTab,
-  agentView,
   evidence,
   guide,
   search,
   setSearch
 }: {
   activeTab: string
-  agentView: AgentView
   evidence: FeatureGuideEvidence[]
   guide?: FeatureGuideDefinition
   search: string
@@ -373,11 +370,10 @@ function InstructionPageChrome({
     guide: guide
       ? {
           definition: guide,
-          evidence,
-          agentView
+          evidence
         }
       : undefined
-  }), [agentView, evidence, guide, search, setSearch, t, title])
+  }), [evidence, guide, search, setSearch, t, title])
   usePageChrome(pageChrome, [pageChrome])
 
   return null
@@ -430,7 +426,6 @@ function ScopeFilterChips({
 export function Instructions({ activeSection }: { activeSection?: string } = {}): React.ReactElement {
   const { t } = useTranslation()
   const assets = useAppStore((s) => s.assets)
-  const agentView = useAppStore((s) => s.agentView)
   const scopeSelection = useAppStore((s) => s.scopeSelection)
   const scanning = useAppStore((s) => s.assetRuntimeStatus.state === 'scanning')
   const runtimeState = useAppStore((s) => s.assetRuntimeStatus.state)
@@ -449,8 +444,8 @@ export function Instructions({ activeSection }: { activeSection?: string } = {})
   }, [focusId])
   const deferredSearch = useDeferredValue(search)
   const visibleAssets = useMemo(
-    () => filterAssetsByAppScope(filterAssetsByAgentView(assets, agentView), scopeSelection),
-    [assets, agentView, scopeSelection]
+    () => filterAssetsByAppScope(assets, scopeSelection),
+    [assets, scopeSelection]
   )
 
   // Type-filtered assets feed the scope chips; their counts stay stable across
@@ -565,7 +560,6 @@ export function Instructions({ activeSection }: { activeSection?: string } = {})
       {activeTab !== 'memories' && (
         <InstructionPageChrome
           activeTab={activeTab}
-          agentView={agentView}
           evidence={activeEvidence}
           guide={activeGuide}
           search={search}

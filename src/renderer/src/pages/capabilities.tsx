@@ -16,7 +16,6 @@ import {
   AlertTriangle
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { filterAssetsByAgentView } from '@/lib/agent-view'
 import { useAppStore } from '@/stores/app'
 import { useAgentCapabilityPlugins } from '@/hooks/use-ipc'
 import { ScopeSelect, type ScopeFilter } from '@/components/shared/filter-bar'
@@ -876,7 +875,6 @@ const tabIconMap: Record<string, React.ComponentType<{ className?: string }>> = 
 
 function CapabilityPageChrome({
   activeTab,
-  agentView,
   evidence,
   guide,
   scope,
@@ -886,7 +884,6 @@ function CapabilityPageChrome({
   showSearch
 }: {
   activeTab: string
-  agentView: AgentView
   evidence: FeatureGuideEvidence[]
   guide?: FeatureGuideDefinition
   scope: ScopeFilter
@@ -914,12 +911,11 @@ function CapabilityPageChrome({
     guide: guide
       ? {
           definition: guide,
-          evidence,
-          agentView
+          evidence
         }
       : undefined,
     actions
-  }), [actions, agentView, evidence, guide, search, setSearch, showSearch, t, title])
+  }), [actions, evidence, guide, search, setSearch, showSearch, t, title])
   usePageChrome(pageChrome, [pageChrome])
 
   return null
@@ -929,7 +925,6 @@ function CapabilityPageChrome({
 export function Capabilities({ activeSection }: { activeSection?: string } = {}): React.ReactElement {
   const { t } = useTranslation()
   const assets = useAppStore((s) => s.assets)
-  const agentView = useAppStore((s) => s.agentView)
   const scopeSelection = useAppStore((s) => s.scopeSelection)
   const scanning = useAppStore((s) => s.assetRuntimeStatus.state === 'scanning')
   const runtimeState = useAppStore((s) => s.assetRuntimeStatus.state)
@@ -939,8 +934,8 @@ export function Capabilities({ activeSection }: { activeSection?: string } = {})
   const [search, setSearch] = useState('')
   const [scope, setScope] = useState<ScopeFilter>('all')
   const visibleAssets = useMemo(
-    () => filterAssetsByAppScope(filterAssetsByAgentView(assets, agentView), scopeSelection),
-    [assets, agentView, scopeSelection]
+    () => filterAssetsByAppScope(assets, scopeSelection),
+    [assets, scopeSelection]
   )
 
   // Filter assets for active tab
@@ -991,7 +986,7 @@ export function Capabilities({ activeSection }: { activeSection?: string } = {})
         )
 
       case 'hooks': {
-        return <HooksLifecycleView assets={filteredAssets} agentView={agentView} search={search} scope={scope} plugins={plugins} />
+        return <HooksLifecycleView assets={filteredAssets} agentView="all" search={search} scope={scope} plugins={plugins} />
       }
 
       case 'plugins': {
@@ -1020,7 +1015,7 @@ export function Capabilities({ activeSection }: { activeSection?: string } = {})
       }
 
       case 'statusLine':
-        return <StatusLineSection assets={filteredAssets} agentView={agentView} />
+        return <StatusLineSection assets={filteredAssets} agentView="all" />
 
       case 'permissions':
         return <PermissionsSection assets={filteredAssets} />
@@ -1039,7 +1034,6 @@ export function Capabilities({ activeSection }: { activeSection?: string } = {})
     <div className={cn('flex flex-col gap-4', PAGE_EMPTY_FILL)}>
       <CapabilityPageChrome
         activeTab={activeTab}
-        agentView={agentView}
         evidence={activeEvidence}
         guide={activeGuide}
         search={search}

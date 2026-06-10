@@ -295,7 +295,6 @@ export function Usage(): React.ReactElement {
   const [reloadKey, setReloadKey] = useState(0)
   const [showPricingOverride, setShowPricingOverride] = useState(false)
   const [pricingOverrideCopied, setPricingOverrideCopied] = useState(false)
-  const agentView = useAppStore((s) => s.agentView)
   const scopeSelection = useAppStore((s) => s.scopeSelection)
   const projectPath = projectPathForScope(scopeSelection)
 
@@ -304,7 +303,6 @@ export function Usage(): React.ReactElement {
     setLoadError(false)
     const request = {
       days,
-      agentView,
       costMode,
       ...(projectPath ? { projectPath } : {})
     }
@@ -326,7 +324,7 @@ export function Usage(): React.ReactElement {
     return () => {
       cancelled = true
     }
-  }, [agentView, costMode, days, projectPath, reloadKey])
+  }, [costMode, days, projectPath, reloadKey])
 
   const hasCostData = usage && usage.dailyCosts.length > 0
   const hasModelData = usage && usage.byModel.length > 0

@@ -19,7 +19,6 @@ describe('Sidebar', () => {
       sidebarCollapsed: false,
       sidebarWidth: SIDEBAR_DEFAULT_WIDTH,
       searchOpen: false,
-      agentView: 'all',
       scopeSelection: { mode: 'global' },
       projectCandidates: []
     })
@@ -33,7 +32,8 @@ describe('Sidebar', () => {
     )
 
     expect(screen.queryByRole('group', { name: 'Agent view' })).not.toBeInTheDocument()
-    expect(useAppStore.getState().agentView).toBe('all')
+    // agentView store 残迹已删除 (issue agent-view-store-vestige): 状态不复存在
+    expect('agentView' in useAppStore.getState()).toBe(false)
   })
 
   it('localizes the sidebar collapse toggle label in Chinese', async () => {

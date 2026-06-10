@@ -109,7 +109,6 @@ describe('TopNavigation', () => {
         guide: {
           definition: sessionGuide,
           evidence: [{ labelKey: 'sessions.evidence.sessions', value: 816 }],
-          agentView: 'all'
         },
         actions: <button type="button">Project</button>
       }

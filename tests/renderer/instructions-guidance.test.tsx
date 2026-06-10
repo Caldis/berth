@@ -104,7 +104,6 @@ describe('Instructions guidance surfaces', () => {
     resetMemoryCacheForTests()
     useAppStore.setState({
       assets: [],
-      agentView: 'all',
       scopeSelection: { mode: 'global' },
       assetRuntimeStatus: { ...useAppStore.getState().assetRuntimeStatus, state: 'ready' }
     })
@@ -172,7 +171,6 @@ describe('Instructions guidance surfaces', () => {
         skillAsset('Project skill', 'project', 'D:/Code/berth/.agents/skills/project/SKILL.md'),
         skillAsset('Other project skill', 'project', 'D:/Code/other/.agents/skills/project/SKILL.md', 'D:/Code/other')
       ],
-      agentView: 'all'
     })
 
     render(<MemoryRouter><Instructions /></MemoryRouter>)
@@ -188,7 +186,6 @@ describe('Instructions guidance surfaces', () => {
         skillAsset('User skill', 'user', 'C:/Users/mail/.codex/skills/user/SKILL.md'),
         skillAsset('Project skill', 'project', 'D:/Code/berth/.agents/skills/project/SKILL.md')
       ],
-      agentView: 'all',
       scopeSelection: { mode: 'global' }
     })
 
@@ -228,7 +225,6 @@ describe('Instructions guidance surfaces', () => {
             : `D:/Code/berth/.agents/skills/skill-${index}/SKILL.md`
         )
       ),
-      agentView: 'all',
       scopeSelection: { mode: 'global' }
     })
 

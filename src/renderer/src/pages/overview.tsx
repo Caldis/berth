@@ -24,7 +24,6 @@ import { CHART_SERIES_FILL } from '@/lib/chart-colors'
 import { formatCurrency, formatOptionalCurrency, formatOptionalRelativeTime, truncatePath } from '@/lib/utils'
 import { useSessions, useUsageSummary, useHealthChecks } from '@/hooks/use-ipc'
 import { useAppStore } from '@/stores/app'
-import { computeStatsForAssets, filterAssetsByAgentView } from '@/lib/agent-view'
 import {
   localizeHealthCheck,
   localizeHealthCheckAssetType,
@@ -52,15 +51,11 @@ export function Overview(): React.ReactElement {
   const allStats = useAppStore((s) => s.stats)
   const assets = useAppStore((s) => s.assets)
   const assetRuntimeStatus = useAppStore((s) => s.assetRuntimeStatus)
-  const agentView = useAppStore((s) => s.agentView)
   const scopeSelection = useAppStore((s) => s.scopeSelection)
   const projectPath = projectPathForScope(scopeSelection)
-  const stats = useMemo(() => {
-    if (agentView === 'all') return allStats
-    return computeStatsForAssets(filterAssetsByAgentView(assets, agentView))
-  }, [agentView, allStats, assets])
-  const { sessions, loading: sessionsLoading } = useSessions({ limit: 5, agentView, projectPath })
-  const { usage, loading: usageLoading } = useUsageSummary(7, agentView, projectPath)
+  const stats = allStats
+  const { sessions, loading: sessionsLoading } = useSessions({ limit: 5, projectPath })
+  const { usage, loading: usageLoading } = useUsageSummary(7, undefined, projectPath)
   const { checks, loading: healthLoading, stale: healthStale } = useHealthChecks()
   const [copiedFixId, setCopiedFixId] = useState<string | null>(null)
   const [ignoredHealthChecks, setIgnoredHealthChecks] = useState<Set<string>>(() => readIgnoredHealthChecks())
@@ -79,7 +74,7 @@ export function Overview(): React.ReactElement {
   const totalCost = usage?.totalCost ?? 0
   const hasKnownCost = usage != null && usage.costSource !== 'unknown'
   const overviewCostSource = usage?.costSource ?? 'unknown'
-  const agentLabel = t(`agentView.${agentView}`)
+  const agentLabel = t('agentView.all')
   const scopeLabel = scopeLabelForSelection(scopeSelection, t)
   const metricsLoading = assetRuntimeStatus.state === 'scanning' && assets.length === 0
 

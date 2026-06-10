@@ -19,7 +19,6 @@ import {
 import { cn, truncatePath, formatOptionalRelativeTime } from '@/lib/utils'
 import { Input, Chip } from '@/components/ui'
 import { useMemory } from '@/hooks/use-memory'
-import { useAppStore } from '@/stores/app'
 import { EmptyState, PAGE_EMPTY_FILL } from '@/components/shared/empty-state'
 import { usePageChrome, type PageChromeConfig } from '@/components/layout/page-chrome'
 import { FileViewerButton } from '@/components/shared/file-viewer-button'
@@ -665,7 +664,6 @@ function buildMemoryGroups(notes: readonly MemoryNote[]): VirtualListGroup<Memor
 export function MemoryView(): React.ReactElement {
   const { t } = useTranslation()
   const { result, loading, refreshing, refresh } = useMemory()
-  const agentView = useAppStore((s) => s.agentView)
   const [activeSource, setActiveSource] = useState('all')
   const [search, setSearch] = useState('')
   const [importanceFilter, setImportanceFilter] = useState<string>('all')
@@ -748,11 +746,10 @@ export function MemoryView(): React.ReactElement {
     },
     guide: {
       definition: instructionGuideMap.memories,
-      evidence,
-      agentView
+      evidence
     },
     actions: pageChromeActions
-  }), [agentView, evidence, pageChromeActions, search, t])
+  }), [evidence, pageChromeActions, search, t])
   usePageChrome(pageChrome, [pageChrome])
 
   const clearFilters = useCallback(() => {

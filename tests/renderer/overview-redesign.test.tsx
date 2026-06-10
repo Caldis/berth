@@ -39,7 +39,6 @@ describe('overview redesign', () => {
     await i18n.changeLanguage('en')
     act(() => {
       useAppStore.setState({
-        agentView: 'all',
         scopeSelection: { mode: 'global' },
         assets: [],
         stats: emptyStats
@@ -53,7 +52,6 @@ describe('overview redesign', () => {
   it('shows the current agent and project scope in the first viewport', async () => {
     act(() => {
       useAppStore.setState({
-        agentView: 'codex',
         scopeSelection: {
           mode: 'project',
           projectPath: 'D:/Code/berth',
@@ -73,18 +71,17 @@ describe('overview redesign', () => {
 
     expect(await screen.findByRole('heading', { name: 'Overview' })).toBeInTheDocument()
     expect(screen.getByText('Current agent')).toBeInTheDocument()
-    expect(screen.getByText('Codex')).toBeInTheDocument()
+    // agentView 切换器残迹已删除: 当前 Agent 恒为 All (issue agent-view-store-vestige)
+    expect(screen.getByText('All')).toBeInTheDocument()
     expect(screen.getByText('Project scope')).toBeInTheDocument()
     expect(screen.getByText('D:/Code/berth')).toBeInTheDocument()
     expect(window.api.sessions.list).toHaveBeenCalledWith({
       projectFilter: undefined,
       limit: 5,
-      agentView: 'codex',
       projectPath: 'D:/Code/berth'
     })
     expect(window.api.usage.summary).toHaveBeenCalledWith({
       days: 7,
-      agentView: 'codex',
       projectPath: 'D:/Code/berth'
     })
   })

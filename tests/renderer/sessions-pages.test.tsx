@@ -290,7 +290,7 @@ describe('session pages', () => {
     )
 
     expect(await screen.findByText('Fix session metadata')).toBeInTheDocument()
-    expect(window.api.sessions.list).toHaveBeenCalledWith({ projectFilter: undefined, limit: 5, agentView: 'all' })
+    expect(window.api.sessions.list).toHaveBeenCalledWith({ projectFilter: undefined, limit: 5 })
     expect(screen.getAllByText('D:\\Code\\berth').length).toBeGreaterThan(0)
     expect(screen.getByText('38 tok')).toBeInTheDocument()
     expect(screen.getByText(/I 10 \/ O 5/)).toBeInTheDocument()
@@ -320,12 +320,10 @@ describe('session pages', () => {
       expect(window.api.sessions.list).toHaveBeenCalledWith({
         projectFilter: undefined,
         limit: 5,
-        agentView: 'all',
         projectPath: 'D:/Code/berth'
       })
       expect(window.api.usage.summary).toHaveBeenCalledWith({
         days: 7,
-        agentView: 'all',
         projectPath: 'D:/Code/berth'
       })
     } finally {
@@ -532,7 +530,6 @@ describe('session pages', () => {
       expect(window.api.sessions.list).toHaveBeenCalledWith({
         projectFilter: undefined,
         limit: undefined,
-        agentView: 'all',
         projectPath: 'D:/Code/berth'
       })
     } finally {
@@ -843,7 +840,6 @@ describe('session pages', () => {
       expect(await screen.findByText('Input: 10')).toBeInTheDocument()
       expect(window.api.usage.summary).toHaveBeenCalledWith({
         days: 0,
-        agentView: 'all',
         costMode: 'auto',
         projectPath: 'D:/Code/berth'
       })
@@ -864,10 +860,7 @@ describe('session pages', () => {
     expect(screen.queryByText('0 tok')).not.toBeInTheDocument()
   })
 
-  it('passes agent view to usage summary and renders unknown token remainder', async () => {
-    act(() => {
-      useAppStore.setState({ agentView: 'codex' })
-    })
+  it('requests usage summary without agent view and renders unknown token remainder', async () => {
     const tokenUsage = normalizeTokenUsage({ inputTokens: 10, totalTokens: 15 })
     window.api.usage.summary = vi.fn(async () => ({
       totalCost: 0,
@@ -891,13 +884,9 @@ describe('session pages', () => {
     expect(screen.getByText('Unknown: 5')).toBeInTheDocument()
     expect(window.api.usage.summary).toHaveBeenCalledWith({
       days: 0,
-      agentView: 'codex',
       costMode: 'auto'
     })
     unmount()
-    act(() => {
-      useAppStore.setState({ agentView: 'all' })
-    })
   })
 
   it('passes selected cost mode to usage summary', async () => {
@@ -919,7 +908,6 @@ describe('session pages', () => {
     await waitFor(() => {
       expect(window.api.usage.summary).toHaveBeenLastCalledWith({
         days: 0,
-        agentView: 'all',
         costMode: 'estimated'
       })
     })
@@ -933,7 +921,6 @@ describe('session pages', () => {
     expect(await screen.findByText('Input: 10')).toBeInTheDocument()
     expect(window.api.usage.summary).toHaveBeenCalledWith({
       days: 0,
-      agentView: 'all',
       costMode: 'auto'
     })
 
@@ -942,7 +929,6 @@ describe('session pages', () => {
     await waitFor(() => {
       expect(window.api.usage.summary).toHaveBeenLastCalledWith({
         days: 30,
-        agentView: 'all',
         costMode: 'auto'
       })
     })
@@ -952,7 +938,6 @@ describe('session pages', () => {
     await waitFor(() => {
       expect(window.api.usage.summary).toHaveBeenLastCalledWith({
         days: 0,
-        agentView: 'all',
         costMode: 'auto'
       })
     })
@@ -988,7 +973,6 @@ describe('session pages', () => {
     expect(await screen.findByText('Input: 4')).toBeInTheDocument()
     expect(window.api.usage.summary).toHaveBeenLastCalledWith({
       days: 0,
-      agentView: 'all',
       costMode: 'auto'
     })
   })

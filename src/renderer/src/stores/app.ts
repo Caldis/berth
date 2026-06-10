@@ -6,7 +6,7 @@ import {
   type AppScopeSelection,
   type ProjectScopeCandidate
 } from '@shared/scope'
-import type { AgentView, Asset, AssetStats } from '@shared/types/asset'
+import type { Asset, AssetStats } from '@shared/types/asset'
 import type { AssetRuntimeStatus, AssetScanPartial, AssetSnapshot, ScanError } from '@shared/types/ipc'
 
 export const SIDEBAR_COLLAPSED_WIDTH = 64
@@ -44,8 +44,6 @@ interface AppState {
   searchOpen: boolean
   setSearchOpen: (open: boolean) => void
 
-  agentView: AgentView
-  setAgentView: (agentView: AgentView) => void
 
   scopeSelection: AppScopeSelection
   projectCandidates: ProjectScopeCandidate[]
@@ -94,8 +92,6 @@ export const useAppStore = create<AppState>((set) => ({
   searchOpen: false,
   setSearchOpen: (searchOpen) => set({ searchOpen }),
 
-  agentView: 'all',
-  setAgentView: (agentView) => set({ agentView }),
 
   scopeSelection: DEFAULT_SCOPE_SELECTION,
   projectCandidates: [],

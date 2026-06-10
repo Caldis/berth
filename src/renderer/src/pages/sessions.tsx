@@ -45,10 +45,9 @@ function getDateGroupKey(dateStr: string | null, unknownLabel: string): string {
 export function Sessions(): React.ReactElement {
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const agentView = useAppStore((s) => s.agentView)
   const scopeSelection = useAppStore((s) => s.scopeSelection)
   const projectPath = projectPathForScope(scopeSelection)
-  const { sessions, loading, stale, error, reload } = useSessions({ agentView, projectPath })
+  const { sessions, loading, stale, error, reload } = useSessions({ projectPath })
 
   const [filter, setFilter] = useState('')
   const deferredFilter = useDeferredValue(filter)
@@ -161,11 +160,10 @@ export function Sessions(): React.ReactElement {
     },
     guide: {
       definition: sessionGuide,
-      evidence,
-      agentView
+      evidence
     },
     actions: pageChromeActions
-  }), [agentView, evidence, filter, pageChromeActions, t])
+  }), [evidence, filter, pageChromeActions, t])
   usePageChrome(pageChrome, [pageChrome])
 
   return (
@@ -237,7 +235,6 @@ export function Sessions(): React.ReactElement {
               return (
                 <SessionRow
                   session={session}
-                  agentView={agentView}
                   unknownLabel={t('common.unknown')}
                   skillsLabel={t('sessions.skillsUsed')}
                   mcpLabel={t('sessions.mcpConnected')}
@@ -295,7 +292,6 @@ function buildSessionGroups(
 
 interface SessionRowProps {
   session: SessionSummary
-  agentView: 'all' | SessionSummary['agentId']
   unknownLabel: string
   skillsLabel: string
   mcpLabel: string
@@ -305,7 +301,6 @@ interface SessionRowProps {
 
 function SessionRow({
   session,
-  agentView,
   unknownLabel,
   skillsLabel,
   mcpLabel,
@@ -337,13 +332,11 @@ function SessionRow({
         </div>
         {/* Fixed-width right-aligned columns so metadata lines up vertically for continuous scanning. */}
         <div className="flex shrink-0 items-center gap-2">
-          {agentView === 'all' && (
-            <div className="flex w-14 justify-end">
-              <Chip tone="neutral" variant="flat" size="sm">
-                {agentLabel}
-              </Chip>
-            </div>
-          )}
+          <div className="flex w-14 justify-end">
+            <Chip tone="neutral" variant="flat" size="sm">
+              {agentLabel}
+            </Chip>
+          </div>
           <div className="flex w-10 justify-end">
             <AssetCountChip
               icon={Sparkles}

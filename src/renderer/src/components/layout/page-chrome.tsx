@@ -9,13 +9,11 @@ import {
   type DependencyList,
   type ReactNode
 } from 'react'
-import type { AgentView } from '@shared/types/asset'
 import type { FeatureGuideDefinition, FeatureGuideEvidence } from '@/lib/feature-guidance'
 
 export interface PageChromeGuide {
   definition: FeatureGuideDefinition
   evidence?: FeatureGuideEvidence[]
-  agentView?: AgentView
 }
 
 export interface PageChromeSearch {
