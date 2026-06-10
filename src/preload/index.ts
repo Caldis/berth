@@ -28,22 +28,18 @@ const api = {
     setAlwaysOnTop: (flag: boolean) => invoke('window:set-always-on-top', flag),
     isAlwaysOnTop: () => invoke('window:is-always-on-top'),
     onMaximizedChange: (callback: (maximized: boolean) => void) =>
-      subscribe('window:maximized-change', (payload) => callback(payload.maximized))
+      subscribe('window:maximized-change', callback)
   },
   platform: {
     info: () => invoke('platform:info')
   },
   theme: {
-    get: () => invoke('theme:get'),
     set: (theme: 'light' | 'dark' | 'system') => invoke('theme:set', theme)
   },
   assets: {
     snapshot: () => invoke('assets:snapshot'),
     status: () => invoke('assets:status'),
     refresh: (opts?: { wait?: boolean }) => invoke('assets:refresh', opts),
-    // 已知 phantom (无 handler, 调用必 reject) — GH-115 T2 与死通道一并清理
-    scan: (category?: string) => ipcRenderer.invoke('assets:scan', category),
-    scanAll: () => invoke('assets:scan-all'),
     scanSources: () => invoke('assets:scan-sources'),
     get: (id: string) => invoke('assets:get', id),
     search: (query: string) => invoke('assets:search', query),
@@ -76,8 +72,6 @@ const api = {
     list: () => invoke('teams:list')
   },
   hooks: {
-    status: (agentId: IpcChannelArgs<'hooks:status'>[0]) => invoke('hooks:status', agentId),
-    setEnabled: (request: IpcChannelArgs<'hooks:set-enabled'>[0]) => invoke('hooks:set-enabled', request),
     setHookEnabled: (request: IpcChannelArgs<'hooks:set-hook-enabled'>[0]) =>
       invoke('hooks:set-hook-enabled', request)
   },

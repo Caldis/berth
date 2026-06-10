@@ -1,43 +1,28 @@
 import * as os from 'os'
-import * as path from 'path'
-import * as fs from 'fs'
 import { BrowserWindow, ipcMain, nativeTheme, shell, app } from 'electron'
 import type { IpcMainInvokeEvent } from 'electron'
-import type { AgentView, Asset, CostMode, Relation, SessionSummary, UsageSummary } from '@shared/types/asset'
+import type { AgentView, Asset, CostMode, SessionSummary, UsageSummary } from '@shared/types/asset'
 import type {
   PlatformInfo,
   AgentScanSourceGroup,
   AssetRuntimeStatus,
   AssetSnapshot,
-  ScanResult,
   SearchResult,
   HealthCheck,
   HealthCheckRequest,
-  ImportChainNode,
   SessionListResult,
   SessionDetailResult,
   AgentTeamListResult,
   SessionModelInfo,
-  MCPMergeInfo,
   SessionArtifacts,
   SessionToolEvent,
-  HooksAgentId,
-  HooksEnablementStatus,
   SetHookEnabledRequest,
-  SetHookEnabledResult,
-  SetHooksEnabledRequest,
-  SetHooksEnabledResult
+  SetHookEnabledResult
 } from '@shared/types/ipc'
 import type { AgentCapabilityPluginListResult } from '@shared/types/agent-plugin'
 import { getAssetRuntime } from '../engine/assets/runtime'
 import { normalizeTokenUsage } from '../../shared/token-usage'
-import {
-  getAgentHooksStatus,
-  setAgentHooksEnabled,
-  setHookEnabled
-} from '../engine/hooks-manager'
-import { resolveRelations, buildImportChain } from '../engine/relations'
-import { parseMcpServers } from '../adapters/claude-code/parsers'
+import { setHookEnabled } from '../engine/hooks-manager'
 import { parseClaudeSessionDetail } from '../adapters/claude-code/session-detail'
 import { parseCodexSessionDetail } from '../adapters/codex/parsers'
 import { listMemory, readMemory } from '../memory'
@@ -83,8 +68,7 @@ export function registerAssetHandlers(): void {
     platform: process.platform,
     arch: process.arch,
     homeDir: os.homedir(),
-    version: app.getVersion(),
-    claudeDir: path.join(os.homedir(), '.claude')
+    version: app.getVersion()
   }))
 
   ipcMain.handle('assets:snapshot', async (): Promise<AssetSnapshot> => {
@@ -97,12 +81,6 @@ export function registerAssetHandlers(): void {
 
   ipcMain.handle('assets:refresh', async (_event, opts: { wait?: boolean } = {}): Promise<AssetRuntimeStatus> => {
     return getAssetRuntime().refresh({ reason: 'manual', wait: opts.wait })
-  })
-
-  ipcMain.handle('assets:scan-all', async (): Promise<ScanResult> => {
-    const runtime = getAssetRuntime()
-    await runtime.refresh({ reason: 'legacy-scan-all', wait: true })
-    return runtime.getScanResult()
   })
 
   ipcMain.handle('assets:scan-sources', async (): Promise<AgentScanSourceGroup[]> => {
@@ -137,23 +115,12 @@ export function registerAssetHandlers(): void {
     return getAssetRuntime().getAsset(id)
   })
 
-  ipcMain.handle('assets:relations', (_event, id: string): Relation[] => {
-    const runtime = getAssetRuntime()
-    const asset = runtime.getAsset(id)
-    if (!asset) return []
-    return resolveRelations(asset, runtime.getAssets())
-  })
-
   ipcMain.handle('assets:search', async (_event, query: string): Promise<SearchResult[]> => {
     return getAssetRuntime().search(query)
   })
 
   ipcMain.handle('assets:health-check', async (_event, opts: HealthCheckRequest = {}): Promise<HealthCheck[]> => {
     return getAssetRuntime().getHealthChecks(opts)
-  })
-
-  ipcMain.handle('assets:import-chain', (_event, filePath: string): ImportChainNode => {
-    return buildImportChain(filePath)
   })
 
   ipcMain.handle(
@@ -219,23 +186,6 @@ export function registerAssetHandlers(): void {
 
   ipcMain.handle('memory:get', (_event, id: string) => readMemory(id))
 
-  ipcMain.handle('mcp:merged', (): MCPMergeInfo[] => {
-    return computeMcpMerged()
-  })
-
-  ipcMain.handle('hooks:status', (_event, agentId: HooksAgentId): HooksEnablementStatus => {
-    return getAgentHooksStatus(agentId)
-  })
-
-  ipcMain.handle(
-    'hooks:set-enabled',
-    async (_event, request: SetHooksEnabledRequest): Promise<SetHooksEnabledResult> => {
-      const result = setAgentHooksEnabled(request)
-      await getAssetRuntime().refresh({ reason: 'manual', wait: true })
-      return result
-    }
-  )
-
   ipcMain.handle(
     'hooks:set-hook-enabled',
     async (_event, request: SetHookEnabledRequest): Promise<SetHookEnabledResult> => {
@@ -244,8 +194,6 @@ export function registerAssetHandlers(): void {
       return result
     }
   )
-
-  ipcMain.handle('theme:get', () => nativeTheme.themeSource)
 
   ipcMain.handle('theme:set', (_event, theme: 'light' | 'dark' | 'system') => {
     nativeTheme.themeSource = theme
@@ -501,48 +449,4 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function slugId(value: string): string {
   return value.replace(/[^a-z0-9_-]+/gi, '-').replace(/^-+|-+$/g, '').slice(0, 80) || 'unknown'
-}
-
-// ---------------------------------------------------------------------------
-// MCP merge info
-// ---------------------------------------------------------------------------
-
-function computeMcpMerged(): MCPMergeInfo[] {
-  const claudeDir = path.join(os.homedir(), '.claude')
-  const sources: { path: string; scope: string }[] = [
-    { path: path.join(os.homedir(), '.claude.json'), scope: 'user' },
-    { path: path.join(claudeDir, 'settings.json'), scope: 'user' }
-  ]
-
-  // Gather all MCP server definitions across scopes
-  const serverMap = new Map<string, MCPMergeInfo>()
-
-  for (const src of sources) {
-    if (!fs.existsSync(src.path)) continue
-    const assets = parseMcpServers(src.path, 'user')
-    for (const a of assets) {
-      const existing = serverMap.get(a.name)
-      const scopeEntry = {
-        scope: src.scope,
-        source: src.path,
-        config: (a.meta.serverConfig as Record<string, unknown>) ?? {}
-      }
-      if (existing) {
-        existing.scopes.push(scopeEntry)
-        existing.hasConflict = true
-        existing.overriddenBy = src.scope
-        existing.effective = scopeEntry.config
-      } else {
-        serverMap.set(a.name, {
-          serverId: a.id,
-          name: a.name,
-          scopes: [scopeEntry],
-          effective: scopeEntry.config,
-          hasConflict: false
-        })
-      }
-    }
-  }
-
-  return Array.from(serverMap.values())
 }

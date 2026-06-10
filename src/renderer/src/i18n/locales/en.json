@@ -1219,7 +1219,6 @@
         "codexSingleHookNotConnected": "Codex can disable non-managed hooks in its hook browser, but Berth has not wired that write path yet.",
         "singleHookMissingKey": "Berth could not compute a stable hook key for this row, so it cannot change this hook safely.",
         "unknownAgent": "Berth does not know how this agent stores hook state.",
-        "projectReadOnly": "Project-level hook switches are shown for review only. Edit the source file directly.",
         "scope": {
           "user": "User scope",
           "project": "Project scope"

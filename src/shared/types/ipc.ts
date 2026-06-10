@@ -8,7 +8,6 @@ import type {
   ScanRoot,
   SessionSummary,
   UsageSummary,
-  Relation,
   WatchEvent
 } from './asset'
 import type { MemoryListResult, MemoryNote } from './memory'
@@ -20,7 +19,6 @@ export interface PlatformInfo {
   arch: string
   homeDir: string
   version: string
-  claudeDir: string
 }
 
 export interface ScanResult {
@@ -277,40 +275,7 @@ export type HealthCheckCategory =
   | 'configuration'
   | 'session'
 
-export interface MCPMergeInfo {
-  serverId: string
-  name: string
-  scopes: { scope: string; source: string; config: Record<string, unknown> }[]
-  effective: Record<string, unknown>
-  hasConflict: boolean
-  overriddenBy?: string
-}
-
 export type HooksAgentId = 'claude-code' | 'codex'
-
-export interface HooksEnablementStatus {
-  agentId: HooksAgentId
-  agentName: string
-  scope: 'user' | 'project'
-  enabled: boolean
-  sourcePath: string
-  sourceExists: boolean
-  supported: boolean
-  writable?: boolean
-  reason?: string
-  reasonKey?: string
-}
-
-export interface SetHooksEnabledRequest {
-  agentId: HooksAgentId
-  scope: 'user'
-  enabled: boolean
-}
-
-export interface SetHooksEnabledResult {
-  status: HooksEnablementStatus
-  changed: boolean
-}
 
 export interface SetHookEnabledRequest {
   agentId: HooksAgentId
@@ -402,36 +367,31 @@ export interface IpcChannels {
   'assets:snapshot': { args: []; result: AssetSnapshot }
   'assets:status': { args: []; result: AssetRuntimeStatus }
   'assets:refresh': { args: [{ wait?: boolean }?]; result: AssetRuntimeStatus }
-  'assets:scan-all': { args: []; result: ScanResult }
   'assets:scan-sources': { args: []; result: AgentScanSourceGroup[] }
   'agent-plugins:list': { args: []; result: AgentCapabilityPluginListResult }
   'project-scope:candidates': { args: []; result: ProjectScopeCandidate[] }
   'project-scope:activate': { args: [{ projectPath?: string }]; result: ProjectScopeActivationResult }
   'project-scope:set-scope': { args: [AppScopeSelection]; result: { applied: boolean } }
   'assets:get': { args: [string]; result: Asset | null }
-  'assets:relations': { args: [string]; result: Relation[] }
   'assets:search': { args: [string]; result: SearchResult[] }
   'assets:health-check': { args: [HealthCheckRequest?]; result: HealthCheck[] }
-  'assets:import-chain': { args: [string]; result: ImportChainNode }
   'sessions:list': { args: [{ projectFilter?: string; projectPath?: string; limit?: number; agentView?: AgentView }]; result: SessionListResult }
   'sessions:get': { args: [string]; result: SessionDetailResult | null }
   'usage:summary': { args: [{ days: number; agentView?: AgentView; costMode?: CostMode; projectPath?: string }]; result: UsageSummary }
   'memory:list': { args: []; result: MemoryListResult }
   'memory:get': { args: [string]; result: MemoryNote | null }
   'teams:list': { args: []; result: AgentTeamListResult }
-  'mcp:merged': { args: []; result: MCPMergeInfo[] }
-  'hooks:status': { args: [HooksAgentId]; result: HooksEnablementStatus }
-  'hooks:set-enabled': { args: [SetHooksEnabledRequest]; result: SetHooksEnabledResult }
   'hooks:set-hook-enabled': { args: [SetHookEnabledRequest]; result: SetHookEnabledResult }
-  'theme:get': { args: []; result: string }
   'theme:set': { args: ['light' | 'dark' | 'system']; result: void }
   'shell:openPath': { args: [string]; result: void }
   'shell:openExternal': { args: [string]; result: void }
 }
 
-/** Events pushed from main → renderer。payload 照实: assets:changed 实发 WatchEvent (src/main/index.ts:145)。 */
+/** Events pushed from main → renderer。payload 必须对实发 site 核验照实:
+ * maximized-change 实发裸 boolean (src/main/index.ts:58); assets:changed 实发 WatchEvent (index.ts:145);
+ * assets:progress 实发 AssetProgressPayload (runtime.ts:33)。改表先查 send 调用点, 不信旧表。 */
 export interface IpcEvents {
-  'window:maximized-change': { maximized: boolean }
+  'window:maximized-change': boolean
   'assets:changed': WatchEvent
   /** Live scan status + cumulative partial assets pushed during a scan (P4.6). */
   'assets:progress': { status: AssetRuntimeStatus; partial?: AssetScanPartial }

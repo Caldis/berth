@@ -13,16 +13,7 @@ import { mockApi } from '../setup'
 const ROOT = resolve(__dirname, '../..')
 const read = (p: string): string => readFileSync(resolve(ROOT, p), 'utf8')
 
-/**
- * handler 已注册但 preload 无 wrapper (renderer 物理不可达) — T2 删 handler 后清零。
- * 另有 4 个"全链存活但 renderer 零调用"的死通道 (theme:get / hooks:status /
- * hooks:set-enabled / assets:scan-all, 01-ANALYSIS 已对抗验证): 它们在本对账的
- * 注册/invoke 两侧同时出现所以不进白名单, T2 整链删除后由两侧同时消失保持绿。
- */
-const KNOWN_HANDLER_ONLY = ['assets:import-chain', 'assets:relations', 'mcp:merged'].sort()
-
-/** preload 暴露但主进程无 handler (调用必 reject) — T2 删除后清零 */
-const KNOWN_PHANTOM_INVOKED = ['assets:scan'].sort()
+// GH-115 T2 已完成死面整链删除: handler-only 与 phantom 白名单清零, 以下断言为严格全等。
 
 const extract = (source: string, pattern: RegExp): string[] => {
   const out = new Set<string>()
@@ -52,14 +43,8 @@ describe('IPC four-way contract accounting', () => {
     expect(declared).toEqual(registered)
   })
 
-  it('preload invoke 集合 ⊆ 注册集合 + 已知 phantom (白名单清零 = T2 完成)', () => {
-    const phantoms = invoked.filter((c) => !registered.includes(c))
-    expect(phantoms).toEqual(KNOWN_PHANTOM_INVOKED)
-  })
-
-  it('注册但 preload 无 wrapper 的通道 == 已知 handler-only 白名单 (白名单清零 = T2 完成)', () => {
-    const handlerOnly = registered.filter((c) => !invoked.includes(c))
-    expect(handlerOnly).toEqual(KNOWN_HANDLER_ONLY)
+  it('preload invoke 集合 == handlers 注册集合 (无 phantom, 无 handler-only)', () => {
+    expect(invoked).toEqual(registered)
   })
 
   it('推送事件三方一致: 实发 ⊆ 订阅 == 声明', () => {

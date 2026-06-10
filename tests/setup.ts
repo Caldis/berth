@@ -1,5 +1,6 @@
 import '@testing-library/jest-dom'
 import { beforeEach } from 'vitest'
+import type { BerthAPI } from '../src/preload/index'
 
 // jsdom does not implement scrollIntoView; stub it so focus/jump code under test runs.
 if (typeof Element !== 'undefined' && !Element.prototype.scrollIntoView) {
@@ -50,12 +51,10 @@ export const mockApi = {
       platform: 'win32' as const,
       arch: 'x64',
       homeDir: 'C:\\Users\\test',
-      version: '0.1.0',
-      claudeDir: 'C:\\Users\\test\\.claude'
+      version: '0.1.0'
     })
   },
   theme: {
-    get: async () => 'system',
     set: async () => {}
   },
   assets: {
@@ -70,8 +69,6 @@ export const mockApi = {
     }),
     status: async () => idleAssetRuntimeStatus,
     refresh: async () => idleAssetRuntimeStatus,
-    scan: async () => [],
-    scanAll: async () => ({ assets: [], stats: emptyStats, errors: [] }),
     scanSources: async () => [],
     get: async () => null,
     search: async () => [],
@@ -119,47 +116,6 @@ export const mockApi = {
     })
   },
   hooks: {
-    status: async (agentId: 'claude-code' | 'codex') => ({
-      agentId,
-      agentName: agentId === 'codex' ? 'Codex' : 'Claude Code',
-      scope: 'user' as const,
-      enabled: true,
-      sourcePath: agentId === 'codex'
-        ? 'C:\\Users\\test\\.codex\\config.toml'
-        : 'C:\\Users\\test\\.claude\\settings.json',
-      sourceExists: true,
-      supported: true,
-      writable: true
-    }),
-    statuses: async (agentId: 'claude-code' | 'codex') => [
-      {
-        agentId,
-        agentName: agentId === 'codex' ? 'Codex' : 'Claude Code',
-        scope: 'user' as const,
-        enabled: true,
-        sourcePath: agentId === 'codex'
-          ? 'C:\\Users\\test\\.codex\\config.toml'
-          : 'C:\\Users\\test\\.claude\\settings.json',
-        sourceExists: true,
-        supported: true,
-        writable: true
-      }
-    ],
-    setEnabled: async (request: { agentId: 'claude-code' | 'codex'; scope: 'user'; enabled: boolean }) => ({
-      status: {
-        agentId: request.agentId,
-        agentName: request.agentId === 'codex' ? 'Codex' : 'Claude Code',
-        scope: request.scope,
-        enabled: request.enabled,
-        sourcePath: request.agentId === 'codex'
-          ? 'C:\\Users\\test\\.codex\\config.toml'
-          : 'C:\\Users\\test\\.claude\\settings.json',
-        sourceExists: true,
-        supported: true,
-        writable: true
-      },
-      changed: true
-    }),
     setHookEnabled: async (request: { hookKey: string; enabled: boolean }) => ({
       hookKey: request.hookKey,
       enabled: request.enabled,
@@ -171,6 +127,8 @@ export const mockApi = {
     openPath: async () => {},
     openExternal: async () => {}
   }
+} satisfies {
+  [G in keyof BerthAPI]: { [M in keyof BerthAPI[G]]: unknown }
 }
 
 const hasDomEnvironment = typeof window !== 'undefined' && typeof HTMLElement !== 'undefined'

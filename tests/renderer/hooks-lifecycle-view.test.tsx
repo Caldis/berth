@@ -6,7 +6,7 @@ import i18n from '../../src/renderer/src/i18n'
 import { HooksLifecycleView } from '../../src/renderer/src/components/capabilities/hooks-lifecycle-view'
 import type { AgentView, Asset } from '../../src/shared/types/asset'
 import type { AgentCapabilityPlugin, AgentCapabilityPluginHookHandlerDescriptor } from '../../src/shared/types/agent-plugin'
-import type { HealthCheck, HooksAgentId } from '../../src/shared/types/ipc'
+import type { HealthCheck } from '../../src/shared/types/ipc'
 
 interface MockIntersectionObserverInstance {
   callback: IntersectionObserverCallback
@@ -200,20 +200,6 @@ describe('HooksLifecycleView', () => {
     })
     window.api.assets.healthCheck = vi.fn(async () => [])
     window.api.shell.openPath = vi.fn(async () => {})
-    window.api.hooks.statuses = vi.fn(async (agentId: HooksAgentId) => [
-      {
-        agentId,
-        agentName: agentId === 'codex' ? 'Codex' : 'Claude Code',
-        scope: 'user',
-        enabled: true,
-        sourcePath: agentId === 'codex'
-          ? 'C:\\Users\\test\\.codex\\config.toml'
-          : 'C:\\Users\\test\\.claude\\settings.json',
-        sourceExists: true,
-        supported: true,
-        writable: true
-      }
-    ])
     window.api.hooks.setHookEnabled = vi.fn(async (request) => ({
       hookKey: request.hookKey,
       enabled: request.enabled,
@@ -681,7 +667,6 @@ describe('HooksLifecycleView', () => {
     expect(screen.queryByText('Agent-level hooks switch')).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Disable all' })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Enable all' })).not.toBeInTheDocument()
-    expect(window.api.hooks.statuses).not.toHaveBeenCalled()
   })
 
   it('keeps long hook commands visible without a density switch', async () => {
@@ -1125,12 +1110,12 @@ describe('HooksLifecycleView', () => {
       .fn()
       .mockResolvedValueOnce(checks)
       .mockReturnValueOnce(pendingNext)
-    window.api.assets.onChanged = vi.fn((callback: () => void) => {
+    window.api.assets.onChanged = vi.fn(((callback: () => void) => {
       onChanged = callback
       return () => {
         onChanged = null
       }
-    })
+    }) as unknown as typeof window.api.assets.onChanged)
 
     renderHooks('codex', [hookAsset('codex-stop', 'codex', 'Stop')])
 

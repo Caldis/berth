@@ -3,12 +3,7 @@ import * as os from 'os'
 import * as path from 'path'
 import { parse as parseToml } from 'smol-toml'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import {
-  getAgentHooksStatus,
-  getAgentHooksStatuses,
-  setAgentHooksEnabled,
-  setHookEnabled
-} from '../../src/main/engine/hooks-manager'
+import { setHookEnabled } from '../../src/main/engine/hooks-manager'
 import { buildHookKey } from '../../src/shared/hook-identity'
 
 let tempDir: string | null = null
@@ -25,77 +20,6 @@ afterEach(() => {
 })
 
 describe('hooks manager', () => {
-  it('reads and writes Claude Code disableAllHooks', () => {
-    const settingsPath = path.join(tempDir!, '.claude', 'settings.json')
-
-    expect(getAgentHooksStatus('claude-code', tempDir!).enabled).toBe(true)
-
-    const result = setAgentHooksEnabled({ agentId: 'claude-code', scope: 'user', enabled: false }, tempDir!)
-
-    expect(result.status.enabled).toBe(false)
-    expect(JSON.parse(fs.readFileSync(settingsPath, 'utf-8'))).toMatchObject({
-      disableAllHooks: true
-    })
-    expect(fs.existsSync(`${settingsPath}.bak`)).toBe(false)
-
-    setAgentHooksEnabled({ agentId: 'claude-code', scope: 'user', enabled: true }, tempDir!)
-    expect(JSON.parse(fs.readFileSync(settingsPath, 'utf-8'))).toMatchObject({
-      disableAllHooks: false
-    })
-    expect(fs.existsSync(`${settingsPath}.bak`)).toBe(true)
-    expect(fs.readdirSync(path.dirname(settingsPath)).some((name) =>
-      name.startsWith('settings.json.') && name.endsWith('.bak')
-    )).toBe(true)
-  })
-
-  it('reads and writes Codex features.hooks in config.toml', () => {
-    const configPath = path.join(tempDir!, '.codex', 'config.toml')
-    fs.mkdirSync(path.dirname(configPath), { recursive: true })
-    fs.writeFileSync(configPath, ['model = "gpt-5.3-codex"', '[features]', 'goals = true'].join('\n'))
-
-    const result = setAgentHooksEnabled({ agentId: 'codex', scope: 'user', enabled: false }, tempDir!)
-    const written = fs.readFileSync(configPath, 'utf-8')
-
-    expect(result.status.enabled).toBe(false)
-    expect(written).toContain('[features]')
-    expect(written).toContain('hooks = false')
-    expect(written).toContain('goals = true')
-    expect(getAgentHooksStatus('codex', tempDir!).enabled).toBe(false)
-
-    setAgentHooksEnabled({ agentId: 'codex', scope: 'user', enabled: true }, tempDir!)
-    expect(fs.readFileSync(configPath, 'utf-8')).toContain('hooks = true')
-  })
-
-  it('returns separate user and project hook statuses', () => {
-    const projectDir = path.join(tempDir!, 'project')
-    const userConfigPath = path.join(tempDir!, '.codex', 'config.toml')
-    const projectConfigPath = path.join(projectDir, '.codex', 'config.toml')
-    fs.mkdirSync(path.dirname(userConfigPath), { recursive: true })
-    fs.mkdirSync(path.dirname(projectConfigPath), { recursive: true })
-    fs.writeFileSync(userConfigPath, ['[features]', 'hooks = true'].join('\n'))
-    fs.writeFileSync(projectConfigPath, ['[features]', 'hooks = false'].join('\n'))
-
-    const statuses = getAgentHooksStatuses('codex', tempDir!, projectDir)
-
-    expect(statuses).toEqual([
-      expect.objectContaining({
-        agentId: 'codex',
-        scope: 'user',
-        enabled: true,
-        writable: true,
-        sourcePath: userConfigPath
-      }),
-      expect.objectContaining({
-        agentId: 'codex',
-        scope: 'project',
-        enabled: false,
-        writable: false,
-        reasonKey: 'capabilities.hooks.management.projectReadOnly',
-        sourcePath: projectConfigPath
-      })
-    ])
-  })
-
   it('writes Codex single hook state under hooks.state', () => {
     const configPath = path.join(tempDir!, '.codex', 'config.toml')
     const hookSourcePath = path.join(tempDir!, '.codex', 'hooks.json')

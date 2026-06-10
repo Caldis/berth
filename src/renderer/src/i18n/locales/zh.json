@@ -1213,7 +1213,6 @@
         "codexSingleHookNotConnected": "Codex 可以在自己的 hook browser 里禁用 non-managed hook, 但 Berth 还没有接入这条写入路径。",
         "singleHookMissingKey": "Berth 没有算出这一行的稳定 Hook key, 因此不能安全修改这个 Hook。",
         "unknownAgent": "Berth 还不知道这个 Agent 如何保存 Hook 状态。",
-        "projectReadOnly": "项目级 Hooks 开关只在这里展示, 如需修改请直接编辑来源文件。",
         "scope": {
           "user": "用户级",
           "project": "项目级"
