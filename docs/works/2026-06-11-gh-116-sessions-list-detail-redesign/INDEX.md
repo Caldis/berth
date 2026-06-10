@@ -2,7 +2,7 @@
 task: 2026-06-11-gh-116-sessions-list-detail-redesign
 task_id: GH-116
 type: feature
-phase: explore
+phase: design
 created: 2026-06-11
 priority: P2
 target_date: 
@@ -11,15 +11,15 @@ source:
   refs: []
 debt:
   estimate:
-    incurred: 5
-    repaid: 2
-    net: 3
-    scope: module
+    incurred: 8
+    repaid: 3
+    net: 5
+    scope: cross-process
     risk: medium
     areas:
       - ui-ux
-    confidence: low
-    rationale: "0.0-new 初始估算: 会话列表页+详情页全面重设计, 集中在 renderer sessions 模块; 时间线重放为新交互范式 (incurred), 同时替换手写 tab 为 heroui Tabs、收敛布局 (repaid)。explore/design 后校准。"
+    confidence: medium
+    rationale: "explore 校准: 重放需要 shared 类型 → adapters 解析 → engine → IPC 四方 → renderer 纵向切面 (scope 升 cross-process, incurred 8); 同批替换自绘 tab/hover-popover 为 HeroUI 原生、删 timeline 专属 CSS、detail 接 AssetFileCache 还性能债 (repaid 3)。"
   final:
     incurred:
     repaid:
@@ -29,7 +29,12 @@ debt:
     areas: []
     confidence:
     rationale:
-  revisions: []
+  revisions:
+    - phase: explore
+      date: 2026-06-11
+      from: "incurred 5 / repaid 2 / net 3 / scope module / confidence low"
+      to: "incurred 8 / repaid 3 / net 5 / scope cross-process / confidence medium"
+      reason: "重放功能需扩展 session 事件数据链 (shared 类型/adapters 解析/engine/IPC 四方/renderer), 影响面跨进程; 同批以 HeroUI 原生件替换自绘 tab 与 hover-popover、补 detail 缓存, repaid 上调。"
 issue:
   number: 116
   repo: Caldis/berth
@@ -57,7 +62,7 @@ artifacts:
 
 ## 产物
 - [x] 00-PRD.md — 原始输入快照
-- [ ] 01-ANALYSIS.md — Explore 产物
+- [x] 01-ANALYSIS.md — Explore 产物
 - [ ] 02-SPEC.md — Design 产物
 - [ ] 03-PLAN.md — 活任务清单
 - [ ] 04-POLISH.md — 可选抛光记录
