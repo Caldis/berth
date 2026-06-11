@@ -26,7 +26,7 @@
   - session-replay.tsx 控制行替换接入
   - tests: tests/renderer/replay-kind-filter.test.tsx (新): 选中 Check 槽呈现/位置、全选=null 语义、计数渲染
   - verify: pnpm test 绿; 界面验收: Check 在行首、图标主题色、触发器摘要、密度与 h-9 控件一致 (真机 T7 复核)
-- [ ] T5 Canvas 时间轴 — replay-timeline.tsx 替换 replay-scrubber.tsx [AC3/4/5/6]
+- [x] T5 Canvas 时间轴 — replay-timeline.tsx 替换 replay-scrubber.tsx [AC3/4/5/6] (timeline 7 测 + model 19 测 + sessions-pages 29 测绿; 偏差: window 拖动不抑制 rangeChanged 回写 — window 位置始终由列表真实视口驱动, 拖动只发 scrollToIndex 意图, 单写无环路, 比 SPEC 的抑制方案更简; scrubberLabel→timelineLabel key 同批迁移; 附 CI 红灯修复 db0d3232 + HeroUI 弹层 friction 沉淀)
   - canvas DPR + ResizeObserver + rAF 脏标记; 三泳道 + 刻度尺 + bucket 聚合绘制
   - 原生 wheel (passive:false) 锚点缩放; pointer 平移/window 拖动/事件点选; cursor 切换
   - window 矩形 (visibleRange props); 等待带 + 中断线 + 选中框选; hover tooltip (DOM overlay)

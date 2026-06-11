@@ -6,7 +6,8 @@ import type { SessionReplayEvent, SessionReplayEventKind } from '@shared/types/i
 import { Chip, Input } from '@/components/ui'
 import { cn, formatNumber } from '@/lib/utils'
 import {
-  buildReplayPositions,
+  buildReplayTimePoints,
+  computeWaitGaps,
   filterReplayEvents,
   formatReplayOffset,
   replayOffsetMs
@@ -17,7 +18,7 @@ import { ErrorState } from '@/components/shared/error-state'
 import { LoadingState } from '@/components/shared/loading-state'
 import { ReplayKindChip } from './replay-kind-chip'
 import { ReplayKindFilter } from './replay-kind-filter'
-import { ReplayScrubber } from './replay-scrubber'
+import { ReplayTimeline } from './replay-timeline'
 import { ReplayDetailPanel, type ReplayPayloadState } from './replay-detail-panel'
 
 // GH-116: 会话重放视图 — 参考 ClaudeConsole Sessions Debug 界面:
@@ -54,10 +55,13 @@ export function SessionReplay({
     () => filterReplayEvents(events, kindFilter, searchQuery),
     [events, kindFilter, searchQuery]
   )
-  const positions = useMemo(
-    () => buildReplayPositions(filtered, replay?.startedAt ?? null, replay?.endedAt ?? null),
+  const timePoints = useMemo(
+    () => buildReplayTimePoints(filtered, replay?.startedAt ?? null, replay?.endedAt ?? null),
     [filtered, replay?.startedAt, replay?.endedAt]
   )
+  const waitGaps = useMemo(() => computeWaitGaps(timePoints.times), [timePoints.times])
+  // 列表可视范围 → 时间轴 window 矩形 (Virtuoso rangeChanged 驱动)
+  const [visibleRange, setVisibleRange] = useState<{ startIndex: number; endIndex: number } | null>(null)
   const startMs = useMemo(() => {
     if (!replay?.startedAt) return null
     const ms = Date.parse(replay.startedAt)
@@ -211,12 +215,26 @@ export function SessionReplay({
         )}
       </div>
 
-      {/* 时间轴刷子 */}
-      <ReplayScrubber
-        positions={positions}
+      {/* Canvas 时间轴 (滚轮缩放 / 拖曳平移 / window 双向同步) */}
+      <ReplayTimeline
+        events={filtered}
+        times={timePoints.times}
+        bounds={timePoints.bounds}
+        waitGaps={waitGaps}
         selectedIndex={selectedIndex}
+        visibleRange={visibleRange}
         onSelect={(index) => selectByIndex(index, true)}
-        ariaLabel={t('sessions.replay.scrubberLabel')}
+        onWindowDrag={(startMs) => {
+          const times = timePoints.times
+          for (let i = 0; i < times.length; i++) {
+            const t = times[i]
+            if (t != null && t >= startMs) {
+              listRef.current?.scrollToIndex({ index: i, align: 'start' })
+              return
+            }
+          }
+        }}
+        ariaLabel={t('sessions.replay.timelineLabel')}
         ariaValueText={
           selectedIndex >= 0
             ? `${selectedIndex + 1} / ${filtered.length} · ${formatReplayOffset(
@@ -251,6 +269,7 @@ export function SessionReplay({
               computeItemKey={(_, event) => event.id}
               defaultItemHeight={36}
               increaseViewportBy={{ top: 240, bottom: 240 }}
+              rangeChanged={(range) => setVisibleRange(range)}
               itemContent={(index, event) => (
                 <ReplayEventRow
                   event={event}

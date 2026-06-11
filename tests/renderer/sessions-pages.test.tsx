@@ -825,7 +825,7 @@ describe('session pages', () => {
     expect(await screen.findByRole('heading', { name: 'Fix session metadata' })).toBeInTheDocument()
     selectSessionDetailTab(/Replay/)
     expect(await screen.findByText('start working on the fix')).toBeInTheDocument()
-    expect(screen.getByTestId('replay-scrubber')).toBeInTheDocument()
+    expect(screen.getByTestId('replay-timeline')).toBeInTheDocument()
     expect(screen.queryByTestId('replay-detail-panel')).not.toBeInTheDocument()
 
     // 点选事件 → 详情面板出现, 原始 payload 按需取数并语法着色

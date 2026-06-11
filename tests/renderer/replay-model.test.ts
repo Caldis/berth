@@ -4,12 +4,10 @@ import {
   REPLAY_LANES,
   REPLAY_WAIT_THRESHOLD_MS,
   bucketReplayEvents,
-  buildReplayPositions,
   buildReplayTimePoints,
   computeWaitGaps,
   filterReplayEvents,
   formatReplayOffset,
-  nearestReplayIndex,
   nearestTimeIndex,
   panViewportBy,
   replayOffsetMs,
@@ -64,46 +62,6 @@ describe('replay offsets', () => {
     expect(formatReplayOffset(71 * 3600_000 + 49 * 60_000 + 57_000)).toBe('71:49:57')
     expect(formatReplayOffset(null)).toBe('—')
     expect(formatReplayOffset(-5)).toBe('0:00:00')
-  })
-})
-
-describe('scrubber positions', () => {
-  it('positions events proportionally between start and end timestamps', () => {
-    const events = [
-      event({ timestamp: '2026-06-11T01:00:00.000Z' }),
-      event({ timestamp: '2026-06-11T01:00:30.000Z' }),
-      event({ timestamp: '2026-06-11T01:01:00.000Z' })
-    ]
-    const positions = buildReplayPositions(events, '2026-06-11T01:00:00.000Z', '2026-06-11T01:01:00.000Z')
-    expect(positions).toEqual([0, 0.5, 1])
-  })
-
-  it('falls back to index-proportional spacing without usable timestamps', () => {
-    const events = [event({}), event({}), event({}), event({})]
-    expect(buildReplayPositions(events, null, null)).toEqual([0, 1 / 3, 2 / 3, 1])
-    expect(buildReplayPositions([event({})], null, null)).toEqual([0])
-    expect(buildReplayPositions([], null, null)).toEqual([])
-  })
-
-  it('clamps events outside the window and interpolates missing timestamps', () => {
-    const events = [
-      event({ timestamp: '2026-06-10T23:00:00.000Z' }), // before start → 0
-      event({ timestamp: null }), // no ts → index-proportional
-      event({ timestamp: '2026-06-11T02:00:00.000Z' }) // after end → 1
-    ]
-    const positions = buildReplayPositions(events, '2026-06-11T01:00:00.000Z', '2026-06-11T01:30:00.000Z')
-    expect(positions[0]).toBe(0)
-    expect(positions[1]).toBe(0.5)
-    expect(positions[2]).toBe(1)
-  })
-
-  it('finds the nearest event index for a track fraction', () => {
-    const positions = [0, 0.5, 1]
-    expect(nearestReplayIndex(positions, 0)).toBe(0)
-    expect(nearestReplayIndex(positions, 0.2)).toBe(0)
-    expect(nearestReplayIndex(positions, 0.3)).toBe(1)
-    expect(nearestReplayIndex(positions, 0.9)).toBe(2)
-    expect(nearestReplayIndex([], 0.5)).toBe(-1)
   })
 })
 

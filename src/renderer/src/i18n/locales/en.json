@@ -428,7 +428,7 @@
       "searchAriaLabel": "Search replay events",
       "showing": "{{shown}} / {{total}} events",
       "truncatedNotice": "Long session: showing the latest {{shown}} of {{total}} events",
-      "scrubberLabel": "Replay position",
+      "timelineLabel": "Replay timeline",
       "listLabel": "Replay events",
       "detailTitle": "Event detail",
       "closeDetail": "Close event detail",

@@ -422,7 +422,7 @@
       "searchAriaLabel": "搜索重放事件",
       "showing": "{{shown}} / {{total}} 条事件",
       "truncatedNotice": "长会话: 仅显示最近 {{shown}} / {{total}} 条事件",
-      "scrubberLabel": "重放进度",
+      "timelineLabel": "重放时间轴",
       "listLabel": "重放事件列表",
       "detailTitle": "事件详情",
       "closeDetail": "关闭事件详情",
