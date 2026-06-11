@@ -22,12 +22,14 @@ export function useMemory(): {
   loading: boolean
   /** True during a manual refresh while existing data stays on screen. */
   refreshing: boolean
+  error: string | null
   refresh: () => void
 } {
   const initialResult = memoryResource.peek()
   const [result, setResult] = useState<MemoryListResult>(initialResult ?? empty)
   const [loading, setLoading] = useState(initialResult === undefined)
   const [refreshing, setRefreshing] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const loadedRef = useRef(initialResult !== undefined)
   const mountedRef = useRef(false)
 
@@ -56,13 +58,19 @@ export function useMemory(): {
       setLoading(true)
       setRefreshing(false)
     }
+    setError(null)
 
     requestMemoryList()
       .then((value) => {
         if (!mountedRef.current) return
         setResult((current) => (current === value ? current : value))
+        setError(null)
       })
-      .catch(() => {})
+      .catch((err) => {
+        // GH-118: surface the failure (previous list is kept — SWR, no clear-screen).
+        if (!mountedRef.current) return
+        setError(err instanceof Error ? err.message : String(err))
+      })
       .finally(() => {
         if (!mountedRef.current) return
         loadedRef.current = true
@@ -83,6 +91,6 @@ export function useMemory(): {
     }
   }, [load])
 
-  return { result, loading, refreshing, refresh }
+  return { result, loading, refreshing, error, refresh }
 }
 

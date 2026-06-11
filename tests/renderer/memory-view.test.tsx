@@ -90,6 +90,7 @@ const memoryState = vi.hoisted(() => ({
   } as MemoryListResult,
   loading: false,
   refreshing: false,
+  error: null as string | null,
   refresh: vi.fn()
 }))
 
@@ -142,6 +143,7 @@ describe('MemoryView', () => {
     }
     memoryState.loading = false
     memoryState.refreshing = false
+    memoryState.error = null
     memoryState.refresh.mockClear()
     memoryVirtuosoMock.scrollToIndex.mockClear()
     useAppStore.getState().closeInspector()
@@ -149,6 +151,28 @@ describe('MemoryView', () => {
 
   afterEach(() => {
     vi.useRealTimers()
+  })
+
+  it('shows a full-view error state distinct from empty when load fails with no data (GH-118 T3)', () => {
+    memoryState.result = { notes: [], sources: [] }
+    memoryState.error = 'memory boom'
+
+    render(<MemoryView />)
+
+    expect(screen.getByText('Memories could not be loaded')).toBeInTheDocument()
+    expect(screen.queryByText('No memories yet')).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Retry' }))
+    expect(memoryState.refresh).toHaveBeenCalledTimes(1)
+  })
+
+  it('keeps the loaded list visible with a compact error banner on refresh failure (GH-118 T3)', () => {
+    memoryState.error = 'refresh boom'
+
+    render(<MemoryView />)
+
+    expect(screen.getByText('Memories could not be loaded')).toBeInTheDocument()
+    expect(screen.getByText('Missing note')).toBeInTheDocument()
   })
 
   it('shows a missing-file state and hides file actions for missing notes', () => {

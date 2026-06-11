@@ -20,6 +20,7 @@ import { cn, truncatePath, formatOptionalRelativeTime } from '@/lib/utils'
 import { Input, Chip } from '@/components/ui'
 import { useMemory } from '@/hooks/use-memory'
 import { EmptyState, PAGE_EMPTY_FILL } from '@/components/shared/empty-state'
+import { ErrorState } from '@/components/shared/error-state'
 import { usePageChrome, type PageChromeConfig } from '@/components/layout/page-chrome'
 import { FileViewerButton } from '@/components/shared/file-viewer-button'
 import { instructionGuideMap, type FeatureGuideEvidence } from '@/lib/feature-guidance'
@@ -663,7 +664,7 @@ function buildMemoryGroups(notes: readonly MemoryNote[]): VirtualListGroup<Memor
 
 export function MemoryView(): React.ReactElement {
   const { t } = useTranslation()
-  const { result, loading, refreshing, refresh } = useMemory()
+  const { result, loading, refreshing, error, refresh } = useMemory()
   const [activeSource, setActiveSource] = useState('all')
   const [search, setSearch] = useState('')
   const [importanceFilter, setImportanceFilter] = useState<string>('all')
@@ -797,8 +798,20 @@ export function MemoryView(): React.ReactElement {
     )
   }
 
+  // GH-118 T3: load failure with nothing to show — full-view error, distinct from EmptyState.
+  if (error && result.notes.length === 0 && result.sources.length === 0) {
+    return (
+      <div className={cn('flex flex-col', PAGE_EMPTY_FILL)}>
+        <ErrorState fullHeight title={t('memory.loadErrorTitle')} onRetry={refresh} />
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-3">
+      {error && (
+        <ErrorState title={t('memory.loadErrorTitle')} onRetry={refresh} />
+      )}
       <SourceFilter sources={result.sources} active={activeSource} total={result.notes.length} onChange={setActiveSource} />
       <div className="space-y-2">
         <FilterGroup

@@ -1771,6 +1771,7 @@
   },
   "memory": {
     "allSources": "All sources",
+    "loadErrorTitle": "Memories could not be loaded",
     "searchPlaceholder": "Search memories...",
     "groupNavigation": "Memory groups",
     "refresh": "Refresh",

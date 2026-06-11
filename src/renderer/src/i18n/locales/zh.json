@@ -1761,6 +1761,7 @@
   },
   "memory": {
     "allSources": "全部来源",
+    "loadErrorTitle": "记忆加载失败",
     "searchPlaceholder": "搜索记忆…",
     "groupNavigation": "记忆分组",
     "refresh": "刷新",
