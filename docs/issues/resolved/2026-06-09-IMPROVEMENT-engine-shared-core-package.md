@@ -14,7 +14,17 @@
 
 # 来源 · 关联
 - 架构图绘制任务 (2026-06-09)。关联 2026-06-09-IMPROVEMENT-architecture-doc-drift.md、2026-06-09-IMPROVEMENT-asset-runtime-collaborators-split.md。
-- 状态: OPEN。
+
+# 终态 (2026-06-12, RESOLVED — 主体全兑现, GH-121)
+- **物理迁包完成** (docs/works/_archive/2026-06-12-gh-121-engine-shared-core-package, 提交 638bf1f6/aaa581e0/dbb1abf9/8afb5be5): engine 27 + adapters 21 + agent-plugins/{adapter-registry,manifest} + 4 根级中立件 + shared 12 = **66 文件**物理位于 `packages/berth-scan-engine/src/` (实际闭包远超本 issue 估的 30 — adapters 全量与 manifest 当时漏算)。
+- **分层倒置消灭**: src/main 经 `@berth/scan-engine/<path>` 源码 alias 正向消费; CLI engine-bridge 包内相对; `packages/**` 对 src 反向引用 grep 归零; `../../../` 全清。
+- **typecheck 盲区根治且自证**: 包 tsconfig exclude 三文件 (cli/cli-bin/engine-bridge) 清空, root tsconfig.node include 纳管包源码 — 迁移过程中 root typecheck 当场抓到 bridge 断链 (以前静默) 即生效证明。
+- **行为零变更**: 等价钉测 + 全量 1050 双轮 + 包 24 (CLI E2E golden) + e2e + dev 冷启动端到端 (401 资产/双 agent/sessions/memory) + CI 含包三步 success。
+- **残项去向** (均非本 issue 主体, 不留尾账):
+  - adapter scanAll 接 sources 表、conventions 双表收敛、session 解析 capability map 契约化 → 链 ② (asset-runtime-collaborators-split) 同窗处理, ARCHITECTURE 例外清单在册;
+  - memory splitFrontmatter ×2 收敛 → 独立小批 (characterization 已钉, 方向 = memory 消费包导出 markdown 工具, 正向);
+  - tsup publishConfig/桶导出/exports 子路径发布形态 → 链 ② 收口时一并 (源码 alias 消费态下无急迫);
+  - watcher resolveClaudeManagedDir 中立化、project-scope-runtime 归位 (R33) → 同包/留 main 消费者定位后已弱化, 链 ② explore 复核。
 
 # 追记 (GH-115 前置已铺, 2026-06-10)
 - T8: adapters↔agent-plugins 唯一值依赖环已解 (descriptor 数据下沉 adapter 侧); AgentAdapter 3 死方法已删。
