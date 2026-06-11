@@ -124,6 +124,24 @@ describe('overview redesign', () => {
     expect(screen.queryAllByText('Nothing here yet')).toHaveLength(0)
   })
 
+  it('surfaces a health load failure as an inline error state with retry (GH-118 T2)', async () => {
+    window.api.assets.healthCheck = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('health boom'))
+      .mockResolvedValue([])
+
+    renderOverview()
+
+    expect(await screen.findByText('Health checks could not be loaded')).toBeInTheDocument()
+    expect(screen.getByText('Health Checks')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Retry' }))
+
+    expect(await screen.findByText('No health checks need attention')).toBeInTheDocument()
+    expect(screen.queryByText('Health checks could not be loaded')).not.toBeInTheDocument()
+    expect(window.api.assets.healthCheck).toHaveBeenCalledTimes(2)
+  })
+
   it('surfaces a usage load failure as an inline error state with retry (GH-118 T1)', async () => {
     window.api.usage.summary = vi
       .fn()

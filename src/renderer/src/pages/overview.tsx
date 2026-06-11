@@ -57,7 +57,7 @@ export function Overview(): React.ReactElement {
   const stats = allStats
   const { sessions, loading: sessionsLoading } = useSessions({ limit: 5, projectPath })
   const { usage, loading: usageLoading, error: usageError, reload: reloadUsage } = useUsageSummary(7, undefined, projectPath)
-  const { checks, loading: healthLoading, stale: healthStale } = useHealthChecks()
+  const { checks, loading: healthLoading, stale: healthStale, error: healthError, refresh: refreshHealth } = useHealthChecks()
   const [copiedFixId, setCopiedFixId] = useState<string | null>(null)
   const [ignoredHealthChecks, setIgnoredHealthChecks] = useState<Set<string>>(() => readIgnoredHealthChecks())
   const visibleChecks = useMemo(
@@ -198,6 +198,8 @@ export function Overview(): React.ReactElement {
           loading={healthLoading}
           summary={healthSummary}
           copiedFixId={copiedFixId}
+          error={healthError}
+          onRetry={() => refreshHealth({ force: false })}
           onActivate={activateHealthCheck}
           onCopyFixSnippet={copyFixSnippet}
           onIgnore={ignoreCheck}
@@ -431,6 +433,8 @@ function HealthWorklistPanel({
   loading,
   summary,
   copiedFixId,
+  error,
+  onRetry,
   onActivate,
   onCopyFixSnippet,
   onIgnore
@@ -439,6 +443,8 @@ function HealthWorklistPanel({
   loading: boolean
   summary: HealthSummary
   copiedFixId: string | null
+  error?: string | null
+  onRetry?: () => void
   onActivate: (check: HealthCheck) => void
   onCopyFixSnippet: (event: React.MouseEvent, check: HealthCheck, snippet: string) => void
   onIgnore: (event: React.MouseEvent, check: HealthCheck) => void
@@ -459,6 +465,10 @@ function HealthWorklistPanel({
             {t('overview.healthSummary.loading')}
           </div>
           <SkeletonRows count={2} compact />
+        </div>
+      ) : error && !hasChecks ? (
+        <div className="p-4">
+          <ErrorState title={t('overview.healthErrorTitle')} onRetry={onRetry} />
         </div>
       ) : !hasChecks ? (
         <div className="p-4">

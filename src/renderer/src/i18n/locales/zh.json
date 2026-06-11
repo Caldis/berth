@@ -162,6 +162,7 @@
     "recentSessions": "最近会话",
     "costLast7Days": "近 7 天费用",
     "healthChecks": "健康检查",
+    "healthErrorTitle": "健康检查加载失败",
     "loadingAssets": "正在加载资产指标",
     "loadingUsage": "正在加载用量图表",
     "scope": {

@@ -424,6 +424,7 @@ export function useHealthChecks(): {
   loading: boolean
   stale: boolean
   lastCheckedAt: string | null
+  error: string | null
   refresh: (opts?: { force?: boolean }) => void
 } {
   const cached = healthResource.peek()
@@ -432,6 +433,7 @@ export function useHealthChecks(): {
   const [loading, setLoading] = useState(cached === undefined)
   const [stale, setStale] = useState(false)
   const [lastCheckedAt, setLastCheckedAt] = useState<string | null>(cached?.lastCheckedAt ?? null)
+  const [error, setError] = useState<string | null>(null)
 
   const refresh = useCallback((opts: { force?: boolean } = {}) => {
     if (!window.api?.assets?.healthCheck) {
@@ -446,14 +448,21 @@ export function useHealthChecks(): {
     }
     setLoading(true)
     setStale(previous !== undefined)
+    setError(null)
     requestHealthChecks(opts.force === true)
       .then((snapshot) => {
         if (!mountedRef.current) return
         setChecks(snapshot.checks)
         setLastCheckedAt(snapshot.lastCheckedAt)
         setStale(false)
+        setError(null)
       })
-      .catch(() => {})
+      .catch((err) => {
+        // GH-118: surface the failure and reset stale (previous checks are kept — SWR).
+        if (!mountedRef.current) return
+        setError(err instanceof Error ? err.message : String(err))
+        setStale(false)
+      })
       .finally(() => {
         if (!mountedRef.current) return
         setLoading(false)
@@ -483,7 +492,7 @@ export function useHealthChecks(): {
     }
   }, [refresh])
 
-  return { checks, loading, stale, lastCheckedAt, refresh }
+  return { checks, loading, stale, lastCheckedAt, error, refresh }
 }
 
 export function useAgentCapabilityPlugins(): {

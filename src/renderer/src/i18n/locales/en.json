@@ -164,6 +164,7 @@
     "recentSessions": "Recent Sessions",
     "costLast7Days": "Cost (last 7 days)",
     "healthChecks": "Health Checks",
+    "healthErrorTitle": "Health checks could not be loaded",
     "loadingAssets": "Loading asset metrics",
     "loadingUsage": "Loading usage chart",
     "scope": {
