@@ -2,7 +2,7 @@
 task: 2026-06-11-gh-119-electron-window-hardening
 task_id: GH-119
 type: maintenance
-phase: explore
+phase: design
 created: 2026-06-11
 priority: P1
 target_date: 
@@ -21,8 +21,8 @@ debt:
     risk: medium
     areas:
       - architecture
-    confidence: low
-    rationale: "0.0-new 初始估算: url-guard 单点新模块小幅复杂度 (+1), 消灭 sandbox 回退/出口直通/导航裸奔/权限全放行分散风险 (-4); sandbox:true 涉 preload 打包与 renderer 行为, scope cross-process, 真机验证前 risk medium。explore/design 后校准。"
+    confidence: medium
+    rationale: "explore 校准 (2026-06-11): 六缺口全部代码实勘 + 官方契约确认 (sandboxed preload require 白名单 + electron-vite bundle 解法 + preload 产物已 CJS); 两处输入修正 (openPath 实为 showItemInFolder; permission 合法集合非空, 须放行 clipboard-sanitized-write)。数值维持 incurred 1 / repaid 4 / net -3。"
   final:
     incurred:
     repaid:
@@ -32,7 +32,12 @@ debt:
     areas: []
     confidence:
     rationale:
-  revisions: []
+  revisions:
+    - phase: explore
+      date: 2026-06-11
+      from: "confidence low"
+      to: "confidence medium"
+      reason: "六缺口实勘 + 官方契约确认; 数值与 scope/risk 维持不变。"
 issue:
   number: 119
   repo: Caldis/berth
@@ -62,7 +67,7 @@ defense-in-depth 一批落地: sandbox:true + preload exclude 打包、`main/url
 
 ## 产物
 - [x] 00-PRD.md — 原始输入快照 (来源 issue 全文)
-- [ ] 01-ANALYSIS.md — Explore 产物
+- [x] 01-ANALYSIS.md — Explore 产物 (六缺口实勘 + 官方契约 + AC1-9)
 - [ ] 02-SPEC.md — Design 产物
 - [ ] 03-PLAN.md — 活任务清单
 - [ ] 04-POLISH.md — 可选抛光记录
