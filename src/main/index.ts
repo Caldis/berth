@@ -1,4 +1,4 @@
-import { app, BrowserWindow, dialog, shell } from 'electron'
+import { app, BrowserWindow, dialog, session, shell } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { registerAllHandlers } from './ipc'
@@ -11,6 +11,7 @@ import { resolveDefaultProjectDir } from './project-dir'
 import { configureAgentDevProfile, shouldRequestSingleInstanceLock } from './dev-instance'
 import { shouldAutoOpenDevTools } from './devtools'
 import { createLogWriter, getMainLog, setMainLogWriter } from './log'
+import { isAllowedPermission, isSafeExternalUrl } from './url-guard'
 import appIcon from '../../assets/icon/app_icon.png?asset'
 
 // GH-115 T5: 进程级兜底 — 打包应用 (无终端) 的故障此前零痕迹。日志仅落
@@ -61,7 +62,10 @@ function createWindow(options: CreateWindowOptions = {}): BrowserWindow {
       : {}),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
-      sandbox: false,
+      // GH-119: preload is pure contextBridge+ipcRenderer and ships with
+      // @electron-toolkit/preload bundled (electron.vite.config preload
+      // exclude), so the Electron 20+ default sandbox applies cleanly.
+      sandbox: true,
       contextIsolation: true,
       nodeIntegration: false
     }
@@ -84,8 +88,37 @@ function createWindow(options: CreateWindowOptions = {}): BrowserWindow {
   })
 
   mainWindow.webContents.setWindowOpenHandler((details) => {
-    shell.openExternal(details.url)
+    if (isSafeExternalUrl(details.url)) {
+      setImmediate(() => {
+        void shell.openExternal(details.url)
+      })
+    } else {
+      getMainLog().log('url-guard', `denied window-open: ${details.url}`)
+    }
     return { action: 'deny' }
+  })
+
+  // GH-119: MemoryRouter does no real navigation, so no legitimate top-level
+  // navigation exists in prod — block everything (a dropped file would
+  // otherwise replace the SPA with file:// content). Dev allows same-origin
+  // only: vite's full reload goes through will-navigate via location.reload().
+  const devOrigin =
+    is.dev && process.env['ELECTRON_RENDERER_URL']
+      ? new URL(process.env['ELECTRON_RENDERER_URL']).origin
+      : null
+  mainWindow.webContents.on('will-navigate', (event, navigationUrl) => {
+    let allowed = false
+    if (devOrigin) {
+      try {
+        allowed = new URL(navigationUrl).origin === devOrigin
+      } catch {
+        allowed = false
+      }
+    }
+    if (!allowed) {
+      event.preventDefault()
+      getMainLog().log('url-guard', `denied navigation: ${navigationUrl}`)
+    }
   })
 
   if (options.openDevTools) {
@@ -142,6 +175,19 @@ if (!gotTheLock) {
     })
 
     registerAllHandlers()
+
+    // GH-119: deny-all permission policy except the explicit allow-list
+    // (clipboard-sanitized-write backs the renderer copy buttons). Request and
+    // check handlers share one predicate so query/request never disagree; the
+    // check handler stays silent (synchronous, potentially hot path).
+    session.defaultSession.setPermissionRequestHandler((_webContents, permission, callback) => {
+      const allowed = isAllowedPermission(permission)
+      if (!allowed) getMainLog().log('url-guard', `denied permission request: ${permission}`)
+      callback(allowed)
+    })
+    session.defaultSession.setPermissionCheckHandler((_webContents, permission) => {
+      return isAllowedPermission(permission)
+    })
 
     // Initialize the asset engine
     const projectDir = resolveDefaultProjectDir({ isDev: is.dev, cwd: process.cwd() })

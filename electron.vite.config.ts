@@ -20,7 +20,9 @@ export default defineConfig({
     }
   },
   preload: {
-    plugins: [externalizeDepsPlugin()]
+    // GH-119: sandboxed preload can only require Electron's polyfilled module
+    // subset — @electron-toolkit/preload must be bundled into the output.
+    plugins: [externalizeDepsPlugin({ exclude: ['@electron-toolkit/preload'] })]
   },
   renderer: {
     resolve: {

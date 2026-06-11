@@ -13,7 +13,7 @@
   - tests: T1 单测覆盖判定; 聚合为薄 IO 并集无分支, 例外理由见 02-SPEC 测试策略表; `pnpm test` 全量回归 (memory 模块测试不破坏)。
   - verify: typecheck/lint/test 绿; handler 签名 void 不变 (preload/renderer 零改动确认)。
 
-- [ ] T3 窗口装配: sandbox:true + preload exclude + window-open/will-navigate/permission (AC-1/4/5/6 装配层)
+- [x] T3 窗口装配: sandbox:true + preload exclude + window-open/will-navigate/permission (AC-1/4/5/6 装配层) — DONE: e2e 20/21 绿 (sandbox 链路全过); 唯 1 败 project-scope.e2e 为预先存在的 win32 宿主隔离缺口 (stash baseline 双侧同失败复证非本任务回归, GH-117 决策已知限制), 记 docs/issues/2026-06-11-IMPROVEMENT-e2e-win32-host-isolation.md; typecheck/lint 过
   - 内容: electron.vite.config.ts preload `externalizeDepsPlugin({ exclude: ['@electron-toolkit/preload'] })`; index.ts `sandbox: true`; setWindowOpenHandler 接 isSafeExternalUrl + setImmediate (官方模式) + 拒绝 log; createWindow 内挂 will-navigate (dev 同 origin 放行 / 其余 preventDefault + log); whenReady 挂 session.defaultSession 双 permission handler (request+check 共用 isAllowedPermission)。
   - tests: `pnpm build` 后 `pnpm test:e2e` 现有 7 个全量 — sandbox 链路回归网 (AC-1 核心证据)。
   - verify: e2e 全绿; dev 模式 `pnpm dev` 启动正常 + window.api 可用。
