@@ -187,6 +187,13 @@ describe('Codex session replay parser', () => {
 
     expect(patch.toolName).toBe('apply_patch')
     expect(patch.status).toBe('success')
+
+    // turn_aborted is the codex user-interrupt shape — flagged for the replay timeline
+    const [taskStarted, turnAborted, compacted] = events.slice(8)
+    expect(taskStarted.interrupted).toBeUndefined()
+    expect(turnAborted.interrupted).toBe(true)
+    expect(turnAborted.summary).toContain('user interrupt')
+    expect(compacted.interrupted).toBeUndefined()
   })
 
   it('marks failed tool outputs as error on both sides', () => {

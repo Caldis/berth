@@ -198,6 +198,36 @@ describe('Claude session replay parser', () => {
     expect(events[1].summary).toBe('File does not exist')
   })
 
+  it('flags user-interrupt records (Esc) in both scalar and block content shapes', () => {
+    const filePath = writeTranscript([
+      JSON.stringify({
+        type: 'user',
+        timestamp: '2026-06-11T05:00:00.000Z',
+        message: { role: 'user', content: 'keep going' }
+      }),
+      JSON.stringify({
+        type: 'user',
+        timestamp: '2026-06-11T05:00:05.000Z',
+        message: { role: 'user', content: '[Request interrupted by user]' }
+      }),
+      JSON.stringify({
+        type: 'user',
+        timestamp: '2026-06-11T05:00:10.000Z',
+        message: {
+          role: 'user',
+          content: [{ type: 'text', text: '[Request interrupted by user for tool use]' }]
+        }
+      })
+    ])
+
+    const events = parseClaudeSessionReplay(filePath)
+
+    expect(events.map((e) => e.kind)).toEqual(['user', 'user', 'user'])
+    expect(events[0].interrupted).toBeUndefined()
+    expect(events[1].interrupted).toBe(true)
+    expect(events[2].interrupted).toBe(true)
+  })
+
   it('returns an empty list for unreadable transcripts', () => {
     expect(parseClaudeSessionReplay(path.join(os.tmpdir(), 'berth-missing', 'nope.jsonl'))).toEqual([])
   })

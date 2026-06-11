@@ -250,6 +250,8 @@ export interface SessionReplayEvent {
   tokens?: SessionReplayTokens
   /** Claude isSidechain — event originated in a subagent thread. */
   sidechain?: boolean
+  /** User interrupt (Claude `[Request interrupted by user…]` / Codex `turn_aborted`); set only when true. */
+  interrupted?: boolean
 }
 
 export interface SessionReplayResult {

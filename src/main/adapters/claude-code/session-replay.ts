@@ -93,7 +93,14 @@ export function parseClaudeSessionReplay(filePath: string): SessionReplayEvent[]
 
     if (type === 'user' && typeof content === 'string') {
       if (!content.trim()) continue
-      events.push({ id: nextId(), kind: 'user', timestamp, summary: replaySummary(content), sidechain })
+      events.push({
+        id: nextId(),
+        kind: 'user',
+        timestamp,
+        summary: replaySummary(content),
+        sidechain,
+        interrupted: isUserInterruptText(content) || undefined
+      })
       continue
     }
 
@@ -107,7 +114,14 @@ export function parseClaudeSessionReplay(filePath: string): SessionReplayEvent[]
         if (blockType === 'text') {
           const text = readString(block, 'text')
           if (text?.trim()) {
-            events.push({ id: nextId(), kind: 'user', timestamp, summary: replaySummary(text), sidechain })
+            events.push({
+              id: nextId(),
+              kind: 'user',
+              timestamp,
+              summary: replaySummary(text),
+              sidechain,
+              interrupted: isUserInterruptText(text) || undefined
+            })
           }
         } else if (blockType === 'tool_result') {
           const callId = readString(block, 'tool_use_id')
@@ -187,6 +201,11 @@ export function parseClaudeSessionReplay(filePath: string): SessionReplayEvent[]
   }
 
   return events
+}
+
+/** Esc-interrupt marker Claude Code writes as a user record (empirical, no public contract). */
+function isUserInterruptText(text: string): boolean {
+  return text.trimStart().startsWith('[Request interrupted by user')
 }
 
 function toolResultText(block: Record<string, unknown>): string {

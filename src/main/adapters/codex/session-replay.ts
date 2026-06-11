@@ -101,7 +101,8 @@ export function parseCodexSessionReplay(filePath: string): SessionReplayEvent[] 
           id: nextId(),
           kind: 'system',
           timestamp,
-          summary: replaySummary(reason ? `${payloadType}: ${reason}` : payloadType)
+          summary: replaySummary(reason ? `${payloadType}: ${reason}` : payloadType),
+          interrupted: payloadType === 'turn_aborted' || undefined
         })
       } else if (payloadType === 'hook_finished') {
         const hookEvent =
