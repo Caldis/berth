@@ -4,7 +4,7 @@ import * as os from 'os'
 import * as path from 'path'
 import { fileURLToPath } from 'url'
 import { runScan } from '../src/engine-bridge'
-import { resolveRelations } from '../../../src/main/engine/relations'
+import { resolveRelations } from '../src/engine/relations'
 
 const here = path.dirname(fileURLToPath(import.meta.url))
 const FIXTURE_SRC = path.resolve(here, '../fixtures/e2e')

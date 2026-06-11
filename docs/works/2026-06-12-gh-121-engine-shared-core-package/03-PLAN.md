@@ -13,7 +13,7 @@
   - tests: not needed - 纯平移+说明符改写; 证据 = 等价钉测 + `pnpm test` 全量双轮 + `pnpm build` + `pnpm test:e2e` (win32 已知项口径同 GH-119) + typecheck (首次纳管包源码)。
   - verify: AC-1 (src/main 内闭包目录消失) + AC-6 (grep 零旧路径 import) + 门禁全绿; 非 UI 不适用。
 
-- [ ] B3 CLI 归位 + 盲区根治 (AC-2/3)
+- [x] B3 CLI 归位 + 盲区根治 (AC-2/3) — DONE: 包 tsconfig exclude 三项清空 (cli/cli-bin/engine-bridge 首次全覆盖 typecheck 即绿, 注: bridge scanner 行已在 B2 被 root typecheck 强制提前); **偏差**: 包 tests/plugin-relations.test.ts 还有 1 处反向 import (explore 只查包 src 漏包 tests) 改包内相对; AC-2 归零 grep=0 实证; 包三连绿 (typecheck / tsup build / 5 文件 24 测含 CLI E2E golden)
   - 内容: engine-bridge.ts `../../../src/*` ×4 → 包内 `./engine/scanner` + `@shared/*`; 包 tsconfig exclude 清空 cli.ts/cli-bin.ts/engine-bridge.ts 三项; `pnpm --filter @berth/scan-engine build && test && typecheck` 三绿。
   - tests: not needed - CLI E2E golden 网既有 (fixtures 快照); exclude 清空后 typecheck 首次全覆盖三文件即 AC-3 证据。
   - verify: AC-2 (packages/** 零 `../../../src` — grep 实证) + AC-3 (exclude 清空 + root `pnpm typecheck` 含包) + 包三命令绿; 非 UI 不适用。
