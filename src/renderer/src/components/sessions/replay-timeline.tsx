@@ -388,7 +388,11 @@ export function ReplayTimeline({
   }, [markDirty])
 
   useEffect(() => () => {
+    // StrictMode 双挂载: 取消后必须复位 id, 否则 markDirty 的去重分支
+    // (`if (rafRef.current) return`) 在二次挂载后永远短路, 时间轴永不绘制。
     if (rafRef.current && typeof cancelAnimationFrame === 'function') cancelAnimationFrame(rafRef.current)
+    rafRef.current = 0
+    dirtyRef.current = true
   }, [])
 
   // wheel 缩放必须 non-passive 才能 preventDefault (React onWheel 不行)

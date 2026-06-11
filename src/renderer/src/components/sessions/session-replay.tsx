@@ -21,6 +21,7 @@ import { ReplayKindChip } from './replay-kind-chip'
 import { ReplayKindFilter } from './replay-kind-filter'
 import { ReplayTimeline } from './replay-timeline'
 import {
+  PanelResizeHandle,
   REPLAY_PANEL_MAX_WIDTH,
   REPLAY_PANEL_MIN_WIDTH,
   ReplayDetailPanel,
@@ -312,9 +313,12 @@ export function SessionReplay({
         }
       />
 
-      {/* 事件流 + 详情面板 (relative: 面板全屏态的覆盖基准) */}
+      {/* 事件流 + 详情面板 (relative: 面板全屏态的覆盖基准; lg+ 两栏间由拖宽分隔条充当间距) */}
       <div
-        className="relative flex min-h-[420px] gap-3 max-lg:flex-col lg:h-[calc(100vh-21rem)]"
+        className={cn(
+          'relative flex min-h-[420px] max-lg:flex-col lg:h-[calc(100vh-21rem)]',
+          selectedEvent && !panelExpanded ? 'max-lg:gap-3 lg:gap-0' : 'gap-3'
+        )}
         style={{ '--replay-panel-w': `${panelWidth}px` } as React.CSSProperties}
       >
         {filtered.length === 0 ? (
@@ -355,6 +359,9 @@ export function SessionReplay({
           </div>
         )}
 
+        {selectedEvent && !panelExpanded && (
+          <PanelResizeHandle width={panelWidth} onResize={handlePanelResize} className="max-lg:hidden" />
+        )}
         {selectedEvent && (
           <ReplayDetailPanel
             event={selectedEvent}
@@ -363,8 +370,6 @@ export function SessionReplay({
             onClose={() => setViewState({ selectedEventId: null })}
             expanded={panelExpanded}
             onToggleExpanded={() => setPanelExpanded((value) => !value)}
-            width={panelWidth}
-            onResize={handlePanelResize}
             onExportEvent={handleExportEvent}
             onExportStream={handleExportStream}
             className={cn(

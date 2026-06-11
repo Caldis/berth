@@ -52,9 +52,6 @@ interface ReplayDetailPanelProps {
   /** 全屏态 (覆盖整个重放区域); 由父组件持有。 */
   expanded: boolean
   onToggleExpanded: () => void
-  /** 当前面板宽度 (px, lg+ 生效); aria 与键盘步进基准。 */
-  width: number
-  onResize: (width: number) => void
   /** 导出当前事件原始 JSON (payload ready 时可用)。 */
   onExportEvent: () => void
   /** 导出筛选后事件流摘要。 */
@@ -62,25 +59,24 @@ interface ReplayDetailPanelProps {
   className?: string
 }
 
-export function ReplayDetailPanel({
-  event,
-  offsetMs,
-  payload,
-  onClose,
-  expanded,
-  onToggleExpanded,
+/**
+ * 列表与详情面板之间的拖宽分隔条 (lg+; GH-120 AC7)。
+ * 居中可见 indicator; 键盘 ←/→ ±16px (← = 面板变宽)。
+ */
+export function PanelResizeHandle({
   width,
   onResize,
-  onExportEvent,
-  onExportStream,
   className
-}: ReplayDetailPanelProps): React.ReactElement {
+}: {
+  width: number
+  onResize: (width: number) => void
+  className?: string
+}): React.ReactElement {
   const { t } = useTranslation()
   const dragRef = useRef<{ startX: number; startWidth: number } | null>(null)
 
-  const handleResizeKeyDown = useCallback(
+  const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLDivElement>): void => {
-      // 手柄在面板左缘: ← 把分隔线向左推 = 面板变宽
       if (e.key === 'ArrowLeft') {
         e.preventDefault()
         onResize(width + RESIZE_KEY_STEP)
@@ -92,7 +88,7 @@ export function ReplayDetailPanel({
     [onResize, width]
   )
 
-  const handleResizePointerDown = useCallback(
+  const handlePointerDown = useCallback(
     (e: React.PointerEvent<HTMLDivElement>): void => {
       dragRef.current = { startX: e.clientX, startWidth: width }
       e.currentTarget.setPointerCapture?.(e.pointerId)
@@ -100,7 +96,7 @@ export function ReplayDetailPanel({
     [width]
   )
 
-  const handleResizePointerMove = useCallback(
+  const handlePointerMove = useCallback(
     (e: React.PointerEvent<HTMLDivElement>): void => {
       const drag = dragRef.current
       if (!drag) return
@@ -109,9 +105,53 @@ export function ReplayDetailPanel({
     [onResize]
   )
 
-  const stopResize = useCallback((): void => {
+  const stopDrag = useCallback((): void => {
     dragRef.current = null
   }, [])
+
+  return (
+    <div
+      role="separator"
+      tabIndex={0}
+      aria-orientation="vertical"
+      aria-label={t('sessions.replay.detailResize')}
+      aria-valuenow={Math.round(width)}
+      aria-valuemin={REPLAY_PANEL_MIN_WIDTH}
+      aria-valuemax={REPLAY_PANEL_MAX_WIDTH}
+      onKeyDown={handleKeyDown}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={stopDrag}
+      onPointerCancel={stopDrag}
+      className={cn(
+        'group flex w-3 shrink-0 cursor-col-resize touch-none select-none items-center justify-center',
+        'focus-visible:outline-none',
+        className
+      )}
+    >
+      <span
+        aria-hidden="true"
+        className={cn(
+          'h-10 w-1 rounded-full bg-border transition-colors',
+          'group-hover:bg-primary/60 group-active:bg-primary group-focus-visible:bg-primary'
+        )}
+      />
+    </div>
+  )
+}
+
+export function ReplayDetailPanel({
+  event,
+  offsetMs,
+  payload,
+  onClose,
+  expanded,
+  onToggleExpanded,
+  onExportEvent,
+  onExportStream,
+  className
+}: ReplayDetailPanelProps): React.ReactElement {
+  const { t } = useTranslation()
 
   const handlePanelKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLElement>): void => {
@@ -130,27 +170,6 @@ export function ReplayDetailPanel({
       onKeyDown={handlePanelKeyDown}
       className={cn('relative flex min-h-0 flex-col rounded-xl border border-border bg-card', className)}
     >
-      <div
-        role="separator"
-        tabIndex={0}
-        aria-orientation="vertical"
-        aria-label={t('sessions.replay.detailResize')}
-        aria-valuenow={Math.round(width)}
-        aria-valuemin={REPLAY_PANEL_MIN_WIDTH}
-        aria-valuemax={REPLAY_PANEL_MAX_WIDTH}
-        onKeyDown={handleResizeKeyDown}
-        onPointerDown={handleResizePointerDown}
-        onPointerMove={handleResizePointerMove}
-        onPointerUp={stopResize}
-        onPointerCancel={stopResize}
-        className={cn(
-          'absolute -left-1 top-0 z-10 h-full w-2 cursor-col-resize touch-none rounded-full',
-          'hover:bg-primary/25 focus-visible:bg-primary/25 focus-visible:outline-none',
-          'max-lg:hidden',
-          expanded && 'hidden'
-        )}
-      />
-
       <div className="flex items-center gap-2 border-b border-border px-3 py-2.5">
         <ReplayKindChip event={event} />
         {event.toolName && (

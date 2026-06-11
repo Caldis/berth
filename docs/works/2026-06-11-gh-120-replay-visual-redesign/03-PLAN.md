@@ -47,5 +47,10 @@
   - tests: 全量 pnpm test 双轮绿
   - verify: AC1-AC9 逐条核对; 界面验收: 02-SPEC 六行验收表全过; 主观视觉项整理截图供用户裁判 (INDEX phase→verify)
 
+## 用户实时反馈修正 (implement 期, 2026-06-12)
+
+- [x] F1 时间轴全白 (hover tips 正常) — 根因: React StrictMode 双挂载下 cleanup `cancelAnimationFrame` 后未复位 `rafRef.current`, markDirty 去重分支永久短路, draw 永不执行。修复: cleanup 复位 id + 置 dirty。CDP 真机探针定位 (size update 跑/draw enter 不跑) + 修复后 canvas 1476×96 38k 非透明像素确认。
+- [x] F2 拖宽锚点改两栏中间 + indicator — 手柄从面板左 border 的"虚空"热区 (absolute -left-1) 重构为列表与面板之间的独立 `PanelResizeHandle` 分隔条 (w-3 列 + 居中 h-10 w-1 圆条 indicator, hover/active/focus 变 primary); panel 卸下 width/onResize props; 测试迁移。真机布局确认。
+
 ## verify 回写
 verify 不通过项作为新任务追加于此, phase 退回 implement。

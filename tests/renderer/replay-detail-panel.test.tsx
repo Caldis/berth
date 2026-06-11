@@ -4,11 +4,12 @@ import { describe, expect, it, vi } from 'vitest'
 import '../../src/renderer/src/i18n'
 import type { SessionReplayEvent } from '@shared/types/ipc'
 import {
+  PanelResizeHandle,
   ReplayDetailPanel,
   type ReplayPayloadState
 } from '../../src/renderer/src/components/sessions/replay-detail-panel'
 
-// GH-120 AC7: 右侧面板 — 拖宽手柄 (separator + 键盘)、全屏 toggle + Esc、导出两档。
+// GH-120 AC7: 拖宽分隔条 (两栏之间, separator + indicator + 键盘)、全屏 toggle + Esc、导出两档。
 
 const EVENT: SessionReplayEvent = {
   id: 'L1B0',
@@ -19,12 +20,10 @@ const EVENT: SessionReplayEvent = {
 }
 
 function renderPanel(over: Partial<React.ComponentProps<typeof ReplayDetailPanel>> = {}): {
-  onResize: ReturnType<typeof vi.fn>
   onToggleExpanded: ReturnType<typeof vi.fn>
   onExportEvent: ReturnType<typeof vi.fn>
   onExportStream: ReturnType<typeof vi.fn>
 } {
-  const onResize = vi.fn()
   const onToggleExpanded = vi.fn()
   const onExportEvent = vi.fn()
   const onExportStream = vi.fn()
@@ -36,22 +35,28 @@ function renderPanel(over: Partial<React.ComponentProps<typeof ReplayDetailPanel
       onClose={() => {}}
       expanded={false}
       onToggleExpanded={onToggleExpanded}
-      width={400}
-      onResize={onResize}
       onExportEvent={onExportEvent}
       onExportStream={onExportStream}
       {...over}
     />
   )
-  return { onResize, onToggleExpanded, onExportEvent, onExportStream }
+  return { onToggleExpanded, onExportEvent, onExportStream }
 }
 
-describe('ReplayDetailPanel resize handle', () => {
-  it('exposes separator semantics and resizes with arrow keys (left = wider)', () => {
-    const { onResize } = renderPanel()
+describe('PanelResizeHandle', () => {
+  function renderHandle(): ReturnType<typeof vi.fn> {
+    const onResize = vi.fn()
+    render(<PanelResizeHandle width={400} onResize={onResize} />)
+    return onResize
+  }
+
+  it('exposes separator semantics, a visible indicator, and resizes with arrow keys (left = wider)', () => {
+    const onResize = renderHandle()
     const handle = screen.getByRole('separator', { name: 'Resize detail panel' })
     expect(handle).toHaveAttribute('aria-valuenow', '400')
     expect(handle).toHaveAttribute('aria-orientation', 'vertical')
+    // 居中可见 indicator (非虚空热区)
+    expect(handle.querySelector('span')).not.toBeNull()
 
     fireEvent.keyDown(handle, { key: 'ArrowLeft' })
     expect(onResize).toHaveBeenLastCalledWith(416)
@@ -59,8 +64,8 @@ describe('ReplayDetailPanel resize handle', () => {
     expect(onResize).toHaveBeenLastCalledWith(384)
   })
 
-  it('resizes by pointer drag from the left edge', () => {
-    const { onResize } = renderPanel()
+  it('resizes by pointer drag', () => {
+    const onResize = renderHandle()
     const handle = screen.getByRole('separator', { name: 'Resize detail panel' })
     handle.dispatchEvent(new MouseEvent('pointerdown', { clientX: 500, bubbles: true }))
     handle.dispatchEvent(new MouseEvent('pointermove', { clientX: 460, bubbles: true }))
