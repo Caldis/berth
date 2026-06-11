@@ -3,7 +3,7 @@
 从 02-SPEC 拆解。**全程顺序执行** (改动集中 index.ts/handlers.ts 强耦合, T2/T3 依赖 T1 谓词, T4 e2e 依赖 T3 装配齐; 不并行)。
 实现中若发现 debt 初估不准, 更新 INDEX.md `debt.estimate`, 并追加 `debt.revisions[]`。
 
-- [ ] T1 url-guard 纯模块 + 单测矩阵 (AC-2/3/6/8 判定层)
+- [x] T1 url-guard 纯模块 + 单测矩阵 (AC-2/3/6/8 判定层) — DONE: 29 测试绿 (协议 13/路径 9/权限 7), TDD 红→绿, isPathInside includeEqual 单调用 (samePath 冗余已简化); typecheck/lint 过
   - 内容: 新建 `src/main/url-guard.ts` (isSafeExternalUrl / isAllowedRevealPath / isAllowedPermission, 零 electron import, 复用 shared/path-utils isPathInside); 先写 `tests/unit/url-guard.test.ts` 红 → 实现绿 (TDD)。
   - tests: tests/unit/url-guard.test.ts — 协议矩阵 (http/https/mailto 放; file/javascript/data/smb/畸形/空/大小写 HTTPS/前后空格) + 路径矩阵 (根内/根本身 includeEqual/根外/.. 穿越/win32 大小写/空 roots) + 权限矩阵 (clipboard-sanitized-write 放; notifications/geolocation/media 拒)。
   - verify: `pnpm test -- url-guard` 绿; 文件零 electron import (AC-8)。非 UI 不适用界面验收。
