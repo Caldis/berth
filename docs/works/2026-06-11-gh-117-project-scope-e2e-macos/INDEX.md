@@ -2,7 +2,7 @@
 task: 2026-06-11-gh-117-project-scope-e2e-macos
 task_id: GH-117
 type: bug
-phase: implement
+phase: verify
 created: 2026-06-11
 priority: P1
 target_date:
