@@ -2,7 +2,7 @@
 task: 2026-06-11-gh-119-electron-window-hardening
 task_id: GH-119
 type: maintenance
-phase: design
+phase: implement
 created: 2026-06-11
 priority: P1
 target_date: 
@@ -68,8 +68,8 @@ defense-in-depth 一批落地: sandbox:true + preload exclude 打包、`main/url
 ## 产物
 - [x] 00-PRD.md — 原始输入快照 (来源 issue 全文)
 - [x] 01-ANALYSIS.md — Explore 产物 (六缺口实勘 + 官方契约 + AC1-9)
-- [ ] 02-SPEC.md — Design 产物
-- [ ] 03-PLAN.md — 活任务清单
+- [x] 02-SPEC.md — Design 产物 (纯谓词契约 + 装配契约 + 测试矩阵, Q1-Q3 消解)
+- [x] 03-PLAN.md — 活任务清单 (T1-T5 顺序执行)
 - [ ] 04-POLISH.md — 可选抛光记录
 
 ## 待澄清 (blocked 时填)
