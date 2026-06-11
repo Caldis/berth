@@ -22,3 +22,14 @@
 
 ## verify 回写
 verify 不通过项作为新任务追加于此, phase 退回 implement。
+
+### verify 记录 (2026-06-11, 全过)
+- **AC-1 ✅**: hooks 层 `catch(() => {})` 清零 (grep 复核: 全 renderer 仅剩 `settings-content.tsx:74` platform.info — 01-ANALYSIS 明确出范围的组件层降级); 4 hook 暴露 `error` + 重试入口, SWR 失败保留数据 (11 个错误分支测试断言)。
+- **AC-2 ✅**: app-layout 零数据全屏 (sidebar 保留) / 有数据紧凑横幅双形态; overview 用量/健康面板内嵌 ErrorState (卡片壳保留); memory-view 全页/列表头双形态且与 EmptyState 互斥 — 各有渲染断言 (app-layout×2 / overview×2 / memory-view×2)。
+- **AC-3 ✅**: useHealthChecks 失败 stale 复位 (health-error.test 两例断言)。
+- **AC-4 ✅**: 4 新 hook 测试文件 + 3 扩展渲染测试; 全量 988 双轮绿 (修复两处弱 waitFor race 后稳定)。
+- **AC-5 ✅**: en/zh key 全集对称校验 (en-only 仅既有 `_one` 复数后缀); 新增 4 key (common.assetsErrorTitle/Body, overview.healthErrorTitle, memory.loadErrorTitle) 双侧同义。
+- **AC-6 ✅**: 真机回归 — dev:agent 实例 CDP 走总览/记忆页, role=alert 计数 0, 数据完整渲染 (截图人工核验后清理); 错误态以 jsdom renderer 测试为证据 (CDP 不能 stub contextBridge)。
+- 机械门禁: prepush 全绿; CI 3a871d0 / c954c3f success; `harness:stats` debt 15 ok; `harness-projects check --strict` 全匹配。
+- 界面质量: 全部复用 ErrorState (GH-110 已验收视觉), 零新视觉语言; 三态 (loading/empty/error) 互斥边界有测试钉。
+- debt.final 已回填 (net -2, risk 校准 low)。

@@ -2,7 +2,7 @@
 task: 2026-06-11-gh-118-renderer-error-channels
 task_id: GH-118
 type: maintenance
-phase: verify
+phase: archive
 created: 2026-06-11
 priority: P2
 target_date:
@@ -24,14 +24,15 @@ debt:
     confidence: high
     rationale: "explore 实勘: 5 处吞错点/样板/消费面全部确认 (plugins 已先行修复出范围, usage.tsx 页面自有处理不属吞错); 改 2 hook 文件 + 4 消费端 + i18n + 测试, 多页渲染面故 risk medium。"
   final:
-    incurred:
-    repaid:
-    net:
-    scope:
-    risk:
-    areas: []
-    confidence:
-    rationale:
+    incurred: 1
+    repaid: 3
+    net: -2
+    scope: module
+    risk: low
+    areas:
+      - ui-ux
+    confidence: high
+    rationale: "hooks 层 5 处吞错全清零 (grep 复核仅剩范围外 settings platform.info 组件层降级); 4 hook error+重试 + 4 消费端条件形态 + stale 卡死修复, 11 个新错误分支测试 + 988 全量双轮绿 + 真机回归; risk 降 low (落地后多页渲染面实测无回归)。"
   revisions:
     - phase: 1.0-explore
       date: 2026-06-11
@@ -49,7 +50,7 @@ gh_project:
   project_number: 6
   project_url: https://github.com/users/Caldis/projects/6
   item_id: PVTI_lAHOADXbEs4BZHvQzgvaHvE
-  item_status: In Progress
+  item_status: Done
   project_id: PVT_kwHOADXbEs4BZHvQ
 artifacts:
   source: 00-PRD.md
