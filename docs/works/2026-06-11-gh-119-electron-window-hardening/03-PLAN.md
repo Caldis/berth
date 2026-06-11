@@ -18,7 +18,7 @@
   - tests: `pnpm build` 后 `pnpm test:e2e` 现有 7 个全量 — sandbox 链路回归网 (AC-1 核心证据)。
   - verify: e2e 全绿; dev 模式 `pnpm dev` 启动正常 + window.api 可用。
 
-- [ ] T4 CSP 三指令 + window-hardening e2e (AC-4/5/6/7 行为网)
+- [x] T4 CSP 三指令 + window-hardening e2e (AC-4/5/6/7 行为网) — DONE: CSP 追加 object-src/base-uri/form-action 'none'; 新 e2e 5/5 绿 (sandbox 直证 getLastWebPreferences 运行时窄化 cast — Electron 33 类型未导出 + will-navigate 拦截后 SPA 存活 + window.open(file://) 拒且窗口数不变 + geolocation query denied + CSP meta 三指令); typecheck/lint 过
   - 内容: index.html CSP 追加 `object-src 'none'; base-uri 'none'; form-action 'none'` (只增不改); 新建 tests/e2e/window-hardening.e2e.ts (复用 GH-117 launch helper): ①`location.href='https://example.com'` 赋值后 page.url() 仍为 file:// 入口 (will-navigate prod 拦截); ②`window.open('file:///...')` 后 app 窗口数不变 (AC-4); ③`navigator.permissions.query({name:'geolocation'})` → 'denied' (AC-6 deny 路径); ④document CSP meta 含三指令 (AC-7)。
   - tests: tests/e2e/window-hardening.e2e.ts (新) — `pnpm test:e2e`。
   - verify: 新 e2e 绿 + 现有 e2e 全量绿 + prod 加载零回归。
