@@ -2,7 +2,7 @@
 task: 2026-06-11-gh-120-replay-visual-redesign
 task_id: GH-120
 type: feature
-phase: explore
+phase: design
 created: 2026-06-11
 priority: P2
 target_date: 
@@ -19,8 +19,8 @@ debt:
     risk: medium
     areas:
       - ui-ux
-    confidence: low
-    rationale: "0.0-new 初始估算; 重放模块 UI 大改 + 新增 Canvas 时间轴组件 (缩放/拖曳/window 区域), 同时偿还现有筛选器/定位胶囊交互问题; explore/design 后校准。"
+    confidence: medium
+    rationale: "explore 核实: 影响面限 renderer sessions 模块 + lib/replay-model + 测试; 若 design 采纳 adapter 层中断标志则升 cross-process (加可选字段, 低风险)。估算维持 6/2/4。"
   final:
     incurred:
     repaid:
@@ -60,7 +60,7 @@ artifacts:
 
 ## 产物
 - [x] 00-PRD.md — 原始输入快照
-- [ ] 01-ANALYSIS.md — Explore 产物
+- [x] 01-ANALYSIS.md — Explore 产物
 - [ ] 02-SPEC.md — Design 产物
 - [ ] 03-PLAN.md — 活任务清单
 - [ ] 04-POLISH.md — 可选抛光记录
