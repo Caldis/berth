@@ -2,7 +2,7 @@
 task: 2026-06-11-gh-118-renderer-error-channels
 task_id: GH-118
 type: maintenance
-phase: explore
+phase: design
 created: 2026-06-11
 priority: P2
 target_date:
@@ -21,8 +21,8 @@ debt:
     risk: medium
     areas:
       - ui-ux
-    confidence: medium
-    rationale: "0.0-new 初始估算: 5 处吞错点按 GH-110 样板逐 hook 补 error 通道 (偿 GH-115 R13 残余); 改 4 个 hook 消费面涉及多页渲染故 risk medium; explore 后按消费面实情校准。"
+    confidence: high
+    rationale: "explore 实勘: 5 处吞错点/样板/消费面全部确认 (plugins 已先行修复出范围, usage.tsx 页面自有处理不属吞错); 改 2 hook 文件 + 4 消费端 + i18n + 测试, 多页渲染面故 risk medium。"
   final:
     incurred:
     repaid:
@@ -32,7 +32,12 @@ debt:
     areas: []
     confidence:
     rationale:
-  revisions: []
+  revisions:
+    - phase: 1.0-explore
+      date: 2026-06-11
+      from: "confidence medium"
+      to: "confidence high"
+      reason: "吞错点终表实勘 (行号/内容漂移修正: plugins 已先行修复, useUsageSummary 顶替进表); 样板三件套 (useSessions/ErrorState/session-error.test) 与消费面 (app-layout/overview/memory-view/hooks-lifecycle-view) 全部确认。"
 issue:
   number: 118
   repo: Caldis/berth
@@ -59,7 +64,7 @@ artifacts:
 
 ## 产物
 - [x] 00-PRD.md — 原始输入快照 (docs/issues/2026-06-10-IMPROVEMENT-renderer-swallowed-error-channels.md)
-- [ ] 01-ANALYSIS.md — Explore 产物
+- [x] 01-ANALYSIS.md — Explore 产物 (吞错点终表 5 处实勘 + 样板/消费面/blast radius + AC-1~6)
 - [ ] 02-SPEC.md — Design 产物
 - [ ] 03-PLAN.md — 活任务清单
 
