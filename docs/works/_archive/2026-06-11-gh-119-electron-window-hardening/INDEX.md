@@ -2,7 +2,7 @@
 task: 2026-06-11-gh-119-electron-window-hardening
 task_id: GH-119
 type: maintenance
-phase: verify
+phase: archive
 created: 2026-06-11
 priority: P1
 target_date: 
@@ -24,20 +24,26 @@ debt:
     confidence: medium
     rationale: "explore 校准 (2026-06-11): 六缺口全部代码实勘 + 官方契约确认 (sandboxed preload require 白名单 + electron-vite bundle 解法 + preload 产物已 CJS); 两处输入修正 (openPath 实为 showItemInFolder; permission 合法集合非空, 须放行 clipboard-sanitized-write)。数值维持 incurred 1 / repaid 4 / net -3。"
   final:
-    incurred:
-    repaid:
-    net:
-    scope:
-    risk:
-    areas: []
-    confidence:
-    rationale:
+    incurred: 1
+    repaid: 4
+    net: -3
+    scope: cross-process
+    risk: low
+    areas:
+      - architecture
+    confidence: high
+    rationale: "verify 收口 (2026-06-11): 六缺口全消 (sandbox:true/出口双白名单/导航守卫/权限 deny-all 例外 clipboard/CSP 三指令), 判定层 29 unit + 行为层 hardening e2e 5 + 现有 e2e 回归 + CDP 真机 12 项 (含三方并集三分支端到端) 全绿; CI success。剩余风险仅 win32 e2e 宿主隔离预存项 (独立 issue, 非本任务引入)。"
   revisions:
     - phase: explore
       date: 2026-06-11
       from: "confidence low"
       to: "confidence medium"
       reason: "六缺口实勘 + 官方契约确认; 数值与 scope/risk 维持不变。"
+    - phase: verify
+      date: 2026-06-11
+      from: "risk medium / confidence medium"
+      to: "risk low / confidence high"
+      reason: "全 AC 自动化+真机闭环 (unit/e2e/CDP 三层), sandbox 链路经 25 e2e + dev 实例双形态实证; 数值不变。"
 issue:
   number: 119
   repo: Caldis/berth
@@ -49,7 +55,7 @@ gh_project:
   project_number: 6
   project_url: https://github.com/users/Caldis/projects/6
   item_id: PVTI_lAHOADXbEs4BZHvQzgvcfLI
-  item_status: In Progress
+  item_status: Done
   project_id: PVT_kwHOADXbEs4BZHvQ
 artifacts:
   source: 00-PRD.md
