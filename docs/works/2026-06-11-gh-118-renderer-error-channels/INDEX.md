@@ -2,7 +2,7 @@
 task: 2026-06-11-gh-118-renderer-error-channels
 task_id: GH-118
 type: maintenance
-phase: implement
+phase: verify
 created: 2026-06-11
 priority: P2
 target_date:
