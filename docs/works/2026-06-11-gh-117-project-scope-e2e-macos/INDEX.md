@@ -2,7 +2,7 @@
 task: 2026-06-11-gh-117-project-scope-e2e-macos
 task_id: GH-117
 type: bug
-phase: design
+phase: implement
 created: 2026-06-11
 priority: P1
 target_date:
@@ -63,8 +63,8 @@ artifacts:
 ## 产物
 - [x] 00-BUG.md — 原始输入快照 (docs/issues/2026-06-08-BUG-project-scope-e2e-macos.md)
 - [x] 01-ANALYSIS.md — Explore 产物 (根因实证: e2e fixture 未隔离 HOME, 宿主数据污染; 非产品 bug)
-- [ ] 02-SPEC.md — Design 产物
-- [ ] 03-PLAN.md — 活任务清单
+- [x] 02-SPEC.md — Design 产物 (共享 launch helper 统一隔离; win 保守不动; 断言不放宽)
+- [x] 03-PLAN.md — 活任务清单 (T1 helper → T2 project-scope → T3 其余 5 文件 → T4 推送 CI)
 
 ## 背景速览
 - `tests/e2e/project-scope.e2e.ts` 在 macOS 稳定失败 (trigger 停 `Global`, 重试 7 次), Windows 本地与 CI 绿; 当前被 `test.skip(darwin)` 跳过 (project-scope.e2e.ts:12), macOS「切到 session 派生 project」路径零 e2e 覆盖。
