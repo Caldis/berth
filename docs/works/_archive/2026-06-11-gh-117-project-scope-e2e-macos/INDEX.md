@@ -2,7 +2,7 @@
 task: 2026-06-11-gh-117-project-scope-e2e-macos
 task_id: GH-117
 type: bug
-phase: verify
+phase: archive
 created: 2026-06-11
 priority: P1
 target_date:
@@ -22,14 +22,15 @@ debt:
     confidence: high
     rationale: "explore 定性: e2e fixture 未隔离 HOME 致宿主数据污染 (activate 10s > 断言 5s), 非产品 bug; 产品零改动, 移除 skip + 6 文件隔离偿还覆盖洞与宿主依赖。"
   final:
-    incurred:
-    repaid:
-    net:
-    scope:
-    risk:
-    areas: []
-    confidence:
-    rationale:
+    incurred: 1
+    repaid: 2
+    net: -1
+    scope: module
+    risk: low
+    areas:
+      - testability
+    confidence: high
+    rationale: "最终 diff 全部在 tests/e2e (helper +47 行, 6 文件接入净 -28 行); 移除 darwin skip 偿还 macOS 覆盖洞, 三隔离根根除全部 e2e 宿主数据依赖; 双轮全量 e2e 绿 + CI 绿, 无残余风险。"
   revisions:
     - phase: 1.0-explore
       date: 2026-06-11
@@ -47,7 +48,7 @@ gh_project:
   project_number: 6
   project_url: https://github.com/users/Caldis/projects/6
   item_id: PVTI_lAHOADXbEs4BZHvQzgvZNMI
-  item_status: In Progress
+  item_status: Done
   project_id: PVT_kwHOADXbEs4BZHvQ
 artifacts:
   source: 00-BUG.md

@@ -20,3 +20,13 @@
 
 ## verify 回写
 verify 不通过项作为新任务追加于此, phase 退回 implement。
+
+### verify 记录 (2026-06-11, 全过)
+- **AC-1 ✅**: skip 已移除 (commit 88acd48); macOS 本地 project-scope e2e 三轮绿 (4.5s / 2.2s / 复跑套内), 断言零放宽零延时。
+- **AC-2 ✅**: 6/6 文件接入 `launch.ts` 三隔离根 (158517d / 88acd48 / 65f8c79); app.e2e 补齐 CODEX_HOME。
+- **AC-3 ✅**: option 计数=3 隔离生效断言已入 project-scope (修复前实测 16 项宿主泄入, 该断言能拦截隔离回退)。
+- **AC-4 ✅**: macOS 全量 e2e 双轮 18 passed + 3 win-only skip (28.8s / 14.5s); CI (Windows) 65f8c79 success (CI#27329776394)。
+- **AC-5 → archive 硬项**: issue 移 resolved 随 5.0-archive 执行。
+- 机械门禁: prepush 全绿 (lint/typecheck/test 974/harness:check/baseline); `harness:stats` debt 17 ok; `harness-projects check --strict` 全匹配。
+- 前端验收: 不适用 (产品零改动; explore 探针 B 已实证 ProjectScopeSwitcher 交互正确)。
+- debt.final 已回填 (net -1, 与 estimate 一致)。

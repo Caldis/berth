@@ -19,4 +19,11 @@
 # 解决方案
 - 待根因。方向: ① 用 trace 看点击 `app` option 后 setProjectDir/setScope 是否触发、scope state 是否更新; ② 核对 macOS 上 session 派生 project 的项目名/路径识别 (POSIX vs Windows path) 是否产出可点击的 `app` option; ③ 若是 e2e harness 时序, 加等待条件而非放宽断言。
 - 关联: work `docs/works/2026-06-07-gh-113-scope-refactor-convergence/`; friction `20260608-3.0-implement-e2e-build-artifact-stale-platform-baseline`; 既有 friction `20260606-3.0-implement-scope-filter-broke-search-e2e` (同测试, 当时是改动引起, 本次是平台引起)。
-- 状态: OPEN。
+
+# 解决记录 (2026-06-11, GH-117)
+- **根因 (三重实证, 非产品 bug / 非 macOS 平台差异)**: e2e fixture 只隔离 CODEX_HOME 未隔离 HOME, berth 经 `os.homedir()` 扫到宿主真实 `~/.claude`; 本机 (主力开发机) 数据量下 `activate` 全量重扫 10047ms + snapshot 93ms > 断言 5s 窗口 → 稳定超时。点击事件本身 36ms 即命中 (探针时间线), 产品 IPC 链路全绿 (探针直通), HOME 隔离后同序列 133ms (78 倍差)。Windows 绿只因其 home 干净 — 真实变量是宿主数据量, 不是平台。
+- **修复**: 新建 `tests/e2e/launch.ts` 共享 helper (user-data/codex-home/home 三隔离根, POSIX 经 `HOME` env 接管 `os.homedir()`; win32 保守不动并注释言明), 6 个 e2e 全部接入 (app.e2e 顺带补齐 CODEX_HOME 缺失隔离); 移除 `test.skip(darwin)`; 新增 option 计数=3 隔离生效断言。断言零放宽零延时。
+- **验证**: macOS 本地全量 e2e 双轮 18 passed (28.8s / 14.5s); CI (Windows) success。关联 commit: 158517d (T1 helper) / 88acd48 (T2 project-scope+去 skip) / 65f8c79 (T3 其余 5 文件)。
+- 旁支: activate 全量重扫 10s 的真实用户性能问题已追记 `2026-06-07-FEATURE-background-progressive-asset-indexer.md` (GH-117 追记段)。
+- 归档: `docs/works/_archive/2026-06-11-gh-117-project-scope-e2e-macos/` (GitHub Issue #117)。
+- 状态: RESOLVED (2026-06-11)。
