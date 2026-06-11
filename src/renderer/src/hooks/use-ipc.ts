@@ -373,16 +373,24 @@ export function useSessionReplay(id: string): {
 export function useUsageSummary(days: number, agentView?: AgentView, projectPath?: string): {
   usage: UsageSummary | null
   loading: boolean
+  error: string | null
+  reload: () => void
 } {
   const [usage, setUsage] = useState<UsageSummary | null>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [reloadNonce, setReloadNonce] = useState(0)
+
+  const reload = useCallback(() => setReloadNonce((n) => n + 1), [])
 
   useEffect(() => {
     if (!window.api?.usage?.summary) {
       setLoading(false)
       return
     }
+    let cancelled = false
     setLoading(true)
+    setError(null)
     const request = {
       days,
       agentView,
@@ -391,13 +399,24 @@ export function useUsageSummary(days: number, agentView?: AgentView, projectPath
     window.api.usage
       .summary(request)
       .then((result) => {
+        if (cancelled) return
         setUsage(result ?? null)
+        setError(null)
       })
-      .catch(() => {})
-      .finally(() => setLoading(false))
-  }, [days, agentView, projectPath])
+      .catch((err) => {
+        // GH-118: surface the failure (previous summary is kept — SWR, no clear-screen).
+        if (cancelled) return
+        setError(err instanceof Error ? err.message : String(err))
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [days, agentView, projectPath, reloadNonce])
 
-  return { usage, loading }
+  return { usage, loading, error, reload }
 }
 
 export function useHealthChecks(): {

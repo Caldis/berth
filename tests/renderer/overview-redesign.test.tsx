@@ -123,6 +123,26 @@ describe('overview redesign', () => {
     expect(screen.getByText('No health checks need attention')).toBeInTheDocument()
     expect(screen.queryAllByText('Nothing here yet')).toHaveLength(0)
   })
+
+  it('surfaces a usage load failure as an inline error state with retry (GH-118 T1)', async () => {
+    window.api.usage.summary = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('usage boom'))
+      .mockResolvedValue(emptyUsage)
+
+    renderOverview()
+
+    expect(await screen.findByText('Usage data could not be loaded')).toBeInTheDocument()
+    expect(screen.getAllByRole('alert').length).toBeGreaterThan(0)
+    // The panel shell (title) stays in place — only the content area swaps.
+    expect(screen.getByText('Cost (last 7 days)')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Retry' }))
+
+    expect(await screen.findByText('No usage recorded for the last 7 days')).toBeInTheDocument()
+    expect(screen.queryAllByRole('alert')).toHaveLength(0)
+    expect(window.api.usage.summary).toHaveBeenCalledTimes(2)
+  })
 })
 
 function renderOverview(): void {

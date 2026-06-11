@@ -31,6 +31,7 @@ import {
   localizeHealthCheckScope
 } from '@/lib/health-check-i18n'
 import { EmptyState } from '@/components/shared/empty-state'
+import { ErrorState } from '@/components/shared/error-state'
 import type { HealthCheck } from '@shared/types/ipc'
 import { TokenUsageDisplay } from '@/components/shared/token-usage-display'
 import { CostSourceBadge } from '@/components/shared/cost-source-badge'
@@ -55,7 +56,7 @@ export function Overview(): React.ReactElement {
   const projectPath = projectPathForScope(scopeSelection)
   const stats = allStats
   const { sessions, loading: sessionsLoading } = useSessions({ limit: 5, projectPath })
-  const { usage, loading: usageLoading } = useUsageSummary(7, undefined, projectPath)
+  const { usage, loading: usageLoading, error: usageError, reload: reloadUsage } = useUsageSummary(7, undefined, projectPath)
   const { checks, loading: healthLoading, stale: healthStale } = useHealthChecks()
   const [copiedFixId, setCopiedFixId] = useState<string | null>(null)
   const [ignoredHealthChecks, setIgnoredHealthChecks] = useState<Set<string>>(() => readIgnoredHealthChecks())
@@ -188,6 +189,8 @@ export function Overview(): React.ReactElement {
             loading={usageLoading}
             source={overviewCostSource}
             totalCost={totalCost}
+            error={usageError}
+            onRetry={reloadUsage}
           />
         </div>
         <HealthWorklistPanel
@@ -339,13 +342,17 @@ function UsageSnapshotPanel({
   hasKnownCost,
   loading,
   source,
-  totalCost
+  totalCost,
+  error,
+  onRetry
 }: {
   dailyCosts: Array<{ date: string; cost: number }>
   hasKnownCost: boolean
   loading: boolean
   source: Parameters<typeof CostSourceBadge>[0]['source']
   totalCost: number
+  error?: string | null
+  onRetry?: () => void
 }): React.ReactElement {
   const { t } = useTranslation()
 
@@ -365,6 +372,10 @@ function UsageSnapshotPanel({
       {loading ? (
         <div className="p-4">
           <div aria-label={t('overview.loadingUsage')} className="h-[180px] animate-pulse rounded-lg bg-muted/40" />
+        </div>
+      ) : error && dailyCosts.length === 0 ? (
+        <div className="p-4">
+          <ErrorState title={t('usage.loadErrorTitle')} onRetry={onRetry} />
         </div>
       ) : dailyCosts.length === 0 ? (
         <div className="p-4">
