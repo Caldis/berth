@@ -3,12 +3,27 @@ import type {
   MemoryNote,
   MemorySourceStatus
 } from '@shared/types/memory'
+import * as path from 'path'
 import type { MemorySource } from './types'
-import { UnitedMemorySource } from './sources/united-memory'
+import { UnitedMemorySource, defaultUnitedMemoryRoot } from './sources/united-memory'
 import { ClaudeNativeSource } from './sources/claude-native'
+import { resolveClaudeDirs } from '../agent-homes'
 
 function buildSources(projectDir?: string): MemorySource[] {
   return [new UnitedMemorySource(), new ClaudeNativeSource(projectDir)]
+}
+
+/**
+ * Roots memory notes may live under — consumed by the shell reveal-path guard
+ * (GH-119). ~/.united-memory is NOT an adapter scan root, so without this the
+ * memory page's "show in explorer" would be denied; the claude projects roots
+ * are covered by the ~/.claude scan root and listed redundantly for clarity.
+ */
+export function getMemoryRoots(): string[] {
+  return [
+    defaultUnitedMemoryRoot(),
+    ...resolveClaudeDirs().map((dir) => path.join(dir, 'projects'))
+  ]
 }
 
 /**

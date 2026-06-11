@@ -23,7 +23,9 @@ import { getAssetRuntime } from '../engine/assets/runtime'
 import { setHookEnabled } from '../engine/hooks-manager'
 import { buildSessionDetail } from '../engine/session-detail'
 import { buildSessionReplay, readSessionReplayEventPayload } from '../engine/session-replay'
-import { listMemory, readMemory } from '../memory'
+import { getMemoryRoots, listMemory, readMemory } from '../memory'
+import { isAllowedRevealPath, isSafeExternalUrl } from '../url-guard'
+import { getMainLog } from '../log'
 import { listAgentTeams, markLeadSessionAvailability } from '../agent-teams'
 import { listAgentCapabilityPlugins } from '../agent-plugins/registry'
 import { activateProjectScope } from '../project-scope-runtime'
@@ -77,11 +79,35 @@ export function registerSystemHandlers(): void {
     nativeTheme.themeSource = theme
   })
 
-  ipcMain.handle('shell:openPath', (_event, p: string) => {
+  // GH-119: reveal targets must stay inside known roots — adapter scan roots
+  // (incl. missing/not-scanned candidates) ∪ memory roots ∪ active project dir.
+  // Collected per call: the set follows project switches with no cache to
+  // invalidate, and the click frequency makes the cost irrelevant.
+  async function collectAllowedRevealRoots(): Promise<string[]> {
+    const runtime = getAssetRuntime()
+    const groups = await runtime.getScanSourceGroups()
+    const roots = groups.flatMap((group) =>
+      [...group.roots, ...(group.sources ?? [])].map((source) => source.path)
+    )
+    const projectDir = runtime.getSnapshot().projectDir
+    if (projectDir) roots.push(projectDir)
+    roots.push(...getMemoryRoots())
+    return roots
+  }
+
+  ipcMain.handle('shell:openPath', async (_event, p: string) => {
+    if (!isAllowedRevealPath(p, await collectAllowedRevealRoots())) {
+      getMainLog().log('url-guard', `denied reveal-path: ${p}`)
+      return
+    }
     shell.showItemInFolder(p)
   })
 
   ipcMain.handle('shell:openExternal', (_event, url: string) => {
+    if (!isSafeExternalUrl(url)) {
+      getMainLog().log('url-guard', `denied external-url: ${url}`)
+      return
+    }
     shell.openExternal(url)
   })
 }

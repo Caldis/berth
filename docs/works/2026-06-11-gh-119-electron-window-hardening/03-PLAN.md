@@ -8,7 +8,7 @@
   - tests: tests/unit/url-guard.test.ts — 协议矩阵 (http/https/mailto 放; file/javascript/data/smb/畸形/空/大小写 HTTPS/前后空格) + 路径矩阵 (根内/根本身 includeEqual/根外/.. 穿越/win32 大小写/空 roots) + 权限矩阵 (clipboard-sanitized-write 放; notifications/geolocation/media 拒)。
   - verify: `pnpm test -- url-guard` 绿; 文件零 electron import (AC-8)。非 UI 不适用界面验收。
 
-- [ ] T2 shell handler 接谓词 + allowedRoots 聚合 + memory 根导出 (AC-2/3 接线层)
+- [x] T2 shell handler 接谓词 + allowedRoots 聚合 + memory 根导出 (AC-2/3 接线层) — DONE: defaultUnitedMemoryRoot/getMemoryRoots 导出 + collectAllowedRevealRoots 三方并集 (groups roots∪sources + projectDir + memoryRoots, 每次现取) + 两 handler 拒绝即 return + log('url-guard'); 签名 void 不变; typecheck/lint/全量 1016 测试绿
   - 内容: united-memory.ts 增 `defaultUnitedMemoryRoot()` (构造函数共用); memory/index.ts 增 `getMemoryRoots()`; handlers.ts 增私有 `collectAllowedRevealRoots()` (scanSourceGroups ∪ snapshot.projectDir ∪ memoryRoots, 每次现取); `shell:openExternal`/`shell:openPath` 接谓词, 拒绝不执行 + `getMainLog().log('url-guard', ...)`。
   - tests: T1 单测覆盖判定; 聚合为薄 IO 并集无分支, 例外理由见 02-SPEC 测试策略表; `pnpm test` 全量回归 (memory 模块测试不破坏)。
   - verify: typecheck/lint/test 绿; handler 签名 void 不变 (preload/renderer 零改动确认)。

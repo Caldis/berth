@@ -199,6 +199,11 @@ export function parseUnitedNote(mdString: string, localId: string): MemoryNote {
   }
 }
 
+/** Default on-disk root, shared with the reveal-path guard (GH-119). */
+export function defaultUnitedMemoryRoot(): string {
+  return path.join(os.homedir(), '.united-memory')
+}
+
 /**
  * united-memory source: reads ~/.united-memory. List from index.json; detail
  * reads mem/<id>.md on demand. Read-only.
@@ -210,7 +215,7 @@ export class UnitedMemorySource implements MemorySource {
   private cachedIndexNotes: MemoryNote[] | null | undefined
 
   constructor(root?: string) {
-    this.root = root ?? path.join(os.homedir(), '.united-memory')
+    this.root = root ?? defaultUnitedMemoryRoot()
   }
 
   private get indexPath(): string {
