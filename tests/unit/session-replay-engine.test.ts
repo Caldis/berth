@@ -6,7 +6,7 @@ import type { Asset } from '@shared/types/asset'
 import {
   buildSessionReplay,
   readSessionReplayEventPayload
-} from '../../src/main/engine/session-replay'
+} from '@berth/scan-engine/engine/session-replay'
 
 let tempDir: string | null = null
 

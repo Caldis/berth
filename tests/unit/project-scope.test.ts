@@ -4,7 +4,7 @@ import {
   assetMatchesProjectPath,
   filterAssetsByProjectPath,
   projectScopeCandidatesFromAssets
-} from '../../src/main/project-scope'
+} from '@berth/scan-engine/project-scope'
 
 function sessionAsset(id: string, projectPath: string, extra: Record<string, unknown> = {}): Asset {
   return {

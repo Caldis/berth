@@ -3,7 +3,7 @@ import * as fs from 'fs'
 import * as os from 'os'
 import * as path from 'path'
 import type { WatchEvent } from '@shared/types/asset'
-import { applyWatchEvent, type WatchableRuntime } from '../../src/main/engine/assets/watch-wiring'
+import { applyWatchEvent, type WatchableRuntime } from '@berth/scan-engine/engine/assets/watch-wiring'
 
 // GH-113 I1: the watcher wiring routes a file change to an incremental snapshot
 // fold (supported types) or a full refresh (everything else). Real fixtures back

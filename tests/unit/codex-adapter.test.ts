@@ -13,7 +13,7 @@ vi.mock('os', async (importOriginal) => {
   }
 })
 
-import { CodexAdapter } from '../../src/main/adapters/codex'
+import { CodexAdapter } from '@berth/scan-engine/adapters/codex'
 
 let tempDir: string | null = null
 

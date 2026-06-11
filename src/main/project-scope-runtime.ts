@@ -1,7 +1,7 @@
 import type { ProjectScopeActivationResult } from '@shared/types/ipc'
 import { normalizeProjectPath, sameProjectPath } from '@shared/scope'
-import { getAssetRuntime } from './engine/assets/runtime'
-import { getWatcher } from './engine/watcher'
+import { getAssetRuntime } from '@berth/scan-engine/engine/assets/runtime'
+import { getWatcher } from '@berth/scan-engine/engine/watcher'
 
 interface WatcherRuntime {
   restart: (projectDir?: string) => Promise<void>

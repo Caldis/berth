@@ -2,7 +2,7 @@ import * as fs from 'fs'
 import * as os from 'os'
 import * as path from 'path'
 import { afterEach, describe, expect, it } from 'vitest'
-import { parseCodexSessionReplay } from '../../src/main/adapters/codex/session-replay'
+import { parseCodexSessionReplay } from '@berth/scan-engine/adapters/codex/session-replay'
 
 let tempDir: string | null = null
 

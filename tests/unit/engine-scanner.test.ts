@@ -36,7 +36,7 @@ const mocks = vi.hoisted(() => ({
   ])
 }))
 
-vi.mock('../../src/main/adapters/claude-code', () => ({
+vi.mock('@berth/scan-engine/adapters/claude-code', () => ({
   ClaudeCodeAdapter: class {
     id = 'claude-code'
     displayName = 'Claude Code'
@@ -46,7 +46,7 @@ vi.mock('../../src/main/adapters/claude-code', () => ({
   }
 }))
 
-vi.mock('../../src/main/adapters/codex', () => ({
+vi.mock('@berth/scan-engine/adapters/codex', () => ({
   CodexAdapter: class {
     id = 'codex'
     displayName = 'Codex'
@@ -56,12 +56,12 @@ vi.mock('../../src/main/adapters/codex', () => ({
   }
 }))
 
-vi.mock('../../src/main/agent-plugins/manifest', async (importActual) => ({
-  ...(await importActual<typeof import('../../src/main/agent-plugins/manifest')>()),
+vi.mock('@berth/scan-engine/agent-plugins/manifest', async (importActual) => ({
+  ...(await importActual<typeof import('@berth/scan-engine/agent-plugins/manifest')>()),
   loadAgentPluginManifests: vi.fn(() => [])
 }))
 
-import { AssetScanner } from '../../src/main/engine/scanner'
+import { AssetScanner } from '@berth/scan-engine/engine/scanner'
 
 describe('AssetScanner', () => {
   beforeEach(() => {

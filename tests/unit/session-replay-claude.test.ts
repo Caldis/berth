@@ -2,7 +2,7 @@ import * as fs from 'fs'
 import * as os from 'os'
 import * as path from 'path'
 import { afterEach, describe, expect, it } from 'vitest'
-import { parseClaudeSessionReplay } from '../../src/main/adapters/claude-code/session-replay'
+import { parseClaudeSessionReplay } from '@berth/scan-engine/adapters/claude-code/session-replay'
 import { replayEventLineIndex, replaySummary } from '@shared/session-replay'
 
 let tempDir: string | null = null

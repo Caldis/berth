@@ -8,7 +8,7 @@ import {
   createSqliteSnapshotStore,
   type SqliteDatabase,
   type SqliteStatement
-} from '../../src/main/engine/assets/sqlite-snapshot-store'
+} from '@berth/scan-engine/engine/assets/sqlite-snapshot-store'
 
 // GH-113 I3: row-level SQLite backend for the asset snapshot. better-sqlite3
 // ships an Electron-ABI prebuilt .node that the test host (system Node) cannot

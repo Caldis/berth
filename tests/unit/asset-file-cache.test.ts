@@ -2,7 +2,7 @@ import * as fs from 'fs'
 import * as os from 'os'
 import * as path from 'path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { AssetFileCache, fingerprintFile } from '../../src/main/engine/assets/file-cache'
+import { AssetFileCache, fingerprintFile } from '@berth/scan-engine/engine/assets/file-cache'
 
 let tempDir: string | null = null
 

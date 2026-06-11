@@ -21,8 +21,8 @@ import {
   parseEnv,
   parseStatuslinesFromSettings,
   parseOutputMode
-} from '../../src/main/adapters/claude-code/parsers'
-import { parseCodexAgentsMd, parseCodexSkill } from '../../src/main/adapters/codex/parsers'
+} from '@berth/scan-engine/adapters/claude-code/parsers'
+import { parseCodexAgentsMd, parseCodexSkill } from '@berth/scan-engine/adapters/codex/parsers'
 import { assetEntityId, dedupePathKey } from '@shared/asset-dedupe'
 import { normalizeProjectPathKey } from '@shared/scope'
 

@@ -13,7 +13,7 @@ vi.mock('os', async (importOriginal) => {
   }
 })
 
-import { ClaudeCodeAdapter } from '../../src/main/adapters/claude-code'
+import { ClaudeCodeAdapter } from '@berth/scan-engine/adapters/claude-code'
 
 let tempDir: string | null = null
 

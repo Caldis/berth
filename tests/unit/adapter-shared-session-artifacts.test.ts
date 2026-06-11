@@ -3,7 +3,7 @@ import {
   extractPaths,
   parseMcpToolName,
   upsertFile
-} from '../../src/main/adapters/_shared/session-artifacts'
+} from '@berth/scan-engine/adapters/_shared/session-artifacts'
 import type { SessionArtifactFile } from '@shared/types/ipc'
 
 describe('extractPaths (shared)', () => {

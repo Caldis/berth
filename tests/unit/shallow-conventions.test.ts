@@ -3,8 +3,8 @@ import * as fs from 'fs'
 import * as os from 'os'
 import * as path from 'path'
 import type { Asset } from '@shared/types/asset'
-import { scanProjectCapabilities, scanShallowConventions } from '../../src/main/engine/shallow-conventions'
-import { AssetFileCache } from '../../src/main/engine/assets/file-cache'
+import { scanProjectCapabilities, scanShallowConventions } from '@berth/scan-engine/engine/shallow-conventions'
+import { AssetFileCache } from '@berth/scan-engine/engine/assets/file-cache'
 import { dedupePathKey } from '@shared/asset-dedupe'
 
 // GH-113 T3b: the global scope shows every session-derived project's ROOT

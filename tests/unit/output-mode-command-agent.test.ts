@@ -2,7 +2,7 @@ import * as fs from 'fs'
 import * as os from 'os'
 import * as path from 'path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { scanInstructions, type ScanContext } from '../../src/main/adapters/claude-code/scanner'
+import { scanInstructions, type ScanContext } from '@berth/scan-engine/adapters/claude-code/scanner'
 import type { Asset } from '@shared/types/asset'
 
 /**

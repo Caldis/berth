@@ -3,8 +3,8 @@ import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'fs'
 import { join } from 'path'
 import { tmpdir } from 'os'
 import { buildHookHash, buildHookScenarioHash } from '@shared/hook-identity'
-import { scanCapabilities, scanInstructions, scanState } from '../../src/main/adapters/claude-code/scanner'
-import { parseHooks, parseStatuslinesFromSettings } from '../../src/main/adapters/claude-code/parsers'
+import { scanCapabilities, scanInstructions, scanState } from '@berth/scan-engine/adapters/claude-code/scanner'
+import { parseHooks, parseStatuslinesFromSettings } from '@berth/scan-engine/adapters/claude-code/parsers'
 
 let root: string | null = null
 

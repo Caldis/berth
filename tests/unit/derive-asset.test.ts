@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import * as fs from 'fs'
 import * as os from 'os'
 import * as path from 'path'
-import { deriveAssetsForPath } from '../../src/main/engine/assets/derive-asset'
+import { deriveAssetsForPath } from '@berth/scan-engine/engine/assets/derive-asset'
 import { dedupePathKey } from '@shared/asset-dedupe'
 
 // GH-113 I1: re-derive a single changed file's assets so the watcher can replace

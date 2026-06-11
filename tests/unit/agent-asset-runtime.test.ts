@@ -1,13 +1,13 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { Asset, AssetStats } from '@shared/types/asset'
 import type { AgentScanSourceGroup, AssetSnapshot, ScanResult } from '@shared/types/ipc'
-import { AgentAssetRuntime, type AssetRuntimeScanner } from '../../src/main/engine/assets/runtime'
+import { AgentAssetRuntime, type AssetRuntimeScanner } from '@berth/scan-engine/engine/assets/runtime'
 import { createProjectScopeCandidate, normalizeProjectPathKey } from '@shared/scope'
-import { runHealthChecks } from '../../src/main/engine/health'
+import { runHealthChecks } from '@berth/scan-engine/engine/health'
 
 // GH-113 T3: health is device-wide. Mock the checker so we can capture which assets
 // it receives and prove scope selection never narrows them.
-vi.mock('../../src/main/engine/health', () => ({ runHealthChecks: vi.fn(() => []) }))
+vi.mock('@berth/scan-engine/engine/health', () => ({ runHealthChecks: vi.fn(() => []) }))
 
 const emptyStats: AssetStats = {
   skills: 0,

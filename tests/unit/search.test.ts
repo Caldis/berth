@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { AssetSearch } from '../../src/main/engine/search'
+import { AssetSearch } from '@berth/scan-engine/engine/search'
 import type { Asset, AssetCategory, AssetScope, AssetType } from '@shared/types/asset'
 
 function asset(

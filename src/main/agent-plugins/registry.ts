@@ -25,7 +25,7 @@ import type {
   ScanSourceStatus
 } from '@shared/types/asset'
 import { CLAUDE_SOURCE_DESCRIPTORS, CODEX_SOURCE_DESCRIPTORS } from './descriptors'
-import { loadAgentPluginManifests } from './manifest'
+import { loadAgentPluginManifests } from '@berth/scan-engine/agent-plugins/manifest'
 
 const PLUGIN_SCHEMA_VERSION = 1
 const BUILTIN_PLUGIN_VERSION = '0.1.0'

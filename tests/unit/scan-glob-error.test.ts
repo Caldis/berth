@@ -16,7 +16,7 @@ vi.mock('glob', () => ({
   }
 }))
 
-import { scanInstructions, type ScanContext } from '../../src/main/adapters/claude-code/scanner'
+import { scanInstructions, type ScanContext } from '@berth/scan-engine/adapters/claude-code/scanner'
 
 let claudeDir: string
 

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { extractAtImports, splitFrontmatter } from '../../src/main/adapters/_shared/markdown'
+import { extractAtImports, splitFrontmatter } from '@berth/scan-engine/adapters/_shared/markdown'
 
 // Pins the unified splitFrontmatter semantics after reconciling the two
 // drifted adapter copies (claude-code regex variant vs codex indexOf variant).

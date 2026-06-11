@@ -6,8 +6,8 @@ import {
   loadLocalPricingOverrides,
   resolveModelPricing,
   resolveUsageCost
-} from '../../src/main/engine/pricing'
-import type { ModelPricing } from '../../src/main/engine/pricing'
+} from '@berth/scan-engine/engine/pricing'
+import type { ModelPricing } from '@berth/scan-engine/engine/pricing'
 import { normalizeTokenUsage } from '@shared/token-usage'
 
 const localPricing: ModelPricing = {

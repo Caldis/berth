@@ -1,6 +1,6 @@
 import * as fs from 'fs'
 import * as path from 'path'
-import { resolveClaudeDirs } from '../../agent-homes'
+import { resolveClaudeDirs } from '@berth/scan-engine/agent-homes'
 import { isPathInside } from '@shared/path-utils'
 import * as yaml from 'js-yaml'
 import type { MemoryNote, MemorySourceStatus } from '@shared/types/memory'

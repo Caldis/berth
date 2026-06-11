@@ -10,14 +10,15 @@ export default defineConfig({
     include: ['tests/**/*.test.ts', 'tests/**/*.test.tsx'],
     coverage: {
       provider: 'v8',
-      include: ['src/**/*.ts', 'src/**/*.tsx'],
+      include: ['src/**/*.ts', 'src/**/*.tsx', 'packages/berth-scan-engine/src/**/*.ts'],
       exclude: ['src/**/*.d.ts', 'src/renderer/src/env.d.ts']
     }
   },
   resolve: {
     alias: {
       '@': resolve(__dirname, 'src/renderer/src'),
-      '@shared': resolve(__dirname, 'packages/berth-scan-engine/src/shared')
+      '@shared': resolve(__dirname, 'packages/berth-scan-engine/src/shared'),
+      '@berth/scan-engine': resolve(__dirname, 'packages/berth-scan-engine/src')
     }
   }
 })

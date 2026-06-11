@@ -2,8 +2,8 @@ import * as fs from 'fs'
 import * as os from 'os'
 import * as path from 'path'
 import { afterEach, describe, expect, it } from 'vitest'
-import { parseCodexSessionDetail, parseCodexSessionMeta } from '../../src/main/adapters/codex/parsers'
-import { AssetFileCache } from '../../src/main/engine/assets/file-cache'
+import { parseCodexSessionDetail, parseCodexSessionMeta } from '@berth/scan-engine/adapters/codex/parsers'
+import { AssetFileCache } from '@berth/scan-engine/engine/assets/file-cache'
 import type { Asset } from '@shared/types/asset'
 
 let tempDir: string | null = null

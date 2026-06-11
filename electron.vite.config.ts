@@ -7,14 +7,17 @@ export default defineConfig({
     plugins: [externalizeDepsPlugin()],
     resolve: {
       alias: {
-        '@shared': resolve('packages/berth-scan-engine/src/shared')
+        '@shared': resolve('packages/berth-scan-engine/src/shared'),
+        // GH-121: the engine lives in the workspace package; main consumes its
+        // source directly (bundled into out/main like any aliased source dir).
+        '@berth/scan-engine': resolve('packages/berth-scan-engine/src')
       }
     },
     build: {
       rollupOptions: {
         input: {
           index: resolve('src/main/index.ts'),
-          'asset-worker': resolve('src/main/engine/assets/worker.ts')
+          'asset-worker': resolve('packages/berth-scan-engine/src/engine/assets/worker.ts')
         }
       }
     }

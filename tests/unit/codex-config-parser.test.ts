@@ -6,7 +6,7 @@ import {
   parseCodexConfig,
   parseCodexCustomAgent,
   parseCodexHooksJson
-} from '../../src/main/adapters/codex/parsers'
+} from '@berth/scan-engine/adapters/codex/parsers'
 import { dedupePathKey } from '@shared/asset-dedupe'
 
 let tempDir: string | null = null

@@ -2,7 +2,7 @@ import * as fs from 'fs'
 import * as os from 'os'
 import * as path from 'path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { parseSessionMeta } from '../../src/main/adapters/claude-code/parsers'
+import { parseSessionMeta } from '@berth/scan-engine/adapters/claude-code/parsers'
 
 // GH-111 O2: session parsing must not silently swallow malformed lines or read
 // failures — both should be observable rather than looking like a clean session.

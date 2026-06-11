@@ -2,7 +2,7 @@ import * as fs from 'fs'
 import * as os from 'os'
 import * as path from 'path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { AssetWatcher, buildWatchEvent, getAssetWatchPaths } from '../../src/main/engine/watcher'
+import { AssetWatcher, buildWatchEvent, getAssetWatchPaths } from '@berth/scan-engine/engine/watcher'
 import type { WatchEvent } from '@shared/types/asset'
 import { dedupePathKey } from '@shared/asset-dedupe'
 

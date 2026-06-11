@@ -15,10 +15,10 @@ vi.mock('fs', async () => {
   }
 })
 
-import { parseAgentsMd, parseClaudeMd } from '../../src/main/adapters/claude-code/parsers'
-import { parseCodexAgentsMd } from '../../src/main/adapters/codex/parsers'
-import { mergeSharedConventions } from '../../src/main/engine/scanner'
-import { resolveRelations } from '../../src/main/engine/relations'
+import { parseAgentsMd, parseClaudeMd } from '@berth/scan-engine/adapters/claude-code/parsers'
+import { parseCodexAgentsMd } from '@berth/scan-engine/adapters/codex/parsers'
+import { mergeSharedConventions } from '@berth/scan-engine/engine/scanner'
+import { resolveRelations } from '@berth/scan-engine/engine/relations'
 import { dedupePathKey } from '@shared/asset-dedupe'
 import type { Asset } from '@shared/types/asset'
 

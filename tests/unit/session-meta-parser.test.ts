@@ -2,9 +2,9 @@ import * as fs from 'fs'
 import * as os from 'os'
 import * as path from 'path'
 import { afterEach, describe, expect, it } from 'vitest'
-import { parseSessionMeta } from '../../src/main/adapters/claude-code/parsers'
-import { parseClaudeSessionDetail } from '../../src/main/adapters/claude-code/session-detail'
-import { AssetFileCache } from '../../src/main/engine/assets/file-cache'
+import { parseSessionMeta } from '@berth/scan-engine/adapters/claude-code/parsers'
+import { parseClaudeSessionDetail } from '@berth/scan-engine/adapters/claude-code/session-detail'
+import { AssetFileCache } from '@berth/scan-engine/engine/assets/file-cache'
 import type { Asset } from '@shared/types/asset'
 
 let tempDir: string | null = null

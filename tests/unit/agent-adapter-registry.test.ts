@@ -5,11 +5,11 @@ import { afterEach, describe, expect, it } from 'vitest'
 import {
   createAgentAdapters,
   ManifestAgentAdapter
-} from '../../src/main/agent-plugins/adapter-registry'
+} from '@berth/scan-engine/agent-plugins/adapter-registry'
 import {
   loadAgentPluginManifests,
   resetAgentPluginManifestCacheForTests
-} from '../../src/main/agent-plugins/manifest'
+} from '@berth/scan-engine/agent-plugins/manifest'
 
 const tempDirs: string[] = []
 

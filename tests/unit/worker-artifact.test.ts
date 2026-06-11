@@ -10,7 +10,10 @@ const ROOT = resolve(__dirname, '../..')
 
 describe('asset worker artifact wiring', () => {
   const viteConfig = readFileSync(resolve(ROOT, 'electron.vite.config.ts'), 'utf8')
-  const workerHost = readFileSync(resolve(ROOT, 'src/main/engine/assets/worker-host.ts'), 'utf8')
+  const workerHost = readFileSync(
+    resolve(ROOT, 'packages/berth-scan-engine/src/engine/assets/worker-host.ts'),
+    'utf8'
+  )
 
   it('build config declares the asset-worker entry pointing at an existing source file', () => {
     const entry = viteConfig.match(/'asset-worker':\s*resolve\('([^']+)'\)/)

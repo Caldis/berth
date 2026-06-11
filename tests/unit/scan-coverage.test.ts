@@ -7,7 +7,7 @@ import {
   scanInstructions,
   scanIntegration,
   type ScanContext
-} from '../../src/main/adapters/claude-code/scanner'
+} from '@berth/scan-engine/adapters/claude-code/scanner'
 
 /**
  * GH-111 — coverage corrections from the Codex×Claude adversarial review.

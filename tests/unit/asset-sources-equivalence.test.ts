@@ -2,9 +2,9 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'fs'
 import { join, sep } from 'path'
 import { tmpdir } from 'os'
-import { scanProjectCapabilities } from '../../src/main/engine/shallow-conventions'
-import { deriveAssetsForPath } from '../../src/main/engine/assets/derive-asset'
-import { getAssetWatchPaths } from '../../src/main/engine/watcher'
+import { scanProjectCapabilities } from '@berth/scan-engine/engine/shallow-conventions'
+import { deriveAssetsForPath } from '@berth/scan-engine/engine/assets/derive-asset'
+import { getAssetWatchPaths } from '@berth/scan-engine/engine/watcher'
 
 // GH-115 T9 等价钉测: 扫描源表三方收口 (shallow / derive / watch) 前先把现行为
 // 按 fixture 钉死 — 接表重构后本测试必须原样保持绿 (枚举输出 diff 为空)。

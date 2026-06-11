@@ -3,7 +3,7 @@ import * as os from 'os'
 import * as path from 'path'
 import { parse as parseToml } from 'smol-toml'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { setHookEnabled } from '../../src/main/engine/hooks-manager'
+import { setHookEnabled } from '@berth/scan-engine/engine/hooks-manager'
 import { buildHookKey } from '@shared/hook-identity'
 
 let tempDir: string | null = null

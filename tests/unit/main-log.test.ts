@@ -2,8 +2,8 @@ import { describe, expect, it, beforeEach, afterEach } from 'vitest'
 import * as fs from 'fs'
 import * as os from 'os'
 import * as path from 'path'
-import { createLogWriter } from '../../src/main/log'
-import { AssetWatcher } from '../../src/main/engine/watcher'
+import { createLogWriter } from '@berth/scan-engine/log'
+import { AssetWatcher } from '@berth/scan-engine/engine/watcher'
 
 // GH-115 T5: 主进程可观测性地基。日志只落本地文件 (无遥测边界), 滚动防膨胀。
 

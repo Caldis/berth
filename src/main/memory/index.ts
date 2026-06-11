@@ -7,7 +7,7 @@ import * as path from 'path'
 import type { MemorySource } from './types'
 import { UnitedMemorySource, defaultUnitedMemoryRoot } from './sources/united-memory'
 import { ClaudeNativeSource } from './sources/claude-native'
-import { resolveClaudeDirs } from '../agent-homes'
+import { resolveClaudeDirs } from '@berth/scan-engine/agent-homes'
 
 function buildSources(projectDir?: string): MemorySource[] {
   return [new UnitedMemorySource(), new ClaudeNativeSource(projectDir)]

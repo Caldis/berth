@@ -8,7 +8,7 @@ import {
   WorkerAssetScanner,
   type AssetWorkerData,
   type WorkerLike
-} from '../../src/main/engine/assets/worker-host'
+} from '@berth/scan-engine/engine/assets/worker-host'
 import { createProjectScopeCandidate } from '@shared/scope'
 
 const emptyStats: AssetStats = {

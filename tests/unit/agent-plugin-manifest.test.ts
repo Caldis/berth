@@ -7,7 +7,7 @@ import {
   loadAgentPluginManifests,
   resetAgentPluginManifestCacheForTests,
   validateAgentPluginManifest
-} from '../../src/main/agent-plugins/manifest'
+} from '@berth/scan-engine/agent-plugins/manifest'
 
 const tempDirs: string[] = []
 

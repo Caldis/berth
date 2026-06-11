@@ -8,7 +8,7 @@
   - tests: not needed - 纯说明符/alias 改向零行为变更; 证据 = `pnpm typecheck` + `pnpm test` 全量绿 + `pnpm --filter @berth/scan-engine build` 绿。
   - verify: 门禁三绿 + git diff 确认 shared 12 文件纯 rename; 非 UI 不适用界面验收。
 
-- [ ] B2 内核 53 文件平移 + 消费面改写 (AC-1/5/6 主体)
+- [x] B2 内核 54 文件平移 + 消费面改写 (AC-1/5/6 主体) — DONE。**偏差记录 3 则**: ① 用户 dev --watch 锁 src/main/engine 目录致目录级 git mv EPERM, 改逐文件 mv (53+probe 撤销) 绕过, 旧空目录壳留待 dev 停后清; ② agent-plugins/manifest.ts 系 explore 漏算闭包成员 (adapter-registry 同目录 './manifest' 引用, grep 只抓 ../ 漏同目录) — 随批迁入 (54 非 53), registry.ts 留 main 改包说明符, root typecheck 首次抓到该断链 = 盲区根治生效首证; ③ main 改写首次用 scriptblock 正则批量损坏 3 文件 (丢段/截断), 改逐文件 Read+Edit 修复, tests 批量改用无分组前缀替换安全完成 (39 文件 + vi.mock 3 处 + readFileSync 1 处 + 注释 1 处)。engine-bridge scanner 行提前包内化 (B3 项, typecheck 强制)。门禁: typecheck 三段 (node 纳管包 66 文件) + 全量 1050 双轮 + build + e2e 24/26 绿 — 2 失败均环境项: project-scope (win32 宿主隔离, 既有 issue) + window-controls native-mouse (用户 dev 窗口抢前台, GH-119 时同测试绿/CDP 同链路 2 测绿佐证非回归, 用户 dev 关闭后复验)
   - 内容: `git mv` src/main/{engine,adapters} + agent-plugins/adapter-registry.ts + {log,agent-homes,project-config-roots,project-scope}.ts → packages/berth-scan-engine/src/ (保持相对结构, 闭包内零行修改); main 6 文件 17 行 + tests 40 文件 ~50 行 import → `@berth/scan-engine/<path>`; electron.vite main 段增 `@berth/scan-engine` alias + worker input 改包路径; vitest 增 alias + coverage include; tsconfig.node paths 增 + include 增 `packages/berth-scan-engine/src/**/*`。
   - tests: not needed - 纯平移+说明符改写; 证据 = 等价钉测 + `pnpm test` 全量双轮 + `pnpm build` + `pnpm test:e2e` (win32 已知项口径同 GH-119) + typecheck (首次纳管包源码)。
   - verify: AC-1 (src/main 内闭包目录消失) + AC-6 (grep 零旧路径 import) + 门禁全绿; 非 UI 不适用。

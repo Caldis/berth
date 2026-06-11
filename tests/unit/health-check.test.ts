@@ -2,7 +2,7 @@ import * as fs from 'fs'
 import * as os from 'os'
 import * as path from 'path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { runHealthChecks } from '../../src/main/engine/health'
+import { runHealthChecks } from '@berth/scan-engine/engine/health'
 
 let tempDir: string | null = null
 

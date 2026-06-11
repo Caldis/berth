@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { buildUsageSummary } from '../../src/main/engine/usage'
-import type { ModelPricing } from '../../src/main/engine/pricing'
+import { buildUsageSummary } from '@berth/scan-engine/engine/usage'
+import type { ModelPricing } from '@berth/scan-engine/engine/pricing'
 import type { Asset } from '@shared/types/asset'
 
 describe('buildUsageSummary', () => {

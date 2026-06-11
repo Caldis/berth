@@ -1,12 +1,8 @@
 /**
- * Bridge to the existing berth scan engine (src/main/engine).
- *
- * P1.3 (hybrid): the CLI consumes the engine in-place via this thin bridge so
- * the agent CLI + E2E loop exist NOW. The engine is Electron-free and
- * native-free, so it bundles cleanly. P2 physically migrates the engine source
- * into this package, after which the relative import below becomes a local one.
+ * Bridge to the berth scan engine, now physically in-package (GH-121): the
+ * engine is Electron-free and native-free, so it bundles cleanly into the CLI.
  */
-import { AssetScanner } from '../../../src/main/engine/scanner'
+import { AssetScanner } from './engine/scanner'
 import type { Asset } from '@shared/types/asset'
 import type { AgentScanSourceGroup, ScanResult } from '@shared/types/ipc'
 import type { ProjectScopeCandidate } from '@shared/scope'

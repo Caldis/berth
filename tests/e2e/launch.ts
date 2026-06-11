@@ -3,7 +3,7 @@ import { mkdirSync } from 'fs'
 import { join, resolve } from 'path'
 
 // GH-117: e2e 统一隔离根。berth 主进程经 os.homedir() 解析 ~/.claude 等 home 级
-// 扫描根 (src/main/agent-homes.ts), 不隔离 HOME 时 e2e 会扫宿主真实数据 —
+// 扫描根 (packages/berth-scan-engine/src/agent-homes.ts), 不隔离 HOME 时 e2e 会扫宿主真实数据 —
 // 运行时长与候选列表随宿主 ~/.claude 体量漂移 (macOS 开发机上 activate 链路
 // 实测 10s, 超出断言 5s 窗口, 即原 darwin "平台失败" 的真因)。
 export interface IsolatedDirs {
