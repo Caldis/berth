@@ -1,29 +1,26 @@
 import { test, expect, type ElectronApplication, type Locator, type Page } from '@playwright/test'
-import { _electron as electron } from '@playwright/test'
 import { mkdirSync, rmSync, writeFileSync } from 'fs'
-import { join, resolve } from 'path'
+import { join } from 'path'
+import { prepareIsolatedDirs, launchBerthApp } from './launch'
 
 let app: ElectronApplication
 let page: Page
 let tempDir: string
 
-// macOS 上「切到 session 派生 project」稳定失败 (与改动无关的既有平台差异),
-// 根因待定: docs/issues/2026-06-08-BUG-project-scope-e2e-macos.md (GH-115 T0 扩 e2e 矩阵时按该 issue 隔离)
-test.skip(process.platform === 'darwin', 'known macOS failure — docs/issues/2026-06-08-BUG-project-scope-e2e-macos.md')
+// GH-117: 原 darwin skip 已移除 — "macOS 失败" 实为 fixture 未隔离 HOME 时扫到宿主
+// ~/.claude 数据, activate 链路超出断言窗口; 三隔离根 (launch.ts) 后全平台确定性运行。
 
 const projectScopeButton = (): Locator =>
   page.locator('aside').getByRole('button', { name: /^(Project scope|项目范围)$/ })
 
 test.beforeEach(async ({ browserName: _browserName }, testInfo) => {
   tempDir = testInfo.outputPath('project-scope-fixture')
-  const userDataDir = join(tempDir, 'user-data')
-  const codexHome = join(tempDir, 'codex-home')
+  const dirs = prepareIsolatedDirs(tempDir)
   const projectDir = join(tempDir, 'e2e-project')
   const projectCwd = join(projectDir, 'packages', 'app')
-  const sessionsDir = join(codexHome, 'sessions')
+  const sessionsDir = join(dirs.codexHome, 'sessions')
   const skillDir = join(projectDir, '.agents', 'skills', 'e2e-skill')
 
-  mkdirSync(userDataDir, { recursive: true })
   mkdirSync(sessionsDir, { recursive: true })
   mkdirSync(join(projectDir, '.git'), { recursive: true })
   mkdirSync(projectCwd, { recursive: true })
@@ -41,16 +38,9 @@ test.beforeEach(async ({ browserName: _browserName }, testInfo) => {
     ['---', 'name: e2e-skill', 'description: E2E project scope skill', '---', 'Body'].join('\n')
   )
 
-  app = await electron.launch({
-    args: [resolve(__dirname, '../../out/main/index.js'), `--user-data-dir=${userDataDir}`],
-    env: {
-      ...process.env,
-      CODEX_HOME: codexHome,
-      NODE_ENV: 'test'
-    }
-  })
-  page = await app.firstWindow()
-  await page.waitForLoadState('domcontentloaded')
+  const launched = await launchBerthApp(dirs)
+  app = launched.app
+  page = launched.page
 })
 
 test.afterEach(async () => {
@@ -73,6 +63,9 @@ test('switches project scope and rebuilds the searchable project assets', async 
   await trigger.click()
   const option = page.getByRole('option', { name: 'app' })
   await expect(option).toBeVisible()
+  // GH-117 AC-3: 隔离生效断言 — 仅 Global/User/app 三项; 宿主 ~/.claude 数据
+  // 一旦再泄入 (隔离被破坏), 此处立刻红, 防止测试退化回"依赖宿主清洁度"。
+  await expect(page.getByRole('option')).toHaveCount(3)
   await option.click()
 
   await expect(trigger).toContainText('app')
