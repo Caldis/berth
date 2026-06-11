@@ -12,12 +12,12 @@
   - `adapters/codex/session-replay.ts` `turn_aborted` → interrupted
   - tests: tests/unit/session-replay-claude.test.ts + session-replay-codex.test.ts 各加中断 case
   - verify: pnpm test (unit) 绿; INDEX debt scope→cross-process + revision 同批 (非 UI 项, 界面验收不适用)
-- [ ] T2 颜色系统 — replay 7 色 CSS 变量 + tailwind + kind-chip 主题化 [AC1]
+- [x] T2 颜色系统 — replay 7 色 CSS 变量 + tailwind + kind-chip 主题化 [AC1] (commit bbf9c06f; chip 10 测 + sessions-pages 29 测回归绿)
   - globals.css `--replay-*` ×7 (light/dark); tailwind.config.ts colors.replay.*
   - replay-kind-chip.tsx KIND_META → { icon, 染色 class }; danger 覆盖保留
   - tests: sessions-pages.test.tsx 既有断言不回归; chip 染色 class 轻断言
   - verify: pnpm test 绿; 界面验收: 7 色与图标绑定、双主题可读 (真机截图待 T7 统一)
-- [ ] T3 replay-model 纯函数扩展 — 视口/聚合/gap/tick [AC3-6 数学层]
+- [x] T3 replay-model 纯函数扩展 — 视口/聚合/gap/tick [AC3-6 数学层] (replay-model 23 测绿: timePoints/zoom 锚点往返/pan clamp/nearest 容差/tick 步长/waitGaps/三泳道 bucket error 升级)
   - buildReplayTimePoints / zoomViewportAt / panViewportBy / timeToX / xToTime / nearestTimeIndex / computeWaitGaps (REPLAY_WAIT_THRESHOLD_MS=60_000) / selectTickStep / bucketEvents
   - tests: tests/renderer/replay-model.test.ts 扩 (每函数边界: clamp/空列表/null 时间戳/单事件/锚点缩放往返)
   - verify: pnpm test 绿; 函数纯度 (无 DOM/React import); 非 UI 项, 界面验收不适用
