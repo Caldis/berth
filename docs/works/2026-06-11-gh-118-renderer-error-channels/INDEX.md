@@ -2,7 +2,7 @@
 task: 2026-06-11-gh-118-renderer-error-channels
 task_id: GH-118
 type: maintenance
-phase: design
+phase: implement
 created: 2026-06-11
 priority: P2
 target_date:
@@ -65,8 +65,8 @@ artifacts:
 ## 产物
 - [x] 00-PRD.md — 原始输入快照 (docs/issues/2026-06-10-IMPROVEMENT-renderer-swallowed-error-channels.md)
 - [x] 01-ANALYSIS.md — Explore 产物 (吞错点终表 5 处实勘 + 样板/消费面/blast radius + AC-1~6)
-- [ ] 02-SPEC.md — Design 产物
-- [ ] 03-PLAN.md — 活任务清单
+- [x] 02-SPEC.md — Design 产物 (hook 契约×4 + 条件形态渲染表 + i18n 清单 + 测试矩阵 9 项)
+- [x] 03-PLAN.md — 活任务清单 (T1 usage → T2 health → T3 memory → T4 runtime → T5 收口, 顺序执行)
 
 ## 背景速览
 - 5 处 `.catch(() => {})` (2026-06-11 grep 核实): `use-ipc.ts` 138/156/396/437 + `use-memory.ts` 65; 最重者 useAssetRuntime 初始拉取失败整应用 idle 静默空转。
