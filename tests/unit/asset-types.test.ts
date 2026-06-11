@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import type { Asset, AssetCategory, AssetScope, Relation } from '../../src/shared/types/asset'
+import type { Asset, AssetCategory, AssetScope, Relation } from '@shared/types/asset'
 
 describe('Asset type definitions', () => {
   it('can create a valid skill asset', () => {

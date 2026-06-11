@@ -9,8 +9,8 @@ import {
   normalizeScopeSelection,
   projectPathForScope,
   sameProjectPath
-} from '../../src/shared/scope'
-import type { Asset, AssetScope, AssetType } from '../../src/shared/types/asset'
+} from '@shared/scope'
+import type { Asset, AssetScope, AssetType } from '@shared/types/asset'
 
 function asset(
   id: string,

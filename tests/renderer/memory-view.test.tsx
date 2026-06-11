@@ -9,7 +9,7 @@ import { TopNavigation } from '../../src/renderer/src/components/layout/top-navi
 import { PageChromeProvider } from '../../src/renderer/src/components/layout/page-chrome'
 import { SearchDialog } from '../../src/renderer/src/components/layout/search-dialog'
 import { useAppStore } from '../../src/renderer/src/stores/app'
-import type { MemoryListResult } from '../../src/shared/types/memory'
+import type { MemoryListResult } from '@shared/types/memory'
 
 type MockGroupedVirtuosoHandle = {
   scrollToIndex: (location: unknown) => void

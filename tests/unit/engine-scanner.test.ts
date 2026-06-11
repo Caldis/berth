@@ -2,8 +2,8 @@ import * as fs from 'fs'
 import * as os from 'os'
 import * as path from 'path'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { Asset } from '../../src/shared/types/asset'
-import { sameProjectPath } from '../../src/shared/scope'
+import type { Asset } from '@shared/types/asset'
+import { sameProjectPath } from '@shared/scope'
 
 const mocks = vi.hoisted(() => ({
   claudeScanAll: vi.fn(async () => ({ assets: [], errors: [] })),

@@ -3,7 +3,7 @@ import React from 'react'
 import { MemoryRouter } from 'react-router-dom'
 import { describe, expect, it, vi } from 'vitest'
 import i18n from '../../src/renderer/src/i18n'
-import { normalizeTokenUsage } from '../../src/shared/token-usage'
+import { normalizeTokenUsage } from '@shared/token-usage'
 
 vi.mock('recharts', async () => {
   const ReactModule = await vi.importActual<typeof import('react')>('react')

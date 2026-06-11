@@ -1,7 +1,7 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { resetHealthCheckCacheForTests, useHealthChecks } from '../../src/renderer/src/hooks/use-ipc'
-import type { HealthCheck } from '../../src/shared/types/ipc'
+import type { HealthCheck } from '@shared/types/ipc'
 
 const firstCheck: HealthCheck = {
   id: 'codex:configuration:first',

@@ -19,8 +19,8 @@ import { parseAgentsMd, parseClaudeMd } from '../../src/main/adapters/claude-cod
 import { parseCodexAgentsMd } from '../../src/main/adapters/codex/parsers'
 import { mergeSharedConventions } from '../../src/main/engine/scanner'
 import { resolveRelations } from '../../src/main/engine/relations'
-import { dedupePathKey } from '../../src/shared/asset-dedupe'
-import type { Asset } from '../../src/shared/types/asset'
+import { dedupePathKey } from '@shared/asset-dedupe'
+import type { Asset } from '@shared/types/asset'
 
 describe('dedupePathKey', () => {
   it('case-folds on Windows so different-case paths share one key', () => {

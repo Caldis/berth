@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { AssetSearch } from '../../src/main/engine/search'
-import type { Asset, AssetCategory, AssetScope, AssetType } from '../../src/shared/types/asset'
+import type { Asset, AssetCategory, AssetScope, AssetType } from '@shared/types/asset'
 
 function asset(
   id: string,

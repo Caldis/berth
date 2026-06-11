@@ -4,9 +4,9 @@ import * as path from 'path'
 import { afterEach, describe, expect, it } from 'vitest'
 import { CLAUDE_SOURCE_DESCRIPTORS, CODEX_SOURCE_DESCRIPTORS } from '../../src/main/agent-plugins/descriptors'
 import { listAgentCapabilityPlugins } from '../../src/main/agent-plugins/registry'
-import type { AgentScanSourceGroup } from '../../src/shared/types/ipc'
-import type { HealthCheckCategory, HealthCheckSeverity } from '../../src/shared/types/ipc'
-import type { AssetType, ScanSourceCode } from '../../src/shared/types/asset'
+import type { AgentScanSourceGroup } from '@shared/types/ipc'
+import type { HealthCheckCategory, HealthCheckSeverity } from '@shared/types/ipc'
+import type { AssetType, ScanSourceCode } from '@shared/types/asset'
 
 const tempDirs: string[] = []
 

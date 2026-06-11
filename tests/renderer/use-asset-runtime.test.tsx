@@ -2,8 +2,8 @@ import { act, renderHook, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useAssetRuntime } from '../../src/renderer/src/hooks/use-ipc'
 import { IDLE_ASSET_RUNTIME_STATUS, useAppStore } from '../../src/renderer/src/stores/app'
-import type { Asset, AssetStats } from '../../src/shared/types/asset'
-import type { AssetRuntimeStatus, AssetSnapshot } from '../../src/shared/types/ipc'
+import type { Asset, AssetStats } from '@shared/types/asset'
+import type { AssetRuntimeStatus, AssetSnapshot } from '@shared/types/ipc'
 
 const emptyStats: AssetStats = {
   skills: 0,

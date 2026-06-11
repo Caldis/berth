@@ -5,8 +5,8 @@ import {
   resetSessionsCacheForTests,
   useSessions
 } from '../../src/renderer/src/hooks/use-ipc'
-import type { SessionSummary } from '../../src/shared/types/asset'
-import { normalizeTokenUsage } from '../../src/shared/token-usage'
+import type { SessionSummary } from '@shared/types/asset'
+import { normalizeTokenUsage } from '@shared/token-usage'
 
 function sessionSummary(id: string, title: string): SessionSummary {
   return {

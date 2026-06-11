@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { isPathInside } from '../../src/shared/path-utils'
+import { isPathInside } from '@shared/path-utils'
 
 // GH-115 T7: 收敛此前互相矛盾的 4 套 2 算法包含判定 (memory ×2 / engine/scanner)。
 // 语义锚: 平台感知大小写折叠与 samePath 一致; equal 是否算 inside 由调用方显式声明。

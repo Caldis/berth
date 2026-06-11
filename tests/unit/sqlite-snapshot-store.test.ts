@@ -2,8 +2,8 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import * as fs from 'fs'
 import * as os from 'os'
 import * as path from 'path'
-import type { Asset } from '../../src/shared/types/asset'
-import type { AssetSnapshot } from '../../src/shared/types/ipc'
+import type { Asset } from '@shared/types/asset'
+import type { AssetSnapshot } from '@shared/types/ipc'
 import {
   createSqliteSnapshotStore,
   type SqliteDatabase,

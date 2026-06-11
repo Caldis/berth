@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { toSessionActivityMetrics } from '../../src/main/engine/session-activity'
-import { normalizeTokenUsage } from '../../src/shared/token-usage'
+import { normalizeTokenUsage } from '@shared/token-usage'
 
 describe('toSessionActivityMetrics', () => {
   it('does not calculate a token consumption rate from local usage samples', () => {

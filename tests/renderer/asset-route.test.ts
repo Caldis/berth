@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { routeForAsset } from '../../src/renderer/src/lib/asset-route'
-import type { AssetType } from '../../src/shared/types/asset'
+import type { AssetType } from '@shared/types/asset'
 
 // GH-112 S1: shared asset→page route map (extracted from the search dialog so
 // both global search and plugin↔component jump use one source of truth).

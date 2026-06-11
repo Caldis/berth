@@ -3,14 +3,14 @@
   "include": [
     "src/main/**/*",
     "src/preload/**/*",
-    "src/shared/**/*",
+    "packages/berth-scan-engine/src/shared/**/*",
     "electron.vite.config.ts"
   ],
   "compilerOptions": {
     "composite": true,
     "types": ["electron-vite/node"],
     "paths": {
-      "@shared/*": ["./src/shared/*"]
+      "@shared/*": ["./packages/berth-scan-engine/src/shared/*"]
     }
   }
 }

@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import i18n from '../../src/renderer/src/i18n'
 import { Overview } from '../../src/renderer/src/pages/overview'
 import { useAppStore } from '../../src/renderer/src/stores/app'
-import { normalizeTokenUsage } from '../../src/shared/token-usage'
+import { normalizeTokenUsage } from '@shared/token-usage'
 
 const emptyStats = {
   skills: 0,

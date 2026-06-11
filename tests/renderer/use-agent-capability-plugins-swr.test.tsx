@@ -5,8 +5,8 @@ import {
   useAgentCapabilityPlugins
 } from '../../src/renderer/src/hooks/use-ipc'
 import { EMPTY_ASSET_STATS, IDLE_ASSET_RUNTIME_STATUS, useAppStore } from '../../src/renderer/src/stores/app'
-import type { AgentCapabilityPlugin } from '../../src/shared/types/agent-plugin'
-import type { AssetSnapshot } from '../../src/shared/types/ipc'
+import type { AgentCapabilityPlugin } from '@shared/types/agent-plugin'
+import type { AssetSnapshot } from '@shared/types/ipc'
 
 function plugin(id: string, displayName: string): AgentCapabilityPlugin {
   return {

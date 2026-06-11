@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { parseSessionMeta } from '../../src/main/adapters/claude-code/parsers'
 import { parseClaudeSessionDetail } from '../../src/main/adapters/claude-code/session-detail'
 import { AssetFileCache } from '../../src/main/engine/assets/file-cache'
-import type { Asset } from '../../src/shared/types/asset'
+import type { Asset } from '@shared/types/asset'
 
 let tempDir: string | null = null
 

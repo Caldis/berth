@@ -3,7 +3,7 @@ import * as fs from 'fs'
 import * as os from 'os'
 import * as path from 'path'
 import { deriveAssetsForPath } from '../../src/main/engine/assets/derive-asset'
-import { dedupePathKey } from '../../src/shared/asset-dedupe'
+import { dedupePathKey } from '@shared/asset-dedupe'
 
 // GH-113 I1: re-derive a single changed file's assets so the watcher can replace
 // just that file (no full rescan). This slice covers root-level convention files;

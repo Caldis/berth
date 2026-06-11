@@ -5,7 +5,7 @@ import { MemoryRouter } from 'react-router-dom'
 import '../../src/renderer/src/i18n'
 import { HooksLifecycleView } from '../../src/renderer/src/components/capabilities/hooks-lifecycle-view'
 import { FOCUS_HIGHLIGHT_CLASS } from '../../src/renderer/src/hooks/use-focus-target'
-import type { Asset } from '../../src/shared/types/asset'
+import type { Asset } from '@shared/types/asset'
 
 const PLUGIN_ID = 'plugin:acme/demo-plugin@1.0.0'
 

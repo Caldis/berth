@@ -3,7 +3,7 @@ import * as os from 'os'
 import * as path from 'path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { scanInstructions, type ScanContext } from '../../src/main/adapters/claude-code/scanner'
-import type { Asset } from '../../src/shared/types/asset'
+import type { Asset } from '@shared/types/asset'
 
 /**
  * GH-110 P5.1 — no-side-effect coverage for the output-mode / command / subagent

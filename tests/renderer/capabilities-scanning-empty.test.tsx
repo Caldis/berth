@@ -6,7 +6,7 @@ import i18n from '../../src/renderer/src/i18n'
 import { Capabilities } from '../../src/renderer/src/pages/capabilities'
 import { PageChromeProvider } from '../../src/renderer/src/components/layout/page-chrome'
 import { useAppStore, IDLE_ASSET_RUNTIME_STATUS } from '../../src/renderer/src/stores/app'
-import type { Asset } from '../../src/shared/types/asset'
+import type { Asset } from '@shared/types/asset'
 
 // GH-113 (per-root 完成度 / 空态不误导, SPEC A4): while a full scan is still in
 // flight, a tab whose category hasn't been reached yet must show a skeleton — not a

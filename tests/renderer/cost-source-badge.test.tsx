@@ -3,7 +3,7 @@ import React from 'react'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { CostSourceBadge } from '../../src/renderer/src/components/shared/cost-source-badge'
 import i18n from '../../src/renderer/src/i18n'
-import type { CostSource } from '../../src/shared/types/asset'
+import type { CostSource } from '@shared/types/asset'
 
 const sources: CostSource[] = ['actual', 'estimated', 'mixed', 'unknown']
 

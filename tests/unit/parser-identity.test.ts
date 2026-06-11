@@ -23,8 +23,8 @@ import {
   parseOutputMode
 } from '../../src/main/adapters/claude-code/parsers'
 import { parseCodexAgentsMd, parseCodexSkill } from '../../src/main/adapters/codex/parsers'
-import { assetEntityId, dedupePathKey } from '../../src/shared/asset-dedupe'
-import { normalizeProjectPathKey } from '../../src/shared/scope'
+import { assetEntityId, dedupePathKey } from '@shared/asset-dedupe'
+import { normalizeProjectPathKey } from '@shared/scope'
 
 const read = vi.mocked(fs.readFileSync)
 function setContent(content: string): void {

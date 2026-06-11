@@ -7,7 +7,7 @@ import { Instructions } from '../../src/renderer/src/pages/instructions'
 import { TopNavigation } from '../../src/renderer/src/components/layout/top-navigation'
 import { PageChromeProvider } from '../../src/renderer/src/components/layout/page-chrome'
 import { useAppStore } from '../../src/renderer/src/stores/app'
-import type { Asset } from '../../src/shared/types/asset'
+import type { Asset } from '@shared/types/asset'
 import { resetMemoryCacheForTests } from '../../src/renderer/src/hooks/use-memory'
 
 type MockGroupedVirtuosoHandle = {

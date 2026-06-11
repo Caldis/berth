@@ -10,9 +10,9 @@ import { Usage } from '../../src/renderer/src/pages/usage'
 import { TopNavigation } from '../../src/renderer/src/components/layout/top-navigation'
 import { PageChromeProvider } from '../../src/renderer/src/components/layout/page-chrome'
 import { SearchDialog } from '../../src/renderer/src/components/layout/search-dialog'
-import type { Asset, SessionSummary, UsageSummary } from '../../src/shared/types/asset'
-import type { SessionActivityMetrics, SessionReplayResult } from '../../src/shared/types/ipc'
-import { normalizeTokenUsage } from '../../src/shared/token-usage'
+import type { Asset, SessionSummary, UsageSummary } from '@shared/types/asset'
+import type { SessionActivityMetrics, SessionReplayResult } from '@shared/types/ipc'
+import { normalizeTokenUsage } from '@shared/token-usage'
 import { useAppStore } from '../../src/renderer/src/stores/app'
 
 type MockGroupedVirtuosoHandle = {

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { buildSessionProjectGroups } from '../../src/renderer/src/lib/session-location-groups'
-import { normalizeTokenUsage } from '../../src/shared/token-usage'
-import type { SessionSummary } from '../../src/shared/types/asset'
+import { normalizeTokenUsage } from '@shared/token-usage'
+import type { SessionSummary } from '@shared/types/asset'
 
 const labels = {
   root: 'Root /',

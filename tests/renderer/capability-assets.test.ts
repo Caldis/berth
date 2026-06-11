@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { Asset } from '../../src/shared/types/asset'
+import type { Asset } from '@shared/types/asset'
 import {
   MASKED_ENV_VALUE,
   groupEnvVars,

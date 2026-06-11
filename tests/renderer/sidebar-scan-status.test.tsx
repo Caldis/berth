@@ -5,7 +5,7 @@ import { HeroUIProvider } from '@heroui/react'
 import '../../src/renderer/src/i18n'
 import { SidebarScanStatus } from '../../src/renderer/src/components/layout/sidebar-scan-status'
 import { useAppStore, IDLE_ASSET_RUNTIME_STATUS } from '../../src/renderer/src/stores/app'
-import type { Asset, AssetType } from '../../src/shared/types/asset'
+import type { Asset, AssetType } from '@shared/types/asset'
 
 function asset(id: string, type: AssetType): Asset {
   return { id, agentId: 'claude-code', category: 'capability', type, scope: 'user', name: id, path: `/x/${id}`, meta: {} }

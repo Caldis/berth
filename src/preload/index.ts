@@ -1,7 +1,7 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
-import type { AppScopeSelection } from '../shared/scope'
-import type { IpcChannels, IpcChannelArgs, IpcChannelResult, IpcEvents } from '../shared/types/ipc'
+import type { AppScopeSelection } from '@shared/scope'
+import type { IpcChannels, IpcChannelArgs, IpcChannelResult, IpcEvents } from '@shared/types/ipc'
 
 // GH-115 T1: 通道调用一律经 typed invoke — 通道名/参数/返回值由 shared/types/ipc.ts 的
 // IpcChannels 表约束; window.api 的类型唯一来源是文末导出的 BerthAPI = typeof api。

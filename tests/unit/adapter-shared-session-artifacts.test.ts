@@ -4,7 +4,7 @@ import {
   parseMcpToolName,
   upsertFile
 } from '../../src/main/adapters/_shared/session-artifacts'
-import type { SessionArtifactFile } from '../../src/shared/types/ipc'
+import type { SessionArtifactFile } from '@shared/types/ipc'
 
 describe('extractPaths (shared)', () => {
   it('collects strings under path-like keys, recursively and deduped', () => {

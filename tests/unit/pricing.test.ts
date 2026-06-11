@@ -8,7 +8,7 @@ import {
   resolveUsageCost
 } from '../../src/main/engine/pricing'
 import type { ModelPricing } from '../../src/main/engine/pricing'
-import { normalizeTokenUsage } from '../../src/shared/token-usage'
+import { normalizeTokenUsage } from '@shared/token-usage'
 
 const localPricing: ModelPricing = {
   model: 'priced-model',

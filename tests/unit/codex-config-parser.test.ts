@@ -7,7 +7,7 @@ import {
   parseCodexCustomAgent,
   parseCodexHooksJson
 } from '../../src/main/adapters/codex/parsers'
-import { dedupePathKey } from '../../src/shared/asset-dedupe'
+import { dedupePathKey } from '@shared/asset-dedupe'
 
 let tempDir: string | null = null
 

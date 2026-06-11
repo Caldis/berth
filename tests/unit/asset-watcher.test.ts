@@ -2,7 +2,7 @@ import * as os from 'os'
 import * as path from 'path'
 import { describe, expect, it } from 'vitest'
 import { buildWatchEvent, buildWatchOptions, getAssetWatchPaths, isIgnoredWatchPath } from '../../src/main/engine/watcher'
-import { dedupePathKey } from '../../src/shared/asset-dedupe'
+import { dedupePathKey } from '@shared/asset-dedupe'
 
 // GH-111 R2: the watcher must not ignore its own dot-directory roots.
 describe('isIgnoredWatchPath', () => {

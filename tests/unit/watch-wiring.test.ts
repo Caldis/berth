@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import * as fs from 'fs'
 import * as os from 'os'
 import * as path from 'path'
-import type { WatchEvent } from '../../src/shared/types/asset'
+import type { WatchEvent } from '@shared/types/asset'
 import { applyWatchEvent, type WatchableRuntime } from '../../src/main/engine/assets/watch-wiring'
 
 // GH-113 I1: the watcher wiring routes a file change to an incremental snapshot

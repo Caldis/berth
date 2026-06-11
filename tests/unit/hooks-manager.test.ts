@@ -4,7 +4,7 @@ import * as path from 'path'
 import { parse as parseToml } from 'smol-toml'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { setHookEnabled } from '../../src/main/engine/hooks-manager'
-import { buildHookKey } from '../../src/shared/hook-identity'
+import { buildHookKey } from '@shared/hook-identity'
 
 let tempDir: string | null = null
 

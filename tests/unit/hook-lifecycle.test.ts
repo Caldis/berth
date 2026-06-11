@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { Asset } from '../../src/shared/types/asset'
+import type { Asset } from '@shared/types/asset'
 import {
   getHookRiskHints,
   getHookManagementState,
@@ -9,7 +9,7 @@ import {
   groupHookAssetsByStage,
   hookLifecycleStages
 } from '../../src/renderer/src/lib/hook-lifecycle'
-import type { AgentCapabilityPluginHookSchemaDescriptor } from '../../src/shared/types/agent-plugin'
+import type { AgentCapabilityPluginHookSchemaDescriptor } from '@shared/types/agent-plugin'
 
 function hookAsset(overrides: Partial<Asset> & { id: string; agentId: string; eventType?: string }): Asset {
   return {

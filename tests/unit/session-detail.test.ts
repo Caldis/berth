@@ -2,7 +2,7 @@ import * as fs from 'fs'
 import * as os from 'os'
 import * as path from 'path'
 import { afterEach, describe, expect, it } from 'vitest'
-import type { Asset } from '../../src/shared/types/asset'
+import type { Asset } from '@shared/types/asset'
 import { buildSessionDetail, toSessionSummary } from '../../src/main/engine/session-detail'
 
 // GH-115 T10: session/模型推断域逻辑此前住 ipc/handlers.ts (顶层 import electron),

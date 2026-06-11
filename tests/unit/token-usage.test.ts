@@ -6,7 +6,7 @@ import {
   TOKEN_BREAKDOWN_ALIAS_KEYS,
   tokenUsageCacheDetails,
   tokenUsageSegments
-} from '../../src/shared/token-usage'
+} from '@shared/token-usage'
 
 describe('token usage helpers', () => {
   it('returns a stable empty breakdown', () => {

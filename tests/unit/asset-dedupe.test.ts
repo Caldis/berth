@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { stableAssetHash, assetEntityId } from '../../src/shared/asset-dedupe'
+import { stableAssetHash, assetEntityId } from '@shared/asset-dedupe'
 
 // GH-113 Pre-T0: deterministic, collision-safe asset identity is the foundation
 // for the persistent SQLite index (id = primary key) and incremental upsert.

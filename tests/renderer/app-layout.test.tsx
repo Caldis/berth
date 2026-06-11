@@ -6,7 +6,7 @@ import i18n from '../../src/renderer/src/i18n'
 import { AppLayout } from '../../src/renderer/src/components/layout/app-layout'
 import { usePageChrome } from '../../src/renderer/src/components/layout/page-chrome'
 import { SIDEBAR_DEFAULT_WIDTH, useAppStore } from '../../src/renderer/src/stores/app'
-import type { Asset } from '../../src/shared/types/asset'
+import type { Asset } from '@shared/types/asset'
 
 function PageWithChrome({ title = 'Sessions' }: { title?: string }): React.ReactElement {
   usePageChrome({ title, sectionLabelKey: 'nav.sections.work' }, [title])

@@ -7,7 +7,7 @@ export default defineConfig({
     plugins: [externalizeDepsPlugin()],
     resolve: {
       alias: {
-        '@shared': resolve('src/shared')
+        '@shared': resolve('packages/berth-scan-engine/src/shared')
       }
     },
     build: {
@@ -22,13 +22,18 @@ export default defineConfig({
   preload: {
     // GH-119: sandboxed preload can only require Electron's polyfilled module
     // subset — @electron-toolkit/preload must be bundled into the output.
-    plugins: [externalizeDepsPlugin({ exclude: ['@electron-toolkit/preload'] })]
+    plugins: [externalizeDepsPlugin({ exclude: ['@electron-toolkit/preload'] })],
+    resolve: {
+      alias: {
+        '@shared': resolve('packages/berth-scan-engine/src/shared')
+      }
+    }
   },
   renderer: {
     resolve: {
       alias: {
         '@': resolve('src/renderer/src'),
-        '@shared': resolve('src/shared')
+        '@shared': resolve('packages/berth-scan-engine/src/shared')
       }
     },
     plugins: [react()]

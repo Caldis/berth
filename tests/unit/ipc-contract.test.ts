@@ -21,7 +21,7 @@ const extract = (source: string, pattern: RegExp): string[] => {
   return [...out].sort()
 }
 
-const ipcTypesSource = read('src/shared/types/ipc.ts')
+const ipcTypesSource = read('packages/berth-scan-engine/src/shared/types/ipc.ts')
 const preloadSource = read('src/preload/index.ts')
 
 const registered = extract(read('src/main/ipc/handlers.ts'), /ipcMain\.handle\(\s*'([^']+)'/g)

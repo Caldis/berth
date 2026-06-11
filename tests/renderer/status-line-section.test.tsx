@@ -3,7 +3,7 @@ import React from 'react'
 import { beforeEach, describe, expect, it } from 'vitest'
 import i18n from '../../src/renderer/src/i18n'
 import { StatusLineSection } from '../../src/renderer/src/pages/capabilities'
-import type { AgentView, Asset } from '../../src/shared/types/asset'
+import type { AgentView, Asset } from '@shared/types/asset'
 
 function statusLineAsset(id: string, agentId: string, meta: Record<string, unknown>, scope: Asset['scope'] = 'user'): Asset {
   return {

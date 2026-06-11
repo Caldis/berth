@@ -9,7 +9,7 @@ import {
   readStringArray,
   safeId,
   uniqueStrings
-} from '../../src/shared/object-guards'
+} from '@shared/object-guards'
 
 // GH-115 T7: 单源后的行为锚 — 各模块副本收敛到此, 语义以这里为准。
 

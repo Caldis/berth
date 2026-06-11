@@ -5,7 +5,7 @@ import {
   resetMemoryCacheForTests,
   useMemory
 } from '../../src/renderer/src/hooks/use-memory'
-import type { MemoryListResult, MemoryNote } from '../../src/shared/types/memory'
+import type { MemoryListResult, MemoryNote } from '@shared/types/memory'
 
 function note(id: string, title: string): MemoryNote {
   return {

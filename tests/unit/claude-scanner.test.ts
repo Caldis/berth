@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'fs'
 import { join } from 'path'
 import { tmpdir } from 'os'
-import { buildHookHash, buildHookScenarioHash } from '../../src/shared/hook-identity'
+import { buildHookHash, buildHookScenarioHash } from '@shared/hook-identity'
 import { scanCapabilities, scanInstructions, scanState } from '../../src/main/adapters/claude-code/scanner'
 import { parseHooks, parseStatuslinesFromSettings } from '../../src/main/adapters/claude-code/parsers'
 

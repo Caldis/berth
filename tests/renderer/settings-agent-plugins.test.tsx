@@ -6,7 +6,7 @@ import { SettingsContent } from '../../src/renderer/src/components/settings/sett
 import type {
   AgentCapabilityPlugin,
   AgentCapabilityPluginManifestEntry
-} from '../../src/shared/types/agent-plugin'
+} from '@shared/types/agent-plugin'
 
 const plugins: AgentCapabilityPlugin[] = [
   {

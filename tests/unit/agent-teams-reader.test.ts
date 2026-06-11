@@ -6,7 +6,7 @@ import {
   listAgentTeams,
   markLeadSessionAvailability
 } from '../../src/main/agent-teams'
-import type { AgentTeamSummary } from '../../src/shared/types/ipc'
+import type { AgentTeamSummary } from '@shared/types/ipc'
 
 let tempHome: string | null = null
 

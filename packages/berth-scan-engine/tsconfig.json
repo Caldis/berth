@@ -12,7 +12,11 @@
     "verbatimModuleSyntax": false,
     "types": ["node"],
     "outDir": "dist",
-    "rootDir": "src"
+    "rootDir": "src",
+    "baseUrl": ".",
+    "paths": {
+      "@shared/*": ["./src/shared/*"]
+    }
   },
   "include": ["src/**/*"],
   "comment": "cli/engine-bridge import the in-place repo engine (@shared + ../../../src); typechecked at the repo + validated via tsup build, vitest and E2E. Migrated into the package in P2.",

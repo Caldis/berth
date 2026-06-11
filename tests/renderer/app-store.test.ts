@@ -1,7 +1,7 @@
 import { describe, expect, it, beforeEach } from 'vitest'
-import { DEFAULT_SCOPE_SELECTION, createProjectScopeCandidate } from '../../src/shared/scope'
+import { DEFAULT_SCOPE_SELECTION, createProjectScopeCandidate } from '@shared/scope'
 import { EMPTY_ASSET_STATS, IDLE_ASSET_RUNTIME_STATUS, SIDEBAR_DEFAULT_WIDTH, useAppStore } from '../../src/renderer/src/stores/app'
-import type { AssetRuntimeStatus, AssetSnapshot } from '../../src/shared/types/ipc'
+import type { AssetRuntimeStatus, AssetSnapshot } from '@shared/types/ipc'
 
 describe('useAppStore scope state', () => {
   beforeEach(() => {

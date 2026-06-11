@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { buildUsageSummary } from '../../src/main/engine/usage'
 import type { ModelPricing } from '../../src/main/engine/pricing'
-import type { Asset } from '../../src/shared/types/asset'
+import type { Asset } from '@shared/types/asset'
 
 describe('buildUsageSummary', () => {
   const localPricing: ModelPricing = {

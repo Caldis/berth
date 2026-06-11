@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import i18n from '../../src/renderer/src/i18n'
 import { SearchDialog } from '../../src/renderer/src/components/layout/search-dialog'
 import { useAppStore } from '../../src/renderer/src/stores/app'
-import type { SearchResult } from '../../src/shared/types/ipc'
+import type { SearchResult } from '@shared/types/ipc'
 
 function searchResult(id: string, overrides: Partial<SearchResult['asset']> = {}): SearchResult {
   return {

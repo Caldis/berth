@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
-import type { Asset } from '../../src/shared/types/asset'
-import type { ProjectScopeCandidate } from '../../src/shared/scope'
-import { createProjectScopeCandidate } from '../../src/shared/scope'
+import type { Asset } from '@shared/types/asset'
+import type { ProjectScopeCandidate } from '@shared/scope'
+import { createProjectScopeCandidate } from '@shared/scope'
 import { activateProjectScope, type ProjectScopeRuntimeDeps } from '../../src/main/project-scope-runtime'
 
 const stats = {

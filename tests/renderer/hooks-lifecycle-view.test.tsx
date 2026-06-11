@@ -4,9 +4,9 @@ import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import i18n from '../../src/renderer/src/i18n'
 import { HooksLifecycleView } from '../../src/renderer/src/components/capabilities/hooks-lifecycle-view'
-import type { AgentView, Asset } from '../../src/shared/types/asset'
-import type { AgentCapabilityPlugin, AgentCapabilityPluginHookHandlerDescriptor } from '../../src/shared/types/agent-plugin'
-import type { HealthCheck } from '../../src/shared/types/ipc'
+import type { AgentView, Asset } from '@shared/types/asset'
+import type { AgentCapabilityPlugin, AgentCapabilityPluginHookHandlerDescriptor } from '@shared/types/agent-plugin'
+import type { HealthCheck } from '@shared/types/ipc'
 
 interface MockIntersectionObserverInstance {
   callback: IntersectionObserverCallback

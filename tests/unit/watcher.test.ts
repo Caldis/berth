@@ -3,8 +3,8 @@ import * as os from 'os'
 import * as path from 'path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { AssetWatcher, buildWatchEvent, getAssetWatchPaths } from '../../src/main/engine/watcher'
-import type { WatchEvent } from '../../src/shared/types/asset'
-import { dedupePathKey } from '../../src/shared/asset-dedupe'
+import type { WatchEvent } from '@shared/types/asset'
+import { dedupePathKey } from '@shared/asset-dedupe'
 
 let tempDir: string | null = null
 

@@ -3,7 +3,7 @@
 从 02-SPEC 拆解。**全程顺序执行** (全局迁移类: 同批文件互引密集, B2 依赖 B1 alias 就位, B3 依赖 B1+B2 物理就位)。
 实现中若发现 debt 初估不准, 更新 INDEX.md `debt.estimate`, 并追加 `debt.revisions[]`。
 
-- [ ] B1 shared 进包 (AC-1 部分 / AC-2 前置)
+- [x] B1 shared 进包 (AC-1 部分 / AC-2 前置) — DONE: 12 文件 git mv + 解析配置 9 处 (tsconfig×3/vitest/electron.vite 三段含 preload 新增 alias/包 tsup+tsconfig+vitest) + preload 2 行 @shared 化 + engine-bridge shared 3 行提前 @shared 化 (位置变更跟随)。**偏差记录**: explore 漏数 tests 对 src/shared 的相对 import — 实测 101 行/72 文件批量正则改写 + 2 处 readFileSync 源文本路径; typecheck 三段 + 全量 1050 + 包 24 测 + tsup build 全绿
   - 内容: `git mv src/shared packages/berth-scan-engine/src/shared`; alias/include 改指 5 处 (tsconfig.node paths+include、tsconfig.web paths+include、tsconfig.test paths、vitest alias、electron.vite main+renderer @shared); preload index.ts 2 行相对 `../shared/*` → `@shared/*` + electron.vite preload 段补 resolve.alias; 包 tsup alias `../../src/shared` → `./src/shared`; 包 tsconfig 补 paths `@shared/*`。
   - tests: not needed - 纯说明符/alias 改向零行为变更; 证据 = `pnpm typecheck` + `pnpm test` 全量绿 + `pnpm --filter @berth/scan-engine build` 绿。
   - verify: 门禁三绿 + git diff 确认 shared 12 文件纯 rename; 非 UI 不适用界面验收。

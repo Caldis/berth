@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { samePath } from '../../src/shared/path-utils'
+import { samePath } from '@shared/path-utils'
 
 // GH-111 R3: samePath must respect filesystem case semantics — fold case only on
 // Windows, compare exactly elsewhere (and never use locale-aware lowercasing).

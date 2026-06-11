@@ -8,7 +8,7 @@ import { PageChromeProvider } from '../../src/renderer/src/components/layout/pag
 import { useAppStore } from '../../src/renderer/src/stores/app'
 import { FOCUS_HIGHLIGHT_CLASS } from '../../src/renderer/src/hooks/use-focus-target'
 import { resetMemoryCacheForTests } from '../../src/renderer/src/hooks/use-memory'
-import type { Asset } from '../../src/shared/types/asset'
+import type { Asset } from '@shared/types/asset'
 
 // Mock react-virtuoso so the grouped list renders rows synchronously in jsdom
 // (same approach as instructions-guidance.test.tsx).

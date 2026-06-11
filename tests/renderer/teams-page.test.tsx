@@ -6,7 +6,7 @@ import '../../src/renderer/src/i18n'
 import { Teams, TEAMS_RECENT_ACTIVITY_MS } from '../../src/renderer/src/pages/teams'
 import { PageChromeProvider } from '../../src/renderer/src/components/layout/page-chrome'
 import { navSections } from '../../src/renderer/src/components/layout/nav-config'
-import type { AgentTeamSummary } from '../../src/shared/types/ipc'
+import type { AgentTeamSummary } from '@shared/types/ipc'
 
 function SessionDetailProbe(): React.ReactElement {
   return <div data-testid="session-detail" />

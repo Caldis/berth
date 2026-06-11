@@ -7,9 +7,9 @@
  * into this package, after which the relative import below becomes a local one.
  */
 import { AssetScanner } from '../../../src/main/engine/scanner'
-import type { Asset } from '../../../src/shared/types/asset'
-import type { AgentScanSourceGroup, ScanResult } from '../../../src/shared/types/ipc'
-import type { ProjectScopeCandidate } from '../../../src/shared/scope'
+import type { Asset } from '@shared/types/asset'
+import type { AgentScanSourceGroup, ScanResult } from '@shared/types/ipc'
+import type { ProjectScopeCandidate } from '@shared/scope'
 
 export interface ScanInput {
   /** Override the user home (its `.claude` / `.codex` are scanned). */

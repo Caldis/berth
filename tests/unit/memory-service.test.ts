@@ -5,7 +5,7 @@ import * as path from 'path'
 import { listMemory, readMemory } from '../../src/main/memory'
 import { UnitedMemorySource } from '../../src/main/memory/sources/united-memory'
 import { ClaudeNativeSource } from '../../src/main/memory/sources/claude-native'
-import type { MemoryNote } from '../../src/shared/types/memory'
+import type { MemoryNote } from '@shared/types/memory'
 import type { MemorySource } from '../../src/main/memory/types'
 
 // ── Source classes against a real temp dir (covers fs + absolute-path resolution) ──

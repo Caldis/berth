@@ -7,8 +7,8 @@ import { Capabilities } from '../../src/renderer/src/pages/capabilities'
 import { TopNavigation } from '../../src/renderer/src/components/layout/top-navigation'
 import { PageChromeProvider } from '../../src/renderer/src/components/layout/page-chrome'
 import { useAppStore } from '../../src/renderer/src/stores/app'
-import type { Asset } from '../../src/shared/types/asset'
-import type { AgentCapabilityPlugin } from '../../src/shared/types/agent-plugin'
+import type { Asset } from '@shared/types/asset'
+import type { AgentCapabilityPlugin } from '@shared/types/agent-plugin'
 
 function hookAsset(): Asset {
   return {

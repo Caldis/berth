@@ -5,7 +5,7 @@ import i18n from '../../src/renderer/src/i18n'
 import { InspectorDrawer } from '../../src/renderer/src/components/layout/inspector-drawer'
 import { ViewRawButton } from '../../src/renderer/src/components/shared/view-raw-button'
 import { useAppStore } from '../../src/renderer/src/stores/app'
-import type { Asset } from '../../src/shared/types/asset'
+import type { Asset } from '@shared/types/asset'
 
 function asset(overrides: Partial<Asset> = {}): Asset {
   return {

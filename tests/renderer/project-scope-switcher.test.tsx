@@ -3,9 +3,9 @@ import React from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import i18n from '../../src/renderer/src/i18n'
 import { ProjectScopeSwitcher } from '../../src/renderer/src/components/layout/project-scope-switcher'
-import { DEFAULT_SCOPE_SELECTION, createProjectScopeCandidate } from '../../src/shared/scope'
+import { DEFAULT_SCOPE_SELECTION, createProjectScopeCandidate } from '@shared/scope'
 import { useAppStore } from '../../src/renderer/src/stores/app'
-import type { AgentScanSourceGroup, AssetSnapshot, ProjectScopeActivationResult } from '../../src/shared/types/ipc'
+import type { AgentScanSourceGroup, AssetSnapshot, ProjectScopeActivationResult } from '@shared/types/ipc'
 
 function activationResult(projectPath?: string): ProjectScopeActivationResult {
   const candidate = projectPath

@@ -6,7 +6,7 @@ import '../../src/renderer/src/i18n'
 import { Capabilities } from '../../src/renderer/src/pages/capabilities'
 import { PageChromeProvider } from '../../src/renderer/src/components/layout/page-chrome'
 import { useAppStore } from '../../src/renderer/src/stores/app'
-import type { Asset } from '../../src/shared/types/asset'
+import type { Asset } from '@shared/types/asset'
 
 const PLUGIN_ID = 'plugin:acme/demo-plugin@1.0.0'
 

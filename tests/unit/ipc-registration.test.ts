@@ -21,7 +21,10 @@ describe('registerAllHandlers', () => {
     const { registerAllHandlers } = await import('../../src/main/ipc')
     registerAllHandlers()
 
-    const ipcTypes = readFileSync(resolve(__dirname, '../../src/shared/types/ipc.ts'), 'utf8')
+    const ipcTypes = readFileSync(
+      resolve(__dirname, '../../packages/berth-scan-engine/src/shared/types/ipc.ts'),
+      'utf8'
+    )
     const declared = [...ipcTypes.matchAll(/^\s{2}'([a-zA-Z-]+:[a-zA-Z-]+)':\s*\{\s*args:/gm)]
       .map((m) => m[1])
       .sort()

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { normalizeUsageSummary } from '../../src/shared/usage-summary'
-import type { UsageSummary } from '../../src/shared/types/asset'
+import { normalizeUsageSummary } from '@shared/usage-summary'
+import type { UsageSummary } from '@shared/types/asset'
 
 describe('normalizeUsageSummary', () => {
   it('fills missing fields from a legacy usage summary', () => {

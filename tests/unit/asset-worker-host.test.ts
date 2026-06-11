@@ -1,7 +1,7 @@
 import { EventEmitter } from 'events'
 import { describe, expect, it, vi } from 'vitest'
-import type { AssetStats } from '../../src/shared/types/asset'
-import type { AgentScanSourceGroup, AssetScanProgress, ScanResult } from '../../src/shared/types/ipc'
+import type { AssetStats } from '@shared/types/asset'
+import type { AgentScanSourceGroup, AssetScanProgress, ScanResult } from '@shared/types/ipc'
 import {
   AssetWorkerHost,
   type AssetWorkerMessage,
@@ -9,7 +9,7 @@ import {
   type AssetWorkerData,
   type WorkerLike
 } from '../../src/main/engine/assets/worker-host'
-import { createProjectScopeCandidate } from '../../src/shared/scope'
+import { createProjectScopeCandidate } from '@shared/scope'
 
 const emptyStats: AssetStats = {
   skills: 0,

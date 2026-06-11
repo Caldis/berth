@@ -16,7 +16,7 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/renderer/src/*"],
-      "@shared/*": ["./src/shared/*"]
+      "@shared/*": ["./packages/berth-scan-engine/src/shared/*"]
     }
   },
   "include": ["tests/**/*", "src/preload/index.d.ts", "src/renderer/src/env.d.ts"],
