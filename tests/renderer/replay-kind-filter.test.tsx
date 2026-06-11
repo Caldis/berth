@@ -54,11 +54,12 @@ describe('ReplayKindFilter', () => {
       )
     }
     render(<Harness />)
-    let listbox = await openListbox()
+    // multiple 模式下选择不关闭弹层 — 全程在同一 listbox 内操作,
+    // 重复点 trigger 反而会先关闭弹层 (CI Linux/macOS 上时序必败)。
+    const listbox = await openListbox()
     fireEvent.click(within(listbox).getByRole('option', { name: /User/ }))
     expect(onChange).toHaveBeenLastCalledWith(new Set(['user']))
 
-    listbox = await openListbox()
     fireEvent.click(within(listbox).getByRole('option', { name: /User/ }))
     expect(onChange).toHaveBeenLastCalledWith(null)
   })
