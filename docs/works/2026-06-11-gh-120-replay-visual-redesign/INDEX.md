@@ -2,7 +2,7 @@
 task: 2026-06-11-gh-120-replay-visual-redesign
 task_id: GH-120
 type: feature
-phase: implement
+phase: verify
 created: 2026-06-11
 priority: P2
 target_date: 

@@ -40,12 +40,12 @@
   - lib/download.ts downloadTextFile; 头部 Dropdown 导出两档 (当前事件 payload / 过滤后事件流摘要); 文件名 sanitize
   - tests: tests/renderer/replay-detail-panel.test.tsx (新): 手柄 aria/键盘 clamp/persist mock、全屏 toggle+Esc、导出回调与 disabled 态; tests/renderer/download.test.ts (新)
   - verify: pnpm test 绿; 界面验收: 拖宽手感与 clamp、全屏过渡与 Esc/focus、导出菜单层级、disabled 态 — 真机 (T7)
-- [ ] T7 集成收口 — i18n + 全量门禁 + 真机视觉验收 [AC8/9 + 全 AC 复核]
-  - i18n en/zh 新 key 同批 (timeline/waiting/interrupted/expand/collapse/exportEvent/exportStream/resize); 删 scrubberLabel 等弃 key 连带清引用
-  - pnpm lint + typecheck + test 双轮 + build
-  - 真机 (pnpm dev): 双主题截图 — 时间轴缩放/拖曳/window 同步/等待中断样式/选中框选/筛选器 Check 左置/面板拖宽全屏导出全路径走查
-  - tests: 全量 pnpm test 双轮绿
-  - verify: AC1-AC9 逐条核对; 界面验收: 02-SPEC 六行验收表全过; 主观视觉项整理截图供用户裁判 (INDEX phase→verify)
+- [x] T7 集成收口 — i18n + 全量门禁 + 真机视觉验收 [AC8/9 + 全 AC 复核]
+  - i18n: 各任务已同批加 key (kindFilterSummary/timelineLabel/detailExpand·Collapse·Resize/exportMenu·Event·Stream×2 desc); scrubberLabel 已删连带清引用; en/zh 对称检查过 (en-only 仅 i18next `*_one` 复数派生, 正常)
+  - 门禁: prepush (lint+typecheck+test 1050 绿) + 第二轮 pnpm test 1050 绿 + pnpm build 成功
+  - 真机 (agent-dev CDP): 7 截图序列 — light 全貌 / 滚轮缩放 (等待带 16m48s 标签可见) / 拖曳平移 / 筛选器 Check 左置+图标+计数 / 面板全屏 / 导出菜单 / dark 主题 (canvas MutationObserver 重取色正确)。timeline 偏差: 等待带标签在低 zoom 时按宽度阈值隐藏 (>44px 才画), 符合设计
+  - tests: 全量双轮绿 (上两行)
+  - verify: AC1-AC9 正式核对移交 verify 阶段; 主观视觉项截图已留存 $env:TEMP\berth-gh120-v1..v7
 
 ## 用户实时反馈修正 (implement 期, 2026-06-12)
 
