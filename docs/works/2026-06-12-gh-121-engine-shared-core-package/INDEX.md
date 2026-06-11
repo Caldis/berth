@@ -2,7 +2,7 @@
 task: 2026-06-12-gh-121-engine-shared-core-package
 task_id: GH-121
 type: maintenance
-phase: explore
+phase: design
 created: 2026-06-12
 priority: P1
 target_date: 
@@ -21,8 +21,8 @@ debt:
     risk: high
     areas:
       - architecture
-    confidence: low
-    rationale: "0.0-new 初始估算: 包边界配置 (tsup/tsconfig/别名) 引入复杂度 (+2); 消灭分层倒置 + CLI 反向 import + typecheck 盲区 (-6)。30 文件物理迁移 + 全仓 import 改写触面 (worker 入口/electron.vite/e2e 产物), scope global, 等价钉测红绿网未实勘前 risk high。explore/design 后校准。"
+    confidence: medium
+    rationale: "explore 校准 (2026-06-12): 真实闭包 53 文件 (engine 27+adapters 21+adapter-registry+中立件 4, issue 30 系低估), 但消费面实测小 (main 6 文件 17 行 + tests 40 文件 ~50 行 + 配置 ~6 处); engine 零 electron import 实证; 机制全有仓内先例 (@shared 源码 alias/externalize exclude/等价钉测)。盲区实证升级: CLI 三核心文件因包 tsconfig exclude 处于全局零 typecheck。数值维持 2/6/-4, scope global risk high 维持。"
   final:
     incurred:
     repaid:
@@ -32,7 +32,12 @@ debt:
     areas: []
     confidence:
     rationale:
-  revisions: []
+  revisions:
+    - phase: explore
+      date: 2026-06-12
+      from: "confidence low"
+      to: "confidence medium"
+      reason: "闭包/消费面/构建触点全部实测 (53 文件闭包 vs 估 30, 改写面反而小), 机制全有仓内先例; 数值与 scope/risk 维持。"
 issue:
   number: 121
   repo: Caldis/berth
@@ -62,7 +67,7 @@ artifacts:
 
 ## 产物
 - [x] 00-PRD.md — 原始输入快照 (来源 issue 全文)
-- [ ] 01-ANALYSIS.md — Explore 产物
+- [x] 01-ANALYSIS.md — Explore 产物 (闭包 53 实测 + 盲区实证升级 + AC1-8)
 - [ ] 02-SPEC.md — Design 产物
 - [ ] 03-PLAN.md — 活任务清单
 - [ ] 04-POLISH.md — 可选抛光记录
