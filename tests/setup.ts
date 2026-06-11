@@ -7,6 +7,15 @@ if (typeof Element !== 'undefined' && !Element.prototype.scrollIntoView) {
   Element.prototype.scrollIntoView = function scrollIntoView(): void {}
 }
 
+// jsdom's HTMLCanvasElement.getContext logs a noisy "Not implemented" jsdomError.
+// Return null instead — canvas components (replay timeline) take the null-ctx
+// skip-drawing path; pixel output is covered by pure-function tests + manual QA.
+if (typeof HTMLCanvasElement !== 'undefined') {
+  HTMLCanvasElement.prototype.getContext = function getContext(): null {
+    return null
+  } as typeof HTMLCanvasElement.prototype.getContext
+}
+
 const emptyTokenUsage = {
   inputTokens: 0,
   outputTokens: 0,

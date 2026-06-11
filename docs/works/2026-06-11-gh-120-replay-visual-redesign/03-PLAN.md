@@ -34,7 +34,7 @@
   - 删除 replay-scrubber.tsx + replay-scrubber.test.tsx; session-replay.tsx 接线 (rangeChanged→visibleRange, onWindowDrag→scrollToIndex 环路抑制)
   - tests: tests/renderer/replay-timeline.test.tsx (新): slider aria 契约、键盘步进/缩放回调、点选拾取 (mock rect+pointer)、jsdom null-ctx 容错; sessions-pages.test.tsx testid replay-scrubber→replay-timeline
   - verify: pnpm test 绿; 界面验收: 缩放跟手 (锚点正确)、拖曳惯性手感、window 同步、等待/中断样式、选中框选、hover 反馈、键盘可达 — 真机走查 (T7)
-- [ ] T6 详情面板 — 拖宽 + 全屏 + 导出 [AC7]
+- [x] T6 详情面板 — 拖宽 + 全屏 + 导出 [AC7] (panel 6 测 + download 2 测 + sessions-pages 29 测回归绿; 宽度经 --replay-panel-w CSS 变量驱动 lg:w-[var(…)], localStorage 持久化; 全屏 absolute inset-0 + Esc + animate-in; 导出 Dropdown 两档 payload 未 ready 时单事件项 disabled; 附 tests/setup.ts canvas getContext null stub 消 jsdom 噪音)
   - 左缘手柄 (role=separator, 键盘 ±16px, clamp [320,720]∧≤60%, lg+ 限定); localStorage 持久化
   - 全屏 toggle (absolute inset-0, Esc 退出, focus 归还, 150ms opacity, reduced-motion 降级)
   - lib/download.ts downloadTextFile; 头部 Dropdown 导出两档 (当前事件 payload / 过滤后事件流摘要); 文件名 sanitize

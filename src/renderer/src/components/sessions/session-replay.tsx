@@ -13,17 +13,41 @@ import {
   replayOffsetMs
 } from '@/lib/replay-model'
 import { useSessionReplay } from '@/hooks/use-ipc'
+import { downloadTextFile, sanitizeFilenamePart } from '@/lib/download'
 import { EmptyState } from '@/components/shared/empty-state'
 import { ErrorState } from '@/components/shared/error-state'
 import { LoadingState } from '@/components/shared/loading-state'
 import { ReplayKindChip } from './replay-kind-chip'
 import { ReplayKindFilter } from './replay-kind-filter'
 import { ReplayTimeline } from './replay-timeline'
-import { ReplayDetailPanel, type ReplayPayloadState } from './replay-detail-panel'
+import {
+  REPLAY_PANEL_MAX_WIDTH,
+  REPLAY_PANEL_MIN_WIDTH,
+  ReplayDetailPanel,
+  type ReplayPayloadState
+} from './replay-detail-panel'
 
-// GH-116: 会话重放视图 — 参考 ClaudeConsole Sessions Debug 界面:
-// 控制行 (类型多选 + 搜索 + 计数) → 时间轴刷子 → 事件流 (虚拟化) + 右侧详情面板。
-// 选中/过滤状态由 session-detail 页持有, tab 切换不丢失。
+// GH-116: 会话重放视图 — 控制行 (类型多选 + 搜索 + 计数) → canvas 时间轴 →
+// 事件流 (虚拟化) + 右侧详情面板。选中/过滤状态由 session-detail 页持有, tab 切换不丢失。
+// GH-120: 面板宽度 localStorage 持久化 + 全屏态 + 导出 (当前事件 / 筛选后事件流)。
+
+const PANEL_WIDTH_STORAGE_KEY = 'berth-replay-panel-width'
+const PANEL_DEFAULT_WIDTH = 400
+
+function clampPanelWidth(width: number): number {
+  return Math.min(REPLAY_PANEL_MAX_WIDTH, Math.max(REPLAY_PANEL_MIN_WIDTH, Math.round(width)))
+}
+
+function readStoredPanelWidth(): number {
+  try {
+    const raw = window.localStorage.getItem(PANEL_WIDTH_STORAGE_KEY)
+    const value = raw == null ? NaN : Number(raw)
+    if (Number.isFinite(value)) return clampPanelWidth(value)
+  } catch {
+    // storage 不可用时静默回退默认宽度
+  }
+  return PANEL_DEFAULT_WIDTH
+}
 
 export interface SessionReplayViewState {
   selectedEventId: string | null
@@ -100,6 +124,20 @@ export function SessionReplay({
     [filtered, setViewState]
   )
 
+  // 面板宽度 (lg+ 拖宽, localStorage 持久化) 与全屏态 (瞬时, tab 切换重置可接受)
+  const [panelWidth, setPanelWidth] = useState(readStoredPanelWidth)
+  const [panelExpanded, setPanelExpanded] = useState(false)
+
+  const handlePanelResize = useCallback((width: number) => {
+    const next = clampPanelWidth(width)
+    setPanelWidth(next)
+    try {
+      window.localStorage.setItem(PANEL_WIDTH_STORAGE_KEY, String(next))
+    } catch {
+      // storage 不可用时仅保留会话内宽度
+    }
+  }, [])
+
   // payload 按需取 + 组件内缓存 (同事件来回点不重复 IPC)
   const payloadCacheRef = useRef(new Map<string, string>())
   const [payloadState, setPayloadState] = useState<ReplayPayloadState>({ status: 'loading' })
@@ -144,6 +182,36 @@ export function SessionReplay({
     },
     [filtered.length, selectByIndex, selectedIndex]
   )
+
+  const handleExportEvent = useCallback(() => {
+    if (payloadState.status !== 'ready' || !selectedEvent) return
+    downloadTextFile(
+      `berth-replay-${sanitizeFilenamePart(sessionId)}-${sanitizeFilenamePart(selectedEvent.id)}.json`,
+      payloadState.json
+    )
+  }, [payloadState, selectedEvent, sessionId])
+
+  const handleExportStream = useCallback(() => {
+    if (!replay) return
+    const data = {
+      sessionId: replay.sessionId,
+      agentId: replay.agentId,
+      startedAt: replay.startedAt,
+      endedAt: replay.endedAt,
+      totalEvents: replay.totalEvents,
+      truncated: replay.truncated,
+      filter: {
+        kinds: kindFilter ? [...kindFilter] : null,
+        query: searchQuery.trim() || null
+      },
+      exportedAt: new Date().toISOString(),
+      events: filtered
+    }
+    downloadTextFile(
+      `berth-replay-${sanitizeFilenamePart(sessionId)}.json`,
+      JSON.stringify(data, null, 2)
+    )
+  }, [filtered, kindFilter, replay, searchQuery, sessionId])
 
   if (loading && !replay) {
     return (
@@ -244,8 +312,11 @@ export function SessionReplay({
         }
       />
 
-      {/* 事件流 + 详情面板 */}
-      <div className="flex min-h-[420px] gap-3 max-lg:flex-col lg:h-[calc(100vh-21rem)]">
+      {/* 事件流 + 详情面板 (relative: 面板全屏态的覆盖基准) */}
+      <div
+        className="relative flex min-h-[420px] gap-3 max-lg:flex-col lg:h-[calc(100vh-21rem)]"
+        style={{ '--replay-panel-w': `${panelWidth}px` } as React.CSSProperties}
+      >
         {filtered.length === 0 ? (
           <div className="flex min-w-0 flex-1 flex-col justify-center">
             <EmptyState
@@ -290,7 +361,17 @@ export function SessionReplay({
             offsetMs={replayOffsetMs(selectedEvent.timestamp, startMs)}
             payload={payloadState}
             onClose={() => setViewState({ selectedEventId: null })}
-            className="w-full shrink-0 lg:w-[400px] xl:w-[440px] max-lg:max-h-[420px]"
+            expanded={panelExpanded}
+            onToggleExpanded={() => setPanelExpanded((value) => !value)}
+            width={panelWidth}
+            onResize={handlePanelResize}
+            onExportEvent={handleExportEvent}
+            onExportStream={handleExportStream}
+            className={cn(
+              panelExpanded
+                ? 'absolute inset-0 z-10 animate-in fade-in zoom-in-95 duration-150 motion-reduce:animate-none'
+                : 'w-full shrink-0 max-lg:max-h-[420px] lg:w-[var(--replay-panel-w)] lg:max-w-[60%]'
+            )}
           />
         )}
       </div>
