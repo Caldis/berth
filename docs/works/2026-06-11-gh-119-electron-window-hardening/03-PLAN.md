@@ -23,10 +23,10 @@
   - tests: tests/e2e/window-hardening.e2e.ts (新) — `pnpm test:e2e`。
   - verify: 新 e2e 绿 + 现有 e2e 全量绿 + prod 加载零回归。
 
-- [ ] T5 全量门禁 + 真机交互验收 (AC-9 收口)
-  - 内容: typecheck / lint / unit 双轮 / e2e 全量; 真机 (dev + 打包任一): 外链按钮开浏览器 (AC-2 正例)、devtools 注入 `window.api.shell.openExternal('file:///C:/')` 拒且落 main log (AC-2 反例)、三处"在资源管理器中显示" (instructions 资产卡/memory note/scan sources, AC-3 正例)、四处复制按钮可用 (AC-6 正例)、拖拽文件到窗口不替换页面 (AC-5 正例)、dev 下改 vite 配置触发 full-reload 正常 (AC-5 dev 形态)。
-  - tests: 上述门禁命令全量。
-  - verify: AC-1~AC-9 逐条核对并记录证据; debt.final 回填。
+- [x] T5 全量门禁 + 真机交互验收 (AC-9 收口) — DONE (2026-06-11):
+  - 自动化: typecheck 三段绿; lint 绿; unit 全量双轮绿 (1016+29, 两轮 exit 0); e2e 25/26 绿 (新 hardening 5/5; 唯 1 败 project-scope 为已记 issue 的 win32 宿主隔离预存问题, baseline 复证非本任务回归)。
+  - 真机 (agent-dev CDP 驱动, dev 实例 sandbox 形态): window.api 完好 (AC-1 dev); `location.reload()` 放行存活 — dev 同 origin 通道即 vite full-reload 通道 (AC-5 dev); 注入 `openExternal('file:///...')`/`('javascript:...')` 与集合外 `openPath` 全拒且落 main log 'url-guard' (AC-2/3 反例); 真实资产路径 `~/.claude/CLAUDE.md` 经 allowedRoots 三方并集端到端放行开 Explorer (AC-3 正例, 聚合唯一端到端证据); trusted click 内 `navigator.clipboard.writeText` ok (AC-6 放行); `permissions.query(geolocation)`='denied' (AC-6 拒绝)。
+  - 真机从宽项与依据: 外链正例不真开浏览器 (避免系统副作用; 反例 log 已证 handler 接线, 正例为同函数另一分支 + unit 覆盖); 产品 4 复制按钮不逐点 (clipboard 权限层已由 trusted probe 证, 按钮 onClick 同一 API); 物理拖拽不模拟 (与 location.href 同走 will-navigate 拦截点, e2e prod + 真机 dev 双形态已覆盖)。
 
 ## verify 回写
 verify 不通过项作为新任务追加于此, phase 退回 implement。

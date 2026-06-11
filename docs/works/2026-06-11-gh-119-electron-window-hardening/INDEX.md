@@ -2,7 +2,7 @@
 task: 2026-06-11-gh-119-electron-window-hardening
 task_id: GH-119
 type: maintenance
-phase: implement
+phase: verify
 created: 2026-06-11
 priority: P1
 target_date: 
