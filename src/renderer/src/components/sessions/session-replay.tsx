@@ -3,10 +3,9 @@ import { useTranslation } from 'react-i18next'
 import { Virtuoso, type VirtuosoHandle } from 'react-virtuoso'
 import { ListVideo, Search } from 'lucide-react'
 import type { SessionReplayEvent, SessionReplayEventKind } from '@shared/types/ipc'
-import { Chip, Input, Select, SelectItem } from '@/components/ui'
+import { Chip, Input } from '@/components/ui'
 import { cn, formatNumber } from '@/lib/utils'
 import {
-  REPLAY_KINDS,
   buildReplayPositions,
   filterReplayEvents,
   formatReplayOffset,
@@ -17,6 +16,7 @@ import { EmptyState } from '@/components/shared/empty-state'
 import { ErrorState } from '@/components/shared/error-state'
 import { LoadingState } from '@/components/shared/loading-state'
 import { ReplayKindChip } from './replay-kind-chip'
+import { ReplayKindFilter } from './replay-kind-filter'
 import { ReplayScrubber } from './replay-scrubber'
 import { ReplayDetailPanel, type ReplayPayloadState } from './replay-detail-panel'
 
@@ -176,35 +176,11 @@ export function SessionReplay({
     <section data-testid="session-replay" className="min-w-0 space-y-3">
       {/* 控制行 */}
       <div className="flex flex-wrap items-center gap-2">
-        <Select
-          aria-label={t('sessions.replay.kindFilterLabel')}
-          data-testid="replay-kind-filter"
-          selectionMode="multiple"
-          size="sm"
-          placeholder={t('sessions.replay.kindFilterAll')}
-          selectedKeys={(kindFilter ?? new Set()) as Set<string>}
-          onSelectionChange={(keys) => {
-            if (keys === 'all') {
-              setViewState({ kindFilter: null })
-              return
-            }
-            const next = new Set([...keys] as SessionReplayEventKind[])
-            setViewState({ kindFilter: next.size === 0 ? null : next })
-          }}
-          className="w-44"
-          classNames={{ trigger: 'h-9 min-h-9' }}
-        >
-          {REPLAY_KINDS.map((kind) => (
-            <SelectItem key={kind} textValue={t(`sessions.replay.kind.${kind}`)}>
-              <span className="flex items-center justify-between gap-2">
-                {t(`sessions.replay.kind.${kind}`)}
-                <span className="text-xs tabular-nums text-muted-foreground">
-                  {formatNumber(kindCounts.get(kind) ?? 0)}
-                </span>
-              </span>
-            </SelectItem>
-          ))}
-        </Select>
+        <ReplayKindFilter
+          selected={kindFilter}
+          counts={kindCounts}
+          onChange={(next) => setViewState({ kindFilter: next })}
+        />
         <Input
           aria-label={t('sessions.replay.searchAriaLabel')}
           data-testid="replay-search"

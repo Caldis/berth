@@ -423,6 +423,7 @@
     "replay": {
       "kindFilterLabel": "Event types",
       "kindFilterAll": "All events",
+      "kindFilterSummary": "{{count}} types",
       "searchPlaceholder": "Search events...",
       "searchAriaLabel": "Search replay events",
       "showing": "{{shown}} / {{total}} events",

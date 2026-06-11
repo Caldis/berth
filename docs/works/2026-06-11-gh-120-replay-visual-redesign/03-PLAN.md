@@ -21,7 +21,7 @@
   - buildReplayTimePoints / zoomViewportAt / panViewportBy / timeToX / xToTime / nearestTimeIndex / computeWaitGaps (REPLAY_WAIT_THRESHOLD_MS=60_000) / selectTickStep / bucketEvents
   - tests: tests/renderer/replay-model.test.ts 扩 (每函数边界: clamp/空列表/null 时间戳/单事件/锚点缩放往返)
   - verify: pnpm test 绿; 函数纯度 (无 DOM/React import); 非 UI 项, 界面验收不适用
-- [ ] T4 筛选器 — replay-kind-filter.tsx (Check 左置 + 图标 + 主题色) [AC2]
+- [x] T4 筛选器 — replay-kind-filter.tsx (Check 左置 + 图标 + 主题色) [AC2] (filter 3 测 + sessions-pages 29 测回归绿; kindFilterSummary key en/zh 同批)
   - 新组件: Select multiple + SelectItem hideSelectedIcon + 左 Check 槽 + kind 图标染色 + 计数; renderValue 色点摘要
   - session-replay.tsx 控制行替换接入
   - tests: tests/renderer/replay-kind-filter.test.tsx (新): 选中 Check 槽呈现/位置、全选=null 语义、计数渲染

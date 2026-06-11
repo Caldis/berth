@@ -417,6 +417,7 @@
     "replay": {
       "kindFilterLabel": "事件类型",
       "kindFilterAll": "全部事件",
+      "kindFilterSummary": "{{count}} 类事件",
       "searchPlaceholder": "搜索事件...",
       "searchAriaLabel": "搜索重放事件",
       "showing": "{{shown}} / {{total}} 条事件",
