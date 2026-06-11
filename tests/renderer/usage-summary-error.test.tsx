@@ -17,8 +17,10 @@ describe('useUsageSummary — error channel (GH-118 T1)', () => {
     expect(result.current.usage).toBeNull()
 
     act(() => result.current.reload())
-    await waitFor(() => expect(result.current.error).toBeNull())
-    expect(result.current.usage).not.toBeNull()
+    // Wait on the strong condition (data arrived) — the effect clears `error`
+    // synchronously at request start, so error===null alone would race the fetch.
+    await waitFor(() => expect(result.current.usage).not.toBeNull())
+    expect(result.current.error).toBeNull()
     expect(window.api.usage.summary).toHaveBeenCalledTimes(2)
   })
 

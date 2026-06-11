@@ -34,8 +34,10 @@ describe('useAssetRuntime — error channel (GH-118 T4)', () => {
     await waitFor(() => expect(result.current.error).toBe('bootstrap boom'))
 
     act(() => result.current.retry())
+    // Wait on the strong condition (second call happened) — retry clears `error`
+    // synchronously, so error===null alone would race the re-bootstrap.
+    await waitFor(() => expect(window.api.assets.status).toHaveBeenCalledTimes(2))
     await waitFor(() => expect(result.current.error).toBeNull())
-    expect(window.api.assets.status).toHaveBeenCalledTimes(2)
   })
 
   it('surfaces a manual refresh failure through the same channel', async () => {
