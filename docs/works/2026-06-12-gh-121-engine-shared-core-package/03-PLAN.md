@@ -18,10 +18,7 @@
   - tests: not needed - CLI E2E golden 网既有 (fixtures 快照); exclude 清空后 typecheck 首次全覆盖三文件即 AC-3 证据。
   - verify: AC-2 (packages/** 零 `../../../src` — grep 实证) + AC-3 (exclude 清空 + root `pnpm typecheck` 含包) + 包三命令绿; 非 UI 不适用。
 
-- [ ] B4 文档对齐 + 收口 (AC-7/8)
-  - 内容: docs/ARCHITECTURE.md — engine/adapters/中立件目录行迁移至 packages 段、模块表路径、"electron 值 import 白名单"措辞核对 (白名单文件未动, 路径表述更新); 源 issue (engine-shared-core-package) 补进展 (splitFrontmatter 等余项明确留存); 全量门禁末轮 + prepush + push + ci:wait。
-  - tests: not needed - 文档与流程收口; 证据 = `pnpm harness:check` + 全量门禁 + CI conclusion=success。
-  - verify: AC-7/AC-8 + verify 阶段逐条核对 AC-1~8; 非 UI 不适用。
+- [x] B4 文档对齐 + 收口 (AC-7/8) — DONE: ARCHITECTURE 全面对齐 (进程边界/仓库布局/主进程模块 pkg: 前缀/IPC 真源链/分层表加物理位置列+方向不变量/安全约束 url-guard 衔接); agent-plugins 跨侧拆分注明 (registry+descriptors 留 main, adapter-registry+manifest 进包); 全仓 lint (迁移后首轮) + harness:check 绿; 源 issue 终态与 prepush/push/ci:wait 留 archive 流程 (按 5.0 步骤 5-7)。两则 friction 已当轮沉淀提交 (a4865934)。
 
 ## verify 回写
 verify 不通过项作为新任务追加于此, phase 退回 implement。

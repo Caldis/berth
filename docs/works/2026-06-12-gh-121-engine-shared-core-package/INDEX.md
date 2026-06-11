@@ -2,7 +2,7 @@
 task: 2026-06-12-gh-121-engine-shared-core-package
 task_id: GH-121
 type: maintenance
-phase: implement
+phase: verify
 created: 2026-06-12
 priority: P1
 target_date: 
