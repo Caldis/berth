@@ -34,6 +34,11 @@ GH-113 已落地本 FEATURE 的地基与核心数据通路 (详见归档 INDEX�
 
 **仍 OPEN (本 FEATURE 主线剩余)**: T4 可暂停/可控 (协作式取消 worker checkpoint) + **设置中暴露扫描策略档位** (频率/并发/排除/重建) — 用户明确要, 最后做; 老用户 JSON→SQLite 迁移 ([[2026-06-08-IMPROVEMENT-json-to-sqlite-snapshot-migration]]); 调度/背压/限流优先级队列。cap-5 行级 SQLite delta (SqliteSnapshotStore.replaceBySourceKey, 低优先) — 自 incremental-write-followups (2026-06-10 RESOLVED) 并入本主线。
 
+# GH-117 追记 (2026-06-11, 真实数据量下 scope 切换实测证据)
+- macOS 真机 (主力开发机, `~/.claude` 全量真实数据) 探针实测: 切换 project scope 时 `project-scope:activate` 全量重扫耗时 **10047ms** (产出 393 资产; 对照 `set-scope` 3ms / `snapshot` 93ms), 用户面对弹层 spinner 转 ~10 秒。
+- 这与本 FEATURE 的目标模型「切换仅是对已扫完整结果的 narrow-down 过滤, 不触发扫描」直接冲突 — activate 的全量重扫路径属于待消灭行为; 调度/背压落地时应一并收敛。
+- 证据来源: `docs/works/2026-06-11-gh-117-project-scope-e2e-macos/01-ANALYSIS.md` 探针 C (GH-117 本体修 e2e 隔离, 性能旁支只在此处跟踪)。
+
 # 来源 / 关联
 - 用户在 GH-113 收尾澄清 (2026-06-07): "全局意味着完全完整的扫描结果, 切换只是 narrow down; 启动即扫全部; conventions-only 是 BUG; 扫描应像 spotlight/windows 索引: 后台渐进增量可控可暂停 + 可配置"。
 - 关联 `docs/works/_archive/2026-06-07-gh-113-scope-refactor-convergence/`。

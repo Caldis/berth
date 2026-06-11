@@ -2,7 +2,7 @@
 task: 2026-06-11-gh-117-project-scope-e2e-macos
 task_id: GH-117
 type: bug
-phase: explore
+phase: design
 created: 2026-06-11
 priority: P1
 target_date:
@@ -12,15 +12,15 @@ source:
     - docs/issues/2026-06-08-BUG-project-scope-e2e-macos.md
 debt:
   estimate:
-    incurred: 2
-    repaid: 1
-    net: 1
+    incurred: 1
+    repaid: 2
+    net: -1
     scope: module
-    risk: medium
+    risk: low
     areas:
       - testability
-    confidence: low
-    rationale: "0.0-new 初始估算: 根因未定 (产品 scope 切换 vs e2e harness 时序), 修复后移除 test.skip(darwin) 偿还 macOS e2e 覆盖洞; explore 定性后校准。"
+    confidence: high
+    rationale: "explore 定性: e2e fixture 未隔离 HOME 致宿主数据污染 (activate 10s > 断言 5s), 非产品 bug; 产品零改动, 移除 skip + 6 文件隔离偿还覆盖洞与宿主依赖。"
   final:
     incurred:
     repaid:
@@ -30,7 +30,12 @@ debt:
     areas: []
     confidence:
     rationale:
-  revisions: []
+  revisions:
+    - phase: 1.0-explore
+      date: 2026-06-11
+      from: "incurred 2 / repaid 1 / net 1 / risk medium / confidence low"
+      to: "incurred 1 / repaid 2 / net -1 / risk low / confidence high"
+      reason: "根因三重实证为 e2e harness 隔离缺失 (IPC 直通绿 / UI 时间线 10.3s>5s / HOME 隔离后 133ms); 产品代码零改动, 影响面收窄至 tests/e2e。"
 issue:
   number: 117
   repo: Caldis/berth
@@ -57,7 +62,7 @@ artifacts:
 
 ## 产物
 - [x] 00-BUG.md — 原始输入快照 (docs/issues/2026-06-08-BUG-project-scope-e2e-macos.md)
-- [ ] 01-ANALYSIS.md — Explore 产物
+- [x] 01-ANALYSIS.md — Explore 产物 (根因实证: e2e fixture 未隔离 HOME, 宿主数据污染; 非产品 bug)
 - [ ] 02-SPEC.md — Design 产物
 - [ ] 03-PLAN.md — 活任务清单
 
