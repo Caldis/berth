@@ -22,14 +22,15 @@ debt:
     confidence: medium
     rationale: "design 决议: 中断标志 adapter 层标准化 (shared 类型加可选字段 + 两家 adapter), scope 升 cross-process; 主体仍是 renderer sessions 模块 + lib + 测试。估算维持 6/2/4。"
   final:
-    incurred:
-    repaid:
-    net:
-    scope:
-    risk:
-    areas: []
-    confidence:
-    rationale:
+    incurred: 6
+    repaid: 2
+    net: 4
+    scope: cross-process
+    risk: medium
+    areas:
+      - ui-ux
+    confidence: high
+    rationale: "verify 校准: 与 estimate 一致。incurred 6 = 新 canvas 时间轴组件 (~600 行自管绘制/交互) + 面板/筛选器/下载新面; repaid 2 = 删除 DOM scrubber 与定位胶囊、修正筛选器交互债。risk 维持 medium (首个 canvas 组件, 维护面新, 但 StrictMode rAF bug 已在任务内发现并修复, 数学层 23 测钉死)。"
   revisions:
     - phase: design
       date: 2026-06-11

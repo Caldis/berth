@@ -52,5 +52,14 @@
 - [x] F1 时间轴全白 (hover tips 正常) — 根因: React StrictMode 双挂载下 cleanup `cancelAnimationFrame` 后未复位 `rafRef.current`, markDirty 去重分支永久短路, draw 永不执行。修复: cleanup 复位 id + 置 dirty。CDP 真机探针定位 (size update 跑/draw enter 不跑) + 修复后 canvas 1476×96 38k 非透明像素确认。
 - [x] F2 拖宽锚点改两栏中间 + indicator — 手柄从面板左 border 的"虚空"热区 (absolute -left-1) 重构为列表与面板之间的独立 `PanelResizeHandle` 分隔条 (w-3 列 + 居中 h-10 w-1 圆条 indicator, hover/active/focus 变 primary); panel 卸下 width/onResize props; 测试迁移。真机布局确认。
 
+## verify 客观核对 (2026-06-12, Agent 自验部分)
+
+- 测试覆盖审计: T1-T7 + F1/F2 全部有测试证据或已声明例外 (canvas 像素 manual; 真机 7 截图序列留存 $env:TEMP\berth-gh120-v1..v7)。diff 内行为变更 ↔ 测试映射: interrupted (adapter 单测×2 + ipc-contract) / 7 色 (chip 10 测) / 视口数学 (model 23 测) / 筛选器 (3 测) / 时间轴 DOM 语义 (7 测) / 面板+手柄 (6 测) / download (2 测) / 集成 (sessions-pages 29 测)。
+- 机械门禁: lint/typecheck/test 双轮 1050 绿 + build 成功; CI master 全绿 (24ef74ec success, conclusion 判定)。
+- Code review: AC1-AC9 逐条过 — AC1✓ (同源 7 色 light/dark, danger 保留) AC2✓ (Check 行首测试+真机) AC3✓ (DPR 1.5 真机/锚点缩放/平移/1026 事件流畅) AC4✓ (window 双向, rangeChanged 单写) AC5✓* AC6✓ (胶囊删除/框选真机可见) AC7✓ (拖宽手柄重构/全屏/导出菜单真机) AC8✓ (slider aria 契约延续/状态全保留/reduced-motion) AC9✓ (双轮绿)。架构边界: 零新 IPC 通道 (加可选字段), renderer 准入合规 (@/components/ui 单入口), 无 electron 越界 import。
+- *AC5 已知限制: 中断线真机视觉未用真实中断数据走查 (验收会话无 Esc 中断事件); 数据层 adapter 单测×2 覆盖, 渲染与等待带同管线 (等待带真机已见 16m48s 标签)。用户验收时若有含中断的会话可顺带确认。
+- debt.final 已校准 (6/2/4 cross-process medium high), 与 estimate 一致无 revision; harness:stats total=16 ok; Project strict check 过 (scope/confidence 字段漂移已 ensure 同步)。
+- **待用户裁判的主观项**: 时间轴整体观感与信息密度 / 手柄 indicator 样式 / 缩放跟手感 / 全屏过渡 — 截图已发, 等确认后 archive。
+
 ## verify 回写
 verify 不通过项作为新任务追加于此, phase 退回 implement。
