@@ -2,7 +2,7 @@
 task: 2026-06-11-gh-120-replay-visual-redesign
 task_id: GH-120
 type: feature
-phase: verify
+phase: archive
 created: 2026-06-11
 priority: P2
 target_date: 
@@ -48,7 +48,7 @@ gh_project:
   project_number: 6
   project_url: https://github.com/users/Caldis/projects/6
   item_id: PVTI_lAHOADXbEs4BZHvQzgvcm10
-  item_status: In Progress
+  item_status: Done
   project_id: PVT_kwHOADXbEs4BZHvQ
 artifacts:
   source: 00-PRD.md
