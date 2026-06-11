@@ -22,7 +22,7 @@
 # 预期 / 建议 (执行计划)
 - 走 cross-review 重构流程: 调研成熟索引器 + 论文 (Spotlight/Windows Search/Everything-USN/编辑器索引/调度背压/缓存失效) → 重设计 → Codex 两轮对抗 review → 分层落地。
 - 调研+映射 Workflow 已启动 (run wf_46cf319a-ea8)。设计产出写入 `docs/works/2026-06-07-gh-113-scope-refactor-convergence/`。
-- 关联性能后续: [[2026-06-07-IMPROVEMENT-scan-worker-long-lived]] (独立后台 worker, Codex B①) 并入本 FEATURE。
+- 关联性能后续: [[2026-06-07-IMPROVEMENT-scan-worker-long-lived]] (独立后台 worker, Codex B①) 并入本 FEATURE (2026-06-11 RESOLVED-MERGED, 见下"仍 OPEN"明列项)。
 
 # 进展 (2026-06-09, GH-113 归档)
 GH-113 已落地本 FEATURE 的地基与核心数据通路 (详见归档 INDEX「续跑指南」):
@@ -32,7 +32,7 @@ GH-113 已落地本 FEATURE 的地基与核心数据通路 (详见归档 INDEX�
 - **可观测性 v1**: IndexHairline/IndexingInline/IndexPulse + useIndexActivity 局部 loading。
 - **确定式 id**: 全 parser `assetEntityId` ([[2026-06-07-BUG-claude-makeid-nondeterministic-selection-loss]] RESOLVED)。
 
-**仍 OPEN (本 FEATURE 主线剩余)**: T4 可暂停/可控 (协作式取消 worker checkpoint) + **设置中暴露扫描策略档位** (频率/并发/排除/重建) — 用户明确要, 最后做; 老用户 JSON→SQLite 迁移 ([[2026-06-08-IMPROVEMENT-json-to-sqlite-snapshot-migration]]); 调度/背压/限流优先级队列。cap-5 行级 SQLite delta (SqliteSnapshotStore.replaceBySourceKey, 低优先) — 自 incremental-write-followups (2026-06-10 RESOLVED) 并入本主线。
+**仍 OPEN (本 FEATURE 主线剩余)**: T4 可暂停/可控 (协作式取消 worker checkpoint) + **设置中暴露扫描策略档位** (频率/并发/排除/重建) — 用户明确要, 最后做; 调度/背压/限流优先级队列。长驻 scan worker (跨扫描复用, 消灭每轮 new Worker + sessionCache 双向 structured clone, worker-host.ts) — 自 scan-worker-long-lived (2026-06-11 RESOLVED-MERGED) 并入本主线, 随调度/背压设计一并定 worker 生命周期与缓存归属。cap-5 行级 SQLite delta (SqliteSnapshotStore.replaceBySourceKey, 低优先) — 自 incremental-write-followups (2026-06-10 RESOLVED) 并入本主线。(JSON→SQLite 迁移项已出清: 2026-06-08-IMPROVEMENT-json-to-sqlite-snapshot-migration 已 RESOLVED @ a9959bb4, 方案为 sqlite store 打开后清理 legacy JSON。)
 
 # GH-117 追记 (2026-06-11, 真实数据量下 scope 切换实测证据)
 - macOS 真机 (主力开发机, `~/.claude` 全量真实数据) 探针实测: 切换 project scope 时 `project-scope:activate` 全量重扫耗时 **10047ms** (产出 393 资产; 对照 `set-scope` 3ms / `snapshot` 93ms), 用户面对弹层 spinner 转 ~10 秒。
