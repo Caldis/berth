@@ -1,7 +1,7 @@
 import { test, expect, type ElectronApplication, type Page } from '@playwright/test'
-import { _electron as electron } from '@playwright/test'
 import { mkdirSync, rmSync, writeFileSync } from 'fs'
-import { join, resolve } from 'path'
+import { join } from 'path'
+import { prepareIsolatedDirs, launchBerthApp } from './launch'
 
 // GH-113 T3b: the global scope shows EVERY session-derived project's root
 // conventions via the shallow index, while project scope filters to the selected
@@ -26,13 +26,11 @@ function writeCodexSession(sessionsDir: string, id: string, cwd: string): void {
 
 test.beforeEach(async ({ browserName: _browserName }, testInfo) => {
   tempDir = testInfo.outputPath('global-shallow-fixture')
-  const userDataDir = join(tempDir, 'user-data')
-  const codexHome = join(tempDir, 'codex-home')
-  const sessionsDir = join(codexHome, 'sessions')
+  const dirs = prepareIsolatedDirs(tempDir)
+  const sessionsDir = join(dirs.codexHome, 'sessions')
   alphaDir = join(tempDir, 'proj-alpha')
   bravoDir = join(tempDir, 'proj-bravo')
 
-  mkdirSync(userDataDir, { recursive: true })
   mkdirSync(sessionsDir, { recursive: true })
   // Two independent git projects, each with a root AGENTS.md.
   for (const dir of [alphaDir, bravoDir]) {
@@ -45,12 +43,9 @@ test.beforeEach(async ({ browserName: _browserName }, testInfo) => {
   writeCodexSession(sessionsDir, 'alpha-session', alphaDir)
   writeCodexSession(sessionsDir, 'bravo-session', bravoDir)
 
-  app = await electron.launch({
-    args: [resolve(__dirname, '../../out/main/index.js'), `--user-data-dir=${userDataDir}`],
-    env: { ...process.env, CODEX_HOME: codexHome, NODE_ENV: 'test' }
-  })
-  page = await app.firstWindow()
-  await page.waitForLoadState('domcontentloaded')
+  const launched = await launchBerthApp(dirs)
+  app = launched.app
+  page = launched.page
 })
 
 test.afterEach(async () => {

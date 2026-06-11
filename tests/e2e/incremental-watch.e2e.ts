@@ -1,7 +1,7 @@
 import { test, expect, type ElectronApplication } from '@playwright/test'
-import { _electron as electron } from '@playwright/test'
 import { mkdirSync, rmSync, writeFileSync } from 'fs'
-import { join, resolve } from 'path'
+import { join } from 'path'
+import { prepareIsolatedDirs, launchBerthApp } from './launch'
 
 // GH-113 cap-4: end-to-end proof of the real-time incremental write path. A real
 // chokidar event on a watched capability file is re-derived for that file alone
@@ -17,13 +17,11 @@ function skill(name: string): string {
 
 test('folds a newly-added watched skill into the snapshot incrementally (id stays stable)', async ({ browserName: _b }, info) => {
   tempDir = info.outputPath('incremental-watch')
-  const userDataDir = join(tempDir, 'user-data')
-  const codexHome = join(tempDir, 'codex-home')
+  const dirs = prepareIsolatedDirs(tempDir)
   const projectDir = join(tempDir, 'proj')
-  const sessionsDir = join(codexHome, 'sessions')
+  const sessionsDir = join(dirs.codexHome, 'sessions')
   const skillsDir = join(projectDir, '.agents', 'skills')
 
-  mkdirSync(userDataDir, { recursive: true })
   mkdirSync(sessionsDir, { recursive: true })
   mkdirSync(join(projectDir, '.git'), { recursive: true })
   mkdirSync(join(skillsDir, 'seed'), { recursive: true })
@@ -34,13 +32,10 @@ test('folds a newly-added watched skill into the snapshot incrementally (id stay
     JSON.stringify({ type: 'session_meta', timestamp: '2026-06-02T00:00:00.000Z', payload: { id: 'watch-session', cwd: projectDir, model: 'gpt-5' } }) + '\n'
   )
 
-  const app: ElectronApplication = await electron.launch({
-    args: [resolve(__dirname, '../../out/main/index.js'), `--user-data-dir=${userDataDir}`],
-    env: { ...process.env, CODEX_HOME: codexHome, NODE_ENV: 'test' }
-  })
+  const launched = await launchBerthApp(dirs)
+  const app: ElectronApplication = launched.app
   try {
-    const page = await app.firstWindow()
-    await page.waitForLoadState('domcontentloaded')
+    const page = launched.page
     await page.locator('aside').first().waitFor()
 
     // Activate the temp project so the watcher restarts and watches its .agents/skills.

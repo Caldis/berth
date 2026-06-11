@@ -1,8 +1,6 @@
 import { test, expect, type ElectronApplication, type Page } from '@playwright/test'
-import { _electron as electron } from '@playwright/test'
 import { execFileSync } from 'child_process'
-import { mkdirSync } from 'fs'
-import { resolve } from 'path'
+import { prepareIsolatedDirs, launchBerthApp } from './launch'
 
 let app: ElectronApplication
 let page: Page
@@ -13,14 +11,11 @@ const windowControlNames = {
 }
 
 test.beforeEach(async ({ browserName: _browserName }, testInfo) => {
-  const userDataDir = testInfo.outputPath('user-data')
-  mkdirSync(userDataDir, { recursive: true })
+  const dirs = prepareIsolatedDirs(testInfo.outputPath('window-controls-fixture'))
 
-  app = await electron.launch({
-    args: [resolve(__dirname, '../../out/main/index.js'), `--user-data-dir=${userDataDir}`]
-  })
-  page = await app.firstWindow()
-  await page.waitForLoadState('domcontentloaded')
+  const launched = await launchBerthApp(dirs)
+  app = launched.app
+  page = launched.page
 })
 
 test.afterEach(async () => {

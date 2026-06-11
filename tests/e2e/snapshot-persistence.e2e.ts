@@ -1,7 +1,7 @@
 import { test, expect, type ElectronApplication } from '@playwright/test'
-import { _electron as electron } from '@playwright/test'
 import { existsSync, mkdirSync, rmSync, writeFileSync } from 'fs'
-import { join, resolve } from 'path'
+import { join } from 'path'
+import { prepareIsolatedDirs, launchBerthApp, type IsolatedDirs } from './launch'
 
 // GH-113 I3: the snapshot is persisted to an on-disk SQLite index on scan
 // completion and restored on a cold start, so a relaunch shows the last result
@@ -10,21 +10,13 @@ import { join, resolve } from 'path'
 // binding opens a real DB inside the packaged main process.
 
 let tempDir: string
-let userDataDir: string
-
-async function launch(): Promise<ElectronApplication> {
-  return electron.launch({
-    args: [resolve(__dirname, '../../out/main/index.js'), `--user-data-dir=${userDataDir}`],
-    env: { ...process.env, CODEX_HOME: join(tempDir, 'codex-home'), NODE_ENV: 'test' }
-  })
-}
+let dirs: IsolatedDirs
 
 test('persists the snapshot on scan and cold-starts from it on relaunch', async ({ browserName: _b }, info) => {
   tempDir = info.outputPath('snap-persist')
-  userDataDir = join(tempDir, 'user-data')
-  const sessionsDir = join(tempDir, 'codex-home', 'sessions')
+  dirs = prepareIsolatedDirs(tempDir)
+  const sessionsDir = join(dirs.codexHome, 'sessions')
   const projectDir = join(tempDir, 'proj')
-  mkdirSync(userDataDir, { recursive: true })
   mkdirSync(sessionsDir, { recursive: true })
   mkdirSync(join(projectDir, '.git'), { recursive: true })
   writeFileSync(join(projectDir, 'AGENTS.md'), '# Persisted project conventions\nbody')
@@ -34,10 +26,10 @@ test('persists the snapshot on scan and cold-starts from it on relaunch', async 
   )
 
   // Run 1 — scan, then the runtime persists the snapshot on completion.
-  const app1 = await launch()
+  const run1 = await launchBerthApp(dirs)
+  const app1: ElectronApplication = run1.app
   try {
-    const page1 = await app1.firstWindow()
-    await page1.waitForLoadState('domcontentloaded')
+    const page1 = run1.page
     await page1.locator('aside').first().waitFor()
     await expect
       .poll(() => page1.evaluate(async () => (await window.api.assets.status())?.state), { timeout: 15000 })
@@ -53,15 +45,15 @@ test('persists the snapshot on scan and cold-starts from it on relaunch', async 
   // runs on system Node and cannot load the Electron-ABI better-sqlite3 binding,
   // so here we assert the file exists and prove the data survives via the
   // cold-start read below.
-  const dbPath = join(userDataDir, 'berth-index.db')
+  const dbPath = join(dirs.userDataDir, 'berth-index.db')
   expect(existsSync(dbPath)).toBe(true)
 
   // Run 2 — cold start: the persisted assets are available immediately (the very
   // first snapshot read is already populated, before a fresh scan could finish).
-  const app2 = await launch()
+  const run2 = await launchBerthApp(dirs)
+  const app2: ElectronApplication = run2.app
   try {
-    const page2 = await app2.firstWindow()
-    await page2.waitForLoadState('domcontentloaded')
+    const page2 = run2.page
     const coldCount = await page2.evaluate(async () => (await window.api.assets.snapshot()).assets.length)
     expect(coldCount).toBeGreaterThan(0)
   } finally {

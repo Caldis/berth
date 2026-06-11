@@ -1,8 +1,8 @@
 import { test, expect, type ElectronApplication, type Locator, type Page } from '@playwright/test'
-import { _electron as electron } from '@playwright/test'
 import { mkdtempSync } from 'fs'
 import { tmpdir } from 'os'
-import { join, resolve } from 'path'
+import { join } from 'path'
+import { prepareIsolatedDirs, launchBerthApp } from './launch'
 
 let app: ElectronApplication
 let page: Page
@@ -34,17 +34,12 @@ const topBreadcrumb = (): Locator =>
   })
 
 test.beforeAll(async () => {
-  const userDataDir = mkdtempSync(join(tmpdir(), 'berth-e2e-'))
+  // GH-117: 原先连 CODEX_HOME 都未隔离 (扫宿主 ~/.codex), 统一走三隔离根。
+  const dirs = prepareIsolatedDirs(mkdtempSync(join(tmpdir(), 'berth-e2e-')))
 
-  app = await electron.launch({
-    args: [resolve(__dirname, '../../out/main/index.js'), `--user-data-dir=${userDataDir}`],
-    env: {
-      ...process.env,
-      NODE_ENV: 'test'
-    }
-  })
-  page = await app.firstWindow()
-  await page.waitForLoadState('domcontentloaded')
+  const launched = await launchBerthApp(dirs)
+  app = launched.app
+  page = launched.page
 })
 
 test.afterAll(async () => {
