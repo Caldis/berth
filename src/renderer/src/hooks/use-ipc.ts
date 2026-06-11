@@ -107,12 +107,22 @@ function requestAgentCapabilityPlugins(): Promise<AgentCapabilityPluginListResul
 export function useAssetRuntime(): {
   loading: boolean
   refresh: () => void
+  error: string | null
+  retry: () => void
 } {
   const status = useAppStore((s) => s.assetRuntimeStatus)
   const setAssetRuntimeStatus = useAppStore((s) => s.setAssetRuntimeStatus)
   const setAssetSnapshot = useAppStore((s) => s.setAssetSnapshot)
   const applyAssetProgress = useAppStore((s) => s.applyAssetProgress)
   const mountedRef = useRef(false)
+  const [error, setError] = useState<string | null>(null)
+  const [bootstrapNonce, setBootstrapNonce] = useState(0)
+
+  // GH-118: re-runs the initial status/snapshot bootstrap from scratch after a failure.
+  const retry = useCallback(() => {
+    setError(null)
+    setBootstrapNonce((n) => n + 1)
+  }, [])
 
   const syncSnapshot = useCallback(async () => {
     if (!window.api?.assets?.snapshot) return
@@ -135,7 +145,15 @@ export function useAssetRuntime(): {
         setAssetRuntimeStatus(nextStatus)
         return syncSnapshot()
       })
-      .catch(() => {})
+      .then(() => {
+        if (!mountedRef.current) return
+        setError(null)
+      })
+      .catch((err) => {
+        // GH-118: a failed rescan is observable (existing snapshot data stays in the store).
+        if (!mountedRef.current) return
+        setError(err instanceof Error ? err.message : String(err))
+      })
   }, [setAssetRuntimeStatus, syncSnapshot])
 
   useEffect(() => {
@@ -148,12 +166,18 @@ export function useAssetRuntime(): {
         await syncSnapshot()
       })
       .then(() => {
+        if (!mountedRef.current) return
+        setError(null)
         const current = useAppStore.getState().assetRuntimeStatus
         if (current.state === 'idle' || current.state === 'stale' || current.state === 'error') {
           refresh()
         }
       })
-      .catch(() => {})
+      .catch((err) => {
+        // GH-118: a failed bootstrap leaves the whole app empty — surface it (AC-2 ①).
+        if (!mountedRef.current) return
+        setError(err instanceof Error ? err.message : String(err))
+      })
     const unsubscribe = window.api?.assets?.onChanged?.(() => {
       void syncSnapshot()
     })
@@ -167,11 +191,13 @@ export function useAssetRuntime(): {
       if (unsubscribe) unsubscribe()
       if (unsubscribeProgress) unsubscribeProgress()
     }
-  }, [applyAssetProgress, refresh, setAssetRuntimeStatus, syncSnapshot])
+  }, [applyAssetProgress, refresh, setAssetRuntimeStatus, syncSnapshot, bootstrapNonce])
 
   return {
     loading: status.state === 'scanning',
-    refresh
+    refresh,
+    error,
+    retry
   }
 }
 
@@ -180,12 +206,21 @@ export function useAssets(): {
   stats: AssetStats
   loading: boolean
   refresh: () => void
+  error: string | null
+  retry: () => void
 } {
   const assets = useAppStore((s) => s.assets)
   const stats = useAppStore((s) => s.stats)
   const runtime = useAssetRuntime()
 
-  return { assets, stats, loading: runtime.loading, refresh: runtime.refresh }
+  return {
+    assets,
+    stats,
+    loading: runtime.loading,
+    refresh: runtime.refresh,
+    error: runtime.error,
+    retry: runtime.retry
+  }
 }
 
 export function useSessions(opts?: {

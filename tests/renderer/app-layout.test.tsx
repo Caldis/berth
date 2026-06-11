@@ -1,11 +1,12 @@
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import React from 'react'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import i18n from '../../src/renderer/src/i18n'
 import { AppLayout } from '../../src/renderer/src/components/layout/app-layout'
 import { usePageChrome } from '../../src/renderer/src/components/layout/page-chrome'
 import { SIDEBAR_DEFAULT_WIDTH, useAppStore } from '../../src/renderer/src/stores/app'
+import type { Asset } from '../../src/shared/types/asset'
 
 function PageWithChrome({ title = 'Sessions' }: { title?: string }): React.ReactElement {
   usePageChrome({ title, sectionLabelKey: 'nav.sections.work' }, [title])
@@ -31,8 +32,10 @@ describe('AppLayout navigation shell', () => {
     useAppStore.setState({
       sidebarCollapsed: false,
       sidebarWidth: SIDEBAR_DEFAULT_WIDTH,
-      searchOpen: false
+      searchOpen: false,
+      assets: []
     })
+    window.api.assets.status = vi.fn(async () => ({ state: 'ready' as const, stale: false }))
   })
 
   it('reserves the top navigation bar on the overview route', () => {
@@ -62,6 +65,36 @@ describe('AppLayout navigation shell', () => {
     const navItem = screen.getByRole('button', { name: 'Overview' })
     expect(navItem.className).toContain('bg-primary')
     expect(navItem.className).not.toContain('bg-accent')
+  })
+
+  it('replaces the content area with a full error state when bootstrap fails with no assets (GH-118 T4)', async () => {
+    window.api.assets.status = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('bootstrap boom'))
+      .mockResolvedValue({ state: 'ready' as const, stale: false })
+
+    renderLayout('/')
+
+    expect(await screen.findByText('Assets could not be loaded')).toBeInTheDocument()
+    // Full takeover: the page content is not rendered, the sidebar still is.
+    expect(screen.queryByTestId('overview-page')).not.toBeInTheDocument()
+    expect(screen.getByTestId('app-sidebar')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Retry' }))
+
+    expect(await screen.findByTestId('overview-page')).toBeInTheDocument()
+    expect(screen.queryByText('Assets could not be loaded')).not.toBeInTheDocument()
+  })
+
+  it('keeps pages rendered with a compact banner when bootstrap fails but assets exist (GH-118 T4)', async () => {
+    useAppStore.setState({ assets: [{ id: 'a1' } as Asset] })
+    window.api.assets.status = vi.fn().mockRejectedValue(new Error('soft boom'))
+
+    renderLayout('/')
+
+    expect(await screen.findByText('Assets could not be loaded')).toBeInTheDocument()
+    // Non-blocking: existing data keeps the page visible (SWR, no clear-screen).
+    expect(screen.getByTestId('overview-page')).toBeInTheDocument()
   })
 
   it('keeps top navigation outside the independent content scroll region', () => {

@@ -1829,6 +1829,8 @@
     "loading": "加载中…",
     "error": "出了点问题",
     "retry": "重试",
+    "assetsErrorTitle": "资产数据加载失败",
+    "assetsErrorBody": "资产扫描请求失败, 页面暂无数据可展示, 可重试加载。",
     "backToOverview": "返回总览",
     "empty": "暂无内容",
     "unknown": "未知",

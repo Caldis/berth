@@ -1839,6 +1839,8 @@
     "loading": "Loading...",
     "error": "Something went wrong",
     "retry": "Retry",
+    "assetsErrorTitle": "Assets could not be loaded",
+    "assetsErrorBody": "The asset scan request failed, so pages have no data to show. Retry to reload.",
     "backToOverview": "Back to overview",
     "empty": "Nothing here yet",
     "unknown": "Unknown",
