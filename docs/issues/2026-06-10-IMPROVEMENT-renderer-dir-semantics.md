@@ -4,6 +4,10 @@
 # 预期 · 建议
 - SettingsContent 移 components/settings/ 删伪页面; memory-view chrome 注册上提回 instructions 页; local-source-copy 字典迁 en/zh.json sources.* 前缀; sessions 三件迁 components/sessions/。
 
+# 进展 (2026-06-11, 5.2 收敛核实)
+- **#1 SettingsContent 迁 components/settings/ (伪页面删除) + #4 sessions 专属三件迁 components/sessions/ — DONE** (提交 170bde3b)。
+- **仍 OPEN 余 2 项** (今日代码核实): #2 memory-view.tsx 仍在 components/memory/ 且自注册 page-chrome (import '@/components/layout/page-chrome'); #3 local-source-copy.ts 已随 GH-115 T3 迁至 components/layout/ 消费者旁, 但 EN/ZH 双语字典 (EN_SOURCE_COPY/ZH_SOURCE_COPY + getScanSourceStatusLabel 内联双语) 仍为绕过 i18next 的平行翻译机制, 未并入 en/zh.json。
+
 # 来源 · 关联
-- GH-115 架构全面分析 (2026-06-10), 完整证据见 `docs/works/2026-06-10-gh-115-architecture-refactor/01-ANALYSIS.md` (R32, 低优)。与 renderer-god-pages 同窗口顺做。
-- 状态: OPEN。
+- GH-115 架构全面分析 (2026-06-10), 完整证据见 `docs/works/_archive/2026-06-10-gh-115-architecture-refactor/01-ANALYSIS.md` (R32, 低优)。与 renderer-god-pages 同窗口顺做。
+- 状态: OPEN (余 #2 memory-view chrome 上提 + #3 字典并入 i18next)。
