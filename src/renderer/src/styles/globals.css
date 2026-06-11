@@ -44,6 +44,19 @@
     --chart-3: 38 92% 50%;
     --chart-4: 258 90% 66%;
     --chart-5: 330 81% 60%;
+
+    /* Replay event-kind semantic colors (GH-120). Same hue family as --chart-*
+       but fixed per kind (user/assistant/… keep their color as kinds grow),
+       so they evolve independently of the chart series order. Consumed by
+       Tailwind colors.replay.* and read via getComputedStyle by the canvas
+       timeline. */
+    --replay-user: 217 91% 60%;
+    --replay-assistant: 160 84% 39%;
+    --replay-thinking: 258 90% 66%;
+    --replay-tool: 38 92% 50%;
+    --replay-result: 187 80% 42%;
+    --replay-model: 330 81% 60%;
+    --replay-system: 240 5% 46%;
   }
 
   .dark {
@@ -79,6 +92,15 @@
     --chart-3: 43 96% 56%;
     --chart-4: 255 92% 76%;
     --chart-5: 329 87% 70%;
+
+    /* Replay event-kind colors (dark, brightened one step) */
+    --replay-user: 213 94% 68%;
+    --replay-assistant: 160 65% 52%;
+    --replay-thinking: 255 92% 76%;
+    --replay-tool: 43 96% 56%;
+    --replay-result: 187 70% 55%;
+    --replay-model: 329 87% 70%;
+    --replay-system: 240 5% 65%;
   }
 }
 

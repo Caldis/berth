@@ -6,7 +6,7 @@
 
 执行模式: **顺序执行** (T2/T3 文件不重叠但 T4-T7 依赖其产物, 共享工作区小步提交优先; 不并行 subagent)。每项完成即提交一次。
 
-- [ ] T1 数据契约 — interrupted 标志 adapter 层标准化 [AC5]
+- [x] T1 数据契约 — interrupted 标志 adapter 层标准化 [AC5] (commit 0963f20a; claude/codex/engine/ipc-contract 19 测绿 + typecheck 绿)
   - `src/shared/types/ipc.ts` `SessionReplayEvent` + `interrupted?: boolean`
   - `adapters/claude-code/session-replay.ts` user 文本前缀 `[Request interrupted by user` → interrupted
   - `adapters/codex/session-replay.ts` `turn_aborted` → interrupted

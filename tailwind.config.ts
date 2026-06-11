@@ -47,6 +47,15 @@ const config: Config = {
           accent: 'hsl(var(--sidebar-accent))',
           border: 'hsl(var(--sidebar-border))',
           ring: 'hsl(var(--sidebar-ring))'
+        },
+        replay: {
+          user: 'hsl(var(--replay-user) / <alpha-value>)',
+          assistant: 'hsl(var(--replay-assistant) / <alpha-value>)',
+          thinking: 'hsl(var(--replay-thinking) / <alpha-value>)',
+          tool: 'hsl(var(--replay-tool) / <alpha-value>)',
+          result: 'hsl(var(--replay-result) / <alpha-value>)',
+          model: 'hsl(var(--replay-model) / <alpha-value>)',
+          system: 'hsl(var(--replay-system) / <alpha-value>)'
         }
       },
       borderRadius: {
