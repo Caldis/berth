@@ -130,6 +130,32 @@ export function TopNavigation({ isWindows }: TopNavigationProps): React.ReactEle
         >
           <IndexingInline className="mr-0.5" />
           {pageChrome.actions}
+          {pageChrome.search && (
+            <Input
+              ref={searchInputRef}
+              aria-label={pageChrome.search.ariaLabel ?? pageChrome.search.placeholder}
+              value={pageChrome.search.value}
+              onValueChange={pageChrome.search.onValueChange}
+              placeholder={pageChrome.search.placeholder}
+              variant="bordered"
+              size="sm"
+              radius="md"
+              startContent={
+                <Search className="pointer-events-none h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+              }
+              endContent={
+                <Kbd className="pointer-events-none hidden bg-muted text-[11px] font-semibold text-muted-foreground md:inline-flex">
+                  {isMac ? '⌘K' : 'Ctrl+K'}
+                </Kbd>
+              }
+              classNames={{
+                base: 'min-w-[14rem] flex-1 sm:w-72 sm:flex-none',
+                inputWrapper:
+                  'h-9 min-h-9 border-border bg-background shadow-none data-[hover=true]:bg-muted/40 group-data-[focus=true]:border-ring',
+                input: 'text-sm placeholder:text-muted-foreground'
+              }}
+            />
+          )}
           {pageChrome.guide && (
             <FloatingPopover
               triggerTestId="page-guide-hover-region"
@@ -157,32 +183,6 @@ export function TopNavigation({ isWindows }: TopNavigationProps): React.ReactEle
                 className="shadow-[0_18px_45px_-20px_hsl(var(--foreground)/0.35)]"
               />
             </FloatingPopover>
-          )}
-          {pageChrome.search && (
-            <Input
-              ref={searchInputRef}
-              aria-label={pageChrome.search.ariaLabel ?? pageChrome.search.placeholder}
-              value={pageChrome.search.value}
-              onValueChange={pageChrome.search.onValueChange}
-              placeholder={pageChrome.search.placeholder}
-              variant="bordered"
-              size="sm"
-              radius="md"
-              startContent={
-                <Search className="pointer-events-none h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-              }
-              endContent={
-                <Kbd className="pointer-events-none hidden bg-muted text-[11px] font-semibold text-muted-foreground md:inline-flex">
-                  {isMac ? '⌘K' : 'Ctrl+K'}
-                </Kbd>
-              }
-              classNames={{
-                base: 'min-w-[14rem] flex-1 sm:w-72 sm:flex-none',
-                inputWrapper:
-                  'h-9 min-h-9 border-border bg-background shadow-none data-[hover=true]:bg-muted/40 group-data-[focus=true]:border-ring',
-                input: 'text-sm placeholder:text-muted-foreground'
-              }}
-            />
           )}
         </div>
       </div>

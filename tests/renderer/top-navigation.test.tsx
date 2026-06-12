@@ -120,7 +120,11 @@ describe('TopNavigation', () => {
     expect(guideButton).toBeInTheDocument()
     expect(guideButton).toHaveTextContent('')
     expect(screen.queryByText('Local conversation history')).not.toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Project' })).toBeInTheDocument()
+    const projectButton = screen.getByRole('button', { name: 'Project' })
+    const pageSearch = screen.getByRole('textbox', { name: 'Filter sessions...' })
+    expect(projectButton).toBeInTheDocument()
+    expect(projectButton.compareDocumentPosition(pageSearch) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(pageSearch.compareDocumentPosition(guideButton) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
 
     const hoverRegion = screen.getByTestId('page-guide-hover-region')
     fireEvent.mouseEnter(hoverRegion, { clientX: 760, clientY: 36 })
