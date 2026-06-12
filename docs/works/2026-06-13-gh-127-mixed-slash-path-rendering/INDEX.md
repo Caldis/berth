@@ -2,7 +2,7 @@
 task: 2026-06-13-gh-127-mixed-slash-path-rendering
 task_id: GH-127
 type: bug
-phase: explore
+phase: implement
 created: 2026-06-13
 priority: P2
 target_date: 
@@ -20,8 +20,8 @@ debt:
     areas:
       - ui-ux
       - testability
-    confidence: low
-    rationale: "0.0-new 初始估算; 用户反馈部分页面路径展示中正斜杠和反斜杠混用。预期涉及 renderer 路径展示 helper 和页面测试, explore 后校准影响面。"
+    confidence: medium
+    rationale: "Explore 确认根因在 renderer 共享 truncatePath 固定用 / 拼接截断路径; 影响面为共享显示 helper 和页面测试, 不跨 IPC。"
   final:
     incurred:
     repaid:
@@ -31,7 +31,14 @@ debt:
     areas: []
     confidence:
     rationale:
-  revisions: []
+  revisions:
+    - phase: explore
+      date: 2026-06-13
+      from:
+        confidence: low
+      to:
+        confidence: medium
+      reason: "已定位到 renderer 共享 helper, 影响面清楚, 但涉及多页面消费所以风险仍为 medium。"
 issue:
   number: 127
   repo: Caldis/berth
@@ -59,9 +66,9 @@ artifacts:
 
 ## 产物
 - [x] 00-BUG.md — 原始输入快照
-- [ ] 01-ANALYSIS.md — Explore 产物
-- [ ] 02-SPEC.md — Design 产物
-- [ ] 03-PLAN.md — 活任务清单
+- [x] 01-ANALYSIS.md — Explore 产物
+- [x] 02-SPEC.md — Design 产物
+- [x] 03-PLAN.md — 活任务清单
 - [ ] 04-POLISH.md — 可选抛光记录
 
 ## 待澄清 (blocked 时填)
