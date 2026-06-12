@@ -53,7 +53,6 @@ export function Teams(): React.ReactElement {
   const pageChrome = useMemo<PageChromeConfig>(
     () => ({
       title: t('teams.title'),
-      subtitle: t('teams.subtitle'),
       sectionLabelKey: 'nav.sections.work',
       guide: {
         definition: teamsGuide,

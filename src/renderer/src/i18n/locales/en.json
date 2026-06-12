@@ -289,7 +289,6 @@
   },
   "teams": {
     "title": "Agent Teams",
-    "subtitle": "Experimental Claude Code feature — runtime-generated collaboration records, read-only",
     "loadingList": "Loading team records",
     "loadingListDescription": "Reading runtime team state from ~/.claude/teams.",
     "errorTitle": "Failed to load team records",

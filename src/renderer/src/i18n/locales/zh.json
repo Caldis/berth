@@ -284,7 +284,6 @@
   },
   "teams": {
     "title": "Agent 团队",
-    "subtitle": "Claude Code 实验性功能 — 运行时生成的协作记录, 只读",
     "loadingList": "加载团队记录",
     "loadingListDescription": "正在读取 ~/.claude/teams 下的运行时团队状态。",
     "errorTitle": "团队记录加载失败",
