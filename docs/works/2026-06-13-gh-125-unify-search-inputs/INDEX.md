@@ -2,7 +2,7 @@
 task: 2026-06-13-gh-125-unify-search-inputs
 task_id: GH-125
 type: feature
-phase: explore
+phase: design
 created: 2026-06-13
 priority: P2
 target_date:
@@ -20,8 +20,8 @@ debt:
     areas:
       - ui-ux
       - testability
-    confidence: low
-    rationale: "0.0-new 初始估算; 共享标题栏、侧栏搜索入口和多个页面 placeholder 会一起变更, explore/design 后校准。"
+    confidence: medium
+    rationale: "Explore 确认影响面集中在 renderer 顶部导航、侧栏全局搜索入口、全局搜索弹窗输入和少数页面 placeholder; 追加标题栏固定高度验收后仍是模块级 UI/test 变更。"
   final:
     incurred:
     repaid:
@@ -31,7 +31,20 @@ debt:
     areas: []
     confidence:
     rationale:
-  revisions: []
+  revisions:
+    - at: explore
+      date: 2026-06-13
+      from:
+        incurred: 4
+        repaid: 1
+        net: 3
+        confidence: low
+      to:
+        incurred: 5
+        repaid: 2
+        net: 3
+        confidence: medium
+      reason: "用户追加会话列表到详情页标题栏高度抖动要求; 同时计划用共享搜索控件收敛重复样式, 净 debt 不变。"
 issue:
   number: 125
   repo: Caldis/berth
@@ -59,7 +72,7 @@ artifacts:
 
 ## 产物
 - [x] 00-PRD.md / 00-BUG.md — 原始输入快照
-- [ ] 01-ANALYSIS.md — Explore 产物
+- [x] 01-ANALYSIS.md — Explore 产物
 - [ ] 02-SPEC.md — Design 产物
 - [ ] 03-PLAN.md — 活任务清单
 - [ ] 04-POLISH.md — 可选抛光记录
