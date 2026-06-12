@@ -224,7 +224,7 @@ describe('Instructions guidance surfaces', () => {
     expect(screen.queryByText('Project skill')).not.toBeInTheDocument()
   })
 
-  it('keeps truncated Windows paths consistent with expanded convention details', async () => {
+  it('shows full Windows paths in convention cards without ellipsis truncation', async () => {
     const assetPath = 'D:\\Code\\berth\\packages\\berth-scan-engine\\fixtures\\e2e\\project\\CLAUDE.md'
     useAppStore.setState({
       assets: [
@@ -242,13 +242,18 @@ describe('Instructions guidance surfaces', () => {
       </MemoryRouter>
     )
 
-    expect(await screen.findByText('D:\\...\\project\\CLAUDE.md')).toBeInTheDocument()
+    const pathText = await screen.findByText(assetPath)
+    expect(pathText).toBeInTheDocument()
+    expect(pathText).toHaveClass('break-all')
+    expect(pathText).not.toHaveClass('truncate')
+    expect(screen.getAllByText(assetPath)).toHaveLength(1)
+    expect(screen.queryByText('D:\\...\\project\\CLAUDE.md')).not.toBeInTheDocument()
     expect(screen.queryByText('D:/.../project/CLAUDE.md')).not.toBeInTheDocument()
 
     const card = screen.getByTestId('instruction-asset-card-CLAUDE.md')
     fireEvent.click(within(card).getByRole('button'))
 
-    expect(screen.getByText(assetPath)).toBeInTheDocument()
+    expect(screen.getAllByText(assetPath)).toHaveLength(2)
   })
 
   it('virtualizes large skill lists without a redundant scope jump rail', async () => {

@@ -14,7 +14,7 @@ import {
   FileCode,
   Hash
 } from 'lucide-react'
-import { truncatePath, cn } from '@/lib/utils'
+import { cn } from '@/lib/utils'
 import { useAppStore } from '@/stores/app'
 import { type ScopeFilter } from '@/components/shared/filter-bar'
 import { DetailRow } from '@/components/shared/detail-row'
@@ -64,16 +64,16 @@ function MemoryCard({ asset }: { asset: Asset }): React.ReactElement {
     <div data-testid={`instruction-asset-card-${asset.id}`} className="rounded-lg border border-border bg-card transition-colors hover:bg-accent/5">
       <button
         onClick={() => setExpanded(!expanded)}
-        className="flex w-full items-center gap-3 px-4 py-3 text-left"
+        className="flex w-full items-start gap-3 px-4 py-3 text-left"
       >
-        {expanded ? <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" /> : <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />}
-        <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
+        {expanded ? <ChevronDown className="mt-1 h-3.5 w-3.5 shrink-0 text-muted-foreground" /> : <ChevronRight className="mt-1 h-3.5 w-3.5 shrink-0 text-muted-foreground" />}
+        <FileText className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             <span className="truncate text-sm font-medium text-foreground">{asset.name}</span>
             <ScopeBadge scope={asset.scope} className="rounded-full px-2 font-semibold" />
           </div>
-          <p className="truncate text-xs text-muted-foreground font-mono">{truncatePath(asset.path)}</p>
+          <p className="whitespace-normal break-all text-xs leading-relaxed text-muted-foreground font-mono">{asset.path}</p>
         </div>
         {size > 0 && (
           <span className="shrink-0 text-xs text-muted-foreground">
