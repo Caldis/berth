@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { Asset, AssetStats } from '@shared/types/asset'
 import type { AgentScanSourceGroup, AssetSnapshot, ScanResult } from '@shared/types/ipc'
 import { AgentAssetRuntime, type AssetRuntimeScanner } from '@berth/scan-engine/engine/assets/runtime'
@@ -76,6 +76,10 @@ function createScanner(scanResult: ScanResult): AssetRuntimeScanner {
 }
 
 describe('AgentAssetRuntime', () => {
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
   it('starts with an idle empty snapshot', () => {
     const runtime = createRuntime(createScanner({ assets: [], stats: emptyStats, errors: [] }))
 
@@ -222,6 +226,52 @@ describe('AgentAssetRuntime', () => {
     await runtime.refresh({ reason: 'startup', wait: true })
 
     expect(statuses.at(-1)).toBe('error')
+  })
+
+  it('coalesces high-frequency watcher fallback refreshes behind one scheduled scan (GH-129)', async () => {
+    vi.useFakeTimers()
+    const scanner = createScanner({ assets: [], stats: emptyStats, errors: [] })
+    const runtime = createRuntime(scanner)
+
+    runtime.scheduleRefresh({ reason: 'watcher', delayMs: 10, minIntervalMs: 100 })
+    runtime.scheduleRefresh({ reason: 'watcher', delayMs: 10, minIntervalMs: 100 })
+    runtime.scheduleRefresh({ reason: 'watcher', delayMs: 10, minIntervalMs: 100 })
+
+    expect(scanner.scanAll).not.toHaveBeenCalled()
+    await vi.advanceTimersByTimeAsync(9)
+    expect(scanner.scanAll).not.toHaveBeenCalled()
+    await vi.advanceTimersByTimeAsync(1)
+
+    expect(scanner.scanAll).toHaveBeenCalledTimes(1)
+  })
+
+  it('rate-limits watcher scheduled full refreshes after one has started (GH-129)', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-06-13T00:00:00.000Z'))
+    const scanner = createScanner({ assets: [], stats: emptyStats, errors: [] })
+    const runtime = createRuntime(scanner)
+
+    runtime.scheduleRefresh({ reason: 'watcher', delayMs: 10, minIntervalMs: 100 })
+    await vi.advanceTimersByTimeAsync(10)
+    expect(scanner.scanAll).toHaveBeenCalledTimes(1)
+
+    runtime.scheduleRefresh({ reason: 'watcher', delayMs: 10, minIntervalMs: 100 })
+    await vi.advanceTimersByTimeAsync(99)
+    expect(scanner.scanAll).toHaveBeenCalledTimes(1)
+    await vi.advanceTimersByTimeAsync(1)
+    expect(scanner.scanAll).toHaveBeenCalledTimes(2)
+  })
+
+  it('drops a pending scheduled refresh when the project generation changes (GH-129)', async () => {
+    vi.useFakeTimers()
+    const scanner = createScanner({ assets: [], stats: emptyStats, errors: [] })
+    const runtime = createRuntime(scanner)
+
+    runtime.scheduleRefresh({ reason: 'watcher', delayMs: 10, minIntervalMs: 100 })
+    runtime.setProjectDir('/repo/other')
+    await vi.advanceTimersByTimeAsync(10)
+
+    expect(scanner.scanAll).not.toHaveBeenCalled()
   })
 
   it('discards a mid-flight scan whose project was switched away (no clobber) (GH-111 R4)', async () => {

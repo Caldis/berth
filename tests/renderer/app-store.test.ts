@@ -131,8 +131,8 @@ describe('useAppStore scope state', () => {
     expect(useAppStore.getState().projectCandidates).toHaveLength(1)
   })
 
-  it('folds a partial scan tick into assets/stats without bumping the snapshot id (P4.6)', () => {
-    useAppStore.setState({ assetSnapshotId: 'snapshot-stable' })
+  it('lets an initial partial scan tick populate assets/stats without bumping the snapshot id (P4.6)', () => {
+    useAppStore.setState({ assetSnapshotId: 'initial' })
     const scanning: AssetRuntimeStatus = {
       state: 'scanning',
       reason: 'startup',
@@ -161,7 +161,53 @@ describe('useAppStore scope state', () => {
     expect(useAppStore.getState().assets.map((a) => a.id)).toEqual(['skill-live'])
     expect(useAppStore.getState().stats.skills).toBe(1)
     // Snapshot id stays frozen during the scan so plugin consumers don't re-fetch.
-    expect(useAppStore.getState().assetSnapshotId).toBe('snapshot-stable')
+    expect(useAppStore.getState().assetSnapshotId).toBe('initial')
+  })
+
+  it('keeps committed visible assets/stats stable during a background scanning partial (GH-129)', () => {
+    const candidate = createProjectScopeCandidate({ path: 'D:\\Code\\berth', source: 'current', sessionCount: 1 })
+    useAppStore.setState({
+      assetSnapshotId: 'snapshot-stable',
+      assets: [{
+        id: 'existing-session',
+        agentId: 'codex',
+        category: 'state',
+        type: 'session',
+        scope: 'session',
+        name: 'existing',
+        path: '/x.jsonl',
+        meta: {}
+      }],
+      stats: { ...EMPTY_ASSET_STATS, sessions: 1 },
+      projectCandidates: candidate ? [candidate] : [],
+      assetErrors: [{ path: '/x/broken.jsonl', type: 'parse', message: 'bad json' }]
+    })
+
+    useAppStore.getState().applyAssetProgress({
+      status: { state: 'scanning', reason: 'watcher', stale: true, progress: { phase: 'parsing', current: 1, total: 2 } },
+      partial: {
+        assets: [{
+          id: 'skill-live',
+          agentId: 'claude-code',
+          category: 'instruction',
+          type: 'skill',
+          scope: 'user',
+          name: 'live-skill',
+          path: '/x/SKILL.md',
+          meta: {}
+        }],
+        stats: { ...EMPTY_ASSET_STATS, skills: 1 }
+      }
+    })
+
+    const state = useAppStore.getState()
+    expect(state.assetRuntimeStatus.state).toBe('scanning')
+    expect(state.assets.map((a) => a.id)).toEqual(['existing-session'])
+    expect(state.stats.sessions).toBe(1)
+    expect(state.stats.skills).toBe(0)
+    expect(state.projectCandidates).toEqual(candidate ? [candidate] : [])
+    expect(state.assetErrors).toEqual([{ path: '/x/broken.jsonl', type: 'parse', message: 'bad json' }])
+    expect(state.assetSnapshotId).toBe('snapshot-stable')
   })
 
   it('applies a progress-only tick (no partial) without clobbering existing assets (P4.6)', () => {
@@ -259,6 +305,42 @@ describe('useAppStore scope state', () => {
     const ids = useAppStore.getState().assets.map((a) => a.id)
     expect(ids).toContain('skill-live')
     expect(ids).toContain('shallow-conv') // shallow survives a mid-scan deep-only read
+  })
+
+  it('keeps committed visible assets stable when a mid-scan snapshot is read via syncSnapshot (GH-129)', () => {
+    const candidate = createProjectScopeCandidate({ path: 'D:\\Code\\berth', source: 'current', sessionCount: 1 })
+    useAppStore.setState({
+      assetSnapshotId: 'snapshot-ready',
+      assets: [{
+        id: 'existing-session', agentId: 'codex', category: 'state', type: 'session',
+        scope: 'session', name: 'existing', path: '/existing.jsonl', meta: {}
+      }],
+      stats: { ...EMPTY_ASSET_STATS, sessions: 1 },
+      projectCandidates: candidate ? [candidate] : [],
+      assetErrors: [{ path: '/old-error.jsonl', type: 'parse', message: 'old parse error' }]
+    })
+
+    useAppStore.getState().setAssetSnapshot({
+      id: 'mid-scan',
+      assets: [{
+        id: 'skill-live', agentId: 'claude-code', category: 'capability', type: 'skill',
+        scope: 'project', name: 'live', path: '/active/skill.md', meta: {}
+      }],
+      stats: { ...EMPTY_ASSET_STATS, skills: 1 },
+      errors: [],
+      sources: [],
+      projectCandidates: [],
+      status: { state: 'scanning', reason: 'watcher', stale: true }
+    })
+
+    const state = useAppStore.getState()
+    expect(state.assetRuntimeStatus.state).toBe('scanning')
+    expect(state.assets.map((a) => a.id)).toEqual(['existing-session'])
+    expect(state.stats.sessions).toBe(1)
+    expect(state.stats.skills).toBe(0)
+    expect(state.projectCandidates).toEqual(candidate ? [candidate] : [])
+    expect(state.assetErrors).toEqual([{ path: '/old-error.jsonl', type: 'parse', message: 'old parse error' }])
+    expect(state.assetSnapshotId).toBe('snapshot-ready')
   })
 
   it('replaces wholesale when a terminal snapshot already carries shallow (no stale shallow lingers)', () => {

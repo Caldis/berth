@@ -82,6 +82,14 @@ function foldKeepingShallow(incoming: Asset[], existing: Asset[]): Asset[] {
   return shallowKept.length > 0 ? [...incoming, ...shallowKept] : incoming
 }
 
+function hasCommittedAssetSnapshot(snapshotId: string | null): boolean {
+  return snapshotId != null && snapshotId !== 'initial'
+}
+
+function shouldPreserveVisibleAssetsDuringScan(status: AssetRuntimeStatus, state: Pick<AppState, 'assetSnapshotId'>): boolean {
+  return status.state === 'scanning' && hasCommittedAssetSnapshot(state.assetSnapshotId)
+}
+
 export const useAppStore = create<AppState>((set) => ({
   sidebarCollapsed: false,
   sidebarWidth: SIDEBAR_DEFAULT_WIDTH,
@@ -105,25 +113,33 @@ export const useAppStore = create<AppState>((set) => ({
   assetSnapshotId: null,
   assetErrors: [],
   setAssetRuntimeStatus: (assetRuntimeStatus) => set({ assetRuntimeStatus }),
-  setAssetSnapshot: (snapshot) => set((state) => ({
-    // Keep shallow (other-project) assets if this snapshot was read mid-scan and
-    // carries only the deep set — e.g. syncSnapshot via assets:changed → onChanged
-    // landing during a refresh. Same guard as applyAssetProgress, shared. (GH-113)
-    assets: foldKeepingShallow(snapshot.assets, state.assets),
-    stats: snapshot.stats,
-    projectCandidates: mergeProjectScopeCandidates(snapshot.projectCandidates),
-    assetRuntimeStatus: snapshot.status,
-    assetSnapshotId: snapshot.id,
-    assetErrors: snapshot.errors
-  })),
-  // Live scan tick (P4.6): update status and, when a partial is present, fold the
-  // cumulative assets/stats into the store so pages render already-scanned items.
+  setAssetSnapshot: (snapshot) =>
+    set((state) => {
+      if (shouldPreserveVisibleAssetsDuringScan(snapshot.status, state)) {
+        return { assetRuntimeStatus: snapshot.status }
+      }
+      return {
+        // Keep shallow (other-project) assets if this snapshot was read mid-scan and
+        // carries only the deep set — e.g. syncSnapshot via assets:changed → onChanged
+        // landing during a refresh. Same guard as applyAssetProgress, shared. (GH-113)
+        assets: foldKeepingShallow(snapshot.assets, state.assets),
+        stats: snapshot.stats,
+        projectCandidates: mergeProjectScopeCandidates(snapshot.projectCandidates),
+        assetRuntimeStatus: snapshot.status,
+        assetSnapshotId: snapshot.id,
+        assetErrors: snapshot.errors
+      }
+    }),
+  // Live scan tick (P4.6/GH-129): always update status. Partial assets populate
+  // the initial view, but a background scan with an existing snapshot keeps the
+  // visible list stale until the final snapshot arrives.
   // Deliberately does NOT touch assetSnapshotId — that only changes on completion,
   // so id-keyed consumers (plugin list) don't re-fetch on every partial.
   applyAssetProgress: (payload) =>
     set((state) => {
       const base = { assetRuntimeStatus: payload.status }
       if (!payload.partial) return base
+      if (shouldPreserveVisibleAssetsDuringScan(payload.status, state)) return base
       const assets = foldKeepingShallow(payload.partial.assets, state.assets)
       return { ...base, assets, stats: payload.partial.stats }
     }),

@@ -21,6 +21,7 @@ afterEach(() => {
 function fakeRuntime(projectDir?: string): WatchableRuntime & {
   applyFileChange: ReturnType<typeof vi.fn>
   refresh: ReturnType<typeof vi.fn>
+  scheduleRefresh?: ReturnType<typeof vi.fn>
 } {
   return {
     getProjectDir: () => projectDir,
@@ -82,7 +83,20 @@ describe('applyWatchEvent (GH-113 I1 watcher wiring)', () => {
     expect(runtime.refresh).not.toHaveBeenCalled()
   })
 
-  it('still falls back to a full refresh for a genuinely unsupported file (session jsonl)', () => {
+  it('schedules a coalesced refresh for a genuinely unsupported file (session jsonl)', () => {
+    const filePath = path.join(dir, 'sessions', 'rollout-x.jsonl')
+    fs.mkdirSync(path.dirname(filePath), { recursive: true })
+    fs.writeFileSync(filePath, '{}')
+    const runtime = { ...fakeRuntime(dir), scheduleRefresh: vi.fn() }
+
+    applyWatchEvent(event('changed', filePath), runtime)
+
+    expect(runtime.scheduleRefresh).toHaveBeenCalledWith({ reason: 'watcher' })
+    expect(runtime.refresh).not.toHaveBeenCalled()
+    expect(runtime.applyFileChange).not.toHaveBeenCalled()
+  })
+
+  it('falls back to immediate refresh for unsupported events when the runtime cannot schedule', () => {
     const filePath = path.join(dir, 'sessions', 'rollout-x.jsonl')
     fs.mkdirSync(path.dirname(filePath), { recursive: true })
     fs.writeFileSync(filePath, '{}')
@@ -94,12 +108,13 @@ describe('applyWatchEvent (GH-113 I1 watcher wiring)', () => {
     expect(runtime.applyFileChange).not.toHaveBeenCalled()
   })
 
-  it('falls back to a refresh when the event carries no filePath', () => {
-    const runtime = fakeRuntime(dir)
+  it('schedules a refresh when the event carries no filePath and scheduling is available', () => {
+    const runtime = { ...fakeRuntime(dir), scheduleRefresh: vi.fn() }
 
     applyWatchEvent(event('changed', undefined), runtime)
 
-    expect(runtime.refresh).toHaveBeenCalledWith({ reason: 'watcher' })
+    expect(runtime.scheduleRefresh).toHaveBeenCalledWith({ reason: 'watcher' })
+    expect(runtime.refresh).not.toHaveBeenCalled()
     expect(runtime.applyFileChange).not.toHaveBeenCalled()
   })
 

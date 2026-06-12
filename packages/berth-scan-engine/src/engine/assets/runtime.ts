@@ -43,6 +43,11 @@ export interface AssetRefreshOptions {
   wait?: boolean
 }
 
+export interface AssetScheduledRefreshOptions extends AssetRefreshOptions {
+  delayMs?: number
+  minIntervalMs?: number
+}
+
 export interface AssetRuntimeEnsureOptions {
   reason?: AssetScanReason
   refresh?: boolean
@@ -68,6 +73,9 @@ const EMPTY_ASSET_STATS: AssetStats = {
   subagents: 0
 }
 
+export const WATCHER_REFRESH_DEBOUNCE_MS = 1_000
+export const WATCHER_REFRESH_MIN_INTERVAL_MS = 30_000
+
 export class AgentAssetRuntime {
   private projectDir?: string
   private scopeSelection: AppScopeSelection = DEFAULT_SCOPE_SELECTION
@@ -82,6 +90,8 @@ export class AgentAssetRuntime {
   private readonly snapshotStore?: SnapshotStore
   private readonly initialProjectDir?: string
   private progressListener?: (payload: AssetProgressPayload) => void
+  private scheduledRefreshTimer: ReturnType<typeof setTimeout> | null = null
+  private lastWatcherRefreshStartedAtMs = 0
 
   constructor(options: AssetRuntimeOptions = {}) {
     this.projectDir = options.projectDir
@@ -173,6 +183,7 @@ export class AgentAssetRuntime {
   setProjectDir(projectDir?: string): void {
     if (this.projectDir === projectDir) return
 
+    this.clearScheduledRefresh()
     this.projectDir = projectDir
     // Swap the scanner generation: results of any in-flight scan against the
     // old project are discarded by the coordinator (GH-111 R4).
@@ -204,12 +215,16 @@ export class AgentAssetRuntime {
   }
 
   async refresh(options: AssetRefreshOptions = {}): Promise<AssetRuntimeStatus> {
+    this.clearScheduledRefresh()
     if (this.coordinator.isScanning()) {
       if (options.wait) await this.coordinator.wait()
       return this.status
     }
 
     const reason = options.reason ?? 'manual'
+    if (reason === 'watcher') {
+      this.lastWatcherRefreshStartedAtMs = Date.now()
+    }
     this.status = {
       state: 'scanning',
       reason,
@@ -226,6 +241,25 @@ export class AgentAssetRuntime {
     const run = this.coordinator.run(this.createScanSink(reason))
     if (options.wait) await run
     return this.status
+  }
+
+  scheduleRefresh(options: AssetScheduledRefreshOptions = {}): void {
+    const reason = options.reason ?? 'manual'
+    const delayMs = Math.max(0, options.delayMs ?? (reason === 'watcher' ? WATCHER_REFRESH_DEBOUNCE_MS : 0))
+    const minIntervalMs = Math.max(0, options.minIntervalMs ?? (reason === 'watcher' ? WATCHER_REFRESH_MIN_INTERVAL_MS : 0))
+    const elapsedSinceWatcherRefresh = this.lastWatcherRefreshStartedAtMs > 0
+      ? Math.max(0, Date.now() - this.lastWatcherRefreshStartedAtMs)
+      : minIntervalMs
+    const rateLimitDelayMs = reason === 'watcher'
+      ? Math.max(0, minIntervalMs - elapsedSinceWatcherRefresh)
+      : 0
+    const scheduledDelayMs = Math.max(delayMs, rateLimitDelayMs)
+
+    this.clearScheduledRefresh()
+    this.scheduledRefreshTimer = setTimeout(() => {
+      this.scheduledRefreshTimer = null
+      void this.refresh({ reason, wait: options.wait })
+    }, scheduledDelayMs)
   }
 
   select<T>(key: string, derive: (snapshot: AssetSnapshot) => T): T {
@@ -421,6 +455,12 @@ export class AgentAssetRuntime {
       projectCandidates: [],
       status: this.status
     }
+  }
+
+  private clearScheduledRefresh(): void {
+    if (!this.scheduledRefreshTimer) return
+    clearTimeout(this.scheduledRefreshTimer)
+    this.scheduledRefreshTimer = null
   }
 
   private setProgress(progress: AssetScanProgress): void {

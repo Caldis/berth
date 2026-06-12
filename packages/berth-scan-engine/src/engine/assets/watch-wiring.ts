@@ -7,6 +7,7 @@ import { deriveAssetsForPath } from './derive-asset'
 export interface WatchableRuntime {
   getProjectDir(): string | undefined
   applyFileChange(sourceKey: string, derivedAssets: Asset[]): void
+  scheduleRefresh?(options?: { reason?: 'watcher' }): unknown
   refresh(options?: { reason?: 'watcher' }): unknown
 }
 
@@ -14,15 +15,20 @@ export interface WatchableRuntime {
  * Translate a filesystem change into a live-snapshot update (GH-113 I1). A
  * supported file (root-level convention files, for now) is re-derived and folded
  * in incrementally by `sourceKey` — no full rescan. Anything not yet supported
- * incrementally (derived === null: sessions, settings, skills, ...) falls back to
- * a background full refresh, matching the previous full-rescan behavior.
+ * incrementally (derived === null: sessions, settings, skills, ...) schedules a
+ * background full refresh. Older runtime shims without scheduling still fall back
+ * to the previous immediate refresh behavior.
  */
 export function applyWatchEvent(event: WatchEvent, runtime: WatchableRuntime): void {
   const derived = event.filePath
     ? deriveAssetsForPath(event.filePath, { projectRoots: resolveProjectConfigRoots(runtime.getProjectDir()) })
     : null
   if (derived === null) {
-    void runtime.refresh({ reason: 'watcher' })
+    if (runtime.scheduleRefresh) {
+      void runtime.scheduleRefresh({ reason: 'watcher' })
+    } else {
+      void runtime.refresh({ reason: 'watcher' })
+    }
   } else {
     runtime.applyFileChange(event.sourceKey ?? '', derived)
   }
