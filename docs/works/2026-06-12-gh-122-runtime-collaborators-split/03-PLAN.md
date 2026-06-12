@@ -13,7 +13,7 @@
   - tests: tests/unit/project-snapshot-cache.test.ts (新): set/get/has、normalizeProjectPathKey 归一同键 (大小写/斜杠变体)、undefined=global 键、miss undefined; 锚点 24 逐字不动绿。
   - verify: `pnpm test` 全量绿 + typecheck; 非 UI 不适用。
 
-- [ ] T3 scan-coordinator.ts + runtime 重组 (AC-1/2 主体, Q1=B)
+- [x] T3 scan-coordinator.ts + runtime 重组 (AC-1/2 主体, Q1=B) — DONE: ScanCoordinator (swap/current/isScanning/wait/run, 代际 guard 内化, 失败 log 无条件保留在 coordinator 单点) + AssetRuntimeScanner 接口随迁 (runtime re-export 保 import 面零变); runtime: scanner/inFlight/createScanner 字段删除, refresh→isScanning+transition+run(sink), setProjectDir→swap, runRefresh→createScanSink/commitScan/failScan 三私有; 新直测 5 (去重/wait/swap 丢全部回调/onFailed/再扫) + **锚点 24 零改动全绿 (R4/P4.6 等价性证明)** + 全量 1062 双轮 + lint/typecheck; runtime 591→491 行
   - 内容: 新建 ScanCoordinator (swap/isScanning/wait/run(sink)/current, 代际检查内化 R4); runtime: refresh() 改 isScanning+wait+transitionToScanning+run(makeSink); setProjectDir() 改 coordinator.swap; runRefresh 拆解 — 执行体进 coordinator.run, 数据提交进 makeSink (onProgress/onPartial/onCompleted/onFailed); 持久化谓词收敛 persistIfDefaultView; scanner 字段/inFlight/isCurrent 从 runtime 删除。
   - tests: tests/unit/scan-coordinator.test.ts (新): run 期间二次 run 返回同 inFlight (去重) / wait 语义 / swap 后旧扫描 onProgress/onPartial/onCompleted/onFailed 全部不派发 / 异常走 onFailed / finally 清 inFlight 可再扫; **锚点 24 逐字不动绿** (R4/P4.6/id 稳定/in-flight 复用等价性核心证据)。
   - verify: `pnpm test` 全量双轮绿 + typecheck; 非 UI 不适用。

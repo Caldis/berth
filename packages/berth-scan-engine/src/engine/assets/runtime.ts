@@ -1,5 +1,4 @@
 import type { AgentView, Asset, AssetStats, CostMode, UsageSummary } from '@shared/types/asset'
-import { getMainLog } from '../../log'
 import type {
   AgentScanSourceGroup,
   AssetScanPartial,
@@ -26,24 +25,17 @@ import { readString } from '@shared/object-guards'
 import type { SnapshotStore } from './snapshot-store'
 import { SnapshotSelectorCache, type AssetSelectorCache } from './selector-cache'
 import { ProjectSnapshotCache, projectSnapshotKey } from './project-snapshot-cache'
+import { ScanCoordinator, type AssetRuntimeScanner, type ScanOutcome, type ScanSink } from './scan-coordinator'
 
-export interface AssetRuntimeScanOptions {
-  onProgress?: (progress: AssetScanProgress) => void
-  onPartial?: (partial: AssetScanPartial) => void
-}
+// Scanner contract moved to scan-coordinator.ts (GH-122); re-exported so the
+// existing import surface (worker-host, tests) stays unchanged.
+export type { AssetRuntimeScanOptions, AssetRuntimeScanner } from './scan-coordinator'
 
 /** Pushed to the main process on every progress tick / partial during a scan so
  * it can forward live status + already-scanned assets to the renderer (P4.6). */
 export interface AssetProgressPayload {
   status: AssetRuntimeStatus
   partial?: AssetScanPartial
-}
-
-export interface AssetRuntimeScanner {
-  scanAll(options?: AssetRuntimeScanOptions): Promise<ScanResult>
-  getScanSourceGroups(): Promise<AgentScanSourceGroup[]>
-  getProjectScopeCandidates(): ProjectScopeCandidate[]
-  getProjectDir(): string | undefined
 }
 
 export interface AssetRefreshOptions {
@@ -80,13 +72,11 @@ export class AgentAssetRuntime {
   private projectDir?: string
   private scopeSelection: AppScopeSelection = DEFAULT_SCOPE_SELECTION
   private readonly snapshotCache = new ProjectSnapshotCache()
-  private scanner: AssetRuntimeScanner
+  private readonly coordinator: ScanCoordinator
   private snapshot: AssetSnapshot
   private status: AssetRuntimeStatus
   private assetMap = new Map<string, Asset>()
-  private inFlight: Promise<void> | null = null
   private readonly selectorCache: AssetSelectorCache
-  private readonly createScanner: (projectDir?: string) => AssetRuntimeScanner
   private readonly now: () => string
   private readonly createSnapshotId: () => string
   private readonly snapshotStore?: SnapshotStore
@@ -96,11 +86,13 @@ export class AgentAssetRuntime {
   constructor(options: AssetRuntimeOptions = {}) {
     this.projectDir = options.projectDir
     this.initialProjectDir = options.projectDir
-    this.createScanner = options.createScanner ?? ((projectDir) => new WorkerAssetScanner(projectDir))
     this.now = options.now ?? (() => new Date().toISOString())
     this.createSnapshotId = options.createSnapshotId ?? createDefaultSnapshotId
     this.snapshotStore = options.snapshotStore
-    this.scanner = this.createScanner(this.projectDir)
+    this.coordinator = new ScanCoordinator(
+      options.createScanner ?? ((projectDir) => new WorkerAssetScanner(projectDir)),
+      this.projectDir
+    )
     this.selectorCache = new SnapshotSelectorCache()
     this.status = this.createIdleStatus()
     this.snapshot = this.createInitialSnapshot()
@@ -182,7 +174,9 @@ export class AgentAssetRuntime {
     if (this.projectDir === projectDir) return
 
     this.projectDir = projectDir
-    this.scanner = this.createScanner(projectDir)
+    // Swap the scanner generation: results of any in-flight scan against the
+    // old project are discarded by the coordinator (GH-111 R4).
+    this.coordinator.swap(projectDir)
     this.selectorCache.clear()
 
     // Serve a cached snapshot for this project instantly (sub-second switching).
@@ -210,8 +204,8 @@ export class AgentAssetRuntime {
   }
 
   async refresh(options: AssetRefreshOptions = {}): Promise<AssetRuntimeStatus> {
-    if (this.inFlight) {
-      if (options.wait) await this.inFlight
+    if (this.coordinator.isScanning()) {
+      if (options.wait) await this.coordinator.wait()
       return this.status
     }
 
@@ -229,8 +223,8 @@ export class AgentAssetRuntime {
       status: this.status
     }
 
-    this.inFlight = this.runRefresh(reason)
-    if (options.wait) await this.inFlight
+    const run = this.coordinator.run(this.createScanSink(reason))
+    if (options.wait) await run
     return this.status
   }
 
@@ -335,76 +329,69 @@ export class AgentAssetRuntime {
     })
   }
 
-  private async runRefresh(reason: AssetScanReason): Promise<void> {
-    // Capture the scanner generation. setProjectDir() can swap `this.scanner`
-    // (and serve a cached snapshot) while this scan is awaiting — committing the
-    // old scan's result afterwards would clobber the newly-selected project with
-    // stale assets. Guard every state write on the scanner still being current. (GH-111 R4)
-    const scanner = this.scanner
-    const isCurrent = (): boolean => this.scanner === scanner
-    try {
-      const scanResult = await scanner.scanAll({
-        onProgress: (progress) => { if (isCurrent()) this.setProgress(progress) },
-        onPartial: (partial) => { if (isCurrent()) this.applyPartial(partial) }
-      })
-      if (!isCurrent()) return
-      const sources = await scanner.getScanSourceGroups()
-      const projectCandidates = scanner.getProjectScopeCandidates()
-      const projectDir = scanner.getProjectDir() ?? this.projectDir
-      if (!isCurrent()) return
-      const status: AssetRuntimeStatus = {
-        state: 'ready',
-        reason,
-        projectDir,
-        startedAt: this.status.startedAt,
-        lastCompletedAt: this.now(),
-        stale: false
-      }
-
-      this.projectDir = projectDir
-      this.status = status
-      this.snapshot = {
-        id: this.createSnapshotId(),
-        projectDir,
-        assets: scanResult.assets,
-        stats: scanResult.stats,
-        errors: scanResult.errors,
-        sources,
-        projectCandidates,
-        status
-      }
-      this.assetMap = new Map(scanResult.assets.map((asset) => [asset.id, asset]))
-      this.snapshotCache.set(projectDir, this.snapshot)
-      this.selectorCache.clear()
-      this.persistIfDefaultView(projectDir)
-      // Emit the terminal status on the SAME progress channel as the live ticks
-      // so the renderer's last event is authoritative. Without this, a trailing
-      // "scanning" progress macrotask can clobber the `ready` set by the
-      // refresh() reply microtask, leaving the UI stuck at scanning (P4.6 fix).
-      this.progressListener?.({ status })
-    } catch (error) {
-      // GH-115 T6: 这是全部扫描故障的汇聚点, 也是 stack 此前永久丢失处 — 先落盘再转 status。
-      getMainLog().log('asset-runtime', error)
-      // A scan whose project was switched away mid-flight must not mark the
-      // newly-selected project as errored. (GH-111 R4)
-      if (!isCurrent()) return
-      this.status = {
-        state: 'error',
-        reason,
-        projectDir: this.projectDir,
-        startedAt: this.status.startedAt,
-        lastCompletedAt: this.status.lastCompletedAt,
-        stale: this.snapshot.id !== 'initial',
-        error: error instanceof Error ? error.message : String(error)
-      }
-      this.snapshot = {
-        ...this.snapshot,
-        status: this.status
-      }
-      this.progressListener?.({ status: this.status })
-    } finally {
-      this.inFlight = null
+  /** The data-commit half of a scan (GH-122): the coordinator executes and
+   * generation-guards (GH-111 R4 — callbacks of a swapped-away scan never
+   * arrive here); this sink owns every state transition and cache write. */
+  private createScanSink(reason: AssetScanReason): ScanSink {
+    return {
+      onProgress: (progress) => this.setProgress(progress),
+      onPartial: (partial) => this.applyPartial(partial),
+      onCompleted: (outcome) => this.commitScan(reason, outcome),
+      onFailed: (error) => this.failScan(reason, error)
     }
+  }
+
+  private commitScan(reason: AssetScanReason, outcome: ScanOutcome): void {
+    const projectDir = outcome.projectDir ?? this.projectDir
+    const status: AssetRuntimeStatus = {
+      state: 'ready',
+      reason,
+      projectDir,
+      startedAt: this.status.startedAt,
+      lastCompletedAt: this.now(),
+      stale: false
+    }
+
+    this.projectDir = projectDir
+    this.status = status
+    this.snapshot = {
+      id: this.createSnapshotId(),
+      projectDir,
+      assets: outcome.scanResult.assets,
+      stats: outcome.scanResult.stats,
+      errors: outcome.scanResult.errors,
+      sources: outcome.sources,
+      projectCandidates: outcome.projectCandidates,
+      status
+    }
+    this.assetMap = new Map(outcome.scanResult.assets.map((asset) => [asset.id, asset]))
+    this.snapshotCache.set(projectDir, this.snapshot)
+    this.selectorCache.clear()
+    this.persistIfDefaultView(projectDir)
+    // Emit the terminal status on the SAME progress channel as the live ticks
+    // so the renderer's last event is authoritative. Without this, a trailing
+    // "scanning" progress macrotask can clobber the `ready` set by the
+    // refresh() reply microtask, leaving the UI stuck at scanning (P4.6 fix).
+    this.progressListener?.({ status })
+  }
+
+  private failScan(reason: AssetScanReason, error: unknown): void {
+    // The stack was already logged at the coordinator (the single failure sink);
+    // here only the state transition remains.
+    this.status = {
+      state: 'error',
+      reason,
+      projectDir: this.projectDir,
+      startedAt: this.status.startedAt,
+      lastCompletedAt: this.status.lastCompletedAt,
+      stale: this.snapshot.id !== 'initial',
+      error: error instanceof Error ? error.message : String(error)
+    }
+    this.snapshot = {
+      ...this.snapshot,
+      status: this.status
+    }
+    this.progressListener?.({ status: this.status })
   }
 
   /** Persist only the default/global view so the next cold start restores the
