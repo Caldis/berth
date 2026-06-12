@@ -17,10 +17,10 @@
   - tests: `pnpm exec vitest run tests/renderer/instructions-guidance.test.tsx tests/renderer/capabilities-guidance.test.tsx tests/renderer/memory-view.test.tsx tests/renderer/sessions-pages.test.tsx`
   - verified: `pnpm typecheck:web`; `pnpm harness:check --work docs/works/2026-06-13-gh-125-unify-search-inputs`
   - verify: 不再出现 `Search assets... Skills` / `搜索资产… 约定`; 局部搜索统一 `Filter ...` / `筛选...`; 全局搜索仍是 `Search assets...` / `搜索资产…`; Permissions 页仍无局部搜索。
-- [ ] 任务 4: 收口验证与真实视觉检查
+- [x] 任务 4: 收口验证与真实视觉检查
   - files: 测试或文档按结果补充
-  - tests: `pnpm typecheck:web`, `pnpm harness:check`, 目标 renderer tests; 若改动影响更广再跑 `pnpm test`
-  - verify: Electron 实测会话列表 -> 会话详情 header 高度不抖动; 侧栏全局搜索与顶部局部搜索样式一致; 搜索弹窗输入 HeroUI 样式正常; 提交前 `git diff --cached` 只含本任务文件。
+  - tests: `pnpm lint`; `pnpm typecheck`; `pnpm test`; `pnpm build`; `pnpm test:e2e tests/e2e/app.e2e.ts`
+  - verify: Electron 实测 `pnpm dev:agent start --id gh125-search-chrome --debug-port 9341 --json` + CDP: 总览、会话列表、会话详情、Skills、MCP 的 `[data-testid="top-navigation"]` 高度均为 72px; 会话列表 -> 详情没有高度抖动; 会话页 `Ctrl+K` 聚焦局部搜索且不打开全局弹窗; 全局搜索弹窗 backdrop class 含 `backdrop-blur-sm` / `fade-in`, panel class 含 `fade-in` / `zoom-in-95`; 截图 `C:\Users\mail\AppData\Local\Temp\berth-agent-dev\gh125-search-chrome\screenshot.png`; `pnpm dev:agent guard after --id gh125-search-chrome --json` 返回 `guard-ok`。
 
 ## verify 回写
 verify 不通过项作为新任务追加于此, phase 退回 implement。

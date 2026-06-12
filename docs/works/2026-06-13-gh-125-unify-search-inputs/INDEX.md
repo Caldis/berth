@@ -2,7 +2,7 @@
 task: 2026-06-13-gh-125-unify-search-inputs
 task_id: GH-125
 type: feature
-phase: implement
+phase: verify
 created: 2026-06-13
 priority: P2
 target_date:
@@ -23,14 +23,16 @@ debt:
     confidence: medium
     rationale: "Explore 确认影响面集中在 renderer 顶部导航、侧栏全局搜索入口、全局搜索弹窗输入和少数页面 placeholder; 追加标题栏固定高度验收后仍是模块级 UI/test 变更。"
   final:
-    incurred:
-    repaid:
-    net:
-    scope:
-    risk:
-    areas: []
-    confidence:
-    rationale:
+    incurred: 4
+    repaid: 2
+    net: 2
+    scope: module
+    risk: low
+    areas:
+      - ui-ux
+      - testability
+    confidence: high
+    rationale: "最终改动集中在 renderer 标题栏、搜索输入控件、全局搜索弹窗和局部搜索 placeholder; 通过共享 ChromeSearchInput/SearchTriggerButton 收敛重复样式, 固定 TopNavigation 72px, 并用 renderer tests、完整 vitest、build/e2e 和真实 Electron CDP/截图验证高度与交互。新增 debt 主要是局部 UI 组合依赖 HeroUI className 约定; 测试与真实验收覆盖后风险降为 low。"
   revisions:
     - at: explore
       date: 2026-06-13
