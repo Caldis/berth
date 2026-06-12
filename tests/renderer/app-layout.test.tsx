@@ -103,7 +103,9 @@ describe('AppLayout navigation shell', () => {
     const navigation = screen.getByTestId('top-navigation')
     const scrollRegion = screen.getByTestId('app-content-scroll')
 
+    expect(navigation).toHaveClass('h-[72px]')
     expect(navigation).toHaveClass('min-h-[72px]')
+    expect(navigation).toHaveClass('max-h-[72px]')
     // Block layout: header is a normal flex child, not a floating overlay.
     expect(navigation).not.toHaveClass('absolute')
     expect(navigation).not.toHaveClass('backdrop-blur-xl')

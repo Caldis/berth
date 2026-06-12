@@ -96,6 +96,27 @@ describe('TopNavigation', () => {
     expect(screen.getByTestId('top-navigation')).toHaveClass('pr-52')
   })
 
+  it('keeps the titlebar height fixed while actions stay on one row', () => {
+    renderTopNavigation('/sessions', {
+      config: {
+        title: 'Sessions',
+        sectionLabelKey: 'nav.sections.work',
+        search: {
+          value: '',
+          onValueChange: () => undefined,
+          placeholder: 'Filter sessions...'
+        },
+        actions: <button type="button">Project</button>
+      }
+    })
+
+    expect(screen.getByTestId('top-navigation')).toHaveClass('h-[72px]')
+    expect(screen.getByTestId('top-navigation')).toHaveClass('max-h-[72px]')
+    expect(screen.getByTestId('top-navigation')).toHaveClass('overflow-hidden')
+    expect(screen.getByTestId('top-navigation-actions')).not.toHaveClass('flex-wrap')
+    expect(screen.getByTestId('top-navigation-actions')).toHaveClass('overflow-hidden')
+  })
+
   it('shows page search and keeps page guidance reachable only while hovering the trigger or panel', async () => {
     renderTopNavigation('/sessions', {
       config: {

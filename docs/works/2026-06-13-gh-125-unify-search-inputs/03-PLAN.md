@@ -4,7 +4,7 @@
 每个实现项必须有测试证据或明确例外理由。
 实现中若发现 debt 初估不准, 更新 INDEX.md `debt.estimate`, 并追加 `debt.revisions[]`。
 
-- [ ] 任务 1: 抽共享搜索控件, 替换顶部局部搜索, 固定 TopNavigation 高度
+- [x] 任务 1: 抽共享搜索控件, 替换顶部局部搜索, 固定 TopNavigation 高度
   - files: `src/renderer/src/components/layout/search-control.tsx`, `src/renderer/src/components/layout/top-navigation.tsx`, 顶部导航相关测试
   - tests: `pnpm exec vitest run tests/renderer/top-navigation-search.test.tsx tests/renderer/top-navigation.test.tsx tests/renderer/app-layout.test.tsx`
   - verify: header 固定 72px; 页面搜索仍是 textbox, placeholder/aria-label 正确; Ctrl/⌘K 聚焦并全选; 页面说明按钮仍在搜索右侧; 右侧操作不换行撑高。
