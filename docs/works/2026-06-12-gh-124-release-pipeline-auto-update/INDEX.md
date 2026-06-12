@@ -2,7 +2,7 @@
 task: 2026-06-12-gh-124-release-pipeline-auto-update
 task_id: GH-124
 type: feature
-phase: design
+phase: implement
 created: 2026-06-12
 priority: P1
 target_date: 
@@ -66,8 +66,8 @@ artifacts:
 ## 产物
 - [x] 00-PRD.md — 原始输入快照
 - [x] 01-ANALYSIS.md — Explore 产物 (mac 定界 + AC1-8)
-- [ ] 02-SPEC.md — Design 产物
-- [ ] 03-PLAN.md — 活任务清单
+- [x] 02-SPEC.md — Design 产物 (IPC/装配/workflow 执行契约)
+- [x] 03-PLAN.md — 活任务清单 (T1-T4 + 实弹操作序)
 - [ ] 04-POLISH.md — 可选抛光记录
 
 ## 待澄清 (blocked 时填)
