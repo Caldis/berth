@@ -4,7 +4,7 @@ task_id: GH-126
 type: maintenance
 maintenance:
   subtype: architecture
-phase: implement
+phase: archive
 created: 2026-06-13
 priority: P2
 target_date: 
@@ -27,14 +27,17 @@ debt:
     confidence: medium
     rationale: "T1 已收敛筛选类 Select 视觉契约, T3 已把 ProjectScopeSwitcher 的 store/IPC/snapshot 副作用收进内部 hook。PageChrome builder 候选因当前收益偏浅暂缓。"
   final:
-    incurred:
-    repaid:
-    net:
-    scope:
-    risk:
-    areas: []
-    confidence:
-    rationale:
+    incurred: 2
+    repaid: 7
+    net: -5
+    scope: global
+    risk: low
+    areas:
+      - architecture
+      - ui-ux
+      - testability
+    confidence: high
+    rationale: "完成两个小步: 1) 新增 FilterSelect, 统一会话/能力/用量/回放筛选 Select 的密集视觉契约; 2) 将 ProjectScopeSwitcher 的候选加载、scope IPC、project activation、asset snapshot 和 store 写入顺序收进 useProjectScopeActions。PageChrome builder 候选评估后暂缓, 因当前只做 helper 会过浅。本地 lint/typecheck/test/harness 全绿, CI run 27433383973 三平台成功, agent-owned Electron 实测会话筛选高度 36px 且项目范围 user/global 切换正常。"
   revisions:
     - phase: explore
       date: 2026-06-13
@@ -57,7 +60,7 @@ gh_project:
   project_number: 6
   project_url: https://github.com/users/Caldis/projects/6
   item_id: PVTI_lAHOADXbEs4BZHvQzgvksW4
-  item_status: In Progress
+  item_status: Done
   project_id: PVT_kwHOADXbEs4BZHvQ
 artifacts:
   source: 00-PRD.md

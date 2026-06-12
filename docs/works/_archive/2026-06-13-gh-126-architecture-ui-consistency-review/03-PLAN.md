@@ -22,3 +22,14 @@
 
 ## verify 回写
 verify 不通过项作为新任务追加于此, phase 退回 implement。
+
+通过项:
+- `pnpm lint`
+- `pnpm typecheck:web`
+- `pnpm typecheck:test`
+- `pnpm typecheck:node`
+- `pnpm test` — 161 files, 1081 passed, 1 skipped
+- `pnpm harness:check`
+- `node scripts/harness-projects.mjs check --strict`
+- CI: https://github.com/Caldis/berth/actions/runs/27433383973 (`03ec01c62f324519e984abc015dc011daa389044`, ubuntu/macos/windows success)
+- UI 自验: agent-owned Electron `gh126-verify`, CDP 连接 `http://127.0.0.1:9333`, 会话页 `session-model-filter` 实测高度 36px, 项目范围菜单 user/global 切换正常。截图: `C:\Users\mail\AppData\Local\Temp\berth-gh126-sessions-filter.png`
