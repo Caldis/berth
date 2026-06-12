@@ -39,7 +39,7 @@
       },
       {
         "title": "只读且安全",
-        "body": "v0.1 不修改任何文件；API Key 与 Token 只探测状态，永不显示。"
+        "body": "Berth 不修改任何文件；API Key 与 Token 只探测状态，永不显示。"
       }
     ]
   },
@@ -109,7 +109,7 @@
     "items": [
       {
         "q": "Berth 会修改我的文件吗？",
-        "a": "不会。v0.1 完全只读——只扫描和展示，绝不写入任何配置或资产文件。"
+        "a": "不会。Berth 完全只读——只扫描和展示，绝不写入任何配置或资产文件。"
       },
       {
         "q": "我的数据会被上传吗？",
@@ -117,7 +117,7 @@
       },
       {
         "q": "支持哪些 Agent？",
-        "a": "v0.1 聚焦 Claude Code，并已为 Codex 等设计了适配层，后续版本逐步扩展。"
+        "a": "Berth 支持 Claude Code 与 Codex，适配层已就绪，后续版本将覆盖更多 Agent。"
       },
       {
         "q": "是免费的吗？",
@@ -176,17 +176,17 @@
     "featuresIntro": "Berth 把 AI Agent 背后的纯文本资产，变成结构化、可浏览的对象。下面是这款应用的全貌。",
     "about": {
       "body1": "Berth 让 AI Agent 背后看不见的资产变得可见。随着 Claude Code、Codex 等工具快速演进，你在本地积累的 skills、MCP、hooks 与记忆，大多是缺乏可见性的纯文本。Berth 扫描它们、关联它们，把它们呈现为一等公民般的对象。",
-      "body2": "Berth 开源并采用 MIT 许可，由 Caldis 打造。v0.1 在设计上即只读、本地优先。"
+      "body2": "Berth 开源并采用 MIT 许可，由 Caldis 打造。它在设计上即只读、本地优先。"
     },
     "privacy": {
       "body1": "Berth 完全在你的机器上运行。它不发送任何遥测、没有账号体系，你的数据永不离开你的电脑。",
-      "body2": "Berth 为了展示而读取 Agent 的配置与会话文件；v0.1 绝不写入它们。API Key、Token 等凭证仅用于探测状态，永不显示其内容。"
+      "body2": "Berth 为了展示而读取 Agent 的配置与会话文件，但绝不写入它们。API Key、Token 等凭证仅用于探测状态，永不显示其内容。"
     },
     "changelog": {
       "intro": "Berth 还很年轻，这是它目前的状态。",
       "items": [
         {
-          "version": "v0.1",
+          "version": "v0.2",
           "date": "2026",
           "notes": [
             "面向 Claude Code 的只读资产可视化",

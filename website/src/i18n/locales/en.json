@@ -39,7 +39,7 @@
       },
       {
         "title": "Read-only & safe",
-        "body": "v0.1 never modifies a file. API keys and tokens are detected, never displayed."
+        "body": "Berth never modifies a file. API keys and tokens are detected, never displayed."
       }
     ]
   },
@@ -109,7 +109,7 @@
     "items": [
       {
         "q": "Will Berth modify my files?",
-        "a": "No. v0.1 is fully read-only — it scans and displays, and never writes to any config or asset file."
+        "a": "No. Berth is fully read-only — it scans and displays, and never writes to any config or asset file."
       },
       {
         "q": "Is my data uploaded anywhere?",
@@ -117,7 +117,7 @@
       },
       {
         "q": "Which agents are supported?",
-        "a": "v0.1 focuses on Claude Code, with an adapter layer already designed for Codex and more in later releases."
+        "a": "Berth supports Claude Code and Codex, with an adapter layer designed to cover more agents in later releases."
       },
       {
         "q": "Is it free?",
@@ -176,17 +176,17 @@
     "featuresIntro": "Berth turns the plain-text assets behind your AI agents into structured, browsable objects. Here is the shape of the app.",
     "about": {
       "body1": "Berth makes the invisible assets behind your AI agents visible. As tools like Claude Code and Codex evolve, the skills, MCP servers, hooks and memories you accumulate locally pile up as plain text with no real visibility. Berth scans them, connects them, and shows them as first-class objects.",
-      "body2": "Berth is open source under the MIT license and built by Caldis. v0.1 is read-only and local-first by design."
+      "body2": "Berth is open source under the MIT license and built by Caldis. It is read-only and local-first by design."
     },
     "privacy": {
       "body1": "Berth runs entirely on your machine. It sends no telemetry, has no account system, and your data never leaves your computer.",
-      "body2": "Berth reads agent configuration and session files in order to display them. v0.1 never writes to them. Credentials such as API keys and tokens are detected for status only and are never displayed."
+      "body2": "Berth reads agent configuration and session files in order to display them and never writes to them. Credentials such as API keys and tokens are detected for status only and are never displayed."
     },
     "changelog": {
       "intro": "Berth is early. Here is where it stands.",
       "items": [
         {
-          "version": "v0.1",
+          "version": "v0.2",
           "date": "2026",
           "notes": [
             "Read-only asset visualization for Claude Code",
