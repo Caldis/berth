@@ -19,10 +19,10 @@ berth 项目自用工具 (不含企业内部设施)。Agent 据此主动获取�
 - `run` skill / Playwright `_electron` REPL + 截图 — 启动应用做视觉/交互验收。
 - `pnpm lint` / `pnpm typecheck` — 机械检查。
 - `pnpm harness:check` / `pnpm harness:check --work docs/works/{task}` / `pnpm harness:sync` — harness 自检与分发。并行任务影响全局检查时, 用 `--work` 只验证当前任务目录; 总验证仍跑全局 `pnpm harness:check`。
-- `pnpm harness:ci:baseline` — push 前检查当前分支最近 `CI` GitHub Actions run; 默认要求 completed/success。CI 修复提交可显式追加 `-- --allow-failed-baseline`。
-- `pnpm harness:ci:wait` — push 后等待当前 `HEAD` 对应的 `CI` run; 也可传 `-- --sha <sha>`。
-- `pnpm harness:prepush` — 代码类提交的 push 前本地门禁: lint / typecheck / test / harness:check / Actions baseline 并行执行, 任一失败即失败。
-- 非本地门禁可由子代理执行: `pnpm harness:ci:wait` 和 GitHub Project 同步属于远端等待任务; 主 Agent 必须消费成功结果后才能声明阶段通过、archive 或完成。
+- `pnpm harness:ci:baseline` — 查看当前分支最近 `CI` GitHub Actions run。实现阶段只作远端状态参考; CI 修复提交可显式追加 `-- --allow-failed-baseline`。
+- `pnpm harness:ci:wait` — 等待指定 `CI` run, 也可传 `-- --sha <sha>`。实现阶段不要用它阻塞主循环; push 后交给子代理或旁路检查异步跟踪, verify/archive/最终完成声明前再消费成功结果。
+- `pnpm harness:prepush` — 代码类提交的 push 前本地门禁: lint / typecheck / test / harness:check / Actions baseline 并行执行。若仅因远端 CI baseline 仍在运行而阻塞实现阶段, 拆开跑本地 lint/typecheck/test/harness 检查, 不等待远端完成。
+- 非本地门禁可由子代理执行: `pnpm harness:ci:wait` 和 GitHub Project 同步属于远端等待任务; 实现阶段不阻塞主开发, verify/archive/最终完成声明前主 Agent 必须消费成功结果。
 - `pnpm harness:stats` — 只读统计 works/friction/issues/debt pool/distribution; 达到维护阈值时输出 Agent 可直接使用的 `maintenance=<subtype>:<score>` 推荐。
 - **harness:check ≠ harness 单测**: `harness:check` 过不代表 `tests/harness/` 过 — 测试 fixture 与 `WORKFLOW_ACTIONS`/`ACTION_IDS` 会静默漂移。改 harness 体系 (workflow 清单、脚本、action id) 后, 提交前门禁必须含 `pnpm test` (至少 tests/harness), 不止 harness:check (friction 20260609-fixture-drift)。
 - **Windows spawn 故障辨析**: `harness:prepush` 报 `spawn EINVAL` 是 Node 24 + `pnpm.cmd` 的 spawn 启动失败, 不是应用代码检查失败 — 逐项单独运行 lint/typecheck/test 定位 (friction 20260603-prepush-spawn)。`pnpm install` postinstall 因 esbuild optionalDependencies 未物化而 ENOENT 时, 不阻塞 dev/test/typecheck/build 链路; 打包用 `--ignore-scripts` 跳过后针对性重建原生模块 (friction 20260606-esbuild-postinstall)。
