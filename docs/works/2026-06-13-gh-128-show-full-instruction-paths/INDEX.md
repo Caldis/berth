@@ -2,7 +2,7 @@
 task: 2026-06-13-gh-128-show-full-instruction-paths
 task_id: GH-128
 type: bug
-phase: implement
+phase: verify
 created: 2026-06-13
 priority: P2
 target_date:
@@ -23,14 +23,16 @@ debt:
     confidence: medium
     rationale: "Explore 确认根因在约定页 conventions 卡片折叠态同时使用 truncatePath 文本省略和 CSS truncate; 影响面为 renderer 单页展示和页面测试。"
   final:
-    incurred:
-    repaid:
-    net:
-    scope:
-    risk:
-    areas: []
-    confidence:
-    rationale:
+    incurred: 1
+    repaid: 1
+    net: 0
+    scope: module
+    risk: low
+    areas:
+      - ui-ux
+      - testability
+    confidence: high
+    rationale: "最终 diff 限定在约定页 conventions 卡片折叠态和 renderer 测试; 完整路径直接渲染并用 break-all 换行, 不再使用 truncatePath 或 CSS truncate。"
   revisions:
     - phase: explore
       date: 2026-06-13

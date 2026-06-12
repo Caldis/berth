@@ -12,9 +12,12 @@
   - tests: `tests/renderer/instructions-guidance.test.tsx`
   - verify: `pnpm test -- tests/renderer/instructions-guidance.test.tsx`; 界面质量项为完整路径可换行、不横向溢出、卡片结构不变。
   - evidence: 2026-06-13 `pnpm test -- tests\renderer\instructions-guidance.test.tsx` 通过, 7 tests passed。
-- [ ] 任务 3: 阶段门禁与真实界面验收。
+- [x] 任务 3: 阶段门禁与真实界面验收。
   - tests: `pnpm typecheck:web`; `pnpm typecheck:test`; `pnpm harness:check --work docs/works/2026-06-13-gh-128-show-full-instruction-paths`
   - verify: agent-owned Electron 进入约定页截图确认完整路径可读; 只暂存本任务相关文件提交并推送。
+  - evidence: 2026-06-13 `pnpm typecheck:web`; `pnpm typecheck:test`; `pnpm harness:check --work docs\works\2026-06-13-gh-128-show-full-instruction-paths` 均通过。
+  - evidence: 2026-06-13 verify 门禁 `pnpm lint`; `pnpm typecheck`; `pnpm test`; `node scripts\harness-projects.mjs check --strict` 均通过。
+  - evidence: 2026-06-13 agent-owned Electron `gh-128-verify` 进入约定页, CDP 检查下半段长路径无省略号行; 截图 `C:\Users\mail\AppData\Local\Temp\berth-gh128-verify-conventions-long-paths.png`。
 
 ## verify 回写
 verify 不通过项作为新任务追加于此, phase 退回 implement。
