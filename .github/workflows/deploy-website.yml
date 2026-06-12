@@ -34,7 +34,10 @@ jobs:
           node-version: 22
           cache: pnpm
           cache-dependency-path: website/pnpm-lock.yaml
-      - run: pnpm install --frozen-lockfile
+      # --ignore-workspace: the repo root gained pnpm-workspace.yaml (scan-engine
+      # package, 2026-06-06) which hijacks a bare install run inside website/ —
+      # the website keeps its own lockfile and must install against it.
+      - run: pnpm install --frozen-lockfile --ignore-workspace
       - run: pnpm build
       - uses: actions/upload-pages-artifact@v3
         with:
