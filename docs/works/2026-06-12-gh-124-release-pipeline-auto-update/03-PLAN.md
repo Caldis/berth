@@ -6,7 +6,7 @@
   - 内容: shared/types/ipc.ts 增 UpdatePreferences/UpdateState + 5 invoke + update:state; src/main/update-preferences.ts (新); src/main/updater.ts (新, 依赖全注入中立件); ipc/handlers.ts registerUpdateHandlers; index.ts 接线 (electron-updater import + broadcast emit + 启动延迟 check); preload update 域; tests/setup.ts mock 同步; electron-builder.yml publish; package.json electron-updater 入 dependencies; 本机 package:win 实证 dist/latest.yml。
   - tests: updater-controller.test.ts (事件归一/mac 分支/偏好/错误) + update-preferences.test.ts + 对账两件绿 + 全量。
   - verify: typecheck/lint/test 绿; latest.yml 实证。
-- [ ] T2 renderer 更新卡 (AC-5)
+- [x] T2 renderer 更新卡 (AC-5) — DONE: use-update hook + UpdateSection (7 状态/busy 禁用/platformLimited 前往下载页/autoDownload Switch) 入 About 卡, i18n settings.update.* 12 键 en/zh 对称; 渲染测试 6 断言绿; 既有'零 switch'钉测按删除纪律改写为行为断言 (唯一 switch=autoDownload 可达名 + advanced 不存在); 全量 1077 绿
   - 内容: hooks/use-update.ts (订阅+动作); settings-content.tsx About 下更新卡 (7 状态/按钮禁用态/mac 前往下载页/autoDownload Switch); i18n settings.update.* en/zh。
   - tests: settings-update.test.tsx (phase→文案/按钮/limited 分支) + 全量。
   - verify: 界面验收条目 (状态全显/禁用态/i18n)。

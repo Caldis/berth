@@ -1758,7 +1758,21 @@
     "fileWatchingDesc": "Detected source folders are watched automatically while Berth is running",
     "about": "About",
     "version": "Version",
-    "reportIssue": "Report Issue"
+    "reportIssue": "Report Issue",
+    "update": {
+      "idle": "Checks for updates automatically on launch.",
+      "check": "Check for updates",
+      "checking": "Checking for updates…",
+      "available": "Update {{version}} available.",
+      "upToDate": "You are on the latest version.",
+      "downloading": "Downloading update… {{percent}}%",
+      "downloaded": "Update {{version}} ready to install.",
+      "installRestart": "Restart & install",
+      "download": "Download update",
+      "goToDownloads": "Go to downloads",
+      "error": "Update check failed: {{message}}",
+      "autoDownload": "Download updates automatically"
+    }
   },
   "filter": {
     "allScopes": "All scopes"

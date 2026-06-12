@@ -1748,7 +1748,21 @@
     "fileWatchingDesc": "Berth 运行时会自动监听已发现的来源目录",
     "about": "关于",
     "version": "版本",
-    "reportIssue": "报告问题"
+    "reportIssue": "报告问题",
+    "update": {
+      "idle": "启动时会自动检查更新。",
+      "check": "检查更新",
+      "checking": "正在检查更新…",
+      "available": "发现新版本 {{version}}。",
+      "upToDate": "已是最新版本。",
+      "downloading": "正在下载更新… {{percent}}%",
+      "downloaded": "新版本 {{version}} 已就绪。",
+      "installRestart": "重启并安装",
+      "download": "下载更新",
+      "goToDownloads": "前往下载页",
+      "error": "检查更新失败：{{message}}",
+      "autoDownload": "自动下载更新"
+    }
   },
   "filter": {
     "allScopes": "全部作用域"

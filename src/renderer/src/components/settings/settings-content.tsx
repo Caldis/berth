@@ -11,6 +11,7 @@ import {
 import { cn } from '@/lib/utils'
 import { useAgentCapabilityPlugins } from '@/hooks/use-ipc'
 import { AgentCapabilityPluginsSection } from '@/components/settings/agent-capability-plugins-section'
+import { UpdateSection } from '@/components/settings/update-section'
 
 function getNextRadioIndex(key: string, currentIndex: number, optionCount: number): number | null {
   if (optionCount <= 0) return null
@@ -281,6 +282,7 @@ export function SettingsContent({
               </p>
             </div>
           </div>
+          <UpdateSection />
           <div className="mt-3 flex gap-2 border-t border-border pt-3">
             <button
               onClick={() => window.api?.shell.openExternal('https://github.com/Caldis/berth')}
