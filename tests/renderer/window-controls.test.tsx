@@ -71,12 +71,19 @@ describe('WindowControls', () => {
   it('uses navigation-scaled hit targets and quiet icon styling', async () => {
     render(<WindowControls />)
 
+    const divider = screen.getByTestId('window-controls-divider')
+    expect(divider).toHaveAttribute('aria-hidden', 'true')
+    expect(divider).toHaveClass('h-6')
+    expect(divider).toHaveClass('w-px')
+    expect(divider).toHaveClass('bg-border/80')
+
     const buttons = [
       screen.getByRole('button', { name: 'Pin window' }),
       screen.getByRole('button', { name: 'Minimize window' }),
       screen.getByRole('button', { name: 'Maximize window' }),
       screen.getByRole('button', { name: 'Close window' })
     ]
+    expect(divider.compareDocumentPosition(buttons[0]) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
 
     for (const button of buttons) {
       expect(button).toHaveClass('h-9')

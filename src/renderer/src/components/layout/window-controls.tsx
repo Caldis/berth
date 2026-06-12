@@ -47,6 +47,11 @@ export function WindowControls({ navigationHeight = DEFAULT_NAVIGATION_HEIGHT }:
       style={containerStyle}
       data-testid="window-controls"
     >
+      <span
+        aria-hidden="true"
+        className="pointer-events-none h-6 w-px shrink-0 bg-border/80"
+        data-testid="window-controls-divider"
+      />
       <button
         aria-label={alwaysOnTop ? t('windowControls.unpin') : t('windowControls.pin')}
         aria-pressed={alwaysOnTop}
