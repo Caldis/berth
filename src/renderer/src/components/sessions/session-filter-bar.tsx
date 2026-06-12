@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import { Select, SelectItem, Tabs, Tab } from '@/components/ui'
+import { FilterSelect, SelectItem, Tabs, Tab } from '@/components/ui'
 import { formatNumber } from '@/lib/utils'
 import type {
   SessionAgentFilter,
@@ -79,11 +79,10 @@ export function SessionFilterBar({
         {agentTab('codex', 'Codex')}
       </Tabs>
 
-      <Select
+      <FilterSelect
         aria-label={t('sessions.filters.model')}
         data-testid="session-model-filter"
         selectionMode="multiple"
-        size="sm"
         placeholder={t('sessions.filters.modelAll')}
         selectedKeys={modelFilter as Set<string>}
         onSelectionChange={(keys) => {
@@ -95,19 +94,17 @@ export function SessionFilterBar({
         }}
         isDisabled={modelOptions.length === 0}
         className="w-48"
-        classNames={{ trigger: 'h-9 min-h-9' }}
       >
         {modelOptions.map((model) => (
           <SelectItem key={model} textValue={model}>
             <span className="truncate font-mono text-xs">{model}</span>
           </SelectItem>
         ))}
-      </Select>
+      </FilterSelect>
 
-      <Select
+      <FilterSelect
         aria-label={t('sessions.filters.sort')}
         data-testid="session-sort-select"
-        size="sm"
         selectedKeys={new Set([sortBy])}
         disallowEmptySelection
         onSelectionChange={(keys) => {
@@ -116,13 +113,12 @@ export function SessionFilterBar({
           if (first) onSortByChange(first as SessionSortBy)
         }}
         className="w-32"
-        classNames={{ trigger: 'h-9 min-h-9' }}
       >
         <SelectItem key="recent">{t('sessions.filters.sortRecent')}</SelectItem>
         <SelectItem key="duration">{t('sessions.filters.sortDuration')}</SelectItem>
         <SelectItem key="cost">{t('sessions.filters.sortCost')}</SelectItem>
         <SelectItem key="tokens">{t('sessions.filters.sortTokens')}</SelectItem>
-      </Select>
+      </FilterSelect>
 
       <div className="ml-auto flex items-center gap-2">
         <span

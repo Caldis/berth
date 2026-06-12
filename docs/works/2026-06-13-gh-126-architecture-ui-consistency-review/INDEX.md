@@ -4,7 +4,7 @@ task_id: GH-126
 type: maintenance
 maintenance:
   subtype: architecture
-phase: explore
+phase: implement
 created: 2026-06-13
 priority: P2
 target_date: 
@@ -24,8 +24,8 @@ debt:
       - ui-ux
       - testability
       - performance
-    confidence: low
-    rationale: "0.0-new 初始估算; 用户要求跨底层和 renderer/UI 层做架构分析并修复。预期偿还 UI 组件复用、交互一致性、数据流和测试面债务; explore 后校准候选和范围。"
+    confidence: medium
+    rationale: "Explore 已确认首个高把握修复点: 筛选类 Select 的视觉契约散落在 4 个调用点。另记录 page chrome 注册和 project scope side effect 两个后续候选。估算仍按全局 UI/架构债务处理, 先用 T1 做可独立验证的小步偿还。"
   final:
     incurred:
     repaid:
@@ -35,7 +35,12 @@ debt:
     areas: []
     confidence:
     rationale:
-  revisions: []
+  revisions:
+    - phase: explore
+      date: 2026-06-13
+      from: { confidence: low }
+      to: { confidence: medium }
+      reason: "已完成 renderer/UI 调用点审计, 候选收敛为 FilterSelect、PageChrome builder、ProjectScope hook 三类; 第一类可小步实现并测试。"
 issue:
   number: 126
   repo: Caldis/berth
@@ -63,9 +68,9 @@ artifacts:
 
 ## 产物
 - [x] 00-PRD.md / 00-BUG.md — 原始输入快照
-- [ ] 01-ANALYSIS.md — Explore 产物
-- [ ] 02-SPEC.md — Design 产物
-- [ ] 03-PLAN.md — 活任务清单
+- [x] 01-ANALYSIS.md — Explore 产物
+- [x] 02-SPEC.md — Design 产物
+- [x] 03-PLAN.md — 活任务清单
 - [ ] 04-POLISH.md — 可选抛光记录
 
 ## 待澄清 (blocked 时填)

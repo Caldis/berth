@@ -19,6 +19,7 @@ describe('components/ui barrel', () => {
       'Input',
       'Select',
       'SelectItem',
+      'FilterSelect',
       'Tabs',
       'Tab',
       'Switch',

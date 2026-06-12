@@ -28,7 +28,7 @@ import { CostSourceBadge } from '@/components/shared/cost-source-badge'
 import { NoticePanel } from '@/components/shared/notice-panel'
 import { projectPathForScope } from '@shared/scope'
 import { usePageChrome, type PageChromeConfig } from '@/components/layout/page-chrome'
-import { Select, SelectItem } from '@/components/ui'
+import { FilterSelect, SelectItem } from '@/components/ui'
 import { CHART_CATEGORICAL, CHART_SERIES_FILL } from '@/lib/chart-colors'
 
 const TIME_RANGES = [
@@ -471,7 +471,7 @@ export function Usage(): React.ReactElement {
                       <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                         {t('usage.costModeLabel')}
                       </span>
-                      <Select
+                      <FilterSelect
                         aria-label={t('usage.costModeLabel')}
                         aria-describedby="usage-cost-mode-help"
                         selectionMode="single"
@@ -481,18 +481,12 @@ export function Usage(): React.ReactElement {
                           const next = Array.from(keys)[0]
                           if (next) setCostMode(next as CostMode)
                         }}
-                        size="sm"
-                        variant="bordered"
                         className="mt-1 w-full"
-                        classNames={{
-                          trigger:
-                            'border-border bg-background shadow-none data-[hover=true]:bg-muted/40 data-[open=true]:border-ring'
-                        }}
                       >
                         {COST_MODES.map((mode) => (
                           <SelectItem key={mode.value}>{t(mode.labelKey)}</SelectItem>
                         ))}
-                      </Select>
+                      </FilterSelect>
                       <p id="usage-cost-mode-help" className="mt-1 text-xs text-muted-foreground">
                         {t(selectedCostMode.tooltipKey)}
                       </p>

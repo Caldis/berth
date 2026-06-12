@@ -75,4 +75,6 @@ export {
 // ── berth composites & tokens ──
 export { Chip } from './chip'
 export type { ChipTone, ChipUIProps } from './chip'
+export { FilterSelect } from './filter-select'
+export type { FilterSelectProps } from './filter-select'
 export { MOTION, TRANSITION, fadeRise } from './motion'

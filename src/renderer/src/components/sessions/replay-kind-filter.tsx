@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { Check } from 'lucide-react'
 import type { SessionReplayEventKind } from '@shared/types/ipc'
-import { Select, SelectItem } from '@/components/ui'
+import { FilterSelect, SelectItem } from '@/components/ui'
 import { cn, formatNumber } from '@/lib/utils'
 import { REPLAY_KINDS } from '@/lib/replay-model'
 import { replayKindColorClasses, replayKindIcon } from './replay-kind-chip'
@@ -27,11 +27,10 @@ export function ReplayKindFilter({
   const { t } = useTranslation()
 
   return (
-    <Select
+    <FilterSelect
       aria-label={t('sessions.replay.kindFilterLabel')}
       data-testid="replay-kind-filter"
       selectionMode="multiple"
-      size="sm"
       placeholder={t('sessions.replay.kindFilterAll')}
       selectedKeys={(selected ?? new Set()) as Set<string>}
       onSelectionChange={(keys) => {
@@ -44,7 +43,6 @@ export function ReplayKindFilter({
       }}
       renderValue={() => <TriggerSummary selected={selected} />}
       className={cn('w-44', className)}
-      classNames={{ trigger: 'h-9 min-h-9' }}
     >
       {REPLAY_KINDS.map((kind) => {
         const Icon = replayKindIcon(kind)
@@ -69,7 +67,7 @@ export function ReplayKindFilter({
           </SelectItem>
         )
       })}
-    </Select>
+    </FilterSelect>
   )
 }
 
