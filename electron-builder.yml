@@ -40,3 +40,9 @@ linux:
     - deb
   category: Utility
 npmRebuild: false
+# GH-124: provider 配置驱动 latest*.yml 生成 (electron-updater 数据源); 发布动作
+# 本身由 release.yml 的 publish job 经 gh CLI 执行, builder 恒 --publish never。
+publish:
+  provider: github
+  owner: Caldis
+  repo: berth

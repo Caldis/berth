@@ -12,6 +12,9 @@ import { configureAgentDevProfile, shouldRequestSingleInstanceLock } from './dev
 import { shouldAutoOpenDevTools } from './devtools'
 import { createLogWriter, getMainLog, setMainLogWriter } from '@berth/scan-engine/log'
 import { isAllowedPermission, isSafeExternalUrl } from './url-guard'
+import { autoUpdater } from 'electron-updater'
+import { createUpdaterController, setUpdaterRuntime } from './updater'
+import { readUpdatePreferences } from './update-preferences'
 import appIcon from '../../assets/icon/app_icon.png?asset'
 
 // GH-115 T5: 进程级兜底 — 打包应用 (无终端) 的故障此前零痕迹。日志仅落
@@ -234,6 +237,26 @@ if (!gotTheLock) {
     app.on('activate', () => {
       if (BrowserWindow.getAllWindows().length === 0) createWindow({ openDevTools })
     })
+
+    // GH-124: auto-update wiring. The controller is electron-free (deps
+    // injected); state broadcasts to every live window like assets:progress.
+    const userDataDir = app.getPath('userData')
+    const updaterController = createUpdaterController({
+      autoUpdater,
+      platform: process.platform,
+      isPackaged: app.isPackaged,
+      preferences: readUpdatePreferences(userDataDir),
+      emit: (state) => {
+        for (const win of BrowserWindow.getAllWindows()) {
+          if (!win.isDestroyed()) win.webContents.send('update:state', state)
+        }
+      },
+      log: (scope, payload) => getMainLog().log(scope, payload)
+    })
+    setUpdaterRuntime({ controller: updaterController, userDataDir })
+    // Deferred startup check: never blocks launch; failures surface as
+    // update:state error (and the main log), not dialogs.
+    setTimeout(() => { void updaterController.check() }, 5000)
   }).catch((err: unknown) => {
     // 启动期 throw 此前表现为 dock 图标出现但永远无窗口、零诊断 (GH-115 T5)
     getMainLog().log('startup', err)

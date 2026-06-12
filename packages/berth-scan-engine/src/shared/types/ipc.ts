@@ -442,6 +442,29 @@ export interface IpcChannels {
   'theme:set': { args: ['light' | 'dark' | 'system']; result: void }
   'shell:openPath': { args: [string]; result: void }
   'shell:openExternal': { args: [string]; result: void }
+  'update:check': { args: []; result: void }
+  'update:download': { args: []; result: void }
+  'update:install': { args: []; result: void }
+  'update:get-preferences': { args: []; result: UpdatePreferences }
+  'update:set-preferences': { args: [UpdatePreferences]; result: void }
+}
+
+/** Auto-update preferences persisted in userData (GH-124). */
+export interface UpdatePreferences {
+  autoDownload: boolean
+}
+
+/** Aggregated auto-update state pushed over the single `update:state` event
+ * (GH-124). `platformLimited` marks the unsigned-macOS degradation: checking
+ * works, download/install are unavailable (electron-builder: "macOS application
+ * must be signed in order for auto updating to work"). */
+export interface UpdateState {
+  phase: 'idle' | 'checking' | 'available' | 'not-available' | 'downloading' | 'downloaded' | 'error'
+  version?: string
+  notes?: string
+  percent?: number
+  error?: string
+  platformLimited?: boolean
 }
 
 /** Events pushed from main → renderer。payload 必须对实发 site 核验照实:
@@ -452,6 +475,8 @@ export interface IpcEvents {
   'assets:changed': WatchEvent
   /** Live scan status + cumulative partial assets pushed during a scan (P4.6). */
   'assets:progress': { status: AssetRuntimeStatus; partial?: AssetScanPartial }
+  /** Auto-update state machine, broadcast from main (GH-124, src/main/index.ts). */
+  'update:state': UpdateState
 }
 
 /** Typed helper aliases — preload 的 invoke 包装与未来 handlers 类型化共用。 */

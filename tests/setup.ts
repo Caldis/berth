@@ -137,6 +137,14 @@ export const mockApi = {
   shell: {
     openPath: async () => {},
     openExternal: async () => {}
+  },
+  update: {
+    check: async () => {},
+    download: async () => {},
+    install: async () => {},
+    getPreferences: async () => ({ autoDownload: false }),
+    setPreferences: async () => {},
+    onState: () => () => {}
   }
 } satisfies {
   [G in keyof BerthAPI]: { [M in keyof BerthAPI[G]]: unknown }

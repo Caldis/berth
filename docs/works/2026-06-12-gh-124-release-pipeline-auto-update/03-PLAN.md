@@ -2,7 +2,7 @@
 
 从 02-SPEC 拆解。顺序执行 (T2 依赖 T1 契约, T4 依赖全部)。
 
-- [ ] T1 契约 + 主进程装配 (AC-2/3/4)
+- [x] T1 契约 + 主进程装配 (AC-2/3/4) — DONE: 类型+5 通道+update:state 入表, updater.ts 依赖全注入中立件 (9 直测: 事件归一/偏好/错误/darwin 降级/dev config) + update-preferences (含损坏回退), handlers update 域经 lazy holder (registerAllHandlers 无参保持) + index.ts broadcast 接线 + 启动延迟 check, preload/mock 四方同批 (对账绿), builder publish 配置, electron-updater 入 deps (本机 .pnpm 70 断链 junction 阻 postinstall — 全量扫清根治, friction 已记); typecheck/lint/全量 1070 绿; latest.yml 实证随后台 package:win 出
   - 内容: shared/types/ipc.ts 增 UpdatePreferences/UpdateState + 5 invoke + update:state; src/main/update-preferences.ts (新); src/main/updater.ts (新, 依赖全注入中立件); ipc/handlers.ts registerUpdateHandlers; index.ts 接线 (electron-updater import + broadcast emit + 启动延迟 check); preload update 域; tests/setup.ts mock 同步; electron-builder.yml publish; package.json electron-updater 入 dependencies; 本机 package:win 实证 dist/latest.yml。
   - tests: updater-controller.test.ts (事件归一/mac 分支/偏好/错误) + update-preferences.test.ts + 对账两件绿 + 全量。
   - verify: typecheck/lint/test 绿; latest.yml 实证。

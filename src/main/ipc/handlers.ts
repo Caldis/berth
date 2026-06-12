@@ -16,7 +16,8 @@ import type {
   SessionReplayEventPayload,
   AgentTeamListResult,
   SetHookEnabledRequest,
-  SetHookEnabledResult
+  SetHookEnabledResult,
+  UpdatePreferences
 } from '@shared/types/ipc'
 import type { AgentCapabilityPluginListResult } from '@shared/types/agent-plugin'
 import { getAssetRuntime } from '@berth/scan-engine/engine/assets/runtime'
@@ -25,6 +26,8 @@ import { buildSessionDetail } from '@berth/scan-engine/engine/session-detail'
 import { buildSessionReplay, readSessionReplayEventPayload } from '@berth/scan-engine/engine/session-replay'
 import { getMemoryRoots, listMemory, readMemory } from '../memory'
 import { isAllowedRevealPath, isSafeExternalUrl } from '../url-guard'
+import { getUpdaterRuntime } from '../updater'
+import { DEFAULT_UPDATE_PREFERENCES, readUpdatePreferences, writeUpdatePreferences } from '../update-preferences'
 import { getMainLog } from '@berth/scan-engine/log'
 import { listAgentTeams, markLeadSessionAvailability } from '../agent-teams'
 import { listAgentCapabilityPlugins } from '../agent-plugins/registry'
@@ -109,6 +112,35 @@ export function registerSystemHandlers(): void {
       return
     }
     shell.openExternal(url)
+  })
+}
+
+// GH-124: handlers resolve the updater runtime lazily — it is wired in
+// index.ts after whenReady; before that (and in the unit-test host) the
+// channels degrade to no-ops / default preferences.
+export function registerUpdateHandlers(): void {
+  ipcMain.handle('update:check', async (): Promise<void> => {
+    await getUpdaterRuntime()?.controller.check()
+  })
+
+  ipcMain.handle('update:download', async (): Promise<void> => {
+    await getUpdaterRuntime()?.controller.download()
+  })
+
+  ipcMain.handle('update:install', (): void => {
+    getUpdaterRuntime()?.controller.install()
+  })
+
+  ipcMain.handle('update:get-preferences', (): UpdatePreferences => {
+    const runtime = getUpdaterRuntime()
+    return runtime ? readUpdatePreferences(runtime.userDataDir) : { ...DEFAULT_UPDATE_PREFERENCES }
+  })
+
+  ipcMain.handle('update:set-preferences', (_event, prefs: UpdatePreferences): void => {
+    const runtime = getUpdaterRuntime()
+    if (!runtime) return
+    writeUpdatePreferences(runtime.userDataDir, prefs)
+    runtime.controller.applyPreferences(prefs)
   })
 }
 

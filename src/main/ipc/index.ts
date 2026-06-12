@@ -3,6 +3,7 @@ import {
   registerDomainHandlers,
   registerSessionHandlers,
   registerSystemHandlers,
+  registerUpdateHandlers,
   registerWindowHandlers
 } from './handlers'
 
@@ -12,4 +13,5 @@ export function registerAllHandlers(): void {
   registerAssetHandlers()
   registerSessionHandlers()
   registerDomainHandlers()
+  registerUpdateHandlers()
 }

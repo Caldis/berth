@@ -80,6 +80,16 @@ const api = {
   shell: {
     openPath: (path: string) => invoke('shell:openPath', path),
     openExternal: (url: string) => invoke('shell:openExternal', url)
+  },
+  update: {
+    check: () => invoke('update:check'),
+    download: () => invoke('update:download'),
+    install: () => invoke('update:install'),
+    getPreferences: () => invoke('update:get-preferences'),
+    setPreferences: (prefs: IpcChannelArgs<'update:set-preferences'>[0]) =>
+      invoke('update:set-preferences', prefs),
+    onState: (callback: (state: IpcEvents['update:state']) => void) =>
+      subscribe('update:state', callback)
   }
 }
 
