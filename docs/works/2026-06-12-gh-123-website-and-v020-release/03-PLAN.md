@@ -2,7 +2,7 @@
 
 从 02-SPEC 拆解。顺序执行。
 
-- [ ] T1 版本 bump + 官网四语内容更新
+- [x] T1 版本 bump + 官网四语内容更新 — DONE: package.json 0.2.0 + APP_VERSION v0.2 + features ×4 语 ×3 处 (只读口径去版本钉死/sessions 篇重放口径) + guides ×4 语 ×1 处; 整串替换全命中零 MISS; website 12 测 + build + typecheck 绿, 全仓 typecheck + 1062 绿
   - 内容: package.json 0.2.0; site.ts APP_VERSION v0.2; features ×4 语言 ×3 处 (只读口径去版本钉死 + sessions 篇重放口径) + guides ×4 语言 ×1 处。
   - tests: website content 测试 + website build; 全仓 typecheck/test (版本 bump 回归)。
   - verify: 四语对称自查; 措辞对照 App 实现 (重放/时间轴)。

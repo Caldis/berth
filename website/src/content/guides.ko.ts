@@ -21,7 +21,7 @@ export const guidesKo: Article[] = [
       { type: 'h2', text: '2. hooks가 전역으로 꺼져 있나요?' },
       { type: 'p', text: 'disableAllHooks 설정은 모든 hook을 한 번에 꺼 버립니다. Berth의 헬스 체크가 이를 드러내 줍니다. 가장 먼저 배제하고 넘어가야 할 항목이죠.' },
       { type: 'h2', text: '3. matcher가 너무 좁나요?' },
-      { type: 'p', text: '많은 hook은 특정 도구를 겨냥하기 위해 matcher를 사용합니다. matcher가 당신이 쓰는 도구와 맞지 않으면 아무 일도 일어나지 않습니다. 세션의 도구 타임라인에 나온 도구 이름과 matcher를 대조해 보세요.' },
+      { type: 'p', text: '많은 hook은 특정 도구를 겨냥하기 위해 matcher를 사용합니다. matcher가 당신이 쓰는 도구와 맞지 않으면 아무 일도 일어나지 않습니다. 세션 리플레이에 나온 도구 이름과 matcher를 대조해 보세요.' },
       { type: 'h2', text: '4. 명령 파일이 존재하나요?' },
       { type: 'p', text: 'Hook은 명령이나 스크립트를 가리킵니다. 경로가 틀렸거나 파일이 없으면 hook은 실행될 수 없습니다. Berth는 헬스 체크에서 hook의 진입 경로를 검증합니다.' },
       { type: 'callout', label: '빠른 길', text: 'Capabilities → Hooks를 열어 해당 hook의 라이프사이클 뷰와 헬스 체크를 읽어 보세요. 대개 1분도 안 되어 끊어진 링크를 찾아낼 수 있습니다.' },

@@ -21,7 +21,7 @@ export const guidesEn: Article[] = [
       { type: 'h2', text: '2. Are hooks disabled globally?' },
       { type: 'p', text: 'A disableAllHooks setting turns every hook off at once. Berth’s health checks surface this — it’s the first thing to rule out.' },
       { type: 'h2', text: '3. Is the matcher too narrow?' },
-      { type: 'p', text: 'Many hooks use a matcher to target specific tools. If the matcher doesn’t match the tool you’re using, nothing happens. Check the matcher against the tool name in the session’s tool timeline.' },
+      { type: 'p', text: 'Many hooks use a matcher to target specific tools. If the matcher doesn’t match the tool you’re using, nothing happens. Check the matcher against the tool name in the session replay’s tool events.' },
       { type: 'h2', text: '4. Does the command file exist?' },
       { type: 'p', text: 'A hook points at a command or script. If the path is wrong or the file is missing, the hook can’t run. Berth validates hook entry paths in health checks.' },
       { type: 'callout', label: 'The fast path', text: 'Open Capabilities → Hooks, read the lifecycle view and health checks for that hook, and you’ll usually find the broken link in under a minute.' },

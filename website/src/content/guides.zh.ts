@@ -21,7 +21,7 @@ export const guidesZh: Article[] = [
       { type: 'h2', text: '2. 是不是被全局关掉了?' },
       { type: 'p', text: 'disableAllHooks 设置会一次性关闭所有 Hook。Berth 的健康检查会把它标出来——这是第一个要排除的因素。' },
       { type: 'h2', text: '3. matcher 是不是太窄?' },
-      { type: 'p', text: '很多 Hook 用 matcher 来锁定特定工具。若 matcher 匹配不到你正在用的工具,就什么都不会发生。对照会话的工具时间线里的工具名,检查 matcher。' },
+      { type: 'p', text: '很多 Hook 用 matcher 来锁定特定工具。若 matcher 匹配不到你正在用的工具,就什么都不会发生。对照会话重放里的工具事件名,检查 matcher。' },
       { type: 'h2', text: '4. 命令文件存在吗?' },
       { type: 'p', text: 'Hook 指向一个命令或脚本。若路径错误或文件缺失,Hook 无法运行。Berth 会在健康检查里校验 Hook 的入口路径。' },
       { type: 'callout', label: '快速路径', text: '打开 Capabilities → Hooks,看那个 Hook 的生命周期视图和健康检查,通常一分钟内就能找到那个断开的环节。' },
