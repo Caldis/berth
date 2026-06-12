@@ -2,7 +2,7 @@
 task: 2026-06-12-gh-123-website-and-v020-release
 task_id: GH-123
 type: feature
-phase: implement
+phase: archive
 created: 2026-06-12
 priority: P1
 target_date: 
@@ -22,14 +22,15 @@ debt:
     confidence: medium
     rationale: "0.0-new 初始估算: 官网四语言内容更新 + 版本发布脚手架 (+1, 内容维护面); 无还债目标。scope module (website + package.json + release); risk medium — 外发动作 (GitHub Release 公开 / 官网自动上线), 且 mac 资产存在跨设备物理约束。explore 后校准。"
   final:
-    incurred:
-    repaid:
-    net:
-    scope:
-    risk:
-    areas: []
-    confidence:
-    rationale:
+    incurred: 1
+    repaid: 0
+    net: 1
+    scope: module
+    risk: low
+    areas:
+      - docs
+    confidence: high
+    rationale: "verify 收口: AC1-6 全过 (版本两处/四语 12+24 处内容/deploy 根修+线上 v0.1 归零/win 三资产冒烟/Release Latest/CI 绿); 额外交付 deploy-website 自 06-07 红灯根修。mac 资产待用户 mac 机后补。"
   revisions:
     - phase: explore
       date: 2026-06-12
@@ -47,7 +48,7 @@ gh_project:
   project_number: 6
   project_url: https://github.com/users/Caldis/projects/6
   item_id: PVTI_lAHOADXbEs4BZHvQzgvhBzY
-  item_status: In Progress
+  item_status: Done
   project_id: PVT_kwHOADXbEs4BZHvQ
 artifacts:
   source: 00-PRD.md
