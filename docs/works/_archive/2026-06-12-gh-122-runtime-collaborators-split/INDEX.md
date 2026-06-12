@@ -2,7 +2,7 @@
 task: 2026-06-12-gh-122-runtime-collaborators-split
 task_id: GH-122
 type: maintenance
-phase: verify
+phase: archive
 created: 2026-06-12
 priority: P1
 target_date: 
@@ -24,20 +24,26 @@ debt:
     confidence: medium
     rationale: "explore 校准 (2026-06-12): 591 行职责块行级映射完成, SelectorCache 已半成 (独立类未出文件), 24 用例红绿网现成且覆盖全部六不变量, 消费面窄接口先例 — 拆分为内部协作者公共 API 零变更。数值维持 2/5/-3, scope module / risk high 维持 (写回边界 Q1 未定)。"
   final:
-    incurred:
-    repaid:
-    net:
-    scope:
-    risk:
-    areas: []
-    confidence:
-    rationale:
+    incurred: 2
+    repaid: 5
+    net: -3
+    scope: module
+    risk: low
+    areas:
+      - architecture
+    confidence: high
+    rationale: "verify 收口 (2026-06-12): 三协作者出文件 (selector-cache 平移/project-snapshot-cache 收敛 5 处/scan-coordinator B 案 R4 内化), runtime 591→491 行职责判据全过; 锚点 24 逐字不动每步全绿 = 行为等价性证明, src/ 全程零改动 (AC-3 git diff 实证), 全量 1062 双轮 + e2e + 包三连 + dev 双实例真实链路 (切换重扫/缓存切回 251ms) + CI success。risk high→low: 等价网全程未破。"
   revisions:
     - phase: explore
       date: 2026-06-12
       from: "confidence low"
       to: "confidence medium"
       reason: "职责块行级映射 + 24 用例红绿网现成 + 公共 API 零变更判据落定; 数值与 scope/risk 维持。"
+    - phase: verify
+      date: 2026-06-12
+      from: "risk high / confidence medium"
+      to: "risk low / confidence high"
+      reason: "锚点零改动等价性证明 + src 零改动实证 + 真实链路探活 + CI 绿; 数值不变。"
 issue:
   number: 122
   repo: Caldis/berth
@@ -49,7 +55,7 @@ gh_project:
   project_number: 6
   project_url: https://github.com/users/Caldis/projects/6
   item_id: PVTI_lAHOADXbEs4BZHvQzgvg2FQ
-  item_status: In Progress
+  item_status: Done
   project_id: PVT_kwHOADXbEs4BZHvQ
 artifacts:
   source: 00-PRD.md
