@@ -10,7 +10,7 @@
   - 内容: hooks/use-update.ts (订阅+动作); settings-content.tsx About 下更新卡 (7 状态/按钮禁用态/mac 前往下载页/autoDownload Switch); i18n settings.update.* en/zh。
   - tests: settings-update.test.tsx (phase→文案/按钮/limited 分支) + 全量。
   - verify: 界面验收条目 (状态全显/禁用态/i18n)。
-- [ ] T3 release.yml + dev-app-update.yml (AC-1 静态 + AC-6 前置)
+- [x] T3 release.yml + dev-app-update.yml (AC-1 静态 + AC-6 前置) — DONE: 三阶段 (gate 减 e2e → matrix 三平台含 latest*.yml 存在性校验 → publish 齐验/changelog/清 draft/上传/完整性含 latest 三件); dev-app-update.yml 指向 repo; 解析正确性以 push 后 Actions 无语法错为证 (T4)
   - 内容: .github/workflows/release.yml 三阶段 (SPEC 契约); dev-app-update.yml。
   - tests: not needed - workflow 静态产物; 证据 = push 后 GitHub 解析无错 (Actions 页无语法报错) + 本地 YAML lint。
   - verify: AC-1 结构核对 (gate→matrix→publish 依赖链/齐验/完整性步骤)。

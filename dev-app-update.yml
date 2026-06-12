@@ -1,0 +1,6 @@
+# GH-124: dev-mode update feed (electron-updater forceDevUpdateConfig reads this
+# when app.isPackaged is false) — lets the check link be exercised against the
+# real repo releases without packaging.
+provider: github
+owner: Caldis
+repo: berth
