@@ -24,14 +24,17 @@ debt:
     confidence: low
     rationale: "0.0-new 初始估算; 现象涉及后台扫描调度、assets 更新事件、renderer SWR/列表稳定性和性能开销, 需 Explore 后校准。"
   final:
-    incurred:
-    repaid:
-    net:
-    scope:
-    risk:
-    areas: []
-    confidence:
-    rationale:
+    incurred: 1
+    repaid: 4
+    net: -3
+    scope: cross-process
+    risk: medium
+    areas:
+      - ui-ux
+      - performance
+      - architecture
+    confidence: medium
+    rationale: "新增 runtime scheduled refresh 和 renderer stale 守卫带来少量状态机复杂度; 同时修复后台扫描 partial 覆盖完整快照的闪烁, 并把高频 watcher fallback full refresh 合并限频, 降低 UI 抖动与后台扫描开销。"
   revisions: []
 issue:
   number: 129
