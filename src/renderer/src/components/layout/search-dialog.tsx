@@ -13,6 +13,8 @@ import { useAppStore } from '@/stores/app'
 import { cn } from '@/lib/utils'
 import { routeForAsset } from '@/lib/asset-route'
 import { useFocusPageSearch } from './page-chrome'
+import { isMacPlatform } from '@/lib/platform'
+import { ChromeSearchInput, searchShortcutLabel } from './search-control'
 import type { Asset } from '@shared/types/asset'
 import type { SearchResult } from '@shared/types/ipc'
 
@@ -69,6 +71,7 @@ export function SearchDialog(): React.ReactElement | null {
   const [activeIndex, setActiveIndex] = useState(-1)
   const dialogRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  const shortcutLabel = searchShortcutLabel(isMacPlatform())
   const normalizedQuery = query.trim()
   const hasQuery = normalizedQuery.length > 0
 
@@ -207,7 +210,8 @@ export function SearchDialog(): React.ReactElement | null {
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-[20vh]">
       <div
         aria-hidden="true"
-        className="fixed inset-0 bg-black/50"
+        data-testid="search-dialog-backdrop"
+        className="fixed inset-0 bg-black/35 backdrop-blur-sm motion-safe:animate-in motion-safe:fade-in motion-safe:duration-150"
         onClick={() => setOpen(false)}
       />
       <div
@@ -215,19 +219,20 @@ export function SearchDialog(): React.ReactElement | null {
         role="dialog"
         aria-modal="true"
         aria-label={t('search.placeholder')}
+        data-testid="search-dialog-panel"
         onKeyDown={handleDialogKeyDown}
-        className="relative z-10 w-full max-w-lg overflow-hidden rounded-xl border border-border bg-popover shadow-2xl"
+        className="relative z-10 w-full max-w-lg overflow-hidden rounded-xl border border-border bg-popover shadow-2xl motion-safe:animate-in motion-safe:fade-in motion-safe:zoom-in-95 motion-safe:duration-150"
       >
-        <div className="flex items-center border-b border-border px-4">
-          <Search aria-hidden="true" className="mr-2 h-4 w-4 shrink-0 text-muted-foreground" />
-          <input
+        <div className="border-b border-border px-4 py-2">
+          <ChromeSearchInput
             ref={inputRef}
-            aria-label={t('search.placeholder')}
             autoFocus
             value={query}
-            onChange={(event) => setQuery(event.target.value)}
+            onValueChange={setQuery}
             placeholder={t('search.placeholder')}
-            className="flex h-12 w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+            ariaLabel={t('search.placeholder')}
+            shortcutLabel={shortcutLabel}
+            density="dialog"
           />
         </div>
         <div className="max-h-80 overflow-y-auto p-2" aria-busy={loading}>

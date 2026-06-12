@@ -8,10 +8,10 @@
   - files: `src/renderer/src/components/layout/search-control.tsx`, `src/renderer/src/components/layout/top-navigation.tsx`, 顶部导航相关测试
   - tests: `pnpm exec vitest run tests/renderer/top-navigation-search.test.tsx tests/renderer/top-navigation.test.tsx tests/renderer/app-layout.test.tsx`
   - verify: header 固定 72px; 页面搜索仍是 textbox, placeholder/aria-label 正确; Ctrl/⌘K 聚焦并全选; 页面说明按钮仍在搜索右侧; 右侧操作不换行撑高。
-- [ ] 任务 2: 替换侧栏全局搜索入口和全局搜索弹窗输入
+- [x] 任务 2: 替换侧栏全局搜索入口和全局搜索弹窗输入
   - files: `src/renderer/src/components/layout/sidebar.tsx`, `src/renderer/src/components/layout/search-dialog.tsx`, `src/renderer/src/components/layout/search-control.tsx`, 对应测试
   - tests: `pnpm exec vitest run tests/renderer/sidebar-agent-view.test.tsx tests/renderer/search-dialog.test.tsx tests/renderer/top-navigation.test.tsx`
-  - verify: 侧栏入口仍是 button 且点击打开全局搜索; 全局搜索弹窗输入是 textbox 且自动聚焦; Tab trap、Escape、ArrowUp/Down、Enter 行为不变; Ctrl/⌘K 局部优先、无局部搜索时全局打开。
+  - verify: 侧栏入口仍是 button 且点击打开全局搜索; 全局搜索弹窗输入是 textbox 且自动聚焦; Tab trap、Escape、ArrowUp/Down、Enter 行为不变; Ctrl/⌘K 局部优先、无局部搜索时全局打开; 弹窗 show 动画有 background blur 和 crossfade。
 - [ ] 任务 3: 修正局部搜索 placeholder 与 i18n
   - files: `src/renderer/src/pages/instructions.tsx`, `src/renderer/src/pages/capabilities.tsx`, `src/renderer/src/components/memory/memory-view.tsx`, `src/renderer/src/i18n/locales/en.json`, `src/renderer/src/i18n/locales/zh.json`, 对应测试
   - tests: `pnpm exec vitest run tests/renderer/instructions-guidance.test.tsx tests/renderer/capabilities-guidance.test.tsx tests/renderer/memory-view.test.tsx tests/renderer/sessions-pages.test.tsx`

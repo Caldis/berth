@@ -79,9 +79,15 @@ describe('SearchDialog', () => {
 
     const dialog = screen.getByRole('dialog', { name: /搜索资产/ })
     expect(dialog).toHaveAttribute('aria-modal', 'true')
+    expect(dialog).toHaveClass('motion-safe:fade-in')
+    expect(dialog).toHaveClass('motion-safe:zoom-in-95')
 
     const input = within(dialog).getByRole('textbox', { name: /搜索资产/ })
     await waitFor(() => expect(input).toHaveFocus())
+
+    const backdrop = screen.getByTestId('search-dialog-backdrop')
+    expect(backdrop).toHaveClass('backdrop-blur-sm')
+    expect(backdrop).toHaveClass('motion-safe:fade-in')
   })
 
   it('keeps Tab and Shift+Tab inside the open dialog', async () => {

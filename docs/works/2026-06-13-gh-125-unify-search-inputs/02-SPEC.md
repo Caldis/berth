@@ -33,7 +33,7 @@
 
 - `top-navigation.tsx`: 用 `ChromeSearchInput` 替换内联 `Input`; header 从 `min-h-[72px]` 收敛为固定 `h-[72px] min-h-[72px] max-h-[72px] overflow-hidden`; 右侧操作区改为不换行, 通过 `min-w-0`、`truncate`、搜索宽度约束处理溢出。
 - `sidebar.tsx`: 用 `SearchTriggerButton` 替换手写全局搜索按钮; collapsed 时保留方形图标按钮, expanded 时显示 placeholder + Kbd。
-- `search-dialog.tsx`: 用 `ChromeSearchInput density="dialog"` 替换原生 `input`; 保留现有 dialog、focus trap、结果键盘导航。
+- `search-dialog.tsx`: 用 `ChromeSearchInput density="dialog"` 替换原生 `input`; 保留现有 dialog、focus trap、结果键盘导航; show 动画与设置弹窗对齐为 backdrop blur + crossfade, 面板淡入并轻微 zoom。
 - `instructions.tsx` / `capabilities.tsx`: 局部搜索 placeholder 改用 `t('search.filterPlaceholder', { target: title })`。
 - `memory-view.tsx` 和 locale: 改为 `Filter memories...` / `筛选记忆…`。
 
@@ -44,7 +44,7 @@
 |---|---|---|
 | 布局层级 / 信息密度 | 顶部 header 固定 72px; 左侧标题区和右侧操作区同一行居中; 右侧不 wrap 撑高。 | renderer test 检查 header 固定高度类名; 视觉验证会话列表 -> 详情无高度抖动。 |
 | 组件选择 / 设计系统一致性 | 搜索 input 使用 HeroUI `Input`; 全局搜索入口用 HeroUI `Button`; 均从 `@/components/ui` 引入。 | grep 确认无新增 `@heroui/react` 直接 import; tests 确认 textbox/button 语义仍正确。 |
-| 交互反馈 / 状态切换 | 共享 hover/focus ring、border、shortcut kbd; 侧栏点击打开全局搜索; 弹窗输入保持自动聚焦。 | `sidebar-agent-view.test.tsx`, `search-dialog.test.tsx`, 手动/截图检查 hover/focus。 |
+| 交互反馈 / 状态切换 | 共享 hover/focus ring、border、shortcut kbd; 侧栏点击打开全局搜索; 弹窗输入保持自动聚焦; 搜索弹窗 show 使用背景 blur 和 crossfade。 | `sidebar-agent-view.test.tsx`, `search-dialog.test.tsx`, 手动/截图检查 hover/focus/弹窗 show。 |
 | loading / empty / error / disabled / focus | 搜索弹窗 loading/empty/error 结果区不改; 页面搜索 Ctrl/⌘K 聚焦并全选。 | `search-dialog.test.tsx`, `top-navigation-search.test.tsx`, `top-navigation.test.tsx`。 |
 | 响应式 / 可访问性 / 键盘可达 | 侧栏入口保留 button aria-label; 页面搜索保留 textbox aria-label; Ctrl/⌘K 局部优先, 无局部搜索时全局弹窗。 | `top-navigation.test.tsx`, `search-dialog.test.tsx`, `memory-view.test.tsx`。 |
 | 文案 / i18n / 数字和路径格式 | 全局搜索继续“搜索资产”; 局部搜索改为“筛选{当前页面内容}”; 英文对应 `Filter ...`。 | instructions/capabilities/memory/sessions 相关 renderer tests; grep 不再出现 `Search assets... Skills`。 |
