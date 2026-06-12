@@ -14,7 +14,7 @@
   - 内容: .github/workflows/release.yml 三阶段 (SPEC 契约); dev-app-update.yml。
   - tests: not needed - workflow 静态产物; 证据 = push 后 GitHub 解析无错 (Actions 页无语法报错) + 本地 YAML lint。
   - verify: AC-1 结构核对 (gate→matrix→publish 依赖链/齐验/完整性步骤)。
-- [ ] T4 收口 (AC-6/7/8)
+- [x] T4 收口 (AC-6/7/8) — DONE: Release workflow 注册解析无错 (gh workflow list active); dev 真机 check 链路真跑 checking→not-available (dev 0.2.0 对 v0.2.0 latest.yml 真实 feed 比对) + 偏好 set/get round-trip; v0.2.0 补传 latest.yml (存量版本即刻可被发现, 旁支项落账); 更新卡 DOM 证据 (status 中文文案/check/switch 在场) + 整页截图 (dialog 关闭时序致组件级视觉以渲染测试 6 断言佐证); CI success ×2
   - 内容: dev 实例真机 check 链路 (CDP 观测 update:state 状态机) + 更新卡截图走查 (≥3 态); 全量门禁 + prepush/push/ci:wait; v0.2.0 release 补传本机 latest.yml (旁支, 让存量版本可被 check 发现); AC-8 操作序写入本 PLAN 收尾 (下个 tag 即 CI 发布)。
   - tests: 门禁全量。
   - verify: AC1-8 逐条; debt.final 回填。

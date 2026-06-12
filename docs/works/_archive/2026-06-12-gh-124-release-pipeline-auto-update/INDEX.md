@@ -2,7 +2,7 @@
 task: 2026-06-12-gh-124-release-pipeline-auto-update
 task_id: GH-124
 type: feature
-phase: implement
+phase: archive
 created: 2026-06-12
 priority: P1
 target_date: 
@@ -22,20 +22,26 @@ debt:
     confidence: medium
     rationale: "0.0-new 初始估算: release workflow (+1) + updater main 装配/IPC 契约/renderer UI/偏好 (+3, 新功能面); 还掉'发布只能本机手打'约束 (-1)。scope cross-process (workflow + main + preload + renderer + builder 配置); risk high — 自动更新链路 (latest*.yml/签名约束/下载安装) 真实验证依赖 Release 实弹, mac 未签名对 updater 的限制待核。explore/design 后校准。"
   final:
-    incurred:
-    repaid:
-    net:
-    scope:
-    risk:
-    areas: []
-    confidence:
-    rationale:
+    incurred: 4
+    repaid: 1
+    net: 3
+    scope: cross-process
+    risk: low
+    areas:
+      - tooling-ci
+    confidence: high
+    rationale: "verify 收口: AC1-8 全过 — workflow 注册解析无错 + latest.yml 实证 + darwin 降级钉测 + 四方对账 + dev 真机 check 链路真跑 (真实 feed not-available) + CI 绿; 实弹留下个 tag (操作序在 PLAN)。risk high→low: 状态机/降级/feed 全有证据。"
   revisions:
     - phase: explore
       date: 2026-06-12
       from: "confidence low"
       to: "confidence medium"
       reason: "mac 未签名限制经官方文档定界 (win/linux 全自动, mac 检查+引导) + 通道映射/装配模式/workflow 适配全落定。"
+    - phase: verify
+      date: 2026-06-12
+      from: "risk high / confidence medium"
+      to: "risk low / confidence high"
+      reason: "workflow 解析/feed 实证/降级钉测/dev 真机链路全有证据; 数值不变。"
 issue:
   number: 124
   repo: Caldis/berth
@@ -47,7 +53,7 @@ gh_project:
   project_number: 6
   project_url: https://github.com/users/Caldis/projects/6
   item_id: PVTI_lAHOADXbEs4BZHvQzgvhq3E
-  item_status: In Progress
+  item_status: Done
   project_id: PVT_kwHOADXbEs4BZHvQ
 artifacts:
   source: 00-PRD.md
