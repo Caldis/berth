@@ -51,9 +51,29 @@ export function formatOptionalCurrency(amount: number | null | undefined): strin
   return amount == null ? '—' : formatCurrency(amount)
 }
 
+const WINDOWS_DRIVE_PATH_PATTERN = /^[A-Za-z]:[\\/]/
+
+function getDisplayPathSeparator(path: string): '/' | '\\' {
+  if (path.startsWith('\\\\')) return '\\'
+  if (WINDOWS_DRIVE_PATH_PATTERN.test(path)) return '\\'
+  if (path.includes('\\')) return '\\'
+  return '/'
+}
+
+function truncateUncPath(parts: string[]): string | null {
+  const server = parts[2]
+  const share = parts[3]
+  if (!server || !share) return null
+  return `\\\\${[server, share, '...', ...parts.slice(-2)].join('\\')}`
+}
+
 export function truncatePath(path: string, maxLength = 50): string {
   if (path.length <= maxLength) return path
   const parts = path.split(/[/\\]/)
   if (parts.length <= 3) return path
-  return `${parts[0]}/.../${parts.slice(-2).join('/')}`
+  const separator = getDisplayPathSeparator(path)
+  if (separator === '\\' && parts[0] === '' && parts[1] === '') {
+    return truncateUncPath(parts) ?? path
+  }
+  return [parts[0], '...', ...parts.slice(-2)].join(separator)
 }

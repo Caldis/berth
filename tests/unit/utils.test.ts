@@ -93,13 +93,23 @@ describe('truncatePath', () => {
   it('truncates long paths', () => {
     const longPath = '/Users/caldis/projects/some-very-long-project-name/.claude/skills/my-skill/SKILL.md'
     const result = truncatePath(longPath, 50)
-    expect(result.length).toBeLessThanOrEqual(longPath.length)
-    expect(result).toContain('...')
+    expect(result).toBe('/.../my-skill/SKILL.md')
   })
 
-  it('handles Windows paths', () => {
+  it('keeps backslashes when truncating Windows paths', () => {
     const winPath = 'C:\\Users\\user\\.claude\\skills\\my-skill\\SKILL.md'
     const result = truncatePath(winPath, 30)
-    expect(result).toContain('...')
+    expect(result).toBe('C:\\...\\my-skill\\SKILL.md')
+    expect(result).not.toContain('/')
+  })
+
+  it('uses backslashes for Windows drive paths that arrive with forward slashes', () => {
+    const winPath = 'D:/Code/berth/packages/berth-scan-engine/fixtures/e2e/project/CLAUDE.md'
+    expect(truncatePath(winPath, 40)).toBe('D:\\...\\project\\CLAUDE.md')
+  })
+
+  it('keeps the UNC server and share when truncating network paths', () => {
+    const uncPath = '\\\\server\\share\\deep\\folder\\file.md'
+    expect(truncatePath(uncPath, 20)).toBe('\\\\server\\share\\...\\folder\\file.md')
   })
 })

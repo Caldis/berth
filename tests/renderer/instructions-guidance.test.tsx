@@ -82,12 +82,18 @@ vi.mock('react-virtuoso', async () => {
   return { GroupedVirtuoso }
 })
 
-function skillAsset(id: string, scope: Asset['scope'], path: string, projectPath?: string): Asset {
+function instructionAsset(
+  id: string,
+  type: Asset['type'],
+  scope: Asset['scope'],
+  path: string,
+  projectPath?: string
+): Asset {
   return {
     id,
     agentId: 'codex',
     category: 'instruction',
-    type: 'skill',
+    type,
     scope,
     name: id,
     path,
@@ -97,6 +103,10 @@ function skillAsset(id: string, scope: Asset['scope'], path: string, projectPath
       ...(projectPath ? { projectPath } : {})
     }
   }
+}
+
+function skillAsset(id: string, scope: Asset['scope'], path: string, projectPath?: string): Asset {
+  return instructionAsset(id, 'skill', scope, path, projectPath)
 }
 
 describe('Instructions guidance surfaces', () => {
@@ -212,6 +222,33 @@ describe('Instructions guidance surfaces', () => {
 
     expect(screen.getByText('Nothing here yet')).toBeInTheDocument()
     expect(screen.queryByText('Project skill')).not.toBeInTheDocument()
+  })
+
+  it('keeps truncated Windows paths consistent with expanded convention details', async () => {
+    const assetPath = 'D:\\Code\\berth\\packages\\berth-scan-engine\\fixtures\\e2e\\project\\CLAUDE.md'
+    useAppStore.setState({
+      assets: [
+        instructionAsset('CLAUDE.md', 'claude-md', 'project', assetPath)
+      ],
+      scopeSelection: { mode: 'global' }
+    })
+
+    render(
+      <MemoryRouter initialEntries={['/instructions/conventions']}>
+        <PageChromeProvider>
+          <TopNavigation isWindows={false} />
+          <Instructions activeSection="conventions" />
+        </PageChromeProvider>
+      </MemoryRouter>
+    )
+
+    expect(await screen.findByText('D:\\...\\project\\CLAUDE.md')).toBeInTheDocument()
+    expect(screen.queryByText('D:/.../project/CLAUDE.md')).not.toBeInTheDocument()
+
+    const card = screen.getByTestId('instruction-asset-card-CLAUDE.md')
+    fireEvent.click(within(card).getByRole('button'))
+
+    expect(screen.getByText(assetPath)).toBeInTheDocument()
   })
 
   it('virtualizes large skill lists without a redundant scope jump rail', async () => {

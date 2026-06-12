@@ -2,7 +2,7 @@
 task: 2026-06-13-gh-127-mixed-slash-path-rendering
 task_id: GH-127
 type: bug
-phase: implement
+phase: verify
 created: 2026-06-13
 priority: P2
 target_date: 
