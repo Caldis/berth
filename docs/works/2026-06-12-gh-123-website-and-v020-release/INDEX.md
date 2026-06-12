@@ -2,7 +2,7 @@
 task: 2026-06-12-gh-123-website-and-v020-release
 task_id: GH-123
 type: feature
-phase: explore
+phase: implement
 created: 2026-06-12
 priority: P1
 target_date: 
@@ -19,7 +19,7 @@ debt:
     risk: medium
     areas:
       - docs
-    confidence: low
+    confidence: medium
     rationale: "0.0-new 初始估算: 官网四语言内容更新 + 版本发布脚手架 (+1, 内容维护面); 无还债目标。scope module (website + package.json + release); risk medium — 外发动作 (GitHub Release 公开 / 官网自动上线), 且 mac 资产存在跨设备物理约束。explore 后校准。"
   final:
     incurred:
@@ -30,7 +30,12 @@ debt:
     areas: []
     confidence:
     rationale:
-  revisions: []
+  revisions:
+    - phase: explore
+      date: 2026-06-12
+      from: "confidence low"
+      to: "confidence medium"
+      reason: "更新面全站扫描收口 (版本单源 + 四语漂移 4 处); 数值维持。"
 issue:
   number: 123
   repo: Caldis/berth
@@ -60,9 +65,9 @@ artifacts:
 
 ## 产物
 - [x] 00-PRD.md — 原始输入快照
-- [ ] 01-ANALYSIS.md — Explore 产物
-- [ ] 02-SPEC.md — Design 产物
-- [ ] 03-PLAN.md — 活任务清单
+- [x] 01-ANALYSIS.md — Explore 产物 (AC1-6)
+- [x] 02-SPEC.md — Design 产物
+- [x] 03-PLAN.md — 活任务清单 (T1-T4)
 - [ ] 04-POLISH.md — 可选抛光记录
 
 ## 待澄清 (blocked 时填)
