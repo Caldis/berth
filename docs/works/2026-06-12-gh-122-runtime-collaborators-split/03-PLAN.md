@@ -3,7 +3,7 @@
 从 02-SPEC 拆解。**顺序执行** (runtime.ts 同文件反复修改)。
 实现中若发现 debt 初估不准, 更新 INDEX.md `debt.estimate` 并追加 `debt.revisions[]`。
 
-- [ ] T1 selector-cache.ts 出文件 (AC-1 部分)
+- [x] T1 selector-cache.ts 出文件 (AC-1 部分) — DONE: 类+接口纯平移, runtime 删声明改 import; 新直测 3 断言绿 + 锚点文件零改动全过 + 全量 1053 绿 (+3) + typecheck
   - 内容: SnapshotSelectorCache 类 + AssetSelectorCache 接口纯平移至 `engine/assets/selector-cache.ts`; runtime import 之, 不再声明 (接口零外部消费, grep 已证)。
   - tests: tests/unit/selector-cache.test.ts (新): 同 snapshot.id 命中不重 derive / 换 id 重 derive / clear 后重 derive; 锚点 24 逐字不动绿。
   - verify: `pnpm test` 全量绿 + typecheck; 非 UI 不适用。

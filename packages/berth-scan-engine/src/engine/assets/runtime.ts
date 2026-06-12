@@ -24,6 +24,7 @@ import { mergeSharedConventions } from '../scanner'
 import { toSessionSummary } from '../session-detail'
 import { readString } from '@shared/object-guards'
 import type { SnapshotStore } from './snapshot-store'
+import { SnapshotSelectorCache, type AssetSelectorCache } from './selector-cache'
 
 export interface AssetRuntimeScanOptions {
   onProgress?: (progress: AssetScanProgress) => void
@@ -64,11 +65,6 @@ export interface AssetRuntimeOptions {
   snapshotStore?: SnapshotStore
 }
 
-export interface AssetSelectorCache {
-  select<T>(key: string, snapshot: AssetSnapshot, derive: (snapshot: AssetSnapshot) => T): T
-  clear(): void
-}
-
 const EMPTY_ASSET_STATS: AssetStats = {
   skills: 0,
   mcpServers: 0,
@@ -77,23 +73,6 @@ const EMPTY_ASSET_STATS: AssetStats = {
   hooks: 0,
   commands: 0,
   subagents: 0
-}
-
-class SnapshotSelectorCache implements AssetSelectorCache {
-  private readonly values = new Map<string, { snapshotId: string; value: unknown }>()
-
-  select<T>(key: string, snapshot: AssetSnapshot, derive: (snapshot: AssetSnapshot) => T): T {
-    const cached = this.values.get(key)
-    if (cached?.snapshotId === snapshot.id) return cached.value as T
-
-    const value = derive(snapshot)
-    this.values.set(key, { snapshotId: snapshot.id, value })
-    return value
-  }
-
-  clear(): void {
-    this.values.clear()
-  }
 }
 
 /** Stable per-project cache key (normalized; empty for no/global project). */
