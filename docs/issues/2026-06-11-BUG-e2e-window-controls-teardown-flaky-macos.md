@@ -13,4 +13,5 @@
 # 来源 / 关联
 - GH-120 (重放模块视觉重设计) explore→design 期间推送文档提交被该 flake 推红, rerun 后恢复。
 - 第 2 次复发 (2026-06-12, run 27361209136, commit 761783f2 renderer 改动): 同形态 — 用例 flaky 重试已过 + `Worker teardown timeout of 30000ms` + `22 passed / 1 flaky` → run 级失败。两日内两中, 频率已影响推送节奏, 建议提升处理优先级。
+- 第 3 次复发 (2026-06-12, run 27402075712, commit 0e3fd35b **纯 docs 归档移动**): 同形态 (window-controls teardown + "2 errors were not a part of any test"), win/ubuntu 双绿。GH-123 归档推送被推红, rerun 处理。两日三中 — 建议下一个维护窗口直接做 teardown 防御 (app.close 超时竞速 + alwaysOnTop 复位)。
 - 状态: OPEN。
