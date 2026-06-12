@@ -2,7 +2,7 @@
 task: 2026-06-12-gh-124-release-pipeline-auto-update
 task_id: GH-124
 type: feature
-phase: explore
+phase: design
 created: 2026-06-12
 priority: P1
 target_date: 
@@ -19,7 +19,7 @@ debt:
     risk: high
     areas:
       - tooling-ci
-    confidence: low
+    confidence: medium
     rationale: "0.0-new 初始估算: release workflow (+1) + updater main 装配/IPC 契约/renderer UI/偏好 (+3, 新功能面); 还掉'发布只能本机手打'约束 (-1)。scope cross-process (workflow + main + preload + renderer + builder 配置); risk high — 自动更新链路 (latest*.yml/签名约束/下载安装) 真实验证依赖 Release 实弹, mac 未签名对 updater 的限制待核。explore/design 后校准。"
   final:
     incurred:
@@ -30,7 +30,12 @@ debt:
     areas: []
     confidence:
     rationale:
-  revisions: []
+  revisions:
+    - phase: explore
+      date: 2026-06-12
+      from: "confidence low"
+      to: "confidence medium"
+      reason: "mac 未签名限制经官方文档定界 (win/linux 全自动, mac 检查+引导) + 通道映射/装配模式/workflow 适配全落定。"
 issue:
   number: 124
   repo: Caldis/berth
@@ -60,7 +65,7 @@ artifacts:
 
 ## 产物
 - [x] 00-PRD.md — 原始输入快照
-- [ ] 01-ANALYSIS.md — Explore 产物
+- [x] 01-ANALYSIS.md — Explore 产物 (mac 定界 + AC1-8)
 - [ ] 02-SPEC.md — Design 产物
 - [ ] 03-PLAN.md — 活任务清单
 - [ ] 04-POLISH.md — 可选抛光记录
