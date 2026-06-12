@@ -8,7 +8,7 @@
   - tests: tests/unit/selector-cache.test.ts (新): 同 snapshot.id 命中不重 derive / 换 id 重 derive / clear 后重 derive; 锚点 24 逐字不动绿。
   - verify: `pnpm test` 全量绿 + typecheck; 非 UI 不适用。
 
-- [ ] T2 project-snapshot-cache.ts (AC-1 部分)
+- [x] T2 project-snapshot-cache.ts (AC-1 部分) — DONE: ProjectSnapshotCache (has/get/set, projectSnapshotKey 内聚并导出供持久化谓词) 替换 5 处裸 Map+projectKey 习语; persistIfDefaultView 谓词收敛 ×2 (原计划 T3 项顺势提前); 新直测 4 断言绿 + 锚点零改动全过 + 全量 1057 绿 + typecheck
   - 内容: 新建 ProjectSnapshotCache (has/get/set, projectKey 私有内聚); runtime 的 snapshotCache Map + projectKey() + 5 处裸操作 (restore/setProjectDir 命中/runRefresh set/applyFileChange set/hasSnapshotFor) 全部改经协作者。
   - tests: tests/unit/project-snapshot-cache.test.ts (新): set/get/has、normalizeProjectPathKey 归一同键 (大小写/斜杠变体)、undefined=global 键、miss undefined; 锚点 24 逐字不动绿。
   - verify: `pnpm test` 全量绿 + typecheck; 非 UI 不适用。

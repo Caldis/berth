@@ -14,7 +14,7 @@ import type {
   ScanResult
 } from '@shared/types/ipc'
 import type { AppScopeSelection, ProjectScopeCandidate } from '@shared/scope'
-import { assetMatchesAppScope, DEFAULT_SCOPE_SELECTION, normalizeProjectPathKey, normalizeScopeSelection } from '@shared/scope'
+import { assetMatchesAppScope, DEFAULT_SCOPE_SELECTION, normalizeScopeSelection } from '@shared/scope'
 import { assetMatchesProjectPath } from '../../project-scope'
 import { runHealthChecks } from '../health'
 import { getSearch } from '../search'
@@ -25,6 +25,7 @@ import { toSessionSummary } from '../session-detail'
 import { readString } from '@shared/object-guards'
 import type { SnapshotStore } from './snapshot-store'
 import { SnapshotSelectorCache, type AssetSelectorCache } from './selector-cache'
+import { ProjectSnapshotCache, projectSnapshotKey } from './project-snapshot-cache'
 
 export interface AssetRuntimeScanOptions {
   onProgress?: (progress: AssetScanProgress) => void
@@ -75,17 +76,10 @@ const EMPTY_ASSET_STATS: AssetStats = {
   subagents: 0
 }
 
-/** Stable per-project cache key (normalized; empty for no/global project). */
-function projectKey(projectDir?: string): string {
-  return projectDir ? normalizeProjectPathKey(projectDir) : ''
-}
-
 export class AgentAssetRuntime {
   private projectDir?: string
   private scopeSelection: AppScopeSelection = DEFAULT_SCOPE_SELECTION
-  // Per-project snapshot cache: re-selecting an already-scanned project serves
-  // its snapshot instantly (no rescan). The watcher keeps the active project fresh.
-  private readonly snapshotCache = new Map<string, AssetSnapshot>()
+  private readonly snapshotCache = new ProjectSnapshotCache()
   private scanner: AssetRuntimeScanner
   private snapshot: AssetSnapshot
   private status: AssetRuntimeStatus
@@ -131,7 +125,7 @@ export class AgentAssetRuntime {
     this.status = status
     this.snapshot = { ...persisted, projectDir: this.projectDir, status }
     this.assetMap = new Map(persisted.assets.map((asset) => [asset.id, asset]))
-    this.snapshotCache.set(projectKey(this.projectDir), this.snapshot)
+    this.snapshotCache.set(this.projectDir, this.snapshot)
   }
 
   /** Register the sink that forwards live scan status + partial assets to the
@@ -181,7 +175,7 @@ export class AgentAssetRuntime {
 
   /** Whether a (cached) snapshot already exists for the given project. */
   hasSnapshotFor(projectDir?: string): boolean {
-    return this.snapshotCache.has(projectKey(projectDir))
+    return this.snapshotCache.has(projectDir)
   }
 
   setProjectDir(projectDir?: string): void {
@@ -192,7 +186,7 @@ export class AgentAssetRuntime {
     this.selectorCache.clear()
 
     // Serve a cached snapshot for this project instantly (sub-second switching).
-    const cached = this.snapshotCache.get(projectKey(projectDir))
+    const cached = this.snapshotCache.get(projectDir)
     if (cached) {
       this.snapshot = cached
       this.assetMap = new Map(cached.assets.map((asset) => [asset.id, asset]))
@@ -380,13 +374,9 @@ export class AgentAssetRuntime {
         status
       }
       this.assetMap = new Map(scanResult.assets.map((asset) => [asset.id, asset]))
-      this.snapshotCache.set(projectKey(projectDir), this.snapshot)
+      this.snapshotCache.set(projectDir, this.snapshot)
       this.selectorCache.clear()
-      // Persist only the default/global view so the next cold start restores the
-      // same scope the app opens in — not whatever project was last selected. (T1)
-      if (projectKey(projectDir) === projectKey(this.initialProjectDir)) {
-        this.snapshotStore?.save(this.snapshot)
-      }
+      this.persistIfDefaultView(projectDir)
       // Emit the terminal status on the SAME progress channel as the live ticks
       // so the renderer's last event is authoritative. Without this, a trailing
       // "scanning" progress macrotask can clobber the `ready` set by the
@@ -414,6 +404,14 @@ export class AgentAssetRuntime {
       this.progressListener?.({ status: this.status })
     } finally {
       this.inFlight = null
+    }
+  }
+
+  /** Persist only the default/global view so the next cold start restores the
+   * same scope the app opens in — not whatever project was last selected. (T1) */
+  private persistIfDefaultView(projectDir?: string): void {
+    if (projectSnapshotKey(projectDir) === projectSnapshotKey(this.initialProjectDir)) {
+      this.snapshotStore?.save(this.snapshot)
     }
   }
 
@@ -488,11 +486,8 @@ export class AgentAssetRuntime {
     this.snapshot = { ...this.snapshot, assets: merged, stats }
     this.assetMap = new Map(merged.map((asset) => [asset.id, asset]))
     this.selectorCache.clear()
-    this.snapshotCache.set(projectKey(this.projectDir), this.snapshot)
-    // Persist only the default/global view, mirroring runRefresh's cold-start intent. (T1)
-    if (projectKey(this.projectDir) === projectKey(this.initialProjectDir)) {
-      this.snapshotStore?.save(this.snapshot)
-    }
+    this.snapshotCache.set(this.projectDir, this.snapshot)
+    this.persistIfDefaultView(this.projectDir)
     this.progressListener?.({ status: this.status, partial: { assets: merged, stats } })
   }
 }
