@@ -2,7 +2,7 @@
 task: 2026-06-12-gh-122-runtime-collaborators-split
 task_id: GH-122
 type: maintenance
-phase: explore
+phase: design
 created: 2026-06-12
 priority: P1
 target_date: 
@@ -21,8 +21,8 @@ debt:
     risk: high
     areas:
       - architecture
-    confidence: low
-    rationale: "0.0-new 初始估算: 三协作者新模块边界 (+2), 消解上帝对象单一依赖/整体 mock 困境 (-5)。改动集中包内 engine/assets 域 (scope module), 但 runtime 是全部 IPC 读路径单一依赖且有快照 ID 稳定/scope 无重扫两条行为硬约束, 重构期 risk high。explore/design 后校准。"
+    confidence: medium
+    rationale: "explore 校准 (2026-06-12): 591 行职责块行级映射完成, SelectorCache 已半成 (独立类未出文件), 24 用例红绿网现成且覆盖全部六不变量, 消费面窄接口先例 — 拆分为内部协作者公共 API 零变更。数值维持 2/5/-3, scope module / risk high 维持 (写回边界 Q1 未定)。"
   final:
     incurred:
     repaid:
@@ -32,7 +32,12 @@ debt:
     areas: []
     confidence:
     rationale:
-  revisions: []
+  revisions:
+    - phase: explore
+      date: 2026-06-12
+      from: "confidence low"
+      to: "confidence medium"
+      reason: "职责块行级映射 + 24 用例红绿网现成 + 公共 API 零变更判据落定; 数值与 scope/risk 维持。"
 issue:
   number: 122
   repo: Caldis/berth
@@ -62,7 +67,7 @@ artifacts:
 
 ## 产物
 - [x] 00-PRD.md — 原始输入快照
-- [ ] 01-ANALYSIS.md — Explore 产物
+- [x] 01-ANALYSIS.md — Explore 产物 (职责块行级映射 + 六不变量 + 24 用例红绿网 + AC1-6)
 - [ ] 02-SPEC.md — Design 产物
 - [ ] 03-PLAN.md — 活任务清单
 - [ ] 04-POLISH.md — 可选抛光记录
