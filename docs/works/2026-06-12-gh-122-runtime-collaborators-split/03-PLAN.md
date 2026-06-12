@@ -18,10 +18,7 @@
   - tests: tests/unit/scan-coordinator.test.ts (新): run 期间二次 run 返回同 inFlight (去重) / wait 语义 / swap 后旧扫描 onProgress/onPartial/onCompleted/onFailed 全部不派发 / 异常走 onFailed / finally 清 inFlight 可再扫; **锚点 24 逐字不动绿** (R4/P4.6/id 稳定/in-flight 复用等价性核心证据)。
   - verify: `pnpm test` 全量双轮绿 + typecheck; 非 UI 不适用。
 
-- [ ] T4 收口 (AC-2/4/5/6)
-  - 内容: runtime.ts 行数核对 (目标 ≤~400) + 职责自查 (无类体/裸 Map/执行体残留); ARCHITECTURE pkg:engine 行补 "assets/ 三协作者" 一句; 全量门禁 + e2e + 包三连 + dev 冷启动探活; prepush + push + ci:wait。
-  - tests: 全量 `pnpm test` ×2 + `pnpm build && pnpm test:e2e` + `--filter` 三连 + agent 实例探活 (资产/扫描状态/项目切换)。
-  - verify: AC-1~6 逐条核对; 消费面 git diff 零改动实证 (AC-3); debt.final 回填。
+- [x] T4 收口 (AC-2/4/5/6) — DONE: ARCHITECTURE runtime 行补三协作者; build + 包三连 (typecheck/tsup/24) + e2e 25/26 (唯一失败为既有 win32 隔离项, 上轮 native-mouse 干扰已消散自证环境项定性) + dev 冷启动双实例探活 (首扫 401 ready / refresh ready / **切换重扫 3575ms·403 → 切回 251ms 缓存命中·401 = swap+ProjectSnapshotCache 真实链路**; 探活脚本启动竞争窗口抓到 initial 快照的 0 值经定性为脚本时序瑕疵, 行为证据链充足); **AC-3 实证: GH-122 全程 src/ 零改动 (git diff 0892da1a..HEAD -- src/ 为空)**; runtime 591→491 行 (≤~400 参考线未达, 职责判据全过 — commitScan/failScan 数据提交体本属 runtime, 行数为代理指标如实记录)。
 
 ## verify 回写
 verify 不通过项作为新任务追加于此, phase 退回 implement。

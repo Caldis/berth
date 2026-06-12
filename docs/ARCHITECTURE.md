@@ -31,7 +31,7 @@
   - `session-detail.ts` — session/模型推断域逻辑 (GH-115 自 ipc/handlers 迁入): `buildSessionDetail` 编排 + `toSessionSummary` 单源 + `KNOWN_MODEL_METADATA` 模型知识库 (新模型补条目); detail 解析按文件指纹缓存 (GH-116)
   - `session-replay.ts` — 会话重放编排 (GH-116): `buildSessionReplay` (per-agent `adapters/*/session-replay.ts` 解析 + AssetFileCache 指纹缓存 + 20k 事件 cap) + `readSessionReplayEventPayload` (事件 id→JSONL 行按需反查, 正文不全量过 IPC)
   - `session-activity.ts` — session 活动指标纯函数
-  - `assets/runtime.ts` — 中心资产运行时, 维护 `AssetSnapshot`、`AssetRuntimeStatus`、in-flight refresh 与 selector cache; IPC 派生数据经此读取
+  - `assets/runtime.ts` — 中心资产运行时 (GH-122 拆协作者后为状态机 + 数据提交 + 查询门面 + 编排): 维护 `AssetSnapshot`/`AssetRuntimeStatus`; IPC 派生数据经此读取。协作者: `assets/selector-cache.ts` (snapshot.id 键派生缓存) · `assets/project-snapshot-cache.ts` (per-project 快照缓存, 归一键内聚) · `assets/scan-coordinator.ts` (scanner 生命周期 + in-flight 去重 + R4 代际 guard; 链 ③ 调度/背压落点)
   - `assets/worker-host.ts` / `assets/worker.ts` — main process 的 worker_threads 边界; 大文件枚举、JSONL parse 与 adapter `scanAll()` 在 worker 中执行
   - `assets/file-cache.ts` — 进程内 file fingerprint cache, 基于 `path + size + mtimeMs` 复用 Claude session / Codex rollout metadata; 不写磁盘
   - `scanner.ts` — adapter 扫描编排, 供 worker job 使用
