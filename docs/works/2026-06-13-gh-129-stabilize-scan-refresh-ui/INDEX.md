@@ -2,7 +2,7 @@
 task: 2026-06-13-gh-129-stabilize-scan-refresh-ui
 task_id: GH-129
 type: bug
-phase: implement
+phase: verify
 created: 2026-06-13
 priority: P2
 target_date: 
