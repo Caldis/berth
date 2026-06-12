@@ -904,8 +904,8 @@ function CapabilityPageChrome({
       ? {
           value: search,
           onValueChange: setSearch,
-          placeholder: `${t('search.placeholder')} ${title}`,
-          ariaLabel: `${t('search.placeholder')} ${title}`
+          placeholder: t('search.filterPlaceholder', { target: title }),
+          ariaLabel: t('search.filterPlaceholder', { target: title })
         }
       : undefined,
     guide: guide

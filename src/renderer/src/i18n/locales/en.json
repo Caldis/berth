@@ -106,6 +106,7 @@
   },
   "search": {
     "placeholder": "Search assets...",
+    "filterPlaceholder": "Filter {{target}}...",
     "noResults": "No results found.",
     "hint": "Search across all assets by name, type, or scope.",
     "loading": "Searching...",
@@ -1794,7 +1795,7 @@
   "memory": {
     "allSources": "All sources",
     "loadErrorTitle": "Memories could not be loaded",
-    "searchPlaceholder": "Search memories...",
+    "searchPlaceholder": "Filter memories...",
     "groupNavigation": "Memory groups",
     "refresh": "Refresh",
     "relations": "Related",

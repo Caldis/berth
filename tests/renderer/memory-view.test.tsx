@@ -743,8 +743,8 @@ describe('MemoryView', () => {
       </MemoryRouter>
     )
 
-    const pageSearch = screen.getByRole('textbox', { name: 'Search memories...' })
-    expect(screen.getAllByPlaceholderText('Search memories...')).toHaveLength(1)
+    const pageSearch = screen.getByRole('textbox', { name: 'Filter memories...' })
+    expect(screen.getAllByPlaceholderText('Filter memories...')).toHaveLength(1)
 
     fireEvent.keyDown(window, { key: 'k', ctrlKey: true })
     expect(pageSearch).toHaveFocus()

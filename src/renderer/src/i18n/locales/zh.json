@@ -104,6 +104,7 @@
   },
   "search": {
     "placeholder": "搜索资产…",
+    "filterPlaceholder": "筛选{{target}}…",
     "noResults": "未找到结果。",
     "hint": "按名称、类型或作用域搜索所有资产。",
     "loading": "正在搜索…",
@@ -1784,7 +1785,7 @@
   "memory": {
     "allSources": "全部来源",
     "loadErrorTitle": "记忆加载失败",
-    "searchPlaceholder": "搜索记忆…",
+    "searchPlaceholder": "筛选记忆…",
     "groupNavigation": "记忆分组",
     "refresh": "刷新",
     "relations": "相关",

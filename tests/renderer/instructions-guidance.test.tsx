@@ -199,8 +199,8 @@ describe('Instructions guidance surfaces', () => {
     )
 
     expect(await screen.findByRole('heading', { name: 'Skills' })).toBeInTheDocument()
-    const pageSearch = screen.getByRole('textbox', { name: 'Search assets... Skills' })
-    expect(screen.getAllByPlaceholderText('Search assets... Skills')).toHaveLength(1)
+    const pageSearch = screen.getByRole('textbox', { name: 'Filter Skills...' })
+    expect(screen.getAllByPlaceholderText('Filter Skills...')).toHaveLength(1)
 
     fireEvent.change(pageSearch, { target: { value: 'Project' } })
 

@@ -215,7 +215,7 @@ describe('Capabilities guidance surfaces', () => {
     renderCapabilities('permissions', '/capabilities/permissions')
 
     expect(await screen.findByRole('heading', { name: 'Permissions' })).toBeInTheDocument()
-    expect(screen.queryByRole('textbox', { name: /Search assets/ })).not.toBeInTheDocument()
+    expect(screen.queryByRole('textbox', { name: /Filter Permissions/ })).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Page guide' })).toBeInTheDocument()
   })
 

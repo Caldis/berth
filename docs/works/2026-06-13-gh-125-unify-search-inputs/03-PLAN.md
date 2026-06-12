@@ -12,9 +12,10 @@
   - files: `src/renderer/src/components/layout/sidebar.tsx`, `src/renderer/src/components/layout/search-dialog.tsx`, `src/renderer/src/components/layout/search-control.tsx`, 对应测试
   - tests: `pnpm exec vitest run tests/renderer/sidebar-agent-view.test.tsx tests/renderer/search-dialog.test.tsx tests/renderer/top-navigation.test.tsx`
   - verify: 侧栏入口仍是 button 且点击打开全局搜索; 全局搜索弹窗输入是 textbox 且自动聚焦; Tab trap、Escape、ArrowUp/Down、Enter 行为不变; Ctrl/⌘K 局部优先、无局部搜索时全局打开; 弹窗 show 动画有 background blur 和 crossfade。
-- [ ] 任务 3: 修正局部搜索 placeholder 与 i18n
+- [x] 任务 3: 修正局部搜索 placeholder 与 i18n
   - files: `src/renderer/src/pages/instructions.tsx`, `src/renderer/src/pages/capabilities.tsx`, `src/renderer/src/components/memory/memory-view.tsx`, `src/renderer/src/i18n/locales/en.json`, `src/renderer/src/i18n/locales/zh.json`, 对应测试
   - tests: `pnpm exec vitest run tests/renderer/instructions-guidance.test.tsx tests/renderer/capabilities-guidance.test.tsx tests/renderer/memory-view.test.tsx tests/renderer/sessions-pages.test.tsx`
+  - verified: `pnpm typecheck:web`; `pnpm harness:check --work docs/works/2026-06-13-gh-125-unify-search-inputs`
   - verify: 不再出现 `Search assets... Skills` / `搜索资产… 约定`; 局部搜索统一 `Filter ...` / `筛选...`; 全局搜索仍是 `Search assets...` / `搜索资产…`; Permissions 页仍无局部搜索。
 - [ ] 任务 4: 收口验证与真实视觉检查
   - files: 测试或文档按结果补充

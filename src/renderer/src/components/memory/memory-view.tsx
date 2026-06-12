@@ -742,8 +742,8 @@ export function MemoryView(): React.ReactElement {
     search: {
       value: search,
       onValueChange: setSearch,
-      placeholder: t('memory.searchPlaceholder', 'Search memories...'),
-      ariaLabel: t('memory.searchPlaceholder', 'Search memories...')
+      placeholder: t('memory.searchPlaceholder', 'Filter memories...'),
+      ariaLabel: t('memory.searchPlaceholder', 'Filter memories...')
     },
     guide: {
       definition: instructionGuideMap.memories,
