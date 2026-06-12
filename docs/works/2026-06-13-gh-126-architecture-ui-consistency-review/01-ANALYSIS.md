@@ -17,13 +17,13 @@
 
 ## 候选
 1. **FilterSelect**: 在 `components/ui` 增加一个深一点的筛选 Select Module, 统一密集筛选控件高度、边框、背景、hover/open 样式。风险低, 可小步验证。
-2. **PageChrome builder**: `capabilities`、`instructions`、`sessions`、`memory-view` 都重复组装 page chrome search/guide/actions。可后续收敛, 但涉及路由标题、guide evidence 和搜索 placeholder, 应独立设计。
-3. **ProjectScope hook**: `ProjectScopeSwitcher` 同时处理 UI、store 写入、IPC 和 asset snapshot 刷新。应考虑把 side effect 移到 hook, 但影响全局作用域语义, 风险高于 T1。
+2. **PageChrome builder**: `capabilities`、`instructions`、`sessions`、`memory-view` 都重复组装 page chrome search/guide/actions。审计后判断当前只做 helper 容易变成浅搬运, 暂不实现。
+3. **ProjectScope hook**: `ProjectScopeSwitcher` 同时处理 UI、store 写入、IPC 和 asset snapshot 刷新。可把 side effect 移到内部 hook, 保留现有 UI interface 和测试面。
 
 ## 任务分类与 debt 校准
 - type / maintenance.subtype: `maintenance / architecture`
 - source.kind / refs: `user-request`, GH-126
-- debt estimate 修正: 数字不变; confidence 从 low 调整为 medium。
+- debt estimate 修正: confidence 从 low 调整为 medium; T3 完成后 repaid 从 6 调整为 7。
 - scope / risk / areas / confidence: `global / medium / architecture, ui-ux, testability, performance / medium`
 - revision: 已写入 `INDEX.md`。
 
@@ -32,6 +32,8 @@
 2. scope、session model/sort、replay kind、usage cost mode 的交互行为不变。
 3. 新 Module 有 renderer 测试覆盖默认视觉契约和 caller classNames 合并。
 4. 受影响 renderer 测试和 `pnpm typecheck:web` 通过。
+5. `ProjectScopeSwitcher` 的 store/IPC/snapshot 副作用集中到内部 hook, render 部分只消费动作和状态。
+6. 项目作用域选择成功、source 加载失败、project activation 失败、user scope 即时切换等行为保持不变。
 
 ## 界面质量与交互验收
 本轮不改信息架构和布局顺序, 只统一筛选下拉控件的外观契约。预期效果:
@@ -40,4 +42,4 @@
 - 调用点仍保留业务宽度、禁用态、placeholder、renderValue 和多选行为。
 
 ## 未决问题
-无需要用户澄清的问题。PageChrome builder 和 ProjectScope hook 作为后续候选处理, 不并入 T1 提交。
+无需要用户澄清的问题。PageChrome builder 候选暂缓, 因当前实现成 helper 的 depth 不够。

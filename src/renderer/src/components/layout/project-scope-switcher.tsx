@@ -30,19 +30,31 @@ interface ProjectScopeSwitcherProps {
   collapsed: boolean
 }
 
+interface ProjectScopeActions {
+  error: string | null
+  loadCandidates: () => Promise<void>
+  loading: boolean
+  selectScope: (selection: Partial<AppScopeSelection>) => Promise<void>
+  sourceError: string | null
+  sourceGroups: AgentScanSourceGroup[]
+  sourceLoading: boolean
+}
+
 export function ProjectScopeSwitcher({ collapsed }: ProjectScopeSwitcherProps): React.ReactElement {
   const { t } = useTranslation()
   const [open, setOpen] = useState(false)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [sourceGroups, setSourceGroups] = useState<AgentScanSourceGroup[]>([])
-  const [sourceLoading, setSourceLoading] = useState(false)
-  const [sourceError, setSourceError] = useState<string | null>(null)
+  const closeMenu = useCallback(() => setOpen(false), [])
+  const {
+    error,
+    loadCandidates,
+    loading,
+    selectScope,
+    sourceError,
+    sourceGroups,
+    sourceLoading
+  } = useProjectScopeActions({ onSelected: closeMenu })
   const scopeSelection = useAppStore((s) => s.scopeSelection)
-  const setScopeSelection = useAppStore((s) => s.setScopeSelection)
   const candidates = useAppStore((s) => s.projectCandidates)
-  const setProjectCandidates = useAppStore((s) => s.setProjectCandidates)
-  const setAssetSnapshot = useAppStore((s) => s.setAssetSnapshot)
   const currentProject = useMemo(
     () => currentProjectCandidate(scopeSelection, candidates),
     [candidates, scopeSelection]
@@ -61,75 +73,10 @@ export function ProjectScopeSwitcher({ collapsed }: ProjectScopeSwitcherProps): 
   const label = scopeLabel(t, scopeSelection, currentProject)
   const description = scopeDescription(t, scopeSelection, currentProject)
 
-  const loadCandidates = useCallback(async () => {
-    setLoading(true)
-    setSourceLoading(true)
-    setError(null)
-    setSourceError(null)
-
-    const [candidateResult, sourceResult] = await Promise.allSettled([
-      window.api.projectScope.candidates(),
-      window.api?.assets?.scanSources ? window.api.assets.scanSources() : Promise.resolve([])
-    ])
-
-    if (candidateResult.status === 'fulfilled') {
-      setProjectCandidates(candidateResult.value)
-    } else {
-      const err = candidateResult.reason
-      setError(err instanceof Error ? err.message : String(err))
-    }
-
-    if (sourceResult.status === 'fulfilled') {
-      setSourceGroups(sourceResult.value ?? [])
-    } else {
-      const err = sourceResult.reason
-      setSourceError(err instanceof Error ? err.message : String(err))
-    }
-
-    setLoading(false)
-    setSourceLoading(false)
-  }, [setProjectCandidates])
-
   const toggleOpen = (): void => {
     const nextOpen = !open
     setOpen(nextOpen)
     if (nextOpen) void loadCandidates()
-  }
-
-  const selectScope = async (selection: Partial<AppScopeSelection>): Promise<void> => {
-    // Inform the engine of the active scope so server-side reads (search) honour
-    // it. This is a fast no-rescan IPC — the core of sub-second switching.
-    setError(null)
-    try {
-      await window.api.projectScope.setScope?.(normalizeScopeSelection(selection))
-    } catch {
-      /* non-fatal: scope still applies client-side */
-    }
-    // Global / User are pure client-side filters over the current snapshot, so
-    // switching is instant (no rescan). Only selecting a specific project
-    // (re)scans that project's roots.
-    if (selection.mode !== 'project') {
-      setScopeSelection(selection)
-      setOpen(false)
-      return
-    }
-    setLoading(true)
-    setError(null)
-    try {
-      const result = await window.api.projectScope.activate({ projectPath: selection.projectPath })
-      // GH-115 T4: 资产只走 setAssetSnapshot 单写落点 (fold 不变量), 不再裸替换 —
-      // activate 的 scanResult 由随后的快照读取覆盖, 此处只更新候选列表。
-      setProjectCandidates(result.candidates ?? [])
-      if (window.api?.assets?.snapshot) {
-        setAssetSnapshot(await window.api.assets.snapshot())
-      }
-      setScopeSelection(selection)
-      setOpen(false)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err))
-    } finally {
-      setLoading(false)
-    }
   }
 
   return (
@@ -243,6 +190,92 @@ export function ProjectScopeSwitcher({ collapsed }: ProjectScopeSwitcherProps): 
       )}
     </div>
   )
+}
+
+function useProjectScopeActions({ onSelected }: { onSelected: () => void }): ProjectScopeActions {
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [sourceGroups, setSourceGroups] = useState<AgentScanSourceGroup[]>([])
+  const [sourceLoading, setSourceLoading] = useState(false)
+  const [sourceError, setSourceError] = useState<string | null>(null)
+  const setScopeSelection = useAppStore((s) => s.setScopeSelection)
+  const setProjectCandidates = useAppStore((s) => s.setProjectCandidates)
+  const setAssetSnapshot = useAppStore((s) => s.setAssetSnapshot)
+
+  const loadCandidates = useCallback(async () => {
+    setLoading(true)
+    setSourceLoading(true)
+    setError(null)
+    setSourceError(null)
+
+    const [candidateResult, sourceResult] = await Promise.allSettled([
+      window.api.projectScope.candidates(),
+      window.api?.assets?.scanSources ? window.api.assets.scanSources() : Promise.resolve([])
+    ])
+
+    if (candidateResult.status === 'fulfilled') {
+      setProjectCandidates(candidateResult.value)
+    } else {
+      const err = candidateResult.reason
+      setError(err instanceof Error ? err.message : String(err))
+    }
+
+    if (sourceResult.status === 'fulfilled') {
+      setSourceGroups(sourceResult.value ?? [])
+    } else {
+      const err = sourceResult.reason
+      setSourceError(err instanceof Error ? err.message : String(err))
+    }
+
+    setLoading(false)
+    setSourceLoading(false)
+  }, [setProjectCandidates])
+
+  const selectScope = useCallback(async (selection: Partial<AppScopeSelection>): Promise<void> => {
+    // Inform the engine of the active scope so server-side reads (search) honour
+    // it. This is a fast no-rescan IPC — the core of sub-second switching.
+    setError(null)
+    try {
+      await window.api.projectScope.setScope?.(normalizeScopeSelection(selection))
+    } catch {
+      /* non-fatal: scope still applies client-side */
+    }
+    // Global / User are pure client-side filters over the current snapshot, so
+    // switching is instant (no rescan). Only selecting a specific project
+    // (re)scans that project's roots.
+    if (selection.mode !== 'project') {
+      setScopeSelection(selection)
+      onSelected()
+      return
+    }
+    setLoading(true)
+    setError(null)
+    try {
+      const result = await window.api.projectScope.activate({ projectPath: selection.projectPath })
+      // GH-115 T4: 资产只走 setAssetSnapshot 单写落点 (fold 不变量), 不再裸替换 —
+      // activate 的 scanResult 由随后的快照读取覆盖, 此处只更新候选列表。
+      setProjectCandidates(result.candidates ?? [])
+      if (window.api?.assets?.snapshot) {
+        setAssetSnapshot(await window.api.assets.snapshot())
+      }
+      setScopeSelection(selection)
+      onSelected()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err))
+    } finally {
+      setLoading(false)
+    }
+  }, [onSelected, setAssetSnapshot, setProjectCandidates, setScopeSelection])
+
+  return {
+    error,
+    loadCandidates,
+    loading,
+    selectScope,
+    sourceError,
+    sourceGroups,
+    sourceLoading
+  }
 }
 
 function ScopeOption({

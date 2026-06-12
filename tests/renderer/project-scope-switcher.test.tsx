@@ -202,6 +202,21 @@ describe('ProjectScopeSwitcher', () => {
     expect(await screen.findByRole('option', { name: 'berth' })).toBeInTheDocument()
   })
 
+  it('keeps the menu open and scope unchanged when project activation fails', async () => {
+    window.api.projectScope.activate = vi.fn(async () => {
+      throw new Error('activation boom')
+    })
+
+    render(<ProjectScopeSwitcher collapsed={false} />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Project scope' }))
+    fireEvent.click(await screen.findByRole('option', { name: 'berth' }))
+
+    expect(await screen.findByText('Could not refresh projects.')).toBeInTheDocument()
+    expect(screen.getByRole('listbox', { name: 'Project scope options' })).toBeInTheDocument()
+    expect(useAppStore.getState().scopeSelection).toEqual(DEFAULT_SCOPE_SELECTION)
+  })
+
   it('switches to user scope as an instant client-side filter (no rescan)', async () => {
     window.api.projectScope.candidates = vi.fn(async () => [])
     render(<ProjectScopeSwitcher collapsed={false} />)

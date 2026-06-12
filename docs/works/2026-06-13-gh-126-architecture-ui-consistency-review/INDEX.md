@@ -15,8 +15,8 @@ source:
 debt:
   estimate:
     incurred: 2
-    repaid: 6
-    net: -4
+    repaid: 7
+    net: -5
     scope: global
     risk: medium
     areas:
@@ -25,7 +25,7 @@ debt:
       - testability
       - performance
     confidence: medium
-    rationale: "Explore 已确认首个高把握修复点: 筛选类 Select 的视觉契约散落在 4 个调用点。另记录 page chrome 注册和 project scope side effect 两个后续候选。估算仍按全局 UI/架构债务处理, 先用 T1 做可独立验证的小步偿还。"
+    rationale: "T1 已收敛筛选类 Select 视觉契约, T3 已把 ProjectScopeSwitcher 的 store/IPC/snapshot 副作用收进内部 hook。PageChrome builder 候选因当前收益偏浅暂缓。"
   final:
     incurred:
     repaid:
@@ -41,6 +41,11 @@ debt:
       from: { confidence: low }
       to: { confidence: medium }
       reason: "已完成 renderer/UI 调用点审计, 候选收敛为 FilterSelect、PageChrome builder、ProjectScope hook 三类; 第一类可小步实现并测试。"
+    - phase: implement
+      date: 2026-06-13
+      from: { repaid: 6, net: -4 }
+      to: { repaid: 7, net: -5 }
+      reason: "除 FilterSelect 外, 又完成 ProjectScopeSwitcher 副作用 hook 抽取, 减少 UI render 对 store/IPC/snapshot 写入顺序的直接依赖。"
 issue:
   number: 126
   repo: Caldis/berth
