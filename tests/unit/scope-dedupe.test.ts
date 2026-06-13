@@ -129,6 +129,17 @@ describe('mergeSharedConventions', () => {
     const merged = mergeSharedConventions([s1, s2])
     expect(merged).toHaveLength(2)
   })
+
+  it('collapses shared skills with the same deterministic id across adapters', () => {
+    const s1 = skillAsset('shared-skill')
+    const s2 = { ...skillAsset('shared-skill'), agentId: 'github-copilot-cli' }
+
+    const merged = mergeSharedConventions([s1, s2])
+
+    expect(merged).toHaveLength(1)
+    expect(merged[0]?.id).toBe(s1.id)
+    expect(merged[0]?.meta.readByAgentIds).toEqual(['claude-code', 'github-copilot-cli'])
+  })
 })
 
 describe('relations point at the merged canonical id', () => {

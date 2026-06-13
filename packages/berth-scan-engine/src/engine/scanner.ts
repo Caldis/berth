@@ -315,23 +315,26 @@ function stripAssetRaw(asset: Asset): Asset {
 }
 
 /**
- * Collapse cross-agent shared instruction files (AGENTS.md) into one canonical
- * asset. Only assets carrying an explicit `meta.dedupeKey` are grouped — the
- * parsers tag just AGENTS.md, so multi-entity files (settings.json hooks/mcp),
- * skills, and plugin components have no dedupeKey and pass through untouched. The
- * canonical row keeps a stable primary id (claude-code preferred) and unions
- * `readByAgentIds` so the file stays visible under every agent view. Pure (does
- * not mutate the input) and idempotent (safe to run on already-merged input,
- * which is why the partial stream and the final result can both call it).
+ * Collapse cross-agent shared files into one canonical asset. AGENTS.md uses an
+ * explicit `meta.dedupeKey` because each adapter historically used a different
+ * asset type/id. Other shared files, such as project skill files under
+ * `.agents/skills`, now use the same deterministic id across adapters and are
+ * grouped by `id`.
+ *
+ * The canonical row keeps a stable primary id (claude-code preferred for
+ * conventions, otherwise first reader) and unions `readByAgentIds` so the file
+ * stays visible under every agent view. Pure (does not mutate the input) and
+ * idempotent (safe to run on already-merged input, which is why the partial
+ * stream and the final result can both call it).
  */
 export function mergeSharedConventions(assets: Asset[]): Asset[] {
   const groups = new Map<string, Asset[]>()
   for (const asset of assets) {
     const dedupeKey = readString(asset.meta, 'dedupeKey')
-    if (!dedupeKey) continue
-    const list = groups.get(dedupeKey) ?? []
+    const groupKey = dedupeKey ? `dedupe:${dedupeKey}` : `id:${asset.id}`
+    const list = groups.get(groupKey) ?? []
     list.push(asset)
-    groups.set(dedupeKey, list)
+    groups.set(groupKey, list)
   }
   if (groups.size === 0) return assets
 
@@ -339,13 +342,10 @@ export function mergeSharedConventions(assets: Asset[]): Asset[] {
   const result: Asset[] = []
   for (const asset of assets) {
     const dedupeKey = readString(asset.meta, 'dedupeKey')
-    if (!dedupeKey) {
-      result.push(asset)
-      continue
-    }
-    if (emitted.has(dedupeKey)) continue
-    emitted.add(dedupeKey)
-    result.push(mergeConventionGroup(groups.get(dedupeKey) ?? [asset]))
+    const groupKey = dedupeKey ? `dedupe:${dedupeKey}` : `id:${asset.id}`
+    if (emitted.has(groupKey)) continue
+    emitted.add(groupKey)
+    result.push(mergeConventionGroup(groups.get(groupKey) ?? [asset]))
   }
   return result
 }

@@ -369,6 +369,7 @@ describe('AssetScanner', () => {
   })
 
   it('streams per-adapter progress and cumulative partial assets (P4.6)', async () => {
+    const homeDir = fs.mkdtempSync(path.join(os.tmpdir(), 'berth-eng-partials-home-'))
     mocks.claudeScanAll.mockResolvedValueOnce({
       assets: [skillAsset('claude-skill', 'claude-code')],
       errors: []
@@ -377,25 +378,32 @@ describe('AssetScanner', () => {
       assets: [skillAsset('codex-skill', 'codex')],
       errors: []
     })
-    const scanner = new AssetScanner()
+    try {
+      const scanner = new AssetScanner(undefined, {
+        adapterRegistry: { homeDir, env: {} }
+      })
 
-    const progress: { phase: string; current: number; total: number; label?: string }[] = []
-    const partials: { assets: Asset[] }[] = []
-    await scanner.scanAll({
-      onProgress: (event) => progress.push(event),
-      onPartial: (partial) => partials.push({ assets: partial.assets })
-    })
+      const progress: { phase: string; current: number; total: number; label?: string }[] = []
+      const partials: { assets: Asset[] }[] = []
+      await scanner.scanAll({
+        onProgress: (event) => progress.push(event),
+        onPartial: (partial) => partials.push({ assets: partial.assets })
+      })
 
-    const adapterCount = 2 + PLANNED_AGENT_ADAPTER_DEFINITIONS.length
-    // Per-adapter granularity: total === adapter count (claude + codex + metadata-only declarations).
-    expect(progress.every((p) => p.phase === 'parsing' && p.total === adapterCount)).toBe(true)
-    expect(progress.at(-1)).toMatchObject({ current: adapterCount, total: adapterCount })
+      const adapterCount = 2 + PLANNED_AGENT_ADAPTER_DEFINITIONS.length
+      // Per-adapter granularity: total === adapter count (claude + codex + metadata-only declarations).
+      expect(progress.every((p) => p.phase === 'parsing' && p.total === adapterCount)).toBe(true)
+      expect(progress.at(-1)).toMatchObject({ current: adapterCount, total: adapterCount })
 
-    // One partial per adapter; declared adapters add source metadata but no assets yet.
-    expect(partials).toHaveLength(adapterCount)
-    expect(partials[0]?.assets.map((a) => a.id)).toEqual(['claude-skill'])
-    expect(partials[1]?.assets.map((a) => a.id)).toEqual(['claude-skill', 'codex-skill'])
-    expect(partials.at(-1)?.assets.map((a) => a.id)).toEqual(['claude-skill', 'codex-skill'])
+      // One partial per adapter; empty fixture homes make third-party adapters
+      // contribute source metadata but no assets.
+      expect(partials).toHaveLength(adapterCount)
+      expect(partials[0]?.assets.map((a) => a.id)).toEqual(['claude-skill'])
+      expect(partials[1]?.assets.map((a) => a.id)).toEqual(['claude-skill', 'codex-skill'])
+      expect(partials.at(-1)?.assets.map((a) => a.id)).toEqual(['claude-skill', 'codex-skill'])
+    } finally {
+      fs.rmSync(homeDir, { recursive: true, force: true })
+    }
   })
 
   it('strips raw from partials and reports the running error count (GH-111 P1+O4)', async () => {

@@ -70,5 +70,10 @@
   - tests: `pnpm --filter @berth/scan-engine exec vitest run tests/scan-bridge.test.ts`; `pnpm vitest run tests/unit/agent-adapter-registry.test.ts tests/unit/parser-identity.test.ts`; `pnpm test:e2e tests/e2e/project-scope.e2e.ts`。
   - verify: passed 2026-06-13。回归测试新增 “多 adapter 注册时资产 id 唯一” 断言; 本机复跑远端失败的 project scope e2e 已通过。
 
+- [x] 任务 12: GitHub Copilot CLI 真实 adapter v1
+  - scope: `github-copilot-cli` 不再只走 metadata-only declared adapter; 新增真实 adapter/parser, 读取稳定低风险本地文件: 用户/项目 custom instructions、`AGENTS.md`、agents、skills、MCP config、settings 内 inline MCP/hooks、hook 文件、installed plugin manifest, 以及 `~/.copilot/config.json` 的 credential presence。`config.json` 正文、permissions、session-state、session-store、logs、plugin-data 仍只做 source coverage metadata, 不读取正文。扫描器同时按相同 deterministic asset id 合并共享 `.agents/skills` 读者, 防止 Copilot/Codex 重复资产进入搜索索引。
+  - tests: `pnpm vitest run tests/unit/agent-adapter-registry.test.ts tests/unit/scope-dedupe.test.ts tests/unit/planned-agent-adapter-definitions.test.ts tests/unit/agent-capability-plugins.test.ts`; `pnpm vitest run tests/unit/engine-scanner.test.ts tests/unit/search.test.ts tests/unit/asset-dedupe.test.ts`; `pnpm --filter @berth/scan-engine test`; `pnpm --filter @berth/scan-engine typecheck`; `pnpm --filter @berth/scan-engine build`; `pnpm typecheck:node`; `pnpm typecheck:test`; `pnpm typecheck:web`; `pnpm lint`。
+  - verify: passed 2026-06-13。真实本机 `copilot --version` 为 `GitHub Copilot CLI 0.0.414`。用已构建 `packages/berth-scan-engine/dist/cli.cjs scan --home-dir $env:USERPROFILE --project D:\Code\berth --json` 汇总 Copilot 相关扫描: `assetCount=1` (`credential=1`), Copilot 相关 errors=0, scanned sources 包含 `copilot.user.home`, `copilot.user.config`, `copilot.user.shared-skills`, `copilot.user.logs`, `copilot.user.sessions`, `copilot.project.shared-skills`, `copilot.project.agents-md`; sensitive/debug sources 均保持 `credential-presence-only` / `sensitive-metadata-only` / `debug-summary-only`。
+
 ## verify 回写
 verify 不通过项作为新任务追加于此, phase 退回 implement。

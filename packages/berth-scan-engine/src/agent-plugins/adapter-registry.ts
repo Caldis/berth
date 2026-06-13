@@ -14,6 +14,7 @@ import type {
 import { ClaudeCodeAdapter } from '../adapters/claude-code'
 import { CodexAdapter } from '../adapters/codex'
 import { GeminiCliAdapter } from '../adapters/gemini-cli'
+import { GitHubCopilotCliAdapter } from '../adapters/github-copilot-cli'
 import { OpenCodeAdapter } from '../adapters/opencode'
 import { PLANNED_AGENT_ADAPTER_DEFINITIONS } from '../adapters/planned-agent-definitions'
 import type { AgentAdapterDefinition } from '../adapter-api'
@@ -44,6 +45,9 @@ export function createAgentAdapters(
     ...PLANNED_AGENT_ADAPTER_DEFINITIONS.map((definition) => {
       if (definition.id === 'gemini-cli') {
         return new GeminiCliAdapter(definition, { homeDir, projectDir, env })
+      }
+      if (definition.id === 'github-copilot-cli') {
+        return new GitHubCopilotCliAdapter(definition, { homeDir, projectDir, env })
       }
       if (definition.id === 'opencode') {
         return new OpenCodeAdapter(definition, { homeDir, projectDir, env })

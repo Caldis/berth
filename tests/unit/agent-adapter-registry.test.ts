@@ -8,6 +8,7 @@ import {
   ManifestAgentAdapter
 } from '@berth/scan-engine/agent-plugins/adapter-registry'
 import { GeminiCliAdapter } from '@berth/scan-engine/adapters/gemini-cli'
+import { GitHubCopilotCliAdapter } from '@berth/scan-engine/adapters/github-copilot-cli'
 import { OpenCodeAdapter } from '@berth/scan-engine/adapters/opencode'
 import { PLANNED_AGENT_ADAPTER_DEFINITIONS } from '@berth/scan-engine/adapters/planned-agent-definitions'
 import {
@@ -147,6 +148,20 @@ describe('agent adapter registry', () => {
     const geminiProjectAgents = path.join(projectDir, 'AGENTS.md')
     const geminiExtension = path.join(homeDir, '.gemini', 'extensions', 'helper', 'gemini-extension.json')
     const geminiSession = path.join(homeDir, '.gemini', 'tmp', 'session.json')
+    const copilotSettings = path.join(homeDir, '.copilot', 'settings.json')
+    const copilotMcp = path.join(homeDir, '.copilot', 'mcp-config.json')
+    const copilotInstructions = path.join(homeDir, '.copilot', 'copilot-instructions.md')
+    const copilotAgent = path.join(homeDir, '.copilot', 'agents', 'reviewer.agent.md')
+    const copilotSkill = path.join(homeDir, '.copilot', 'skills', 'release-helper', 'SKILL.md')
+    const copilotProjectInstructions = path.join(projectDir, '.github', 'copilot-instructions.md')
+    const copilotProjectPathInstructions = path.join(projectDir, '.github', 'instructions', 'tests.instructions.md')
+    const copilotProjectSkill = path.join(projectDir, '.github', 'skills', 'ci-helper', 'SKILL.md')
+    const copilotProjectSharedSkill = path.join(projectDir, '.agents', 'skills', 'shared-helper', 'SKILL.md')
+    const copilotProjectMcp = path.join(projectDir, '.github', 'mcp.json')
+    const copilotProjectAgents = path.join(projectDir, 'AGENTS.md')
+    const copilotPlugin = path.join(homeDir, '.copilot', 'installed-plugins', '_direct', 'helper', 'package.json')
+    const copilotHook = path.join(homeDir, '.copilot', 'hooks', 'pre-commit.ps1')
+    const copilotConfig = path.join(homeDir, '.copilot', 'config.json')
     const cursorRules = path.join(projectDir, '.cursor', 'rules')
     const opencodeProjectConfig = path.join(projectDir, 'opencode.json')
     const opencodeUserConfig = path.join(homeDir, '.config', 'opencode', 'opencode.jsonc')
@@ -175,6 +190,36 @@ describe('agent adapter registry', () => {
     })
     fs.mkdirSync(path.dirname(geminiSession), { recursive: true })
     fs.writeFileSync(geminiSession, 'sensitive transcript', 'utf8')
+    fs.mkdirSync(path.dirname(copilotSettings), { recursive: true })
+    fs.writeFileSync(copilotSettings, '{\n  // JSONC settings\n  "hooks": { "pre-edit": { "command": "echo ok" } }\n}', 'utf8')
+    writeJson(copilotMcp, {
+      mcpServers: {
+        docs: {
+          type: 'local',
+          command: 'docs-mcp',
+          env: { API_KEY: 'secret' }
+        }
+      }
+    })
+    fs.writeFileSync(copilotInstructions, 'Personal Copilot guidance.\n', 'utf8')
+    fs.mkdirSync(path.dirname(copilotAgent), { recursive: true })
+    fs.writeFileSync(copilotAgent, '---\nname: reviewer\n---\nReview code.\n', 'utf8')
+    fs.mkdirSync(path.dirname(copilotSkill), { recursive: true })
+    fs.writeFileSync(copilotSkill, '---\nname: release-helper\ndescription: Help releases.\n---\nBody', 'utf8')
+    fs.mkdirSync(path.dirname(copilotProjectInstructions), { recursive: true })
+    fs.writeFileSync(copilotProjectInstructions, 'Project Copilot guidance.\n', 'utf8')
+    fs.mkdirSync(path.dirname(copilotProjectPathInstructions), { recursive: true })
+    fs.writeFileSync(copilotProjectPathInstructions, '---\napplyTo: "**/*.test.ts"\n---\nTest guidance.\n', 'utf8')
+    fs.mkdirSync(path.dirname(copilotProjectSkill), { recursive: true })
+    fs.writeFileSync(copilotProjectSkill, '---\nname: ci-helper\ndescription: Help CI.\n---\nBody', 'utf8')
+    fs.mkdirSync(path.dirname(copilotProjectSharedSkill), { recursive: true })
+    fs.writeFileSync(copilotProjectSharedSkill, '---\nname: shared-helper\ndescription: Shared helper.\n---\nBody', 'utf8')
+    writeJson(copilotProjectMcp, { mcpServers: { repo: { type: 'local', command: 'repo-mcp' } } })
+    fs.writeFileSync(copilotProjectAgents, 'Shared project guidance.\n', 'utf8')
+    writeJson(copilotPlugin, { name: 'helper', version: '1.0.0', description: 'Copilot helper' })
+    fs.mkdirSync(path.dirname(copilotHook), { recursive: true })
+    fs.writeFileSync(copilotHook, 'Write-Output ok\n', 'utf8')
+    writeJson(copilotConfig, { loggedInUsers: [{ id: 'secret' }] })
     fs.mkdirSync(cursorRules, { recursive: true })
     fs.writeFileSync(path.join(cursorRules, 'rule.mdc'), 'Always test.', 'utf8')
     fs.mkdirSync(path.dirname(opencodeUserConfig), { recursive: true })
@@ -207,7 +252,7 @@ describe('agent adapter registry', () => {
     )
 
     expect(planned).toHaveLength(6)
-    expect(planned.filter((adapter) => adapter instanceof DeclaredAgentAdapter)).toHaveLength(4)
+    expect(planned.filter((adapter) => adapter instanceof DeclaredAgentAdapter)).toHaveLength(3)
 
     const gemini = planned.find((adapter) => adapter.id === 'gemini-cli')!
     expect(gemini).toBeInstanceOf(GeminiCliAdapter)
@@ -288,6 +333,131 @@ describe('agent adapter registry', () => {
       ])
     )
     expect(geminiResult.assets.some((asset) => asset.type === 'session')).toBe(false)
+
+    const copilot = planned.find((adapter) => adapter.id === 'github-copilot-cli')!
+    expect(copilot).toBeInstanceOf(GitHubCopilotCliAdapter)
+    await expect(copilot.detect()).resolves.toMatchObject({
+      installed: true,
+      paths: expect.arrayContaining([
+        expect.objectContaining({
+          code: 'copilot.user.home',
+          path: path.join(homeDir, '.copilot'),
+          status: 'scanned'
+        })
+      ])
+    })
+    await expect(copilot.scanSourceCoverage?.()).resolves.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: 'copilot.user.sessions',
+          status: 'missing',
+          reason: 'sensitive-metadata-only'
+        })
+      ])
+    )
+    const copilotResult = await copilot.scanAll()
+    expect(copilotResult.errors).toEqual([])
+    expect(copilotResult.assets).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          agentId: 'github-copilot-cli',
+          type: 'agents-md',
+          scope: 'user',
+          path: copilotInstructions
+        }),
+        expect.objectContaining({
+          agentId: 'github-copilot-cli',
+          type: 'agents-md',
+          scope: 'project',
+          path: copilotProjectInstructions
+        }),
+        expect.objectContaining({
+          agentId: 'github-copilot-cli',
+          type: 'agents-md',
+          scope: 'project',
+          path: copilotProjectAgents,
+          meta: expect.objectContaining({
+            readByAgentIds: ['github-copilot-cli']
+          })
+        }),
+        expect.objectContaining({
+          agentId: 'github-copilot-cli',
+          type: 'agent',
+          scope: 'user',
+          name: 'reviewer',
+          path: copilotAgent
+        }),
+        expect.objectContaining({
+          agentId: 'github-copilot-cli',
+          type: 'skill',
+          scope: 'user',
+          name: 'release-helper',
+          path: copilotSkill
+        }),
+        expect.objectContaining({
+          agentId: 'github-copilot-cli',
+          type: 'skill',
+          scope: 'project',
+          name: 'ci-helper',
+          path: copilotProjectSkill
+        }),
+        expect.objectContaining({
+          agentId: 'github-copilot-cli',
+          type: 'skill',
+          scope: 'project',
+          name: 'shared-helper',
+          path: copilotProjectSharedSkill
+        }),
+        expect.objectContaining({
+          agentId: 'github-copilot-cli',
+          type: 'mcp-server',
+          scope: 'user',
+          name: 'docs',
+          path: copilotMcp,
+          meta: expect.objectContaining({
+            serverConfig: expect.objectContaining({
+              env: { API_KEY: '<redacted>' }
+            })
+          })
+        }),
+        expect.objectContaining({
+          agentId: 'github-copilot-cli',
+          type: 'mcp-server',
+          scope: 'project',
+          name: 'repo',
+          path: copilotProjectMcp
+        }),
+        expect.objectContaining({
+          agentId: 'github-copilot-cli',
+          type: 'hook',
+          scope: 'user',
+          name: 'pre-edit',
+          path: copilotSettings
+        }),
+        expect.objectContaining({
+          agentId: 'github-copilot-cli',
+          type: 'hook',
+          scope: 'user',
+          name: 'pre-commit',
+          path: copilotHook
+        }),
+        expect.objectContaining({
+          agentId: 'github-copilot-cli',
+          type: 'plugin',
+          scope: 'user',
+          name: 'helper',
+          path: path.dirname(copilotPlugin)
+        }),
+        expect.objectContaining({
+          agentId: 'github-copilot-cli',
+          type: 'credential',
+          scope: 'user',
+          path: copilotConfig,
+          sensitive: true
+        })
+      ])
+    )
+    expect(copilotResult.assets.some((asset) => asset.type === 'session')).toBe(false)
 
     const cursor = planned.find((adapter) => adapter.id === 'cursor')!
     await expect(cursor.scanSourceCoverage()).resolves.toEqual(
