@@ -14,10 +14,10 @@
   - tests: `pnpm vitest run tests/unit/scan-coordinator.test.ts tests/unit/agent-asset-runtime.test.ts tests/renderer/settings-page.test.tsx`
   - verify: refresh 去重、排队、暂停/恢复计划、错误保留旧 snapshot; UI 状态随 progress/change 更新。
 
-- [ ] 任务 3: project scope filter-first
+- [x] 任务 3: project scope filter-first
   - scope: `project-scope-runtime.ts` 优先用已有 global snapshot 过滤; 缺缓存时后台 refresh, 不在已有数据时同步 full scan。
   - tests: `pnpm vitest run tests/unit/project-scope-runtime.test.ts tests/unit/agent-asset-runtime.test.ts`
-  - verify: 已有 snapshot 的 scope 切换不等待 full scan; 空缓存仍有明确 loading/stale 状态。
+  - verify: passed 2026-06-13; 另跑 `pnpm typecheck:node`。已缓存项目直接切换不重扫; 未缓存项目只发起 `wait:false` 后台 refresh; 同一项目重复选择不重扫也不重启 watcher。
 
 - [ ] 任务 4: Adapter public API 收敛
   - scope: 新 adapter declaration contract; package export; Claude/Codex source declarations 迁移; 移除 manifest adapter 旧方法残留。

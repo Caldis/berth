@@ -29,7 +29,7 @@ function sessionAsset(projectPath: string): Asset {
 
 class FakeScanner {
   cached = false
-  refresh = vi.fn(async () => {})
+  refresh = vi.fn(async (_opts: { reason: 'project-scope'; wait: boolean }) => {})
   hasSnapshotFor = vi.fn((_projectDir?: string) => this.cached)
   setProjectDir = vi.fn((projectDir?: string) => {
     this.projectDir = projectDir
@@ -81,27 +81,27 @@ function deps(current: FakeScanner): {
 }
 
 describe('activateProjectScope', () => {
-  it('rebuilds scanner, search index, and watcher when switching to a project', async () => {
+  it('switches to an uncached project and starts a background refresh without waiting', async () => {
     const current = new FakeScanner(undefined)
     const runtime = deps(current)
 
     const result = await activateProjectScope('D:\\Code\\berth', runtime.deps)
 
     expect(current.setProjectDir).toHaveBeenCalledWith('D:/Code/berth')
-    expect(current.refresh).toHaveBeenCalledWith({ reason: 'project-scope', wait: true })
+    expect(current.refresh).toHaveBeenCalledWith({ reason: 'project-scope', wait: false })
     expect(runtime.restart).toHaveBeenCalledWith('D:/Code/berth')
     expect(result.projectDir).toBe('D:/Code/berth')
     expect(result.candidates[0]?.pathKey).toBe('d:/code/berth')
   })
 
-  it('rescans without rebuilding watcher when the selected project is unchanged', async () => {
+  it('does not rescan or rebuild watcher when the selected project is unchanged', async () => {
     const current = new FakeScanner('D:\\Code\\berth', [sessionAsset('D:\\Code\\berth')])
     const runtime = deps(current)
 
     await activateProjectScope('d:/code/berth/', runtime.deps)
 
     expect(current.setProjectDir).not.toHaveBeenCalled()
-    expect(current.refresh).toHaveBeenCalledTimes(1)
+    expect(current.refresh).not.toHaveBeenCalled()
     expect(runtime.restart).not.toHaveBeenCalled()
   })
 
