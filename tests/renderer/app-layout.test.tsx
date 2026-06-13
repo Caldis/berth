@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import React from 'react'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import i18n from '../../src/renderer/src/i18n'
 import { AppLayout } from '../../src/renderer/src/components/layout/app-layout'
@@ -26,9 +26,42 @@ function renderLayout(pathname: string): void {
   )
 }
 
+const originalNavigatorDescriptors = {
+  platform: Object.getOwnPropertyDescriptor(window.navigator, 'platform'),
+  userAgent: Object.getOwnPropertyDescriptor(window.navigator, 'userAgent'),
+  userAgentData: Object.getOwnPropertyDescriptor(window.navigator, 'userAgentData')
+}
+
+function setNavigatorPlatform(platform: string): void {
+  Object.defineProperty(window.navigator, 'platform', {
+    configurable: true,
+    value: platform
+  })
+  Object.defineProperty(window.navigator, 'userAgent', {
+    configurable: true,
+    value: platform
+  })
+  Object.defineProperty(window.navigator, 'userAgentData', {
+    configurable: true,
+    value: { platform }
+  })
+}
+
+function restoreNavigatorProperty(
+  key: 'platform' | 'userAgent' | 'userAgentData',
+  descriptor: PropertyDescriptor | undefined
+): void {
+  if (descriptor) {
+    Object.defineProperty(window.navigator, key, descriptor)
+  } else {
+    Reflect.deleteProperty(window.navigator, key)
+  }
+}
+
 describe('AppLayout navigation shell', () => {
   beforeEach(async () => {
     await i18n.changeLanguage('en')
+    setNavigatorPlatform('Windows')
     useAppStore.setState({
       sidebarCollapsed: false,
       sidebarWidth: SIDEBAR_DEFAULT_WIDTH,
@@ -36,6 +69,12 @@ describe('AppLayout navigation shell', () => {
       assets: []
     })
     window.api.assets.status = vi.fn(async () => ({ state: 'ready' as const, stale: false }))
+  })
+
+  afterEach(() => {
+    restoreNavigatorProperty('platform', originalNavigatorDescriptors.platform)
+    restoreNavigatorProperty('userAgent', originalNavigatorDescriptors.userAgent)
+    restoreNavigatorProperty('userAgentData', originalNavigatorDescriptors.userAgentData)
   })
 
   it('reserves the top navigation bar on the overview route', () => {
@@ -58,6 +97,19 @@ describe('AppLayout navigation shell', () => {
       paddingLeft: 'var(--berth-page-gutter)',
       paddingTop: 'var(--berth-page-gutter)'
     })
+  })
+
+  it('hides the Windows control divider on the overview route', () => {
+    renderLayout('/')
+
+    expect(screen.getByTestId('window-controls')).toBeInTheDocument()
+    expect(screen.queryByTestId('window-controls-divider')).not.toBeInTheDocument()
+  })
+
+  it('shows the Windows control divider when a page has persistent top navigation content', () => {
+    renderLayout('/sessions')
+
+    expect(screen.getByTestId('window-controls-divider')).toBeInTheDocument()
   })
 
   it('renders the active nav item with brand primary, not neutral accent (GH-106 A)', () => {

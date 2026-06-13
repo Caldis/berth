@@ -99,6 +99,18 @@ describe('WindowControls', () => {
     await waitFor(() => expect(isAlwaysOnTop).toHaveBeenCalledTimes(1))
   })
 
+  it('can hide the divider while keeping Windows chrome buttons available', async () => {
+    render(<WindowControls showDivider={false} />)
+
+    expect(screen.queryByTestId('window-controls-divider')).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Pin window' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Minimize window' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Maximize window' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Close window' })).toBeInTheDocument()
+
+    await waitFor(() => expect(isAlwaysOnTop).toHaveBeenCalledTimes(1))
+  })
+
   it('toggles pin state and exposes pressed semantics', async () => {
     render(<WindowControls />)
 

@@ -1,4 +1,5 @@
 import { useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
+import { useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Sidebar } from './sidebar'
 import { SearchDialog } from './search-dialog'
@@ -17,6 +18,7 @@ type ContentScrollStyle = CSSProperties & {
 }
 
 export function AppLayout({ children }: { children: ReactNode }): React.ReactElement {
+  const location = useLocation()
   const sidebarCollapsed = useAppStore((s) => s.sidebarCollapsed)
   const sidebarWidth = useAppStore((s) => s.sidebarWidth)
   const isWindows = isWindowsPlatform()
@@ -107,7 +109,7 @@ export function AppLayout({ children }: { children: ReactNode }): React.ReactEle
             </div>
           </main>
         </div>
-        {isWindows && <WindowControls />}
+        {isWindows && <WindowControls showDivider={location.pathname !== '/'} />}
         <SearchDialog />
         <InspectorDrawer />
       </PageChromeProvider>

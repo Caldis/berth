@@ -8,9 +8,13 @@ const ICON_STROKE_WIDTH = 1.8
 
 interface WindowControlsProps {
   navigationHeight?: number
+  showDivider?: boolean
 }
 
-export function WindowControls({ navigationHeight = DEFAULT_NAVIGATION_HEIGHT }: WindowControlsProps): React.ReactElement {
+export function WindowControls({
+  navigationHeight = DEFAULT_NAVIGATION_HEIGHT,
+  showDivider = true
+}: WindowControlsProps): React.ReactElement {
   const { t } = useTranslation()
   const [maximized, setMaximized] = useState(false)
   const [alwaysOnTop, setAlwaysOnTop] = useState(false)
@@ -47,11 +51,13 @@ export function WindowControls({ navigationHeight = DEFAULT_NAVIGATION_HEIGHT }:
       style={containerStyle}
       data-testid="window-controls"
     >
-      <span
-        aria-hidden="true"
-        className="pointer-events-none mr-3 h-6 w-px shrink-0 bg-border/80"
-        data-testid="window-controls-divider"
-      />
+      {showDivider && (
+        <span
+          aria-hidden="true"
+          className="pointer-events-none mr-3 h-6 w-px shrink-0 bg-border/80"
+          data-testid="window-controls-divider"
+        />
+      )}
       <button
         aria-label={alwaysOnTop ? t('windowControls.unpin') : t('windowControls.pin')}
         aria-pressed={alwaysOnTop}
