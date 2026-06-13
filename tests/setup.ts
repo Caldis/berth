@@ -85,7 +85,7 @@ const createMockScanEngineInfo = () => ({
   ],
   capabilities: {
     workerMode: 'one-shot' as const,
-    schedulerMode: 'single-flight' as const,
+    schedulerMode: 'single-flight-queued-project-scope' as const,
     scopeMode: 'scan-on-miss' as const,
     cacheMode: 'sqlite-swr' as const,
     incrementalFileChanges: true,

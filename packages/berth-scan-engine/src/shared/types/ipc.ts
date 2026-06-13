@@ -103,7 +103,7 @@ export interface ScanEngineControlDescriptor {
 
 export interface ScanEngineCapabilitySummary {
   workerMode: 'one-shot' | 'long-lived'
-  schedulerMode: 'single-flight' | 'priority-queue'
+  schedulerMode: 'single-flight' | 'single-flight-queued-project-scope' | 'priority-queue'
   scopeMode: 'filter-first' | 'scan-on-miss'
   cacheMode: 'sqlite-swr'
   incrementalFileChanges: boolean

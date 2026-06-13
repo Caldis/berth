@@ -103,6 +103,8 @@ export class AgentAssetRuntime {
   private readonly initialProjectDir?: string
   private progressListener?: (payload: AssetProgressPayload) => void
   private scheduledRefreshTimer: ReturnType<typeof setTimeout> | null = null
+  private pendingRefresh: AssetRefreshOptions | null = null
+  private flushingPendingRefresh = false
   private lastWatcherRefreshStartedAtMs = 0
 
   constructor(options: AssetRuntimeOptions = {}) {
@@ -206,7 +208,7 @@ export class AgentAssetRuntime {
           ...SCAN_ENGINE_SETTING_LIMITS.watcherMinIntervalMs
         },
         { id: 'worker-mode', value: 'one-shot', unit: 'mode', editable: false, supported: true },
-        { id: 'scheduler-mode', value: 'single-flight', unit: 'mode', editable: false, supported: true },
+        { id: 'scheduler-mode', value: 'single-flight-queued-project-scope', unit: 'mode', editable: false, supported: true },
         { id: 'scope-fallback', value: 'scan-on-miss', unit: 'mode', editable: false, supported: true },
         { id: 'pause', value: 'unsupported', unit: 'state', editable: false, supported: false },
         { id: 'cancel', value: 'unsupported', unit: 'state', editable: false, supported: false },
@@ -214,7 +216,7 @@ export class AgentAssetRuntime {
       ],
       capabilities: {
         workerMode: 'one-shot',
-        schedulerMode: 'single-flight',
+        schedulerMode: 'single-flight-queued-project-scope',
         scopeMode: 'scan-on-miss',
         cacheMode: 'sqlite-swr',
         incrementalFileChanges: true,
@@ -303,6 +305,9 @@ export class AgentAssetRuntime {
   async refresh(options: AssetRefreshOptions = {}): Promise<AssetRuntimeStatus> {
     this.clearScheduledRefresh()
     if (this.coordinator.isScanning()) {
+      if (options.reason === 'project-scope' && !options.wait) {
+        this.queuePendingRefresh(options)
+      }
       if (options.wait) await this.coordinator.wait()
       return this.status
     }
@@ -325,6 +330,9 @@ export class AgentAssetRuntime {
     }
 
     const run = this.coordinator.run(this.createScanSink(reason))
+    void run.finally(() => {
+      void this.flushPendingRefresh()
+    })
     if (options.wait) await run
     return this.status
   }
@@ -547,6 +555,25 @@ export class AgentAssetRuntime {
     if (!this.scheduledRefreshTimer) return
     clearTimeout(this.scheduledRefreshTimer)
     this.scheduledRefreshTimer = null
+  }
+
+  private queuePendingRefresh(options: AssetRefreshOptions): void {
+    this.pendingRefresh = {
+      reason: options.reason,
+      wait: false
+    }
+  }
+
+  private async flushPendingRefresh(): Promise<void> {
+    if (this.flushingPendingRefresh || !this.pendingRefresh) return
+    const pending = this.pendingRefresh
+    this.pendingRefresh = null
+    this.flushingPendingRefresh = true
+    try {
+      await this.refresh(pending)
+    } finally {
+      this.flushingPendingRefresh = false
+    }
   }
 
   private setProgress(progress: AssetScanProgress): void {

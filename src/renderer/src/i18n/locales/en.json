@@ -1498,6 +1498,7 @@
         "unsupported": "Unsupported",
         "one-shot": "One-shot",
         "single-flight": "Single-flight",
+        "single-flight-queued-project-scope": "Single-flight with queued project scope",
         "scan-on-miss": "Scan on cache miss"
       },
       "controlLabels": {

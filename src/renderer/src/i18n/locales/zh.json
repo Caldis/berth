@@ -1488,6 +1488,7 @@
         "unsupported": "不支持",
         "one-shot": "单次 worker",
         "single-flight": "单任务合并",
+        "single-flight-queued-project-scope": "单任务合并, 项目切换补扫",
         "scan-on-miss": "缓存缺失时扫描"
       },
       "controlLabels": {

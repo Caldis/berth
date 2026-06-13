@@ -39,11 +39,19 @@ test('folds a newly-added watched skill into the snapshot incrementally (id stay
     await page.locator('aside').first().waitFor()
 
     // Activate the temp project so the watcher restarts and watches its .agents/skills.
-    const before = await page.evaluate(async (p) => {
+    await page.evaluate(async (p) => {
       await window.api.projectScope.activate({ projectPath: p })
+    }, projectDir)
+    await expect
+      .poll(() => page.evaluate(async () => {
+        const snap = await window.api.assets.snapshot()
+        return snap.assets.some((a) => a.type === 'skill' && a.name === 'seed')
+      }), { timeout: 15000 })
+      .toBe(true)
+    const before = await page.evaluate(async () => {
       const snap = await window.api.assets.snapshot()
       return { id: snap.id, skillNames: snap.assets.filter((a) => a.type === 'skill').map((a) => a.name) }
-    }, projectDir)
+    })
     expect(before.skillNames).toContain('seed') // the full scan picked up the seed skill
     expect(before.skillNames).not.toContain('added')
 

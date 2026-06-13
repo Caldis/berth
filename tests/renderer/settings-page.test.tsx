@@ -59,7 +59,7 @@ describe('SettingsContent page chrome', () => {
       ],
       capabilities: {
         workerMode: 'one-shot',
-        schedulerMode: 'single-flight',
+        schedulerMode: 'single-flight-queued-project-scope',
         scopeMode: 'scan-on-miss',
         cacheMode: 'sqlite-swr',
         incrementalFileChanges: true,
