@@ -87,7 +87,7 @@ export function TopNavigation({ isWindows }: TopNavigationProps): React.ReactEle
       className={cn(
         'titlebar-drag flex h-[72px] min-h-[72px] max-h-[72px] shrink-0 items-center overflow-hidden border-b border-border bg-background px-[var(--berth-page-gutter)] py-3 transition-opacity duration-200 ease-out motion-reduce:transition-none',
         isVisible ? 'opacity-100' : 'pointer-events-none opacity-0',
-        isWindows && 'pr-52'
+        isWindows && 'pr-[13.5rem]'
       )}
       data-testid="top-navigation"
       data-state={isVisible ? 'visible' : 'hidden'}

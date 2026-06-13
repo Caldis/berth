@@ -93,7 +93,7 @@ describe('TopNavigation', () => {
   it('reserves the Windows titlebar control area on the right', () => {
     renderTopNavigation('/usage', { isWindows: true })
 
-    expect(screen.getByTestId('top-navigation')).toHaveClass('pr-52')
+    expect(screen.getByTestId('top-navigation')).toHaveClass('pr-[13.5rem]')
   })
 
   it('keeps the titlebar height fixed while actions stay on one row', () => {
