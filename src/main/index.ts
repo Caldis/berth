@@ -243,11 +243,12 @@ if (!gotTheLock) {
 
     // GH-124: auto-update wiring. The controller is electron-free (deps
     // injected); state broadcasts to every live window like assets:progress.
+    const updatePreferences = readUpdatePreferences(userDataDir)
     const updaterController = createUpdaterController({
       autoUpdater,
       platform: process.platform,
       isPackaged: app.isPackaged,
-      preferences: readUpdatePreferences(userDataDir),
+      preferences: updatePreferences,
       emit: (state) => {
         for (const win of BrowserWindow.getAllWindows()) {
           if (!win.isDestroyed()) win.webContents.send('update:state', state)
@@ -256,9 +257,11 @@ if (!gotTheLock) {
       log: (scope, payload) => getMainLog().log(scope, payload)
     })
     setUpdaterRuntime({ controller: updaterController, userDataDir })
-    // Deferred startup check: never blocks launch; failures surface as
-    // update:state error (and the main log), not dialogs.
-    setTimeout(() => { void updaterController.check() }, 5000)
+    // Deferred startup check, gated by the autoCheck preference (GH-134); never
+    // blocks launch; failures surface as update:state error (and the main log).
+    if (updatePreferences.autoCheck) {
+      setTimeout(() => { void updaterController.check() }, 5000)
+    }
   }).catch((err: unknown) => {
     // 启动期 throw 此前表现为 dock 图标出现但永远无窗口、零诊断 (GH-115 T5)
     getMainLog().log('startup', err)

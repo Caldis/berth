@@ -15,6 +15,7 @@ import type { UpdatePreferences, UpdateState } from '@shared/types/ipc'
 export interface UpdaterLike {
   autoDownload: boolean
   autoInstallOnAppQuit: boolean
+  allowPrerelease: boolean
   forceDevUpdateConfig: boolean
   on(event: string, listener: (...args: never[]) => void): unknown
   checkForUpdates(): Promise<unknown>
@@ -46,6 +47,9 @@ export function createUpdaterController(options: UpdaterControllerOptions): Upda
 
   autoUpdater.autoInstallOnAppQuit = true
   autoUpdater.autoDownload = !limited && options.preferences.autoDownload
+  // allowPrerelease (beta channel) is independent of signing — it only changes
+  // which GitHub releases `check` considers, so set it unconditionally.
+  autoUpdater.allowPrerelease = options.preferences.allowPrerelease
   if (!isPackaged) autoUpdater.forceDevUpdateConfig = true
 
   autoUpdater.on('checking-for-update', () => emit(withLimit({ phase: 'checking' })))
@@ -104,6 +108,7 @@ export function createUpdaterController(options: UpdaterControllerOptions): Upda
     },
     applyPreferences(prefs: UpdatePreferences): void {
       autoUpdater.autoDownload = !limited && prefs.autoDownload
+      autoUpdater.allowPrerelease = prefs.allowPrerelease
     }
   }
 }

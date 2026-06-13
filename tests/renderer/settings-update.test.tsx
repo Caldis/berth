@@ -16,7 +16,11 @@ beforeEach(() => {
     pushState = cb
     return () => {}
   })
-  window.api.update.getPreferences = vi.fn(async () => ({ autoDownload: false }))
+  window.api.update.getPreferences = vi.fn(async () => ({
+    autoCheck: true,
+    autoDownload: false,
+    allowPrerelease: false
+  }))
   window.api.update.check = vi.fn(async () => {})
   window.api.update.download = vi.fn(async () => {})
   window.api.update.install = vi.fn(async () => {})
@@ -24,11 +28,27 @@ beforeEach(() => {
 })
 
 describe('UpdateSection', () => {
-  it('renders idle with an enabled check button and the autoDownload switch', async () => {
+  it('renders idle with an enabled check button and the three preference switches', async () => {
     render(<UpdateSection />)
     expect(await screen.findByTestId('update-check')).toBeEnabled()
     expect(screen.getByTestId('update-status').textContent).toContain('Checks for updates')
+    expect(screen.getByTestId('update-auto-check')).toBeInTheDocument()
     expect(screen.getByTestId('update-auto-download')).toBeInTheDocument()
+    expect(screen.getByTestId('update-beta')).toBeInTheDocument()
+  })
+
+  it('toggling the beta switch persists a merged preferences payload (GH-134)', async () => {
+    render(<UpdateSection />)
+    await screen.findByTestId('update-beta')
+
+    await act(async () => {
+      screen.getByTestId('update-beta').click()
+    })
+    expect(window.api.update.setPreferences).toHaveBeenCalledWith({
+      autoCheck: true,
+      autoDownload: false,
+      allowPrerelease: true
+    })
   })
 
   it('disables the check button while checking and shows progress while downloading', async () => {

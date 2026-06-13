@@ -18,6 +18,7 @@ function fakeUpdater(): UpdaterLike & {
   return {
     autoDownload: false,
     autoInstallOnAppQuit: false,
+    allowPrerelease: false,
     forceDevUpdateConfig: false,
     listeners,
     on(event: string, listener: Listener) {
@@ -33,7 +34,10 @@ function fakeUpdater(): UpdaterLike & {
   }
 }
 
-function setup(platform: NodeJS.Platform = 'win32', autoDownload = false) {
+function setup(
+  platform: NodeJS.Platform = 'win32',
+  prefs: Partial<{ autoCheck: boolean; autoDownload: boolean; allowPrerelease: boolean }> = {}
+) {
   const updater = fakeUpdater()
   const states: UpdateState[] = []
   const log = vi.fn()
@@ -41,7 +45,7 @@ function setup(platform: NodeJS.Platform = 'win32', autoDownload = false) {
     autoUpdater: updater,
     platform,
     isPackaged: true,
-    preferences: { autoDownload },
+    preferences: { autoCheck: true, autoDownload: false, allowPrerelease: false, ...prefs },
     emit: (s) => states.push(s),
     log
   })
@@ -61,12 +65,14 @@ describe('createUpdaterController', () => {
     expect(states[2].percent).toBe(42)
   })
 
-  it('applies preferences: autoDownload follows the user setting on win/linux', () => {
-    const { updater, controller } = setup('win32', true)
+  it('applies preferences: autoDownload + allowPrerelease follow the user setting on win/linux', () => {
+    const { updater, controller } = setup('win32', { autoDownload: true, allowPrerelease: true })
     expect(updater.autoDownload).toBe(true)
     expect(updater.autoInstallOnAppQuit).toBe(true)
-    controller.applyPreferences({ autoDownload: false })
+    expect(updater.allowPrerelease).toBe(true)
+    controller.applyPreferences({ autoCheck: true, autoDownload: false, allowPrerelease: false })
     expect(updater.autoDownload).toBe(false)
+    expect(updater.allowPrerelease).toBe(false)
   })
 
   it('logs and emits error state on updater errors and check rejections', async () => {
@@ -81,9 +87,10 @@ describe('createUpdaterController', () => {
   })
 
   it('darwin (unsigned) degradation: states carry platformLimited, download/install are refused', async () => {
-    const { updater, states, controller } = setup('darwin', true)
-    // autoDownload is forced off regardless of preference
+    const { updater, states, controller } = setup('darwin', { autoDownload: true, allowPrerelease: true })
+    // autoDownload is forced off regardless of preference; allowPrerelease still applies
     expect(updater.autoDownload).toBe(false)
+    expect(updater.allowPrerelease).toBe(true)
 
     updater.fire('update-available', { version: '0.3.0' })
     expect(states.at(-1)).toMatchObject({ phase: 'available', platformLimited: true })
@@ -106,7 +113,7 @@ describe('createUpdaterController', () => {
       autoUpdater: updater,
       platform: 'win32',
       isPackaged: false,
-      preferences: { autoDownload: false },
+      preferences: { autoCheck: true, autoDownload: false, allowPrerelease: false },
       emit: () => {},
       log: () => {}
     })

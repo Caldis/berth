@@ -1872,7 +1872,9 @@
       "download": "下载更新",
       "goToDownloads": "前往下载页",
       "error": "检查更新失败：{{message}}",
-      "autoDownload": "自动下载更新"
+      "autoCheck": "启动时检查更新",
+      "autoDownload": "自动下载更新",
+      "beta": "接收测试版（预发布）更新"
     }
   },
   "filter": {

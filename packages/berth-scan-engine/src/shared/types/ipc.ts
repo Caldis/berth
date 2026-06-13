@@ -542,9 +542,14 @@ export interface IpcChannels {
   'update:set-preferences': { args: [UpdatePreferences]; result: void }
 }
 
-/** Auto-update preferences persisted in userData (GH-124). */
+/** Auto-update preferences persisted in userData (GH-124, GH-134). */
 export interface UpdatePreferences {
+  /** Auto-check for updates on launch; default true (GH-134). */
+  autoCheck: boolean
+  /** Download an available update in the background; default false. */
   autoDownload: boolean
+  /** Receive GitHub pre-releases (beta channel); default false (GH-134). */
+  allowPrerelease: boolean
 }
 
 /** Aggregated auto-update state pushed over the single `update:state` event

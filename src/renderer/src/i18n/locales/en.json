@@ -1886,7 +1886,9 @@
       "download": "Download update",
       "goToDownloads": "Go to downloads",
       "error": "Update check failed: {{message}}",
-      "autoDownload": "Download updates automatically"
+      "autoCheck": "Check for updates on launch",
+      "autoDownload": "Download updates automatically",
+      "beta": "Receive beta (pre-release) updates"
     }
   },
   "filter": {

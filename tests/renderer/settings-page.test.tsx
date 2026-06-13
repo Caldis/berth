@@ -148,11 +148,12 @@ describe('SettingsContent page chrome', () => {
 
     await waitForSettingsAsyncSections()
 
-    // GH-124 起 About 区有一个功能性 autoDownload switch; 原"零 switch"断言
-    // 收紧为: 每个 switch 都有可达名, 且 advanced-mode 那个不存在。
-    const switches = screen.queryAllByRole('switch')
-    expect(switches).toHaveLength(1)
-    expect(switches[0]).toHaveAccessibleName('Download updates automatically')
+    // GH-124/GH-134 起 About 区有三个功能性更新 switch (autoCheck/autoDownload/
+    // beta); 原"零 switch"断言收紧为: 每个 switch 都有可达名, 且 advanced-mode 不存在。
+    expect(screen.queryAllByRole('switch')).toHaveLength(3)
+    expect(screen.getByRole('switch', { name: 'Check for updates on launch' })).toBeInTheDocument()
+    expect(screen.getByRole('switch', { name: 'Download updates automatically' })).toBeInTheDocument()
+    expect(screen.getByRole('switch', { name: 'Receive beta (pre-release) updates' })).toBeInTheDocument()
     expect(screen.queryByRole('switch', { name: /advanced/i })).not.toBeInTheDocument()
   })
 

@@ -12,7 +12,7 @@ const RELEASES_URL = 'https://github.com/Caldis/berth/releases'
  */
 export function UpdateSection(): React.JSX.Element {
   const { t } = useTranslation()
-  const { state, preferences, check, download, install, setAutoDownload } = useUpdate()
+  const { state, preferences, check, download, install, setPreference } = useUpdate()
 
   const busy = state.phase === 'checking' || state.phase === 'downloading'
 
@@ -84,13 +84,33 @@ export function UpdateSection(): React.JSX.Element {
         </div>
       </div>
       <div className="flex items-center justify-between gap-3">
+        <p className="text-xs text-muted-foreground">{t('settings.update.autoCheck')}</p>
+        <Switch
+          size="sm"
+          isSelected={preferences.autoCheck}
+          onValueChange={(value) => setPreference({ autoCheck: value })}
+          aria-label={t('settings.update.autoCheck')}
+          data-testid="update-auto-check"
+        />
+      </div>
+      <div className="flex items-center justify-between gap-3">
         <p className="text-xs text-muted-foreground">{t('settings.update.autoDownload')}</p>
         <Switch
           size="sm"
           isSelected={preferences.autoDownload}
-          onValueChange={setAutoDownload}
+          onValueChange={(value) => setPreference({ autoDownload: value })}
           aria-label={t('settings.update.autoDownload')}
           data-testid="update-auto-download"
+        />
+      </div>
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-xs text-muted-foreground">{t('settings.update.beta')}</p>
+        <Switch
+          size="sm"
+          isSelected={preferences.allowPrerelease}
+          onValueChange={(value) => setPreference({ allowPrerelease: value })}
+          aria-label={t('settings.update.beta')}
+          data-testid="update-beta"
         />
       </div>
     </div>
