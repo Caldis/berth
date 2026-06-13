@@ -4,21 +4,22 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import i18n from '../../src/renderer/src/i18n'
 import { ThemeProvider } from '../../src/renderer/src/components/theme-provider'
 import { SettingsContent } from '../../src/renderer/src/components/settings/settings-content'
+import type { AssetRuntimeStatus, ScanEngineInfo } from '@shared/types/ipc'
 
 describe('SettingsContent page chrome', () => {
   beforeEach(async () => {
     localStorage.clear()
     document.documentElement.className = ''
     await i18n.changeLanguage('en')
-    window.api.assets.engineInfo = vi.fn(async () => ({
+    window.api.assets.engineInfo = vi.fn(async (): Promise<ScanEngineInfo> => ({
       engine: {
         name: '@berth/scan-engine',
         packageName: '@berth/scan-engine',
         version: '0.1.0'
       },
       status: {
-        state: 'ready',
-        reason: 'startup',
+        state: 'ready' as const,
+        reason: 'startup' as const,
         stale: false,
         lastCompletedAt: '2026-06-13T02:00:00.000Z'
       },
@@ -53,7 +54,11 @@ describe('SettingsContent page chrome', () => {
     }))
     window.api.agentPlugins.list = vi.fn(async () => ({ plugins: [], manifests: [] }))
     window.api.assets.scanSources = vi.fn(async () => [])
-    window.api.assets.refresh = vi.fn(async () => ({ state: 'scanning', reason: 'manual', stale: true }))
+    window.api.assets.refresh = vi.fn(async (): Promise<AssetRuntimeStatus> => ({
+      state: 'scanning',
+      reason: 'manual',
+      stale: true
+    }))
     window.api.shell.openExternal = vi.fn(async () => {})
     window.api.theme.set = vi.fn(async () => {})
   })

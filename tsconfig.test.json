@@ -17,6 +17,7 @@
     "paths": {
       "@/*": ["./src/renderer/src/*"],
       "@shared/*": ["./packages/berth-scan-engine/src/shared/*"],
+      "@berth/scan-engine": ["./packages/berth-scan-engine/src/index.ts"],
       "@berth/scan-engine/*": ["./packages/berth-scan-engine/src/*"]
     }
   },
