@@ -10,6 +10,7 @@ import {
 import { CursorAdapter } from '@berth/scan-engine/adapters/cursor'
 import { GeminiCliAdapter } from '@berth/scan-engine/adapters/gemini-cli'
 import { GitHubCopilotCliAdapter } from '@berth/scan-engine/adapters/github-copilot-cli'
+import { OpenClawAdapter } from '@berth/scan-engine/adapters/openclaw'
 import { OpenCodeAdapter } from '@berth/scan-engine/adapters/opencode'
 import { PLANNED_AGENT_ADAPTER_DEFINITIONS } from '@berth/scan-engine/adapters/planned-agent-definitions'
 import {
@@ -182,6 +183,14 @@ describe('agent adapter registry', () => {
     const opencodeProjectSkill = path.join(projectDir, '.opencode', 'skills', 'lint', 'SKILL.md')
     const opencodeProjectPlugin = path.join(projectDir, '.opencode', 'plugins', 'helper', 'plugin.json')
     const opencodeAuth = path.join(homeDir, '.local', 'share', 'opencode', 'auth.json')
+    const openClawConfig = path.join(homeDir, '.openclaw', 'openclaw.json')
+    const openClawWorkspaceAgents = path.join(homeDir, '.openclaw', 'workspace', 'AGENTS.md')
+    const openClawWorkspaceSkill = path.join(homeDir, '.openclaw', 'workspace', 'skills', 'release', 'SKILL.md')
+    const openClawSharedSkill = path.join(homeDir, '.agents', 'skills', 'openclaw-shared', 'SKILL.md')
+    const openClawExtension = path.join(homeDir, '.openclaw', 'extensions', 'helper', 'openclaw.plugin.json')
+    const openClawSessions = path.join(homeDir, '.openclaw', 'agents', 'default', 'sessions', 'sessions.json')
+    const openClawSecrets = path.join(homeDir, '.openclaw', 'secrets.json')
+    const openClawAuthProfiles = path.join(homeDir, '.openclaw', 'agents', 'default', 'agent', 'auth-profiles.json')
     fs.mkdirSync(path.dirname(geminiSettings), { recursive: true })
     writeJson(geminiSettings, {
       context: { fileName: 'GEMINI.md' },
@@ -276,6 +285,43 @@ describe('agent adapter registry', () => {
       description: 'OpenCode helper'
     })
     writeJson(opencodeAuth, { token: 'secret' })
+    writeJson(openClawConfig, {
+      mcpServers: {
+        docs: {
+          command: 'docs-mcp',
+          env: { API_TOKEN: 'secret' }
+        }
+      }
+    })
+    fs.mkdirSync(path.dirname(openClawWorkspaceAgents), { recursive: true })
+    fs.writeFileSync(openClawWorkspaceAgents, 'OpenClaw workspace guidance.\n', 'utf8')
+    fs.mkdirSync(path.dirname(openClawWorkspaceSkill), { recursive: true })
+    fs.writeFileSync(openClawWorkspaceSkill, '---\nname: release\n---\nRelease helper.\n', 'utf8')
+    fs.mkdirSync(path.dirname(openClawSharedSkill), { recursive: true })
+    fs.writeFileSync(openClawSharedSkill, '---\nname: openclaw-shared\n---\nShared helper.\n', 'utf8')
+    writeJson(openClawExtension, {
+      name: 'helper',
+      version: '0.4.0',
+      description: 'OpenClaw helper',
+      mcpServers: {
+        helper: {
+          command: 'helper-mcp',
+          token: 'secret'
+        }
+      }
+    })
+    writeJson(openClawSessions, {
+      sessions: [
+        {
+          id: 'session-1',
+          createdAt: '2026-06-13T00:00:00.000Z',
+          updatedAt: '2026-06-13T00:10:00.000Z',
+          tokenCount: 123
+        }
+      ]
+    })
+    writeJson(openClawSecrets, { token: 'secret' })
+    writeJson(openClawAuthProfiles, { github: { accessToken: 'secret' } })
 
     const adapters = createAgentAdapters(projectDir, {
       homeDir,
@@ -287,7 +333,7 @@ describe('agent adapter registry', () => {
     )
 
     expect(planned).toHaveLength(6)
-    expect(planned.filter((adapter) => adapter instanceof DeclaredAgentAdapter)).toHaveLength(2)
+    expect(planned.filter((adapter) => adapter instanceof DeclaredAgentAdapter)).toHaveLength(1)
 
     const gemini = planned.find((adapter) => adapter.id === 'gemini-cli')!
     expect(gemini).toBeInstanceOf(GeminiCliAdapter)
@@ -698,6 +744,103 @@ describe('agent adapter registry', () => {
           type: 'credential',
           scope: 'user',
           path: opencodeAuth,
+          sensitive: true
+        })
+      ])
+    )
+
+    const openclaw = planned.find((adapter) => adapter.id === 'openclaw')!
+    expect(openclaw).toBeInstanceOf(OpenClawAdapter)
+    await expect(openclaw.scanSourceCoverage()).resolves.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: 'openclaw.user.config',
+          path: openClawConfig,
+          status: 'scanned'
+        }),
+        expect.objectContaining({
+          code: 'openclaw.user.sessions-index',
+          path: openClawSessions,
+          status: 'scanned',
+          reason: 'sensitive-metadata-only'
+        })
+      ])
+    )
+    const openClawResult = await openclaw.scanAll()
+    expect(openClawResult.errors).toEqual([])
+    expect(openClawResult.assets).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          agentId: 'openclaw',
+          type: 'agents-md',
+          scope: 'user',
+          path: openClawWorkspaceAgents
+        }),
+        expect.objectContaining({
+          agentId: 'openclaw',
+          type: 'skill',
+          scope: 'user',
+          name: 'release',
+          path: openClawWorkspaceSkill
+        }),
+        expect.objectContaining({
+          agentId: 'openclaw',
+          type: 'skill',
+          scope: 'user',
+          name: 'openclaw-shared',
+          path: openClawSharedSkill
+        }),
+        expect.objectContaining({
+          agentId: 'openclaw',
+          type: 'mcp-server',
+          scope: 'user',
+          name: 'docs',
+          path: openClawConfig,
+          meta: expect.objectContaining({
+            serverConfig: expect.objectContaining({
+              env: { API_TOKEN: '<redacted>' }
+            })
+          })
+        }),
+        expect.objectContaining({
+          agentId: 'openclaw',
+          type: 'plugin',
+          scope: 'user',
+          name: 'helper',
+          path: path.dirname(openClawExtension)
+        }),
+        expect.objectContaining({
+          agentId: 'openclaw',
+          type: 'mcp-server',
+          scope: 'user',
+          name: 'helper',
+          path: openClawExtension,
+          meta: expect.objectContaining({
+            serverConfig: expect.objectContaining({
+              token: '<redacted>'
+            })
+          })
+        }),
+        expect.objectContaining({
+          agentId: 'openclaw',
+          type: 'session',
+          scope: 'session',
+          name: 'session-1',
+          path: openClawSessions,
+          sensitive: true
+        }),
+        expect.objectContaining({
+          agentId: 'openclaw',
+          type: 'credential',
+          scope: 'user',
+          path: openClawSecrets,
+          sensitive: true
+        }),
+        expect.objectContaining({
+          agentId: 'openclaw',
+          type: 'credential',
+          scope: 'user',
+          path: openClawAuthProfiles,
           sensitive: true
         })
       ])

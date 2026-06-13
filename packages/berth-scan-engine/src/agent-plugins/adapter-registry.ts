@@ -16,6 +16,7 @@ import { CodexAdapter } from '../adapters/codex'
 import { CursorAdapter } from '../adapters/cursor'
 import { GeminiCliAdapter } from '../adapters/gemini-cli'
 import { GitHubCopilotCliAdapter } from '../adapters/github-copilot-cli'
+import { OpenClawAdapter } from '../adapters/openclaw'
 import { OpenCodeAdapter } from '../adapters/opencode'
 import { PLANNED_AGENT_ADAPTER_DEFINITIONS } from '../adapters/planned-agent-definitions'
 import type { AgentAdapterDefinition } from '../adapter-api'
@@ -55,6 +56,9 @@ export function createAgentAdapters(
       }
       if (definition.id === 'opencode') {
         return new OpenCodeAdapter(definition, { homeDir, projectDir, env })
+      }
+      if (definition.id === 'openclaw') {
+        return new OpenClawAdapter(definition, { homeDir, projectDir, env })
       }
       return new DeclaredAgentAdapter(definition, { homeDir, projectDir, env })
     })
