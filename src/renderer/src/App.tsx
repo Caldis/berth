@@ -9,6 +9,7 @@ import { SessionDetail } from '@/pages/session-detail'
 import { Teams } from '@/pages/teams'
 import { Instructions } from '@/pages/instructions'
 import { Capabilities } from '@/pages/capabilities'
+import { PluginDetail } from '@/pages/plugin-detail'
 import { Usage } from '@/pages/usage'
 import { PageErrorBoundary } from '@/components/layout/page-error-boundary'
 
@@ -62,6 +63,7 @@ export default function App(): React.ReactElement {
             <Route path="/capabilities/mcp" element={<Capabilities activeSection="mcp" />} />
             <Route path="/capabilities/hooks" element={<Capabilities activeSection="hooks" />} />
             <Route path="/capabilities/plugins" element={<Capabilities activeSection="plugins" />} />
+            <Route path="/capabilities/plugins/:pluginId" element={<PluginDetail />} />
             <Route path="/capabilities/status-line" element={<Capabilities activeSection="statusLine" />} />
             <Route path="/capabilities/permissions" element={<Capabilities activeSection="permissions" />} />
             <Route path="/capabilities/env" element={<Capabilities activeSection="env" />} />

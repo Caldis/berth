@@ -51,11 +51,13 @@ function handleRadioKeyDown(
 interface SettingsContentProps {
   showTitle?: boolean
   className?: string
+  onOpenPluginDetail?: (pluginId: string) => void
 }
 
 export function SettingsContent({
   showTitle = true,
-  className
+  className,
+  onOpenPluginDetail
 }: SettingsContentProps): React.ReactElement {
   const { t, i18n } = useTranslation()
   const { theme, setTheme, accent, setAccent } = useTheme()
@@ -265,6 +267,7 @@ export function SettingsContent({
         loading={agentPluginsLoading}
         stale={agentPluginsStale}
         error={agentPluginsError}
+        onOpenPluginDetail={onOpenPluginDetail}
       />
 
       {/* About */}

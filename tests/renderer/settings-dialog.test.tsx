@@ -2,6 +2,7 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import React, { useRef, useState } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { HeroUIProvider } from '@heroui/react'
+import { MemoryRouter } from 'react-router-dom'
 import i18n from '../../src/renderer/src/i18n'
 import { SettingsDialog } from '../../src/renderer/src/components/layout/settings-dialog'
 
@@ -10,14 +11,16 @@ function SettingsDialogHarness(): React.ReactElement {
   const triggerRef = useRef<HTMLButtonElement>(null)
 
   return (
-    <HeroUIProvider>
-      <button type="button">Outside before</button>
-      <button ref={triggerRef} type="button" onClick={() => setOpen(true)}>
-        Open settings
-      </button>
-      <SettingsDialog open={open} onOpenChange={setOpen} returnFocusRef={triggerRef} />
-      <button type="button">Outside after</button>
-    </HeroUIProvider>
+    <MemoryRouter>
+      <HeroUIProvider>
+        <button type="button">Outside before</button>
+        <button ref={triggerRef} type="button" onClick={() => setOpen(true)}>
+          Open settings
+        </button>
+        <SettingsDialog open={open} onOpenChange={setOpen} returnFocusRef={triggerRef} />
+        <button type="button">Outside after</button>
+      </HeroUIProvider>
+    </MemoryRouter>
   )
 }
 

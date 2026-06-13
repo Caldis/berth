@@ -395,6 +395,16 @@ describe('SettingsContent agent capability plugins', () => {
     expect(window.api.shell.openExternal).toHaveBeenCalledWith('https://code.claude.com/docs/en/hooks')
   })
 
+  it('opens the internal plugin detail page from expanded details when provided', async () => {
+    const openPluginDetail = vi.fn()
+    render(<SettingsContent showTitle={false} onOpenPluginDetail={openPluginDetail} />)
+
+    fireEvent.click(await screen.findByRole('button', { name: /Claude Code/ }))
+    fireEvent.click(screen.getByRole('button', { name: 'Open plugin page' }))
+
+    expect(openPluginDetail).toHaveBeenCalledWith('claude-code')
+  })
+
   it('renders manifest summaries without default detail noise', async () => {
     window.api.agentPlugins.list = vi.fn(async () => ({ plugins, manifests }))
 

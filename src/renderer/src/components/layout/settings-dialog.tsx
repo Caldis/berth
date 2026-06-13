@@ -1,5 +1,6 @@
 import { type RefObject } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useNavigate } from 'react-router-dom'
 import { X } from 'lucide-react'
 import { Modal, ModalContent, ModalHeader, ModalBody, Button } from '@/components/ui'
 import { SettingsContent } from '@/components/settings/settings-content'
@@ -16,6 +17,7 @@ interface SettingsDialogProps {
 
 export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps): React.ReactElement {
   const { t } = useTranslation()
+  const navigate = useNavigate()
 
   return (
     <Modal
@@ -52,7 +54,14 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps): Rea
               <span className="text-base font-semibold">{t('settings.title')}</span>
             </ModalHeader>
             <ModalBody className="px-5 py-5">
-              <SettingsContent showTitle={false} className="max-w-none" />
+              <SettingsContent
+                showTitle={false}
+                className="max-w-none"
+                onOpenPluginDetail={(pluginId) => {
+                  onClose()
+                  navigate(`/capabilities/plugins/${encodeURIComponent(pluginId)}`)
+                }}
+              />
             </ModalBody>
           </>
         )}

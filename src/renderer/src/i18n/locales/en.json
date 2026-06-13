@@ -1291,6 +1291,39 @@
       "disabled": "Disabled",
       "noComponents": "No bundled components detected"
     },
+    "pluginDetail": {
+      "title": "Plugin details",
+      "loading": "Loading plugin details",
+      "notFound": "Plugin details were not found.",
+      "backToPlugins": "Back to plugins",
+      "summary": "Adapter metadata and scan contract for {{agent}}.",
+      "version": "Version",
+      "target": "Target agent",
+      "sources": "Declared sources",
+      "assets": "Asset types",
+      "scanSources": "Scan sources",
+      "assetTypes": "Asset types",
+      "permissions": "Permissions",
+      "evidence": "Evidence",
+      "limit": "Limit: {{limit}}",
+      "defaultHidden": "Hidden by default",
+      "sensitiveAsset": "Sensitive",
+      "references": {
+        "homepage": "Homepage",
+        "download": "Download"
+      },
+      "sensitivity": {
+        "normal": "Content readable",
+        "sensitive-metadata-only": "Metadata only",
+        "credential-presence-only": "Presence only",
+        "debug-summary-only": "Debug summary"
+      },
+      "stability": {
+        "official-docs": "Official docs",
+        "primary-source": "Primary source",
+        "heuristic": "Heuristic"
+      }
+    },
     "permissions": {
       "warning": "Warning",
       "bypassEnabled": "bypassPermissions is enabled in {{scope}} scope. This skips ALL permission prompts.",
@@ -1551,6 +1584,7 @@
     "agentPluginSourcesTitle": "Sources",
     "agentPluginCapabilitiesTitle": "Capabilities",
     "agentPluginReferencesTitle": "References",
+    "agentPluginOpenDetail": "Open plugin page",
     "agentPluginSourceTotal_one": "{{count}} source",
     "agentPluginSourceTotal_other": "{{count}} sources",
     "agentPluginSourceSummary": "{{scanned}} scanned · {{missing}} missing · {{notScanned}} not scanned",

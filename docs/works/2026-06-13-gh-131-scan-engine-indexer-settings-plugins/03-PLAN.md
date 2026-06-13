@@ -35,10 +35,11 @@
   - progress 2026-06-13: planned adapter definitions now appear in the Agent Capability Plugins registry as disabled metadata-only entries with homepage/download references and declared `not-scanned` source coverage; passed `pnpm vitest run tests/unit/agent-capability-plugins.test.ts tests/unit/planned-agent-adapter-definitions.test.ts`, `pnpm typecheck:node`, and `pnpm typecheck:test`。
   - progress 2026-06-13: added metadata-only `DeclaredAgentAdapter` registration for the six planned agents. The scanner now resolves declared home/project/special paths into source coverage, reports installed state from existing declared sources, keeps sensitive session/log/state sources metadata-only, and returns no parsed assets until concrete parsers land. Passed `pnpm vitest run tests/unit/agent-adapter-registry.test.ts tests/unit/agent-capability-plugins.test.ts tests/unit/planned-agent-adapter-definitions.test.ts`, `pnpm vitest run tests/unit/engine-scanner.test.ts tests/unit/scan-coverage.test.ts tests/unit/agent-asset-runtime.test.ts`, and `pnpm typecheck:node`。
 
-- [ ] 任务 6: 插件介绍与下载页
+- [x] 任务 6: 插件介绍与下载页
   - scope: 查 website 结构; 为每个可选 agent 插件新增独立介绍/下载页或数据入口。
-  - tests: website 相关 build/test, 具体命令在实施前从 package scripts 确认。
+  - tests: `pnpm vitest run tests/renderer/plugin-detail.test.tsx tests/renderer/settings-agent-plugins.test.tsx tests/renderer/settings-dialog.test.tsx tests/unit/agent-capability-plugins.test.ts`。
   - verify: 页面说明版本、下载入口、扫描范围、敏感文件处理和限制。
+  - progress 2026-06-13: no standalone website package or build script exists in this repo, so implemented an in-app standalone route `/capabilities/plugins/:pluginId` backed by the agent plugin registry. Settings can open this route from expanded plugin details; the page shows homepage/download/reference links, declared scan source paths, sensitivity policy, evidence links, limits, asset types, and permissions. Passed the target tests above plus `pnpm typecheck:web` and `pnpm typecheck:node`。
 
 - [ ] 任务 7: 总体验证
   - scope: 补 typecheck、harness、目标组合测试, 回写 `debt.final`。

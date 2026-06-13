@@ -1285,6 +1285,39 @@
       "disabled": "已禁用",
       "noComponents": "未检测到捆绑组件"
     },
+    "pluginDetail": {
+      "title": "插件详情",
+      "loading": "正在加载插件详情",
+      "notFound": "没有找到插件详情。",
+      "backToPlugins": "返回插件",
+      "summary": "{{agent}} 的 adapter 元数据和扫描契约。",
+      "version": "版本",
+      "target": "目标 Agent",
+      "sources": "声明来源",
+      "assets": "资产类型",
+      "scanSources": "扫描来源",
+      "assetTypes": "资产类型",
+      "permissions": "权限",
+      "evidence": "资料",
+      "limit": "限制: {{limit}}",
+      "defaultHidden": "默认隐藏",
+      "sensitiveAsset": "敏感",
+      "references": {
+        "homepage": "主页",
+        "download": "下载"
+      },
+      "sensitivity": {
+        "normal": "可读内容",
+        "sensitive-metadata-only": "只读元数据",
+        "credential-presence-only": "只读存在性",
+        "debug-summary-only": "只读调试摘要"
+      },
+      "stability": {
+        "official-docs": "官方文档",
+        "primary-source": "源码依据",
+        "heuristic": "经验路径"
+      }
+    },
     "permissions": {
       "warning": "警告",
       "bypassEnabled": "{{scope}} 级别已启用 bypassPermissions，将跳过所有权限提示。",
@@ -1540,6 +1573,7 @@
     "agentPluginSourcesTitle": "来源",
     "agentPluginCapabilitiesTitle": "能力",
     "agentPluginReferencesTitle": "参考",
+    "agentPluginOpenDetail": "打开插件页面",
     "agentPluginSourceTotal_other": "{{count}} 个来源",
     "agentPluginSourceSummary": "{{scanned}} 已扫描 · {{missing}} 缺失 · {{notScanned}} 未扫描",
     "agentPluginManifest": "Manifest",

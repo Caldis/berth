@@ -33,6 +33,7 @@ interface AgentCapabilityPluginsSectionProps {
   loading: boolean
   stale: boolean
   error: string | null
+  onOpenPluginDetail?: (pluginId: string) => void
 }
 
 export function AgentCapabilityPluginsSection({
@@ -40,7 +41,8 @@ export function AgentCapabilityPluginsSection({
   manifests,
   loading,
   stale,
-  error
+  error,
+  onOpenPluginDetail
 }: AgentCapabilityPluginsSectionProps): ReactElement {
   const { t } = useTranslation()
   const [expandedPlugins, setExpandedPlugins] = useState<Record<string, boolean>>({})
@@ -156,7 +158,7 @@ export function AgentCapabilityPluginsSection({
                   <SourceCoverageSummary coverage={plugin.sourceCoverage} />
                 </button>
                 {expanded && (
-                  <PluginDetails plugin={plugin} />
+                  <PluginDetails plugin={plugin} onOpenPluginDetail={onOpenPluginDetail} />
                 )}
               </div>
             )
@@ -246,7 +248,13 @@ export function AgentCapabilityPluginsSection({
   )
 }
 
-function PluginDetails({ plugin }: { plugin: AgentCapabilityPlugin }): ReactElement {
+function PluginDetails({
+  plugin,
+  onOpenPluginDetail
+}: {
+  plugin: AgentCapabilityPlugin
+  onOpenPluginDetail?: (pluginId: string) => void
+}): ReactElement {
   const { t } = useTranslation()
 
   return (
@@ -286,6 +294,16 @@ function PluginDetails({ plugin }: { plugin: AgentCapabilityPlugin }): ReactElem
             title={t('settings.agentPluginReferencesTitle')}
           >
             <div className="flex flex-wrap gap-2">
+              {onOpenPluginDetail && (
+                <button
+                  type="button"
+                  onClick={() => onOpenPluginDetail(plugin.id)}
+                  className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-accent/10 hover:text-foreground"
+                >
+                  <Puzzle className="h-3 w-3" />
+                  {t('settings.agentPluginOpenDetail')}
+                </button>
+              )}
               {plugin.references.map((reference) => (
                 <button
                   key={`${plugin.id}-${reference.url}`}

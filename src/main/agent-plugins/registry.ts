@@ -1010,7 +1010,13 @@ function buildPlannedSourceCoverage(
     kind: source.kind,
     categories: source.categories,
     declared: true,
-    pathPattern: source.pathPattern
+    pathPattern: source.pathPattern,
+    stability: source.stability,
+    evidenceUrls: source.evidenceUrls,
+    sensitivity: source.sensitivity,
+    maxBytes: source.maxBytes,
+    maxRows: source.maxRows,
+    defaultHidden: source.defaultHidden
   }))
   return {
     total: sources.length,

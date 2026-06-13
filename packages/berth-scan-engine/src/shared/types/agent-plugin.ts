@@ -57,6 +57,12 @@ export interface AgentCapabilityPluginSourceDescriptor {
   pathPattern: string
   labelKey: string
   descriptionKey: string
+  stability?: 'official-docs' | 'primary-source' | 'heuristic'
+  evidenceUrls?: string[]
+  sensitivity?: 'normal' | 'sensitive-metadata-only' | 'credential-presence-only' | 'debug-summary-only'
+  maxBytes?: number
+  maxRows?: number
+  defaultHidden?: boolean
 }
 
 export interface AgentCapabilityPluginAssetDescriptor {
@@ -172,6 +178,12 @@ export interface AgentCapabilityPluginSource {
   labelKey?: string
   descriptionKey?: string
   pathPattern?: string
+  stability?: 'official-docs' | 'primary-source' | 'heuristic'
+  evidenceUrls?: string[]
+  sensitivity?: 'normal' | 'sensitive-metadata-only' | 'credential-presence-only' | 'debug-summary-only'
+  maxBytes?: number
+  maxRows?: number
+  defaultHidden?: boolean
 }
 
 export interface AgentCapabilityPluginSourceCoverage {
