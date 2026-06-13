@@ -746,7 +746,7 @@ describe('MemoryView', () => {
     const pageSearch = screen.getByRole('textbox', { name: 'Filter memories...' })
     expect(screen.getAllByPlaceholderText('Filter memories...')).toHaveLength(1)
 
-    fireEvent.keyDown(window, { key: 'k', ctrlKey: true })
+    fireEvent.keyDown(window, { key: 'k', ctrlKey: true, shiftKey: true })
     expect(pageSearch).toHaveFocus()
 
     fireEvent.change(pageSearch, { target: { value: 'core' } })

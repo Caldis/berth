@@ -12,9 +12,8 @@ import {
 import { useAppStore } from '@/stores/app'
 import { cn } from '@/lib/utils'
 import { routeForAsset } from '@/lib/asset-route'
-import { useFocusPageSearch } from './page-chrome'
 import { isMacPlatform } from '@/lib/platform'
-import { ChromeSearchInput, searchShortcutLabel } from './search-control'
+import { ChromeSearchInput, globalSearchShortcutLabel, isGlobalSearchShortcut } from './search-control'
 import type { Asset } from '@shared/types/asset'
 import type { SearchResult } from '@shared/types/ipc'
 
@@ -63,7 +62,6 @@ export function SearchDialog(): React.ReactElement | null {
   const navigate = useNavigate()
   const open = useAppStore((s) => s.searchOpen)
   const setOpen = useAppStore((s) => s.setSearchOpen)
-  const focusPageSearch = useFocusPageSearch()
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<SearchResult[]>([])
   const [loading, setLoading] = useState(false)
@@ -71,15 +69,14 @@ export function SearchDialog(): React.ReactElement | null {
   const [activeIndex, setActiveIndex] = useState(-1)
   const dialogRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
-  const shortcutLabel = searchShortcutLabel(isMacPlatform())
+  const shortcutLabel = globalSearchShortcutLabel(isMacPlatform())
   const normalizedQuery = query.trim()
   const hasQuery = normalizedQuery.length > 0
 
   useEffect(() => {
     const handler = (e: globalThis.KeyboardEvent): void => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+      if (isGlobalSearchShortcut(e)) {
         e.preventDefault()
-        if (focusPageSearch()) return
         setOpen(!open)
         return
       }
@@ -123,7 +120,7 @@ export function SearchDialog(): React.ReactElement | null {
     }
 
     return () => window.removeEventListener('keydown', handler)
-  }, [focusPageSearch, open, setOpen])
+  }, [open, setOpen])
 
   useEffect(() => {
     if (open) return

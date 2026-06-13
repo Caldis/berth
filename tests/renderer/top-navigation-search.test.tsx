@@ -14,7 +14,7 @@ import {
 /**
  * GH-109 C1: header 搜索框从手写 <input> 迁到 HeroUI Input。
  * 这是重构特征测试 — 固化"必须存活"的行为契约 (受控 value/onChange、
- * placeholder/aria-label、⌘K 注册的 focus+select、键盘提示), 迁移前后均须绿。
+ * placeholder/aria-label、页内搜索 focus+select、键盘提示), 迁移前后均须绿。
  */
 function ChromeSetter({ search }: { search: PageChromeSearch }): React.ReactElement {
   usePageChrome({ search }, [search])
@@ -69,7 +69,7 @@ describe('TopNavigation header search (GH-109 C1)', () => {
 
   it('exposes the keyboard-shortcut hint', () => {
     renderHeader({ value: '', onValueChange: () => {}, placeholder: 'Filter sessions...' })
-    expect(screen.getByText(/⌘K|Ctrl\+K/)).toBeInTheDocument()
+    expect(screen.getByText(/⇧⌘K|Ctrl\+Shift\+K/)).toBeInTheDocument()
   })
 
   it('focuses and selects the field via the registered shortcut handler', () => {

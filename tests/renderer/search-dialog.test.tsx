@@ -70,6 +70,22 @@ describe('SearchDialog', () => {
     }
   })
 
+  it('opens with the global search shortcut', async () => {
+    act(() => {
+      useAppStore.setState({ searchOpen: false })
+    })
+    render(
+      <MemoryRouter>
+        <SearchDialog />
+      </MemoryRouter>
+    )
+
+    expect(screen.queryByRole('dialog', { name: /搜索资产/ })).not.toBeInTheDocument()
+    fireEvent.keyDown(window, { key: 'k', ctrlKey: true })
+
+    expect(await screen.findByRole('dialog', { name: /搜索资产/ })).toBeInTheDocument()
+  })
+
   it('exposes modal dialog semantics and focuses the search input', async () => {
     render(
       <MemoryRouter>

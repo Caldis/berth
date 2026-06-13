@@ -17,8 +17,28 @@ interface ChromeSearchInputProps {
   testId?: string
 }
 
-export function searchShortcutLabel(isMac: boolean): string {
+type SearchShortcutEvent = Pick<KeyboardEvent, 'altKey' | 'ctrlKey' | 'key' | 'metaKey' | 'shiftKey'>
+
+export function globalSearchShortcutLabel(isMac: boolean): string {
   return isMac ? '⌘K' : 'Ctrl+K'
+}
+
+export function pageSearchShortcutLabel(isMac: boolean): string {
+  return isMac ? '⇧⌘K' : 'Ctrl+Shift+K'
+}
+
+export function isGlobalSearchShortcut(event: SearchShortcutEvent): boolean {
+  return (event.metaKey || event.ctrlKey) &&
+    !event.shiftKey &&
+    !event.altKey &&
+    event.key.toLowerCase() === 'k'
+}
+
+export function isPageSearchShortcut(event: SearchShortcutEvent): boolean {
+  return (event.metaKey || event.ctrlKey) &&
+    event.shiftKey &&
+    !event.altKey &&
+    event.key.toLowerCase() === 'k'
 }
 
 export const ChromeSearchInput = forwardRef<HTMLInputElement, ChromeSearchInputProps>(

@@ -1,15 +1,16 @@
-import { useCallback, useMemo, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { ChevronRight, HelpCircle } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { findNavMatch } from './nav-config'
 import { isMacPlatform } from '@/lib/platform'
+import { useAppStore } from '@/stores/app'
 import { FeatureGuidePanel } from '@/components/shared/feature-guide-panel'
 import { FloatingPopover } from '@/components/shared/floating-popover'
 import { IndexingInline } from '@/components/shared/index-activity'
 import { useCurrentPageChrome, useRegisterPageSearchFocus } from './page-chrome'
-import { ChromeSearchInput, searchShortcutLabel } from './search-control'
+import { ChromeSearchInput, isPageSearchShortcut, pageSearchShortcutLabel } from './search-control'
 
 type BreadcrumbItem = {
   key: string
@@ -45,6 +46,7 @@ export function TopNavigation({ isWindows }: TopNavigationProps): React.ReactEle
   const { t } = useTranslation()
   const location = useLocation()
   const pageChrome = useCurrentPageChrome()
+  const globalSearchOpen = useAppStore((s) => s.searchOpen)
   const searchInputRef = useRef<HTMLInputElement>(null)
   const route = useMemo(
     () => routeChrome(location.pathname, location.search),
@@ -67,6 +69,18 @@ export function TopNavigation({ isWindows }: TopNavigationProps): React.ReactEle
     searchInputRef.current?.select()
   }, [])
   useRegisterPageSearchFocus(pageChrome.search ? focusPageSearch : null, [pageChrome.search, focusPageSearch])
+  useEffect(() => {
+    if (!pageChrome.search || globalSearchOpen) return
+
+    const handleKeyDown = (event: globalThis.KeyboardEvent): void => {
+      if (!isPageSearchShortcut(event)) return
+      event.preventDefault()
+      focusPageSearch()
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [focusPageSearch, globalSearchOpen, pageChrome.search])
 
   return (
     <header
@@ -138,7 +152,7 @@ export function TopNavigation({ isWindows }: TopNavigationProps): React.ReactEle
               value={pageChrome.search.value}
               onValueChange={pageChrome.search.onValueChange}
               placeholder={pageChrome.search.placeholder}
-              shortcutLabel={searchShortcutLabel(isMac)}
+              shortcutLabel={pageSearchShortcutLabel(isMac)}
             />
           )}
           {pageChrome.guide && (

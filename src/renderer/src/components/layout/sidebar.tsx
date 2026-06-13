@@ -9,7 +9,7 @@ import { isMacPlatform } from '@/lib/platform'
 import { SettingsDialog } from './settings-dialog'
 import { ProjectScopeSwitcher } from './project-scope-switcher'
 import { SidebarScanStatus } from './sidebar-scan-status'
-import { SearchTriggerButton, searchShortcutLabel } from './search-control'
+import { SearchTriggerButton, globalSearchShortcutLabel } from './search-control'
 import appIconUrl from '../../../../../assets/icon/app_icon.png'
 
 export function Sidebar(): React.ReactElement {
@@ -100,7 +100,7 @@ export function Sidebar(): React.ReactElement {
               label={t('search.placeholder')}
               title={collapsed ? t('search.placeholder') : undefined}
               collapsed={collapsed}
-              shortcutLabel={searchShortcutLabel(isMac)}
+              shortcutLabel={globalSearchShortcutLabel(isMac)}
               onPress={() => setSearchOpen(true)}
               className={cn(
                 'border-sidebar-border bg-sidebar data-[hover=true]:border-sidebar-accent/40 data-[hover=true]:bg-sidebar-accent/10 data-[hover=true]:text-sidebar-foreground',

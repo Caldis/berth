@@ -180,7 +180,7 @@ describe('TopNavigation', () => {
     })
   })
 
-  it('uses the keyboard shortcut for page search before global search', () => {
+  it('keeps Ctrl+K reserved for global search when page search exists', async () => {
     render(
       <MemoryRouter initialEntries={['/sessions']}>
         <PageChromeProvider>
@@ -204,8 +204,40 @@ describe('TopNavigation', () => {
     const pageSearch = screen.getByRole('textbox', { name: 'Filter sessions...' })
     fireEvent.keyDown(window, { key: 'k', ctrlKey: true })
 
+    expect(pageSearch).not.toHaveFocus()
+    expect(useAppStore.getState().searchOpen).toBe(true)
+    expect(await screen.findByRole('dialog', { name: /Search assets/ })).toBeInTheDocument()
+  })
+
+  it('focuses page search with Ctrl+Shift+K without opening global search', () => {
+    render(
+      <MemoryRouter initialEntries={['/sessions']}>
+        <PageChromeProvider>
+          <PageChromeSetter
+            config={{
+              title: 'Sessions',
+              sectionLabelKey: 'nav.sections.work',
+              search: {
+                value: 'session',
+                onValueChange: () => undefined,
+                placeholder: 'Filter sessions...'
+              }
+            }}
+          />
+          <TopNavigation isWindows={false} />
+          <SearchDialog />
+        </PageChromeProvider>
+      </MemoryRouter>
+    )
+
+    const pageSearch = screen.getByRole('textbox', { name: 'Filter sessions...' }) as HTMLInputElement
+    fireEvent.keyDown(window, { key: 'k', ctrlKey: true, shiftKey: true })
+
     expect(pageSearch).toHaveFocus()
+    expect(pageSearch.selectionStart).toBe(0)
+    expect(pageSearch.selectionEnd).toBe('session'.length)
     expect(useAppStore.getState().searchOpen).toBe(false)
+    expect(screen.queryByRole('dialog', { name: /Search assets/ })).not.toBeInTheDocument()
   })
 
   it('localizes breadcrumb labels in Chinese', async () => {

@@ -486,7 +486,7 @@ describe('session pages', () => {
     expect(await screen.findByText('Fix session metadata')).toBeInTheDocument()
     expect(screen.getByText('Archive cleanup')).toBeInTheDocument()
 
-    fireEvent.keyDown(window, { key: 'k', ctrlKey: true })
+    fireEvent.keyDown(window, { key: 'k', ctrlKey: true, shiftKey: true })
     const pageSearch = screen.getByRole('textbox', { name: 'Filter sessions...' })
     expect(pageSearch).toHaveFocus()
 

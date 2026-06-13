@@ -2,7 +2,7 @@
 task: 2026-06-13-gh-130-shortcut-conflict-between-searches
 task_id: GH-130
 type: bug
-phase: implement
+phase: verify
 created: 2026-06-13
 priority: P2
 target_date: 
