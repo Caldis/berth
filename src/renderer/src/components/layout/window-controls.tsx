@@ -49,7 +49,7 @@ export function WindowControls({ navigationHeight = DEFAULT_NAVIGATION_HEIGHT }:
     >
       <span
         aria-hidden="true"
-        className="pointer-events-none h-6 w-px shrink-0 bg-border/80"
+        className="pointer-events-none mr-3 h-6 w-px shrink-0 bg-border/80"
         data-testid="window-controls-divider"
       />
       <button

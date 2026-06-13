@@ -75,6 +75,7 @@ describe('WindowControls', () => {
     expect(divider).toHaveAttribute('aria-hidden', 'true')
     expect(divider).toHaveClass('h-6')
     expect(divider).toHaveClass('w-px')
+    expect(divider).toHaveClass('mr-3')
     expect(divider).toHaveClass('bg-border/80')
 
     const buttons = [
