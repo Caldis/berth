@@ -47,10 +47,8 @@
 
 ## Phase C — 版本发布
 
-- [ ] **C1. 版本 bump 0.2.0 → 0.3.0** [AC7]
-  - grep 确认无其他硬编码 0.2.0 (scan-engine 包版本独立不动); 改 `package.json` version。
-  - tests: `pnpm typecheck` 绿; `not needed - 版本号`。
-  - verify: 不适用。
+- [x] **C1. 版本 bump 0.2.0 → 0.3.0** [AC7] — package.json version=0.3.0; grep 确认无其他硬编码 (测试 fixture 0.2.0 是 agent 插件无关; website APP_VERSION 属独立 deploy-website 链路, 交接提示); tests:not needed (版本号, dry-run 验收)。
+  - 注: beta dry-run 从 master@0.3.0 打 v0.3.0-beta.1 (dry-run 验签名/三平台/完整性, 产物版本名无关); 通过后同提交打 v0.3.0。
 
 - [ ] **C2. [需用户前置] 用户添加 5 个 Apple secrets 到 berth 仓库**
   - Agent 不可代办; 交接消息给步骤。push beta tag 前必须就绪。
