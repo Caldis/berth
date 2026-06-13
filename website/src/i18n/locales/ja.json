@@ -281,19 +281,67 @@
     }
   },
   "pages": {
-    "knowledgeIntro": "3 つのトラック、目標は一つ。AI エージェントを理解し、自信を持って管理できるように。一次情報を明記した詳しい記事を順次公開します。",
+    "knowledgeIntro": "3 つの実用的なトラックです。AI エージェントを理解し、Berth の asset model を確認し、ローカル設定が分かりにくいときは短い guide で調べられます。各記事は参照元を表示します。",
+    "knowledgeEmpty": "このセクションにはまだ記事がありません。",
     "featuresIntro": "Berth は AI エージェントの背後にあるテキストファイルとローカルデータベースを、構造化された閲覧可能なオブジェクトに変えます。このページでは app views、scan engine、adapter model を説明します。",
     "about": {
-      "body1": "Berth は AI エージェントの背後にある見えない資産を可視化します。Claude Code や Codex のようなツールが進化するなか、ローカルにたまる skills・MCP・hooks・記憶は、可視性のないテキストとして積み上がります。Berth はそれらをスキャンし、関連づけ、一級のオブジェクトとして示します。",
-      "body2": "Berth は MIT ライセンスのオープンソースで、Caldis が制作しています。設計上、読み取り専用かつローカルファーストです。"
+      "intro": "Berth は、AI coding agent を本格的に使い、ローカル設定が見えにくくなってきた人のための local-first desktop app です。Agent の動作を形づくる files、indexes、session traces を読み取り、変更せずに表示します。",
+      "sections": [
+        {
+          "title": "Berth が読むもの",
+          "body": "現在の scanner は、ローカルの agent assets と、それぞれの出所を説明するための evidence に集中しています。",
+          "items": ["Instructions と memories", "Skills、commands、plugins", "MCP servers、hooks、permissions", "Sessions、usage metadata、scan sources"]
+        },
+        {
+          "title": "Scanner の構成",
+          "body": "Scan engine は UI の中ではなく @berth/scan-engine にあります。この package が shared asset model、adapter registry、CLI、adapter API を担います。",
+          "items": ["独立した package boundary", "worker-backed desktop runtime", "SQLite stale-while-revalidate cache", "新しい Agent 向け adapter v1 contracts"]
+        },
+        {
+          "title": "Berth がしないこと",
+          "body": "Berth は inspector であり editor ではありません。file write、account system、remote telemetry を避け、ローカルの agent configuration を安全に確認できるようにします。",
+          "items": ["ファイルを書き換えない", "アカウント不要", "cloud sync なし", "secret value を表示しない"]
+        }
+      ]
     },
     "privacy": {
-      "body1": "Berth は完全にあなたのマシン上で動作します。テレメトリを送信せず、アカウント機能もなく、データがコンピュータの外に出ることはありません。",
-      "body2": "Berth は表示のためにエージェントの設定・セッションファイルを読み取りますが、書き込むことはありません。API キーやトークンなどの認証情報は状態の検出のみに使い、内容を表示しません。"
+      "intro": "Berth は local inspection を中心に設計されています。既知のローカル agent locations を読み取り、自分の local index を保存し、telemetry を送らず、account も要求しません。",
+      "sections": [
+        {
+          "title": "Berth が読むローカルファイル",
+          "body": "Scanner は既知の user / project roots から agent configuration、instructions、skills、hooks、plugins、MCP settings、sessions、usage metadata を探します。",
+          "items": ["~/.claude、~/.codex、各 tool home などの user-level roots", "AGENTS.md、.cursor、opencode configuration などの project roots", "adapter が安全に読める場合の session と usage stores"]
+        },
+        {
+          "title": "Berth が保存するデータ",
+          "body": "Berth は local SQLite index と local scan settings を保存し、UI を素早く開き、バックグラウンドで更新できるようにします。",
+          "items": ["indexed asset と file metadata", "source paths と adapter evidence", "watcher debounce と minimum refresh interval settings"]
+        },
+        {
+          "title": "Credentials と secrets",
+          "body": "Adapters は credential、token、auth file の存在を検出することがありますが、Berth はそれを status metadata として扱い、secret value は表示しません。",
+          "items": ["必要な場合だけ presence を表示", "secret value を render しない", "adapter が source policy を宣言した場合だけ sensitive files を読む"]
+        },
+        {
+          "title": "Network behavior",
+          "body": "アプリには telemetry、account login、cloud sync がありません。website と app の external link は GitHub releases または引用した documentation を指します。",
+          "items": ["telemetry endpoint なし", "hosted account system なし", "local configuration の automatic upload なし"]
+        }
+      ]
     },
     "changelog": {
-      "intro": "Berth はまだ初期段階です。現状をまとめます。",
+      "intro": "Berth をインストールまたは更新するか判断できるように、現在の product changes をまとめています。",
       "items": [
+        {
+          "version": "Current main",
+          "date": "2026-06-13",
+          "notes": [
+            "Settings に scan engine version、status、indexed assets、indexed files、errors、scheduler state が表示されます。",
+            "@berth/scan-engine は CLI と adapter API boundaries を持つ standalone package になりました。",
+            "Adapter coverage は Claude Code、Codex、Gemini CLI、GitHub Copilot CLI、Cursor、OpenCode、OpenClaw、Hermes Agent を含みます。",
+            "Website content は scan engine、adapter model、privacy rules、static 404 behavior を反映しました。"
+          ]
+        },
         {
           "version": "v0.2",
           "date": "2026",
@@ -308,8 +356,11 @@
     }
   },
   "notFound": {
+    "eyebrow": "404",
+    "metaTitle": "ページが見つかりません — Berth",
+    "metaDescription": "この Berth ページは存在しません。ホームに戻るか、ナビゲーションを使ってください。",
     "title": "ページが見つかりません",
-    "body": "お探しのページは存在しません。",
+    "body": "お探しのページは存在しません。ページが移動したか、リンクが古い可能性があります。",
     "cta": "ホームに戻る"
   }
 }

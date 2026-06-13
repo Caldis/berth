@@ -62,8 +62,9 @@ writeFileSync(join(dist, 'sitemap.xml'), sitemap)
 const llms = [
   '# Berth',
   '',
-  '> Local-first, read-only desktop app that scans and visualizes your AI agent assets',
-  '> (Skills, MCP servers, hooks, subagents, sessions, cost) for Claude Code and Codex.',
+  '> Local-first, read-only desktop app that scans and visualizes AI agent assets',
+  '> across Claude Code, Codex, Gemini CLI, GitHub Copilot CLI, Cursor, OpenCode, OpenClaw and Hermes Agent.',
+  '> The standalone @berth/scan-engine package exposes a CLI and adapter API, while the desktop app shows scan status, indexed files, scheduler state and editable watcher timing.',
   '',
   'Site: ' + SITE,
   'Source: https://github.com/Caldis/berth',
@@ -105,10 +106,54 @@ const full = [
 ].join('\n')
 writeFileSync(join(dist, 'llms-full.txt'), full)
 
+// ---- 404.html (GitHub Pages static fallback) ----
+function write404() {
+  const source = join(dist, 'en.html')
+  const shell = readFileSync(source, 'utf8')
+  const title = 'Page not found - Berth'
+  const description = 'This Berth page does not exist. Return to the English home page or use the navigation.'
+  const main = [
+    '<main class="container-page grid min-h-[60vh] place-items-center py-20 text-center">',
+    '  <div>',
+    '    <div class="mx-auto grid h-12 w-12 place-items-center rounded-xl bg-harbor font-display text-xl font-semibold text-white">B</div>',
+    '    <span class="eyebrow mt-6 block">404</span>',
+    '    <h1 class="mt-3 font-display text-3xl font-semibold tracking-tight">Page not found</h1>',
+    '    <p class="mx-auto mt-3 max-w-md text-muted">The page you are looking for does not exist. Use the navigation or return to the English home page.</p>',
+    '    <a href="/en" class="btn-primary mt-6">Back to home</a>',
+    '  </div>',
+    '</main>',
+  ].join('\n')
+
+  const html = shell
+    .replace(/<title[^>]*>[^<]*<\/title>/i, `<title>${title}</title>`)
+    .replace(
+      /<meta[^>]*name="description"[^>]*content="[^"]*"[^>]*>/i,
+      `<meta name="description" content="${description}" />`,
+    )
+    .replace(/<link[^>]*rel="canonical"[^>]*>/i, `<link rel="canonical" href="${SITE}/404.html" />`)
+    .replace(/<meta[^>]*property="og:title"[^>]*content="[^"]*"[^>]*>/i, `<meta property="og:title" content="${title}" />`)
+    .replace(
+      /<meta[^>]*property="og:description"[^>]*content="[^"]*"[^>]*>/i,
+      `<meta property="og:description" content="${description}" />`,
+    )
+    .replace(/<meta[^>]*property="og:url"[^>]*content="[^"]*"[^>]*>/i, `<meta property="og:url" content="${SITE}/404.html" />`)
+    .replace(/<meta[^>]*name="twitter:title"[^>]*content="[^"]*"[^>]*>/i, `<meta name="twitter:title" content="${title}" />`)
+    .replace(
+      /<meta[^>]*name="twitter:description"[^>]*content="[^"]*"[^>]*>/i,
+      `<meta name="twitter:description" content="${description}" />`,
+    )
+    .replace(/<script[^>]*type="application\/ld\+json"[^>]*>[\s\S]*?<\/script>/gi, '')
+    .replace(/<main[\s\S]*?<\/main>/i, main)
+
+  writeFileSync(join(dist, '404.html'), html)
+}
+
+write404()
+
 if (existsSync(sharedAssets)) {
   cpSync(sharedAssets, join(dist, 'assets'), { recursive: true })
 }
 
 console.log(
-  `[postbuild] sitemap.xml (${pages.length} urls), llms.txt, llms-full.txt (${(full.length / 1024).toFixed(1)} KB), shared assets written.`,
+  `[postbuild] sitemap.xml (${pages.length} urls), llms.txt, llms-full.txt (${(full.length / 1024).toFixed(1)} KB), 404.html, shared assets written.`,
 )

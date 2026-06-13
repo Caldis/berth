@@ -12,7 +12,7 @@
   - 内容: 更新 `i18n/locales/*.json`, `Home.tsx`, `Features.tsx`, `AssetPanel.tsx`; 表达多 agent、scan engine、adapter API、Settings 控制面、source coverage、安全边界。
   - tests: `pnpm --dir website test`, `pnpm --dir website typecheck`, stale `rg` 检查。
   - verify: 页面信息密度提升; 复用现有视觉系统; 首页 knowledge cards 指向具体目标; 不出现未实现承诺。
-- [ ] T3 Knowledge、About、Privacy、Changelog、404 补齐
+- [x] T3 Knowledge、About、Privacy、Changelog、404 补齐 — DONE: KnowledgeHub 移除 coming-soon 常量并使用四语中性空态; About/Privacy 改为结构化 sections; Changelog 增加 Current main 扫描引擎与 adapter 变更; NotFound 支持当前语言并补 SEO; postbuild 生成 `404.html` 并更新 `llms.txt`; `pnpm --dir website test` 3 files / 13 tests 通过, `pnpm --dir website typecheck` 通过, `pnpm --dir website build` 通过; stale `rg` 无命中; sitemap 排除 404; `404.html` 无首页 JSON-LD。
   - 内容: 删除过时 coming-soon 口径; About/Privacy/Changelog 改结构化内容; NotFound 接语言语境; postbuild 生成 `404.html`; 更新 `llms.txt` 简述。
   - tests: `pnpm --dir website test`, `pnpm --dir website typecheck`, `pnpm --dir website build`。
   - verify: `/en/about`, `/en/privacy`, `/en/changelog`, `/en/no-such-page`, `/404.html` 可读; sitemap 排除 404; llms 包含新产品事实。

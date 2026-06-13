@@ -281,19 +281,67 @@
     }
   },
   "pages": {
-    "knowledgeIntro": "Three tracks, one goal: help you understand AI agents and manage them with confidence. In-depth articles are landing here next, each citing primary sources.",
+    "knowledgeIntro": "Three practical tracks: understand AI agents, inspect Berth's asset model, and use short guides when something in your local setup is unclear. Every article keeps sources visible.",
+    "knowledgeEmpty": "No articles are published in this section yet.",
     "featuresIntro": "Berth turns the plain-text files and local databases behind your AI agents into structured, browsable objects. This page covers the app views, the scan engine, and the adapter model behind them.",
     "about": {
-      "body1": "Berth makes the invisible assets behind your AI agents visible. As tools like Claude Code and Codex evolve, the skills, MCP servers, hooks and memories you accumulate locally pile up as plain text with no real visibility. Berth scans them, connects them, and shows them as first-class objects.",
-      "body2": "Berth is open source under the MIT license and built by Caldis. It is read-only and local-first by design."
+      "intro": "Berth is a local-first desktop app for people who use AI coding agents seriously enough that their local setup has become hard to see. It reads the files, indexes and session traces that shape those agents, then shows them without changing them.",
+      "sections": [
+        {
+          "title": "What Berth reads",
+          "body": "The current scanner focuses on local agent assets and the evidence needed to explain where each one came from.",
+          "items": ["Instructions and memories", "Skills, commands and plugins", "MCP servers, hooks and permissions", "Sessions, usage metadata and scan sources"]
+        },
+        {
+          "title": "How the scanner is organized",
+          "body": "The scan engine lives in @berth/scan-engine instead of inside the UI. That package owns the shared asset model, adapter registry, CLI and adapter API.",
+          "items": ["Standalone package boundary", "Worker-backed desktop runtime", "SQLite stale-while-revalidate cache", "Adapter v1 contracts for new agents"]
+        },
+        {
+          "title": "What Berth does not do",
+          "body": "Berth is an inspector, not an editor. It avoids write operations, account systems and remote telemetry so local agent configuration can be reviewed safely.",
+          "items": ["No file writes", "No account requirement", "No cloud sync", "No secret values displayed"]
+        }
+      ]
     },
     "privacy": {
-      "body1": "Berth runs entirely on your machine. It sends no telemetry, has no account system, and your data never leaves your computer.",
-      "body2": "Berth reads agent configuration and session files in order to display them and never writes to them. Credentials such as API keys and tokens are detected for status only and are never displayed."
+      "intro": "Berth is designed around local inspection. The app reads known local agent locations, stores its own local index, and does not send telemetry or require an account.",
+      "sections": [
+        {
+          "title": "Local files Berth reads",
+          "body": "The scanner looks for agent configuration, instructions, skills, hooks, plugins, MCP settings, sessions and usage metadata under known user and project roots.",
+          "items": ["User-level roots such as ~/.claude, ~/.codex and tool-specific homes", "Project roots such as AGENTS.md, .cursor and opencode configuration", "Session and usage stores when the adapter can read them safely"]
+        },
+        {
+          "title": "Data stored by Berth",
+          "body": "Berth keeps a local SQLite index and local scan settings so the UI can open quickly and refresh in the background.",
+          "items": ["Indexed asset and file metadata", "Source paths and adapter evidence", "Watcher debounce and minimum refresh interval settings"]
+        },
+        {
+          "title": "Credentials and secrets",
+          "body": "Adapters may detect that a credential, token or auth file exists, but Berth treats that as status metadata and does not display secret values.",
+          "items": ["Presence is shown when useful", "Secret values are not rendered", "Sensitive files are read only when an adapter declares the source policy"]
+        },
+        {
+          "title": "Network behavior",
+          "body": "The app has no telemetry, account login or cloud sync. External links in the website and app point to GitHub releases or cited documentation.",
+          "items": ["No telemetry endpoint", "No hosted account system", "No automatic upload of local configuration"]
+        }
+      ]
     },
     "changelog": {
-      "intro": "Berth is early. Here is where it stands.",
+      "intro": "Current product changes, written for people deciding whether to install or update Berth.",
       "items": [
+        {
+          "version": "Current main",
+          "date": "2026-06-13",
+          "notes": [
+            "Scan engine is now exposed in Settings with version, status, indexed assets, indexed files, errors and scheduler state.",
+            "@berth/scan-engine is a standalone package with CLI and adapter API boundaries.",
+            "Adapter coverage now includes Claude Code, Codex, Gemini CLI, GitHub Copilot CLI, Cursor, OpenCode, OpenClaw and Hermes Agent.",
+            "Website content now reflects the scan engine, adapter model, privacy rules and static 404 behavior."
+          ]
+        },
         {
           "version": "v0.2",
           "date": "2026",
@@ -308,8 +356,11 @@
     }
   },
   "notFound": {
+    "eyebrow": "404",
+    "metaTitle": "Page not found — Berth",
+    "metaDescription": "This Berth page does not exist. Return to the home page or use the navigation.",
     "title": "Page not found",
-    "body": "The page you're looking for doesn't exist.",
+    "body": "The page you are looking for does not exist. The website may have moved, or the link may be outdated.",
     "cta": "Back to home"
   }
 }

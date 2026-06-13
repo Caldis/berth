@@ -281,19 +281,67 @@
     }
   },
   "pages": {
-    "knowledgeIntro": "三大板块，一个目标：帮你认识 AI Agent，并从容地管理它们。深度文章将陆续上线，每篇都标注一手参考来源。",
+    "knowledgeIntro": "三条实用路径：理解 AI Agent，查看 Berth 的资产模型，并在本地配置看不清时用短指南排查。每篇文章都会保留参考来源。",
+    "knowledgeEmpty": "这个分区当前还没有文章。",
     "featuresIntro": "Berth 把 AI Agent 背后的纯文本文件和本地数据库，变成结构化、可浏览的对象。这里说明应用视图、扫描引擎和 adapter 模型。",
     "about": {
-      "body1": "Berth 让 AI Agent 背后看不见的资产变得可见。随着 Claude Code、Codex 等工具快速演进，你在本地积累的 skills、MCP、hooks 与记忆，大多是缺乏可见性的纯文本。Berth 扫描它们、关联它们，把它们呈现为一等公民般的对象。",
-      "body2": "Berth 开源并采用 MIT 许可，由 Caldis 打造。它在设计上即只读、本地优先。"
+      "intro": "Berth 是一个本地优先的桌面应用，面向认真使用 AI 编程 Agent、并且本地配置已经变得难以看清的人。它读取影响 Agent 行为的文件、索引和 session 记录，然后展示出来，不修改它们。",
+      "sections": [
+        {
+          "title": "Berth 会读取什么",
+          "body": "当前 scanner 关注本地 Agent 资产，以及解释每个资产来源所需的证据。",
+          "items": ["Instructions 和 memories", "Skills、commands 和 plugins", "MCP servers、hooks 和 permissions", "Sessions、usage metadata 和 scan sources"]
+        },
+        {
+          "title": "Scanner 如何组织",
+          "body": "扫描引擎位于 @berth/scan-engine，而不是塞在 UI 里。这个 package 负责 shared asset model、adapter registry、CLI 和 adapter API。",
+          "items": ["独立 package 边界", "worker-backed desktop runtime", "SQLite stale-while-revalidate cache", "面向新 Agent 的 adapter v1 contracts"]
+        },
+        {
+          "title": "Berth 不做什么",
+          "body": "Berth 是检查器，不是编辑器。它避免写文件、账号系统和远程 telemetry，让本地 Agent 配置可以被安全查看。",
+          "items": ["不写入文件", "不要求账号", "不做云同步", "不展示 secret value"]
+        }
+      ]
     },
     "privacy": {
-      "body1": "Berth 完全在你的机器上运行。它不发送任何遥测、没有账号体系，你的数据永不离开你的电脑。",
-      "body2": "Berth 为了展示而读取 Agent 的配置与会话文件，但绝不写入它们。API Key、Token 等凭证仅用于探测状态，永不显示其内容。"
+      "intro": "Berth 的设计重心是本地检查。应用读取已知的本地 Agent 位置，保存自己的本地索引，不发送 telemetry，也不要求账号。",
+      "sections": [
+        {
+          "title": "Berth 读取的本地文件",
+          "body": "Scanner 会在已知 user 和 project roots 下查找 Agent 配置、instructions、skills、hooks、plugins、MCP settings、sessions 和 usage metadata。",
+          "items": ["user-level roots, 例如 ~/.claude、~/.codex 和各工具 home", "project roots, 例如 AGENTS.md、.cursor 和 opencode configuration", "adapter 能安全读取时的 session 和 usage stores"]
+        },
+        {
+          "title": "Berth 保存的数据",
+          "body": "Berth 保存本地 SQLite index 和本地 scan settings，让 UI 可以快速打开并在后台刷新。",
+          "items": ["indexed asset 和 file metadata", "source paths 和 adapter evidence", "watcher debounce 与 minimum refresh interval 设置"]
+        },
+        {
+          "title": "Credentials 和 secrets",
+          "body": "Adapter 可能检测到 credential、token 或 auth file 存在，但 Berth 只把这类信息作为状态 metadata，不展示 secret value。",
+          "items": ["必要时显示存在性", "不渲染 secret value", "只有 adapter 声明 source policy 后才读取敏感文件"]
+        },
+        {
+          "title": "网络行为",
+          "body": "应用没有 telemetry、账号登录或云同步。网站和应用里的外链指向 GitHub releases 或被引用的文档。",
+          "items": ["没有 telemetry endpoint", "没有托管账号系统", "不会自动上传本地配置"]
+        }
+      ]
     },
     "changelog": {
-      "intro": "Berth 还很年轻，这是它目前的状态。",
+      "intro": "这里记录当前产品变化，方便你判断是否安装或更新 Berth。",
       "items": [
+        {
+          "version": "Current main",
+          "date": "2026-06-13",
+          "notes": [
+            "Settings 已展示扫描引擎版本、状态、indexed assets、indexed files、errors 和 scheduler state。",
+            "@berth/scan-engine 已成为独立 package，包含 CLI 和 adapter API 边界。",
+            "Adapter 覆盖 Claude Code、Codex、Gemini CLI、GitHub Copilot CLI、Cursor、OpenCode、OpenClaw 和 Hermes Agent。",
+            "官网内容已同步扫描引擎、adapter model、隐私规则和静态 404 行为。"
+          ]
+        },
         {
           "version": "v0.2",
           "date": "2026",
@@ -308,8 +356,11 @@
     }
   },
   "notFound": {
+    "eyebrow": "404",
+    "metaTitle": "页面未找到 — Berth",
+    "metaDescription": "这个 Berth 页面不存在。请回到首页，或使用导航继续浏览。",
     "title": "页面未找到",
-    "body": "你访问的页面不存在。",
+    "body": "你访问的页面不存在。它可能已经移动，或者当前链接已经过期。",
     "cta": "返回首页"
   }
 }

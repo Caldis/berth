@@ -5,7 +5,6 @@ import { Seo } from '@/components/Seo'
 import { JsonLd } from '@/components/JsonLd'
 import { getArticles, PILLAR_ORDER } from '@/content'
 import { useLang } from '@/lib/useLang'
-import type { Lang } from '@/lib/langs'
 import { SITE_URL } from '@/lib/site'
 import { collectionLd } from '@/lib/schema'
 
@@ -14,13 +13,6 @@ interface Pillar {
   title: string
   body: string
   cta: string
-}
-
-const COMING_SOON: Record<Lang, string> = {
-  zh: '内容陆续上线中',
-  en: 'Articles coming soon',
-  ja: '記事は順次公開予定',
-  ko: '곧 공개됩니다',
 }
 
 export function KnowledgeHub() {
@@ -57,7 +49,7 @@ export function KnowledgeHub() {
             const meta = pillars[i]
             const articles = getArticles(lang, key)
             return (
-              <div key={key}>
+              <section key={key} id={key} className="scroll-mt-24">
                 <div className="flex items-baseline gap-3">
                   <span className="rounded-full bg-cream px-3 py-1 text-xs font-semibold text-ink">{meta?.tag}</span>
                   <h2 className="font-display text-2xl font-semibold tracking-tight">{meta?.title}</h2>
@@ -83,10 +75,10 @@ export function KnowledgeHub() {
                   </ul>
                 ) : (
                   <p className="mt-5 rounded-3xl border border-dashed border-line bg-cream/50 px-6 py-5 text-sm text-muted">
-                    {COMING_SOON[lang]}
+                    {t('pages.knowledgeEmpty')}
                   </p>
                 )}
-              </div>
+              </section>
             )
           })}
         </div>
