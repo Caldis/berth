@@ -138,8 +138,15 @@ export class CursorAdapter implements AgentAdapter {
   }
 
   private cursorDir(): string {
+    const configDir = this.env.CURSOR_CONFIG_DIR?.trim()
+    if (configDir) return path.resolve(configDir)
     const customHome = this.env.CURSOR_HOME?.trim()
-    return customHome || path.join(this.homeDir, '.cursor')
+    if (customHome) return path.resolve(customHome)
+    if (process.platform !== 'win32' && process.platform !== 'darwin') {
+      const xdgConfigHome = this.env.XDG_CONFIG_HOME?.trim()
+      if (xdgConfigHome) return path.join(xdgConfigHome, 'cursor')
+    }
+    return path.join(this.homeDir, '.cursor')
   }
 }
 

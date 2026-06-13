@@ -33,6 +33,14 @@ describe('planned agent adapter definitions', () => {
     }
   })
 
+  it('declares package-manager identity for independently updatable CLI adapters', () => {
+    expect(packageNameFor('gemini-cli')).toBe('@google/gemini-cli')
+    expect(packageNameFor('github-copilot-cli')).toBe('@github/copilot')
+    expect(packageNameFor('opencode')).toBe('opencode-ai')
+    expect(packageNameFor('openclaw')).toBe('openclaw')
+    expect(packageNameFor('hermes-agent')).toBe('hermes-agent')
+  })
+
   it('keeps source declarations evidence-backed and read-only by policy', () => {
     for (const definition of PLANNED_AGENT_ADAPTER_DEFINITIONS) {
       expect(definition.sources.length).toBeGreaterThan(0)
@@ -64,3 +72,7 @@ describe('planned agent adapter definitions', () => {
     expect(sensitiveSources.every((source) => source.sensitivity !== 'normal')).toBe(true)
   })
 })
+
+function packageNameFor(id: string): string | undefined {
+  return PLANNED_AGENT_ADAPTER_DEFINITIONS.find((definition) => definition.id === id)?.versionProbe?.packageName
+}

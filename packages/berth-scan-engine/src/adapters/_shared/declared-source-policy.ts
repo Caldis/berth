@@ -71,6 +71,42 @@ export function resolvePathPattern(
       needsProject: false
     }
   }
+  if (pathPattern.includes('<cursor-config>')) {
+    return {
+      path: path.normalize(pathPattern.replace(/<cursor-config>/g, resolveCursorConfigDir(options.homeDir, options.env ?? process.env))),
+      needsProject: false
+    }
+  }
+  if (pathPattern.includes('<copilot-home>')) {
+    return {
+      path: path.normalize(pathPattern.replace(/<copilot-home>/g, resolveCopilotHomeDir(options.homeDir, options.env ?? process.env))),
+      needsProject: false
+    }
+  }
+  if (pathPattern.includes('<opencode-config>')) {
+    return {
+      path: path.normalize(pathPattern.replace(/<opencode-config>/g, resolveOpenCodeConfigDir(options.homeDir, options.env ?? process.env))),
+      needsProject: false
+    }
+  }
+  if (pathPattern.includes('<opencode-data>')) {
+    return {
+      path: path.normalize(pathPattern.replace(/<opencode-data>/g, resolveOpenCodeDataDir(options.homeDir, options.env ?? process.env))),
+      needsProject: false
+    }
+  }
+  if (pathPattern.includes('<openclaw-config>')) {
+    return {
+      path: path.normalize(pathPattern.replace(/<openclaw-config>/g, resolveOpenClawConfigPath(options.homeDir, options.env ?? process.env))),
+      needsProject: false
+    }
+  }
+  if (pathPattern.includes('<openclaw-state>')) {
+    return {
+      path: path.normalize(pathPattern.replace(/<openclaw-state>/g, resolveOpenClawStateDir(options.homeDir, options.env ?? process.env))),
+      needsProject: false
+    }
+  }
   if (pathPattern.includes('<hermes-home>')) {
     return {
       path: path.normalize(pathPattern.replace(/<hermes-home>/g, resolveHermesHomeDir(options.homeDir, options.env ?? process.env))),
@@ -86,6 +122,47 @@ export function resolvePathPattern(
     }
   }
   return { path: path.normalize(pathPattern), needsProject: false }
+}
+
+function resolveCursorConfigDir(homeDir: string, env: NodeJS.ProcessEnv): string {
+  const explicitConfigDir = env.CURSOR_CONFIG_DIR?.trim()
+  if (explicitConfigDir) return path.resolve(explicitConfigDir)
+  const legacyHome = env.CURSOR_HOME?.trim()
+  if (legacyHome) return path.resolve(legacyHome)
+  if (process.platform !== 'win32' && process.platform !== 'darwin') {
+    const configHome = env.XDG_CONFIG_HOME?.trim()
+    if (configHome) return path.join(configHome, 'cursor')
+  }
+  return path.join(homeDir, '.cursor')
+}
+
+function resolveCopilotHomeDir(homeDir: string, env: NodeJS.ProcessEnv): string {
+  const customHome = env.COPILOT_HOME?.trim()
+  return customHome ? path.resolve(customHome) : path.join(homeDir, '.copilot')
+}
+
+function resolveOpenCodeConfigDir(homeDir: string, env: NodeJS.ProcessEnv): string {
+  const customConfigDir = env.OPENCODE_CONFIG_DIR?.trim()
+  if (customConfigDir) return path.resolve(customConfigDir)
+  const configHome = env.XDG_CONFIG_HOME?.trim() || path.join(homeDir, '.config')
+  return path.join(configHome, 'opencode')
+}
+
+function resolveOpenCodeDataDir(homeDir: string, env: NodeJS.ProcessEnv): string {
+  const dataHome = env.XDG_DATA_HOME?.trim() || path.join(homeDir, '.local', 'share')
+  return path.join(dataHome, 'opencode')
+}
+
+function resolveOpenClawConfigPath(homeDir: string, env: NodeJS.ProcessEnv): string {
+  const configPath = env.OPENCLAW_CONFIG_PATH?.trim()
+  return configPath ? path.resolve(configPath) : path.join(resolveOpenClawStateDir(homeDir, env), 'openclaw.json')
+}
+
+function resolveOpenClawStateDir(homeDir: string, env: NodeJS.ProcessEnv): string {
+  const stateDir = env.OPENCLAW_STATE_DIR?.trim()
+  if (stateDir) return path.resolve(stateDir)
+  const openClawHome = env.OPENCLAW_HOME?.trim()
+  return openClawHome ? path.join(path.resolve(openClawHome), '.openclaw') : path.join(homeDir, '.openclaw')
 }
 
 function resolveCursorUserDataDir(homeDir: string, env: NodeJS.ProcessEnv): string {

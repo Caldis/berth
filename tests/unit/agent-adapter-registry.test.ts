@@ -198,6 +198,172 @@ describe('agent adapter registry', () => {
     })
   })
 
+  it('uses CURSOR_CONFIG_DIR for both Cursor source coverage and parsing', async () => {
+    const homeDir = makeTempDir()
+    const projectDir = makeTempDir()
+    const cursorConfigDir = path.join(homeDir, 'custom-cursor-config')
+    const cursorMcp = path.join(cursorConfigDir, 'mcp.json')
+    const cursorSkill = path.join(cursorConfigDir, 'skills', 'review', 'SKILL.md')
+    writeJson(cursorMcp, {
+      mcpServers: {
+        docs: {
+          command: 'docs-mcp'
+        }
+      }
+    })
+    fs.mkdirSync(path.dirname(cursorSkill), { recursive: true })
+    fs.writeFileSync(cursorSkill, '---\nname: review\n---\nReview code.\n', 'utf8')
+
+    const cursorDefinition = PLANNED_AGENT_ADAPTER_DEFINITIONS.find((definition) => definition.id === 'cursor')!
+    const adapter = new CursorAdapter(cursorDefinition, {
+      homeDir,
+      projectDir,
+      env: { CURSOR_CONFIG_DIR: cursorConfigDir }
+    })
+
+    await expect(adapter.detect()).resolves.toMatchObject({
+      installed: true,
+      paths: expect.arrayContaining([
+        expect.objectContaining({
+          code: 'cursor.user.mcp',
+          path: cursorMcp,
+          status: 'scanned'
+        }),
+        expect.objectContaining({
+          code: 'cursor.user.skills',
+          path: path.join(cursorConfigDir, 'skills'),
+          status: 'scanned'
+        })
+      ])
+    })
+    await expect(adapter.scanAll()).resolves.toMatchObject({
+      assets: expect.arrayContaining([
+        expect.objectContaining({
+          agentId: 'cursor',
+          type: 'mcp-server',
+          name: 'docs',
+          path: cursorMcp
+        }),
+        expect.objectContaining({
+          agentId: 'cursor',
+          type: 'skill',
+          name: 'review',
+          path: cursorSkill
+        })
+      ]),
+      errors: []
+    })
+  })
+
+  it('uses agent-specific home env roots for source coverage and parsing', async () => {
+    const homeDir = makeTempDir()
+    const projectDir = makeTempDir()
+    const copilotHome = path.join(homeDir, 'copilot-home')
+    const copilotMcp = path.join(copilotHome, 'mcp-config.json')
+    const opencodeConfigDir = path.join(homeDir, 'opencode-config')
+    const opencodeConfig = path.join(opencodeConfigDir, 'opencode.json')
+    const opencodeDataHome = path.join(homeDir, 'opencode-data-home')
+    const opencodeAuth = path.join(opencodeDataHome, 'opencode', 'auth.json')
+    const openClawState = path.join(homeDir, 'openclaw-state')
+    const openClawConfig = path.join(openClawState, 'openclaw.json')
+
+    writeJson(copilotMcp, {
+      mcpServers: {
+        docs: {
+          command: 'docs-mcp'
+        }
+      }
+    })
+    writeJson(opencodeConfig, {
+      mcp: {
+        docs: {
+          command: 'docs-mcp'
+        }
+      }
+    })
+    writeJson(opencodeAuth, { token: 'secret' })
+    writeJson(openClawConfig, {
+      mcpServers: {
+        docs: {
+          command: 'docs-mcp'
+        }
+      }
+    })
+
+    const copilot = new GitHubCopilotCliAdapter(definitionFor('github-copilot-cli'), {
+      homeDir,
+      projectDir,
+      env: { COPILOT_HOME: copilotHome }
+    })
+    const opencode = new OpenCodeAdapter(definitionFor('opencode'), {
+      homeDir,
+      projectDir,
+      env: { OPENCODE_CONFIG_DIR: opencodeConfigDir, XDG_DATA_HOME: opencodeDataHome }
+    })
+    const openclaw = new OpenClawAdapter(definitionFor('openclaw'), {
+      homeDir,
+      projectDir,
+      env: { OPENCLAW_STATE_DIR: openClawState }
+    })
+
+    await expect(copilot.detect()).resolves.toMatchObject({
+      installed: true,
+      paths: expect.arrayContaining([
+        expect.objectContaining({
+          code: 'copilot.user.mcp-config',
+          path: copilotMcp,
+          status: 'scanned'
+        })
+      ])
+    })
+    await expect(copilot.scanAll()).resolves.toMatchObject({
+      assets: expect.arrayContaining([
+        expect.objectContaining({ agentId: 'github-copilot-cli', type: 'mcp-server', name: 'docs', path: copilotMcp })
+      ]),
+      errors: []
+    })
+
+    await expect(opencode.detect()).resolves.toMatchObject({
+      installed: true,
+      paths: expect.arrayContaining([
+        expect.objectContaining({
+          code: 'opencode.user.config',
+          path: opencodeConfig,
+          status: 'scanned'
+        }),
+        expect.objectContaining({
+          code: 'opencode.user.auth',
+          path: opencodeAuth,
+          status: 'scanned'
+        })
+      ])
+    })
+    await expect(opencode.scanAll()).resolves.toMatchObject({
+      assets: expect.arrayContaining([
+        expect.objectContaining({ agentId: 'opencode', type: 'mcp-server', name: 'docs', path: opencodeConfig }),
+        expect.objectContaining({ agentId: 'opencode', type: 'credential', path: opencodeAuth })
+      ]),
+      errors: []
+    })
+
+    await expect(openclaw.detect()).resolves.toMatchObject({
+      installed: true,
+      paths: expect.arrayContaining([
+        expect.objectContaining({
+          code: 'openclaw.user.config',
+          path: openClawConfig,
+          status: 'scanned'
+        })
+      ])
+    })
+    await expect(openclaw.scanAll()).resolves.toMatchObject({
+      assets: expect.arrayContaining([
+        expect.objectContaining({ agentId: 'openclaw', type: 'mcp-server', name: 'docs', path: openClawConfig })
+      ]),
+      errors: []
+    })
+  })
+
   it('registers planned agent definitions and parses stable Gemini CLI sources', async () => {
     const homeDir = makeTempDir()
     const projectDir = makeTempDir()
@@ -1119,4 +1285,10 @@ function makeTempDir(): string {
 function writeJson(filePath: string, value: unknown): void {
   fs.mkdirSync(path.dirname(filePath), { recursive: true })
   fs.writeFileSync(filePath, JSON.stringify(value, null, 2), 'utf8')
+}
+
+function definitionFor(id: string) {
+  const definition = PLANNED_AGENT_ADAPTER_DEFINITIONS.find((item) => item.id === id)
+  if (!definition) throw new Error(`Missing planned adapter definition: ${id}`)
+  return definition
 }

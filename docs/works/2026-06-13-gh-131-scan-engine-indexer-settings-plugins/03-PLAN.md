@@ -91,5 +91,10 @@
   - tests: `pnpm vitest run tests/unit/agent-adapter-registry.test.ts tests/unit/planned-agent-adapter-definitions.test.ts tests/unit/agent-capability-plugins.test.ts`; `pnpm vitest run tests/unit/engine-scanner.test.ts tests/unit/scope-dedupe.test.ts tests/unit/search.test.ts tests/unit/asset-dedupe.test.ts`; `pnpm --filter @berth/scan-engine test`; `pnpm --filter @berth/scan-engine typecheck`; `pnpm --filter @berth/scan-engine build`; `pnpm typecheck:node`; `pnpm typecheck:test`; `pnpm typecheck:web`; `pnpm lint`; `pnpm harness:check`; `pnpm build`。
   - verify: passed 2026-06-13。本机 `where.exe hermes` 未找到命令。用已构建 `packages/berth-scan-engine/dist/cli.cjs scan --home-dir $env:USERPROFILE --project D:\Code\berth --json` 验证: Cursor/OpenClaw/Hermes 在只有共享来源时分别为 `detected=false`, source coverage 仍保留 `cursor.project.agents-md`、`openclaw.user.shared-skills`、`hermes.project.agents-md` / `hermes.project.claude-md`, 相关 errors=0。
 
+- [x] 任务 16: agent home/config 环境变量与真实扫描闭环
+  - scope: source coverage 的路径解析补齐 `<copilot-home>`、`<cursor-config>`、`<opencode-config>`、`<opencode-data>`、`<openclaw-config>`、`<openclaw-state>` token, 让 Settings/插件详情展示的扫描源路径与 adapter 实际读取路径一致。Cursor adapter 现在支持 `CURSOR_CONFIG_DIR`; OpenCode/OpenClaw/Copilot 的 package identity 写入 versionProbe, 便于独立版本管理和更新提示。
+  - tests: `pnpm vitest run tests/unit/agent-adapter-registry.test.ts tests/unit/planned-agent-adapter-definitions.test.ts tests/unit/agent-capability-plugins.test.ts`; `pnpm typecheck:node`; `pnpm typecheck:test`; `pnpm --filter @berth/scan-engine build`。
+  - verify: passed 2026-06-13。用系统临时目录构造隔离 home/project, 设置 `COPILOT_HOME`、`CURSOR_CONFIG_DIR`、`OPENCODE_CONFIG_DIR`、`XDG_DATA_HOME`、`OPENCLAW_STATE_DIR`、`HERMES_HOME`, 运行已构建 CLI: `node packages\berth-scan-engine\dist\cli.cjs scan --home-dir <fixture-home> --project <fixture-project> --json`。结果 `errorCount=0`; 六个 agent 均有资产且关键 source 均为 `scanned`: Gemini CLI assets=5, Copilot CLI assets=4, Cursor assets=3, OpenCode assets=3, OpenClaw assets=6, Hermes Agent assets=7。
+
 ## verify 回写
 verify 不通过项作为新任务追加于此, phase 退回 implement。
