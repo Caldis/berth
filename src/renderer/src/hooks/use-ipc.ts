@@ -1,6 +1,12 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import type { AgentView, Asset, AssetStats, SessionSummary, UsageSummary } from '@shared/types/asset'
-import type { SessionDetailResult, SessionReplayResult, HealthCheck, ScanEngineInfo } from '@shared/types/ipc'
+import type {
+  SessionDetailResult,
+  SessionReplayResult,
+  HealthCheck,
+  ScanEngineInfo,
+  ScanEngineSettings
+} from '@shared/types/ipc'
 import type {
   AgentCapabilityPlugin,
   AgentCapabilityPluginListResult,
@@ -227,15 +233,18 @@ export function useScanEngineInfo(): {
   info: ScanEngineInfo | null
   loading: boolean
   refreshing: boolean
+  saving: boolean
   error: string | null
   reload: () => void
   refreshIndex: () => void
+  saveSettings: (settings: Partial<ScanEngineSettings>) => void
 } {
   const mountedRef = useRef(false)
   const infoRef = useRef<ScanEngineInfo | null>(null)
   const [info, setInfo] = useState<ScanEngineInfo | null>(null)
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
+  const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [reloadNonce, setReloadNonce] = useState(0)
 
@@ -278,6 +287,26 @@ export function useScanEngineInfo(): {
       })
   }, [loadInfo])
 
+  const saveSettings = useCallback((settings: Partial<ScanEngineSettings>) => {
+    if (!window.api?.assets?.setEngineSettings) return
+    setSaving(true)
+    void window.api.assets
+      .setEngineSettings(settings)
+      .then((nextInfo) => {
+        if (!mountedRef.current) return
+        infoRef.current = nextInfo
+        setInfo(nextInfo)
+        setError(null)
+      })
+      .catch((err) => {
+        if (!mountedRef.current) return
+        setError(err instanceof Error ? err.message : String(err))
+      })
+      .finally(() => {
+        if (mountedRef.current) setSaving(false)
+      })
+  }, [])
+
   useEffect(() => {
     mountedRef.current = true
     setLoading(infoRef.current === null)
@@ -295,7 +324,7 @@ export function useScanEngineInfo(): {
     }
   }, [loadInfo, reloadNonce])
 
-  return { info, loading, refreshing, error, reload, refreshIndex }
+  return { info, loading, refreshing, saving, error, reload, refreshIndex, saveSettings }
 }
 
 export function useSessions(opts?: {

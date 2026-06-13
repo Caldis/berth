@@ -1460,6 +1460,8 @@
       "loadError": "无法加载扫描引擎详情",
       "lastCompleted": "最近完成: {{value}}",
       "controls": "控制项",
+      "saveControl": "保存",
+      "saving": "保存中",
       "editable": "可调整",
       "readOnly": "只读",
       "unsupported": "暂不支持",
@@ -1508,7 +1510,7 @@
         "scope-fallback": "项目范围没有缓存快照时的行为。",
         "pause": "计划中的调度控制项。",
         "cancel": "计划中的调度控制项。",
-        "persisted-settings": "计划中的可调整扫描策略存储。"
+        "persisted-settings": "把可调整的扫描引擎设置保存在本机。"
       }
     },
     "agentPlugins": "Agent 能力插件",

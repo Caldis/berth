@@ -32,9 +32,29 @@ describe('SettingsContent page chrome', () => {
         sourceRows: 5
       },
       controls: [
-        { id: 'manual-refresh', value: 'available', editable: true, supported: true },
-        { id: 'watcher-debounce-ms', value: 1000, unit: 'ms', editable: false, supported: true },
-        { id: 'watcher-min-interval-ms', value: 30000, unit: 'ms', editable: false, supported: true },
+        { id: 'manual-refresh', value: 'available', editable: false, supported: true },
+        {
+          id: 'watcher-debounce-ms',
+          value: 1000,
+          unit: 'ms',
+          editable: true,
+          supported: true,
+          settingKey: 'watcherDebounceMs',
+          min: 0,
+          max: 10000,
+          step: 100
+        },
+        {
+          id: 'watcher-min-interval-ms',
+          value: 30000,
+          unit: 'ms',
+          editable: true,
+          supported: true,
+          settingKey: 'watcherMinIntervalMs',
+          min: 0,
+          max: 300000,
+          step: 1000
+        },
         { id: 'pause', value: 'unsupported', editable: false, supported: false }
       ],
       capabilities: {
@@ -45,13 +65,14 @@ describe('SettingsContent page chrome', () => {
         incrementalFileChanges: true,
         pauseSupported: false,
         cancelSupported: false,
-        writableSettingsSupported: false
+        writableSettingsSupported: true
       },
       limits: [
         { id: 'metadata-only-sensitive-files', level: 'info', enabled: true },
         { id: 'third-party-code-not-executed', level: 'info', enabled: true }
       ]
     }))
+    window.api.assets.setEngineSettings = vi.fn(async () => window.api.assets.engineInfo())
     window.api.agentPlugins.list = vi.fn(async () => ({ plugins: [], manifests: [] }))
     window.api.assets.scanSources = vi.fn(async () => [])
     window.api.assets.refresh = vi.fn(async (): Promise<AssetRuntimeStatus> => ({
@@ -124,9 +145,23 @@ describe('SettingsContent page chrome', () => {
     expect(screen.getByText('7 files')).toBeInTheDocument()
     expect(screen.getByText('1 error')).toBeInTheDocument()
     expect(screen.getByText('Watcher debounce')).toBeInTheDocument()
-    expect(screen.getByText('1,000 ms')).toBeInTheDocument()
+    expect(screen.getByLabelText('Watcher debounce')).toHaveValue(1000)
     expect(screen.getByText('Pause scanning')).toBeInTheDocument()
     expect(screen.getByText('Not supported yet')).toBeInTheDocument()
+  })
+
+  it('saves editable scan engine controls', async () => {
+    renderSettingsContent()
+
+    const watcherDebounce = await screen.findByLabelText('Watcher debounce')
+    fireEvent.change(watcherDebounce, { target: { value: '1500' } })
+    const row = watcherDebounce.closest('form')
+    expect(row).not.toBeNull()
+    fireEvent.click(within(row!).getByRole('button', { name: 'Save' }))
+
+    await waitFor(() => {
+      expect(window.api.assets.setEngineSettings).toHaveBeenCalledWith({ watcherDebounceMs: 1500 })
+    })
   })
 
   it('refreshes the scan engine from settings', async () => {

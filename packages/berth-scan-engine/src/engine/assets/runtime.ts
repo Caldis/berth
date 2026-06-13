@@ -11,6 +11,7 @@ import type {
   SearchResult,
   SessionListResult,
   ScanEngineInfo,
+  ScanEngineSettings,
   ScanResult
 } from '@shared/types/ipc'
 import type { AppScopeSelection, ProjectScopeCandidate } from '@shared/scope'
@@ -28,6 +29,12 @@ import { SnapshotSelectorCache, type AssetSelectorCache } from './selector-cache
 import { ProjectSnapshotCache, projectSnapshotKey } from './project-snapshot-cache'
 import { ScanCoordinator, type AssetRuntimeScanner, type ScanOutcome, type ScanSink } from './scan-coordinator'
 import { SCAN_ENGINE_NAME, SCAN_ENGINE_VERSION } from '../../index'
+import {
+  DEFAULT_SCAN_ENGINE_SETTINGS,
+  SCAN_ENGINE_SETTING_LIMITS,
+  normalizeScanEngineSettings,
+  type ScanEngineSettingsStore
+} from './settings'
 
 // Scanner contract moved to scan-coordinator.ts (GH-122); re-exported so the
 // existing import surface (worker-host, tests) stays unchanged.
@@ -63,6 +70,7 @@ export interface AssetRuntimeOptions {
   /** Persists the snapshot for instant cold-start (GH-113 T1). Injected by the
    * host with `app.getPath('userData')`; absent in tests that don't exercise it. */
   snapshotStore?: SnapshotStore
+  settingsStore?: ScanEngineSettingsStore
 }
 
 const EMPTY_ASSET_STATS: AssetStats = {
@@ -75,8 +83,8 @@ const EMPTY_ASSET_STATS: AssetStats = {
   subagents: 0
 }
 
-export const WATCHER_REFRESH_DEBOUNCE_MS = 1_000
-export const WATCHER_REFRESH_MIN_INTERVAL_MS = 30_000
+export const WATCHER_REFRESH_DEBOUNCE_MS = DEFAULT_SCAN_ENGINE_SETTINGS.watcherDebounceMs
+export const WATCHER_REFRESH_MIN_INTERVAL_MS = DEFAULT_SCAN_ENGINE_SETTINGS.watcherMinIntervalMs
 
 export class AgentAssetRuntime {
   private projectDir?: string
@@ -90,6 +98,8 @@ export class AgentAssetRuntime {
   private readonly now: () => string
   private readonly createSnapshotId: () => string
   private readonly snapshotStore?: SnapshotStore
+  private readonly settingsStore?: ScanEngineSettingsStore
+  private settings: ScanEngineSettings
   private readonly initialProjectDir?: string
   private progressListener?: (payload: AssetProgressPayload) => void
   private scheduledRefreshTimer: ReturnType<typeof setTimeout> | null = null
@@ -101,6 +111,8 @@ export class AgentAssetRuntime {
     this.now = options.now ?? (() => new Date().toISOString())
     this.createSnapshotId = options.createSnapshotId ?? createDefaultSnapshotId
     this.snapshotStore = options.snapshotStore
+    this.settingsStore = options.settingsStore
+    this.settings = normalizeScanEngineSettings(this.settingsStore?.load())
     this.coordinator = new ScanCoordinator(
       options.createScanner ?? ((projectDir) => new WorkerAssetScanner(projectDir)),
       this.projectDir
@@ -146,6 +158,16 @@ export class AgentAssetRuntime {
     return this.snapshot
   }
 
+  getSettings(): ScanEngineSettings {
+    return this.settings
+  }
+
+  setSettings(settings: Partial<ScanEngineSettings>): ScanEngineSettings {
+    this.settings = normalizeScanEngineSettings({ ...this.settings, ...settings })
+    this.settingsStore?.save(this.settings)
+    return this.settings
+  }
+
   getEngineInfo(): ScanEngineInfo {
     const sourceRows = countScanSourceRows(this.snapshot.sources)
     return {
@@ -164,15 +186,31 @@ export class AgentAssetRuntime {
         sourceRows
       },
       controls: [
-        { id: 'manual-refresh', value: 'available', editable: true, supported: true },
-        { id: 'watcher-debounce-ms', value: WATCHER_REFRESH_DEBOUNCE_MS, unit: 'ms', editable: false, supported: true },
-        { id: 'watcher-min-interval-ms', value: WATCHER_REFRESH_MIN_INTERVAL_MS, unit: 'ms', editable: false, supported: true },
+        { id: 'manual-refresh', value: 'available', editable: false, supported: true },
+        {
+          id: 'watcher-debounce-ms',
+          value: this.settings.watcherDebounceMs,
+          unit: 'ms',
+          editable: true,
+          supported: true,
+          settingKey: 'watcherDebounceMs',
+          ...SCAN_ENGINE_SETTING_LIMITS.watcherDebounceMs
+        },
+        {
+          id: 'watcher-min-interval-ms',
+          value: this.settings.watcherMinIntervalMs,
+          unit: 'ms',
+          editable: true,
+          supported: true,
+          settingKey: 'watcherMinIntervalMs',
+          ...SCAN_ENGINE_SETTING_LIMITS.watcherMinIntervalMs
+        },
         { id: 'worker-mode', value: 'one-shot', unit: 'mode', editable: false, supported: true },
         { id: 'scheduler-mode', value: 'single-flight', unit: 'mode', editable: false, supported: true },
         { id: 'scope-fallback', value: 'scan-on-miss', unit: 'mode', editable: false, supported: true },
         { id: 'pause', value: 'unsupported', unit: 'state', editable: false, supported: false },
         { id: 'cancel', value: 'unsupported', unit: 'state', editable: false, supported: false },
-        { id: 'persisted-settings', value: 'unsupported', unit: 'state', editable: false, supported: false }
+        { id: 'persisted-settings', value: 'available', unit: 'state', editable: false, supported: true }
       ],
       capabilities: {
         workerMode: 'one-shot',
@@ -182,7 +220,7 @@ export class AgentAssetRuntime {
         incrementalFileChanges: true,
         pauseSupported: false,
         cancelSupported: false,
-        writableSettingsSupported: false
+        writableSettingsSupported: true
       },
       limits: [
         { id: 'metadata-only-sensitive-files', level: 'info', enabled: true },
@@ -293,8 +331,8 @@ export class AgentAssetRuntime {
 
   scheduleRefresh(options: AssetScheduledRefreshOptions = {}): void {
     const reason = options.reason ?? 'manual'
-    const delayMs = Math.max(0, options.delayMs ?? (reason === 'watcher' ? WATCHER_REFRESH_DEBOUNCE_MS : 0))
-    const minIntervalMs = Math.max(0, options.minIntervalMs ?? (reason === 'watcher' ? WATCHER_REFRESH_MIN_INTERVAL_MS : 0))
+    const delayMs = Math.max(0, options.delayMs ?? (reason === 'watcher' ? this.settings.watcherDebounceMs : 0))
+    const minIntervalMs = Math.max(0, options.minIntervalMs ?? (reason === 'watcher' ? this.settings.watcherMinIntervalMs : 0))
     const elapsedSinceWatcherRefresh = this.lastWatcherRefreshStartedAtMs > 0
       ? Math.max(0, Date.now() - this.lastWatcherRefreshStartedAtMs)
       : minIntervalMs

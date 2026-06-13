@@ -1,6 +1,6 @@
 import { Activity, AlertTriangle, RefreshCcw } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import type { ScanEngineControlDescriptor, ScanEngineInfo } from '@shared/types/ipc'
+import type { ScanEngineControlDescriptor, ScanEngineInfo, ScanEngineSettings } from '@shared/types/ipc'
 import { useScanEngineInfo } from '@/hooks/use-ipc'
 import { cn } from '@/lib/utils'
 
@@ -70,10 +70,29 @@ function metricRows(info: ScanEngineInfo, language: string, t: ReturnType<typeof
   ]
 }
 
+function settingsPatchForControl(
+  control: ScanEngineControlDescriptor,
+  value: number
+): Partial<ScanEngineSettings> | null {
+  if (!control.settingKey) return null
+  return { [control.settingKey]: value }
+}
+
 export function ScanEngineSettingsSection(): React.ReactElement {
   const { t, i18n } = useTranslation()
   const language = i18n.language || 'en'
-  const { info, loading, refreshing, error, reload, refreshIndex } = useScanEngineInfo()
+  const { info, loading, refreshing, saving, error, reload, refreshIndex, saveSettings } = useScanEngineInfo()
+
+  const handleControlSubmit = (control: ScanEngineControlDescriptor) => (
+    event: React.FormEvent<HTMLFormElement>
+  ): void => {
+    event.preventDefault()
+    const rawValue = new FormData(event.currentTarget).get(control.id)
+    const value = typeof rawValue === 'string' ? Number(rawValue) : Number.NaN
+    if (!Number.isFinite(value)) return
+    const patch = settingsPatchForControl(control, value)
+    if (patch) saveSettings(patch)
+  }
 
   return (
     <div className="rounded-lg border border-border bg-card">
@@ -160,35 +179,63 @@ export function ScanEngineSettingsSection(): React.ReactElement {
                 {t('settings.scanEngine.controls')}
               </p>
               <div className="divide-y divide-border rounded-md border border-border">
-                {info.controls.map((control) => (
-                  <div key={control.id} className="grid gap-1 p-3 text-sm sm:grid-cols-[1fr_auto_auto] sm:items-center">
-                    <div className="min-w-0">
-                      <p className="font-medium">{t(`settings.scanEngine.controlLabels.${control.id}`)}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {t(`settings.scanEngine.controlDescriptions.${control.id}`)}
-                      </p>
-                    </div>
-                    <span className="text-xs text-muted-foreground">
-                      {formatControlValue(control, language, t)}
-                    </span>
-                    <span
-                      className={cn(
-                        'w-fit rounded-md border px-2 py-0.5 text-xs',
-                        control.supported
-                          ? control.editable
-                            ? 'border-primary/30 text-primary'
-                            : 'border-border text-muted-foreground'
-                          : 'border-muted text-muted-foreground opacity-80'
+                {info.controls.map((control) => {
+                  const label = t(`settings.scanEngine.controlLabels.${control.id}`)
+                  const numericValue = typeof control.value === 'number' ? control.value : null
+                  const canEditNumber = control.editable && control.settingKey && numericValue !== null
+                  return (
+                    <div key={control.id} className="grid gap-1 p-3 text-sm sm:grid-cols-[1fr_auto_auto] sm:items-center">
+                      <div className="min-w-0">
+                        <p className="font-medium">{label}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {t(`settings.scanEngine.controlDescriptions.${control.id}`)}
+                        </p>
+                      </div>
+                      {canEditNumber ? (
+                        <form onSubmit={handleControlSubmit(control)} className="flex items-center gap-2">
+                          <input
+                            key={`${control.id}-${control.value}`}
+                            aria-label={label}
+                            name={control.id}
+                            type="number"
+                            defaultValue={numericValue ?? undefined}
+                            min={control.min}
+                            max={control.max}
+                            step={control.step}
+                            className="h-8 w-28 rounded-md border border-input bg-background px-2 text-right text-xs text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-ring/40"
+                          />
+                          <button
+                            type="submit"
+                            disabled={saving}
+                            className="h-8 rounded-md border border-border px-2 text-xs font-medium hover:border-primary/50 disabled:cursor-not-allowed disabled:opacity-60"
+                          >
+                            {saving ? t('settings.scanEngine.saving') : t('settings.scanEngine.saveControl')}
+                          </button>
+                        </form>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">
+                          {formatControlValue(control, language, t)}
+                        </span>
                       )}
-                    >
-                      {control.supported
-                        ? control.editable
-                          ? t('settings.scanEngine.editable')
-                          : t('settings.scanEngine.readOnly')
-                        : t('settings.scanEngine.unsupported')}
-                    </span>
-                  </div>
-                ))}
+                      <span
+                        className={cn(
+                          'w-fit rounded-md border px-2 py-0.5 text-xs',
+                          control.supported
+                            ? control.editable
+                              ? 'border-primary/30 text-primary'
+                              : 'border-border text-muted-foreground'
+                            : 'border-muted text-muted-foreground opacity-80'
+                        )}
+                      >
+                        {control.supported
+                          ? control.editable
+                            ? t('settings.scanEngine.editable')
+                            : t('settings.scanEngine.readOnly')
+                          : t('settings.scanEngine.unsupported')}
+                      </span>
+                    </div>
+                  )
+                })}
               </div>
             </div>
           </>

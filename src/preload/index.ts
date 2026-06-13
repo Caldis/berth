@@ -40,6 +40,8 @@ const api = {
     snapshot: () => invoke('assets:snapshot'),
     status: () => invoke('assets:status'),
     engineInfo: () => invoke('assets:engine-info'),
+    setEngineSettings: (settings: IpcChannelArgs<'assets:set-engine-settings'>[0]) =>
+      invoke('assets:set-engine-settings', settings),
     refresh: (opts?: { wait?: boolean }) => invoke('assets:refresh', opts),
     scanSources: () => invoke('assets:scan-sources'),
     get: (id: string) => invoke('assets:get', id),

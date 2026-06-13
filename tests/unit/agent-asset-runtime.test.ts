@@ -132,16 +132,57 @@ describe('AgentAssetRuntime', () => {
       incrementalFileChanges: true,
       pauseSupported: false,
       cancelSupported: false,
-      writableSettingsSupported: false
+      writableSettingsSupported: true
     })
     expect(info.controls).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ id: 'manual-refresh', editable: true, supported: true }),
-        expect.objectContaining({ id: 'watcher-debounce-ms', value: 1000, unit: 'ms', editable: false }),
-        expect.objectContaining({ id: 'watcher-min-interval-ms', value: 30000, unit: 'ms', editable: false }),
+        expect.objectContaining({ id: 'manual-refresh', editable: false, supported: true }),
+        expect.objectContaining({
+          id: 'watcher-debounce-ms',
+          value: 1000,
+          unit: 'ms',
+          editable: true,
+          settingKey: 'watcherDebounceMs',
+          min: 0,
+          max: 10000,
+          step: 100
+        }),
+        expect.objectContaining({
+          id: 'watcher-min-interval-ms',
+          value: 30000,
+          unit: 'ms',
+          editable: true,
+          settingKey: 'watcherMinIntervalMs',
+          min: 0,
+          max: 300000,
+          step: 1000
+        }),
         expect.objectContaining({ id: 'pause', supported: false, editable: false })
       ])
     )
+  })
+
+  it('loads, normalizes, and persists scan engine settings', () => {
+    const saved: unknown[] = []
+    const runtime = new AgentAssetRuntime({
+      projectDir: '/repo/berth',
+      createScanner: () => createScanner({ assets: [], stats: emptyStats, errors: [] }),
+      settingsStore: {
+        load: () => ({ watcherDebounceMs: 1550, watcherMinIntervalMs: 90_400 }),
+        save: (settings) => saved.push(settings)
+      }
+    })
+
+    expect(runtime.getSettings()).toEqual({
+      watcherDebounceMs: 1600,
+      watcherMinIntervalMs: 90000
+    })
+    runtime.setSettings({ watcherDebounceMs: 240 })
+    expect(runtime.getSettings()).toEqual({
+      watcherDebounceMs: 200,
+      watcherMinIntervalMs: 90000
+    })
+    expect(saved).toEqual([{ watcherDebounceMs: 200, watcherMinIntervalMs: 90000 }])
   })
 
   it('reuses an in-flight scan and publishes a ready snapshot', async () => {
@@ -308,6 +349,19 @@ describe('AgentAssetRuntime', () => {
     expect(scanner.scanAll).toHaveBeenCalledTimes(1)
     await vi.advanceTimersByTimeAsync(1)
     expect(scanner.scanAll).toHaveBeenCalledTimes(2)
+  })
+
+  it('uses editable scan engine settings for watcher scheduled refreshes', async () => {
+    vi.useFakeTimers()
+    const scanner = createScanner({ assets: [], stats: emptyStats, errors: [] })
+    const runtime = createRuntime(scanner)
+    runtime.setSettings({ watcherDebounceMs: 200, watcherMinIntervalMs: 5000 })
+
+    runtime.scheduleRefresh({ reason: 'watcher' })
+    await vi.advanceTimersByTimeAsync(199)
+    expect(scanner.scanAll).not.toHaveBeenCalled()
+    await vi.advanceTimersByTimeAsync(1)
+    expect(scanner.scanAll).toHaveBeenCalledTimes(1)
   })
 
   it('drops a pending scheduled refresh when the project generation changes (GH-129)', async () => {

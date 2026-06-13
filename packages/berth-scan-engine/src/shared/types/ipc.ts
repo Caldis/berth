@@ -95,6 +95,10 @@ export interface ScanEngineControlDescriptor {
   unit?: ScanEngineControlUnit
   editable: boolean
   supported: boolean
+  settingKey?: keyof ScanEngineSettings
+  min?: number
+  max?: number
+  step?: number
 }
 
 export interface ScanEngineCapabilitySummary {
@@ -137,6 +141,11 @@ export interface ScanEngineInfo {
   controls: ScanEngineControlDescriptor[]
   capabilities: ScanEngineCapabilitySummary
   limits: ScanEngineLimitDescriptor[]
+}
+
+export interface ScanEngineSettings {
+  watcherDebounceMs: number
+  watcherMinIntervalMs: number
 }
 
 export interface AssetSnapshot {
@@ -485,6 +494,7 @@ export interface IpcChannels {
   'assets:snapshot': { args: []; result: AssetSnapshot }
   'assets:status': { args: []; result: AssetRuntimeStatus }
   'assets:engine-info': { args: []; result: ScanEngineInfo }
+  'assets:set-engine-settings': { args: [Partial<ScanEngineSettings>]; result: ScanEngineInfo }
   'assets:refresh': { args: [{ wait?: boolean }?]; result: AssetRuntimeStatus }
   'assets:scan-sources': { args: []; result: AgentScanSourceGroup[] }
   'agent-plugins:list': { args: []; result: AgentCapabilityPluginListResult }

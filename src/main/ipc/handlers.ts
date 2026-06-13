@@ -8,6 +8,7 @@ import type {
   AssetRuntimeStatus,
   AssetSnapshot,
   ScanEngineInfo,
+  ScanEngineSettings,
   SearchResult,
   HealthCheck,
   HealthCheckRequest,
@@ -155,6 +156,11 @@ export function registerAssetHandlers(): void {
   })
 
   ipcMain.handle('assets:engine-info', (): ScanEngineInfo => {
+    return getAssetRuntime().getEngineInfo()
+  })
+
+  ipcMain.handle('assets:set-engine-settings', (_event, settings: Partial<ScanEngineSettings>): ScanEngineInfo => {
+    getAssetRuntime().setSettings(settings)
     return getAssetRuntime().getEngineInfo()
   })
 

@@ -13,6 +13,7 @@
   - scope: `ScanCoordinator` 增加 queue/reason/coalescing 状态; runtime 暴露 paused/cancelable capability; Settings 显示真实状态。
   - tests: `pnpm vitest run tests/unit/scan-coordinator.test.ts tests/unit/agent-asset-runtime.test.ts tests/renderer/settings-page.test.tsx`
   - verify: refresh 去重、排队、暂停/恢复计划、错误保留旧 snapshot; UI 状态随 progress/change 更新。
+  - progress 2026-06-13: added persisted scan engine settings for watcher debounce/min interval; Settings can edit those two real runtime parameters through IPC, while pause/cancel/queue remain explicitly unsupported. Passed `pnpm vitest run tests/unit/agent-asset-runtime.test.ts tests/unit/scan-engine-settings.test.ts tests/unit/ipc-contract.test.ts` and `pnpm vitest run tests/renderer/settings-page.test.tsx tests/renderer/settings-agent-plugins.test.tsx`; typecheck web/test passed.
 
 - [x] 任务 3: project scope filter-first
   - scope: `project-scope-runtime.ts` 优先用已有 global snapshot 过滤; 缺缓存时后台 refresh, 不在已有数据时同步 full scan。

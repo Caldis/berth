@@ -15,6 +15,7 @@ import { isAllowedPermission, isSafeExternalUrl } from './url-guard'
 import { autoUpdater } from 'electron-updater'
 import { createUpdaterController, setUpdaterRuntime } from './updater'
 import { readUpdatePreferences } from './update-preferences'
+import { createScanEngineSettingsStore } from './scan-engine-settings'
 import appIcon from '../../assets/icon/app_icon.png?asset'
 
 // GH-115 T5: 进程级兜底 — 打包应用 (无终端) 的故障此前零痕迹。日志仅落
@@ -198,9 +199,11 @@ if (!gotTheLock) {
     // the last result instantly from the on-disk SQLite index, then the renderer
     // triggers a background refresh (SWR). better-sqlite3's Electron-ABI binding
     // loads only here in the main process — never in the unit-test host.
+    const userDataDir = app.getPath('userData')
     initAssetRuntime({
       projectDir,
-      snapshotStore: createSqliteSnapshotStore(app.getPath('userData'), (file) => new Database(file))
+      snapshotStore: createSqliteSnapshotStore(userDataDir, (file) => new Database(file)),
+      settingsStore: createScanEngineSettingsStore(userDataDir)
     })
     const watcher = getWatcher()
 
@@ -240,7 +243,6 @@ if (!gotTheLock) {
 
     // GH-124: auto-update wiring. The controller is electron-free (deps
     // injected); state broadcasts to every live window like assets:progress.
-    const userDataDir = app.getPath('userData')
     const updaterController = createUpdaterController({
       autoUpdater,
       platform: process.platform,
