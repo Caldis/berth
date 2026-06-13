@@ -31,6 +31,11 @@ describe('SettingsContent page chrome', () => {
         sourceGroups: 2,
         sourceRows: 5
       },
+      scheduler: {
+        scanning: false,
+        scheduledRefresh: { active: false },
+        queuedRefresh: { active: false }
+      },
       controls: [
         { id: 'manual-refresh', value: 'available', editable: false, supported: true },
         {
@@ -55,6 +60,8 @@ describe('SettingsContent page chrome', () => {
           max: 300000,
           step: 1000
         },
+        { id: 'scheduled-refresh', value: 'none', unit: 'state', editable: false, supported: true },
+        { id: 'queued-refresh', value: 'none', unit: 'state', editable: false, supported: true },
         { id: 'pause', value: 'unsupported', editable: false, supported: false }
       ],
       capabilities: {
@@ -146,6 +153,9 @@ describe('SettingsContent page chrome', () => {
     expect(screen.getByText('1 error')).toBeInTheDocument()
     expect(screen.getByText('Watcher debounce')).toBeInTheDocument()
     expect(screen.getByLabelText('Watcher debounce')).toHaveValue(1000)
+    expect(screen.getByText('Scheduled refresh')).toBeInTheDocument()
+    expect(screen.getByText('Queued refresh')).toBeInTheDocument()
+    expect(screen.getAllByText('None')).toHaveLength(2)
     expect(screen.getByText('Pause scanning')).toBeInTheDocument()
     expect(screen.getByText('Not supported yet')).toBeInTheDocument()
   })

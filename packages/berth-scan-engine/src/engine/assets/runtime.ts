@@ -11,6 +11,7 @@ import type {
   SearchResult,
   SessionListResult,
   ScanEngineInfo,
+  ScanEngineSchedulerSnapshot,
   ScanEngineSettings,
   ScanResult
 } from '@shared/types/ipc'
@@ -73,6 +74,13 @@ export interface AssetRuntimeOptions {
   settingsStore?: ScanEngineSettingsStore
 }
 
+interface ScheduledRefreshState {
+  reason: AssetScanReason
+  delayMs: number
+  scheduledAtMs: number
+  dueAtMs: number
+}
+
 const EMPTY_ASSET_STATS: AssetStats = {
   skills: 0,
   mcpServers: 0,
@@ -103,6 +111,7 @@ export class AgentAssetRuntime {
   private readonly initialProjectDir?: string
   private progressListener?: (payload: AssetProgressPayload) => void
   private scheduledRefreshTimer: ReturnType<typeof setTimeout> | null = null
+  private scheduledRefreshInfo: ScheduledRefreshState | null = null
   private pendingRefresh: AssetRefreshOptions | null = null
   private flushingPendingRefresh = false
   private lastWatcherRefreshStartedAtMs = 0
@@ -187,6 +196,7 @@ export class AgentAssetRuntime {
         sourceGroups: this.snapshot.sources.length,
         sourceRows
       },
+      scheduler: this.getSchedulerSnapshot(),
       controls: [
         { id: 'manual-refresh', value: 'available', editable: false, supported: true },
         {
@@ -209,6 +219,20 @@ export class AgentAssetRuntime {
         },
         { id: 'worker-mode', value: 'one-shot', unit: 'mode', editable: false, supported: true },
         { id: 'scheduler-mode', value: 'single-flight-queued-project-scope', unit: 'mode', editable: false, supported: true },
+        {
+          id: 'scheduled-refresh',
+          value: this.scheduledRefreshInfo?.reason ?? 'none',
+          unit: 'state',
+          editable: false,
+          supported: true
+        },
+        {
+          id: 'queued-refresh',
+          value: this.pendingRefresh?.reason ?? 'none',
+          unit: 'state',
+          editable: false,
+          supported: true
+        },
         { id: 'scope-fallback', value: 'scan-on-miss', unit: 'mode', editable: false, supported: true },
         { id: 'pause', value: 'unsupported', unit: 'state', editable: false, supported: false },
         { id: 'cancel', value: 'unsupported', unit: 'state', editable: false, supported: false },
@@ -348,10 +372,18 @@ export class AgentAssetRuntime {
       ? Math.max(0, minIntervalMs - elapsedSinceWatcherRefresh)
       : 0
     const scheduledDelayMs = Math.max(delayMs, rateLimitDelayMs)
+    const scheduledAtMs = Date.now()
 
     this.clearScheduledRefresh()
+    this.scheduledRefreshInfo = {
+      reason,
+      delayMs: scheduledDelayMs,
+      scheduledAtMs,
+      dueAtMs: scheduledAtMs + scheduledDelayMs
+    }
     this.scheduledRefreshTimer = setTimeout(() => {
       this.scheduledRefreshTimer = null
+      this.scheduledRefreshInfo = null
       void this.refresh({ reason, wait: options.wait })
     }, scheduledDelayMs)
   }
@@ -552,9 +584,11 @@ export class AgentAssetRuntime {
   }
 
   private clearScheduledRefresh(): void {
-    if (!this.scheduledRefreshTimer) return
-    clearTimeout(this.scheduledRefreshTimer)
+    if (this.scheduledRefreshTimer) {
+      clearTimeout(this.scheduledRefreshTimer)
+    }
     this.scheduledRefreshTimer = null
+    this.scheduledRefreshInfo = null
   }
 
   private queuePendingRefresh(options: AssetRefreshOptions): void {
@@ -573,6 +607,31 @@ export class AgentAssetRuntime {
       await this.refresh(pending)
     } finally {
       this.flushingPendingRefresh = false
+    }
+  }
+
+  private getSchedulerSnapshot(): ScanEngineSchedulerSnapshot {
+    const scheduled = this.scheduledRefreshInfo
+    return {
+      scanning: this.coordinator.isScanning(),
+      scheduledRefresh: scheduled
+        ? {
+            active: true,
+            reason: scheduled.reason,
+            delayMs: scheduled.delayMs,
+            scheduledAt: new Date(scheduled.scheduledAtMs).toISOString(),
+            dueAt: new Date(scheduled.dueAtMs).toISOString()
+          }
+        : { active: false },
+      queuedRefresh: this.pendingRefresh
+        ? {
+            active: true,
+            reason: this.pendingRefresh.reason
+          }
+        : { active: false },
+      lastWatcherRefreshStartedAt: this.lastWatcherRefreshStartedAtMs > 0
+        ? new Date(this.lastWatcherRefreshStartedAtMs).toISOString()
+        : undefined
     }
   }
 

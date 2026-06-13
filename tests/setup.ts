@@ -57,6 +57,11 @@ const createMockScanEngineInfo = () => ({
     sourceGroups: 0,
     sourceRows: 0
   },
+  scheduler: {
+    scanning: false,
+    scheduledRefresh: { active: false },
+    queuedRefresh: { active: false }
+  },
   controls: [
     { id: 'manual-refresh' as const, value: 'available', editable: false, supported: true },
     {
@@ -81,6 +86,8 @@ const createMockScanEngineInfo = () => ({
       max: 300000,
       step: 1000
     },
+    { id: 'scheduled-refresh' as const, value: 'none', unit: 'state' as const, editable: false, supported: true },
+    { id: 'queued-refresh' as const, value: 'none', unit: 'state' as const, editable: false, supported: true },
     { id: 'pause' as const, value: 'unsupported', unit: 'state' as const, editable: false, supported: false }
   ],
   capabilities: {

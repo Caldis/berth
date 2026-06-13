@@ -134,6 +134,11 @@ describe('AgentAssetRuntime', () => {
       cancelSupported: false,
       writableSettingsSupported: true
     })
+    expect(info.scheduler).toEqual({
+      scanning: false,
+      scheduledRefresh: { active: false },
+      queuedRefresh: { active: false }
+    })
     expect(info.controls).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ id: 'manual-refresh', editable: false, supported: true }),
@@ -157,9 +162,67 @@ describe('AgentAssetRuntime', () => {
           max: 300000,
           step: 1000
         }),
+        expect.objectContaining({ id: 'scheduled-refresh', value: 'none', supported: true, editable: false }),
+        expect.objectContaining({ id: 'queued-refresh', value: 'none', supported: true, editable: false }),
         expect.objectContaining({ id: 'pause', supported: false, editable: false })
       ])
     )
+  })
+
+  it('reports scheduled and queued refresh state through scan engine info', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-06-13T00:00:00.000Z'))
+
+    const scheduledRuntime = createRuntime(createScanner({ assets: [], stats: emptyStats, errors: [] }))
+    scheduledRuntime.scheduleRefresh({ reason: 'watcher', delayMs: 500, minIntervalMs: 0 })
+
+    expect(scheduledRuntime.getEngineInfo().scheduler).toMatchObject({
+      scanning: false,
+      scheduledRefresh: {
+        active: true,
+        reason: 'watcher',
+        delayMs: 500,
+        scheduledAt: '2026-06-13T00:00:00.000Z',
+        dueAt: '2026-06-13T00:00:00.500Z'
+      },
+      queuedRefresh: { active: false }
+    })
+    expect(scheduledRuntime.getEngineInfo().controls).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: 'scheduled-refresh', value: 'watcher' }),
+        expect.objectContaining({ id: 'queued-refresh', value: 'none' })
+      ])
+    )
+
+    const deferred = createDeferred<ScanResult>()
+    const scanner: AssetRuntimeScanner = {
+      scanAll: vi.fn(() => deferred.promise),
+      getScanSourceGroups: vi.fn(async () => []),
+      getProjectScopeCandidates: vi.fn(() => []),
+      getProjectDir: () => '/repo/berth'
+    }
+    const queuedRuntime = createRuntime(scanner)
+
+    await queuedRuntime.refresh({ reason: 'manual' })
+    await queuedRuntime.refresh({ reason: 'project-scope' })
+
+    expect(queuedRuntime.getEngineInfo().scheduler).toMatchObject({
+      scanning: true,
+      scheduledRefresh: { active: false },
+      queuedRefresh: {
+        active: true,
+        reason: 'project-scope'
+      }
+    })
+    expect(queuedRuntime.getEngineInfo().controls).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: 'scheduled-refresh', value: 'none' }),
+        expect.objectContaining({ id: 'queued-refresh', value: 'project-scope' })
+      ])
+    )
+
+    deferred.resolve({ assets: [], stats: emptyStats, errors: [] })
+    await vi.runAllTimersAsync()
   })
 
   it('loads, normalizes, and persists scan engine settings', () => {

@@ -82,6 +82,8 @@ export type ScanEngineControlId =
   | 'watcher-min-interval-ms'
   | 'worker-mode'
   | 'scheduler-mode'
+  | 'scheduled-refresh'
+  | 'queued-refresh'
   | 'scope-fallback'
   | 'pause'
   | 'cancel'
@@ -112,6 +114,22 @@ export interface ScanEngineCapabilitySummary {
   writableSettingsSupported: boolean
 }
 
+export interface ScanEngineSchedulerSnapshot {
+  scanning: boolean
+  scheduledRefresh: {
+    active: boolean
+    reason?: AssetScanReason
+    delayMs?: number
+    scheduledAt?: string
+    dueAt?: string
+  }
+  queuedRefresh: {
+    active: boolean
+    reason?: AssetScanReason
+  }
+  lastWatcherRefreshStartedAt?: string
+}
+
 export type ScanEngineLimitId =
   | 'metadata-only-sensitive-files'
   | 'third-party-code-not-executed'
@@ -140,6 +158,7 @@ export interface ScanEngineInfo {
   }
   controls: ScanEngineControlDescriptor[]
   capabilities: ScanEngineCapabilitySummary
+  scheduler: ScanEngineSchedulerSnapshot
   limits: ScanEngineLimitDescriptor[]
 }
 
