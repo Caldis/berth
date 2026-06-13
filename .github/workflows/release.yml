@@ -62,11 +62,23 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
-      # mac 未签名 (electron-builder.yml identity:null, 签名 issue 在册);
-      # publish 恒 never — 发布动作集中在 publish job。
-      - run: pnpm exec electron-builder ${{ matrix.builder_args }} --publish never
+      # publish 恒 never — 发布动作集中在 publish job。win/linux 无签名。
+      - name: Package (win/linux, no publish)
+        if: matrix.platform != 'mac'
+        run: pnpm exec electron-builder ${{ matrix.builder_args }} --publish never
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # mac 签名 + 公证 (GH-134, 参考 bobcorn); 需仓库配置 5 个 secret。
+      - name: Package (mac, signed + notarized, no publish)
+        if: matrix.platform == 'mac'
+        run: pnpm exec electron-builder ${{ matrix.builder_args }} --publish never
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CSC_LINK: ${{ secrets.MAC_CERTS }}
+          CSC_KEY_PASSWORD: ${{ secrets.MAC_CERTS_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
       - name: Validate build output
         shell: bash
         run: |
@@ -118,6 +130,7 @@ jobs:
           find artifacts/release-win/ -name "*.exe" | grep -q . || MISSING="$MISSING win(.exe)"
           find artifacts/release-win/ -name "latest.yml" | grep -q . || MISSING="$MISSING win(latest.yml)"
           find artifacts/release-mac/ -name "*.dmg" | grep -q . || MISSING="$MISSING mac(.dmg)"
+          find artifacts/release-mac/ -name "*-mac.zip" | grep -q . || MISSING="$MISSING mac(.zip)"
           find artifacts/release-mac/ -name "latest-mac.yml" | grep -q . || MISSING="$MISSING mac(latest-mac.yml)"
           find artifacts/release-linux/ -name "*.AppImage" | grep -q . || MISSING="$MISSING linux(.AppImage)"
           find artifacts/release-linux/ -name "latest-linux.yml" | grep -q . || MISSING="$MISSING linux(latest-linux.yml)"
@@ -147,7 +160,7 @@ jobs:
             echo "Initial release." >> changelog.md
           fi
           echo "" >> changelog.md
-          echo "_Unsigned builds (win/mac); macOS auto-update requires signing and is link-only for now._" >> changelog.md
+          echo "_Windows/Linux builds are unsigned; macOS builds are signed & notarized (auto-update enabled on all platforms)._" >> changelog.md
           cat changelog.md
       - name: Create release and upload all assets
         env:
@@ -183,6 +196,7 @@ jobs:
           ERRORS=""
           echo "$ASSETS" | grep -q '\.exe$'        || ERRORS="$ERRORS [MISSING .exe]"
           echo "$ASSETS" | grep -q '\.dmg$'        || ERRORS="$ERRORS [MISSING .dmg]"
+          echo "$ASSETS" | grep -q '\-mac\.zip$'   || ERRORS="$ERRORS [MISSING mac.zip]"
           echo "$ASSETS" | grep -q '\.AppImage$'   || ERRORS="$ERRORS [MISSING .AppImage]"
           echo "$ASSETS" | grep -q '^latest\.yml$'      || ERRORS="$ERRORS [MISSING latest.yml]"
           echo "$ASSETS" | grep -q '^latest-mac\.yml$'  || ERRORS="$ERRORS [MISSING latest-mac.yml]"

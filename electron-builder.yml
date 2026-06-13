@@ -21,16 +21,23 @@ nsis:
   shortcutName: ${productName}
   uninstallDisplayName: ${productName}
   createDesktopShortcut: always
-# 未签名发布策略 (issue macos-release-signing-config): identity null 固定禁用签名
-# 自动发现 — 钥匙串有身份的机器上, 自动签名会撞曾指向不存在 entitlements 文件的
-# 配置而阻断打包。改为签名发布时: 补 build/entitlements.mac.plist + 证书配置, 移除 identity。
+# GH-134 签名发布策略 (参考 bobcorn): 移除 identity:null, 让 electron-builder 从
+# CSC_LINK (base64 Developer ID Application .p12) 自动发现签名身份; notarize:true 走
+# 内置 notarytool (APPLE_ID / APPLE_APP_SPECIFIC_PASSWORD / APPLE_TEAM_ID env)。无需
+# 自定义 entitlements — 默认 hardenedRuntime + electron 默认 entitlements 已够 (bobcorn
+# 同样无自定义 plist)。CI 注入的 5 个 secret 见 release.yml: MAC_CERTS /
+# MAC_CERTS_PASSWORD / APPLE_ID / APPLE_APP_SPECIFIC_PASSWORD / APPLE_TEAM_ID。
+# 本机无凭据时本地打包: `CSC_IDENTITY_AUTO_DISCOVERY=false pnpm package:mac` (产未签名包,
+# 自动跳过 notarize)。mac 更新源是 zip (Squirrel.Mac), dmg 仅供人工下载; 双架构覆盖
+# Intel + Apple Silicon。
 mac:
-  identity: null
   icon: assets/icon/app_icon.png
+  notarize: true
   target:
-    - dmg
-    - zip
-  notarize: false
+    - target: dmg
+      arch: [x64, arm64]
+    - target: zip
+      arch: [x64, arm64]
 dmg:
   artifactName: ${name}-${version}.${ext}
 linux:

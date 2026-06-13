@@ -34,12 +34,12 @@
 
 ## Phase B — 打包 + 发布流水线 (mac 签名, macOS runner 验收)
 
-- [ ] **B1. electron-builder.yml mac 签名 + 双架构** [AC5,D4]
+- [x] **B1. electron-builder.yml mac 签名 + 双架构** [AC5,D4] — 移除 identity:null; notarize:true; dmg/zip 各 [x64,arm64]; YAML 解析验证通过; tests:not needed (配置), B3 dry-run 全链验收
   - 移除 `mac.identity: null`; `notarize: false`→`true`; mac.target 改 dmg/zip 各 `arch: [x64, arm64]`; 重写策略注释 (签名 + 5 secrets 说明)。
   - tests: `not needed - YAML 配置, mac 打包本机不可跑`; 替代验证: YAML 解析 (harness:check / electron-builder 启动) + B3 dry-run 全链。
   - verify: 不适用 (配置)。
 
-- [ ] **B2. release.yml mac 签名 env + zip 校验 + changelog** [AC5,AC7]
+- [x] **B2. release.yml mac 签名 env + zip 校验 + changelog** [AC5,AC7] — 拆 mac/非 mac step (mac 注入 5 签名 env); publish + integrity 加 *-mac.zip 校验; changelog 改"signed & notarized"; YAML 解析验证通过; tests:not needed (CI), B3 dry-run 验收
   - build job 拆 mac/非 mac package step; mac step 注入 5 个签名 env (CSC_LINK/CSC_KEY_PASSWORD/APPLE_ID/APPLE_APP_SPECIFIC_PASSWORD/APPLE_TEAM_ID)。
   - publish "Validate all platforms present" 加 mac `*-mac.zip` 校验; "Verify release integrity" 加 `\-mac\.zip$` 校验; changelog 尾注改签名描述。
   - tests: `not needed - CI workflow`; 替代验证: B3 dry-run。
