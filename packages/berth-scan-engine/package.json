@@ -16,6 +16,11 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
+    },
+    "./adapter-api": {
+      "types": "./dist/adapter-api.d.ts",
+      "import": "./dist/adapter-api.js",
+      "require": "./dist/adapter-api.cjs"
     }
   },
   "files": [

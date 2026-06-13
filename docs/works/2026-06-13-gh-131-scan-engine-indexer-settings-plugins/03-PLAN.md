@@ -26,6 +26,7 @@
   - tests: `pnpm vitest run tests/unit/agent-asset-runtime.test.ts tests/unit/watch-wiring.test.ts` + 新 adapter API tests。
   - verify: engine 通用文件不再直接依赖第三方 parser; 内置 Claude/Codex 行为不回退。
   - progress 2026-06-13: added public adapter API type export and removed stale manifest adapter methods; passed `pnpm vitest run tests/unit/agent-adapter-registry.test.ts` and `pnpm typecheck:node`。
+  - progress 2026-06-13: published `@berth/scan-engine/adapter-api` as a real package subpath with ESM/CJS/type outputs, so independently maintained adapters do not need to import `src/*` deep paths. Passed `pnpm --dir packages/berth-scan-engine test`, `pnpm --dir packages/berth-scan-engine typecheck`, `pnpm --dir packages/berth-scan-engine build`, and Node ESM/CJS self-reference import checks from the package directory。
 
 - [x] 任务 5: 新 agent source declarations
   - scope: Gemini CLI、GitHub Copilot CLI、Cursor、OpenCode、OpenClaw、Hermes Agent 的 home resolver、source declaration、敏感文件策略、version probe 描述与 fixtures。
