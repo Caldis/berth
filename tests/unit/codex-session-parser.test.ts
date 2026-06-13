@@ -81,6 +81,35 @@ describe('Codex session parser', () => {
     expect(asset.meta.title).toBe('Rollout title')
   })
 
+  it('falls back to the first Codex user_message when no thread title metadata exists', () => {
+    tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'berth-codex-session-user-message-title-'))
+    const rolloutPath = path.join(tempDir, 'rollout-2026-06-13T10-00-00-user-message-title.jsonl')
+    fs.writeFileSync(
+      rolloutPath,
+      [
+        JSON.stringify({
+          type: 'session_meta',
+          timestamp: '2026-06-13T10:00:00.000Z',
+          payload: { id: 'user-message-title', cwd: 'D:\\Code\\berth' }
+        }),
+        JSON.stringify({
+          type: 'event_msg',
+          timestamp: '2026-06-13T10:00:02.000Z',
+          payload: {
+            type: 'user_message',
+            message: '请聚焦 GitHub Copilot CLI 与 Cursor 两个 agent，查官方资料和 primary source。'.repeat(4)
+          }
+        })
+      ].join('\n')
+    )
+
+    const asset = parseCodexSessionMeta(rolloutPath)
+
+    expect(asset.name.startsWith('请聚焦 GitHub Copilot CLI 与 Cursor 两个 agent')).toBe(true)
+    expect(asset.name).toHaveLength(120)
+    expect(asset.meta.title).toBe(asset.name)
+  })
+
   it('extracts structured Codex activity metadata without scanning tool output text', () => {
     tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'berth-codex-session-'))
     const rolloutPath = path.join(tempDir, 'rollout-2026-06-03T01-00-00-codex-activity.jsonl')

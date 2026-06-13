@@ -13,6 +13,9 @@
 - [x] 任务 3: 同步 source descriptor、source coverage、source copy 和相关测试
   - tests: 更新 `tests/unit/agent-capability-plugins.test.ts`; 必要时更新 renderer settings 测试。
   - verify: `pnpm test -- tests/unit/codex-adapter.test.ts tests/unit/agent-capability-plugins.test.ts tests/renderer/settings-agent-plugins.test.tsx` 通过; `pnpm typecheck:node`; `pnpm typecheck:web`; `pnpm harness:check --work docs/works/2026-06-13-gh-132-codex-session-title-detection`; UI 验收项为设置/插件来源文案不暴露 raw key。
+- [x] 任务 4 (verify 回写): 没有 session index 的 Codex subagent rollout 用首条 `event_msg.user_message.message` 作为标题 fallback
+  - tests: 更新 `tests/unit/codex-session-parser.test.ts`, 覆盖无 index、无 `thread_name_updated` 时从 `user_message` 提取并截断标题。
+  - verify: `pnpm test -- tests/unit/codex-session-parser.test.ts` 通过; agent-owned Electron 实例读取真实 `sessions:list`, `019ebfe7` 标题为首条用户任务文本且前 40 条 fallback count 为 0; Sessions 页面截图 `C:\Users\mail\AppData\Local\Temp\berth-gh132-sessions-page.png` 可见标题不再是 `Codex Session 019ebfe7`。
 
 ## verify 回写
 verify 不通过项作为新任务追加于此, phase 退回 implement。

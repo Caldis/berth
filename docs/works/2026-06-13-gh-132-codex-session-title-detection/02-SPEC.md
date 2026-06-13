@@ -10,7 +10,8 @@
   - 解析失败策略: 单行 JSON 损坏跳过; 文件缺失或无法读取返回空 Map。
 - `parseCodexSessionMeta(filePath, options?)` 接受可选 `titleIndex`:
   - 先按现有逻辑从 rollout JSONL 读取 `thread_name_updated`。
-  - 结束时优先使用 `titleIndex.get(sessionId)`; 没有索引值时保留 rollout 内标题; 都没有时保留 `Codex Session <id>`。
+  - 读取首条 `event_msg.payload.type === "user_message"` 的 `message`, 作为没有 index/title event 时的用户任务文本 fallback。
+  - 结束时优先使用 `titleIndex.get(sessionId)`; 没有索引值时保留 rollout 内标题; 再没有时使用用户任务文本; 都没有时保留 `Codex Session <id>`。
   - 标题归一化: trim、折叠空白、限制最大长度, 避免 `session_index.jsonl` 异常长值破坏列表。
 - `CodexAdapter.scanSessions()` 按 Codex home 读取一次 title index, active 与 archived session 都传入同一 index。
 - source coverage:
@@ -67,6 +68,7 @@
 | SPEC 项 | 对应 ANALYSIS 验收标准 |
 |---|---|
 | title index 读取与 `parseCodexSessionMeta` 兜底 | 1, 2, 3, 4 |
+| user_message fallback 标题 | 1, 3, 5 |
 | source coverage/descriptor/copy 同步 | 7 |
 | renderer 不特判, 保持 `SessionSummary.title` | 5, 6 |
 | 标题归一化与截断 | 5 |

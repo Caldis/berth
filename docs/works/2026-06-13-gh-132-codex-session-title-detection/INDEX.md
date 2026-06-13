@@ -2,7 +2,7 @@
 task: 2026-06-13-gh-132-codex-session-title-detection
 task_id: GH-132
 type: bug
-phase: implement
+phase: verify
 created: 2026-06-13
 priority: P2
 target_date:
@@ -23,14 +23,16 @@ debt:
     confidence: medium
     rationale: "Explore/design 后校准: 修复点在 Codex adapter 标题索引读取, 影响 session asset name, sessions:list、Overview recent sessions 与 session detail 共用该摘要。"
   final:
-    incurred:
-    repaid:
-    net:
-    scope:
-    risk:
-    areas: []
-    confidence:
-    rationale:
+    incurred: 3
+    repaid: 1
+    net: 2
+    scope: cross-process
+    risk: low
+    areas:
+      - ui-ux
+      - testability
+    confidence: high
+    rationale: "Codex session title 解析改为优先读取 session_index.jsonl, 兼容 rollout thread_name_updated, 并对无索引 subagent 会话使用首条 user_message 兜底; parser/adapter/source descriptor 测试、全量 lint/typecheck/test/harness 与真实 Electron Sessions 页面验证通过。"
   revisions:
     - stage: design
       date: 2026-06-13

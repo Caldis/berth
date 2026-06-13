@@ -423,6 +423,7 @@ export function parseCodexSessionMeta(filePath: string, options: ParseCodexSessi
   let usageStartedAt: string | undefined
   let usageEndedAt: string | undefined
   let title: string | undefined
+  let userMessageTitle: string | undefined
   let model: string | undefined
   let projectPath: string | undefined
   let tokenUsage = emptyTokenUsage()
@@ -471,6 +472,9 @@ export function parseCodexSessionMeta(filePath: string, options: ParseCodexSessi
             normalizeSessionTitle(firstString(payload, ['thread_name', 'threadName', 'name', 'title'])) ??
             title
         }
+        if (payloadType === 'user_message') {
+          userMessageTitle ??= normalizeSessionTitle(readString(payload, 'message'))
+        }
         if (payloadType === 'token_count') {
           const candidate = readTokenUsage(payload)
           if (candidate.totalTokens >= tokenUsage.totalTokens) tokenUsage = candidate
@@ -508,7 +512,7 @@ export function parseCodexSessionMeta(filePath: string, options: ParseCodexSessi
   const duration = calculateDurationSeconds(firstTimestamp, lastTimestamp)
   const usageDuration = calculateDurationSeconds(usageStartedAt, usageEndedAt)
   const hookCountsObject = Object.fromEntries(hookEventCounts)
-  const resolvedTitle = options.titleIndex?.get(sessionId) ?? title
+  const resolvedTitle = options.titleIndex?.get(sessionId) ?? title ?? userMessageTitle
 
   meta.sessionId = sessionId
   meta.project = project
