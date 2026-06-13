@@ -10,6 +10,7 @@ import {
   parseCodexConfig,
   parseCodexCustomAgent,
   parseCodexHooksJson,
+  readCodexSessionTitleIndex,
   parseCodexSessionMeta,
   parseCodexSkill
 } from './parsers'
@@ -223,42 +224,46 @@ export class CodexAdapter implements AgentAdapter {
 
   private scanSessions(errors: ScanError[]): Asset[] {
     const assets: Asset[] = []
-    const sessionDirs = this.codexDirs.flatMap((codexDir) => [
-      { path: path.join(codexDir, 'sessions'), archived: false },
-      { path: path.join(codexDir, 'archived_sessions'), archived: true }
-    ])
 
-    for (const sessionDir of sessionDirs) {
-      if (!fs.existsSync(sessionDir.path)) continue
-      let files: string[] = []
-      try {
-        files = glob.sync('**/rollout-*.jsonl', {
-          cwd: sessionDir.path,
-          absolute: true,
-          windowsPathsNoEscape: true
-        })
-      } catch (err) {
-        errors.push({
-          path: sessionDir.path,
-          type: 'session',
-          message: err instanceof Error ? err.message : String(err)
-        })
-        continue
-      }
+    for (const codexDir of this.codexDirs) {
+      const titleIndex = readCodexSessionTitleIndex(codexDir)
+      const sessionDirs = [
+        { path: path.join(codexDir, 'sessions'), archived: false },
+        { path: path.join(codexDir, 'archived_sessions'), archived: true }
+      ]
 
-      for (const filePath of files) {
+      for (const sessionDir of sessionDirs) {
+        if (!fs.existsSync(sessionDir.path)) continue
+        let files: string[] = []
         try {
-          const asset = this.sessionCache
-            ? this.sessionCache.getOrParse(filePath, () => parseCodexSessionMeta(filePath))
-            : parseCodexSessionMeta(filePath)
-          if (sessionDir.archived) asset.meta.archived = true
-          assets.push(asset)
+          files = glob.sync('**/rollout-*.jsonl', {
+            cwd: sessionDir.path,
+            absolute: true,
+            windowsPathsNoEscape: true
+          })
         } catch (err) {
           errors.push({
-            path: filePath,
+            path: sessionDir.path,
             type: 'session',
             message: err instanceof Error ? err.message : String(err)
           })
+          continue
+        }
+
+        for (const filePath of files) {
+          try {
+            const asset = this.sessionCache
+              ? this.sessionCache.getOrParse(filePath, () => parseCodexSessionMeta(filePath, { titleIndex }))
+              : parseCodexSessionMeta(filePath, { titleIndex })
+            if (sessionDir.archived) asset.meta.archived = true
+            assets.push(asset)
+          } catch (err) {
+            errors.push({
+              path: filePath,
+              type: 'session',
+              message: err instanceof Error ? err.message : String(err)
+            })
+          }
         }
       }
     }

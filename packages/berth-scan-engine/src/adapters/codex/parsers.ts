@@ -45,6 +45,12 @@ export interface CodexHookStateEntry {
 
 export type CodexHookState = Record<string, CodexHookStateEntry>
 
+interface ParseCodexSessionMetaOptions {
+  titleIndex?: ReadonlyMap<string, string>
+}
+
+const CODEX_SESSION_TITLE_MAX_LENGTH = 120
+
 export function parseCodexToml(filePath: string): Record<string, unknown> {
   const parsed = parseToml(fs.readFileSync(filePath, 'utf-8'))
   return isRecord(parsed) ? parsed : {}
@@ -395,7 +401,21 @@ function toSnakeCase(value: string): string {
     .toLowerCase()
 }
 
-export function parseCodexSessionMeta(filePath: string): Asset {
+export function readCodexSessionTitleIndex(codexDir: string): Map<string, string> {
+  const result = new Map<string, string>()
+  try {
+    for (const record of readJsonLines(path.join(codexDir, 'session_index.jsonl'))) {
+      const id = readString(record, 'id')
+      const title = normalizeSessionTitle(firstString(record, ['thread_name', 'threadName', 'name', 'title']))
+      if (id && title) result.set(id, title)
+    }
+  } catch {
+    // Codex does not always create the index; rollout parsing should still work.
+  }
+  return result
+}
+
+export function parseCodexSessionMeta(filePath: string, options: ParseCodexSessionMetaOptions = {}): Asset {
   const fallbackSessionId = path.basename(filePath, '.jsonl')
   let sessionId = fallbackSessionId
   let firstTimestamp: string | undefined
@@ -448,7 +468,7 @@ export function parseCodexSessionMeta(filePath: string): Asset {
       if (type === 'event_msg') {
         if (payloadType === 'thread_name_updated') {
           title =
-            firstString(payload, ['thread_name', 'threadName', 'name', 'title']) ??
+            normalizeSessionTitle(firstString(payload, ['thread_name', 'threadName', 'name', 'title'])) ??
             title
         }
         if (payloadType === 'token_count') {
@@ -488,11 +508,12 @@ export function parseCodexSessionMeta(filePath: string): Asset {
   const duration = calculateDurationSeconds(firstTimestamp, lastTimestamp)
   const usageDuration = calculateDurationSeconds(usageStartedAt, usageEndedAt)
   const hookCountsObject = Object.fromEntries(hookEventCounts)
+  const resolvedTitle = options.titleIndex?.get(sessionId) ?? title
 
   meta.sessionId = sessionId
   meta.project = project
   meta.projectPath = resolvedProjectPath
-  meta.title = title
+  meta.title = resolvedTitle
   meta.model = model
   meta.startedAt = firstTimestamp
   meta.endedAt = lastTimestamp
@@ -514,7 +535,7 @@ export function parseCodexSessionMeta(filePath: string): Asset {
     category: 'state',
     type: 'session',
     scope: 'session',
-    name: title ?? `Codex Session ${sessionId.slice(0, 8)}`,
+    name: resolvedTitle ?? `Codex Session ${sessionId.slice(0, 8)}`,
     path: filePath,
     meta
   }
@@ -903,6 +924,12 @@ function parseMaybeJson(value: string): unknown {
 function truncate(value: string, maxLength: number): string | undefined {
   if (!value.trim()) return undefined
   return value.length > maxLength ? `${value.slice(0, maxLength - 3)}...` : value
+}
+
+function normalizeSessionTitle(value: string | undefined): string | undefined {
+  const normalized = value?.replace(/\s+/g, ' ').trim()
+  if (!normalized) return undefined
+  return truncate(normalized, CODEX_SESSION_TITLE_MAX_LENGTH)
 }
 
 function hashString(value: string): string {

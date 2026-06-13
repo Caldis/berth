@@ -290,6 +290,13 @@ describe('CodexAdapter', () => {
     fs.mkdirSync(sessionsDir, { recursive: true })
     fs.mkdirSync(archivedDir, { recursive: true })
     fs.writeFileSync(
+      path.join(codexDir, 'session_index.jsonl'),
+      [
+        JSON.stringify({ id: 'active-session', thread_name: 'Active Codex task' }),
+        JSON.stringify({ id: 'archived-session', thread_name: 'Archived Codex task' })
+      ].join('\n')
+    )
+    fs.writeFileSync(
       path.join(sessionsDir, 'rollout-active.jsonl'),
       JSON.stringify({
         type: 'session_meta',
@@ -326,6 +333,8 @@ describe('CodexAdapter', () => {
     expect(result.assets.map((asset) => asset.meta.sessionId)).toEqual(
       expect.arrayContaining(['active-session', 'archived-session'])
     )
+    expect(result.assets.find((asset) => asset.meta.sessionId === 'active-session')?.name).toBe('Active Codex task')
+    expect(result.assets.find((asset) => asset.meta.sessionId === 'archived-session')?.name).toBe('Archived Codex task')
     expect(result.assets.find((asset) => asset.meta.sessionId === 'archived-session')?.meta.archived).toBe(true)
   })
 

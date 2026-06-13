@@ -2,7 +2,11 @@ import * as fs from 'fs'
 import * as os from 'os'
 import * as path from 'path'
 import { afterEach, describe, expect, it } from 'vitest'
-import { parseCodexSessionDetail, parseCodexSessionMeta } from '@berth/scan-engine/adapters/codex/parsers'
+import {
+  parseCodexSessionDetail,
+  parseCodexSessionMeta,
+  readCodexSessionTitleIndex
+} from '@berth/scan-engine/adapters/codex/parsers'
 import { AssetFileCache } from '@berth/scan-engine/engine/assets/file-cache'
 import type { Asset } from '@shared/types/asset'
 
@@ -16,6 +20,67 @@ afterEach(() => {
 })
 
 describe('Codex session parser', () => {
+  it('uses session_index thread names for rollout titles', () => {
+    tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'berth-codex-session-title-'))
+    const rolloutPath = path.join(tempDir, 'rollout-2026-06-13T10-00-00-codex-title.jsonl')
+    fs.writeFileSync(
+      path.join(tempDir, 'session_index.jsonl'),
+      [
+        JSON.stringify({
+          id: 'codex-title',
+          thread_name: '  Fix   Codex title detection  ',
+          updated_at: '2026-06-13T10:00:00.000Z'
+        }),
+        '{ malformed json',
+        JSON.stringify({
+          id: 'codex-long-title',
+          thread_name: 'A'.repeat(260)
+        })
+      ].join('\n')
+    )
+    fs.writeFileSync(
+      rolloutPath,
+      JSON.stringify({
+        type: 'session_meta',
+        timestamp: '2026-06-13T10:00:00.000Z',
+        payload: { id: 'codex-title', cwd: 'D:\\Code\\berth' }
+      }) + '\n'
+    )
+
+    const titleIndex = readCodexSessionTitleIndex(tempDir)
+    const asset = parseCodexSessionMeta(rolloutPath, { titleIndex })
+
+    expect(titleIndex.get('codex-title')).toBe('Fix Codex title detection')
+    expect(titleIndex.get('codex-long-title')).toHaveLength(120)
+    expect(asset.name).toBe('Fix Codex title detection')
+    expect(asset.meta.title).toBe('Fix Codex title detection')
+  })
+
+  it('falls back to rollout thread_name_updated when session_index has no title', () => {
+    tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'berth-codex-session-rollout-title-'))
+    const rolloutPath = path.join(tempDir, 'rollout-2026-06-13T10-00-00-rollout-title.jsonl')
+    fs.writeFileSync(
+      rolloutPath,
+      [
+        JSON.stringify({
+          type: 'session_meta',
+          timestamp: '2026-06-13T10:00:00.000Z',
+          payload: { id: 'rollout-title', cwd: 'D:\\Code\\berth' }
+        }),
+        JSON.stringify({
+          type: 'event_msg',
+          timestamp: '2026-06-13T10:00:01.000Z',
+          payload: { type: 'thread_name_updated', thread_name: 'Rollout title' }
+        })
+      ].join('\n')
+    )
+
+    const asset = parseCodexSessionMeta(rolloutPath, { titleIndex: new Map() })
+
+    expect(asset.name).toBe('Rollout title')
+    expect(asset.meta.title).toBe('Rollout title')
+  })
+
   it('extracts structured Codex activity metadata without scanning tool output text', () => {
     tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'berth-codex-session-'))
     const rolloutPath = path.join(tempDir, 'rollout-2026-06-03T01-00-00-codex-activity.jsonl')
