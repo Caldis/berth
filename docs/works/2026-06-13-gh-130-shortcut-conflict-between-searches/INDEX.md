@@ -2,7 +2,7 @@
 task: 2026-06-13-gh-130-shortcut-conflict-between-searches
 task_id: GH-130
 type: bug
-phase: explore
+phase: design
 created: 2026-06-13
 priority: P2
 target_date: 
@@ -59,7 +59,7 @@ artifacts:
 
 ## 产物
 - [x] 00-BUG.md — 原始输入快照
-- [ ] 01-ANALYSIS.md — Explore 产物
+- [x] 01-ANALYSIS.md — Explore 产物
 - [ ] 02-SPEC.md — Design 产物
 - [ ] 03-PLAN.md — 活任务清单
 - [ ] 04-POLISH.md — 可选抛光记录
