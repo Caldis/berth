@@ -9,7 +9,7 @@
   - tests: `pnpm vitest run tests/unit/agent-asset-runtime.test.ts tests/unit/ipc-contract.test.ts tests/renderer/settings-page.test.tsx`
   - verify: passed 2026-06-13; 另跑 `pnpm typecheck:node`, `pnpm typecheck:web`, `pnpm harness:check`。Scanning 区顶部能看到版本、状态、索引资产数、索引文件数、错误数、最近刷新、真实只读控制项和手动 refresh; loading/error/disabled/focus 状态由 renderer test 覆盖。
 
-- [ ] 任务 2: 扫描调度控制模型
+- [x] 任务 2: 扫描调度控制模型
   - scope: `ScanCoordinator` 增加 queue/reason/coalescing 状态; runtime 暴露 paused/cancelable capability; Settings 显示真实状态。
   - tests: `pnpm vitest run tests/unit/scan-coordinator.test.ts tests/unit/agent-asset-runtime.test.ts tests/renderer/settings-page.test.tsx`
   - verify: refresh 去重、排队、暂停/恢复计划、错误保留旧 snapshot; UI 状态随 progress/change 更新。
