@@ -170,7 +170,7 @@ export function TopNavigation({ isWindows }: TopNavigationProps): React.ReactEle
                 <button
                   type="button"
                   aria-label={t('nav.pageGuide')}
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-border bg-background text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:translate-y-px"
+                  className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-border bg-background text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:translate-y-px"
                 >
                   <HelpCircle className="h-4 w-4" aria-hidden="true" />
                 </button>
