@@ -34,10 +34,11 @@ export async function launchBerthApp(
       ...process.env,
       NODE_ENV: 'test',
       CODEX_HOME: dirs.codexHome,
-      // 已知差异: win32 的 os.homedir() 读 USERPROFILE 而非 HOME, 此处不覆盖
-      // USERPROFILE (会波及 Electron 自身路径推导, 且无法在 POSIX 机上实证) —
-      // Windows 行为与隔离前一致, 隔离仅在 POSIX 生效 (GH-117 02-SPEC 决策 1)。
-      ...(process.platform !== 'win32' ? { HOME: dirs.homeDir } : {}),
+      // Node's os.homedir() reads USERPROFILE on Windows. Keep Electron userData
+      // isolated via --user-data-dir, and point home-level scan roots at the
+      // fixture home on every platform so e2e never scans host ~/.claude data.
+      HOME: dirs.homeDir,
+      ...(process.platform === 'win32' ? { USERPROFILE: dirs.homeDir } : {}),
       ...extraEnv
     }
   })

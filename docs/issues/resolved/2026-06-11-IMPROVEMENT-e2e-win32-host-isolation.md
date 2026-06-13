@@ -16,4 +16,9 @@
 
 # 来源 / 关联
 - GH-119 T3 实测发现 (docs/works/2026-06-11-gh-119-electron-window-hardening), baseline 对比定性; 上游决策 GH-117 (docs/works/_archive/2026-06-11-gh-117-project-scope-e2e-macos)。
-- 状态: OPEN。
+- 状态: RESOLVED。
+
+# 解决
+- 2026-06-13: `tests/e2e/launch.ts` 在 win32 下同时覆盖 `HOME` 和 `USERPROFILE`, 继续通过 `--user-data-dir` 隔离 Electron userData, 使 `os.homedir()` 解析到 fixture home。
+- 同步把 `project-scope.e2e.ts` 的 option 断言收窄到项目范围 listbox 内, 避免被其它页面筛选控件污染。
+- 验证: 宿主数据丰富的 Windows 机上 `pnpm test:e2e -- tests/e2e/project-scope.e2e.ts` 通过, 隔离断言仍为 option 计数 3。

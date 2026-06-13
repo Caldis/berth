@@ -61,18 +61,22 @@ test('switches project scope and rebuilds the searchable project assets', async 
   await expect(page.getByRole('listbox', { name: /^(Project scope options|项目范围选项)$/ })).toHaveCount(0)
 
   await trigger.click()
-  const option = page.getByRole('option', { name: 'app' })
+  const listbox = page.getByRole('listbox', { name: /^(Project scope options|项目范围选项)$/ })
+  const option = listbox.getByRole('option', { name: 'app' })
   await expect(option).toBeVisible()
   // GH-117 AC-3: 隔离生效断言 — 仅 Global/User/app 三项; 宿主 ~/.claude 数据
   // 一旦再泄入 (隔离被破坏), 此处立刻红, 防止测试退化回"依赖宿主清洁度"。
-  await expect(page.getByRole('option')).toHaveCount(3)
+  await expect(listbox.getByRole('option')).toHaveCount(3)
   await option.click()
 
   await expect(trigger).toContainText('app')
   await expect.poll(() => hasSearchResult('e2e-skill')).toBe(true)
 
   await trigger.click()
-  await page.getByRole('option', { name: /^(User|用户域)$/ }).click()
+  await page
+    .getByRole('listbox', { name: /^(Project scope options|项目范围选项)$/ })
+    .getByRole('option', { name: /^(User|用户域)$/ })
+    .click()
 
   await expect(trigger).toContainText(/User|用户域/)
   await expect.poll(() => hasSearchResult('e2e-skill')).toBe(false)
