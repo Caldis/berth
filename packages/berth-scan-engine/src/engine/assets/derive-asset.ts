@@ -2,11 +2,11 @@ import * as path from 'path'
 import { getMainLog } from '../../log'
 import type { Asset, AssetScope } from '@shared/types/asset'
 import { dedupePathKey } from '@shared/asset-dedupe'
-// conventions 仍直连 (CONVENTION_DISPATCH 与 shallow 是有意分叉, 见 shallow-conventions.ts 注)
-import { parseAgentsMd, parseClaudeMd, parseMcpServers } from '../../adapters/claude-code/parsers'
-import { parseCodexAgentsMd } from '../../adapters/codex/parsers'
-import { claudeSettingsCapabilities } from '../../adapters/claude-code/sources'
-import { projectCapabilitySources } from '../agent-capabilities'
+import {
+  enterpriseCapabilityDerivers,
+  projectCapabilitySources,
+  projectConventionDerivers
+} from '../agent-capabilities'
 
 export interface DeriveContext {
   /** Config roots of the active project. A file inside one is 'project'-scoped;
@@ -16,15 +16,6 @@ export interface DeriveContext {
 
 type ConventionParser = (filePath: string, scope: AssetScope) => Asset
 type CapabilityParser = (filePath: string, scope: AssetScope) => Asset[]
-
-// Per-basename dispatch for root-level convention files. AGENTS.md is the one
-// cross-agent file, so it emits BOTH adapters' rows (identical dedupeKey) and the
-// engine's mergeSharedConventions collapses them — exactly like a deep scan.
-const CONVENTION_DISPATCH: Record<string, ConventionParser[]> = {
-  'CLAUDE.md': [parseClaudeMd],
-  'CLAUDE.local.md': [parseClaudeMd],
-  'AGENTS.md': [parseAgentsMd, parseCodexAgentsMd]
-}
 
 // GH-115 T9: cap-1 (单文件多资产) 与 cap-2 (glob 类单文件) 两张表从
 // engine/agent-capabilities 单源派生 (此前注释自认 Mirrors 且已实际分叉)。
@@ -47,16 +38,6 @@ const CAPABILITY_GLOB_DISPATCH: { dir: string; fileName?: string; ext?: string; 
       }
     }))
 
-// Enterprise (managed) capability configs (GH-113 cap-3a): their basename uniquely
-// identifies them and their scope is ALWAYS 'enterprise' (not inferScope's
-// project/user). managed-settings.json yields the full settings capability set;
-// managed-mcp.json yields mcp servers. The watcher only emits these from the real
-// managed dir, so a basename key is safe.
-const ENTERPRISE_DISPATCH: Record<string, (filePath: string) => Asset[]> = {
-  'managed-settings.json': (filePath) => claudeSettingsCapabilities(filePath, 'enterprise'),
-  'managed-mcp.json': (filePath) => parseMcpServers(filePath, 'enterprise')
-}
-
 /**
  * Re-derive the assets a single changed file produces (GH-113 I1), so a watcher
  * event can replace just that file's assets instead of triggering a full rescan.
@@ -75,7 +56,7 @@ export function deriveAssetsForPath(filePath: string, ctx: DeriveContext): Asset
   // rule → an mcp row without pluginId). Fall back to a full refresh. (cap-3b)
   if (isUnderPluginsDir(filePath)) return null
 
-  const conventionParsers = CONVENTION_DISPATCH[path.basename(filePath)]
+  const conventionParsers = projectConventionDerivers()[path.basename(filePath)]
   if (conventionParsers) {
     const scope = inferScope(filePath, ctx)
     const assets: Asset[] = []
@@ -91,7 +72,7 @@ export function deriveAssetsForPath(filePath: string, ctx: DeriveContext): Asset
     return assets
   }
 
-  const enterpriseParser = ENTERPRISE_DISPATCH[path.basename(filePath)]
+  const enterpriseParser = enterpriseCapabilityDerivers()[path.basename(filePath)]
   if (enterpriseParser) {
     try {
       return enterpriseParser(filePath)

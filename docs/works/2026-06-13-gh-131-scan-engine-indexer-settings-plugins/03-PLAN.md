@@ -21,12 +21,13 @@
   - tests: `pnpm vitest run tests/unit/project-scope-runtime.test.ts tests/unit/agent-asset-runtime.test.ts`
   - verify: passed 2026-06-13; 另跑 `pnpm typecheck:node`。已缓存项目直接切换不重扫; 未缓存项目只发起 `wait:false` 后台 refresh; 同一项目重复选择不重扫也不重启 watcher。
 
-- [ ] 任务 4: Adapter public API 收敛
+- [x] 任务 4: Adapter public API 收敛
   - scope: 新 adapter declaration contract; package export; Claude/Codex source declarations 迁移; 移除 manifest adapter 旧方法残留。
   - tests: `pnpm vitest run tests/unit/agent-asset-runtime.test.ts tests/unit/watch-wiring.test.ts` + 新 adapter API tests。
   - verify: engine 通用文件不再直接依赖第三方 parser; 内置 Claude/Codex 行为不回退。
   - progress 2026-06-13: added public adapter API type export and removed stale manifest adapter methods; passed `pnpm vitest run tests/unit/agent-adapter-registry.test.ts` and `pnpm typecheck:node`。
   - progress 2026-06-13: published `@berth/scan-engine/adapter-api` as a real package subpath with ESM/CJS/type outputs, so independently maintained adapters do not need to import `src/*` deep paths. Passed `pnpm --dir packages/berth-scan-engine test`, `pnpm --dir packages/berth-scan-engine typecheck`, `pnpm --dir packages/berth-scan-engine build`, and Node ESM/CJS self-reference import checks from the package directory。
+  - progress 2026-06-13: moved convention and enterprise parser dispatch for shallow scan and incremental derive behind `engine/agent-capabilities.ts`, so regular engine files consume the adapter seam instead of importing Claude/Codex parsers directly. Passed `pnpm vitest run tests/unit/watch-wiring.test.ts tests/unit/agent-asset-runtime.test.ts tests/unit/engine-scanner.test.ts`, `pnpm typecheck:node`, `pnpm --dir packages/berth-scan-engine test`, `pnpm --dir packages/berth-scan-engine typecheck`, and `pnpm --dir packages/berth-scan-engine build`。
 
 - [x] 任务 5: 新 agent source declarations
   - scope: Gemini CLI、GitHub Copilot CLI、Cursor、OpenCode、OpenClaw、Hermes Agent 的 home resolver、source declaration、敏感文件策略、version probe 描述与 fixtures。

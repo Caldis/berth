@@ -1,35 +1,10 @@
 import * as fs from 'fs'
 import * as path from 'path'
 import { glob } from 'glob'
-import type { Asset, AssetScope } from '@shared/types/asset'
-// conventions (CLAUDE.md/AGENTS.md) 仍直连两个 parser — 与 derive 的 CONVENTION_DISPATCH
-// 是有意的表示模型分叉 (shallow: 单资产+readByAgentIds; derive: 双 agent 双资产), 不并入
-// capability 单源表; 收敛讨论归 engine-shared-core-package issue。
-import { parseAgentsMd, parseClaudeMd } from '../adapters/claude-code/parsers'
-import { projectCapabilitySources } from './agent-capabilities'
+import type { Asset } from '@shared/types/asset'
+import { projectCapabilitySources, shallowConventionSources } from './agent-capabilities'
 import type { AssetFileCache } from './assets/file-cache'
 import { getMainLog } from '../log'
-
-/** Both agents read AGENTS.md, so a shallow-indexed one is visible in either view. */
-const SHARED_AGENT_READERS = ['claude-code', 'codex']
-
-interface ShallowConventionSource {
-  file: string
-  parse: (filePath: string, scope: AssetScope) => Asset
-  sharedReaders: boolean
-}
-
-// Root-level conventions only — the inexpensive surface that answers "what does
-// this project tell its agents". Deliberately excludes the deep nested
-// `**/CLAUDE.md` glob and every .claude/.codex capability config (skills, agents,
-// commands, hooks, mcp), which only the active project's deep scan reads.
-const SHALLOW_SOURCES: ShallowConventionSource[] = [
-  { file: 'AGENTS.md', parse: parseAgentsMd, sharedReaders: true },
-  { file: path.join('.claude', 'AGENTS.md'), parse: parseAgentsMd, sharedReaders: true },
-  { file: 'CLAUDE.md', parse: parseClaudeMd, sharedReaders: false },
-  { file: 'CLAUDE.local.md', parse: parseClaudeMd, sharedReaders: false },
-  { file: path.join('.claude', 'CLAUDE.md'), parse: parseClaudeMd, sharedReaders: false }
-]
 
 /**
  * Shallow-index a NON-active project's root conventions for the global scope, so
@@ -40,7 +15,7 @@ const SHALLOW_SOURCES: ShallowConventionSource[] = [
  */
 export function scanShallowConventions(projectDir: string, cache?: AssetFileCache<Asset[]>): Asset[] {
   const assets: Asset[] = []
-  for (const source of SHALLOW_SOURCES) {
+  for (const source of shallowConventionSources()) {
     const filePath = path.join(projectDir, source.file)
     if (!fs.existsSync(filePath)) continue
     try {
@@ -50,7 +25,7 @@ export function scanShallowConventions(projectDir: string, cache?: AssetFileCach
           ...asset.meta,
           scanDepth: 'shallow',
           projectPath: projectDir,
-          ...(source.sharedReaders ? { readByAgentIds: SHARED_AGENT_READERS } : {})
+          ...(source.sharedReaderAgentIds ? { readByAgentIds: source.sharedReaderAgentIds } : {})
         }
         return [asset]
       }
