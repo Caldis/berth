@@ -4,7 +4,7 @@
 每个实现项必须有测试证据或明确例外理由。
 实现中若发现 debt 初估不准, 更新 INDEX.md `debt.estimate`, 并追加 `debt.revisions[]`。
 
-- [ ] T1 内容契约与测试护栏
+- [x] T1 内容契约与测试护栏 — DONE: 新增 `website/src/i18n/locales.test.ts`, 校验 zh/en/ja/ko JSON key、数组长度和嵌套结构与英文一致; `pnpm --dir website test` 3 files / 13 tests 通过, `pnpm --dir website typecheck` 通过。
   - 内容: 增加 i18n JSON parity 测试; 必要时扩展 content/postbuild 测试; 明确 stale 文案检查命令。
   - tests: `pnpm --dir website test`, `pnpm --dir website typecheck`。
   - verify: 测试能在未改页面前约束四语结构; 界面项不适用。
