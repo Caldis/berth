@@ -2,7 +2,7 @@
 task: 2026-06-13-gh-134-release-v03-autoupdate-macos-signing
 task_id: GH-134
 type: feature
-phase: design
+phase: implement
 created: 2026-06-13
 priority: P1
 target_date: 
