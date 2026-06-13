@@ -21,3 +21,4 @@ export type {
   AgentAdapterSourceStability,
   AgentAdapterVersionProbe
 } from './adapter-api'
+export { PLANNED_AGENT_ADAPTER_DEFINITIONS } from './adapters/planned-agent-definitions'
