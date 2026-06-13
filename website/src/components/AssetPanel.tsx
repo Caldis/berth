@@ -4,16 +4,16 @@ import { cn } from '@/lib/cn'
 const sidebar = [
   { icon: LayoutGrid, label: 'Overview' },
   { icon: MessagesSquare, label: 'Sessions' },
-  { icon: Settings, label: 'Configuration', active: true },
+  { icon: Settings, label: 'Scan Engine', active: true },
   { icon: Activity, label: 'Usage' },
 ]
 
 const rows = [
-  { icon: Boxes, name: 'code-review', kind: 'Skill', scope: 'user', tone: 'harbor' },
-  { icon: Plug, name: 'github', kind: 'MCP', scope: 'project', tone: 'amber' },
-  { icon: Webhook, name: 'PreToolUse', kind: 'Hook', scope: 'user', tone: 'harbor' },
-  { icon: Bot, name: 'reviewer', kind: 'Subagent', scope: 'project', tone: 'amber' },
-  { icon: Boxes, name: 'commit-helper', kind: 'Skill', scope: 'user', tone: 'harbor' },
+  { icon: Boxes, name: 'Claude Code', kind: '25 assets', scope: '~/.claude', tone: 'harbor' },
+  { icon: Plug, name: 'Codex', kind: 'sessions', scope: '~/.codex', tone: 'amber' },
+  { icon: Webhook, name: 'Gemini CLI', kind: 'GEMINI.md', scope: '~/.gemini', tone: 'harbor' },
+  { icon: Bot, name: 'Cursor', kind: 'rules', scope: '.cursor', tone: 'amber' },
+  { icon: Boxes, name: 'OpenCode', kind: 'plugins', scope: 'opencode', tone: 'harbor' },
 ]
 
 /**
@@ -27,7 +27,7 @@ export function AssetPanel() {
         <span className="h-2.5 w-2.5 rounded-full bg-line" />
         <span className="h-2.5 w-2.5 rounded-full bg-line" />
         <span className="h-2.5 w-2.5 rounded-full bg-line" />
-        <span className="ml-2 font-mono text-xs text-muted">berth · ~/.claude</span>
+          <span className="ml-2 font-mono text-xs text-muted">berth · scan engine</span>
       </div>
 
       <div className="grid grid-cols-[132px_1fr]">
@@ -48,8 +48,8 @@ export function AssetPanel() {
 
         <div className="p-3">
           <div className="mb-2 flex items-center justify-between px-1">
-            <span className="text-xs font-medium text-muted">Capabilities</span>
-            <span className="font-mono text-[10px] text-muted">25 assets</span>
+            <span className="text-xs font-medium text-muted">Source coverage</span>
+            <span className="font-mono text-[10px] text-muted">8 adapters</span>
           </div>
           <ul className="space-y-1.5">
             {rows.map((row) => (

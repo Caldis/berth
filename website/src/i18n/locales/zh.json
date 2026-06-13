@@ -8,7 +8,7 @@
     "badge": "本地优先 · 只读 · 零遥测",
     "title": "让本地 AI Agent 资产，",
     "titleAccent": "一目了然。",
-    "subtitle": "Berth 扫描散落在你电脑各处的 Skills、MCP、Hooks、子代理与会话，把它们关联成一张可浏览、可搜索的全景图——你终于看清自己装了什么、它们如何协作、用得怎么样。",
+    "subtitle": "Berth 扫描散落在 Claude Code、Codex、Gemini CLI、GitHub Copilot CLI、Cursor、OpenCode、OpenClaw 和 Hermes Agent 里的 instructions、skills、MCP、hooks、plugins、sessions 与扫描源, 把它们整理成一张本地可浏览的图。",
     "ctaPrimary": "下载 Berth",
     "ctaSecondary": "在 GitHub 查看",
     "note": "macOS 11+ / Windows 10+ · 免费开源（MIT）"
@@ -31,7 +31,7 @@
       },
       {
         "title": "跨 Agent 统一",
-        "body": "Claude Code 与 Codex 的配置、能力、会话，集中在一处对照查看。"
+        "body": "Claude Code、Codex、Gemini CLI、GitHub Copilot CLI、Cursor、OpenCode、OpenClaw 与 Hermes Agent 经各自 adapter 读取, 最后集中展示。"
       },
       {
         "title": "本地优先",
@@ -62,16 +62,125 @@
       {
         "name": "Configuration",
         "title": "盘点你的装备",
-        "body": "Instructions 与 Capabilities 两栏，跨 user / project / enterprise 作用域合并展示，标注来源与冲突。",
+        "body": "Instructions 与 Capabilities 两栏，跨 user / project / enterprise 作用域合并展示，标注来源路径、作用域与冲突。",
         "points": ["Instructions 与 Capabilities", "作用域合并", "冲突检测"]
       },
       {
         "name": "Usage",
         "title": "用量与成本",
-        "body": "按模型、按项目、按天的花费与 Token 走势，速率限制余量一目了然。",
-        "points": ["按模型 / 项目 / 天", "Token 拆解", "速率限制"]
+        "body": "按模型、按项目、按天的花费与 Token 走势。Berth 展示本地估算, 不把它伪装成 provider 官方账单。",
+        "points": ["按模型 / 项目 / 天", "Token 拆解", "本地估算"]
+      },
+      {
+        "name": "Scan Engine",
+        "title": "看见索引器本身",
+        "body": "Settings 里可以看到扫描引擎版本、状态、已索引资产数、已索引文件数、错误、调度状态, 以及可编辑的 watcher 时序参数。",
+        "points": ["引擎版本", "已索引文件", "可编辑控制项"]
       }
-    ]
+    ],
+    "engine": {
+      "eyebrow": "扫描引擎",
+      "title": "可见的索引器, 不是藏在后台的任务",
+      "body": "Berth 的数据层是独立包 @berth/scan-engine。桌面应用通过 worker-backed runtime 使用它, 这个包也提供 CLI 和 adapter API, 方便独立维护 agent 集成。",
+      "metrics": [
+        {
+          "label": "Package",
+          "value": "@berth/scan-engine",
+          "body": "scanner、adapter registry、共享资产模型和 CLI 都在 Electron UI 外的包边界里。"
+        },
+        {
+          "label": "Adapter API",
+          "value": "./adapter-api",
+          "body": "adapter 定义包含 source policy、permissions、evidence URLs、sensitivity 与 version probe。"
+        },
+        {
+          "label": "Cache mode",
+          "value": "SQLite SWR",
+          "body": "应用会先恢复上次本地索引, 再在后台刷新。"
+        },
+        {
+          "label": "Worker mode",
+          "value": "one-shot",
+          "body": "重扫描在 renderer 之外执行, 支持 project scope 排队刷新和文件变更更新。"
+        }
+      ],
+      "controlsTitle": "Settings 暴露的控制面",
+      "controls": [
+        {
+          "label": "手动刷新",
+          "body": "立刻运行扫描器, 并观察 runtime 状态从 scanning 回到 ready。"
+        },
+        {
+          "label": "Watcher debounce",
+          "body": "调整文件变更后 Berth 等多久再安排刷新。"
+        },
+        {
+          "label": "最小刷新间隔",
+          "body": "避免噪声较多的文件监听反复重建同一个项目索引。"
+        },
+        {
+          "label": "调度状态",
+          "body": "查看 scheduled 和 queued refresh 的原因。pause 与 cancel 不可用时会如实显示 unsupported。"
+        }
+      ]
+    },
+    "adapters": {
+      "eyebrow": "Adapter 覆盖",
+      "title": "独立 agent adapter, 统一资产模型",
+      "body": "每个 adapter 管自己的扫描根和 source policy。AGENTS.md 这类共享兼容文件可以算作 source coverage, 但不会把未安装的 agent 误标为已安装。",
+      "items": [
+        {
+          "name": "Claude Code",
+          "status": "core",
+          "body": "从 Claude 专属目录读取 instructions、skills、subagents、MCP servers、hooks、sessions 与 usage metadata。"
+        },
+        {
+          "name": "Codex",
+          "status": "core",
+          "body": "从 Codex homes 和项目中读取 config、AGENTS.md、hooks、skills、sessions 与 rollout metadata。"
+        },
+        {
+          "name": "Gemini CLI",
+          "status": "adapter v1",
+          "body": "从 user 和 project roots 读取 settings、GEMINI.md context files、extensions 与 session metadata。"
+        },
+        {
+          "name": "GitHub Copilot CLI",
+          "status": "adapter v1",
+          "body": "读取 Copilot instructions、agents、skills、hooks、MCP/LSP config、plugins, 以及 metadata-only session sources。"
+        },
+        {
+          "name": "Cursor",
+          "status": "adapter v1",
+          "body": "从 project 和 config roots 读取 rules、MCP config、hooks、permissions、skills、agents 与 plugins。"
+        },
+        {
+          "name": "OpenCode",
+          "status": "adapter v1",
+          "body": "读取 opencode config、agents、commands、skills、plugins、auth presence、logs 和 session database metadata。"
+        },
+        {
+          "name": "OpenClaw",
+          "status": "adapter v1",
+          "body": "读取 workspace guidance、skills、extensions、plugins、session indexes、credentials presence 和 debug summaries。"
+        },
+        {
+          "name": "Hermes Agent",
+          "status": "adapter v1",
+          "body": "读取 config、profiles、identity files、memories、skills、plugins、hooks 与 project context files。"
+        }
+      ]
+    },
+    "safety": {
+      "eyebrow": "安全边界",
+      "title": "能读取, 不等于会写入",
+      "items": [
+        "Berth 只扫描已知本地 roots, 并展示 source paths, 让你能核对每个资产从哪里来。",
+        "凭证和 token 只按 presence 或 metadata 处理; secret 值不会展示。",
+        "本地 SQLite 索引和扫描设置留在这台机器上, 只供 Berth 使用。",
+        "无遥测、无账号、无云同步。外链只指向 GitHub releases 或被引用的文档。"
+      ]
+    }
   },
   "bridge": {
     "eyebrow": "知识库",
@@ -117,7 +226,7 @@
       },
       {
         "q": "支持哪些 Agent？",
-        "a": "Berth 支持 Claude Code 与 Codex，适配层已就绪，后续版本将覆盖更多 Agent。"
+        "a": "Berth 内置 Claude Code/Codex core adapters, 并包含 Gemini CLI、GitHub Copilot CLI、Cursor、OpenCode、OpenClaw 与 Hermes Agent 的 adapter v1 支持。"
       },
       {
         "q": "是免费的吗？",
@@ -148,11 +257,11 @@
   "meta": {
     "home": {
       "title": "Berth — 看清每一个本地 AI Agent 资产",
-      "description": "Berth 是一款本地优先、只读的桌面应用，扫描并可视化你的 AI Agent 资产——Skills、MCP、Hooks、子代理、会话与成本，支持 Claude Code 与 Codex。"
+      "description": "Berth 是本地优先、只读的桌面应用，可扫描并可视化 Claude Code、Codex、Gemini CLI、GitHub Copilot CLI、Cursor、OpenCode、OpenClaw 与 Hermes Agent 的 AI Agent 资产。"
     },
     "features": {
       "title": "功能 — Berth",
-      "description": "Overview、Sessions、Configuration 与 Usage：Berth 如何让本地 AI Agent 资产变得可见。"
+      "description": "Overview、Sessions、Configuration、Usage 与 Scan Engine 控制面：Berth 如何让本地 AI Agent 资产变得可见。"
     },
     "knowledge": {
       "title": "知识库 — Berth",
@@ -173,7 +282,7 @@
   },
   "pages": {
     "knowledgeIntro": "三大板块，一个目标：帮你认识 AI Agent，并从容地管理它们。深度文章将陆续上线，每篇都标注一手参考来源。",
-    "featuresIntro": "Berth 把 AI Agent 背后的纯文本资产，变成结构化、可浏览的对象。下面是这款应用的全貌。",
+    "featuresIntro": "Berth 把 AI Agent 背后的纯文本文件和本地数据库，变成结构化、可浏览的对象。这里说明应用视图、扫描引擎和 adapter 模型。",
     "about": {
       "body1": "Berth 让 AI Agent 背后看不见的资产变得可见。随着 Claude Code、Codex 等工具快速演进，你在本地积累的 skills、MCP、hooks 与记忆，大多是缺乏可见性的纯文本。Berth 扫描它们、关联它们，把它们呈现为一等公民般的对象。",
       "body2": "Berth 开源并采用 MIT 许可，由 Caldis 打造。它在设计上即只读、本地优先。"

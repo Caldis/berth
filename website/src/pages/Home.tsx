@@ -43,6 +43,11 @@ interface Faq {
 
 const valueIcons = [Layers, LayoutGrid, Lock, Eye]
 const featureIcons = [LayoutGrid, MessagesSquare, Settings, Activity]
+const pillarTargets = [
+  'knowledge/understand/what-is-an-agent',
+  'knowledge/features/asset-model',
+  'knowledge/guides/why-isnt-my-hook-firing',
+]
 
 function SectionHead({ eyebrow, heading }: { eyebrow: string; heading: string }) {
   return (
@@ -209,10 +214,10 @@ export function Home() {
       <section className="container-page pb-20 sm:pb-24">
         <SectionHead eyebrow={t('kb.eyebrow')} heading={t('kb.heading')} />
         <div className="mt-14 grid gap-5 md:grid-cols-3">
-          {pillars.map((pillar) => (
+          {pillars.map((pillar, index) => (
             <Link
               key={pillar.title}
-              to={`${base}/knowledge`}
+              to={`${base}/${pillarTargets[index] ?? 'knowledge'}`}
               className="card group flex flex-col hover:-translate-y-1 hover:shadow-lift"
             >
               <span className="self-start rounded-full bg-cream px-3 py-1 text-xs font-semibold text-ink">

@@ -8,7 +8,7 @@
     "badge": "ローカルファースト · 読み取り専用 · テレメトリなし",
     "title": "ローカルの AI エージェント資産を、",
     "titleAccent": "ひと目で。",
-    "subtitle": "Berth はマシン中に散らばった Skills、MCP、Hooks、サブエージェント、セッションをスキャンし、閲覧・検索できる一枚のマップにつなぎます。何を持ち、どう連携し、いくらかかっているのかが、ようやく分かります。",
+    "subtitle": "Berth は Claude Code、Codex、Gemini CLI、GitHub Copilot CLI、Cursor、OpenCode、OpenClaw、Hermes Agent に散らばった instructions、skills、MCP、hooks、plugins、sessions、scan sources を読み取り、ローカルで閲覧できる一つのマップにします。",
     "ctaPrimary": "Berth をダウンロード",
     "ctaSecondary": "GitHub で見る",
     "note": "macOS 11+ / Windows 10+ · 無料・オープンソース（MIT）"
@@ -31,7 +31,7 @@
       },
       {
         "title": "エージェント横断で一望",
-        "body": "Claude Code と Codex の設定・能力・セッションを、一か所に並べて確認。"
+        "body": "Claude Code、Codex、Gemini CLI、GitHub Copilot CLI、Cursor、OpenCode、OpenClaw、Hermes Agent をそれぞれの adapter で読み取り、一か所に並べます。"
       },
       {
         "title": "ローカルファースト",
@@ -62,16 +62,125 @@
       {
         "name": "Configuration",
         "title": "装備を棚卸し",
-        "body": "Instructions と Capabilities を二列で。user / project / enterprise スコープを統合し、出所と競合を明示。",
+        "body": "Instructions と Capabilities を二列で。user / project / enterprise スコープを統合し、出所のパス、スコープ、競合を明示。",
         "points": ["Instructions と Capabilities", "スコープのマージ", "競合の検出"]
       },
       {
         "name": "Usage",
         "title": "費用とトークン",
-        "body": "モデル・プロジェクト・日別の費用とトークン推移。レート制限の余裕も常に表示。",
-        "points": ["モデル／プロジェクト／日別", "トークンの内訳", "レート制限"]
+        "body": "モデル・プロジェクト・日別の費用とトークン推移。Berth はローカル推定を表示し、それを provider の公式請求として扱いません。",
+        "points": ["モデル／プロジェクト／日別", "トークンの内訳", "ローカル推定"]
+      },
+      {
+        "name": "Scan Engine",
+        "title": "インデクサー自体を見る",
+        "body": "Settings では scan engine のバージョン、状態、indexed assets、indexed files、errors、scheduler state、編集可能な watcher timing を確認できます。",
+        "points": ["Engine version", "Indexed files", "編集可能な controls"]
       }
-    ]
+    ],
+    "engine": {
+      "eyebrow": "Scan engine",
+      "title": "裏で隠れているタスクではなく、見えるインデクサー",
+      "body": "Berth のデータ層は独立した @berth/scan-engine パッケージです。デスクトップアプリは worker-backed runtime 経由で使い、このパッケージは CLI と adapter API も提供します。",
+      "metrics": [
+        {
+          "label": "Package",
+          "value": "@berth/scan-engine",
+          "body": "scanner、adapter registry、共有 asset model、CLI は Electron UI の外側のパッケージ境界にあります。"
+        },
+        {
+          "label": "Adapter API",
+          "value": "./adapter-api",
+          "body": "adapter 定義には source policy、permissions、evidence URLs、sensitivity、version probe が含まれます。"
+        },
+        {
+          "label": "Cache mode",
+          "value": "SQLite SWR",
+          "body": "アプリは前回のローカル index をすばやく復元し、その後でバックグラウンド更新します。"
+        },
+        {
+          "label": "Worker mode",
+          "value": "one-shot",
+          "body": "重い scan は renderer の外で動き、project scope の queued refresh と file-change updates を扱います。"
+        }
+      ],
+      "controlsTitle": "Settings で見える control surface",
+      "controls": [
+        {
+          "label": "Manual refresh",
+          "body": "すぐ scanner を実行し、runtime status が scanning から ready に戻るのを確認できます。"
+        },
+        {
+          "label": "Watcher debounce",
+          "body": "ファイル変更後、Berth が refresh を予定するまでの待ち時間を調整します。"
+        },
+        {
+          "label": "Minimum refresh interval",
+          "body": "変更の多い watcher が同じ project を何度も re-index しないようにします。"
+        },
+        {
+          "label": "Scheduler state",
+          "body": "scheduled / queued refresh の理由を表示します。pause と cancel は未対応なら unsupported として表示します。"
+        }
+      ]
+    },
+    "adapters": {
+      "eyebrow": "Adapter coverage",
+      "title": "独立した agent adapter、ひとつの asset model",
+      "body": "各 adapter が scan roots と source policy を持ちます。AGENTS.md のような共有互換ファイルは source coverage として表示できますが、未インストールの agent を installed と誤表示しません。",
+      "items": [
+        {
+          "name": "Claude Code",
+          "status": "core",
+          "body": "Claude 専用の roots から instructions、skills、subagents、MCP servers、hooks、sessions、usage metadata を読み取ります。"
+        },
+        {
+          "name": "Codex",
+          "status": "core",
+          "body": "Codex homes と projects から config、AGENTS.md、hooks、skills、sessions、rollout metadata を読み取ります。"
+        },
+        {
+          "name": "Gemini CLI",
+          "status": "adapter v1",
+          "body": "user / project roots から settings、GEMINI.md context files、extensions、session metadata を読み取ります。"
+        },
+        {
+          "name": "GitHub Copilot CLI",
+          "status": "adapter v1",
+          "body": "Copilot instructions、agents、skills、hooks、MCP/LSP config、plugins、metadata-only session sources を読み取ります。"
+        },
+        {
+          "name": "Cursor",
+          "status": "adapter v1",
+          "body": "project / config roots から rules、MCP config、hooks、permissions、skills、agents、plugins を読み取ります。"
+        },
+        {
+          "name": "OpenCode",
+          "status": "adapter v1",
+          "body": "opencode config、agents、commands、skills、plugins、auth presence、logs、session database metadata を読み取ります。"
+        },
+        {
+          "name": "OpenClaw",
+          "status": "adapter v1",
+          "body": "workspace guidance、skills、extensions、plugins、session indexes、credentials presence、debug summaries を読み取ります。"
+        },
+        {
+          "name": "Hermes Agent",
+          "status": "adapter v1",
+          "body": "config、profiles、identity files、memories、skills、plugins、hooks、project context files を読み取ります。"
+        }
+      ]
+    },
+    "safety": {
+      "eyebrow": "Safety model",
+      "title": "読めることと、書き込むことは別です",
+      "items": [
+        "Berth は既知の local roots だけを scan し、各 asset の source path を表示します。",
+        "credentials と tokens は presence または metadata として扱い、secret values は表示しません。",
+        "local SQLite index と scan settings はこのマシンに残り、Berth だけが使います。",
+        "テレメトリなし、アカウントなし、クラウド同期なし。外部リンクは GitHub releases または引用文書です。"
+      ]
+    }
   },
   "bridge": {
     "eyebrow": "ナレッジベース",
@@ -117,7 +226,7 @@
       },
       {
         "q": "どのエージェントに対応していますか？",
-        "a": "Berth は Claude Code と Codex に対応。アダプタ層により、今後のリリースでさらに多くのエージェントへ拡張します。"
+        "a": "Berth は Claude Code/Codex の core adapters に加え、Gemini CLI、GitHub Copilot CLI、Cursor、OpenCode、OpenClaw、Hermes Agent の adapter v1 も含みます。"
       },
       {
         "q": "無料ですか？",
@@ -148,11 +257,11 @@
   "meta": {
     "home": {
       "title": "Berth — ローカルの AI エージェント資産をすべて見える化",
-      "description": "Berth はローカルファーストで読み取り専用のデスクトップアプリ。Skills・MCP・Hooks・サブエージェント・セッション・費用といった AI エージェント資産をスキャンして可視化します（Claude Code / Codex 対応）。"
+      "description": "Berth はローカルファーストで読み取り専用のデスクトップアプリ。Claude Code、Codex、Gemini CLI、GitHub Copilot CLI、Cursor、OpenCode、OpenClaw、Hermes Agent の AI エージェント資産を scan して可視化します。"
     },
     "features": {
       "title": "機能 — Berth",
-      "description": "Overview・Sessions・Configuration・Usage：Berth がローカルの AI エージェント資産を可視化する方法。"
+      "description": "Overview・Sessions・Configuration・Usage・Scan Engine controls: Berth がローカルの AI エージェント資産を可視化する方法。"
     },
     "knowledge": {
       "title": "ナレッジベース — Berth",
@@ -173,7 +282,7 @@
   },
   "pages": {
     "knowledgeIntro": "3 つのトラック、目標は一つ。AI エージェントを理解し、自信を持って管理できるように。一次情報を明記した詳しい記事を順次公開します。",
-    "featuresIntro": "Berth は AI エージェントの背後にあるテキスト資産を、構造化された閲覧可能なオブジェクトに変えます。これがアプリの全体像です。",
+    "featuresIntro": "Berth は AI エージェントの背後にあるテキストファイルとローカルデータベースを、構造化された閲覧可能なオブジェクトに変えます。このページでは app views、scan engine、adapter model を説明します。",
     "about": {
       "body1": "Berth は AI エージェントの背後にある見えない資産を可視化します。Claude Code や Codex のようなツールが進化するなか、ローカルにたまる skills・MCP・hooks・記憶は、可視性のないテキストとして積み上がります。Berth はそれらをスキャンし、関連づけ、一級のオブジェクトとして示します。",
       "body2": "Berth は MIT ライセンスのオープンソースで、Caldis が制作しています。設計上、読み取り専用かつローカルファーストです。"

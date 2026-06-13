@@ -8,7 +8,7 @@
     "badge": "Local-first · Read-only · Zero telemetry",
     "title": "Your local AI agent assets,",
     "titleAccent": "finally visible.",
-    "subtitle": "Berth scans the Skills, MCP servers, hooks, subagents and sessions scattered across your machine and connects them into one browsable, searchable map — so you finally know what you have, how it works together, and what it costs.",
+    "subtitle": "Berth scans the instructions, skills, MCP servers, hooks, plugins, sessions and scan sources scattered across Claude Code, Codex, Gemini CLI, GitHub Copilot CLI, Cursor, OpenCode, OpenClaw and Hermes Agent — then turns them into one browsable local map.",
     "ctaPrimary": "Download Berth",
     "ctaSecondary": "View on GitHub",
     "note": "macOS 11+ / Windows 10+ · Free & open source (MIT)"
@@ -31,7 +31,7 @@
       },
       {
         "title": "One view across agents",
-        "body": "Configuration, capabilities and sessions for Claude Code and Codex, side by side in one place."
+        "body": "Claude Code, Codex, Gemini CLI, GitHub Copilot CLI, Cursor, OpenCode, OpenClaw and Hermes Agent are read through separate adapters and shown in one place."
       },
       {
         "title": "Local-first",
@@ -62,16 +62,125 @@
       {
         "name": "Configuration",
         "title": "Take inventory",
-        "body": "Instructions and Capabilities in two columns, merged across user, project and enterprise scope, with sources and conflicts marked.",
+        "body": "Instructions and Capabilities in two columns, merged across user, project and enterprise scope, with source paths, scopes and conflicts marked.",
         "points": ["Instructions & Capabilities", "Scope merge", "Conflict detection"]
       },
       {
         "name": "Usage",
         "title": "Spend & tokens",
-        "body": "Cost and token trends by model, project and day, with rate-limit headroom kept in plain sight.",
-        "points": ["By model / project / day", "Token breakdown", "Rate limits"]
+        "body": "Cost and token trends by model, project and day. Berth keeps local estimates visible without pretending to be provider billing.",
+        "points": ["By model / project / day", "Token breakdown", "Local estimates"]
+      },
+      {
+        "name": "Scan Engine",
+        "title": "See the indexer itself",
+        "body": "Settings now exposes the scan engine version, status, indexed asset count, indexed file count, errors, scheduler state and editable watcher timing.",
+        "points": ["Engine version", "Indexed files", "Editable controls"]
       }
-    ]
+    ],
+    "engine": {
+      "eyebrow": "Scan engine",
+      "title": "A visible indexer, not a hidden background task",
+      "body": "Berth's data layer is the standalone @berth/scan-engine package. The desktop app uses it through a worker-backed runtime, while the package also exposes a CLI and adapter API for independently maintained integrations.",
+      "metrics": [
+        {
+          "label": "Package",
+          "value": "@berth/scan-engine",
+          "body": "The scanner, adapter registry, shared asset model and CLI live in a package boundary outside the Electron UI."
+        },
+        {
+          "label": "Adapter API",
+          "value": "./adapter-api",
+          "body": "Adapter definitions include source policy, permissions, evidence URLs, sensitivity and version probing."
+        },
+        {
+          "label": "Cache mode",
+          "value": "SQLite SWR",
+          "body": "The app restores the last local index quickly and refreshes it in the background."
+        },
+        {
+          "label": "Worker mode",
+          "value": "one-shot",
+          "body": "Heavy scans run outside the renderer, with queued project-scope refreshes and file-change updates."
+        }
+      ],
+      "controlsTitle": "What Settings exposes",
+      "controls": [
+        {
+          "label": "Manual refresh",
+          "body": "Run the scanner now and watch the runtime status move from scanning back to ready."
+        },
+        {
+          "label": "Watcher debounce",
+          "body": "Tune how long Berth waits after file changes before scheduling a refresh."
+        },
+        {
+          "label": "Minimum refresh interval",
+          "body": "Keep noisy file watchers from repeatedly re-indexing the same project."
+        },
+        {
+          "label": "Scheduler state",
+          "body": "See scheduled and queued refresh reasons. Pause and cancel are shown honestly as unsupported when unavailable."
+        }
+      ]
+    },
+    "adapters": {
+      "eyebrow": "Adapter coverage",
+      "title": "Independent agent adapters, one asset model",
+      "body": "Each adapter owns its scan roots and source policy. Shared compatibility files such as AGENTS.md can be counted as source coverage without falsely marking an agent as installed.",
+      "items": [
+        {
+          "name": "Claude Code",
+          "status": "core",
+          "body": "Reads instructions, skills, subagents, MCP servers, hooks, sessions and usage metadata from Claude-specific roots."
+        },
+        {
+          "name": "Codex",
+          "status": "core",
+          "body": "Reads Codex config, AGENTS.md, hooks, skills, sessions and rollout metadata from Codex homes and projects."
+        },
+        {
+          "name": "Gemini CLI",
+          "status": "adapter v1",
+          "body": "Reads settings, GEMINI.md context files, extensions and session metadata from user and project roots."
+        },
+        {
+          "name": "GitHub Copilot CLI",
+          "status": "adapter v1",
+          "body": "Reads Copilot instructions, agents, skills, hooks, MCP/LSP config, plugins and metadata-only session sources."
+        },
+        {
+          "name": "Cursor",
+          "status": "adapter v1",
+          "body": "Reads rules, MCP config, hooks, permissions, skills, agents and plugins from project and config roots."
+        },
+        {
+          "name": "OpenCode",
+          "status": "adapter v1",
+          "body": "Reads opencode config, agents, commands, skills, plugins, auth presence, logs and session database metadata."
+        },
+        {
+          "name": "OpenClaw",
+          "status": "adapter v1",
+          "body": "Reads workspace guidance, skills, extensions, plugins, session indexes, credentials presence and debug summaries."
+        },
+        {
+          "name": "Hermes Agent",
+          "status": "adapter v1",
+          "body": "Reads config, profiles, identity files, memories, skills, plugins, hooks and project context files."
+        }
+      ]
+    },
+    "safety": {
+      "eyebrow": "Safety model",
+      "title": "Readable does not mean writable",
+      "items": [
+        "Berth scans known local roots and presents source paths so you can verify where each asset came from.",
+        "Credentials and tokens are treated as presence or metadata only; secret values are not displayed.",
+        "The local SQLite index and scan settings stay on this machine and are used only by Berth.",
+        "No telemetry, no account, no cloud sync. External links go to GitHub releases or cited documentation."
+      ]
+    }
   },
   "bridge": {
     "eyebrow": "Knowledge base",
@@ -117,7 +226,7 @@
       },
       {
         "q": "Which agents are supported?",
-        "a": "Berth supports Claude Code and Codex, with an adapter layer designed to cover more agents in later releases."
+        "a": "Berth has core adapters for Claude Code/Codex, plus adapter v1 support for Gemini CLI, GitHub Copilot CLI, Cursor, OpenCode, OpenClaw and Hermes Agent."
       },
       {
         "q": "Is it free?",
@@ -148,11 +257,11 @@
   "meta": {
     "home": {
       "title": "Berth — See every local AI agent asset",
-      "description": "Berth is a local-first, read-only desktop app that scans and visualizes your AI agent assets — Skills, MCP servers, hooks, subagents, sessions and cost — for Claude Code and Codex."
+      "description": "Berth is a local-first, read-only desktop app that scans and visualizes AI agent assets across Claude Code, Codex, Gemini CLI, GitHub Copilot CLI, Cursor, OpenCode, OpenClaw and Hermes Agent."
     },
     "features": {
       "title": "Features — Berth",
-      "description": "Overview, Sessions, Configuration and Usage: how Berth makes your local AI agent assets visible."
+      "description": "Overview, Sessions, Configuration, Usage and Scan Engine controls: how Berth makes your local AI agent assets visible."
     },
     "knowledge": {
       "title": "Knowledge base — Berth",
@@ -173,7 +282,7 @@
   },
   "pages": {
     "knowledgeIntro": "Three tracks, one goal: help you understand AI agents and manage them with confidence. In-depth articles are landing here next, each citing primary sources.",
-    "featuresIntro": "Berth turns the plain-text assets behind your AI agents into structured, browsable objects. Here is the shape of the app.",
+    "featuresIntro": "Berth turns the plain-text files and local databases behind your AI agents into structured, browsable objects. This page covers the app views, the scan engine, and the adapter model behind them.",
     "about": {
       "body1": "Berth makes the invisible assets behind your AI agents visible. As tools like Claude Code and Codex evolve, the skills, MCP servers, hooks and memories you accumulate locally pile up as plain text with no real visibility. Berth scans them, connects them, and shows them as first-class objects.",
       "body2": "Berth is open source under the MIT license and built by Caldis. It is read-only and local-first by design."

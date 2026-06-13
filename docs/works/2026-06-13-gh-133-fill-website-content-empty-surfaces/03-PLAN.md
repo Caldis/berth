@@ -8,7 +8,7 @@
   - 内容: 增加 i18n JSON parity 测试; 必要时扩展 content/postbuild 测试; 明确 stale 文案检查命令。
   - tests: `pnpm --dir website test`, `pnpm --dir website typecheck`。
   - verify: 测试能在未改页面前约束四语结构; 界面项不适用。
-- [ ] T2 首页、Features 和产品示意补齐
+- [x] T2 首页、Features 和产品示意补齐 — DONE: 更新 Home/Features/AssetPanel 与四语 locale, 官网现在表达多 agent、scan engine、adapter API、Settings 控制面、source coverage 与安全边界; 首页知识库卡片指向具体文章; `pnpm --dir website test` 3 files / 13 tests 通过, `pnpm --dir website typecheck` 通过; stale `rg` 只剩 T3 范围内的 About 旧描述与 KnowledgeHub 空态。
   - 内容: 更新 `i18n/locales/*.json`, `Home.tsx`, `Features.tsx`, `AssetPanel.tsx`; 表达多 agent、scan engine、adapter API、Settings 控制面、source coverage、安全边界。
   - tests: `pnpm --dir website test`, `pnpm --dir website typecheck`, stale `rg` 检查。
   - verify: 页面信息密度提升; 复用现有视觉系统; 首页 knowledge cards 指向具体目标; 不出现未实现承诺。
