@@ -2,7 +2,7 @@
 task: 2026-06-13-gh-134-release-v03-autoupdate-macos-signing
 task_id: GH-134
 type: feature
-phase: explore
+phase: design
 created: 2026-06-13
 priority: P1
 target_date: 
@@ -19,11 +19,11 @@ debt:
     repaid: 2
     net: 3
     scope: cross-process
-    risk: high
+    risk: medium
     areas:
       - tooling-ci
-    confidence: low
-    rationale: "release/CI + 代码签名/公证为主 (tooling-ci), 跨 main updater / renderer 设置 / electron-builder / release.yml / Apple secrets; 本机 Windows 无法跑 mac 签名打包, 全链验证依赖 macOS runner + Apple 凭据, 故 risk=high confidence=low。修复 macОС 签名缺口偿还既有 signing debt (repaid=2)。explore/design 后校准。"
+    confidence: medium
+    rationale: "release/CI + 代码签名/公证为主 (tooling-ci), 跨 main updater / renderer 设置 / electron-builder / release.yml / Apple secrets。explore 后校准: 开关部分 (A) 是纯代码、复用既有 IPC 通道、完全可本机测试 → 低风险; 残余高风险集中在 mac 签名 (B), 且外部凭据阻塞 (berth 仓库无 secret) 已识别并可隔离, 故 risk high→medium、confidence low→medium。net 维持 3 (repaid=2: 解除 platformLimited 降级 + 补齐 mac release 缺口)。"
   final:
     incurred:
     repaid:
@@ -33,7 +33,12 @@ debt:
     areas: []
     confidence:
     rationale:
-  revisions: []
+  revisions:
+    - phase: explore
+      date: 2026-06-13
+      from: { risk: high, confidence: low }
+      to: { risk: medium, confidence: medium }
+      reason: "explore 后校准: 开关部分纯代码且复用既有 IPC 通道可本机测试 (低风险); 残余高风险集中在 mac 签名且外部凭据阻塞已识别可隔离。net 维持 3。"
 issue:
   number: 134
   repo: Caldis/berth
