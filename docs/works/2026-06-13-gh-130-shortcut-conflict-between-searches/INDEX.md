@@ -23,14 +23,16 @@ debt:
     confidence: low
     rationale: "0.0-new 初始估算; 快捷键冲突影响全局搜索与页面内搜索两个入口, 需核对触发链路、显示文案和测试覆盖。"
   final:
-    incurred:
-    repaid:
-    net:
-    scope:
-    risk:
-    areas: []
-    confidence:
-    rationale:
+    incurred: 2
+    repaid: 2
+    net: 0
+    scope: module
+    risk: low
+    areas:
+      - ui-ux
+      - testability
+    confidence: high
+    rationale: "全局搜索与页内搜索快捷键已拆分, renderer 测试覆盖冲突路径, 本地 lint/typecheck/test 与真实 Electron 键盘验收通过。"
   revisions: []
 issue:
   number: 130

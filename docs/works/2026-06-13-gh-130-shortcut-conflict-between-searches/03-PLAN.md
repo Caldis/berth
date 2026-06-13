@@ -14,10 +14,18 @@
   - tests: `pnpm vitest run tests/renderer/top-navigation.test.tsx tests/renderer/top-navigation-search.test.tsx tests/renderer/search-dialog.test.tsx tests/renderer/sessions-pages.test.tsx tests/renderer/memory-view.test.tsx`
   - verify: `pnpm typecheck:web`; `pnpm harness:check --work docs/works/2026-06-13-gh-130-shortcut-conflict-between-searches`
 
-- [ ] 4. verify 阶段做全量和交互验收。
+- [x] 4. verify 阶段做全量和交互验收。
   - tests: `pnpm lint`, `pnpm typecheck`, `pnpm test`
   - verify: 在实际 Electron 窗口或等价浏览器自动化中验证 Windows 路径: Ctrl+K 打开全局搜索, Ctrl+Shift+K 聚焦页内搜索; 完成后归档并等待最终 CI。
 
 ## verify 回写
 
-verify 不通过项作为新任务追加于此, phase 退回 implement。
+通过:
+
+- `pnpm lint`
+- `pnpm typecheck`
+- `pnpm test` (161 files, 1092 passed, 1 skipped; 存在既有 React act warning, 无失败)
+- `pnpm harness:stats` (debt total=10, status=ok)
+- `node scripts/harness-projects.mjs check --strict`
+- agent-owned Electron 实测: 会话页侧栏显示 `Ctrl+K`, header 显示 `Ctrl+Shift+K`; `Ctrl+K` 打开全局搜索弹窗且不聚焦页内搜索; `Ctrl+Shift+K` 聚焦页内搜索且不打开全局弹窗。
+- 截图: `C:/Users/mail/AppData/Local/Temp/berth-gh-130-shortcuts-sessions.png`
