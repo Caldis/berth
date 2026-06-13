@@ -24,6 +24,8 @@ import type {
   ScanSourceCode,
   ScanSourceStatus
 } from '@shared/types/asset'
+import type { AgentAdapterDefinition } from '@berth/scan-engine/adapter-api'
+import { PLANNED_AGENT_ADAPTER_DEFINITIONS } from '@berth/scan-engine/adapters/planned-agent-definitions'
 import { CLAUDE_SOURCE_DESCRIPTORS, CODEX_SOURCE_DESCRIPTORS } from './descriptors'
 import { loadAgentPluginManifests } from '@berth/scan-engine/agent-plugins/manifest'
 
@@ -917,13 +919,107 @@ export function listAgentCapabilityPlugins(
     agentVersions: toAgentVersions(groups),
     reservedIds: BUILTIN_PLUGIN_IDS
   })
+  const manifestPluginIds = new Set(
+    manifests
+      .filter((manifest) => manifest.status === 'valid' && Boolean(manifest.id))
+      .map((manifest) => manifest.id!)
+  )
   return {
     plugins: [
       buildClaudeCodePlugin(findGroup(groups, 'claude-code')),
       buildCodexPlugin(findGroup(groups, 'codex')),
+      ...buildPlannedAdapterPlugins(manifestPluginIds),
       ...buildManifestPlugins(manifests, groups)
     ],
     manifests
+  }
+}
+
+function buildPlannedAdapterPlugins(manifestPluginIds: Set<string>): AgentCapabilityPlugin[] {
+  return PLANNED_AGENT_ADAPTER_DEFINITIONS
+    .filter((definition) => !manifestPluginIds.has(definition.id))
+    .map((definition) => buildPlannedAdapterPlugin(definition))
+}
+
+function buildPlannedAdapterPlugin(definition: AgentAdapterDefinition): AgentCapabilityPlugin {
+  const agentId = definition.agentCompatibility?.agentId ?? definition.id
+  return {
+    id: definition.id,
+    displayName: definition.displayName,
+    version: definition.version,
+    schemaVersion: PLUGIN_SCHEMA_VERSION,
+    builtin: true,
+    enabled: false,
+    detected: false,
+    agentCompatibility: {
+      agentId,
+      name: definition.agentCompatibility?.name ?? definition.displayName,
+      versionRange: definition.agentCompatibility?.versionRange
+    },
+    capabilities: plannedAdapterCapabilities(definition),
+    permissions: definition.permissions.map((permission) => ({
+      kind: permission.kind,
+      scopes: permission.scopes,
+      pathPatterns: permission.pathPatterns,
+      reasonKey: 'settings.agentPluginPermissionReasons.plannedRead'
+    })),
+    sourceDescriptors: definition.sources,
+    assetDescriptors: definition.assets,
+    hookSchema: definition.hookSchema ?? {
+      agentId,
+      events: [],
+      handlers: []
+    },
+    healthCheckDescriptors: definition.healthChecks ?? [],
+    sourceCoverage: buildPlannedSourceCoverage(definition),
+    references: [
+      { label: 'Homepage', url: definition.homepageUrl },
+      { label: 'Download', url: definition.downloadUrl },
+      ...definition.references
+    ]
+  }
+}
+
+function plannedAdapterCapabilities(
+  definition: AgentAdapterDefinition
+): AgentCapabilityPluginCapability[] {
+  const result: AgentCapabilityPluginCapability[] = []
+  if (definition.sources.length > 0) {
+    result.push(capability('sourceDiscovery', 'planned', 'plannedAdapterMetadataOnly'))
+  }
+  if (definition.assets.length > 0) {
+    result.push(capability('assetParsing', 'planned', 'plannedAdapterMetadataOnly'))
+  }
+  if (definition.hookSchema) {
+    result.push(capability('hookSchema', 'planned', 'plannedAdapterMetadataOnly'))
+  }
+  if ((definition.healthChecks?.length ?? 0) > 0) {
+    result.push(capability('healthChecks', 'planned', 'plannedAdapterMetadataOnly'))
+  }
+  return result.length > 0 ? result : [capability('sourceDiscovery', 'planned', 'plannedAdapterMetadataOnly')]
+}
+
+function buildPlannedSourceCoverage(
+  definition: AgentAdapterDefinition
+): AgentCapabilityPluginSourceCoverage {
+  const sources: AgentCapabilityPluginSource[] = definition.sources.map((source) => ({
+    path: '',
+    scope: source.scope,
+    status: 'not-scanned',
+    code: source.code,
+    kind: source.kind,
+    categories: source.categories,
+    declared: true,
+    pathPattern: source.pathPattern
+  }))
+  return {
+    total: sources.length,
+    counts: {
+      scanned: 0,
+      missing: 0,
+      'not-scanned': sources.length
+    },
+    sources
   }
 }
 

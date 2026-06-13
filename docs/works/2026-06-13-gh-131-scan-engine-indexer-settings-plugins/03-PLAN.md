@@ -31,6 +31,7 @@
   - tests: 新 `agent-source-declarations` fixture tests。
   - verify: 每个 agent 的 config/instruction/skill/plugin/session/log/cache/credential 类源都有官方资料引用或明确“不稳定/经验性”标注; 扫描不执行外部命令。
   - progress 2026-06-13: added planned adapter definitions for all six requested agents with homepage/download URL, version probe, source policy, evidence URL, and metadata-only sensitive source handling; passed `pnpm vitest run tests/unit/planned-agent-adapter-definitions.test.ts` and `pnpm typecheck:node`。
+  - progress 2026-06-13: planned adapter definitions now appear in the Agent Capability Plugins registry as disabled metadata-only entries with homepage/download references and declared `not-scanned` source coverage; passed `pnpm vitest run tests/unit/agent-capability-plugins.test.ts tests/unit/planned-agent-adapter-definitions.test.ts`, `pnpm typecheck:node`, and `pnpm typecheck:test`。
 
 - [ ] 任务 6: 插件介绍与下载页
   - scope: 查 website 结构; 为每个可选 agent 插件新增独立介绍/下载页或数据入口。

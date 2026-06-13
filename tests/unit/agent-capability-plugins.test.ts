@@ -7,6 +7,7 @@ import { listAgentCapabilityPlugins } from '../../src/main/agent-plugins/registr
 import type { AgentScanSourceGroup } from '@shared/types/ipc'
 import type { HealthCheckCategory, HealthCheckSeverity } from '@shared/types/ipc'
 import type { AssetType, ScanSourceCode } from '@shared/types/asset'
+import { PLANNED_AGENT_ADAPTER_DEFINITIONS } from '@berth/scan-engine/adapters/planned-agent-definitions'
 
 const tempDirs: string[] = []
 
@@ -120,6 +121,8 @@ const codexHealthCheckDescriptorIds = [
   'codex:session:unreadable-transcript',
   'codex:session:metadata-missing'
 ]
+
+const plannedAdapterIds = PLANNED_AGENT_ADAPTER_DEFINITIONS.map((definition) => definition.id)
 
 const claudeHookEventTypes = [
   'ConfigChange',
@@ -237,12 +240,60 @@ describe('agent capability plugin registry', () => {
     }
   })
 
-  it('lists built-in Claude Code and Codex plugins', () => {
+  it('lists built-in Claude Code, Codex, and planned agent plugins', () => {
     const result = listAgentCapabilityPlugins(scanGroups)
 
-    expect(result.plugins.map((plugin) => plugin.id)).toEqual(['claude-code', 'codex'])
+    expect(result.plugins.map((plugin) => plugin.id)).toEqual(['claude-code', 'codex', ...plannedAdapterIds])
     expect(result.plugins.every((plugin) => plugin.builtin)).toBe(true)
-    expect(result.plugins.every((plugin) => plugin.enabled)).toBe(true)
+    expect(result.plugins.find((plugin) => plugin.id === 'claude-code')?.enabled).toBe(true)
+    expect(result.plugins.find((plugin) => plugin.id === 'codex')?.enabled).toBe(true)
+    for (const id of plannedAdapterIds) {
+      expect(result.plugins.find((plugin) => plugin.id === id)?.enabled).toBe(false)
+    }
+  })
+
+  it('exposes planned agent adapter metadata without scanning those files', () => {
+    const result = listAgentCapabilityPlugins(scanGroups)
+    const planned = result.plugins.filter((plugin) => plannedAdapterIds.includes(plugin.id))
+
+    expect(planned.map((plugin) => plugin.id)).toEqual([
+      'gemini-cli',
+      'github-copilot-cli',
+      'cursor',
+      'opencode',
+      'openclaw',
+      'hermes-agent'
+    ])
+    for (const plugin of planned) {
+      const definition = PLANNED_AGENT_ADAPTER_DEFINITIONS.find((item) => item.id === plugin.id)!
+      expect(plugin).toMatchObject({
+        version: definition.version,
+        detected: false,
+        sourceCoverage: {
+          total: definition.sources.length,
+          counts: {
+            scanned: 0,
+            missing: 0,
+            'not-scanned': definition.sources.length
+          }
+        }
+      })
+      expect(plugin.capabilities.map((capability) => capability.status)).toContain('planned')
+      expect(plugin.sourceCoverage.sources).toEqual(
+        definition.sources.map((source) => expect.objectContaining({
+          code: source.code,
+          status: 'not-scanned',
+          declared: true,
+          pathPattern: source.pathPattern
+        }))
+      )
+      expect(plugin.references).toEqual(
+        expect.arrayContaining([
+          { label: 'Homepage', url: definition.homepageUrl },
+          { label: 'Download', url: definition.downloadUrl }
+        ])
+      )
+    }
   })
 
   it('returns third-party manifest statuses without changing built-in plugins', () => {
@@ -302,7 +353,12 @@ describe('agent capability plugin registry', () => {
       env: {}
     })
 
-    expect(result.plugins.map((plugin) => plugin.id)).toEqual(['claude-code', 'codex', 'claude-helper'])
+    expect(result.plugins.map((plugin) => plugin.id)).toEqual([
+      'claude-code',
+      'codex',
+      ...plannedAdapterIds,
+      'claude-helper'
+    ])
     expect(result.plugins.find((plugin) => plugin.id === 'claude-helper')).toMatchObject({
       displayName: 'Claude Helper',
       builtin: false,
@@ -654,7 +710,9 @@ describe('agent capability plugin registry', () => {
 
     for (const plugin of result.plugins) {
       expect(plugin.permissions.some((permission) => permission.kind === 'read')).toBe(true)
-      expect(plugin.permissions.some((permission) => permission.kind === 'write')).toBe(true)
+      if (plugin.enabled) {
+        expect(plugin.permissions.some((permission) => permission.kind === 'write')).toBe(true)
+      }
       expect(plugin.permissions.some((permission) => permission.kind === 'execute')).toBe(false)
     }
 

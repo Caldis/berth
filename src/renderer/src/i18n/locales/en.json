@@ -1761,6 +1761,7 @@
       "healthChecksNotPluginOwned": "Health checks are available today, but their rules still live in the health engine instead of the plugin registry.",
       "manifestAdapterMetadataOnly": "The manifest declares asset descriptors. Runtime exposes metadata and source coverage without executing third-party code.",
       "manifestMetadataOnly": "The manifest is visible in the registry, but it has no executable adapter or concrete source descriptors.",
+      "plannedAdapterMetadataOnly": "This adapter is declared from official or primary-source research. Berth shows its planned scan contract but does not read those files yet.",
       "thirdPartyCodeNotExecuted": "The manifest declares an adapter entrypoint. Berth records it but does not import or execute third-party code.",
       "uiGuidanceInProgress": "Settings uses this plugin metadata now. Other pages still have Agent-specific presentation code."
     },
@@ -1806,7 +1807,8 @@
       "claudeRead": "Berth reads Claude Code instructions, capabilities, sessions, usage data, integrations, and managed policy files from these locations.",
       "claudeWrite": "Berth writes only user-level hook state: disableAllHooks, soft-disabled hook restore data, and recovery cleanup.",
       "codexRead": "Berth reads Codex configuration, hooks, instructions, skills, agents, sessions, and shared skill sources from these locations.",
-      "codexWrite": "Berth writes only user-level Codex hook state in config.toml, including features.hooks and hooks.state entries."
+      "codexWrite": "Berth writes only user-level Codex hook state in config.toml, including features.hooks and hooks.state entries.",
+      "plannedRead": "Read only declared local files for this planned adapter. Sensitive state, logs, and credential files are metadata-only."
     },
     "localSources": "Local Sources",
     "localSourcesEmpty": "No supported local sources found.",

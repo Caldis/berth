@@ -1748,6 +1748,7 @@
       "healthChecksNotPluginOwned": "健康检查当前可用, 但规则仍在 health engine 中, 还没有迁入插件注册表。",
       "manifestAdapterMetadataOnly": "Manifest 声明了资产描述信息。Runtime 只暴露元数据和 source coverage, 不执行第三方代码。",
       "manifestMetadataOnly": "Manifest 会显示在注册表中, 但没有可执行 adapter 或明确 source descriptor。",
+      "plannedAdapterMetadataOnly": "这个 adapter 来自官方文档或 primary source 调研。Berth 只展示计划中的扫描契约, 还不会读取这些文件。",
       "thirdPartyCodeNotExecuted": "Manifest 声明了 adapter 入口。Berth 只记录该入口, 不 import 或执行第三方代码。",
       "uiGuidanceInProgress": "设置页已经使用这组插件元数据。其他页面仍有 Agent 专属展示代码。"
     },
@@ -1793,7 +1794,8 @@
       "claudeRead": "Berth 会从这些位置读取 Claude Code 指令、能力、会话、用量数据、集成和 managed policy 文件。",
       "claudeWrite": "Berth 只写用户级 Hook 状态: disableAllHooks、软禁用 Hook 恢复数据和恢复记录清理。",
       "codexRead": "Berth 会从这些位置读取 Codex 配置、Hooks、指令、skills、agents、会话和共享 skill 来源。",
-      "codexWrite": "Berth 只写用户级 Codex Hook 状态, 包括 config.toml 中的 features.hooks 和 hooks.state 条目。"
+      "codexWrite": "Berth 只写用户级 Codex Hook 状态, 包括 config.toml 中的 features.hooks 和 hooks.state 条目。",
+      "plannedRead": "只读取这个计划中 adapter 声明的本地文件。敏感状态、日志和凭据文件只采集元数据。"
     },
     "localSources": "本地来源",
     "localSourcesEmpty": "未发现支持的本地来源。",
