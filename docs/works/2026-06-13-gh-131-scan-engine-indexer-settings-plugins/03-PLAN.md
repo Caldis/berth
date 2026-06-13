@@ -43,11 +43,12 @@
   - verify: 页面说明版本、下载入口、扫描范围、敏感文件处理和限制。
   - progress 2026-06-13: no standalone website package or build script exists in this repo, so implemented an in-app standalone route `/capabilities/plugins/:pluginId` backed by the agent plugin registry. Settings can open this route from expanded plugin details; the page shows homepage/download/reference links, declared scan source paths, sensitivity policy, evidence links, limits, asset types, and permissions. Passed the target tests above plus `pnpm typecheck:web` and `pnpm typecheck:node`。
 
-- [ ] 任务 7: 总体验证
+- [x] 任务 7: 总体验证
   - scope: 补 typecheck、harness、目标组合测试, 回写 `debt.final`。
   - tests: `pnpm typecheck:node`, `pnpm typecheck:web`, `pnpm harness:check`, 以及本任务已改模块的目标 vitest。
   - verify: 远端 CI 成功, Project 状态可同步; Settings 截图检查无溢出。
   - progress 2026-06-13: reproduced the remote `project-scope.e2e.ts` failure locally. Root cause was `ProjectSourceRow` assuming every scan source code had built-in Claude/Codex copy; declared third-party plugin source codes are open strings, so missing copy crashed the renderer and left the page blank. Added a fallback for unknown source codes, covered it in `tests/renderer/project-scope-switcher.test.tsx`, and made the e2e wait for the menu to close before reopening. Passed `pnpm vitest run tests/renderer/project-scope-switcher.test.tsx`, `pnpm typecheck:web`, `pnpm typecheck:test`, `pnpm build`, and `pnpm test:e2e tests/e2e/project-scope.e2e.ts`。
+  - progress 2026-06-13: full local verification passed with `pnpm typecheck`, `pnpm test`, `pnpm lint`, `pnpm harness:check`, and `pnpm build`. Electron screenshot check for Settings → Scanning passed at `test-results/settings-scan-engine-verify.png`: scan engine summary and editable controls are visible without obvious overflow or overlap. Remote CI for `70a18a32` passed after the e2e fallback fix; latest follow-up CI is still running at the time of this local verify note。
 
 ## verify 回写
 verify 不通过项作为新任务追加于此, phase 退回 implement。

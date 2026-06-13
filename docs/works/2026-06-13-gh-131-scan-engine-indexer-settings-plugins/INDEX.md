@@ -2,7 +2,7 @@
 task: 2026-06-13-gh-131-scan-engine-indexer-settings-plugins
 task_id: GH-131
 type: feature
-phase: implement
+phase: verify
 created: 2026-06-13
 priority: P1
 target_date:
@@ -25,14 +25,18 @@ debt:
     confidence: low
     rationale: "0.0-new 初始估算; 扫描引擎后台索引化、统一设置入口和插件接口会增加全局接口面, 但同时偿还现有 scanAll / scope 重扫 / adapter 直连债。explore/design 后校准。"
   final:
-    incurred:
-    repaid:
-    net:
-    scope:
-    risk:
-    areas: []
-    confidence:
-    rationale:
+    incurred: 5
+    repaid: 8
+    net: -3
+    scope: global
+    risk: medium
+    areas:
+      - architecture
+      - performance
+      - ui-ux
+      - testability
+    confidence: medium
+    rationale: "完成 Settings 扫描引擎入口、真实控制面、project scope filter-first/后台排队、第三方 agent source declaration、adapter-api 发布子路径和 parser 依赖收敛。仍保留长驻 worker、row-level delta 和真实第三方 parser 实现为后续工作, 所以风险从 high 降到 medium。"
   revisions: []
 issue:
   number: 131
