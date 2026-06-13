@@ -117,7 +117,7 @@ describe('SettingsContent page chrome', () => {
     renderSettingsContent()
 
     await screen.findByText('Scan Engine')
-    expect(screen.getByText('@berth/scan-engine')).toBeInTheDocument()
+    expect(await screen.findByText('@berth/scan-engine')).toBeInTheDocument()
     expect(screen.getByText('v0.1.0')).toBeInTheDocument()
     expect(screen.getByText('Ready')).toBeInTheDocument()
     expect(screen.getByText('12 assets')).toBeInTheDocument()
