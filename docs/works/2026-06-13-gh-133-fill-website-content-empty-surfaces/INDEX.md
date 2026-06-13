@@ -2,7 +2,7 @@
 task: 2026-06-13-gh-133-fill-website-content-empty-surfaces
 task_id: GH-133
 type: feature
-phase: explore
+phase: design
 created: 2026-06-13
 priority: P1
 target_date: 
@@ -12,17 +12,17 @@ source:
     - https://github.com/Caldis/berth/issues/133
 debt:
   estimate:
-    incurred: 5
-    repaid: 2
-    net: 3
-    scope: cross-process
+    incurred: 4
+    repaid: 5
+    net: -1
+    scope: module
     risk: medium
     areas:
       - ui-ux
       - docs
       - testability
-    confidence: low
-    rationale: "0.0-new 初始估算; 官网内容填充会跨 website 路由、内容集合、多语言、SEO 和验证脚本, 同时偿还当前官网入口空白、产品说明滞后和近期扫描引擎能力未表达的内容债。explore/design 后校准。"
+    confidence: medium
+    rationale: "Explore 校准; 代码变更主要限制在 website 包的路由、页面组件、内容集合、多语言 JSON、SEO/llms/postbuild 测试面。任务会增加内容和少量页面逻辑, 但能偿还官网入口浅、产品事实滞后、扫描引擎和 adapter 能力未表达、404 fallback 不正确等内容债。"
   final:
     incurred:
     repaid:
@@ -32,7 +32,32 @@ debt:
     areas: []
     confidence:
     rationale:
-  revisions: []
+  revisions:
+    - stage: explore
+      date: 2026-06-13
+      from:
+        incurred: 5
+        repaid: 2
+        net: 3
+        scope: cross-process
+        risk: medium
+        areas:
+          - ui-ux
+          - docs
+          - testability
+        confidence: low
+      to:
+        incurred: 4
+        repaid: 5
+        net: -1
+        scope: module
+        risk: medium
+        areas:
+          - ui-ux
+          - docs
+          - testability
+        confidence: medium
+      reason: "完整扫描确认实现面主要在 website 包, 不需要改 Electron 主进程或扫描引擎; 主要收益是补齐官网内容、入口和静态路由质量。"
 issue:
   number: 133
   repo: Caldis/berth
@@ -60,7 +85,7 @@ artifacts:
 
 ## 产物
 - [x] 00-PRD.md / 00-BUG.md — 原始输入快照
-- [ ] 01-ANALYSIS.md — Explore 产物
+- [x] 01-ANALYSIS.md — Explore 产物
 - [ ] 02-SPEC.md — Design 产物
 - [ ] 03-PLAN.md — 活任务清单
 - [ ] 04-POLISH.md — 可选抛光记录
