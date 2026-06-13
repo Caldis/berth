@@ -117,6 +117,15 @@ describe('SettingsContent page chrome', () => {
     expect(window.api.shell.openExternal).toHaveBeenCalledWith('https://github.com/Caldis/berth/issues')
   })
 
+  it('uses the shared app icon in the About section', async () => {
+    renderSettingsContent()
+
+    await waitForSettingsAsyncSections()
+    const appIcon = screen.getByTestId('settings-app-icon')
+    expect(appIcon).toHaveAttribute('src', expect.stringContaining('app_icon.png'))
+    expect(appIcon).toHaveAttribute('aria-hidden', 'true')
+  })
+
   it('localizes the report issue action in Chinese', async () => {
     await i18n.changeLanguage('zh')
 

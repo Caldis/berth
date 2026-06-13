@@ -13,6 +13,7 @@ import { useAgentCapabilityPlugins } from '@/hooks/use-ipc'
 import { AgentCapabilityPluginsSection } from '@/components/settings/agent-capability-plugins-section'
 import { UpdateSection } from '@/components/settings/update-section'
 import { ScanEngineSettingsSection } from '@/components/settings/scan-engine-settings-section'
+import appIconUrl from '../../../../../assets/icon/app_icon.png'
 
 function getNextRadioIndex(key: string, currentIndex: number, optionCount: number): number | null {
   if (optionCount <= 0) return null
@@ -277,9 +278,13 @@ export function SettingsContent({
         </h2>
         <div className="rounded-lg border border-border bg-card p-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold">
-              B
-            </div>
+            <img
+              src={appIconUrl}
+              alt=""
+              aria-hidden="true"
+              className="h-10 w-10 shrink-0 rounded-lg"
+              data-testid="settings-app-icon"
+            />
             <div>
               <p className="font-medium">{t('app.name')}</p>
               <p className="text-xs text-muted-foreground">
