@@ -1,4 +1,4 @@
-import type { ScanRoot, ScanSourceCode, ScanSourceStatus } from '@shared/types/asset'
+import type { BuiltInScanSourceCode, ScanRoot, ScanSourceCode, ScanSourceStatus } from '@shared/types/asset'
 
 interface SourceCopy {
   title: string
@@ -6,7 +6,7 @@ interface SourceCopy {
   actionHint?: string
 }
 
-const EN_SOURCE_COPY: Record<ScanSourceCode, SourceCopy> = {
+const EN_SOURCE_COPY = {
   'claude.user.data-directory': {
     title: 'Claude Code data directory',
     summary:
@@ -95,9 +95,9 @@ const EN_SOURCE_COPY: Record<ScanSourceCode, SourceCopy> = {
     summary: 'Referenced by local session history, but Berth has not scanned this project directory.',
     actionHint: 'Open this project, then Berth will scan its project-level sources.'
   }
-}
+} satisfies Record<BuiltInScanSourceCode, SourceCopy>
 
-const ZH_SOURCE_COPY: Record<ScanSourceCode, SourceCopy> = {
+const ZH_SOURCE_COPY = {
   'claude.user.data-directory': {
     title: 'Claude Code 数据目录',
     summary:
@@ -185,14 +185,18 @@ const ZH_SOURCE_COPY: Record<ScanSourceCode, SourceCopy> = {
     summary: '这个目录来自本机会话历史, 但 Berth 没有扫描这个项目目录。',
     actionHint: '打开这个项目后, Berth 会扫描它的项目级来源。'
   }
-}
+} satisfies Record<BuiltInScanSourceCode, SourceCopy>
 
 export function getScanSourceCopy(source: ScanRoot, language: string): SourceCopy {
-  const dictionary = language.startsWith('zh') ? ZH_SOURCE_COPY : EN_SOURCE_COPY
-  if (source.code) return dictionary[source.code]
+  const dictionary: Partial<Record<ScanSourceCode, SourceCopy>> =
+    language.startsWith('zh') ? ZH_SOURCE_COPY : EN_SOURCE_COPY
+  if (source.code) {
+    const copy = dictionary[source.code]
+    if (copy) return copy
+  }
   return {
-    title: source.description ?? source.path,
-    summary: source.summary
+    title: source.description ?? source.code ?? source.path,
+    summary: source.summary ?? source.path
   }
 }
 

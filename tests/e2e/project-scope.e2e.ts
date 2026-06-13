@@ -70,6 +70,7 @@ test('switches project scope and rebuilds the searchable project assets', async 
   await option.click()
 
   await expect(trigger).toContainText('app')
+  await expect(listbox).toHaveCount(0)
   await expect.poll(() => hasSearchResult('e2e-skill')).toBe(true)
 
   await trigger.click()

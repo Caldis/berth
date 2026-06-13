@@ -45,6 +45,7 @@
   - scope: 补 typecheck、harness、目标组合测试, 回写 `debt.final`。
   - tests: `pnpm typecheck:node`, `pnpm typecheck:web`, `pnpm harness:check`, 以及本任务已改模块的目标 vitest。
   - verify: 远端 CI 成功, Project 状态可同步; Settings 截图检查无溢出。
+  - progress 2026-06-13: reproduced the remote `project-scope.e2e.ts` failure locally. Root cause was `ProjectSourceRow` assuming every scan source code had built-in Claude/Codex copy; declared third-party plugin source codes are open strings, so missing copy crashed the renderer and left the page blank. Added a fallback for unknown source codes, covered it in `tests/renderer/project-scope-switcher.test.tsx`, and made the e2e wait for the menu to close before reopening. Passed `pnpm vitest run tests/renderer/project-scope-switcher.test.tsx`, `pnpm typecheck:web`, `pnpm typecheck:test`, `pnpm build`, and `pnpm test:e2e tests/e2e/project-scope.e2e.ts`。
 
 ## verify 回写
 verify 不通过项作为新任务追加于此, phase 退回 implement。

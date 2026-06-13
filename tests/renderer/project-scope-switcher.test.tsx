@@ -189,6 +189,47 @@ describe('ProjectScopeSwitcher', () => {
     expect(window.api.shell.openPath).toHaveBeenCalledWith('D:\\Code\\berth\\.claude')
   })
 
+  it('renders project sources from plugin adapters even when the source code has no built-in copy', async () => {
+    const pluginSourceGroup: AgentScanSourceGroup = {
+      agentId: 'gemini-cli',
+      agentName: 'Gemini CLI',
+      installed: true,
+      roots: [],
+      sources: [
+        {
+          path: 'D:\\Code\\berth\\.gemini\\settings.json',
+          scope: 'project',
+          code: 'gemini.project.settings',
+          categories: ['capability'],
+          kind: 'file',
+          status: 'missing'
+        }
+      ]
+    }
+    window.api.assets.scanSources = vi.fn(async () => [
+      ...scanSourceGroups,
+      pluginSourceGroup
+    ])
+
+    render(<ProjectScopeSwitcher collapsed={false} />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Project scope' }))
+    fireEvent.click(await screen.findByRole('option', { name: 'berth' }))
+
+    await waitFor(() => {
+      expect(useAppStore.getState().scopeSelection).toEqual({
+        mode: 'project',
+        projectPath: 'D:/Code/berth',
+        projectPathKey: 'd:/code/berth'
+      })
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Project scope' }))
+
+    expect(await screen.findByText('gemini.project.settings')).toBeInTheDocument()
+    expect(screen.getAllByText('D:\\Code\\berth\\.gemini\\settings.json').length).toBeGreaterThan(0)
+  })
+
   it('keeps project selection usable when source loading fails', async () => {
     window.api.assets.scanSources = vi.fn(async () => {
       throw new Error('source boom')
