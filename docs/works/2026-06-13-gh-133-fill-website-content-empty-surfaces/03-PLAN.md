@@ -16,7 +16,7 @@
   - 内容: 删除过时 coming-soon 口径; About/Privacy/Changelog 改结构化内容; NotFound 接语言语境; postbuild 生成 `404.html`; 更新 `llms.txt` 简述。
   - tests: `pnpm --dir website test`, `pnpm --dir website typecheck`, `pnpm --dir website build`。
   - verify: `/en/about`, `/en/privacy`, `/en/changelog`, `/en/no-such-page`, `/404.html` 可读; sitemap 排除 404; llms 包含新产品事实。
-- [ ] T4 本地 preview 和任务收口验证
+- [x] T4 本地 preview 和任务收口验证 — DONE: Edge/Playwright preview 抽查 `/en`, `/en/features`, `/en/knowledge`, `/en/about`, `/en/privacy`, `/en/changelog`, `/en/no-such-page`, `/404.html` 均 200, 关键内容存在, desktop/mobile overflow=0; sitemap 68 URLs 全部 200 且排除 404; 复测发现根页 meta refresh 会把未知路径跳到 `/en`, 已移除 meta refresh 并仅在真实 `/` 执行 JS redirect; `pnpm --dir website test`, `pnpm --dir website typecheck`, `pnpm --dir website build` 通过。
   - 内容: 用本地 preview + Edge/Playwright 抽查桌面/移动主要路由; 更新 03-PLAN 证据; phase 推进 verify。
   - tests: `pnpm --dir website test`, `pnpm --dir website typecheck`, `pnpm --dir website build`, `pnpm harness:check --work docs/works/2026-06-13-gh-133-fill-website-content-empty-surfaces`。
   - verify: 所有 ANALYSIS AC 都有证据; 工作区只包含本任务文件和既有外部脏文件。

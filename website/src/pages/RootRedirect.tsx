@@ -19,7 +19,9 @@ function detectLang(): Lang {
 
 export function RootRedirect() {
   useEffect(() => {
-    window.location.replace(`/${detectLang()}`)
+    if (window.location.pathname === '/') {
+      window.location.replace(`/${detectLang()}`)
+    }
   }, [])
 
   return (
@@ -27,7 +29,6 @@ export function RootRedirect() {
       <Head>
         <title>Berth — Local AI Agent Asset Manager</title>
         <meta name="robots" content="noindex" />
-        <meta httpEquiv="refresh" content="0; url=/en" />
         {LANGS.map((l) => (
           <link key={l} rel="alternate" hrefLang={HREFLANG[l]} href={`${SITE_URL}/${l}`} />
         ))}

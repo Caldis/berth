@@ -2,7 +2,7 @@
 task: 2026-06-13-gh-133-fill-website-content-empty-surfaces
 task_id: GH-133
 type: feature
-phase: implement
+phase: verify
 created: 2026-06-13
 priority: P1
 target_date: 
