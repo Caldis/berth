@@ -1872,6 +1872,7 @@
     "fileWatchingDesc": "Detected source folders are watched automatically while Berth is running",
     "about": "About",
     "version": "Version",
+    "website": "Website",
     "reportIssue": "Report Issue",
     "update": {
       "idle": "Checks for updates automatically on launch.",

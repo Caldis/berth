@@ -15,6 +15,10 @@ import { UpdateSection } from '@/components/settings/update-section'
 import { ScanEngineSettingsSection } from '@/components/settings/scan-engine-settings-section'
 import appIconUrl from '../../../../../assets/icon/app_icon.png'
 
+const OFFICIAL_WEBSITE_URL = 'http://berth.caldis.me/'
+const GITHUB_URL = 'https://github.com/Caldis/berth'
+const ISSUE_URL = 'https://github.com/Caldis/berth/issues'
+
 function getNextRadioIndex(key: string, currentIndex: number, optionCount: number): number | null {
   if (optionCount <= 0) return null
 
@@ -295,15 +299,22 @@ export function SettingsContent({
           <UpdateSection />
           <div className="mt-3 flex gap-2 border-t border-border pt-3">
             <button
-              onClick={() => window.api?.shell.openExternal('https://github.com/Caldis/berth')}
+              onClick={() => window.api?.shell.openExternal(OFFICIAL_WEBSITE_URL)}
               className="flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
             >
               <ExternalLink className="h-3 w-3" />
+              {t('settings.website')}
+            </button>
+            <span className="text-xs text-muted-foreground">·</span>
+            <button
+              onClick={() => window.api?.shell.openExternal(GITHUB_URL)}
+              className="flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
+            >
               GitHub
             </button>
             <span className="text-xs text-muted-foreground">·</span>
             <button
-              onClick={() => window.api?.shell.openExternal('https://github.com/Caldis/berth/issues')}
+              onClick={() => window.api?.shell.openExternal(ISSUE_URL)}
               className="flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
             >
               {t('settings.reportIssue')}

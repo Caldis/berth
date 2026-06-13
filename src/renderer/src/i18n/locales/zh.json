@@ -1858,6 +1858,7 @@
     "fileWatchingDesc": "Berth 运行时会自动监听已发现的来源目录",
     "about": "关于",
     "version": "版本",
+    "website": "官网",
     "reportIssue": "报告问题",
     "update": {
       "idle": "启动时会自动检查更新。",

@@ -108,9 +108,14 @@ describe('SettingsContent page chrome', () => {
   it('renders the report issue action in English', async () => {
     renderSettingsContent()
 
+    const website = await screen.findByRole('button', { name: 'Website' })
     const reportIssue = await screen.findByRole('button', { name: 'Report Issue' })
+    expect(website).toBeInTheDocument()
     expect(reportIssue).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'GitHub' })).toBeInTheDocument()
+
+    fireEvent.click(website)
+    expect(window.api.shell.openExternal).toHaveBeenCalledWith('http://berth.caldis.me/')
 
     fireEvent.click(reportIssue)
 
@@ -133,6 +138,7 @@ describe('SettingsContent page chrome', () => {
 
     const reportIssue = await screen.findByRole('button', { name: '报告问题' })
     expect(reportIssue).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '官网' })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Report Issue' })).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'GitHub' })).toBeInTheDocument()
   })
