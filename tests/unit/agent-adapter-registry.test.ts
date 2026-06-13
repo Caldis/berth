@@ -4,8 +4,10 @@ import * as path from 'path'
 import { afterEach, describe, expect, it } from 'vitest'
 import {
   createAgentAdapters,
+  DeclaredAgentAdapter,
   ManifestAgentAdapter
 } from '@berth/scan-engine/agent-plugins/adapter-registry'
+import { PLANNED_AGENT_ADAPTER_DEFINITIONS } from '@berth/scan-engine/adapters/planned-agent-definitions'
 import {
   loadAgentPluginManifests,
   resetAgentPluginManifestCacheForTests
@@ -131,6 +133,83 @@ describe('agent adapter registry', () => {
         reason: 'project-not-selected'
       })
     ])
+  })
+
+  it('registers planned agent definitions as metadata-only declared adapters', async () => {
+    const homeDir = makeTempDir()
+    const projectDir = makeTempDir()
+    const geminiSettings = path.join(homeDir, '.gemini', 'settings.json')
+    const geminiSession = path.join(homeDir, '.gemini', 'tmp', 'session.json')
+    const cursorRules = path.join(projectDir, '.cursor', 'rules')
+    const opencodeProjectConfig = path.join(projectDir, 'opencode.json')
+    fs.mkdirSync(path.dirname(geminiSettings), { recursive: true })
+    fs.writeFileSync(geminiSettings, '{"mcpServers":{}}', 'utf8')
+    fs.mkdirSync(path.dirname(geminiSession), { recursive: true })
+    fs.writeFileSync(geminiSession, 'sensitive transcript', 'utf8')
+    fs.mkdirSync(cursorRules, { recursive: true })
+    fs.writeFileSync(path.join(cursorRules, 'rule.mdc'), 'Always test.', 'utf8')
+    fs.writeFileSync(opencodeProjectConfig, '{}', 'utf8')
+
+    const adapters = createAgentAdapters(projectDir, {
+      homeDir,
+      env: {},
+      loadManifests: () => []
+    })
+    const planned = adapters.filter((adapter) =>
+      PLANNED_AGENT_ADAPTER_DEFINITIONS.some((definition) => definition.id === adapter.id)
+    )
+
+    expect(planned).toHaveLength(6)
+    expect(planned.every((adapter) => adapter instanceof DeclaredAgentAdapter)).toBe(true)
+
+    const gemini = planned.find((adapter) => adapter.id === 'gemini-cli')!
+    await expect(gemini.detect()).resolves.toMatchObject({
+      installed: true,
+      paths: expect.arrayContaining([
+        expect.objectContaining({
+          code: 'gemini.user.settings',
+          path: geminiSettings,
+          status: 'scanned'
+        }),
+        expect.objectContaining({
+          code: 'gemini.user.sessions',
+          path: path.dirname(geminiSession),
+          status: 'scanned',
+          reason: 'sensitive-metadata-only'
+        })
+      ])
+    })
+    await expect(gemini.scanAll()).resolves.toEqual({
+      assets: [],
+      errors: []
+    })
+
+    const cursor = planned.find((adapter) => adapter.id === 'cursor')!
+    await expect(cursor.scanSourceCoverage()).resolves.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: 'cursor.project.rules',
+          path: cursorRules,
+          status: 'scanned'
+        }),
+        expect.objectContaining({
+          code: 'cursor.user.ide-state',
+          status: 'missing',
+          reason: 'sensitive-metadata-only'
+        })
+      ])
+    )
+
+    const opencode = planned.find((adapter) => adapter.id === 'opencode')!
+    await expect(opencode.scanRoots()).resolves.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: 'opencode.project.config',
+          path: opencodeProjectConfig,
+          status: 'scanned'
+        })
+      ])
+    )
   })
 })
 

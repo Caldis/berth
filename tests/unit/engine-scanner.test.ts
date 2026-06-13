@@ -62,6 +62,7 @@ vi.mock('@berth/scan-engine/agent-plugins/manifest', async (importActual) => ({
 }))
 
 import { AssetScanner } from '@berth/scan-engine/engine/scanner'
+import { PLANNED_AGENT_ADAPTER_DEFINITIONS } from '@berth/scan-engine/adapters/planned-agent-definitions'
 
 describe('AssetScanner', () => {
   beforeEach(() => {
@@ -118,12 +119,19 @@ describe('AssetScanner', () => {
   })
 
   it('reports scan source groups from every adapter without scanning assets', async () => {
-    const scanner = new AssetScanner()
+    const homeDir = fs.mkdtempSync(path.join(os.tmpdir(), 'berth-engine-scanner-home-'))
+    const scanner = new AssetScanner(undefined, {
+      adapterRegistry: {
+        homeDir,
+        env: {}
+      }
+    })
 
     const groups = await scanner.getScanSourceGroups()
 
-    expect(groups).toEqual([
-      {
+    expect(groups).toHaveLength(2 + PLANNED_AGENT_ADAPTER_DEFINITIONS.length)
+    expect(groups.slice(0, 2)).toEqual([
+      expect.objectContaining({
         agentId: 'claude-code',
         agentName: 'Claude Code',
         installed: true,
@@ -137,8 +145,8 @@ describe('AssetScanner', () => {
             status: 'scanned'
           }
         ]
-      },
-      {
+      }),
+      expect.objectContaining({
         agentId: 'codex',
         agentName: 'Codex',
         installed: true,
@@ -152,10 +160,24 @@ describe('AssetScanner', () => {
             status: 'scanned'
           }
         ]
-      }
+      })
     ])
+    expect(groups.slice(2).map((group) => group.agentId)).toEqual(
+      PLANNED_AGENT_ADAPTER_DEFINITIONS.map((definition) => definition.id)
+    )
+    expect(groups.slice(2).every((group) => group.roots.length === 0)).toBe(true)
+    expect(groups.find((group) => group.agentId === 'gemini-cli')?.sources).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: 'gemini.user.settings',
+          path: path.join(homeDir, '.gemini', 'settings.json'),
+          status: 'missing'
+        })
+      ])
+    )
     expect(mocks.claudeScanAll).not.toHaveBeenCalled()
     expect(mocks.codexScanAll).not.toHaveBeenCalled()
+    fs.rmSync(homeDir, { recursive: true, force: true })
   })
 
   it('adds session-derived project source candidates without scanning project directories', async () => {
@@ -364,14 +386,16 @@ describe('AssetScanner', () => {
       onPartial: (partial) => partials.push({ assets: partial.assets })
     })
 
-    // Per-adapter granularity: total === adapter count (claude + codex).
-    expect(progress.every((p) => p.phase === 'parsing' && p.total === 2)).toBe(true)
-    expect(progress.at(-1)).toMatchObject({ current: 2, total: 2 })
+    const adapterCount = 2 + PLANNED_AGENT_ADAPTER_DEFINITIONS.length
+    // Per-adapter granularity: total === adapter count (claude + codex + metadata-only declarations).
+    expect(progress.every((p) => p.phase === 'parsing' && p.total === adapterCount)).toBe(true)
+    expect(progress.at(-1)).toMatchObject({ current: adapterCount, total: adapterCount })
 
-    // Two partials (one per adapter), each cumulative.
-    expect(partials).toHaveLength(2)
+    // One partial per adapter; declared adapters add source metadata but no assets yet.
+    expect(partials).toHaveLength(adapterCount)
     expect(partials[0]?.assets.map((a) => a.id)).toEqual(['claude-skill'])
     expect(partials[1]?.assets.map((a) => a.id)).toEqual(['claude-skill', 'codex-skill'])
+    expect(partials.at(-1)?.assets.map((a) => a.id)).toEqual(['claude-skill', 'codex-skill'])
   })
 
   it('strips raw from partials and reports the running error count (GH-111 P1+O4)', async () => {

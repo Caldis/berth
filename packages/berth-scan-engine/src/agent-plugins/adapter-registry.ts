@@ -14,6 +14,8 @@ import type {
 } from '@shared/types/asset'
 import { ClaudeCodeAdapter } from '../adapters/claude-code'
 import { CodexAdapter } from '../adapters/codex'
+import { PLANNED_AGENT_ADAPTER_DEFINITIONS } from '../adapters/planned-agent-definitions'
+import type { AgentAdapterDefinition, AgentAdapterSourcePolicy } from '../adapter-api'
 import type { AssetFileCache } from '../engine/assets/file-cache'
 import { loadAgentPluginManifests } from './manifest'
 
@@ -33,7 +35,10 @@ export function createAgentAdapters(
   const env = options.env ?? process.env
   const adapters: AgentAdapter[] = [
     new ClaudeCodeAdapter(projectDir, { sessionCache: options.sessionCache, homeDir, env }),
-    new CodexAdapter(projectDir, homeDir, env, options.sessionCache)
+    new CodexAdapter(projectDir, homeDir, env, options.sessionCache),
+    ...PLANNED_AGENT_ADAPTER_DEFINITIONS.map((definition) =>
+      new DeclaredAgentAdapter(definition, { homeDir, projectDir, env })
+    )
   ]
   const loadManifests = options.loadManifests ?? loadAgentPluginManifests
   const manifests = loadManifests({
@@ -125,6 +130,59 @@ export class ManifestAgentAdapter implements AgentAdapter {
   }
 }
 
+export interface DeclaredAgentAdapterOptions {
+  homeDir?: string
+  projectDir?: string
+  env?: NodeJS.ProcessEnv
+}
+
+export class DeclaredAgentAdapter implements AgentAdapter {
+  readonly id: string
+  readonly displayName: string
+
+  private readonly homeDir: string
+  private readonly projectDir?: string
+  private readonly env: NodeJS.ProcessEnv
+
+  constructor(
+    private readonly definition: AgentAdapterDefinition,
+    options: DeclaredAgentAdapterOptions = {}
+  ) {
+    this.id = definition.id
+    this.displayName = definition.displayName
+    this.homeDir = options.homeDir ?? os.homedir()
+    this.projectDir = options.projectDir
+    this.env = options.env ?? process.env
+  }
+
+  async detect(): Promise<DetectResult> {
+    const paths = await this.scanRoots()
+    return {
+      installed: paths.length > 0,
+      version: paths.length > 0 ? this.definition.version : undefined,
+      paths
+    }
+  }
+
+  async scanRoots(): Promise<ScanRoot[]> {
+    return (await this.scanSourceCoverage()).filter((source) => source.status === 'scanned')
+  }
+
+  async scanSourceCoverage(): Promise<ScanRoot[]> {
+    return this.definition.sources.map((source) =>
+      declaredSourceFromPolicy(source, {
+        homeDir: this.homeDir,
+        projectDir: this.projectDir,
+        env: this.env
+      })
+    )
+  }
+
+  async scanAll(): Promise<{ assets: Asset[]; errors: { path: string; type: string; message: string }[] }> {
+    return { assets: [], errors: [] }
+  }
+}
+
 function isManifestRuntimeAdapterEnabled(manifest: AgentCapabilityPluginManifestEntry): boolean {
   return manifest.status === 'valid' &&
     Boolean(manifest.id) &&
@@ -154,23 +212,66 @@ function sourceFromDescriptor(
   }
 }
 
+function declaredSourceFromPolicy(
+  policy: AgentAdapterSourcePolicy,
+  options: { homeDir: string; projectDir?: string; env: NodeJS.ProcessEnv }
+): ScanRoot {
+  const resolved = resolvePathPattern(policy.pathPattern, options)
+  const status = resolved.needsProject && !options.projectDir
+    ? 'not-scanned'
+    : sourceExists(resolved.path, policy.kind)
+      ? 'scanned'
+      : 'missing'
+  const sensitivityReason = policy.sensitivity === 'normal' ? undefined : policy.sensitivity
+
+  return {
+    path: resolved.path,
+    scope: policy.scope,
+    code: policy.code,
+    categories: policy.categories,
+    kind: policy.kind,
+    status,
+    reason: resolved.needsProject && !options.projectDir
+      ? 'project-not-selected'
+      : sensitivityReason
+  }
+}
+
 function resolvePathPattern(
   pathPattern: string,
-  options: { homeDir: string; projectDir?: string }
+  options: { homeDir: string; projectDir?: string; env?: NodeJS.ProcessEnv }
 ): { path: string; needsProject: boolean } {
   if (pathPattern === '~') return { path: options.homeDir, needsProject: false }
   if (pathPattern.startsWith('~/')) {
-    return { path: path.join(options.homeDir, pathPattern.slice(2)), needsProject: false }
+    return { path: path.resolve(options.homeDir, pathPattern.slice(2)), needsProject: false }
+  }
+  if (pathPattern.includes('<cursor-user-data>')) {
+    return {
+      path: path.normalize(pathPattern.replace(/<cursor-user-data>/g, resolveCursorUserDataDir(options.homeDir, options.env ?? process.env))),
+      needsProject: false
+    }
   }
   if (pathPattern.includes('<project>')) {
     return {
       path: options.projectDir
-        ? pathPattern.replace(/<project>/g, options.projectDir)
+        ? path.normalize(pathPattern.replace(/<project>/g, options.projectDir))
         : pathPattern,
       needsProject: true
     }
   }
-  return { path: pathPattern, needsProject: false }
+  return { path: path.normalize(pathPattern), needsProject: false }
+}
+
+function resolveCursorUserDataDir(homeDir: string, env: NodeJS.ProcessEnv): string {
+  if (process.platform === 'win32') {
+    const appData = env.APPDATA?.trim() || path.join(homeDir, 'AppData', 'Roaming')
+    return path.join(appData, 'Cursor')
+  }
+  if (process.platform === 'darwin') {
+    return path.join(homeDir, 'Library', 'Application Support', 'Cursor')
+  }
+  const configHome = env.XDG_CONFIG_HOME?.trim() || path.join(homeDir, '.config')
+  return path.join(configHome, 'Cursor')
 }
 
 function sourceExists(sourcePath: string, kind: ScanRoot['kind']): boolean {

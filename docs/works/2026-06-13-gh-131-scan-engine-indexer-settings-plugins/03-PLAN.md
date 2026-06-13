@@ -26,12 +26,13 @@
   - verify: engine 通用文件不再直接依赖第三方 parser; 内置 Claude/Codex 行为不回退。
   - progress 2026-06-13: added public adapter API type export and removed stale manifest adapter methods; passed `pnpm vitest run tests/unit/agent-adapter-registry.test.ts` and `pnpm typecheck:node`。
 
-- [ ] 任务 5: 新 agent source declarations
+- [x] 任务 5: 新 agent source declarations
   - scope: Gemini CLI、GitHub Copilot CLI、Cursor、OpenCode、OpenClaw、Hermes Agent 的 home resolver、source declaration、敏感文件策略、version probe 描述与 fixtures。
-  - tests: 新 `agent-source-declarations` fixture tests。
+  - tests: `pnpm vitest run tests/unit/agent-adapter-registry.test.ts tests/unit/agent-capability-plugins.test.ts tests/unit/planned-agent-adapter-definitions.test.ts`。
   - verify: 每个 agent 的 config/instruction/skill/plugin/session/log/cache/credential 类源都有官方资料引用或明确“不稳定/经验性”标注; 扫描不执行外部命令。
   - progress 2026-06-13: added planned adapter definitions for all six requested agents with homepage/download URL, version probe, source policy, evidence URL, and metadata-only sensitive source handling; passed `pnpm vitest run tests/unit/planned-agent-adapter-definitions.test.ts` and `pnpm typecheck:node`。
   - progress 2026-06-13: planned adapter definitions now appear in the Agent Capability Plugins registry as disabled metadata-only entries with homepage/download references and declared `not-scanned` source coverage; passed `pnpm vitest run tests/unit/agent-capability-plugins.test.ts tests/unit/planned-agent-adapter-definitions.test.ts`, `pnpm typecheck:node`, and `pnpm typecheck:test`。
+  - progress 2026-06-13: added metadata-only `DeclaredAgentAdapter` registration for the six planned agents. The scanner now resolves declared home/project/special paths into source coverage, reports installed state from existing declared sources, keeps sensitive session/log/state sources metadata-only, and returns no parsed assets until concrete parsers land. Passed `pnpm vitest run tests/unit/agent-adapter-registry.test.ts tests/unit/agent-capability-plugins.test.ts tests/unit/planned-agent-adapter-definitions.test.ts`, `pnpm vitest run tests/unit/engine-scanner.test.ts tests/unit/scan-coverage.test.ts tests/unit/agent-asset-runtime.test.ts`, and `pnpm typecheck:node`。
 
 - [ ] 任务 6: 插件介绍与下载页
   - scope: 查 website 结构; 为每个可选 agent 插件新增独立介绍/下载页或数据入口。
