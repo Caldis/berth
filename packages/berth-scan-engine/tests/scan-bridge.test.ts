@@ -33,6 +33,10 @@ beforeAll(() => {
     path.join(projectDir, '.claude', 'skills', 'proj-skill', 'SKILL.md'),
     '---\nname: proj-skill\ndescription: project skill\n---\nbody'
   )
+  writeFile(
+    path.join(projectDir, '.agents', 'skills', 'shared-skill', 'SKILL.md'),
+    '---\nname: shared-skill\ndescription: shared project skill\n---\nbody'
+  )
 })
 
 describe('runScan (engine bridge, fixture HOME)', () => {
@@ -54,5 +58,11 @@ describe('runScan (engine bridge, fixture HOME)', () => {
     const snap = await runScan({ homeDir, projectDir, env })
     expect(snap.sources.length).toBeGreaterThan(0)
     expect(snap.stats.skills).toBeGreaterThanOrEqual(2)
+  })
+
+  it('keeps asset ids unique when multiple adapters are registered', async () => {
+    const snap = await runScan({ homeDir, projectDir, env })
+    const ids = snap.assets.map((asset) => asset.id)
+    expect(new Set(ids).size).toBe(ids.length)
   })
 })

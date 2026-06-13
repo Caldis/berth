@@ -95,9 +95,7 @@ export class OpenCodeAdapter implements AgentAdapter {
     assets.push(...this.scanInstructionDirs(errors, userConfigDir, 'user'))
     for (const projectDir of this.projectDirs) {
       assets.push(...this.scanInstructionDirs(errors, path.join(projectDir, '.opencode'), 'project'))
-      assets.push(...scanDir(errors, path.join(projectDir, '.agents', 'skills'), 'project', '**/SKILL.md', 'opencode-skill', parseOpenCodeSkill))
     }
-    assets.push(...scanDir(errors, path.join(this.homeDir, '.agents', 'skills'), 'user', '**/SKILL.md', 'opencode-skill', parseOpenCodeSkill))
 
     return assets
   }

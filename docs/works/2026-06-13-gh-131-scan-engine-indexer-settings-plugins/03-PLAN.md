@@ -65,5 +65,10 @@
   - tests: `pnpm vitest run tests/unit/planned-agent-adapter-definitions.test.ts tests/unit/agent-capability-plugins.test.ts tests/unit/agent-adapter-registry.test.ts`; `pnpm typecheck:node`; `pnpm typecheck:test`。
   - verify: passed 2026-06-13。敏感源断言已覆盖 `auth` / `token` 类 source, 防止后续误标为 normal。
 
+- [x] 任务 11: OpenCode shared skill 重复 ID CI 修复
+  - scope: OpenCode 真实 adapter 不再读取 `~/.agents/skills` 和 `<project>/.agents/skills`; 这些共享 skill 仍由 Codex adapter 负责。这样 OpenCode 的真实扫描面与 source coverage 中的 `~/.config/opencode` / `.opencode` 声明保持一致, 避免同一物理 `SKILL.md` 被两个 adapter 产出相同 `skill-project-*` id。
+  - tests: `pnpm --filter @berth/scan-engine exec vitest run tests/scan-bridge.test.ts`; `pnpm vitest run tests/unit/agent-adapter-registry.test.ts tests/unit/parser-identity.test.ts`; `pnpm test:e2e tests/e2e/project-scope.e2e.ts`。
+  - verify: passed 2026-06-13。回归测试新增 “多 adapter 注册时资产 id 唯一” 断言; 本机复跑远端失败的 project scope e2e 已通过。
+
 ## verify 回写
 verify 不通过项作为新任务追加于此, phase 退回 implement。
