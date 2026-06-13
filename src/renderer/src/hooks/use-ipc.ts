@@ -232,6 +232,7 @@ export function useScanEngineInfo(): {
   refreshIndex: () => void
 } {
   const mountedRef = useRef(false)
+  const infoRef = useRef<ScanEngineInfo | null>(null)
   const [info, setInfo] = useState<ScanEngineInfo | null>(null)
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
@@ -251,14 +252,14 @@ export function useScanEngineInfo(): {
     try {
       const nextInfo = await window.api.assets.engineInfo()
       if (!mountedRef.current) return
+      infoRef.current = nextInfo
       setInfo(nextInfo)
       setError(null)
     } catch (err) {
       if (!mountedRef.current) return
       setError(err instanceof Error ? err.message : String(err))
     } finally {
-      if (!mountedRef.current) return
-      setLoading(false)
+      if (mountedRef.current) setLoading(false)
     }
   }, [])
 
@@ -273,14 +274,13 @@ export function useScanEngineInfo(): {
         setError(err instanceof Error ? err.message : String(err))
       })
       .finally(() => {
-        if (!mountedRef.current) return
-        setRefreshing(false)
+        if (mountedRef.current) setRefreshing(false)
       })
   }, [loadInfo])
 
   useEffect(() => {
     mountedRef.current = true
-    setLoading(info === null)
+    setLoading(infoRef.current === null)
     void loadInfo()
     const unsubscribeChanged = window.api?.assets?.onChanged?.(() => {
       void loadInfo()
