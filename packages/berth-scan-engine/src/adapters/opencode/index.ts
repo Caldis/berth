@@ -6,6 +6,7 @@ import type { AgentAdapterDefinition } from '../../adapter-api'
 import type { AgentAdapter, Asset, AssetScope, DetectResult, ScanRoot } from '../types'
 import type { ScanError } from '@shared/types/ipc'
 import { declaredSourceFromPolicy } from '../_shared/declared-source-policy'
+import { detectedFromSources } from '../_shared/detect'
 import { resolveProjectConfigRoots } from '../../project-config-roots'
 import {
   parseOpenCodeAgent,
@@ -42,9 +43,10 @@ export class OpenCodeAdapter implements AgentAdapter {
 
   async detect(): Promise<DetectResult> {
     const paths = await this.scanRoots()
+    const installed = detectedFromSources(paths, isOpenCodeDetectionSource)
     return {
-      installed: paths.length > 0,
-      version: paths.length > 0 ? this.definition.version : undefined,
+      installed,
+      version: installed ? this.definition.version : undefined,
       paths
     }
   }
@@ -218,6 +220,10 @@ function safeGlob(
     })
     return []
   }
+}
+
+function isOpenCodeDetectionSource(source: ScanRoot): boolean {
+  return source.code !== 'opencode.project.agents-md'
 }
 
 function scanDir(

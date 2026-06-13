@@ -6,6 +6,7 @@ import type { AgentAdapterDefinition } from '../../adapter-api'
 import type { AgentAdapter, Asset, AssetScope, DetectResult, ScanRoot } from '../types'
 import type { ScanError } from '@shared/types/ipc'
 import { declaredSourceFromPolicy } from '../_shared/declared-source-policy'
+import { detectedFromSources } from '../_shared/detect'
 import { resolveProjectConfigRoots } from '../../project-config-roots'
 import {
   parseCopilotAgent,
@@ -43,9 +44,10 @@ export class GitHubCopilotCliAdapter implements AgentAdapter {
 
   async detect(): Promise<DetectResult> {
     const paths = await this.scanRoots()
+    const installed = detectedFromSources(paths, isCopilotDetectionSource)
     return {
-      installed: paths.length > 0,
-      version: paths.length > 0 ? this.definition.version : undefined,
+      installed,
+      version: installed ? this.definition.version : undefined,
       paths
     }
   }
@@ -268,4 +270,10 @@ function safeGlob(
 
 function isProjectPath(filePath: string, projectDirs: string[]): boolean {
   return projectDirs.some((projectDir) => path.resolve(filePath).startsWith(path.resolve(projectDir)))
+}
+
+function isCopilotDetectionSource(source: ScanRoot): boolean {
+  return source.code !== 'copilot.user.shared-skills' &&
+    source.code !== 'copilot.project.shared-skills' &&
+    source.code !== 'copilot.project.agents-md'
 }

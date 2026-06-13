@@ -6,6 +6,7 @@ import type { AgentAdapterDefinition } from '../../adapter-api'
 import type { AgentAdapter, Asset, AssetScope, DetectResult, ScanRoot } from '../types'
 import type { ScanError } from '@shared/types/ipc'
 import { declaredSourceFromPolicy } from '../_shared/declared-source-policy'
+import { detectedFromSources } from '../_shared/detect'
 import { resolveProjectConfigRoots } from '../../project-config-roots'
 import {
   parseCursorAgent,
@@ -44,9 +45,10 @@ export class CursorAdapter implements AgentAdapter {
 
   async detect(): Promise<DetectResult> {
     const paths = await this.scanRoots()
+    const installed = detectedFromSources(paths, isCursorDetectionSource)
     return {
-      installed: paths.length > 0,
-      version: paths.length > 0 ? this.definition.version : undefined,
+      installed,
+      version: installed ? this.definition.version : undefined,
       paths
     }
   }
@@ -220,4 +222,8 @@ function safeGlob(
     })
     return []
   }
+}
+
+function isCursorDetectionSource(source: ScanRoot): boolean {
+  return source.code !== 'cursor.project.agents-md'
 }

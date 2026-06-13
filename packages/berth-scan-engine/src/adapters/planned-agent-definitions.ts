@@ -327,65 +327,66 @@ export const PLANNED_AGENT_ADAPTER_DEFINITIONS: AgentAdapterDefinition[] = [
     downloadUrl: 'https://github.com/NousResearch/hermes-agent',
     agentCompatibility: { agentId: 'hermes-agent', name: 'Hermes Agent' },
     versionProbe: { command: 'hermes', args: ['version'], source: 'cli' },
-    permissions: [readPermission('~/.hermes')],
+    permissions: [readPermission('<hermes-home>')],
     references: refs('Configuration', REF.hermesConfig, 'Session storage', REF.hermesSessions),
     sources: [
-      source('hermes.user.config', 'user', 'file', ['capability'], '~/.hermes/config.yaml', REF.hermesConfig),
-      source('hermes.user.profile-configs', 'user', 'directory', ['capability'], '~/.hermes/profiles', REF.hermesConfig),
-      source('hermes.user.env', 'user', 'file', ['integration'], '~/.hermes/.env', REF.hermesConfig, {
+      source('hermes.user.config', 'user', 'file', ['capability'], '<hermes-home>/config.yaml', REF.hermesConfig),
+      source('hermes.user.profile-configs', 'user', 'directory', ['capability'], '<hermes-home>/profiles', REF.hermesConfig),
+      source('hermes.user.env', 'user', 'file', ['integration'], '<hermes-home>/.env', REF.hermesConfig, {
         sensitivity: 'credential-presence-only',
         maxBytes: 0
       }),
-      source('hermes.user.auth', 'user', 'file', ['integration'], '~/.hermes/auth.json', REF.hermesCredentials, {
+      source('hermes.user.auth', 'user', 'file', ['integration'], '<hermes-home>/auth.json', REF.hermesCredentials, {
         sensitivity: 'credential-presence-only',
         maxBytes: 0
       }),
-      source('hermes.user.identity', 'user', 'file', ['instruction'], '~/.hermes/SOUL.md', REF.hermesConfig),
-      source('hermes.user.memory-file', 'user', 'file', ['instruction'], '~/.hermes/MEMORY.md', REF.hermesConfig, {
+      source('hermes.user.identity', 'user', 'file', ['instruction'], '<hermes-home>/SOUL.md', REF.hermesConfig),
+      source('hermes.user.memory-file', 'user', 'file', ['instruction'], '<hermes-home>/MEMORY.md', REF.hermesConfig, {
         sensitivity: 'sensitive-metadata-only',
         maxBytes: 1_000_000
       }),
-      source('hermes.user.user-file', 'user', 'file', ['instruction'], '~/.hermes/USER.md', REF.hermesConfig, {
+      source('hermes.user.user-file', 'user', 'file', ['instruction'], '<hermes-home>/USER.md', REF.hermesConfig, {
         sensitivity: 'sensitive-metadata-only',
         maxBytes: 1_000_000
       }),
-      source('hermes.user.memories', 'user', 'directory', ['instruction'], '~/.hermes/memories', REF.hermesConfig),
-      source('hermes.user.skills', 'user', 'directory', ['instruction'], '~/.hermes/skills', REF.hermesConfig),
-      source('hermes.user.plugins', 'user', 'directory', ['capability'], '~/.hermes/plugins', REF.hermesPlugins),
-      source('hermes.user.hooks', 'user', 'directory', ['capability'], '~/.hermes/hooks', REF.hermesConfig),
+      source('hermes.user.memories', 'user', 'directory', ['instruction'], '<hermes-home>/memories', REF.hermesConfig),
+      source('hermes.user.skills', 'user', 'directory', ['instruction'], '<hermes-home>/skills', REF.hermesConfig),
+      source('hermes.user.plugins', 'user', 'directory', ['capability'], '<hermes-home>/plugins', REF.hermesPlugins),
+      source('hermes.user.hooks', 'user', 'directory', ['capability'], '<hermes-home>/hooks', REF.hermesConfig),
       source('hermes.project.hermes-md', 'project', 'file', ['instruction'], '<project>/.hermes.md', REF.hermesContext),
       source('hermes.project.hermes-root-md', 'project', 'file', ['instruction'], '<project>/HERMES.md', REF.hermesContext),
       source('hermes.project.agents-md', 'project', 'file', ['instruction'], '<project>/AGENTS.md', REF.hermesContext),
       source('hermes.project.claude-md', 'project', 'file', ['instruction'], '<project>/CLAUDE.md', REF.hermesContext),
       source('hermes.project.cursor-rules', 'project', 'directory', ['instruction'], '<project>/.cursor/rules', REF.hermesContext),
-      source('hermes.user.sessions-db', 'session', 'file', ['state'], '~/.hermes/state.db', REF.hermesSessions, {
+      source('hermes.user.sessions-db', 'session', 'file', ['state'], '<hermes-home>/state.db', REF.hermesSessions, {
         sensitivity: 'sensitive-metadata-only',
         maxBytes: 10_000_000
       }),
-      source('hermes.user.sessions-index', 'session', 'file', ['state'], '~/.hermes/sessions/sessions.json', REF.hermesSessions, {
+      source('hermes.user.sessions-index', 'session', 'file', ['state'], '<hermes-home>/sessions/sessions.json', REF.hermesSessions, {
         sensitivity: 'sensitive-metadata-only',
         maxBytes: 10_000_000
       }),
-      source('hermes.user.logs', 'user', 'directory', ['observability'], '~/.hermes/logs', REF.hermesConfig, {
+      source('hermes.user.logs', 'user', 'directory', ['observability'], '<hermes-home>/logs', REF.hermesConfig, {
         sensitivity: 'debug-summary-only',
         defaultHidden: true
       }),
-      source('hermes.user.cache', 'user', 'directory', ['state'], '~/.hermes/cache', REF.hermesCache, {
+      source('hermes.user.cache', 'user', 'directory', ['state'], '<hermes-home>/cache', REF.hermesCache, {
         sensitivity: 'sensitive-metadata-only',
         defaultHidden: true
       }),
-      source('hermes.user.browser-recordings', 'user', 'directory', ['state'], '~/.hermes/browser_recordings', REF.hermesConfig, {
+      source('hermes.user.browser-recordings', 'user', 'directory', ['state'], '<hermes-home>/browser_recordings', REF.hermesConfig, {
         sensitivity: 'sensitive-metadata-only',
         defaultHidden: true
       }),
-      source('hermes.user.checkpoints', 'user', 'directory', ['state'], '~/.hermes/checkpoints', REF.hermesRepo, {
+      source('hermes.user.checkpoints', 'user', 'directory', ['state'], '<hermes-home>/checkpoints', REF.hermesRepo, {
         stability: 'primary-source',
         sensitivity: 'sensitive-metadata-only'
       })
     ],
     assets: assets([
-      ['agents-md', 'instruction', ['user']],
+      ['agents-md', 'instruction', ['user', 'project']],
       ['skill', 'instruction', ['user']],
+      ['mcp-server', 'capability', ['user']],
       ['plugin', 'capability', ['user']],
       ['hook', 'capability', ['user']],
       ['session', 'state', ['session']],

@@ -10,6 +10,7 @@ import {
 import { CursorAdapter } from '@berth/scan-engine/adapters/cursor'
 import { GeminiCliAdapter } from '@berth/scan-engine/adapters/gemini-cli'
 import { GitHubCopilotCliAdapter } from '@berth/scan-engine/adapters/github-copilot-cli'
+import { HermesAgentAdapter } from '@berth/scan-engine/adapters/hermes-agent'
 import { OpenClawAdapter } from '@berth/scan-engine/adapters/openclaw'
 import { OpenCodeAdapter } from '@berth/scan-engine/adapters/opencode'
 import { PLANNED_AGENT_ADAPTER_DEFINITIONS } from '@berth/scan-engine/adapters/planned-agent-definitions'
@@ -140,6 +141,63 @@ describe('agent adapter registry', () => {
     ])
   })
 
+  it('does not treat shared compatibility files as installed third-party agents', async () => {
+    const homeDir = makeTempDir()
+    const projectDir = makeTempDir()
+    const projectAgents = path.join(projectDir, 'AGENTS.md')
+    const projectClaude = path.join(projectDir, 'CLAUDE.md')
+    const sharedSkill = path.join(homeDir, '.agents', 'skills', 'shared', 'SKILL.md')
+    fs.writeFileSync(projectAgents, 'Shared project guidance.\n', 'utf8')
+    fs.writeFileSync(projectClaude, 'Claude-compatible guidance.\n', 'utf8')
+    fs.mkdirSync(path.dirname(sharedSkill), { recursive: true })
+    fs.writeFileSync(sharedSkill, '---\nname: shared\n---\nShared skill.\n', 'utf8')
+
+    const adapters = createAgentAdapters(projectDir, {
+      homeDir,
+      env: { HERMES_HOME: path.join(homeDir, 'missing-hermes') },
+      loadManifests: () => []
+    })
+
+    const cursor = adapters.find((adapter) => adapter.id === 'cursor')!
+    const copilot = adapters.find((adapter) => adapter.id === 'github-copilot-cli')!
+    const opencode = adapters.find((adapter) => adapter.id === 'opencode')!
+    const openclaw = adapters.find((adapter) => adapter.id === 'openclaw')!
+    const hermes = adapters.find((adapter) => adapter.id === 'hermes-agent')!
+
+    await expect(cursor.detect()).resolves.toMatchObject({
+      installed: false,
+      paths: expect.arrayContaining([
+        expect.objectContaining({ code: 'cursor.project.agents-md', status: 'scanned' })
+      ])
+    })
+    await expect(copilot.detect()).resolves.toMatchObject({
+      installed: false,
+      paths: expect.arrayContaining([
+        expect.objectContaining({ code: 'copilot.user.shared-skills', status: 'scanned' }),
+        expect.objectContaining({ code: 'copilot.project.agents-md', status: 'scanned' })
+      ])
+    })
+    await expect(opencode.detect()).resolves.toMatchObject({
+      installed: false,
+      paths: expect.arrayContaining([
+        expect.objectContaining({ code: 'opencode.project.agents-md', status: 'scanned' })
+      ])
+    })
+    await expect(openclaw.detect()).resolves.toMatchObject({
+      installed: false,
+      paths: expect.arrayContaining([
+        expect.objectContaining({ code: 'openclaw.user.shared-skills', status: 'scanned' })
+      ])
+    })
+    await expect(hermes.detect()).resolves.toMatchObject({
+      installed: false,
+      paths: expect.arrayContaining([
+        expect.objectContaining({ code: 'hermes.project.agents-md', status: 'scanned' }),
+        expect.objectContaining({ code: 'hermes.project.claude-md', status: 'scanned' })
+      ])
+    })
+  })
+
   it('registers planned agent definitions and parses stable Gemini CLI sources', async () => {
     const homeDir = makeTempDir()
     const projectDir = makeTempDir()
@@ -191,6 +249,16 @@ describe('agent adapter registry', () => {
     const openClawSessions = path.join(homeDir, '.openclaw', 'agents', 'default', 'sessions', 'sessions.json')
     const openClawSecrets = path.join(homeDir, '.openclaw', 'secrets.json')
     const openClawAuthProfiles = path.join(homeDir, '.openclaw', 'agents', 'default', 'agent', 'auth-profiles.json')
+    const hermesHome = path.join(homeDir, '.hermes-fixture')
+    const hermesConfig = path.join(hermesHome, 'config.yaml')
+    const hermesSoul = path.join(hermesHome, 'SOUL.md')
+    const hermesSkill = path.join(hermesHome, 'skills', 'release', 'SKILL.md')
+    const hermesPlugin = path.join(hermesHome, 'plugins', 'helper', 'plugin.yaml')
+    const hermesHook = path.join(hermesHome, 'hooks', 'notify', 'HOOK.yaml')
+    const hermesSessions = path.join(hermesHome, 'sessions', 'sessions.json')
+    const hermesEnv = path.join(hermesHome, '.env')
+    const hermesAuth = path.join(hermesHome, 'auth.json')
+    const hermesProjectContext = path.join(projectDir, 'HERMES.md')
     fs.mkdirSync(path.dirname(geminiSettings), { recursive: true })
     writeJson(geminiSettings, {
       context: { fileName: 'GEMINI.md' },
@@ -322,10 +390,43 @@ describe('agent adapter registry', () => {
     })
     writeJson(openClawSecrets, { token: 'secret' })
     writeJson(openClawAuthProfiles, { github: { accessToken: 'secret' } })
+    fs.mkdirSync(path.dirname(hermesConfig), { recursive: true })
+    fs.writeFileSync(hermesConfig, [
+      'mcp_servers:',
+      '  docs:',
+      '    command: docs-mcp',
+      '    env:',
+      '      API_TOKEN: secret',
+      'hooks:',
+      '  before_tool:',
+      '    command: echo ok',
+      '    token: secret',
+      ''
+    ].join('\n'), 'utf8')
+    fs.writeFileSync(hermesSoul, 'Hermes identity.\n', 'utf8')
+    fs.mkdirSync(path.dirname(hermesSkill), { recursive: true })
+    fs.writeFileSync(hermesSkill, '---\nname: release\n---\nRelease helper.\n', 'utf8')
+    fs.mkdirSync(path.dirname(hermesPlugin), { recursive: true })
+    fs.writeFileSync(hermesPlugin, 'name: helper\nversion: 0.5.0\ndescription: Hermes helper\n', 'utf8')
+    fs.mkdirSync(path.dirname(hermesHook), { recursive: true })
+    fs.writeFileSync(hermesHook, 'name: notify\ncommand: echo ok\ntoken: secret\n', 'utf8')
+    writeJson(hermesSessions, {
+      sessions: [
+        {
+          id: 'session-1',
+          createdAt: '2026-06-13T01:00:00.000Z',
+          updatedAt: '2026-06-13T01:10:00.000Z',
+          tokenCount: 456
+        }
+      ]
+    })
+    fs.writeFileSync(hermesEnv, 'HERMES_TOKEN=secret\n', 'utf8')
+    writeJson(hermesAuth, { github: { accessToken: 'secret' } })
+    fs.writeFileSync(hermesProjectContext, 'Project Hermes guidance.\n', 'utf8')
 
     const adapters = createAgentAdapters(projectDir, {
       homeDir,
-      env: {},
+      env: { HERMES_HOME: hermesHome },
       loadManifests: () => []
     })
     const planned = adapters.filter((adapter) =>
@@ -333,7 +434,7 @@ describe('agent adapter registry', () => {
     )
 
     expect(planned).toHaveLength(6)
-    expect(planned.filter((adapter) => adapter instanceof DeclaredAgentAdapter)).toHaveLength(1)
+    expect(planned.filter((adapter) => adapter instanceof DeclaredAgentAdapter)).toHaveLength(0)
 
     const gemini = planned.find((adapter) => adapter.id === 'gemini-cli')!
     expect(gemini).toBeInstanceOf(GeminiCliAdapter)
@@ -841,6 +942,128 @@ describe('agent adapter registry', () => {
           type: 'credential',
           scope: 'user',
           path: openClawAuthProfiles,
+          sensitive: true
+        })
+      ])
+    )
+
+    const hermes = planned.find((adapter) => adapter.id === 'hermes-agent')!
+    expect(hermes).toBeInstanceOf(HermesAgentAdapter)
+    await expect(hermes.scanSourceCoverage()).resolves.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: 'hermes.user.config',
+          path: hermesConfig,
+          status: 'scanned'
+        }),
+        expect.objectContaining({
+          code: 'hermes.user.sessions-index',
+          path: hermesSessions,
+          status: 'scanned',
+          reason: 'sensitive-metadata-only'
+        }),
+        expect.objectContaining({
+          code: 'hermes.project.hermes-root-md',
+          path: hermesProjectContext,
+          status: 'scanned'
+        })
+      ])
+    )
+    const hermesResult = await hermes.scanAll()
+    expect(hermesResult.errors).toEqual([])
+    expect(hermesResult.assets).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          agentId: 'hermes-agent',
+          type: 'agents-md',
+          scope: 'user',
+          path: hermesSoul
+        }),
+        expect.objectContaining({
+          agentId: 'hermes-agent',
+          type: 'agents-md',
+          scope: 'project',
+          path: hermesProjectContext
+        }),
+        expect.objectContaining({
+          agentId: 'hermes-agent',
+          type: 'agents-md',
+          scope: 'project',
+          path: path.join(projectDir, 'AGENTS.md'),
+          meta: expect.objectContaining({
+            readByAgentIds: ['hermes-agent']
+          })
+        }),
+        expect.objectContaining({
+          agentId: 'hermes-agent',
+          type: 'skill',
+          scope: 'user',
+          name: 'release',
+          path: hermesSkill
+        }),
+        expect.objectContaining({
+          agentId: 'hermes-agent',
+          type: 'mcp-server',
+          scope: 'user',
+          name: 'docs',
+          path: hermesConfig,
+          meta: expect.objectContaining({
+            serverConfig: expect.objectContaining({
+              env: { API_TOKEN: '<redacted>' }
+            })
+          })
+        }),
+        expect.objectContaining({
+          agentId: 'hermes-agent',
+          type: 'hook',
+          scope: 'user',
+          name: 'before_tool',
+          path: hermesConfig,
+          meta: expect.objectContaining({
+            hook: expect.objectContaining({
+              token: '<redacted>'
+            })
+          })
+        }),
+        expect.objectContaining({
+          agentId: 'hermes-agent',
+          type: 'plugin',
+          scope: 'user',
+          name: 'helper',
+          path: path.dirname(hermesPlugin)
+        }),
+        expect.objectContaining({
+          agentId: 'hermes-agent',
+          type: 'hook',
+          scope: 'user',
+          name: 'notify',
+          path: hermesHook,
+          meta: expect.objectContaining({
+            hook: expect.objectContaining({
+              token: '<redacted>'
+            })
+          })
+        }),
+        expect.objectContaining({
+          agentId: 'hermes-agent',
+          type: 'session',
+          scope: 'session',
+          name: 'session-1',
+          path: hermesSessions,
+          sensitive: true
+        }),
+        expect.objectContaining({
+          agentId: 'hermes-agent',
+          type: 'credential',
+          scope: 'user',
+          path: hermesEnv,
+          sensitive: true
+        }),
+        expect.objectContaining({
+          agentId: 'hermes-agent',
+          type: 'credential',
+          scope: 'user',
+          path: hermesAuth,
           sensitive: true
         })
       ])

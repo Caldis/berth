@@ -7,6 +7,7 @@ import type { AgentAdapter, Asset, AssetScope, DetectResult, ScanRoot } from '..
 import type { ScanError } from '@shared/types/ipc'
 import { isRecord } from '../_shared/parser-helpers'
 import { declaredSourceFromPolicy } from '../_shared/declared-source-policy'
+import { detectedFromSources } from '../_shared/detect'
 import { resolveProjectConfigRoots } from '../../project-config-roots'
 import {
   parseGeminiContextFile,
@@ -42,9 +43,10 @@ export class GeminiCliAdapter implements AgentAdapter {
 
   async detect(): Promise<DetectResult> {
     const paths = await this.scanRoots()
+    const installed = detectedFromSources(paths, isGeminiDetectionSource)
     return {
-      installed: paths.length > 0,
-      version: paths.length > 0 ? this.definition.version : undefined,
+      installed,
+      version: installed ? this.definition.version : undefined,
       paths
     }
   }
@@ -210,4 +212,8 @@ function safeGlob(
     })
     return []
   }
+}
+
+function isGeminiDetectionSource(source: ScanRoot): boolean {
+  return (source.code ?? '').startsWith('gemini.')
 }

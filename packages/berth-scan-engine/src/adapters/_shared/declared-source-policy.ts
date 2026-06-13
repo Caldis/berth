@@ -71,6 +71,12 @@ export function resolvePathPattern(
       needsProject: false
     }
   }
+  if (pathPattern.includes('<hermes-home>')) {
+    return {
+      path: path.normalize(pathPattern.replace(/<hermes-home>/g, resolveHermesHomeDir(options.homeDir, options.env ?? process.env))),
+      needsProject: false
+    }
+  }
   if (pathPattern.includes('<project>')) {
     return {
       path: options.projectDir
@@ -92,6 +98,16 @@ function resolveCursorUserDataDir(homeDir: string, env: NodeJS.ProcessEnv): stri
   }
   const configHome = env.XDG_CONFIG_HOME?.trim() || path.join(homeDir, '.config')
   return path.join(configHome, 'Cursor')
+}
+
+function resolveHermesHomeDir(homeDir: string, env: NodeJS.ProcessEnv): string {
+  const customHome = env.HERMES_HOME?.trim()
+  if (customHome) return path.resolve(customHome)
+  if (process.platform === 'win32') {
+    const localAppData = env.LOCALAPPDATA?.trim() || path.join(homeDir, 'AppData', 'Local')
+    return path.join(localAppData, 'hermes')
+  }
+  return path.join(homeDir, '.hermes')
 }
 
 function sourceExists(sourcePath: string, kind: ScanRoot['kind']): boolean {

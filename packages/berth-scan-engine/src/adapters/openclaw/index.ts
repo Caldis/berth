@@ -7,6 +7,7 @@ import type { AgentAdapter, Asset, AssetScope, DetectResult, ScanRoot } from '..
 import type { ScanError } from '@shared/types/ipc'
 import { isRecord, readString } from '../_shared/parser-helpers'
 import { declaredSourceFromPolicy } from '../_shared/declared-source-policy'
+import { detectedFromSources } from '../_shared/detect'
 import {
   parseOpenClawConfig,
   parseOpenClawCredentialPresence,
@@ -50,9 +51,10 @@ export class OpenClawAdapter implements AgentAdapter {
 
   async detect(): Promise<DetectResult> {
     const paths = await this.scanRoots()
+    const installed = detectedFromSources(paths, isOpenClawDetectionSource)
     return {
-      installed: paths.length > 0,
-      version: paths.length > 0 ? this.definition.version : undefined,
+      installed,
+      version: installed ? this.definition.version : undefined,
       paths
     }
   }
@@ -293,4 +295,8 @@ function stripJsonComments(raw: string): string {
     result += char
   }
   return result
+}
+
+function isOpenClawDetectionSource(source: ScanRoot): boolean {
+  return source.code !== 'openclaw.user.shared-skills'
 }
