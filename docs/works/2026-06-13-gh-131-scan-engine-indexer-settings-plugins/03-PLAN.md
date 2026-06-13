@@ -60,5 +60,10 @@
   - tests: `pnpm vitest run tests/unit/agent-adapter-registry.test.ts tests/unit/agent-capability-plugins.test.ts tests/unit/planned-agent-adapter-definitions.test.ts`; `pnpm typecheck:node`; `pnpm typecheck:web`; `pnpm typecheck:test`; `pnpm --dir packages/berth-scan-engine test`; `pnpm --dir packages/berth-scan-engine typecheck`; `pnpm --dir packages/berth-scan-engine build`; `pnpm lint`; `pnpm harness:check`; `pnpm build`。
   - verify: passed 2026-06-13。真实本机 `opencode --version` 为 `1.1.25`。用已构建 `packages/berth-scan-engine/dist/cli.cjs scan --agent opencode --home-dir $env:USERPROFILE --project D:\Code\berth` 对真实 OpenCode home 扫描, 结果为 OpenCode assets=40 (`credential=1`, `skill=39`), scanned sources 包含 `opencode.user.assets`, `opencode.project.agents-md`, `opencode.user.auth`, `opencode.user.logs`, sensitive sources 为 `opencode.user.auth:credential-presence-only`, `opencode.user.sessions-db:sensitive-metadata-only`, `opencode.user.logs:debug-summary-only`, OpenCode 相关 errors=0。
 
+- [x] 任务 10: Copilot/Cursor/OpenClaw/Hermes source contract 校准
+  - scope: 复用子代理只读调研结果, 按官方/primary-source 修正剩余四个 planned adapters 的 source declarations 与敏感策略。不写 parser, 不执行外部命令。Copilot 拆开 `~/.copilot` 宽路径, 补 settings/config/permissions/instructions/agents/skills/hooks/LSP/plugins/log/session/cache/project `.github` sources; Cursor 修正版本 probe 为官方 `agent --version`, 补 permissions/sandbox/hooks/mcp/agents/plugins/subagents, 并把 `.cursor/commands` 标为 heuristic; OpenClaw 将 plugins/logs 从猜测路径降级或替换为官方 extensions/session/log/credential sources; Hermes 补 profile/env/auth/project context/sessions/cache/browser recordings, 并把 checkpoints 改为 `~/.hermes/checkpoints`。
+  - tests: `pnpm vitest run tests/unit/planned-agent-adapter-definitions.test.ts tests/unit/agent-capability-plugins.test.ts tests/unit/agent-adapter-registry.test.ts`; `pnpm typecheck:node`; `pnpm typecheck:test`。
+  - verify: passed 2026-06-13。敏感源断言已覆盖 `auth` / `token` 类 source, 防止后续误标为 normal。
+
 ## verify 回写
 verify 不通过项作为新任务追加于此, phase 退回 implement。
