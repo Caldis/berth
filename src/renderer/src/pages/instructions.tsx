@@ -41,7 +41,7 @@ import { VirtualGroupedList, type VirtualGroupedListHandle } from '@/components/
 import { type VirtualListGroup } from '@/lib/virtual-list-model'
 
 const tabTypeMap: Record<string, string[]> = {
-  conventions: ['claude-md', 'agents-md'],
+  conventions: ['claude-md', 'gemini-md', 'agents-md'],
   skills: ['skill'],
   subagents: ['agent'],
   commands: ['command'],

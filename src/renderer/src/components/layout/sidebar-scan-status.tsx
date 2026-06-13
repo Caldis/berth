@@ -24,7 +24,7 @@ import { useAppStore } from '@/stores/app'
 // categories (约定/skills/mcp/hooks/…). Counts are derived from the live asset
 // list, so they grow as partial scan results arrive.
 const CATEGORY_DEFS: { key: string; types: AssetType[] }[] = [
-  { key: 'conventions', types: ['claude-md', 'agents-md'] },
+  { key: 'conventions', types: ['claude-md', 'gemini-md', 'agents-md'] },
   { key: 'skills', types: ['skill'] },
   { key: 'subagents', types: ['agent'] },
   { key: 'commands', types: ['command'] },

@@ -296,6 +296,78 @@ describe('agent capability plugin registry', () => {
     }
   })
 
+  it('uses runtime source coverage for planned adapters that have a concrete scanner', () => {
+    const result = listAgentCapabilityPlugins([
+      ...scanGroups,
+      {
+        agentId: 'gemini-cli',
+        agentName: 'Gemini CLI',
+        installed: true,
+        version: '0.1.0',
+        roots: [
+          {
+            path: 'C:\\Users\\test\\.gemini\\settings.json',
+            scope: 'user',
+            code: 'gemini.user.settings',
+            categories: ['capability'],
+            kind: 'file',
+            status: 'scanned'
+          }
+        ],
+        sources: [
+          {
+            path: 'C:\\Users\\test\\.gemini\\settings.json',
+            scope: 'user',
+            code: 'gemini.user.settings',
+            categories: ['capability'],
+            kind: 'file',
+            status: 'scanned'
+          },
+          {
+            path: 'C:\\Users\\test\\.gemini\\tmp',
+            scope: 'session',
+            code: 'gemini.user.sessions',
+            categories: ['state'],
+            kind: 'directory',
+            status: 'missing',
+            reason: 'sensitive-metadata-only'
+          }
+        ]
+      }
+    ])
+
+    const gemini = result.plugins.find((plugin) => plugin.id === 'gemini-cli')
+    expect(gemini).toMatchObject({
+      enabled: true,
+      detected: true,
+      sourceCoverage: {
+        total: 2,
+        counts: {
+          scanned: 1,
+          missing: 1,
+          'not-scanned': 0
+        }
+      }
+    })
+    expect(gemini?.capabilities.find((capability) => capability.id === 'sourceDiscovery'))
+      .toMatchObject({ status: 'available' })
+    expect(gemini?.capabilities.find((capability) => capability.id === 'assetParsing'))
+      .toMatchObject({
+        status: 'partial',
+        statusDetailKey: 'settings.agentPluginCapabilityDetails.plannedAdapterRuntimePartial'
+      })
+    expect(gemini?.assetDescriptors.map((descriptor) => descriptor.type)).toContain('gemini-md')
+    expect(gemini?.sourceCoverage.sources[0]).toMatchObject({
+      code: 'gemini.user.settings',
+      pathPattern: '~/.gemini/settings.json',
+      stability: 'official-docs',
+      evidenceUrls: expect.arrayContaining([
+        expect.stringContaining('gemini-cli')
+      ]),
+      sensitivity: 'normal'
+    })
+  })
+
   it('returns third-party manifest statuses without changing built-in plugins', () => {
     const dir = makeTempDir()
     const validPath = path.join(dir, 'valid.json')

@@ -7,6 +7,7 @@ import {
   DeclaredAgentAdapter,
   ManifestAgentAdapter
 } from '@berth/scan-engine/agent-plugins/adapter-registry'
+import { GeminiCliAdapter } from '@berth/scan-engine/adapters/gemini-cli'
 import { PLANNED_AGENT_ADAPTER_DEFINITIONS } from '@berth/scan-engine/adapters/planned-agent-definitions'
 import {
   loadAgentPluginManifests,
@@ -135,15 +136,36 @@ describe('agent adapter registry', () => {
     ])
   })
 
-  it('registers planned agent definitions as metadata-only declared adapters', async () => {
+  it('registers planned agent definitions and parses stable Gemini CLI sources', async () => {
     const homeDir = makeTempDir()
     const projectDir = makeTempDir()
     const geminiSettings = path.join(homeDir, '.gemini', 'settings.json')
+    const geminiProjectSettings = path.join(projectDir, '.gemini', 'settings.json')
+    const geminiUserContext = path.join(homeDir, '.gemini', 'GEMINI.md')
+    const geminiProjectContext = path.join(projectDir, 'GEMINI.md')
+    const geminiProjectAgents = path.join(projectDir, 'AGENTS.md')
+    const geminiExtension = path.join(homeDir, '.gemini', 'extensions', 'helper', 'gemini-extension.json')
     const geminiSession = path.join(homeDir, '.gemini', 'tmp', 'session.json')
     const cursorRules = path.join(projectDir, '.cursor', 'rules')
     const opencodeProjectConfig = path.join(projectDir, 'opencode.json')
     fs.mkdirSync(path.dirname(geminiSettings), { recursive: true })
-    fs.writeFileSync(geminiSettings, '{"mcpServers":{}}', 'utf8')
+    writeJson(geminiSettings, {
+      context: { fileName: 'GEMINI.md' },
+      mcpServers: { docs: { command: 'docs-mcp' } }
+    })
+    writeJson(geminiProjectSettings, {
+      context: { fileName: ['GEMINI.md', 'AGENTS.md'] },
+      mcpServers: { repo: { command: 'repo-mcp' } }
+    })
+    fs.writeFileSync(geminiUserContext, 'User Gemini guidance.\n', 'utf8')
+    fs.writeFileSync(geminiProjectContext, 'Project Gemini guidance.\n', 'utf8')
+    fs.writeFileSync(geminiProjectAgents, 'Shared project guidance.\n', 'utf8')
+    writeJson(geminiExtension, {
+      name: 'helper',
+      version: '1.2.3',
+      description: 'Test extension',
+      mcpServers: { helper: { command: 'helper-mcp' } }
+    })
     fs.mkdirSync(path.dirname(geminiSession), { recursive: true })
     fs.writeFileSync(geminiSession, 'sensitive transcript', 'utf8')
     fs.mkdirSync(cursorRules, { recursive: true })
@@ -160,9 +182,10 @@ describe('agent adapter registry', () => {
     )
 
     expect(planned).toHaveLength(6)
-    expect(planned.every((adapter) => adapter instanceof DeclaredAgentAdapter)).toBe(true)
+    expect(planned.filter((adapter) => adapter instanceof DeclaredAgentAdapter)).toHaveLength(5)
 
     const gemini = planned.find((adapter) => adapter.id === 'gemini-cli')!
+    expect(gemini).toBeInstanceOf(GeminiCliAdapter)
     await expect(gemini.detect()).resolves.toMatchObject({
       installed: true,
       paths: expect.arrayContaining([
@@ -179,10 +202,67 @@ describe('agent adapter registry', () => {
         })
       ])
     })
-    await expect(gemini.scanAll()).resolves.toEqual({
-      assets: [],
-      errors: []
-    })
+    const geminiResult = await gemini.scanAll()
+    expect(geminiResult.errors).toEqual([])
+    expect(geminiResult.assets).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          agentId: 'gemini-cli',
+          type: 'gemini-md',
+          scope: 'user',
+          path: geminiUserContext
+        }),
+        expect.objectContaining({
+          agentId: 'gemini-cli',
+          type: 'gemini-md',
+          scope: 'project',
+          path: geminiProjectContext
+        }),
+        expect.objectContaining({
+          agentId: 'gemini-cli',
+          type: 'gemini-md',
+          scope: 'project',
+          path: geminiProjectAgents
+        }),
+        expect.objectContaining({
+          agentId: 'gemini-cli',
+          type: 'mcp-server',
+          scope: 'user',
+          name: 'docs',
+          path: geminiSettings
+        }),
+        expect.objectContaining({
+          agentId: 'gemini-cli',
+          type: 'mcp-server',
+          scope: 'project',
+          name: 'repo',
+          path: geminiProjectSettings
+        }),
+        expect.objectContaining({
+          agentId: 'gemini-cli',
+          type: 'plugin',
+          scope: 'user',
+          name: 'helper',
+          path: path.dirname(geminiExtension),
+          meta: expect.objectContaining({
+            version: '1.2.3',
+            origin: 'gemini-extension'
+          })
+        }),
+        expect.objectContaining({
+          agentId: 'gemini-cli',
+          type: 'mcp-server',
+          scope: 'user',
+          name: 'helper',
+          path: geminiExtension,
+          meta: expect.objectContaining({
+            origin: 'gemini-extension',
+            pluginName: 'helper'
+          })
+        })
+      ])
+    )
+    expect(geminiResult.assets.some((asset) => asset.type === 'session')).toBe(false)
 
     const cursor = planned.find((adapter) => adapter.id === 'cursor')!
     await expect(cursor.scanSourceCoverage()).resolves.toEqual(

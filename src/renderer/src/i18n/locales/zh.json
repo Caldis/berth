@@ -270,6 +270,7 @@
         "agent": "Agent",
         "agents-md": "AGENTS.md",
         "claude-md": "CLAUDE.md",
+        "gemini-md": "GEMINI.md",
         "command": "命令",
         "env": "环境变量",
         "hook": "Hook",
@@ -1794,6 +1795,7 @@
       "manifestAdapterMetadataOnly": "Manifest 声明了资产描述信息。Runtime 只暴露元数据和 source coverage, 不执行第三方代码。",
       "manifestMetadataOnly": "Manifest 会显示在注册表中, 但没有可执行 adapter 或明确 source descriptor。",
       "plannedAdapterMetadataOnly": "这个 adapter 来自官方文档或 primary source 调研。Berth 只展示计划中的扫描契约, 还不会读取这些文件。",
+      "plannedAdapterRuntimePartial": "Berth 已能读取这个 adapter 的稳定本地文件。敏感状态和更深的运行时解析仍只做 metadata。",
       "thirdPartyCodeNotExecuted": "Manifest 声明了 adapter 入口。Berth 只记录该入口, 不 import 或执行第三方代码。",
       "uiGuidanceInProgress": "设置页已经使用这组插件元数据。其他页面仍有 Agent 专属展示代码。"
     },

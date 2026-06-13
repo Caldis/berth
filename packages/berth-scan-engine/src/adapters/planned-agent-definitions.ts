@@ -60,7 +60,7 @@ export const PLANNED_AGENT_ADAPTER_DEFINITIONS: AgentAdapterDefinition[] = [
       })
     ],
     assets: assets([
-      ['agents-md', 'instruction', ['user', 'project']],
+      ['gemini-md', 'instruction', ['user', 'project']],
       ['mcp-server', 'capability', ['user', 'project']],
       ['command', 'instruction', ['user']],
       ['session', 'state', ['session']],

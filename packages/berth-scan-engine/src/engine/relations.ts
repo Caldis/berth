@@ -11,7 +11,7 @@ export function resolveRelations(asset: Asset, allAssets: Asset[]): Relation[] {
   const relations: Relation[] = []
 
   // @path import relations for instruction files
-  if (asset.type === 'claude-md' || asset.type === 'agents-md') {
+  if (asset.type === 'claude-md' || asset.type === 'gemini-md' || asset.type === 'agents-md') {
     const imports = (asset.meta.imports as string[]) ?? []
     for (const imp of imports) {
       const resolvedPath = path.resolve(path.dirname(asset.path), imp)

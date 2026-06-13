@@ -33,6 +33,7 @@ export function routeForAsset(asset: Pick<Asset, 'type' | 'id'>): string {
     case 'output-mode':
       return '/instructions/output-modes'
     case 'claude-md':
+    case 'gemini-md':
     case 'agents-md':
       return '/instructions/conventions'
     default:

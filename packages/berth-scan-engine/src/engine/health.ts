@@ -1335,7 +1335,7 @@ function routeForAssetType(assetType: string | undefined): string | undefined {
   if (assetType === 'env') return '/configuration/capabilities?tab=env'
   if (assetType === 'plugin') return '/configuration/capabilities?tab=plugins'
   if (assetType === 'statusline') return '/configuration/capabilities?tab=statusLine'
-  if (['skill', 'agent', 'claude-md', 'agents-md', 'command', 'output-mode'].includes(assetType)) {
+  if (['skill', 'agent', 'claude-md', 'gemini-md', 'agents-md', 'command', 'output-mode'].includes(assetType)) {
     return '/configuration/instructions'
   }
   return undefined

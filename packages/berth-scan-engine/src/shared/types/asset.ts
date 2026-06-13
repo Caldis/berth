@@ -40,6 +40,7 @@ export type ScanSourceCode = BuiltInScanSourceCode | string
 
 export type AssetType =
   | 'claude-md'
+  | 'gemini-md'
   | 'agents-md'
   | 'skill'
   | 'agent'

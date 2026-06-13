@@ -24,7 +24,7 @@ import type {
   ScanSourceCode,
   ScanSourceStatus
 } from '@shared/types/asset'
-import type { AgentAdapterDefinition } from '@berth/scan-engine/adapter-api'
+import type { AgentAdapterDefinition, AgentAdapterSourcePolicy } from '@berth/scan-engine/adapter-api'
 import { PLANNED_AGENT_ADAPTER_DEFINITIONS } from '@berth/scan-engine/adapters/planned-agent-definitions'
 import { CLAUDE_SOURCE_DESCRIPTORS, CODEX_SOURCE_DESCRIPTORS } from './descriptors'
 import { loadAgentPluginManifests } from '@berth/scan-engine/agent-plugins/manifest'
@@ -928,35 +928,42 @@ export function listAgentCapabilityPlugins(
     plugins: [
       buildClaudeCodePlugin(findGroup(groups, 'claude-code')),
       buildCodexPlugin(findGroup(groups, 'codex')),
-      ...buildPlannedAdapterPlugins(manifestPluginIds),
+      ...buildPlannedAdapterPlugins(manifestPluginIds, groups),
       ...buildManifestPlugins(manifests, groups)
     ],
     manifests
   }
 }
 
-function buildPlannedAdapterPlugins(manifestPluginIds: Set<string>): AgentCapabilityPlugin[] {
+function buildPlannedAdapterPlugins(
+  manifestPluginIds: Set<string>,
+  groups: AgentScanSourceGroup[]
+): AgentCapabilityPlugin[] {
   return PLANNED_AGENT_ADAPTER_DEFINITIONS
     .filter((definition) => !manifestPluginIds.has(definition.id))
-    .map((definition) => buildPlannedAdapterPlugin(definition))
+    .map((definition) => buildPlannedAdapterPlugin(definition, findGroup(groups, definition.id)))
 }
 
-function buildPlannedAdapterPlugin(definition: AgentAdapterDefinition): AgentCapabilityPlugin {
+function buildPlannedAdapterPlugin(
+  definition: AgentAdapterDefinition,
+  group: AgentScanSourceGroup | undefined
+): AgentCapabilityPlugin {
   const agentId = definition.agentCompatibility?.agentId ?? definition.id
+  const detected = group?.installed === true
   return {
     id: definition.id,
     displayName: definition.displayName,
-    version: definition.version,
+    version: group?.version ?? definition.version,
     schemaVersion: PLUGIN_SCHEMA_VERSION,
     builtin: true,
-    enabled: false,
-    detected: false,
+    enabled: detected,
+    detected,
     agentCompatibility: {
       agentId,
       name: definition.agentCompatibility?.name ?? definition.displayName,
       versionRange: definition.agentCompatibility?.versionRange
     },
-    capabilities: plannedAdapterCapabilities(definition),
+    capabilities: plannedAdapterCapabilities(definition, detected),
     permissions: definition.permissions.map((permission) => ({
       kind: permission.kind,
       scopes: permission.scopes,
@@ -971,7 +978,9 @@ function buildPlannedAdapterPlugin(definition: AgentAdapterDefinition): AgentCap
       handlers: []
     },
     healthCheckDescriptors: definition.healthChecks ?? [],
-    sourceCoverage: buildPlannedSourceCoverage(definition),
+    sourceCoverage: group
+      ? buildSourceCoverage(group, definition.sources)
+      : buildPlannedSourceCoverage(definition),
     references: [
       { label: 'Homepage', url: definition.homepageUrl },
       { label: 'Download', url: definition.downloadUrl },
@@ -981,14 +990,23 @@ function buildPlannedAdapterPlugin(definition: AgentAdapterDefinition): AgentCap
 }
 
 function plannedAdapterCapabilities(
-  definition: AgentAdapterDefinition
+  definition: AgentAdapterDefinition,
+  detected = false
 ): AgentCapabilityPluginCapability[] {
   const result: AgentCapabilityPluginCapability[] = []
   if (definition.sources.length > 0) {
-    result.push(capability('sourceDiscovery', 'planned', 'plannedAdapterMetadataOnly'))
+    result.push(capability(
+      'sourceDiscovery',
+      detected ? 'available' : 'planned',
+      detected ? undefined : 'plannedAdapterMetadataOnly'
+    ))
   }
   if (definition.assets.length > 0) {
-    result.push(capability('assetParsing', 'planned', 'plannedAdapterMetadataOnly'))
+    result.push(capability(
+      'assetParsing',
+      detected ? 'partial' : 'planned',
+      detected ? 'plannedAdapterRuntimePartial' : 'plannedAdapterMetadataOnly'
+    ))
   }
   if (definition.hookSchema) {
     result.push(capability('hookSchema', 'planned', 'plannedAdapterMetadataOnly'))
@@ -1433,6 +1451,7 @@ function toPluginSource(
   descriptorByCode: Map<ScanSourceCode, AgentCapabilityPluginSourceDescriptor>
 ): AgentCapabilityPluginSource {
   const descriptor = source.code ? descriptorByCode.get(source.code) : undefined
+  const policy = descriptor as Partial<AgentAdapterSourcePolicy> | undefined
 
   return {
     path: source.path,
@@ -1444,6 +1463,12 @@ function toPluginSource(
     declared: descriptor !== undefined,
     labelKey: descriptor?.labelKey,
     descriptionKey: descriptor?.descriptionKey,
-    pathPattern: descriptor?.pathPattern
+    pathPattern: descriptor?.pathPattern,
+    stability: policy?.stability,
+    evidenceUrls: policy?.evidenceUrls,
+    sensitivity: policy?.sensitivity,
+    maxBytes: policy?.maxBytes,
+    maxRows: policy?.maxRows,
+    defaultHidden: policy?.defaultHidden
   }
 }

@@ -42,6 +42,7 @@ const ASSET_CATEGORIES = [
 const SCAN_SOURCE_KINDS = ['directory', 'file', 'policy'] as const
 const ASSET_TYPES = [
   'claude-md',
+  'gemini-md',
   'agents-md',
   'skill',
   'agent',

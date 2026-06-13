@@ -275,6 +275,7 @@
         "agent": "Agent",
         "agents-md": "AGENTS.md",
         "claude-md": "CLAUDE.md",
+        "gemini-md": "GEMINI.md",
         "command": "Command",
         "env": "Environment",
         "hook": "Hook",
@@ -1807,6 +1808,7 @@
       "manifestAdapterMetadataOnly": "The manifest declares asset descriptors. Runtime exposes metadata and source coverage without executing third-party code.",
       "manifestMetadataOnly": "The manifest is visible in the registry, but it has no executable adapter or concrete source descriptors.",
       "plannedAdapterMetadataOnly": "This adapter is declared from official or primary-source research. Berth shows its planned scan contract but does not read those files yet.",
+      "plannedAdapterRuntimePartial": "Berth can read stable local files for this adapter. Sensitive state and deeper runtime parsing are still metadata-only.",
       "thirdPartyCodeNotExecuted": "The manifest declares an adapter entrypoint. Berth records it but does not import or execute third-party code.",
       "uiGuidanceInProgress": "Settings uses this plugin metadata now. Other pages still have Agent-specific presentation code."
     },

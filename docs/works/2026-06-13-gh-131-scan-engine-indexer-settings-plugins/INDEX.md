@@ -36,7 +36,7 @@ debt:
       - ui-ux
       - testability
     confidence: medium
-    rationale: "完成 Settings 扫描引擎入口、真实控制面、project scope filter-first/后台排队、第三方 agent source declaration、adapter-api 发布子路径和 parser 依赖收敛。仍保留长驻 worker、row-level delta 和真实第三方 parser 实现为后续工作, 所以风险从 high 降到 medium。"
+    rationale: "完成 Settings 扫描引擎入口、真实控制面、project scope filter-first/后台排队、第三方 agent source declaration、adapter-api 发布子路径、parser 依赖收敛, 并把 Gemini CLI 推进到可读取稳定本地文件的真实 adapter v1。仍保留长驻 worker、row-level delta、其他五个第三方 agent parser 和更深会话解析为后续工作, 所以风险从 high 降到 medium。"
   revisions: []
 issue:
   number: 131
