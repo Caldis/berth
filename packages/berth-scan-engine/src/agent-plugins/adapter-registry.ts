@@ -14,6 +14,7 @@ import type {
 import { ClaudeCodeAdapter } from '../adapters/claude-code'
 import { CodexAdapter } from '../adapters/codex'
 import { GeminiCliAdapter } from '../adapters/gemini-cli'
+import { OpenCodeAdapter } from '../adapters/opencode'
 import { PLANNED_AGENT_ADAPTER_DEFINITIONS } from '../adapters/planned-agent-definitions'
 import type { AgentAdapterDefinition } from '../adapter-api'
 import type { AssetFileCache } from '../engine/assets/file-cache'
@@ -40,11 +41,15 @@ export function createAgentAdapters(
   const adapters: AgentAdapter[] = [
     new ClaudeCodeAdapter(projectDir, { sessionCache: options.sessionCache, homeDir, env }),
     new CodexAdapter(projectDir, homeDir, env, options.sessionCache),
-    ...PLANNED_AGENT_ADAPTER_DEFINITIONS.map((definition) =>
-      definition.id === 'gemini-cli'
-        ? new GeminiCliAdapter(definition, { homeDir, projectDir, env })
-        : new DeclaredAgentAdapter(definition, { homeDir, projectDir, env })
-    )
+    ...PLANNED_AGENT_ADAPTER_DEFINITIONS.map((definition) => {
+      if (definition.id === 'gemini-cli') {
+        return new GeminiCliAdapter(definition, { homeDir, projectDir, env })
+      }
+      if (definition.id === 'opencode') {
+        return new OpenCodeAdapter(definition, { homeDir, projectDir, env })
+      }
+      return new DeclaredAgentAdapter(definition, { homeDir, projectDir, env })
+    })
   ]
   const loadManifests = options.loadManifests ?? loadAgentPluginManifests
   const manifests = loadManifests({

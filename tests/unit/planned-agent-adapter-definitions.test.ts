@@ -55,7 +55,9 @@ describe('planned agent adapter definitions', () => {
         source.code.includes('session') ||
         source.code.includes('logs') ||
         source.code.includes('state') ||
-        source.code.includes('credential')
+        source.code.includes('credential') ||
+        source.code.includes('auth') ||
+        source.code.includes('token')
       )
 
     expect(sensitiveSources.length).toBeGreaterThan(0)

@@ -8,6 +8,7 @@ import {
   ManifestAgentAdapter
 } from '@berth/scan-engine/agent-plugins/adapter-registry'
 import { GeminiCliAdapter } from '@berth/scan-engine/adapters/gemini-cli'
+import { OpenCodeAdapter } from '@berth/scan-engine/adapters/opencode'
 import { PLANNED_AGENT_ADAPTER_DEFINITIONS } from '@berth/scan-engine/adapters/planned-agent-definitions'
 import {
   loadAgentPluginManifests,
@@ -148,6 +149,12 @@ describe('agent adapter registry', () => {
     const geminiSession = path.join(homeDir, '.gemini', 'tmp', 'session.json')
     const cursorRules = path.join(projectDir, '.cursor', 'rules')
     const opencodeProjectConfig = path.join(projectDir, 'opencode.json')
+    const opencodeUserConfig = path.join(homeDir, '.config', 'opencode', 'opencode.jsonc')
+    const opencodeProjectCommand = path.join(projectDir, '.opencode', 'commands', 'build.md')
+    const opencodeProjectAgent = path.join(projectDir, '.opencode', 'agents', 'reviewer.md')
+    const opencodeProjectSkill = path.join(projectDir, '.opencode', 'skills', 'lint', 'SKILL.md')
+    const opencodeProjectPlugin = path.join(projectDir, '.opencode', 'plugins', 'helper', 'plugin.json')
+    const opencodeAuth = path.join(homeDir, '.local', 'share', 'opencode', 'auth.json')
     fs.mkdirSync(path.dirname(geminiSettings), { recursive: true })
     writeJson(geminiSettings, {
       context: { fileName: 'GEMINI.md' },
@@ -170,7 +177,25 @@ describe('agent adapter registry', () => {
     fs.writeFileSync(geminiSession, 'sensitive transcript', 'utf8')
     fs.mkdirSync(cursorRules, { recursive: true })
     fs.writeFileSync(path.join(cursorRules, 'rule.mdc'), 'Always test.', 'utf8')
-    fs.writeFileSync(opencodeProjectConfig, '{}', 'utf8')
+    fs.mkdirSync(path.dirname(opencodeUserConfig), { recursive: true })
+    fs.writeFileSync(opencodeUserConfig, '{\n  // JSONC config\n  "mcp": { "docs": { "command": "docs-mcp" } }\n}', 'utf8')
+    writeJson(opencodeProjectConfig, {
+      mcp: { repo: { command: 'repo-mcp' } },
+      agent: { build: { model: 'anthropic/claude-sonnet-4-5' } },
+      command: { test: { template: 'Run tests' } }
+    })
+    fs.mkdirSync(path.dirname(opencodeProjectCommand), { recursive: true })
+    fs.writeFileSync(opencodeProjectCommand, '---\ndescription: Build project\n---\nRun build.\n', 'utf8')
+    fs.mkdirSync(path.dirname(opencodeProjectAgent), { recursive: true })
+    fs.writeFileSync(opencodeProjectAgent, '---\nname: reviewer\n---\nReview code.\n', 'utf8')
+    fs.mkdirSync(path.dirname(opencodeProjectSkill), { recursive: true })
+    fs.writeFileSync(opencodeProjectSkill, '---\nname: lint\n---\nRun lint.\n', 'utf8')
+    writeJson(opencodeProjectPlugin, {
+      name: 'helper',
+      version: '0.2.0',
+      description: 'OpenCode helper'
+    })
+    writeJson(opencodeAuth, { token: 'secret' })
 
     const adapters = createAgentAdapters(projectDir, {
       homeDir,
@@ -182,7 +207,7 @@ describe('agent adapter registry', () => {
     )
 
     expect(planned).toHaveLength(6)
-    expect(planned.filter((adapter) => adapter instanceof DeclaredAgentAdapter)).toHaveLength(5)
+    expect(planned.filter((adapter) => adapter instanceof DeclaredAgentAdapter)).toHaveLength(4)
 
     const gemini = planned.find((adapter) => adapter.id === 'gemini-cli')!
     expect(gemini).toBeInstanceOf(GeminiCliAdapter)
@@ -281,12 +306,75 @@ describe('agent adapter registry', () => {
     )
 
     const opencode = planned.find((adapter) => adapter.id === 'opencode')!
+    expect(opencode).toBeInstanceOf(OpenCodeAdapter)
     await expect(opencode.scanRoots()).resolves.toEqual(
       expect.arrayContaining([
         expect.objectContaining({
           code: 'opencode.project.config',
           path: opencodeProjectConfig,
           status: 'scanned'
+        })
+      ])
+    )
+    const opencodeResult = await opencode.scanAll()
+    expect(opencodeResult.errors).toEqual([])
+    expect(opencodeResult.assets).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          agentId: 'opencode',
+          type: 'mcp-server',
+          scope: 'user',
+          name: 'docs',
+          path: opencodeUserConfig
+        }),
+        expect.objectContaining({
+          agentId: 'opencode',
+          type: 'mcp-server',
+          scope: 'project',
+          name: 'repo',
+          path: opencodeProjectConfig
+        }),
+        expect.objectContaining({
+          agentId: 'opencode',
+          type: 'command',
+          scope: 'project',
+          name: 'test',
+          path: opencodeProjectConfig
+        }),
+        expect.objectContaining({
+          agentId: 'opencode',
+          type: 'command',
+          scope: 'project',
+          name: 'build',
+          path: opencodeProjectCommand
+        }),
+        expect.objectContaining({
+          agentId: 'opencode',
+          type: 'agent',
+          scope: 'project',
+          name: 'reviewer',
+          path: opencodeProjectAgent
+        }),
+        expect.objectContaining({
+          agentId: 'opencode',
+          type: 'skill',
+          scope: 'project',
+          name: 'lint',
+          path: opencodeProjectSkill
+        }),
+        expect.objectContaining({
+          agentId: 'opencode',
+          type: 'plugin',
+          scope: 'project',
+          name: 'helper',
+          path: path.dirname(opencodeProjectPlugin)
+        }),
+        expect.objectContaining({
+          agentId: 'opencode',
+          type: 'credential',
+          scope: 'user',
+          path: opencodeAuth,
+          sensitive: true
         })
       ])
     )

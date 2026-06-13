@@ -149,14 +149,28 @@ export const PLANNED_AGENT_ADAPTER_DEFINITIONS: AgentAdapterDefinition[] = [
     downloadUrl: 'https://opencode.ai/docs/',
     agentCompatibility: { agentId: 'opencode', name: 'OpenCode' },
     versionProbe: { command: 'opencode', args: ['--version'], source: 'cli' },
-    permissions: [readPermission('~/.config/opencode', '~/.local/share/opencode', '<project>/.opencode', '<project>/opencode.json')],
+    permissions: [readPermission('~/.config/opencode', '~/.local/share/opencode', '<project>/.opencode', '<project>/opencode.json', '<project>/opencode.jsonc')],
     references: refs('Config', REF.opencodeConfig, 'Rules', REF.opencodeRules),
     sources: [
+      source('opencode.user.config-jsonc', 'user', 'file', ['capability'], '~/.config/opencode/opencode.jsonc', REF.opencodeConfig),
       source('opencode.user.config', 'user', 'file', ['capability'], '~/.config/opencode/opencode.json', REF.opencodeConfig),
       source('opencode.user.assets', 'user', 'directory', ['instruction', 'capability'], '~/.config/opencode', REF.opencodeConfig),
+      source('opencode.user.agents', 'user', 'directory', ['instruction'], '~/.config/opencode/agents', REF.opencodeConfig),
+      source('opencode.user.commands', 'user', 'directory', ['instruction'], '~/.config/opencode/commands', REF.opencodeConfig),
+      source('opencode.user.skills', 'user', 'directory', ['instruction'], '~/.config/opencode/skills', REF.opencodeConfig),
+      source('opencode.user.plugins', 'user', 'directory', ['capability'], '~/.config/opencode/plugins', REF.opencodePlugins),
+      source('opencode.project.config-jsonc', 'project', 'file', ['capability'], '<project>/opencode.jsonc', REF.opencodeConfig),
       source('opencode.project.config', 'project', 'file', ['capability'], '<project>/opencode.json', REF.opencodeConfig),
       source('opencode.project.assets', 'project', 'directory', ['instruction', 'capability'], '<project>/.opencode', REF.opencodeConfig),
+      source('opencode.project.agents', 'project', 'directory', ['instruction'], '<project>/.opencode/agents', REF.opencodeConfig),
+      source('opencode.project.commands', 'project', 'directory', ['instruction'], '<project>/.opencode/commands', REF.opencodeConfig),
+      source('opencode.project.skills', 'project', 'directory', ['instruction'], '<project>/.opencode/skills', REF.opencodeConfig),
+      source('opencode.project.plugins', 'project', 'directory', ['capability'], '<project>/.opencode/plugins', REF.opencodePlugins),
       source('opencode.project.agents-md', 'project', 'file', ['instruction'], '<project>/AGENTS.md', REF.opencodeRules),
+      source('opencode.user.auth', 'user', 'file', ['integration'], '~/.local/share/opencode/auth.json', REF.opencodeConfig, {
+        sensitivity: 'credential-presence-only',
+        maxBytes: 0
+      }),
       source('opencode.user.sessions-db', 'session', 'file', ['state'], '~/.local/share/opencode/opencode.db', REF.opencodeRepo, {
         stability: 'primary-source',
         sensitivity: 'sensitive-metadata-only',
@@ -175,7 +189,8 @@ export const PLANNED_AGENT_ADAPTER_DEFINITIONS: AgentAdapterDefinition[] = [
       ['mcp-server', 'capability', ['user', 'project']],
       ['plugin', 'capability', ['user', 'project']],
       ['session', 'state', ['session']],
-      ['debug', 'observability', ['user']]
+      ['debug', 'observability', ['user']],
+      ['credential', 'integration', ['user'], true]
     ])
   },
   {
