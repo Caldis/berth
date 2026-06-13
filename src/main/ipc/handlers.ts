@@ -7,6 +7,7 @@ import type {
   AgentScanSourceGroup,
   AssetRuntimeStatus,
   AssetSnapshot,
+  ScanEngineInfo,
   SearchResult,
   HealthCheck,
   HealthCheckRequest,
@@ -151,6 +152,10 @@ export function registerAssetHandlers(): void {
 
   ipcMain.handle('assets:status', (): AssetRuntimeStatus => {
     return getAssetRuntime().getStatus()
+  })
+
+  ipcMain.handle('assets:engine-info', (): ScanEngineInfo => {
+    return getAssetRuntime().getEngineInfo()
   })
 
   ipcMain.handle('assets:refresh', async (_event, opts: { wait?: boolean } = {}): Promise<AssetRuntimeStatus> => {

@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils'
 import { useAgentCapabilityPlugins } from '@/hooks/use-ipc'
 import { AgentCapabilityPluginsSection } from '@/components/settings/agent-capability-plugins-section'
 import { UpdateSection } from '@/components/settings/update-section'
+import { ScanEngineSettingsSection } from '@/components/settings/scan-engine-settings-section'
 
 function getNextRadioIndex(key: string, currentIndex: number, optionCount: number): number | null {
   if (optionCount <= 0) return null
@@ -244,6 +245,7 @@ export function SettingsContent({
         <h2 className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
           {t('settings.scanning')}
         </h2>
+        <ScanEngineSettingsSection />
         <div className="rounded-lg border border-border bg-card">
           <div className="flex items-center justify-between p-4">
             <div>

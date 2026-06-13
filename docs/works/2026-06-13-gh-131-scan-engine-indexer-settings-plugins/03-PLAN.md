@@ -4,10 +4,10 @@
 每个实现项必须有测试证据或明确例外理由。
 实现中若发现 debt 初估不准, 更新 INDEX.md `debt.estimate`, 并追加 `debt.revisions[]`。
 
-- [ ] 任务 1: 扫描引擎 Settings 入口 v1
+- [x] 任务 1: 扫描引擎 Settings 入口 v1
   - scope: `ScanEngineInfo` 类型、runtime 信息聚合、`assets:engine-info` IPC/preload/mock、Settings section、i18n。
   - tests: `pnpm vitest run tests/unit/agent-asset-runtime.test.ts tests/unit/ipc-contract.test.ts tests/renderer/settings-page.test.tsx`
-  - verify: Scanning 区顶部能看到版本、状态、索引资产数、索引文件数、错误数、最近刷新、真实只读控制项和手动 refresh; loading/error/disabled/focus 状态不破坏布局。
+  - verify: passed 2026-06-13; 另跑 `pnpm typecheck:node`, `pnpm typecheck:web`, `pnpm harness:check`。Scanning 区顶部能看到版本、状态、索引资产数、索引文件数、错误数、最近刷新、真实只读控制项和手动 refresh; loading/error/disabled/focus 状态由 renderer test 覆盖。
 
 - [ ] 任务 2: 扫描调度控制模型
   - scope: `ScanCoordinator` 增加 queue/reason/coalescing 状态; runtime 暴露 paused/cancelable capability; Settings 显示真实状态。

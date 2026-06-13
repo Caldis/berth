@@ -77,6 +77,42 @@ export const mockApi = {
       status: idleAssetRuntimeStatus
     }),
     status: async () => idleAssetRuntimeStatus,
+    engineInfo: async () => ({
+      engine: {
+        name: '@berth/scan-engine',
+        packageName: '@berth/scan-engine',
+        version: '0.1.0'
+      },
+      status: idleAssetRuntimeStatus,
+      snapshot: {
+        id: 'test-snapshot',
+        indexedAssets: 0,
+        indexedFiles: 0,
+        errors: 0,
+        sourceGroups: 0,
+        sourceRows: 0
+      },
+      controls: [
+        { id: 'manual-refresh' as const, value: 'available', editable: true, supported: true },
+        { id: 'watcher-debounce-ms' as const, value: 1000, unit: 'ms' as const, editable: false, supported: true },
+        { id: 'watcher-min-interval-ms' as const, value: 30000, unit: 'ms' as const, editable: false, supported: true },
+        { id: 'pause' as const, value: 'unsupported', unit: 'state' as const, editable: false, supported: false }
+      ],
+      capabilities: {
+        workerMode: 'one-shot' as const,
+        schedulerMode: 'single-flight' as const,
+        scopeMode: 'scan-on-miss' as const,
+        cacheMode: 'sqlite-swr' as const,
+        incrementalFileChanges: true,
+        pauseSupported: false,
+        cancelSupported: false,
+        writableSettingsSupported: false
+      },
+      limits: [
+        { id: 'metadata-only-sensitive-files' as const, level: 'info' as const, enabled: true },
+        { id: 'third-party-code-not-executed' as const, level: 'info' as const, enabled: true }
+      ]
+    }),
     refresh: async () => idleAssetRuntimeStatus,
     scanSources: async () => [],
     get: async () => null,

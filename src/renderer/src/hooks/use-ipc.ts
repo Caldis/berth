@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import type { AgentView, Asset, AssetStats, SessionSummary, UsageSummary } from '@shared/types/asset'
-import type { SessionDetailResult, SessionReplayResult, HealthCheck } from '@shared/types/ipc'
+import type { SessionDetailResult, SessionReplayResult, HealthCheck, ScanEngineInfo } from '@shared/types/ipc'
 import type {
   AgentCapabilityPlugin,
   AgentCapabilityPluginListResult,
@@ -221,6 +221,81 @@ export function useAssets(): {
     error: runtime.error,
     retry: runtime.retry
   }
+}
+
+export function useScanEngineInfo(): {
+  info: ScanEngineInfo | null
+  loading: boolean
+  refreshing: boolean
+  error: string | null
+  reload: () => void
+  refreshIndex: () => void
+} {
+  const mountedRef = useRef(false)
+  const [info, setInfo] = useState<ScanEngineInfo | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [reloadNonce, setReloadNonce] = useState(0)
+
+  const reload = useCallback(() => {
+    setReloadNonce((n) => n + 1)
+  }, [])
+
+  const loadInfo = useCallback(async (): Promise<void> => {
+    if (!window.api?.assets?.engineInfo) {
+      setLoading(false)
+      setError('assets.engineInfo is unavailable')
+      return
+    }
+    try {
+      const nextInfo = await window.api.assets.engineInfo()
+      if (!mountedRef.current) return
+      setInfo(nextInfo)
+      setError(null)
+    } catch (err) {
+      if (!mountedRef.current) return
+      setError(err instanceof Error ? err.message : String(err))
+    } finally {
+      if (!mountedRef.current) return
+      setLoading(false)
+    }
+  }, [])
+
+  const refreshIndex = useCallback(() => {
+    if (!window.api?.assets?.refresh) return
+    setRefreshing(true)
+    void window.api.assets
+      .refresh({ wait: false })
+      .then(() => loadInfo())
+      .catch((err) => {
+        if (!mountedRef.current) return
+        setError(err instanceof Error ? err.message : String(err))
+      })
+      .finally(() => {
+        if (!mountedRef.current) return
+        setRefreshing(false)
+      })
+  }, [loadInfo])
+
+  useEffect(() => {
+    mountedRef.current = true
+    setLoading(info === null)
+    void loadInfo()
+    const unsubscribeChanged = window.api?.assets?.onChanged?.(() => {
+      void loadInfo()
+    })
+    const unsubscribeProgress = window.api?.assets?.onProgress?.(() => {
+      void loadInfo()
+    })
+    return () => {
+      mountedRef.current = false
+      if (unsubscribeChanged) unsubscribeChanged()
+      if (unsubscribeProgress) unsubscribeProgress()
+    }
+  }, [loadInfo, reloadNonce])
+
+  return { info, loading, refreshing, error, reload, refreshIndex }
 }
 
 export function useSessions(opts?: {

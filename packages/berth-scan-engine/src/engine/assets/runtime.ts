@@ -10,6 +10,7 @@ import type {
   HealthCheckRequest,
   SearchResult,
   SessionListResult,
+  ScanEngineInfo,
   ScanResult
 } from '@shared/types/ipc'
 import type { AppScopeSelection, ProjectScopeCandidate } from '@shared/scope'
@@ -26,6 +27,7 @@ import type { SnapshotStore } from './snapshot-store'
 import { SnapshotSelectorCache, type AssetSelectorCache } from './selector-cache'
 import { ProjectSnapshotCache, projectSnapshotKey } from './project-snapshot-cache'
 import { ScanCoordinator, type AssetRuntimeScanner, type ScanOutcome, type ScanSink } from './scan-coordinator'
+import { SCAN_ENGINE_NAME, SCAN_ENGINE_VERSION } from '../../index'
 
 // Scanner contract moved to scan-coordinator.ts (GH-122); re-exported so the
 // existing import surface (worker-host, tests) stays unchanged.
@@ -142,6 +144,52 @@ export class AgentAssetRuntime {
 
   getSnapshot(): AssetSnapshot {
     return this.snapshot
+  }
+
+  getEngineInfo(): ScanEngineInfo {
+    const sourceRows = countScanSourceRows(this.snapshot.sources)
+    return {
+      engine: {
+        name: SCAN_ENGINE_NAME,
+        packageName: SCAN_ENGINE_NAME,
+        version: SCAN_ENGINE_VERSION
+      },
+      status: this.status,
+      snapshot: {
+        id: this.snapshot.id,
+        indexedAssets: this.snapshot.assets.length,
+        indexedFiles: countIndexedFiles(this.snapshot.assets),
+        errors: this.snapshot.errors.length,
+        sourceGroups: this.snapshot.sources.length,
+        sourceRows
+      },
+      controls: [
+        { id: 'manual-refresh', value: 'available', editable: true, supported: true },
+        { id: 'watcher-debounce-ms', value: WATCHER_REFRESH_DEBOUNCE_MS, unit: 'ms', editable: false, supported: true },
+        { id: 'watcher-min-interval-ms', value: WATCHER_REFRESH_MIN_INTERVAL_MS, unit: 'ms', editable: false, supported: true },
+        { id: 'worker-mode', value: 'one-shot', unit: 'mode', editable: false, supported: true },
+        { id: 'scheduler-mode', value: 'single-flight', unit: 'mode', editable: false, supported: true },
+        { id: 'scope-fallback', value: 'scan-on-miss', unit: 'mode', editable: false, supported: true },
+        { id: 'pause', value: 'unsupported', unit: 'state', editable: false, supported: false },
+        { id: 'cancel', value: 'unsupported', unit: 'state', editable: false, supported: false },
+        { id: 'persisted-settings', value: 'unsupported', unit: 'state', editable: false, supported: false }
+      ],
+      capabilities: {
+        workerMode: 'one-shot',
+        schedulerMode: 'single-flight',
+        scopeMode: 'scan-on-miss',
+        cacheMode: 'sqlite-swr',
+        incrementalFileChanges: true,
+        pauseSupported: false,
+        cancelSupported: false,
+        writableSettingsSupported: false
+      },
+      limits: [
+        { id: 'metadata-only-sensitive-files', level: 'info', enabled: true },
+        { id: 'third-party-code-not-executed', level: 'info', enabled: true },
+        { id: 'unsupported-plugin-bundled-incremental', level: 'warning', enabled: true }
+      ]
+    }
   }
 
   getScanResult(): ScanResult {
@@ -540,6 +588,25 @@ function computeAssetStats(assets: Asset[]): AssetStats {
 function assetSourceKey(asset: Asset): string | undefined {
   const key = asset.meta?.sourceKey
   return typeof key === 'string' ? key : undefined
+}
+
+function countIndexedFiles(assets: Asset[]): number {
+  const keys = new Set<string>()
+  for (const asset of assets) {
+    const key = assetSourceKey(asset) ?? asset.path
+    if (key) keys.add(key)
+  }
+  return keys.size
+}
+
+function countScanSourceRows(groups: AgentScanSourceGroup[]): number {
+  const keys = new Set<string>()
+  for (const group of groups) {
+    for (const source of [...group.roots, ...(group.sources ?? [])]) {
+      keys.add(source.path)
+    }
+  }
+  return keys.size
 }
 
 let runtimeInstance: AgentAssetRuntime | null = null

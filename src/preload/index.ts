@@ -39,6 +39,7 @@ const api = {
   assets: {
     snapshot: () => invoke('assets:snapshot'),
     status: () => invoke('assets:status'),
+    engineInfo: () => invoke('assets:engine-info'),
     refresh: (opts?: { wait?: boolean }) => invoke('assets:refresh', opts),
     scanSources: () => invoke('assets:scan-sources'),
     get: (id: string) => invoke('assets:get', id),

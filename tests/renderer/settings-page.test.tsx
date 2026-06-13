@@ -10,8 +10,50 @@ describe('SettingsContent page chrome', () => {
     localStorage.clear()
     document.documentElement.className = ''
     await i18n.changeLanguage('en')
+    window.api.assets.engineInfo = vi.fn(async () => ({
+      engine: {
+        name: '@berth/scan-engine',
+        packageName: '@berth/scan-engine',
+        version: '0.1.0'
+      },
+      status: {
+        state: 'ready',
+        reason: 'startup',
+        stale: false,
+        lastCompletedAt: '2026-06-13T02:00:00.000Z'
+      },
+      snapshot: {
+        id: 'snapshot-1',
+        indexedAssets: 12,
+        indexedFiles: 7,
+        errors: 1,
+        sourceGroups: 2,
+        sourceRows: 5
+      },
+      controls: [
+        { id: 'manual-refresh', value: 'available', editable: true, supported: true },
+        { id: 'watcher-debounce-ms', value: 1000, unit: 'ms', editable: false, supported: true },
+        { id: 'watcher-min-interval-ms', value: 30000, unit: 'ms', editable: false, supported: true },
+        { id: 'pause', value: 'unsupported', editable: false, supported: false }
+      ],
+      capabilities: {
+        workerMode: 'one-shot',
+        schedulerMode: 'single-flight',
+        scopeMode: 'scan-on-miss',
+        cacheMode: 'sqlite-swr',
+        incrementalFileChanges: true,
+        pauseSupported: false,
+        cancelSupported: false,
+        writableSettingsSupported: false
+      },
+      limits: [
+        { id: 'metadata-only-sensitive-files', level: 'info', enabled: true },
+        { id: 'third-party-code-not-executed', level: 'info', enabled: true }
+      ]
+    }))
     window.api.agentPlugins.list = vi.fn(async () => ({ plugins: [], manifests: [] }))
     window.api.assets.scanSources = vi.fn(async () => [])
+    window.api.assets.refresh = vi.fn(async () => ({ state: 'scanning', reason: 'manual', stale: true }))
     window.api.shell.openExternal = vi.fn(async () => {})
     window.api.theme.set = vi.fn(async () => {})
   })
@@ -64,6 +106,34 @@ describe('SettingsContent page chrome', () => {
     expect(switches).toHaveLength(1)
     expect(switches[0]).toHaveAccessibleName('Download updates automatically')
     expect(screen.queryByRole('switch', { name: /advanced/i })).not.toBeInTheDocument()
+  })
+
+  it('shows scan engine status and current control surface', async () => {
+    renderSettingsContent()
+
+    await screen.findByText('Scan Engine')
+    expect(screen.getByText('@berth/scan-engine')).toBeInTheDocument()
+    expect(screen.getByText('v0.1.0')).toBeInTheDocument()
+    expect(screen.getByText('Ready')).toBeInTheDocument()
+    expect(screen.getByText('12 assets')).toBeInTheDocument()
+    expect(screen.getByText('7 files')).toBeInTheDocument()
+    expect(screen.getByText('1 error')).toBeInTheDocument()
+    expect(screen.getByText('Watcher debounce')).toBeInTheDocument()
+    expect(screen.getByText('1,000 ms')).toBeInTheDocument()
+    expect(screen.getByText('Pause scanning')).toBeInTheDocument()
+    expect(screen.getByText('Not supported yet')).toBeInTheDocument()
+  })
+
+  it('refreshes the scan engine from settings', async () => {
+    renderSettingsContent()
+
+    const refreshIndex = await screen.findByRole('button', { name: 'Refresh index' })
+    fireEvent.click(refreshIndex)
+
+    await waitFor(() => {
+      expect(window.api.assets.refresh).toHaveBeenCalledWith({ wait: false })
+    })
+    expect(window.api.assets.engineInfo).toHaveBeenCalled()
   })
 
   it('localizes the plugin registry copy in Chinese', async () => {

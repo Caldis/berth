@@ -76,6 +76,69 @@ export interface AssetRuntimeStatus {
   error?: string
 }
 
+export type ScanEngineControlId =
+  | 'manual-refresh'
+  | 'watcher-debounce-ms'
+  | 'watcher-min-interval-ms'
+  | 'worker-mode'
+  | 'scheduler-mode'
+  | 'scope-fallback'
+  | 'pause'
+  | 'cancel'
+  | 'persisted-settings'
+
+export type ScanEngineControlUnit = 'ms' | 'mode' | 'state'
+
+export interface ScanEngineControlDescriptor {
+  id: ScanEngineControlId
+  value: string | number | boolean
+  unit?: ScanEngineControlUnit
+  editable: boolean
+  supported: boolean
+}
+
+export interface ScanEngineCapabilitySummary {
+  workerMode: 'one-shot' | 'long-lived'
+  schedulerMode: 'single-flight' | 'priority-queue'
+  scopeMode: 'filter-first' | 'scan-on-miss'
+  cacheMode: 'sqlite-swr'
+  incrementalFileChanges: boolean
+  pauseSupported: boolean
+  cancelSupported: boolean
+  writableSettingsSupported: boolean
+}
+
+export type ScanEngineLimitId =
+  | 'metadata-only-sensitive-files'
+  | 'third-party-code-not-executed'
+  | 'unsupported-plugin-bundled-incremental'
+
+export interface ScanEngineLimitDescriptor {
+  id: ScanEngineLimitId
+  level: 'info' | 'warning'
+  enabled: boolean
+}
+
+export interface ScanEngineInfo {
+  engine: {
+    name: string
+    packageName: string
+    version: string
+  }
+  status: AssetRuntimeStatus
+  snapshot: {
+    id: string
+    indexedAssets: number
+    indexedFiles: number
+    errors: number
+    sourceGroups: number
+    sourceRows: number
+  }
+  controls: ScanEngineControlDescriptor[]
+  capabilities: ScanEngineCapabilitySummary
+  limits: ScanEngineLimitDescriptor[]
+}
+
 export interface AssetSnapshot {
   id: string
   projectDir?: string
@@ -421,6 +484,7 @@ export interface IpcChannels {
   'platform:info': { args: []; result: PlatformInfo }
   'assets:snapshot': { args: []; result: AssetSnapshot }
   'assets:status': { args: []; result: AssetRuntimeStatus }
+  'assets:engine-info': { args: []; result: ScanEngineInfo }
   'assets:refresh': { args: [{ wait?: boolean }?]; result: AssetRuntimeStatus }
   'assets:scan-sources': { args: []; result: AgentScanSourceGroup[] }
   'agent-plugins:list': { args: []; result: AgentCapabilityPluginListResult }

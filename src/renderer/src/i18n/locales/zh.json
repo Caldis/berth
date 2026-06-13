@@ -1452,6 +1452,65 @@
     },
     "language": "语言",
     "scanning": "扫描",
+    "scanEngine": {
+      "title": "扫描引擎",
+      "description": "本地索引运行时、当前扫描状态和已支持的控制项。",
+      "refreshIndex": "刷新索引",
+      "loading": "正在加载扫描引擎…",
+      "loadError": "无法加载扫描引擎详情",
+      "lastCompleted": "最近完成: {{value}}",
+      "controls": "控制项",
+      "editable": "可调整",
+      "readOnly": "只读",
+      "unsupported": "暂不支持",
+      "status": {
+        "idle": "空闲",
+        "scanning": "扫描中",
+        "ready": "就绪",
+        "stale": "旧数据",
+        "error": "错误"
+      },
+      "metrics": {
+        "status": "状态",
+        "assets": "资产",
+        "files": "文件",
+        "errors": "错误",
+        "sources": "来源",
+        "assetsValue_other": "{{formatted}} 项资产",
+        "filesValue_other": "{{formatted}} 个文件",
+        "errorsValue_other": "{{formatted}} 个错误",
+        "sourcesValue_other": "{{formatted}} 个来源"
+      },
+      "values": {
+        "available": "可用",
+        "unsupported": "不支持",
+        "one-shot": "单次 worker",
+        "single-flight": "单任务合并",
+        "scan-on-miss": "缓存缺失时扫描"
+      },
+      "controlLabels": {
+        "manual-refresh": "手动刷新",
+        "watcher-debounce-ms": "监听防抖",
+        "watcher-min-interval-ms": "监听最小间隔",
+        "worker-mode": "Worker 模式",
+        "scheduler-mode": "调度模式",
+        "scope-fallback": "项目范围兜底",
+        "pause": "暂停扫描",
+        "cancel": "取消扫描",
+        "persisted-settings": "持久化设置"
+      },
+      "controlDescriptions": {
+        "manual-refresh": "从设置里发起一次扫描。",
+        "watcher-debounce-ms": "文件监听回退刷新开始前的延迟。",
+        "watcher-min-interval-ms": "两次文件监听回退刷新之间的最小间隔。",
+        "worker-mode": "当前运行时使用的 worker 生命周期。",
+        "scheduler-mode": "当前刷新合并模型。",
+        "scope-fallback": "项目范围没有缓存快照时的行为。",
+        "pause": "计划中的调度控制项。",
+        "cancel": "计划中的调度控制项。",
+        "persisted-settings": "计划中的可调整扫描策略存储。"
+      }
+    },
     "agentPlugins": "Agent 能力插件",
     "agentPluginsEmpty": "插件注册表当前不可用。",
     "agentPluginsLoadError": "插件注册表加载失败: {{error}}",

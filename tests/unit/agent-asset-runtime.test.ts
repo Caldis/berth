@@ -96,6 +96,54 @@ describe('AgentAssetRuntime', () => {
     })
   })
 
+  it('reports scan engine info, indexed source files, and current controls', async () => {
+    const skillA = fileAsset('skill-a', 'source-a', 'skill')
+    const skillB = fileAsset('skill-b', 'source-a', 'skill')
+    const session = sessionAsset('session-1')
+    const scanner = createScanner({
+      assets: [skillA, skillB, session],
+      stats: { ...emptyStats, skills: 2, sessions: 1 },
+      errors: [{ path: '/broken.json', type: 'parse', message: 'invalid json' }]
+    })
+    const runtime = createRuntime(scanner)
+
+    await runtime.refresh({ reason: 'startup', wait: true })
+
+    const info = runtime.getEngineInfo()
+    expect(info.engine).toEqual({
+      name: '@berth/scan-engine',
+      packageName: '@berth/scan-engine',
+      version: '0.1.0'
+    })
+    expect(info.status).toMatchObject({ state: 'ready', reason: 'startup', stale: false })
+    expect(info.snapshot).toMatchObject({
+      id: 'snapshot-1',
+      indexedAssets: 3,
+      indexedFiles: 2,
+      errors: 1,
+      sourceGroups: 1,
+      sourceRows: 0
+    })
+    expect(info.capabilities).toMatchObject({
+      workerMode: 'one-shot',
+      schedulerMode: 'single-flight',
+      scopeMode: 'scan-on-miss',
+      cacheMode: 'sqlite-swr',
+      incrementalFileChanges: true,
+      pauseSupported: false,
+      cancelSupported: false,
+      writableSettingsSupported: false
+    })
+    expect(info.controls).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: 'manual-refresh', editable: true, supported: true }),
+        expect.objectContaining({ id: 'watcher-debounce-ms', value: 1000, unit: 'ms', editable: false }),
+        expect.objectContaining({ id: 'watcher-min-interval-ms', value: 30000, unit: 'ms', editable: false }),
+        expect.objectContaining({ id: 'pause', supported: false, editable: false })
+      ])
+    )
+  })
+
   it('reuses an in-flight scan and publishes a ready snapshot', async () => {
     const deferred = createDeferred<ScanResult>()
     const scanner: AssetRuntimeScanner = {
