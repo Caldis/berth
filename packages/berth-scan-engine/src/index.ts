@@ -13,3 +13,11 @@ export const SCAN_ENGINE_VERSION = '0.1.0'
 
 export { engineCommandManifest } from './capabilities'
 export type { EngineCommand } from './capabilities'
+export type {
+  AgentAdapter,
+  AgentAdapterDefinition,
+  AgentAdapterSourcePolicy,
+  AgentAdapterSourceSensitivity,
+  AgentAdapterSourceStability,
+  AgentAdapterVersionProbe
+} from './adapter-api'

@@ -68,6 +68,9 @@ describe('agent adapter registry', () => {
         code: 'example.user.config'
       })
     ])
+    expect('scanAssets' in manifestAdapter!).toBe(false)
+    expect('watchAssets' in manifestAdapter!).toBe(false)
+    expect('resolveRelations' in manifestAdapter!).toBe(false)
   })
 
   it('does not register manifests blocked by write or execute permissions', () => {

@@ -23,6 +23,7 @@
   - scope: 新 adapter declaration contract; package export; Claude/Codex source declarations 迁移; 移除 manifest adapter 旧方法残留。
   - tests: `pnpm vitest run tests/unit/agent-asset-runtime.test.ts tests/unit/watch-wiring.test.ts` + 新 adapter API tests。
   - verify: engine 通用文件不再直接依赖第三方 parser; 内置 Claude/Codex 行为不回退。
+  - progress 2026-06-13: added public adapter API type export and removed stale manifest adapter methods; passed `pnpm vitest run tests/unit/agent-adapter-registry.test.ts` and `pnpm typecheck:node`。
 
 - [ ] 任务 5: 新 agent source declarations
   - scope: Gemini CLI、GitHub Copilot CLI、Cursor、OpenCode、OpenClaw、Hermes Agent 的 home resolver、source declaration、敏感文件策略、version probe 描述与 fixtures。

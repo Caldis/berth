@@ -8,12 +8,9 @@ import type {
 import type {
   AgentAdapter,
   Asset,
-  AssetCategory,
   AssetScope,
   DetectResult,
-  Relation,
-  ScanRoot,
-  WatchEvent
+  ScanRoot
 } from '@shared/types/asset'
 import { ClaudeCodeAdapter } from '../adapters/claude-code'
 import { CodexAdapter } from '../adapters/codex'
@@ -103,18 +100,6 @@ export class ManifestAgentAdapter implements AgentAdapter {
       assets: [this.toPluginAsset()],
       errors: []
     }
-  }
-
-  async scanAssets(category: AssetCategory): Promise<Asset[]> {
-    return category === 'capability' ? [this.toPluginAsset()] : []
-  }
-
-  watchAssets(_callback: (event: WatchEvent) => void): { dispose(): void } {
-    return { dispose: () => undefined }
-  }
-
-  async resolveRelations(_asset: Asset): Promise<Relation[]> {
-    return []
   }
 
   private toPluginAsset(): Asset {
