@@ -317,10 +317,15 @@ describe('CodexAdapter', () => {
 
     expect(sources).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({
-          path: sessionsDir,
-          code: 'codex.user.sessions',
-          status: 'scanned'
+      expect.objectContaining({
+        path: path.join(codexDir, 'session_index.jsonl'),
+        code: 'codex.user.session-index',
+        status: 'scanned'
+      }),
+      expect.objectContaining({
+        path: sessionsDir,
+        code: 'codex.user.sessions',
+        status: 'scanned'
         }),
         expect.objectContaining({
           path: archivedDir,

@@ -105,6 +105,7 @@ const CODEX_AGENT_SOURCE_CODES: ScanSourceCode[] = [
 ]
 
 const CODEX_SESSION_SOURCE_CODES: ScanSourceCode[] = [
+  'codex.user.session-index',
   'codex.user.sessions',
   'codex.session.archived-sessions'
 ]
@@ -295,7 +296,7 @@ const CODEX_ASSET_DESCRIPTORS: AgentCapabilityPluginAssetDescriptor[] = [
     'session',
     'state',
     ['session'],
-    ['codex.user.sessions', 'codex.session.archived-sessions']
+    CODEX_SESSION_SOURCE_CODES
   )
 ]
 

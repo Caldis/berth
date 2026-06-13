@@ -64,6 +64,7 @@ export class CodexAdapter implements AgentAdapter {
       addRoot(roots, path.join(codexDir, 'AGENTS.md'), 'codex.user.agents-md')
       addRoot(roots, path.join(codexDir, 'agents'), 'codex.user.agents-directory')
       addRoot(roots, path.join(codexDir, 'skills'), 'codex.user.codex-home-skills')
+      addRoot(roots, path.join(codexDir, 'session_index.jsonl'), 'codex.user.session-index')
       addRoot(roots, path.join(codexDir, 'sessions'), 'codex.user.sessions')
       addRoot(roots, path.join(codexDir, 'archived_sessions'), 'codex.session.archived-sessions')
     }

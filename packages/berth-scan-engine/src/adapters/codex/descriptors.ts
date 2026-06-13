@@ -9,6 +9,7 @@ export const CODEX_SOURCE_DESCRIPTORS: AgentCapabilityPluginSourceDescriptor[] =
   sourceDescriptor('codex.user.agents-md', 'user', 'file', ['instruction'], '~/.codex/AGENTS.md'),
   sourceDescriptor('codex.user.agents-directory', 'user', 'directory', ['instruction'], '~/.codex/agents'),
   sourceDescriptor('codex.user.codex-home-skills', 'user', 'directory', ['instruction'], '~/.codex/skills'),
+  sourceDescriptor('codex.user.session-index', 'user', 'file', ['state'], '~/.codex/session_index.jsonl'),
   sourceDescriptor('codex.user.sessions', 'user', 'directory', ['state'], '~/.codex/sessions'),
   sourceDescriptor('codex.session.archived-sessions', 'session', 'directory', ['state'], '~/.codex/archived_sessions'),
   sourceDescriptor('codex.user.shared-skills', 'user', 'directory', ['instruction'], '~/.agents/skills'),

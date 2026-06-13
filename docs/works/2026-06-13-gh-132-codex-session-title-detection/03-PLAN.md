@@ -10,9 +10,9 @@
 - [x] 任务 2: 在 Codex adapter 中按 Codex home 接入 `session_index.jsonl`, active/archived session 都使用索引标题
   - tests: 更新 `tests/unit/codex-adapter.test.ts`, 让 active 和 archived fixture 在没有 `thread_name_updated` 时显示 index title。
   - verify: `pnpm test -- tests/unit/codex-session-parser.test.ts tests/unit/codex-adapter.test.ts` 通过; UI 验收项为 `SessionSummary.title` 数据源修复, renderer 无需特判。
-- [ ] 任务 3: 同步 source descriptor、source coverage、source copy 和相关测试
+- [x] 任务 3: 同步 source descriptor、source coverage、source copy 和相关测试
   - tests: 更新 `tests/unit/agent-capability-plugins.test.ts`; 必要时更新 renderer settings 测试。
-  - verify: `pnpm test -- tests/unit/agent-capability-plugins.test.ts`; `pnpm typecheck:node`; `pnpm typecheck:web`; `pnpm harness:check --work docs/works/2026-06-13-gh-132-codex-session-title-detection`; UI 验收项为设置/插件来源文案不暴露 raw key。
+  - verify: `pnpm test -- tests/unit/codex-adapter.test.ts tests/unit/agent-capability-plugins.test.ts tests/renderer/settings-agent-plugins.test.tsx` 通过; `pnpm typecheck:node`; `pnpm typecheck:web`; `pnpm harness:check --work docs/works/2026-06-13-gh-132-codex-session-title-detection`; UI 验收项为设置/插件来源文案不暴露 raw key。
 
 ## verify 回写
 verify 不通过项作为新任务追加于此, phase 退回 implement。

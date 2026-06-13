@@ -26,6 +26,7 @@ const codexDescriptorCodes: ScanSourceCode[] = [
   'codex.user.agents-md',
   'codex.user.agents-directory',
   'codex.user.codex-home-skills',
+  'codex.user.session-index',
   'codex.user.sessions',
   'codex.session.archived-sessions',
   'codex.user.shared-skills',
@@ -589,7 +590,7 @@ describe('agent capability plugin registry', () => {
       .toMatchObject({
         category: 'state',
         scopes: ['session'],
-        sourceCodes: ['codex.user.sessions', 'codex.session.archived-sessions']
+        sourceCodes: ['codex.user.session-index', 'codex.user.sessions', 'codex.session.archived-sessions']
       })
   })
 

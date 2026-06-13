@@ -57,6 +57,10 @@ const EN_SOURCE_COPY = {
     title: 'Shared user skills directory',
     summary: 'Includes user-level Codex skills.'
   },
+  'codex.user.session-index': {
+    title: 'Codex session index',
+    summary: 'Includes Codex thread names and session index metadata.'
+  },
   'codex.user.sessions': {
     title: 'Codex session history directory',
     summary: 'Includes Codex rollout session history.'
@@ -146,6 +150,10 @@ const ZH_SOURCE_COPY = {
   'codex.user.shared-skills': {
     title: '共享用户 skills 目录',
     summary: '包含用户级 Codex skills。'
+  },
+  'codex.user.session-index': {
+    title: 'Codex 会话索引',
+    summary: '包含 Codex 线程名称和会话索引元数据。'
   },
   'codex.user.sessions': {
     title: 'Codex 会话历史目录',

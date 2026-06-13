@@ -26,6 +26,7 @@ export type BuiltInScanSourceCode =
   | 'codex.user.agents-directory'
   | 'codex.user.codex-home-skills'
   | 'codex.user.shared-skills'
+  | 'codex.user.session-index'
   | 'codex.user.sessions'
   | 'codex.session.archived-sessions'
   | 'codex.project.agents-md'
