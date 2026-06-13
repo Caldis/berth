@@ -246,7 +246,6 @@ if (!gotTheLock) {
     const updatePreferences = readUpdatePreferences(userDataDir)
     const updaterController = createUpdaterController({
       autoUpdater,
-      platform: process.platform,
       isPackaged: app.isPackaged,
       preferences: updatePreferences,
       emit: (state) => {

@@ -4,30 +4,30 @@
 
 ## Phase A — 运行时代码 + 开关 + 解除 platformLimited (本机可测)
 
-- [ ] **A1. 扩展 UpdatePreferences 数据契约 + 偏好持久化** [AC1,AC2,AC4,D5]
+- [x] **A1. 扩展 UpdatePreferences 数据契约 + 偏好持久化** [AC1,AC2,AC4,D5] — 提交 2bd0e99(增量)+本提交(删 platformLimited); update-preferences.test 5 用例绿
   - 改 `packages/berth-scan-engine/src/shared/types/ipc.ts`: `UpdatePreferences` 加 `autoCheck`、`allowPrerelease`; `UpdateState` 删 `platformLimited?` + 更新 JSDoc。
   - 改 `src/main/update-preferences.ts`: `DEFAULT_UPDATE_PREFERENCES = {autoCheck:true, autoDownload:false, allowPrerelease:false}`; `readUpdatePreferences` 改 per-field 布尔合并 (旧文件向后兼容), 损坏/非对象→全默认。
   - tests: 扩 `tests/unit/update-preferences.test.ts` — 三字段默认值; 旧 `{autoDownload:true}` → 三字段 (新字段默认); 损坏兜底。`pnpm test update-preferences` 绿。
   - verify: 不适用 (非 UI)。
 
-- [ ] **A2. updater 控制器: allowPrerelease 接线 + 移除 darwin 降级** [AC2,AC6,D2]
+- [x] **A2. updater 控制器: allowPrerelease 接线 + 移除 darwin 降级** [AC2,AC6,D2] — limited/withLimit/platform 已移除; updater-controller.test 7 用例绿 (含"所有平台真实 download/install")
   - 改 `src/main/updater.ts`: `UpdaterLike` 加 `allowPrerelease`; 构造设 `allowPrerelease`/`autoDownload` (去 `!limited`); 删 `limited`/`withLimit`/download&install 守卫; `applyPreferences` 设两字段。
   - tests: 改 `tests/unit/updater-controller.test.ts` — applyPreferences 设 autoDownload+allowPrerelease; 构造 honor prefs.allowPrerelease; 删 "darwin degradation" 用例, 新增 "darwin 走真实 download/install"; 事件归一化/error 用例保留。`pnpm test updater-controller` 绿。
   - verify: 不适用 (非 UI)。
 
-- [ ] **A3. index.ts 启动检查门控 autoCheck** [AC1,D3]
+- [x] **A3. index.ts 启动检查门控 autoCheck** [AC1,D3] — `if (updatePreferences.autoCheck)` 门控; tests:not needed (electron wiring), 偏好持久化已单测
   - 改 `src/main/index.ts:261`: `if (prefs.autoCheck) setTimeout(...)` (复用已读 prefs)。
   - tests: `not needed - electron 启动 wiring 不可单测`; 替代验证: A1 偏好持久化已单测 + 本机 dev 启动观察 (关闭后无启动检查事件)。
   - verify: 不适用 (非 UI 视觉)。
 
-- [ ] **A4. renderer hook + 设置 UI 两开关 + i18n** [AC3,AC6]
+- [x] **A4. renderer hook + 设置 UI 两开关 + i18n** [AC3,AC6] — setPreference 合并; 三开关 (auto-check/auto-download/beta) + en/zh; platformLimited 分支/goToDownloads 已删; settings-update + settings-page 测试绿 (verify 阶段截图待用户确认)
   - 改 `src/renderer/src/hooks/use-update.ts`: 初始 prefs 全默认; `setAutoDownload`→`setPreference(patch)` 函数式合并持久化。
   - 改 `src/renderer/src/components/settings/update-section.tsx`: 加 `update-auto-check`、`update-beta` 两 Switch 行 (同构 autoDownload 行); 删 platformLimited 分支/`update-go-to-downloads`/`RELEASES_URL`/孤儿 import; 三开关用 setPreference。
   - 改 `src/renderer/src/i18n/locales/{en,zh}.json`: 加 `settings.update.autoCheck`/`beta`, 删 `goToDownloads`。
   - tests: 改 `tests/renderer/settings-update.test.tsx` — mock getPreferences 返回三字段; 断言三开关存在; 切换调用 setPreferences 且 payload 正确; available 恒显真实 download (删 platformLimited→link 用例)。`pnpm test settings-update` 绿。
   - verify: 界面质量 — 三开关同构密度/HeroUI 一致/aria-label; available 真实 download; verify 阶段截图请用户确认更新区块新布局。
 
-- [ ] **A5. Phase A 全量门禁** [AC4,AC8]
+- [x] **A5. Phase A 全量门禁** [AC4,AC8] — typecheck + lint + 1128 test 全绿 (含 ipc-contract 通道键集不变)
   - `pnpm lint && pnpm typecheck && pnpm test` (含 ipc-contract 通道键集不变); `pnpm --filter @berth/scan-engine typecheck/test` 若涉及。
   - tests: 全套绿即证据。
   - verify: 不适用。

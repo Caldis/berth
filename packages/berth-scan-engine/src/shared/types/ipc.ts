@@ -553,16 +553,13 @@ export interface UpdatePreferences {
 }
 
 /** Aggregated auto-update state pushed over the single `update:state` event
- * (GH-124). `platformLimited` marks the unsigned-macOS degradation: checking
- * works, download/install are unavailable (electron-builder: "macOS application
- * must be signed in order for auto updating to work"). */
+ * (GH-124). All platforms (incl. signed macOS, GH-134) run real download/install. */
 export interface UpdateState {
   phase: 'idle' | 'checking' | 'available' | 'not-available' | 'downloading' | 'downloaded' | 'error'
   version?: string
   notes?: string
   percent?: number
   error?: string
-  platformLimited?: boolean
 }
 
 /** Events pushed from main → renderer。payload 必须对实发 site 核验照实:

@@ -1884,7 +1884,6 @@
       "downloaded": "Update {{version}} ready to install.",
       "installRestart": "Restart & install",
       "download": "Download update",
-      "goToDownloads": "Go to downloads",
       "error": "Update check failed: {{message}}",
       "autoCheck": "Check for updates on launch",
       "autoDownload": "Download updates automatically",

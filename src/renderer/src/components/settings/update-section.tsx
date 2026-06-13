@@ -3,12 +3,10 @@ import { Download, RefreshCw } from 'lucide-react'
 import { Button, Switch } from '@/components/ui'
 import { useUpdate } from '@/hooks/use-update'
 
-const RELEASES_URL = 'https://github.com/Caldis/berth/releases'
-
 /**
- * GH-124: in-card update block under Settings → About. Covers the full
- * update:state machine; on unsigned macOS (platformLimited) download/install
- * are replaced by a link to the releases page.
+ * GH-124/GH-134: in-card update block under Settings → About. Covers the full
+ * update:state machine plus the autoCheck / autoDownload / beta preference
+ * switches. All platforms (incl. signed macOS) run real download/install.
  */
 export function UpdateSection(): React.JSX.Element {
   const { t } = useTranslation()
@@ -42,18 +40,7 @@ export function UpdateSection(): React.JSX.Element {
           {statusText()}
         </p>
         <div className="flex shrink-0 items-center gap-2">
-          {state.phase === 'available' && state.platformLimited && (
-            <Button
-              size="sm"
-              variant="flat"
-              startContent={<Download className="h-3.5 w-3.5" />}
-              onPress={() => void window.api?.shell.openExternal(RELEASES_URL)}
-              data-testid="update-go-to-downloads"
-            >
-              {t('settings.update.goToDownloads')}
-            </Button>
-          )}
-          {state.phase === 'available' && !state.platformLimited && (
+          {state.phase === 'available' && (
             <Button
               size="sm"
               color="primary"
@@ -64,7 +51,7 @@ export function UpdateSection(): React.JSX.Element {
               {t('settings.update.download')}
             </Button>
           )}
-          {state.phase === 'downloaded' && !state.platformLimited && (
+          {state.phase === 'downloaded' && (
             <Button size="sm" color="primary" onPress={install} data-testid="update-install">
               {t('settings.update.installRestart')}
             </Button>

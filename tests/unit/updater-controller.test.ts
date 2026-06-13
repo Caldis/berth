@@ -2,9 +2,9 @@ import { describe, it, expect, vi } from 'vitest'
 import { createUpdaterController, type UpdaterLike } from '../../src/main/updater'
 import type { UpdateState } from '@shared/types/ipc'
 
-// GH-124: the controller normalizes electron-updater events into the single
-// update:state payload, applies preferences, and enforces the unsigned-macOS
-// degradation (download/install refused with platformLimited).
+// GH-124/GH-134: the controller normalizes electron-updater events into the
+// single update:state payload and applies preferences. Since macOS is signed
+// (GH-134), all platforms run real download/install — no platformLimited branch.
 type Listener = (...args: never[]) => void
 
 function fakeUpdater(): UpdaterLike & {
@@ -34,16 +34,12 @@ function fakeUpdater(): UpdaterLike & {
   }
 }
 
-function setup(
-  platform: NodeJS.Platform = 'win32',
-  prefs: Partial<{ autoCheck: boolean; autoDownload: boolean; allowPrerelease: boolean }> = {}
-) {
+function setup(prefs: Partial<{ autoCheck: boolean; autoDownload: boolean; allowPrerelease: boolean }> = {}) {
   const updater = fakeUpdater()
   const states: UpdateState[] = []
   const log = vi.fn()
   const controller = createUpdaterController({
     autoUpdater: updater,
-    platform,
     isPackaged: true,
     preferences: { autoCheck: true, autoDownload: false, allowPrerelease: false, ...prefs },
     emit: (s) => states.push(s),
@@ -65,8 +61,8 @@ describe('createUpdaterController', () => {
     expect(states[2].percent).toBe(42)
   })
 
-  it('applies preferences: autoDownload + allowPrerelease follow the user setting on win/linux', () => {
-    const { updater, controller } = setup('win32', { autoDownload: true, allowPrerelease: true })
+  it('applies preferences: autoDownload + allowPrerelease follow the user setting', () => {
+    const { updater, controller } = setup({ autoDownload: true, allowPrerelease: true })
     expect(updater.autoDownload).toBe(true)
     expect(updater.autoInstallOnAppQuit).toBe(true)
     expect(updater.allowPrerelease).toBe(true)
@@ -86,23 +82,23 @@ describe('createUpdaterController', () => {
     expect(states.at(-1)).toMatchObject({ phase: 'error', error: 'net down' })
   })
 
-  it('darwin (unsigned) degradation: states carry platformLimited, download/install are refused', async () => {
-    const { updater, states, controller } = setup('darwin', { autoDownload: true, allowPrerelease: true })
-    // autoDownload is forced off regardless of preference; allowPrerelease still applies
-    expect(updater.autoDownload).toBe(false)
-    expect(updater.allowPrerelease).toBe(true)
+  it('runs real download/install on every platform (no platformLimited after signing, GH-134)', async () => {
+    const { updater, states, controller } = setup({ autoDownload: true })
+    // autoDownload honors preference (no darwin force-off); states carry no platformLimited
+    expect(updater.autoDownload).toBe(true)
 
     updater.fire('update-available', { version: '0.3.0' })
-    expect(states.at(-1)).toMatchObject({ phase: 'available', platformLimited: true })
+    expect(states.at(-1)).toMatchObject({ phase: 'available', version: '0.3.0' })
+    expect(states.at(-1)).not.toHaveProperty('platformLimited')
 
     await controller.download()
-    expect(updater.downloadUpdate).not.toHaveBeenCalled()
+    expect(updater.downloadUpdate).toHaveBeenCalledTimes(1)
     controller.install()
-    expect(updater.quitAndInstall).not.toHaveBeenCalled()
+    expect(updater.quitAndInstall).toHaveBeenCalledTimes(1)
   })
 
-  it('check() works on darwin (fetching latest-mac.yml does not touch Squirrel)', async () => {
-    const { updater, controller } = setup('darwin')
+  it('check() asks the server', async () => {
+    const { updater, controller } = setup()
     await controller.check()
     expect(updater.checkForUpdates).toHaveBeenCalledTimes(1)
   })
@@ -111,7 +107,6 @@ describe('createUpdaterController', () => {
     const updater = fakeUpdater()
     createUpdaterController({
       autoUpdater: updater,
-      platform: 'win32',
       isPackaged: false,
       preferences: { autoCheck: true, autoDownload: false, allowPrerelease: false },
       emit: () => {},

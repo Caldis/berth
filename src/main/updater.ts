@@ -1,16 +1,14 @@
 import type { UpdatePreferences, UpdateState } from '@shared/types/ipc'
 
 /**
- * GH-124: auto-update controller. Every dependency is injected (the real
- * `autoUpdater` from electron-updater, platform, prefs, the broadcast emitter,
- * the logger), so this module stays electron-free and the full state machine is
- * directly testable with a fake updater.
+ * GH-124/GH-134: auto-update controller. Every dependency is injected (the real
+ * `autoUpdater` from electron-updater, prefs, the broadcast emitter, the logger),
+ * so this module stays electron-free and the full state machine is directly
+ * testable with a fake updater.
  *
- * Unsigned-macOS degradation (electron-builder: "macOS application must be
- * signed in order for auto updating to work"): checking still works (it only
- * fetches latest-mac.yml), download/install are refused with platformLimited —
- * the UI routes the user to the releases page instead. Lift the branch once
- * the signing issue is resolved.
+ * GH-134: macOS is now signed + notarized, so it auto-updates like win/linux.
+ * The earlier unsigned-macOS degradation (platformLimited / releases-page link)
+ * has been lifted — all platforms run real download/install.
  */
 export interface UpdaterLike {
   autoDownload: boolean
@@ -25,7 +23,6 @@ export interface UpdaterLike {
 
 export interface UpdaterControllerOptions {
   autoUpdater: UpdaterLike
-  platform: NodeJS.Platform
   isPackaged: boolean
   preferences: UpdatePreferences
   emit: (state: UpdateState) => void
@@ -40,40 +37,37 @@ export interface UpdaterController {
 }
 
 export function createUpdaterController(options: UpdaterControllerOptions): UpdaterController {
-  const { autoUpdater, platform, isPackaged, emit, log } = options
-  const limited = platform === 'darwin'
-  const withLimit = (state: UpdateState): UpdateState =>
-    limited ? { ...state, platformLimited: true } : state
+  const { autoUpdater, isPackaged, emit, log } = options
 
   autoUpdater.autoInstallOnAppQuit = true
-  autoUpdater.autoDownload = !limited && options.preferences.autoDownload
-  // allowPrerelease (beta channel) is independent of signing — it only changes
-  // which GitHub releases `check` considers, so set it unconditionally.
+  autoUpdater.autoDownload = options.preferences.autoDownload
+  // allowPrerelease (beta channel) only changes which GitHub releases `check`
+  // considers.
   autoUpdater.allowPrerelease = options.preferences.allowPrerelease
   if (!isPackaged) autoUpdater.forceDevUpdateConfig = true
 
-  autoUpdater.on('checking-for-update', () => emit(withLimit({ phase: 'checking' })))
+  autoUpdater.on('checking-for-update', () => emit({ phase: 'checking' }))
   autoUpdater.on('update-available', (...args: never[]) => {
     const info = args[0] as { version?: string; releaseNotes?: unknown } | undefined
-    emit(withLimit({
+    emit({
       phase: 'available',
       version: info?.version,
       notes: typeof info?.releaseNotes === 'string' ? info.releaseNotes.slice(0, 2000) : undefined
-    }))
+    })
   })
-  autoUpdater.on('update-not-available', () => emit(withLimit({ phase: 'not-available' })))
+  autoUpdater.on('update-not-available', () => emit({ phase: 'not-available' }))
   autoUpdater.on('download-progress', (...args: never[]) => {
     const progress = args[0] as { percent?: number } | undefined
-    emit(withLimit({ phase: 'downloading', percent: Math.round(progress?.percent ?? 0) }))
+    emit({ phase: 'downloading', percent: Math.round(progress?.percent ?? 0) })
   })
   autoUpdater.on('update-downloaded', (...args: never[]) => {
     const info = args[0] as { version?: string } | undefined
-    emit(withLimit({ phase: 'downloaded', version: info?.version }))
+    emit({ phase: 'downloaded', version: info?.version })
   })
   autoUpdater.on('error', (...args: never[]) => {
     const err = args[0] as Error | undefined
     log('updater', err)
-    emit(withLimit({ phase: 'error', error: err?.message ?? String(err) }))
+    emit({ phase: 'error', error: err?.message ?? String(err) })
   })
 
   return {
@@ -82,32 +76,24 @@ export function createUpdaterController(options: UpdaterControllerOptions): Upda
         await autoUpdater.checkForUpdates()
       } catch (error) {
         // The 'error' listener above usually fires too; this catch covers
-        // rejections raised before the event wiring (e.g. unsigned-mac init).
+        // rejections raised before the event wiring.
         log('updater', error)
-        emit(withLimit({ phase: 'error', error: error instanceof Error ? error.message : String(error) }))
+        emit({ phase: 'error', error: error instanceof Error ? error.message : String(error) })
       }
     },
     async download(): Promise<void> {
-      if (limited) {
-        emit({ phase: 'available', platformLimited: true })
-        return
-      }
       try {
         await autoUpdater.downloadUpdate()
       } catch (error) {
         log('updater', error)
-        emit(withLimit({ phase: 'error', error: error instanceof Error ? error.message : String(error) }))
+        emit({ phase: 'error', error: error instanceof Error ? error.message : String(error) })
       }
     },
     install(): void {
-      if (limited) {
-        emit({ phase: 'downloaded', platformLimited: true })
-        return
-      }
       autoUpdater.quitAndInstall()
     },
     applyPreferences(prefs: UpdatePreferences): void {
-      autoUpdater.autoDownload = !limited && prefs.autoDownload
+      autoUpdater.autoDownload = prefs.autoDownload
       autoUpdater.allowPrerelease = prefs.allowPrerelease
     }
   }

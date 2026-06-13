@@ -5,9 +5,9 @@ import '../../src/renderer/src/i18n'
 import { UpdateSection } from '../../src/renderer/src/components/settings/update-section'
 import type { UpdateState } from '@shared/types/ipc'
 
-// GH-124: the update card must cover every update:state phase, disable the
-// check button while busy, and swap download/install for the releases link on
-// platformLimited (unsigned macOS degradation).
+// GH-124/GH-134: the update card must cover every update:state phase, disable
+// the check button while busy, and expose the autoCheck/autoDownload/beta
+// switches. macOS is signed (GH-134) so download/install are always real.
 let pushState: (state: UpdateState) => void
 
 beforeEach(() => {
@@ -70,16 +70,6 @@ describe('UpdateSection', () => {
     expect(screen.getByTestId('update-status').textContent).toContain('0.3.0')
     screen.getByTestId('update-download').click()
     expect(window.api.update.download).toHaveBeenCalled()
-    expect(screen.queryByTestId('update-go-to-downloads')).not.toBeInTheDocument()
-  })
-
-  it('platformLimited available → releases link instead of download', async () => {
-    render(<UpdateSection />)
-    await screen.findByTestId('update-check')
-
-    act(() => pushState({ phase: 'available', version: '0.3.0', platformLimited: true }))
-    expect(screen.getByTestId('update-go-to-downloads')).toBeInTheDocument()
-    expect(screen.queryByTestId('update-download')).not.toBeInTheDocument()
   })
 
   it('downloaded → restart & install wired to update:install', async () => {

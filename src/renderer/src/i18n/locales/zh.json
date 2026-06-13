@@ -1870,7 +1870,6 @@
       "downloaded": "新版本 {{version}} 已就绪。",
       "installRestart": "重启并安装",
       "download": "下载更新",
-      "goToDownloads": "前往下载页",
       "error": "检查更新失败：{{message}}",
       "autoCheck": "启动时检查更新",
       "autoDownload": "自动下载更新",
