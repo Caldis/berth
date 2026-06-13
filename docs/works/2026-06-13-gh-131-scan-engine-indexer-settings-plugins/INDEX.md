@@ -36,7 +36,7 @@ debt:
       - ui-ux
       - testability
     confidence: medium
-    rationale: "完成 Settings 扫描引擎入口、真实控制面、project scope filter-first/后台排队、第三方 agent source declaration、adapter-api 发布子路径、parser 依赖收敛, 并把 Gemini CLI 与 OpenCode 推进到可读取稳定本地文件的真实 adapter v1。Copilot/Cursor/OpenClaw/Hermes 的 source contract 已按官方资料校准, 但 parser 和更深会话解析仍保留为后续工作; 长驻 worker、row-level delta 也未进入本任务。"
+    rationale: "完成 Settings 扫描引擎入口、真实控制面、project scope filter-first/后台排队、adapter-api 发布子路径、parser 依赖收敛、第三方 agent source declaration, 并把 Gemini CLI、OpenCode、GitHub Copilot CLI、Cursor、OpenClaw、Hermes Agent 推进到可读取稳定低风险本地文件的真实 adapter v1。新增 detected 语义修正, 共享 AGENTS.md / .agents/skills / CLAUDE.md 只显示 source coverage, 不再冒充 agent 已安装。仍保留为后续工作的范围是更深 session 正文解析、OpenClaw 完整 JSON5 配置解析、长驻 worker、row-level delta。"
   revisions: []
 issue:
   number: 131
