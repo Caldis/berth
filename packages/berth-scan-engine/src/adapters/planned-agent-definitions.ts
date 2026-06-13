@@ -198,11 +198,12 @@ export const PLANNED_AGENT_ADAPTER_DEFINITIONS: AgentAdapterDefinition[] = [
     assets: assets([
       ['agents-md', 'instruction', ['project']],
       ['skill', 'instruction', ['user', 'project']],
+      ['agent', 'instruction', ['user', 'project']],
       ['command', 'instruction', ['user', 'project']],
       ['mcp-server', 'capability', ['user', 'project']],
       ['hook', 'capability', ['user', 'project']],
-      ['session', 'state', ['user']],
-      ['credential', 'integration', ['user'], true]
+      ['permission', 'capability', ['user', 'project']],
+      ['plugin', 'capability', ['user', 'project']]
     ])
   },
   {

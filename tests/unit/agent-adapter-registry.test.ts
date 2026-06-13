@@ -7,6 +7,7 @@ import {
   DeclaredAgentAdapter,
   ManifestAgentAdapter
 } from '@berth/scan-engine/agent-plugins/adapter-registry'
+import { CursorAdapter } from '@berth/scan-engine/adapters/cursor'
 import { GeminiCliAdapter } from '@berth/scan-engine/adapters/gemini-cli'
 import { GitHubCopilotCliAdapter } from '@berth/scan-engine/adapters/github-copilot-cli'
 import { OpenCodeAdapter } from '@berth/scan-engine/adapters/opencode'
@@ -163,6 +164,17 @@ describe('agent adapter registry', () => {
     const copilotHook = path.join(homeDir, '.copilot', 'hooks', 'pre-commit.ps1')
     const copilotConfig = path.join(homeDir, '.copilot', 'config.json')
     const cursorRules = path.join(projectDir, '.cursor', 'rules')
+    const cursorProjectMcp = path.join(projectDir, '.cursor', 'mcp.json')
+    const cursorProjectHooks = path.join(projectDir, '.cursor', 'hooks.json')
+    const cursorProjectPermissions = path.join(projectDir, '.cursor', 'permissions.json')
+    const cursorProjectSandbox = path.join(projectDir, '.cursor', 'sandbox.json')
+    const cursorProjectSkill = path.join(projectDir, '.cursor', 'skills', 'ui-helper', 'SKILL.md')
+    const cursorProjectAgent = path.join(projectDir, '.cursor', 'agents', 'reviewer.md')
+    const cursorProjectCommand = path.join(projectDir, '.cursor', 'commands', 'test.md')
+    const cursorProjectPlugin = path.join(projectDir, '.cursor', 'plugins', 'helper', 'plugin.json')
+    const cursorUserMcp = path.join(homeDir, '.cursor', 'mcp.json')
+    const cursorUserSkill = path.join(homeDir, '.cursor', 'skills', 'global-helper', 'SKILL.md')
+    const cursorUserAgent = path.join(homeDir, '.cursor', 'agents', 'planner.md')
     const opencodeProjectConfig = path.join(projectDir, 'opencode.json')
     const opencodeUserConfig = path.join(homeDir, '.config', 'opencode', 'opencode.jsonc')
     const opencodeProjectCommand = path.join(projectDir, '.opencode', 'commands', 'build.md')
@@ -221,7 +233,30 @@ describe('agent adapter registry', () => {
     fs.writeFileSync(copilotHook, 'Write-Output ok\n', 'utf8')
     writeJson(copilotConfig, { loggedInUsers: [{ id: 'secret' }] })
     fs.mkdirSync(cursorRules, { recursive: true })
-    fs.writeFileSync(path.join(cursorRules, 'rule.mdc'), 'Always test.', 'utf8')
+    fs.writeFileSync(path.join(cursorRules, 'rule.mdc'), '---\ndescription: Test rule\n---\nAlways test.', 'utf8')
+    writeJson(cursorProjectMcp, {
+      mcpServers: {
+        repo: {
+          command: 'repo-mcp',
+          env: { API_KEY: 'secret' }
+        }
+      }
+    })
+    writeJson(cursorProjectHooks, { hooks: { beforeShell: { command: 'echo ok' } } })
+    writeJson(cursorProjectPermissions, { allow: ['Shell(ls)'], token: 'secret' })
+    writeJson(cursorProjectSandbox, { mode: 'workspace-write', secret: 'hidden' })
+    fs.mkdirSync(path.dirname(cursorProjectSkill), { recursive: true })
+    fs.writeFileSync(cursorProjectSkill, '---\nname: ui-helper\n---\nBuild UI.\n', 'utf8')
+    fs.mkdirSync(path.dirname(cursorProjectAgent), { recursive: true })
+    fs.writeFileSync(cursorProjectAgent, '---\nname: reviewer\n---\nReview code.\n', 'utf8')
+    fs.mkdirSync(path.dirname(cursorProjectCommand), { recursive: true })
+    fs.writeFileSync(cursorProjectCommand, '---\nname: test\n---\nRun tests.\n', 'utf8')
+    writeJson(cursorProjectPlugin, { name: 'helper', version: '0.3.0', description: 'Cursor helper' })
+    writeJson(cursorUserMcp, { servers: { docs: { command: 'docs-mcp', token: 'secret' } } })
+    fs.mkdirSync(path.dirname(cursorUserSkill), { recursive: true })
+    fs.writeFileSync(cursorUserSkill, '---\nname: global-helper\n---\nGlobal skill.\n', 'utf8')
+    fs.mkdirSync(path.dirname(cursorUserAgent), { recursive: true })
+    fs.writeFileSync(cursorUserAgent, '---\nname: planner\n---\nPlan work.\n', 'utf8')
     fs.mkdirSync(path.dirname(opencodeUserConfig), { recursive: true })
     fs.writeFileSync(opencodeUserConfig, '{\n  // JSONC config\n  "mcp": { "docs": { "command": "docs-mcp" } }\n}', 'utf8')
     writeJson(opencodeProjectConfig, {
@@ -252,7 +287,7 @@ describe('agent adapter registry', () => {
     )
 
     expect(planned).toHaveLength(6)
-    expect(planned.filter((adapter) => adapter instanceof DeclaredAgentAdapter)).toHaveLength(3)
+    expect(planned.filter((adapter) => adapter instanceof DeclaredAgentAdapter)).toHaveLength(2)
 
     const gemini = planned.find((adapter) => adapter.id === 'gemini-cli')!
     expect(gemini).toBeInstanceOf(GeminiCliAdapter)
@@ -460,6 +495,7 @@ describe('agent adapter registry', () => {
     expect(copilotResult.assets.some((asset) => asset.type === 'session')).toBe(false)
 
     const cursor = planned.find((adapter) => adapter.id === 'cursor')!
+    expect(cursor).toBeInstanceOf(CursorAdapter)
     await expect(cursor.scanSourceCoverage()).resolves.toEqual(
       expect.arrayContaining([
         expect.objectContaining({
@@ -471,6 +507,124 @@ describe('agent adapter registry', () => {
           code: 'cursor.user.ide-state',
           status: 'missing',
           reason: 'sensitive-metadata-only'
+        })
+      ])
+    )
+    const cursorResult = await cursor.scanAll()
+    expect(cursorResult.errors).toEqual([])
+    expect(cursorResult.assets).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          agentId: 'cursor',
+          type: 'agents-md',
+          scope: 'project',
+          path: path.join(cursorRules, 'rule.mdc')
+        }),
+        expect.objectContaining({
+          agentId: 'cursor',
+          type: 'agents-md',
+          scope: 'project',
+          path: path.join(projectDir, 'AGENTS.md'),
+          meta: expect.objectContaining({
+            readByAgentIds: ['cursor']
+          })
+        }),
+        expect.objectContaining({
+          agentId: 'cursor',
+          type: 'skill',
+          scope: 'user',
+          name: 'global-helper',
+          path: cursorUserSkill
+        }),
+        expect.objectContaining({
+          agentId: 'cursor',
+          type: 'skill',
+          scope: 'project',
+          name: 'ui-helper',
+          path: cursorProjectSkill
+        }),
+        expect.objectContaining({
+          agentId: 'cursor',
+          type: 'agent',
+          scope: 'user',
+          name: 'planner',
+          path: cursorUserAgent
+        }),
+        expect.objectContaining({
+          agentId: 'cursor',
+          type: 'agent',
+          scope: 'project',
+          name: 'reviewer',
+          path: cursorProjectAgent
+        }),
+        expect.objectContaining({
+          agentId: 'cursor',
+          type: 'command',
+          scope: 'project',
+          name: 'test',
+          path: cursorProjectCommand
+        }),
+        expect.objectContaining({
+          agentId: 'cursor',
+          type: 'mcp-server',
+          scope: 'user',
+          name: 'docs',
+          path: cursorUserMcp,
+          meta: expect.objectContaining({
+            serverConfig: expect.objectContaining({
+              token: '<redacted>'
+            })
+          })
+        }),
+        expect.objectContaining({
+          agentId: 'cursor',
+          type: 'mcp-server',
+          scope: 'project',
+          name: 'repo',
+          path: cursorProjectMcp,
+          meta: expect.objectContaining({
+            serverConfig: expect.objectContaining({
+              env: { API_KEY: '<redacted>' }
+            })
+          })
+        }),
+        expect.objectContaining({
+          agentId: 'cursor',
+          type: 'hook',
+          scope: 'project',
+          name: 'beforeShell',
+          path: cursorProjectHooks
+        }),
+        expect.objectContaining({
+          agentId: 'cursor',
+          type: 'permission',
+          scope: 'project',
+          name: 'permissions',
+          path: cursorProjectPermissions,
+          meta: expect.objectContaining({
+            config: expect.objectContaining({
+              token: '<redacted>'
+            })
+          })
+        }),
+        expect.objectContaining({
+          agentId: 'cursor',
+          type: 'permission',
+          scope: 'project',
+          name: 'sandbox',
+          path: cursorProjectSandbox,
+          meta: expect.objectContaining({
+            config: expect.objectContaining({
+              secret: '<redacted>'
+            })
+          })
+        }),
+        expect.objectContaining({
+          agentId: 'cursor',
+          type: 'plugin',
+          scope: 'project',
+          name: 'helper',
+          path: path.dirname(cursorProjectPlugin)
         })
       ])
     )

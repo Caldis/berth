@@ -13,6 +13,7 @@ import type {
 } from '@shared/types/asset'
 import { ClaudeCodeAdapter } from '../adapters/claude-code'
 import { CodexAdapter } from '../adapters/codex'
+import { CursorAdapter } from '../adapters/cursor'
 import { GeminiCliAdapter } from '../adapters/gemini-cli'
 import { GitHubCopilotCliAdapter } from '../adapters/github-copilot-cli'
 import { OpenCodeAdapter } from '../adapters/opencode'
@@ -48,6 +49,9 @@ export function createAgentAdapters(
       }
       if (definition.id === 'github-copilot-cli') {
         return new GitHubCopilotCliAdapter(definition, { homeDir, projectDir, env })
+      }
+      if (definition.id === 'cursor') {
+        return new CursorAdapter(definition, { homeDir, projectDir, env })
       }
       if (definition.id === 'opencode') {
         return new OpenCodeAdapter(definition, { homeDir, projectDir, env })
