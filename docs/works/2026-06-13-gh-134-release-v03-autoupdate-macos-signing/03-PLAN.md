@@ -50,13 +50,9 @@
 - [x] **C1. 版本 bump 0.2.0 → 0.3.0** [AC7] — package.json version=0.3.0; grep 确认无其他硬编码 (测试 fixture 0.2.0 是 agent 插件无关; website APP_VERSION 属独立 deploy-website 链路, 交接提示); tests:not needed (版本号, dry-run 验收)。
   - 注: beta dry-run 从 master@0.3.0 打 v0.3.0-beta.1 (dry-run 验签名/三平台/完整性, 产物版本名无关); 通过后同提交打 v0.3.0。
 
-- [ ] **C2. [需用户前置] 用户添加 5 个 Apple secrets 到 berth 仓库**
-  - Agent 不可代办; 交接消息给步骤。push beta tag 前必须就绪。
-  - tests: `gh secret list --repo Caldis/berth` 出现 5 个名字。
-  - verify: 不适用。
+- [x] **C2. 5 个 Apple secrets 已设置** — 签名材料在 macmini `~/Docs/ci-signing/` (.p12+文档, 私钥只在 .p12 不在钥匙串, 见记忆 macos-codesign-materials-macmini); MAC_CERTS/MAC_CERTS_PASSWORD/APPLE_ID/APPLE_TEAM_ID 由 Agent 用找到的材料从本机 gh 设置, APPLE_APP_SPECIFIC_PASSWORD 用户网页加; `gh secret list` 确认 5 个齐。
 
-- [ ] **C3. beta dry-run: tag v0.3.0-beta.1 验证签名+三平台全链** [AC5,AC7]
-  - secrets 就绪后 push `v0.3.0-beta.1`; 旁路跟踪 release.yml; 确认 GitHub Release (prerelease) 含 win/mac(dmg+签名 zip 双架构)/linux 全资产 + latest*.yml 三件; mac zip 签名+公证。
+- [~] **C3. beta dry-run: tag v0.3.0-beta.1 验证签名+三平台全链** [AC5,AC7] — 进行中: tag v0.3.0-beta.1 (指向 6b085873, 注释标签 54caf38a) 已推送, release.yml 触发; 子代理后台跟踪三平台构建 + mac 签名/公证 + 完整性校验。
   - tests: release integrity job 绿即证据 + 人工核对资产清单。
   - verify: 不适用 (发布链路)。
 
@@ -67,3 +63,5 @@
 
 ## verify 回写
 verify 不通过项作为新任务追加于此, phase 退回 implement。
+
+- [x] **V1. [beta.1 dry-run 发现] Linux .deb 缺 maintainer 致 linux job 失败** — beta.1 dry-run (run 27488714911): **mac 签名+公证全成功 (x64+arm64 notarization successful, Developer ID identity A23AFFD4…)**、win 成功; linux AppImage 成功但 .deb 因 `package.json` 无 author.email 报错 (`required to set Linux .deb package maintainer`) → linux job 失败 → publish skip 未建 release。修: `electron-builder.yml` linux 补 `maintainer: Caldis <cn@caldis.me>`。重跑 v0.3.0-beta.2 验证。

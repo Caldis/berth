@@ -42,6 +42,8 @@ dmg:
   artifactName: ${name}-${version}.${ext}
 linux:
   icon: assets/icon/app_icon.png
+  # .deb 强制要求 maintainer; 缺失会让整个 linux 打包失败 (GH-134 beta.1 dry-run 实测)。
+  maintainer: Caldis <cn@caldis.me>
   target:
     - AppImage
     - deb
