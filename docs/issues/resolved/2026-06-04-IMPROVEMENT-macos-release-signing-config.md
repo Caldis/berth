@@ -27,3 +27,6 @@
 - `electron-builder.yml`: 删除悬空 `entitlementsInherit` (根因), `mac.identity: null` 把「禁用签名自动发现」从环境变量旁路固化进配置 — 等效 `CSC_IDENTITY_AUTO_DISCOVERY=false`, 有钥匙串身份的机器默认 `pnpm package:mac` 也产未签名 dmg/zip。
 - 证据链: 2026-06-04 实测该旁路可产出发布资产; identity null 为 electron-builder 官方禁签语义; YAML 解析校验通过。下次 macOS 真机发布即全链验证 (Windows 本机无法跑 package:mac, 已在注释中写明转签名发布时的恢复步骤)。
 - 后续若做签名发布 → 按 [[2026-06-04-IMPROVEMENT-macos-release-signing-config]] 注释指引补 entitlements + 证书, 属新需求另立案。
+
+# 追记 (2026-06-14, GH-134 落地签名发布)
+- 此处「另立案」的签名发布已由 GH-134 完成: 移除 `mac.identity: null` 改 CSC_LINK 自动发现 + `notarize: true` (Developer ID, Team N7Z52F27XK, 无需自定义 entitlements — electron-builder 默认 hardenedRuntime+默认 entitlements 已够); release.yml 注入 5 个签名 secret; v0.3.0 真机发布全链验证, mac x64+arm64 `notarization successful`, 签名 zip 进入 GitHub Release。归档见 `docs/works/_archive/2026-06-13-gh-134-release-v03-autoupdate-macos-signing`。

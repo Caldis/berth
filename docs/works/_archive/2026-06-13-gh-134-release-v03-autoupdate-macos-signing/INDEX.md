@@ -2,7 +2,7 @@
 task: 2026-06-13-gh-134-release-v03-autoupdate-macos-signing
 task_id: GH-134
 type: feature
-phase: implement
+phase: archive
 created: 2026-06-13
 priority: P1
 target_date: 
@@ -25,20 +25,26 @@ debt:
     confidence: medium
     rationale: "release/CI + 代码签名/公证为主 (tooling-ci), 跨 main updater / renderer 设置 / electron-builder / release.yml / Apple secrets。explore 后校准: 开关部分 (A) 是纯代码、复用既有 IPC 通道、完全可本机测试 → 低风险; 残余高风险集中在 mac 签名 (B), 且外部凭据阻塞 (berth 仓库无 secret) 已识别并可隔离, 故 risk high→medium、confidence low→medium。net 维持 3 (repaid=2: 解除 platformLimited 降级 + 补齐 mac release 缺口)。"
   final:
-    incurred:
-    repaid:
-    net:
-    scope:
-    risk:
-    areas: []
-    confidence:
-    rationale:
+    incurred: 5
+    repaid: 3
+    net: 2
+    scope: cross-process
+    risk: medium
+    areas:
+      - tooling-ci
+    confidence: high
+    rationale: "已发布 v0.3.0 真 Latest, 全链验证。incurred 5: UpdatePreferences 扩展 + updater/renderer 接线 + electron-builder/release.yml 签名双架构 + 官网四语 v0.3。repaid 3 (>estimate 2): (1) 解除 platformLimited 死分支; (2) 补齐从未端到端跑通的三平台 release 缺口; (3) 落地此前另立案的 macOS 签名 (resolved 2026-06-04) + 顺带修复 linux .deb maintainer 这一潜在发布阻塞。net 3→2。risk 收敛 medium (签名找到既有 .p12 后一次通过, 主要摩擦是材料定位非技术); confidence high。"
   revisions:
     - phase: explore
       date: 2026-06-13
       from: { risk: high, confidence: low }
       to: { risk: medium, confidence: medium }
       reason: "explore 后校准: 开关部分纯代码且复用既有 IPC 通道可本机测试 (低风险); 残余高风险集中在 mac 签名且外部凭据阻塞已识别可隔离。net 维持 3。"
+    - phase: archive
+      date: 2026-06-14
+      from: { repaid: 2, net: 3 }
+      to: { repaid: 3, net: 2 }
+      reason: "实际偿还高于估算: 除解除 platformLimited + 补 mac release 缺口外, 还落地了 macOS 签名 (此前另立案) 并修复 linux .deb maintainer 潜在阻塞。confidence medium→high (已发布验证)。"
 issue:
   number: 134
   repo: Caldis/berth
@@ -50,7 +56,7 @@ gh_project:
   project_number: 6
   project_url: https://github.com/users/Caldis/projects/6
   item_id: PVTI_lAHOADXbEs4BZHvQzgvoO4o
-  item_status: In Progress
+  item_status: Done
   project_id: PVT_kwHOADXbEs4BZHvQ
 artifacts:
   source: 00-PRD.md
