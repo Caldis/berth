@@ -333,9 +333,11 @@
       "intro": "Berth를 설치하거나 업데이트할지 판단할 수 있도록 현재 product changes를 정리합니다.",
       "items": [
         {
-          "version": "Current main",
-          "date": "2026-06-13",
+          "version": "v0.3",
+          "date": "2026-06-14",
           "notes": [
+            "자동 업데이트: 인앱 업데이트를 지원하며, Settings에 시작 시 auto-check와 beta channel 토글을 추가했습니다.",
+            "macOS 빌드가 서명 & notarization 처리되어, 인앱 auto-update가 모든 플랫폼(Windows / macOS / Linux)에서 동작합니다.",
             "Settings에 scan engine version, status, indexed assets, indexed files, errors, scheduler state가 표시됩니다.",
             "@berth/scan-engine은 CLI와 adapter API boundaries를 가진 standalone package가 되었습니다.",
             "Adapter coverage는 Claude Code, Codex, Gemini CLI, GitHub Copilot CLI, Cursor, OpenCode, OpenClaw, Hermes Agent를 포함합니다.",

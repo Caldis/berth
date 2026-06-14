@@ -333,9 +333,11 @@
       "intro": "Current product changes, written for people deciding whether to install or update Berth.",
       "items": [
         {
-          "version": "Current main",
-          "date": "2026-06-13",
+          "version": "v0.3",
+          "date": "2026-06-14",
           "notes": [
+            "Automatic updates: in-app update with auto-check on launch and a beta-channel toggle in Settings.",
+            "macOS builds are now signed & notarized, so in-app auto-update works on every platform (Windows / macOS / Linux).",
             "Scan engine is now exposed in Settings with version, status, indexed assets, indexed files, errors and scheduler state.",
             "@berth/scan-engine is a standalone package with CLI and adapter API boundaries.",
             "Adapter coverage now includes Claude Code, Codex, Gemini CLI, GitHub Copilot CLI, Cursor, OpenCode, OpenClaw and Hermes Agent.",

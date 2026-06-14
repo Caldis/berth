@@ -52,13 +52,12 @@
 
 - [x] **C2. 5 个 Apple secrets 已设置** — 签名材料在 macmini `~/Docs/ci-signing/` (.p12+文档, 私钥只在 .p12 不在钥匙串, 见记忆 macos-codesign-materials-macmini); MAC_CERTS/MAC_CERTS_PASSWORD/APPLE_ID/APPLE_TEAM_ID 由 Agent 用找到的材料从本机 gh 设置, APPLE_APP_SPECIFIC_PASSWORD 用户网页加; `gh secret list` 确认 5 个齐。
 
-- [~] **C3. beta dry-run: tag v0.3.0-beta.1 验证签名+三平台全链** [AC5,AC7] — 进行中: tag v0.3.0-beta.1 (指向 6b085873, 注释标签 54caf38a) 已推送, release.yml 触发; 子代理后台跟踪三平台构建 + mac 签名/公证 + 完整性校验。
-  - tests: release integrity job 绿即证据 + 人工核对资产清单。
+- [x] **C3. beta dry-run 全链验证** [AC5,AC7] — beta.1 (run 27488714911) 验证 mac 签名+公证成功但暴露 linux deb maintainer 缺口 (见 V1); 修后 beta.2 (run 27488984382) **端到端全绿**: test/build(win/mac/linux)/publish 全 success, mac x64+arm64 notarization successful, linux AppImage+deb 都出, publish 完整性校验 `Release v0.3.0-beta.2 verified.`, prerelease 14 资产齐 (win/mac 双架构签名 zip/linux + 三 latest*.yml)。beta.1 tag 已删。
+  - tests: release integrity job 绿 + 资产清单核对。
   - verify: 不适用 (发布链路)。
 
-- [ ] **C4. 正式发布 v0.3.0** [AC7]
-  - dry-run 通过后 push `v0.3.0` 正式 tag; 确认 Latest release 全平台资产齐备。
-  - tests: release integrity job 绿 + 资产清单。
+- [~] **C4. 正式发布 v0.3.0 + 官网 v0.3** [AC7] — 进行中: 用户确认发布。官网 v0.3 内容 (site.ts APP_VERSION + 四语 changelog 升级 v0.3 + 两条自动更新要点) 已改并本地 build 通过; push master 触发 deploy-website; 打 v0.3.0 正式 tag 触发 release.yml (真 Latest); 子代理跟踪到全绿后清理 beta.2 prerelease/tag。
+  - tests: release integrity job 绿 + Latest 资产清单。
   - verify: 不适用。
 
 ## verify 回写
