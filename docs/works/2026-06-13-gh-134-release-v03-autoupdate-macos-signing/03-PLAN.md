@@ -56,9 +56,7 @@
   - tests: release integrity job 绿 + 资产清单核对。
   - verify: 不适用 (发布链路)。
 
-- [~] **C4. 正式发布 v0.3.0 + 官网 v0.3** [AC7] — 进行中: 用户确认发布。官网 v0.3 内容 (site.ts APP_VERSION + 四语 changelog 升级 v0.3 + 两条自动更新要点) 已改并本地 build 通过; push master 触发 deploy-website; 打 v0.3.0 正式 tag 触发 release.yml (真 Latest); 子代理跟踪到全绿后清理 beta.2 prerelease/tag。
-  - tests: release integrity job 绿 + Latest 资产清单。
-  - verify: 不适用。
+- [x] **C4. 正式发布 v0.3.0 + 官网 v0.3** [AC7] — DONE: v0.3.0 (run 27489542573) 全绿, **isLatest=true/prerelease=false**, "Berth 0.3.0" @ 2026-06-14T05:40:06Z, mac x64+arm64 notarization successful, 完整性校验 `Release v0.3.0 verified.`, 14 资产齐; 官网 deploy-website (run 27489537521) success, ci.yml (ee855702) success; beta.2 prerelease+tag 已清理。signing 私钥排查教训沉淀 friction `20260614-3.0-implement-macos-signing-identity-in-p12-file-not-keychain`。
 
 ## verify 回写
 verify 不通过项作为新任务追加于此, phase 退回 implement。
