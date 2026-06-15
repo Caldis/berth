@@ -1,11 +1,12 @@
 import React from 'react'
-import { describe, it, expect, beforeEach } from 'vitest'
-import { fireEvent, render, screen } from '@testing-library/react'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { HeroUIProvider } from '@heroui/react'
 import '../../src/renderer/src/i18n'
-import { SidebarScanStatus } from '../../src/renderer/src/components/layout/sidebar-scan-status'
+import { SidebarScanStatus, ScanProgressPanel } from '../../src/renderer/src/components/layout/sidebar-scan-status'
 import { useAppStore, IDLE_ASSET_RUNTIME_STATUS } from '../../src/renderer/src/stores/app'
 import type { Asset, AssetType } from '@shared/types/asset'
+import type { ScanEngineInfo } from '@shared/types/ipc'
 
 function asset(id: string, type: AssetType): Asset {
   return { id, agentId: 'claude-code', category: 'capability', type, scope: 'user', name: id, path: `/x/${id}`, meta: {} }
@@ -110,5 +111,81 @@ describe('SidebarScanStatus (unified sidebar loading)', () => {
     expect(panel).toHaveTextContent('Reading assets')
     // A progress bar is rendered (HeroUI Progress).
     expect(panel.querySelector('[role="progressbar"]')).not.toBeNull()
+  })
+
+  // GH-135 E2: ScanProgressPanel surfaces engine-computed ETA + rate, the next
+  // scheduled scan, paused state, and dispatches index control commands. Rendered
+  // directly (not via the hover popover, which detaches too fast in jsdom for
+  // live-tree button queries).
+  // Capture the setup baseline before overriding so the new mock can't recurse.
+  function mockEngineInfo(scheduler: Partial<ScanEngineInfo['scheduler']>): void {
+    const baseline = window.api.assets.engineInfo
+    window.api.assets.engineInfo = vi.fn(async (): Promise<ScanEngineInfo> => {
+      const base = (await baseline()) as ScanEngineInfo
+      return { ...base, scheduler: { ...base.scheduler, ...scheduler } }
+    })
+  }
+
+  function renderPanel(): ReturnType<typeof render> {
+    return render(
+      <HeroUIProvider>
+        <ScanProgressPanel />
+      </HeroUIProvider>
+    )
+  }
+
+  it('surfaces engine ETA and rate while scanning (GH-135 E2)', () => {
+    useAppStore.setState({
+      assetRuntimeStatus: {
+        ...IDLE_ASSET_RUNTIME_STATUS,
+        state: 'scanning',
+        progress: { phase: 'parsing', current: 4, total: 10, label: 'skills', etaMs: 5000, ratePerSec: 12 }
+      },
+      assetErrors: []
+    })
+    renderPanel()
+    expect(screen.getByText('~5s left', { exact: false })).toBeInTheDocument()
+    expect(screen.getByText('12/s', { exact: false })).toBeInTheDocument()
+  })
+
+  it('shows the next scheduled scan time when idle (GH-135 E2)', async () => {
+    mockEngineInfo({
+      paused: false,
+      periodicScan: { enabled: true, intervalMs: 86_400_000, nextScanAt: '2026-06-15T14:30:00.000Z' }
+    })
+    useAppStore.setState({ assetRuntimeStatus: { ...IDLE_ASSET_RUNTIME_STATUS, state: 'ready' }, assetErrors: [] })
+    renderPanel()
+    expect(await screen.findByText('Next scan', { exact: false })).toBeInTheDocument()
+  })
+
+  it('dispatches pause and cancel commands while scanning (GH-135 E2)', async () => {
+    const pause = vi.fn(async () => (await window.api.assets.engineInfo()) as ScanEngineInfo)
+    const cancel = vi.fn(async () => IDLE_ASSET_RUNTIME_STATUS)
+    window.api.assets.pause = pause
+    window.api.assets.cancel = cancel
+    useAppStore.setState({
+      assetRuntimeStatus: {
+        ...IDLE_ASSET_RUNTIME_STATUS,
+        state: 'scanning',
+        progress: { phase: 'parsing', current: 1, total: 4, label: 'skills' }
+      },
+      assetErrors: []
+    })
+    renderPanel()
+    fireEvent.click(screen.getByRole('button', { name: 'Pause' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
+    await waitFor(() => expect(pause).toHaveBeenCalled())
+    expect(cancel).toHaveBeenCalled()
+  })
+
+  it('dispatches resume when paused (GH-135 E2)', async () => {
+    const resume = vi.fn(async () => (await window.api.assets.engineInfo()) as ScanEngineInfo)
+    mockEngineInfo({ paused: true })
+    window.api.assets.resume = resume
+    useAppStore.setState({ assetRuntimeStatus: { ...IDLE_ASSET_RUNTIME_STATUS, state: 'ready' }, assetErrors: [] })
+    renderPanel()
+    const resumeButton = await screen.findByRole('button', { name: 'Resume' })
+    fireEvent.click(resumeButton)
+    await waitFor(() => expect(resume).toHaveBeenCalled())
   })
 })

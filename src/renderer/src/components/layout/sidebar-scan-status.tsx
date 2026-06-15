@@ -54,7 +54,9 @@ function scanningLabel(status: AssetRuntimeStatus, scanningText: string): string
   return scanningText
 }
 
-function ScanProgressPanel(): React.ReactElement {
+// Exported for unit testing the GH-135 control surface directly: the hover
+// popover detaches too fast in jsdom for live-tree queries against its buttons.
+export function ScanProgressPanel(): React.ReactElement {
   const { t, i18n } = useTranslation()
   const language = i18n.language || 'en'
   const status = useAppStore((s) => s.assetRuntimeStatus)
