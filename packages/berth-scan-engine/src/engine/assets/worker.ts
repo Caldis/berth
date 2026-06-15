@@ -18,7 +18,9 @@ async function run(): Promise<void> {
   // sources/candidates derivation reports its own coarse phases afterwards.
   const scanResult = await scanner.scanAll({
     onProgress: (progress) => post({ type: 'progress', progress }),
-    onPartial: (partial) => post({ type: 'partial', partial })
+    onPartial: (partial) => post({ type: 'partial', partial }),
+    batchPauseMs: data.batchPauseMs,
+    excludePaths: data.excludePaths
   })
 
   post({

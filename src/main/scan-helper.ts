@@ -33,7 +33,9 @@ async function runScan(data: AssetWorkerData): Promise<void> {
     // Per-adapter progress + cumulative partials drive the live scan UI (P4.6).
     const scanResult = await scanner.scanAll({
       onProgress: (progress) => post({ type: 'progress', progress }),
-      onPartial: (partial) => post({ type: 'partial', partial })
+      onPartial: (partial) => post({ type: 'partial', partial }),
+      batchPauseMs: data.batchPauseMs,
+      excludePaths: data.excludePaths
     })
 
     post({ type: 'progress', progress: { phase: 'indexing', current: 0, total: 1, label: 'sources' } })

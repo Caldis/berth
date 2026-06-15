@@ -10,6 +10,10 @@ import { getMainLog } from '../../log'
 export interface AssetRuntimeScanOptions {
   onProgress?: (progress: AssetScanProgress) => void
   onPartial?: (partial: AssetScanPartial) => void
+  /** Inter-adapter throttle in ms (GH-135 B4 backpressure). */
+  batchPauseMs?: number
+  /** Paths to exclude from the scan result (GH-135 B4). */
+  excludePaths?: string[]
 }
 
 export interface AssetRuntimeScanner {
@@ -77,10 +81,10 @@ export class ScanCoordinator {
   }
 
   /** Execute one scan; concurrent calls join the same in-flight promise. */
-  run(sink: ScanSink): Promise<void> {
+  run(sink: ScanSink, scanOptions?: AssetRuntimeScanOptions): Promise<void> {
     if (this.inFlight) return this.inFlight
     this.cancelled = false
-    this.inFlight = this.execute(sink).finally(() => {
+    this.inFlight = this.execute(sink, scanOptions).finally(() => {
       this.inFlight = null
     })
     return this.inFlight
@@ -95,13 +99,15 @@ export class ScanCoordinator {
     this.scanner.cancel?.()
   }
 
-  private async execute(sink: ScanSink): Promise<void> {
+  private async execute(sink: ScanSink, scanOptions?: AssetRuntimeScanOptions): Promise<void> {
     const scanner = this.scanner
     const isCurrent = (): boolean => this.scanner === scanner && !this.cancelled
     try {
       const scanResult = await scanner.scanAll({
         onProgress: (progress) => { if (isCurrent()) sink.onProgress(progress) },
-        onPartial: (partial) => { if (isCurrent()) sink.onPartial(partial) }
+        onPartial: (partial) => { if (isCurrent()) sink.onPartial(partial) },
+        batchPauseMs: scanOptions?.batchPauseMs,
+        excludePaths: scanOptions?.excludePaths
       })
       if (!isCurrent()) return
       const sources = await scanner.getScanSourceGroups()

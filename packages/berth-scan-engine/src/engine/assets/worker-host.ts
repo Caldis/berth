@@ -15,6 +15,9 @@ export interface AssetWorkerData {
   projectDir?: string
   sessionCache?: AssetFileCacheSnapshot<Asset>
   projectScanCache?: AssetFileCacheSnapshot<Asset[]>
+  /** Backpressure passed through to the scanner (GH-135 B4). */
+  batchPauseMs?: number
+  excludePaths?: string[]
 }
 
 export interface AssetWorkerScanPayload {
@@ -122,7 +125,9 @@ export class WorkerAssetScanner implements AssetRuntimeScanner {
     const result = await this.host.runScan({
       projectDir: this.projectDir,
       sessionCache: this.sessionCache,
-      projectScanCache: this.projectScanCache
+      projectScanCache: this.projectScanCache,
+      batchPauseMs: options.batchPauseMs,
+      excludePaths: options.excludePaths
     }, {
       onProgress: options.onProgress,
       onPartial: options.onPartial

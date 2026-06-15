@@ -39,9 +39,10 @@
 - [x] B3: runtime 周期调度 (schedulePeriodic 递归 setTimeout + nextScanAt 暴露 + idleOnly/acOnly 门控注入 PowerMonitorLike) + main 注入 electron powerMonitor + whenReady 启动; 周期 re-arm 在 runPeriodicScan 末尾 (非 commit)
   - tests: `tests/unit/agent-asset-runtime.test.ts` +1 (fake timer + 假 powerMonitor 验 battery defer → AC scan); `pnpm test`
   - verify: 不适用 (逻辑层); 真机周期/空闲行为经 F1 e2e / manual
-- [ ] B4: scanner 背压 (adapter 间 `sleep(batchPauseMs)`) + 排除路径过滤 (excludePaths/.gitignore 入口剔除)
-  - tests: `engine/scanner.test.ts` sleep spy + 假 fs 验过滤 + 节流; 单测命令
-  - verify: 不适用
+- [x] B4: scanner 背压 (adapter 间 `sleep(batchPauseMs)`) + 排除路径过滤 (filterExcludedPaths 剔 path in excludePaths) + backpressure 传递链 (settings→runtime→coordinator→scanner→worker data→worker/scan-helper)
+  - tests: `packages/berth-scan-engine/tests/scanner-backpressure.test.ts` (4) filterExcludedPaths; `pnpm --filter @berth/scan-engine test`
+  - verify: 不适用 (逻辑层); batchPauseMs sleep 时序节流经 e2e/manual
+  - 偏差: ① excludePaths 是结果后过滤 (非 adapter 入口剔, 仅减结果集不减扫描成本); ② `respectGitignore` setting 未接 engine (列 issue, adapter 层深度); ③ batchPauseMs sleep 无专门单测 (时序节流不改结果) → 记 issue
 
 ## Phase D — main IPC + preload (顺序, 依赖 A/B)
 - [ ] D1: `handlers.ts` registerAssetHandlers 注册 pause/resume/cancel/rebuild 转发 runtime + `preload/index.ts` api.assets 落实 4 方法

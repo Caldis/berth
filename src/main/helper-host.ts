@@ -153,7 +153,9 @@ export class HelperAssetScanner implements AssetRuntimeScanner {
       {
         projectDir: this.projectDir,
         sessionCache: this.sessionCache,
-        projectScanCache: this.projectScanCache
+        projectScanCache: this.projectScanCache,
+        batchPauseMs: options.batchPauseMs,
+        excludePaths: options.excludePaths
       },
       { onProgress: options.onProgress, onPartial: options.onPartial }
     )

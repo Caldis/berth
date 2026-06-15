@@ -39,6 +39,12 @@ interface AssetScannerOptions {
 export interface AssetScanStreamOptions {
   onProgress?: (progress: AssetScanProgress) => void
   onPartial?: (partial: AssetScanPartial) => void
+  /** Inter-adapter throttle (GH-135 B4): await this many ms between adapters so the
+   * helper yields CPU/IO between batches. 0/undefined = no pause. */
+  batchPauseMs?: number
+  /** Paths to exclude from the result (GH-135 B4): any asset whose path is inside
+   * one of these is dropped. */
+  excludePaths?: string[]
 }
 
 export class AssetScanner {
@@ -108,6 +114,10 @@ export class AssetScanner {
         stats: this.computeStats(partialAssets),
         errorCount: errors.length
       })
+      // GH-135 B4: yield CPU/IO between adapters (application-level backpressure).
+      if (options.batchPauseMs && options.batchPauseMs > 0 && index < total) {
+        await sleep(options.batchPauseMs)
+      }
     }
     // Shallow-index other session-derived projects' root conventions so the global
     // scope shows every project's AGENTS.md/CLAUDE.md (GH-113 T3b). Done after the
@@ -116,7 +126,7 @@ export class AssetScanner {
     const withShallow = this.appendShallowConventions(assets)
     // Collapse cross-agent shared conventions BEFORE annotation/cache/stats so the
     // single canonical id flows into relations, search, and the renderer. (GH-113 T1)
-    const merged = mergeSharedConventions(withShallow)
+    const merged = filterExcludedPaths(mergeSharedConventions(withShallow), options.excludePaths)
     annotateEquivalentHookSources(merged)
     this.cachedAssets = merged
     this.cachedErrors = errors
@@ -410,5 +420,17 @@ function toHookEquivalentSource(asset: Asset): HookEquivalentSource {
 function readString(record: Record<string, unknown>, key: string): string | undefined {
   const value = record[key]
   return typeof value === 'string' && value.trim().length > 0 ? value : undefined
+}
+
+/** GH-135 B4: application-level inter-adapter pause (helper has no OS-level IO
+ * throttle on win; even where it does, this caps total throughput). */
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+/** GH-135 B4: drop assets whose path is inside any user-excluded path. */
+export function filterExcludedPaths(assets: Asset[], excludePaths?: string[]): Asset[] {
+  if (!excludePaths || excludePaths.length === 0) return assets
+  return assets.filter((asset) => !excludePaths.some((ex) => isPathInside(asset.path, ex, { includeEqual: true })))
 }
 
