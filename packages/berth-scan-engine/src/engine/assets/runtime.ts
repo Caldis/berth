@@ -32,7 +32,8 @@ import { ScanCoordinator, type AssetRuntimeScanner, type ScanOutcome, type ScanS
 import { SCAN_ENGINE_NAME, SCAN_ENGINE_VERSION } from '../../index'
 import {
   DEFAULT_SCAN_ENGINE_SETTINGS,
-  SCAN_ENGINE_SETTING_LIMITS,
+  applyScanEnginePreset,
+  buildScanEngineSettingControls,
   normalizeScanEngineSettings,
   type ScanEngineSettingsStore
 } from './settings'
@@ -189,8 +190,19 @@ export class AgentAssetRuntime {
     return this.settings
   }
 
-  setSettings(settings: Partial<ScanEngineSettings>): ScanEngineSettings {
-    this.settings = normalizeScanEngineSettings({ ...this.settings, ...settings })
+  setSettings(patch: Partial<ScanEngineSettings>): ScanEngineSettings {
+    if (patch.preset && patch.preset !== 'custom') {
+      // GH-135 E3: selecting a named preset applies its tuning overrides.
+      this.settings = normalizeScanEngineSettings({ ...applyScanEnginePreset(patch.preset), ...patch })
+    } else {
+      // Editing a raw value flips the preset to 'custom' (unless the caller set it).
+      const editsRawValue = Object.keys(patch).some((key) => key !== 'preset')
+      this.settings = normalizeScanEngineSettings({
+        ...this.settings,
+        ...patch,
+        ...(editsRawValue && patch.preset === undefined ? { preset: 'custom' as const } : {})
+      })
+    }
     this.settingsStore?.save(this.settings)
     return this.settings
   }
@@ -215,24 +227,7 @@ export class AgentAssetRuntime {
       scheduler: this.getSchedulerSnapshot(),
       controls: [
         { id: 'manual-refresh', value: 'available', editable: false, supported: true },
-        {
-          id: 'watcher-debounce-ms',
-          value: this.settings.watcherDebounceMs,
-          unit: 'ms',
-          editable: true,
-          supported: true,
-          settingKey: 'watcherDebounceMs',
-          ...SCAN_ENGINE_SETTING_LIMITS.watcherDebounceMs
-        },
-        {
-          id: 'watcher-min-interval-ms',
-          value: this.settings.watcherMinIntervalMs,
-          unit: 'ms',
-          editable: true,
-          supported: true,
-          settingKey: 'watcherMinIntervalMs',
-          ...SCAN_ENGINE_SETTING_LIMITS.watcherMinIntervalMs
-        },
+        ...buildScanEngineSettingControls(this.settings, process.platform),
         { id: 'worker-mode', value: 'one-shot', unit: 'mode', editable: false, supported: true },
         { id: 'scheduler-mode', value: 'single-flight-queued-project-scope', unit: 'mode', editable: false, supported: true },
         {

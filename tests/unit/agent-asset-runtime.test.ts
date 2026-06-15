@@ -244,7 +244,8 @@ describe('AgentAssetRuntime', () => {
       normalizeScanEngineSettings({ watcherDebounceMs: 1550, watcherMinIntervalMs: 90_400 })
     )
     runtime.setSettings({ watcherDebounceMs: 240 })
-    const expectedSettings = normalizeScanEngineSettings({ watcherDebounceMs: 240, watcherMinIntervalMs: 90_400 })
+    // Editing a raw value flips the preset to 'custom' (GH-135 E3).
+    const expectedSettings = normalizeScanEngineSettings({ watcherDebounceMs: 240, watcherMinIntervalMs: 90_400, preset: 'custom' })
     expect(runtime.getSettings()).toEqual(expectedSettings)
     expect(saved).toEqual([expectedSettings])
   })

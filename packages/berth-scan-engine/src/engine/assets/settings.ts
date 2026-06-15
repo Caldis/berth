@@ -1,4 +1,11 @@
-import type { ScanEnginePreset, ScanEngineSettings } from '@shared/types/ipc'
+import type {
+  ScanEngineControlDescriptor,
+  ScanEngineControlGroup,
+  ScanEngineControlId,
+  ScanEngineControlUnit,
+  ScanEnginePreset,
+  ScanEngineSettings
+} from '@shared/types/ipc'
 
 export const DEFAULT_SCAN_ENGINE_SETTINGS: ScanEngineSettings = {
   preset: 'balanced',
@@ -58,6 +65,79 @@ export interface ScanEngineSettingsStore {
 /** Merge a named preset onto DEFAULT and stamp the preset id (GH-135). */
 export function applyScanEnginePreset(preset: 'eco' | 'balanced' | 'performance'): ScanEngineSettings {
   return { ...DEFAULT_SCAN_ENGINE_SETTINGS, ...SCAN_ENGINE_PRESETS[preset], preset }
+}
+
+/** GH-135 E3: the user-configurable setting controls for the GUI (all B-strategy
+ * params, grouped + typed). getEngineInfo splices these into controls[] so the
+ * settings panel renders the right widget per kind without hand-listing each. */
+export function buildScanEngineSettingControls(
+  settings: ScanEngineSettings,
+  platform: NodeJS.Platform
+): ScanEngineControlDescriptor[] {
+  return [
+    {
+      id: 'preset',
+      value: settings.preset,
+      kind: 'enum',
+      group: 'preset',
+      options: ['eco', 'balanced', 'performance', 'custom'],
+      editable: true,
+      supported: true,
+      settingKey: 'preset'
+    },
+    numControl('watcher-debounce-ms', 'watcherDebounceMs', 'watcher', settings.watcherDebounceMs, 'ms'),
+    numControl('watcher-min-interval-ms', 'watcherMinIntervalMs', 'watcher', settings.watcherMinIntervalMs, 'ms'),
+    boolControl('periodic-scan-enabled', 'periodicScanEnabled', 'schedule', settings.periodicScanEnabled),
+    numControl('periodic-scan-interval-ms', 'periodicScanIntervalMs', 'schedule', settings.periodicScanIntervalMs, 'ms'),
+    boolControl('idle-only', 'idleOnly', 'schedule', settings.idleOnly),
+    numControl('idle-threshold-ms', 'idleThresholdMs', 'schedule', settings.idleThresholdMs, 'ms'),
+    numControl('scan-concurrency', 'scanConcurrency', 'performance', settings.scanConcurrency),
+    numControl('batch-pause-ms', 'batchPauseMs', 'performance', settings.batchPauseMs, 'ms'),
+    boolControl('content-hash', 'contentHash', 'performance', settings.contentHash),
+    boolControl('os-throttle-enabled', 'osThrottleEnabled', 'performance', settings.osThrottleEnabled, platform !== 'win32'),
+    boolControl('ac-only-full-scan', 'acOnlyFullScan', 'power', settings.acOnlyFullScan),
+    numControl('min-free-disk-mb', 'minFreeDiskMb', 'power', settings.minFreeDiskMb),
+    {
+      id: 'exclude-paths',
+      value: settings.excludePaths,
+      kind: 'string-list',
+      group: 'scope',
+      editable: true,
+      supported: true,
+      settingKey: 'excludePaths'
+    },
+    boolControl('respect-gitignore', 'respectGitignore', 'scope', settings.respectGitignore)
+  ]
+}
+
+function numControl(
+  id: ScanEngineControlId,
+  settingKey: NumberSettingKey,
+  group: ScanEngineControlGroup,
+  value: number,
+  unit?: ScanEngineControlUnit
+): ScanEngineControlDescriptor {
+  return {
+    id,
+    value,
+    kind: 'number',
+    group,
+    editable: true,
+    supported: true,
+    settingKey,
+    ...(unit ? { unit } : {}),
+    ...SCAN_ENGINE_SETTING_LIMITS[settingKey]
+  }
+}
+
+function boolControl(
+  id: ScanEngineControlId,
+  settingKey: keyof ScanEngineSettings,
+  group: ScanEngineControlGroup,
+  value: boolean,
+  supported = true
+): ScanEngineControlDescriptor {
+  return { id, value, kind: 'boolean', group, editable: true, supported, settingKey }
 }
 
 export function normalizeScanEngineSettings(input?: Partial<ScanEngineSettings> | null): ScanEngineSettings {

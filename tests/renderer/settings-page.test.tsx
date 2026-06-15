@@ -43,6 +43,8 @@ describe('SettingsContent page chrome', () => {
         {
           id: 'watcher-debounce-ms',
           value: 1000,
+          kind: 'number',
+          group: 'watcher',
           unit: 'ms',
           editable: true,
           supported: true,
@@ -54,6 +56,8 @@ describe('SettingsContent page chrome', () => {
         {
           id: 'watcher-min-interval-ms',
           value: 30000,
+          kind: 'number',
+          group: 'watcher',
           unit: 'ms',
           editable: true,
           supported: true,
