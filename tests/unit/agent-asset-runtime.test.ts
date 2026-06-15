@@ -626,7 +626,7 @@ describe('AgentAssetRuntime', () => {
       projectCandidates: [],
       status: { state: 'ready', stale: false, lastCompletedAt: '2026-06-06T00:00:00.000Z' }
     }
-    const store = { load: vi.fn(() => persisted), save: vi.fn() }
+    const store = { load: vi.fn(() => persisted), save: vi.fn(), clear: vi.fn() }
     const scanner = createScanner({ assets: [], stats: emptyStats, errors: [] })
     const runtime = new AgentAssetRuntime({
       projectDir: '/repo/berth',
@@ -644,7 +644,7 @@ describe('AgentAssetRuntime', () => {
   })
 
   it('persists the default-project snapshot on refresh complete, not other projects (GH-113 T1)', async () => {
-    const store = { load: vi.fn(() => null), save: vi.fn() }
+    const store = { load: vi.fn(() => null), save: vi.fn(), clear: vi.fn() }
     const scanner = createScanner({ assets: [skillAsset('fresh')], stats: { ...emptyStats, skills: 1 }, errors: [] })
     const runtime = new AgentAssetRuntime({
       projectDir: '/repo/berth',
@@ -711,7 +711,7 @@ function fileAsset(id: string, sourceKey: string, type: Asset['type'] = 'skill')
   }
 }
 
-async function readyRuntime(assets: Asset[], store?: { load: ReturnType<typeof vi.fn>; save: ReturnType<typeof vi.fn> }): Promise<AgentAssetRuntime> {
+async function readyRuntime(assets: Asset[], store?: { load: ReturnType<typeof vi.fn>; save: ReturnType<typeof vi.fn>; clear: ReturnType<typeof vi.fn> }): Promise<AgentAssetRuntime> {
   const scanner = createScanner({ assets, stats: emptyStats, errors: [] })
   const runtime = new AgentAssetRuntime({
     projectDir: '/repo/berth',
@@ -783,7 +783,7 @@ describe('AgentAssetRuntime.applyFileChange (GH-113 I1)', () => {
   })
 
   it('persists the updated snapshot and emits a partial to the listener', async () => {
-    const store = { load: vi.fn(() => null), save: vi.fn() }
+    const store = { load: vi.fn(() => null), save: vi.fn(), clear: vi.fn() }
     const runtime = await readyRuntime([fileAsset('a', 'key-a')], store)
     store.save.mockClear() // ignore the refresh-time save
     const partials: number[] = []
@@ -796,7 +796,7 @@ describe('AgentAssetRuntime.applyFileChange (GH-113 I1)', () => {
   })
 
   it('is a no-op when an untracked file yields no assets', async () => {
-    const store = { load: vi.fn(() => null), save: vi.fn() }
+    const store = { load: vi.fn(() => null), save: vi.fn(), clear: vi.fn() }
     const runtime = await readyRuntime([fileAsset('a', 'key-a')], store)
     store.save.mockClear()
     const partials: number[] = []

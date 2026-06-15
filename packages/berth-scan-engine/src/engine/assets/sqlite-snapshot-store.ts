@@ -109,6 +109,21 @@ export function createSqliteSnapshotStore(dir: string, openDatabase: OpenSqliteD
         // persistence is best-effort
         getMainLog().log('sqlite-snapshot-store', err)
       }
+    },
+    clear(): void {
+      // Rebuild (GH-135): drop every indexed asset + the envelope so the next scan
+      // starts from an empty index. Same best-effort contract as load/save.
+      try {
+        const handle = getDb()
+        if (!handle) return
+        const run = handle.transaction(() => {
+          handle.prepare('DELETE FROM asset').run()
+          handle.prepare('DELETE FROM snapshot_meta').run()
+        })
+        run()
+      } catch (err) {
+        getMainLog().log('sqlite-snapshot-store', err)
+      }
     }
   }
 }

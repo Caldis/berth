@@ -4,6 +4,9 @@ import type { AssetSnapshot } from '@shared/types/ipc'
 export interface SnapshotStore {
   load(): AssetSnapshot | null
   save(snapshot: AssetSnapshot): void
+  /** Drop the persisted index so the next scan repopulates from scratch (rebuild,
+   * GH-135). Best-effort like load/save — a failure must never break scanning. */
+  clear(): void
 }
 
 // GH-115 T13: JSON 后端 createSnapshotStore 已删除 — 生产装配 (main/index.ts) 自 GH-113 I3

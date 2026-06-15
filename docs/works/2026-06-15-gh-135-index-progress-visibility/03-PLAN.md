@@ -4,13 +4,14 @@
 **顺序/并行边界**: Phase A (契约地基) 必须先行; Phase C (helper 迁移, high risk 架构) 与 Phase B (引擎逻辑) 都依赖 A, 且 B 的 cancel/scan 依赖 C 的 helper-host, 故 **A→C→B→D→E→F 主链顺序**; phase 内不重叠文件的子项可并行 (标注)。全程小步提交: 每子项过对应单测即提交。
 
 ## Phase A — 契约与引擎数据层 (顺序, 地基)
-- [ ] A1: `ipc.ts` 契约扩展 (ScanEngineSettings 全参数 / AssetScanProgress eta·rate·scanned / ScanEngineSchedulerSnapshot paused·periodicScan·lastScanDuration / ScanEngineControlDescriptor kind·group·options / IpcChannels +pause·resume·cancel·rebuild / capabilities 翻转) + `tests/setup.ts` mock 同批 + preload `api.assets` 占位方法
+- [x] A1: `ipc.ts` 契约扩展 (ScanEngineSettings 全参数 / AssetScanProgress eta·rate·scanned / ScanEngineSchedulerSnapshot paused·periodicScan·lastScanDuration / ScanEngineControlDescriptor kind·group·options / IpcChannels +pause·resume·cancel·rebuild / capabilities 翻转) + `tests/setup.ts` mock 同批 + preload `api.assets` 占位方法
   - tests: `tests/unit/ipc-contract.test.ts` 四方对账 (表==handlers==preload==mock); `pnpm test`
   - verify: 不适用 (非 UI); `pnpm typecheck` + `pnpm --filter @berth/scan-engine typecheck` 全绿
-- [ ] A2: `engine/assets/settings.ts` 全参数 DEFAULT + LIMITS + 3 档 PRESETS + normalize (boolean/string[]/preset 合并, 改裸值→custom)
+  - 偏差: channel (pause/resume/cancel/rebuild) + preload 方法挪 **D1** 与 handlers 四方同批 (ipc-contract 严格全等要求三方+mock 同批; runtime 命令方法 B2 就绪)。commit f04aa9b
+- [x] A2: `engine/assets/settings.ts` 全参数 DEFAULT + LIMITS + 3 档 PRESETS + normalize (boolean/string[]/preset 合并, 改裸值→custom) — 已并入 A1 commit f04aa9b
   - tests: `engine/assets/settings.test.ts` 全分支 (clamp/step/preset 应用/custom 回落); `pnpm --filter @berth/scan-engine test`
   - verify: 不适用
-- [ ] A3: `SnapshotStore.clear()` 接口 + sqlite 实现 (`DELETE FROM asset; DELETE FROM snapshot_meta` 事务, best-effort)
+- [x] A3: `SnapshotStore.clear()` 接口 + sqlite 实现 (`DELETE FROM asset; DELETE FROM snapshot_meta` 事务, best-effort)
   - tests: `engine/assets/sqlite-snapshot-store.test.ts` 注入假 Database 验 DELETE + 幂等; 同上命令
   - verify: 不适用
 
