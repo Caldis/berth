@@ -199,6 +199,26 @@ describe('SettingsContent page chrome', () => {
     })
   })
 
+  it('opens the rebuild dialog with translated labels and confirms (GH-135 E3)', async () => {
+    window.api.assets.rebuild = vi.fn(
+      async (): Promise<AssetRuntimeStatus> => ({ state: 'scanning', reason: 'manual', stale: true })
+    )
+    renderSettingsContent()
+
+    const trigger = await screen.findByRole('button', { name: 'Rebuild index' })
+    fireEvent.click(trigger)
+
+    // Destructive confirm dialog: title + body + translated action buttons (no raw i18n keys).
+    expect(await screen.findByText('Rebuild the index?')).toBeInTheDocument()
+    const cancel = screen.getByRole('button', { name: 'Cancel' })
+    const confirm = screen.getByRole('button', { name: 'Clear and rebuild' })
+    expect(cancel).toBeInTheDocument()
+    expect(screen.queryByText('common.cancel')).not.toBeInTheDocument()
+
+    fireEvent.click(confirm)
+    await waitFor(() => expect(window.api.assets.rebuild).toHaveBeenCalled())
+  })
+
   it('refreshes the scan engine from settings', async () => {
     renderSettingsContent()
 
