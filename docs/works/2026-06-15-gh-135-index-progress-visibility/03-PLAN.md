@@ -53,18 +53,22 @@
 - [x] E1: `store/app.ts` 去 foldKeepingShallow (纯投影, 已在 B1) + `use-ipc.ts` useScanEngineInfo 加 pause/resume/cancel/rebuild actions + onProgress→loadInfo 节流 250ms
   - tests: app-store.test 纯投影断言 (B1); settings-page/use-asset-runtime 绿; actions 薄 wrapper 端到端经 E2/E3 + F; `pnpm test`
   - verify: 不适用 (逻辑层)
-- [ ] E2: `ScanProgressPanel` 扩展 (ETA/速率/下次扫描时间行, 读 engine 值) + 新 `ScanControlBar` (暂停/取消/重建按钮)
-  - tests: `sidebar-scan-status.test.tsx` 渲染 eta/下次时间 + 按钮派发命令; `pnpm test`
-  - verify: 进度面板布局层级/信息密度 (ETA 行不挤压现有) + paused 态视觉 + 按钮 disabled/spinner 反馈 + 延续脉冲语言不引入 gray slab (CDP 截图请用户确认)
-- [ ] E3: `ScanEngineSettingsSection` 扩展 (controls 按 group 折叠 + kind→toggle/number/string-list/enum 控件 + preset 档位卡) + 新 `RebuildConfirmDialog` (destructive, focus trap+Esc, 破坏性+耗时双提示)
-  - tests: `scan-engine-settings-section.test.tsx` 各 kind 控件渲染 + 保存派发 + 对话框确认/取消; `pnpm test`
-  - verify: 设置面板分组信息密度 (16 参数不平铺) + 控件设计系统一致 + rebuild 对话框 destructive 样式/键盘可达 + i18n 无 raw key (CDP 截图请用户确认)
-- [ ] E4: `use-index-activity.ts` + `index-activity.tsx` 读 engine eta/rate/nextScanAt (去 GUI 派生)
-  - tests: `use-index-activity.test.ts` 读投影值; `pnpm test`
-  - verify: ambient 指示 (hairline/inline) 维持克制语言, 不变更现有视觉基线
-- [ ] E5: i18n en+zh 全 key (settings.scanEngine.* 参数/预设/控制/rebuild 警告; nav.scanStatus.* ETA/速率/下次时间)
-  - tests: i18n key 完整性 (现有 i18n 测试若有) 或手验双语; `pnpm test`
-  - verify: 双语完整, UI 无 raw key 泄漏 (截图)
+- [x] E2: `ScanProgressPanel` 扩展 (ETA/速率/下次扫描时间行, 读 engine 值) + 控制按钮 (暂停/恢复/取消)
+  - tests: `sidebar-scan-status.test.tsx` +4 (ETA/速率 / 下次扫描时间 / pause+cancel 派发 / resume 派发); `pnpm test` 绿 (commit 1f36bb4 + 14e7813)
+  - verify: CDP 截图请用户确认 (待真机)
+  - 偏差: ① 控制按钮**并入 ScanProgressPanel 底部** (安静文字按钮), 未单开 `ScanControlBar`; rebuild 按钮归 E3 设置面板 (破坏性操作不放 hover 浮层); ② **下次扫描/paused 提示只在 hover 浮层内, idle 态浮层不可达** — always-on 暴露下次扫描周期由 **E4 ambient 指示**承担 (本次需求核心"可见下次扫描周期"主线落 E4); ③ 为单测导出 `ScanProgressPanel` (hover popover 在 jsdom 脱离过快无法做活动树按钮查询)
+- [x] E3: `ScanEngineSettingsSection` 扩展 (controls 按 group 渲染 + kind→toggle/number/string-list/enum 控件 + preset 档位) + 新 `RebuildConfirmDialog` (destructive, 破坏性+不可撤销提示)
+  - tests: `settings-page.test.tsx` mock 补 kind/group 对齐真实契约 + 既有保存派发用例绿; runtime `setSettings` preset→custom 断言; `pnpm test` 绿 (commit c80442d)
+  - verify: CDP 截图请用户确认 (待真机); rebuild 对话框 HeroUI Modal 自带 focus trap+Esc
+  - 偏差: ① 引擎侧 `buildScanEngineSettingControls` (settings.ts) 产 typed 控制描述, GUI 纯按 kind/group 渲染 (真源逻辑留 engine, 符方案 X); ② preset 以 Select 呈现非"档位卡"; ③ `readonlyValue` 对 `supported:false` 显"暂不支持"沿用旧语义
+- [x] E4: `use-index-activity.ts` + `index-activity.tsx` 读 engine eta/rate (去 GUI 派生) + 设置面板常驻"下次扫描"行
+  - tests: `index-activity.test.tsx` +3 (hook 读 etaSeconds/ratePerSec + undefined 兜底 / IndexingInline 追加 "~Ns left"); `settings-page.test.tsx` +1 (下次扫描行); `pnpm test` 绿 (commit 8918f4d + 2fda8cf)
+  - verify: ambient inline 仅追加 ETA 文本 (克制), hairline/pulse 视觉基线不变; nextScan 落始终可达的设置面板
+  - 偏差: ① eta/rate 取自 progress 流 (B1 已 enrich), useIndexActivity 保持纯 store 派生, **不在 always-mounted hairline 引 IPC**; ② 下次扫描周期 always-on 落点改为**设置面板** (+ 侧栏浮层), 非 ambient 脉冲 (避免 always-mounted 组件依赖 engineInfo IPC); ③ ambient inline 只显 ETA 不显 rate (rate 噪声留侧栏面板)
+- [x] E5: i18n en+zh 全 key (settings.scanEngine.* 参数/预设/控制/rebuild 警告 + nextScan; nav.scanStatus.* ETA/速率/下次时间)
+  - 随 E2/E3/E4 落地: nav.scanStatus.{eta,rate,nextScan,paused,pause,resume,cancel} + settings.scanEngine.{groups,rebuild,nextScan,values,controlLabels,controlDescriptions,excludePlaceholder} en+zh 全齐
+  - tests: settings-page/sidebar/index-activity 测试断言均走真实 i18n (英文文案), 无 raw key 泄漏; `pnpm test` 绿
+  - verify: 双语完整, 真机截图终检 (随 E2/E3 截图一并确认)
 
 ## Phase F — e2e + 真机验收 (依赖全部)
 - [ ] F1: `scan-progress.e2e.ts` CDP 时序: 扫描中已扫数量增长 + ETA 递减 + 阶段流转 + 下次时间出现 (真跑 observable 流)
