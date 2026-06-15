@@ -133,4 +133,27 @@ describe('ScanHelperHost (GH-135)', () => {
     child.send({ type: 'done', result: donePayload })
     await r.catch(() => undefined)
   })
+
+  it('applies OS throttle to the helper pid on spawn', async () => {
+    const child = new FakeChild()
+    const applyThrottle = vi.fn()
+    const host = new ScanHelperHost({ createChild: () => asChild(child), applyThrottle })
+    const r = host.runScan({ projectDir: '/a' })
+    child.emit('spawn')
+    await vi.waitFor(() => expect(applyThrottle).toHaveBeenCalledWith(4242))
+    child.send({ type: 'done', result: donePayload })
+    await r
+  })
+
+  it('skips throttle when osThrottle is disabled', async () => {
+    const child = new FakeChild()
+    const applyThrottle = vi.fn()
+    const host = new ScanHelperHost({ createChild: () => asChild(child), applyThrottle, osThrottle: false })
+    const r = host.runScan({ projectDir: '/a' })
+    child.emit('spawn')
+    await vi.waitFor(() => expect(child.postMessage).toHaveBeenCalled())
+    expect(applyThrottle).not.toHaveBeenCalled()
+    child.send({ type: 'done', result: donePayload })
+    await r
+  })
 })

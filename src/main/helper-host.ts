@@ -1,5 +1,7 @@
 import { utilityProcess, type UtilityProcess } from 'electron'
+import { execFile } from 'child_process'
 import * as path from 'path'
+import { getMainLog } from '@berth/scan-engine/log'
 import type { Asset } from '@berth/scan-engine/shared/types/asset'
 import type { ProjectScopeCandidate } from '@berth/scan-engine/shared/scope'
 import type { AgentScanSourceGroup, ScanResult } from '@berth/scan-engine/shared/types/ipc'
@@ -14,6 +16,11 @@ import type {
 export interface ScanHelperHostOptions {
   helperPath?: string
   createChild?: () => UtilityProcess
+  /** Apply OS-level I/O+CPU throttle to the helper pid on spawn (GH-135 C2).
+   * Default true; no-op on win32 (no native binding yet). */
+  osThrottle?: boolean
+  /** Injectable throttle hook (tests). Default runs taskpolicy/ionice via execFile. */
+  applyThrottle?: (pid: number) => void
 }
 
 /**
@@ -29,17 +36,18 @@ export class ScanHelperHost {
   private spawnPromise: Promise<void> | null = null
   private readonly helperPath: string
   private readonly createChild: () => UtilityProcess
+  private readonly osThrottle: boolean
+  private readonly applyThrottle: (pid: number) => void
 
   constructor(options: ScanHelperHostOptions = {}) {
     this.helperPath = options.helperPath ?? path.join(__dirname, 'scan-helper.js')
+    this.osThrottle = options.osThrottle ?? true
+    this.applyThrottle = options.applyThrottle ?? defaultApplyThrottle
+    // No execArgv: utilityProcess routes it through NODE_OPTIONS, which Electron
+    // rejects ("Most NODE_OPTIONs are not supported"). Process isolation already
+    // separates the helper's V8 heap from main without it.
     this.createChild =
-      options.createChild ??
-      (() =>
-        utilityProcess.fork(this.helperPath, [], {
-          serviceName: 'berth-scan-helper',
-          // Isolated heap: scan GC pauses never touch the main process V8.
-          execArgv: ['--max-old-space-size=512']
-        }))
+      options.createChild ?? (() => utilityProcess.fork(this.helperPath, [], { serviceName: 'berth-scan-helper' }))
   }
 
   /** Live child pid once spawned — OS throttle (C2) targets this. */
@@ -59,7 +67,11 @@ export class ScanHelperHost {
     const child = this.createChild()
     this.child = child
     this.spawnPromise = new Promise<void>((resolve) => {
-      child.once('spawn', () => resolve())
+      child.once('spawn', () => {
+        // GH-135 C2: lower the helper's OS scheduling priority once it has a pid.
+        if (this.osThrottle && typeof child.pid === 'number') this.applyThrottle(child.pid)
+        resolve()
+      })
     })
     child.once('exit', () => {
       // Long-lived child died (crash/kill); drop it so the next scan respawns.
@@ -178,4 +190,28 @@ function createHelperError(message: string, stack?: string): Error {
   const error = new Error(message)
   if (stack) error.stack = stack
   return error
+}
+
+/**
+ * Lower the helper process's OS scheduling priority (GH-135 C2). Node has no
+ * IO-priority binding, so shell out to the platform CLI: macOS `taskpolicy -b`
+ * (DARWIN_BG = IOPOL_THROTTLE + background CPU), Linux `ionice -c3` (idle I/O) +
+ * `renice 19` (lowest CPU). Best-effort: a missing or failing CLI must never
+ * block scanning. win32 has no equivalent without a native binding (future).
+ */
+function defaultApplyThrottle(pid: number): void {
+  const cmds: Array<[string, string[]]> =
+    process.platform === 'darwin'
+      ? [['taskpolicy', ['-b', '-p', String(pid)]]]
+      : process.platform === 'linux'
+        ? [
+            ['ionice', ['-c', '3', '-p', String(pid)]],
+            ['renice', ['-n', '19', '-p', String(pid)]]
+          ]
+        : []
+  for (const [cmd, args] of cmds) {
+    execFile(cmd, args, (err) => {
+      if (err) getMainLog().log('scan-helper-throttle', err)
+    })
+  }
 }

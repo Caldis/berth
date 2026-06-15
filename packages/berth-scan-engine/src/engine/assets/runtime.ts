@@ -247,7 +247,7 @@ export class AgentAssetRuntime {
         pauseSupported: false,
         cancelSupported: false,
         writableSettingsSupported: true,
-        osThrottleSupported: false
+        osThrottleSupported: this.settings.osThrottleEnabled && process.platform !== 'win32'
       },
       limits: [
         { id: 'metadata-only-sensitive-files', level: 'info', enabled: true },

@@ -20,9 +20,10 @@
   - tests: `tests/unit/helper-host.test.ts` (5) 注入假 child 验 fork/spawn/scan/done/长驻复用/error/exit-respawn/kill; `pnpm test`
   - verify: `pnpm build` 产出 out/main/scan-helper.js + scanner chunk (alias resolve OK); 全量 typecheck/lint/test 绿。**真机 spike (helper 进程实跑扫描) 待做**
   - 偏差: ① helper 入口放 **src/main** (process.parentPort 是 electron API, 保引擎 electron-free; 引擎 WorkerAssetScanner/worker_threads 保留给 CLI); ② 打包沿用 `rollupOptions.input` (保守, 非 ?modulePath); ③ payload **暂保持 cache** (跨进程传), 去 cache (file-cache 留 helper) 列 C1b 后续; ④ cancel/OS节流/child-process-gone 自愈 → C2
-- [ ] C2: OS 节流 (helper-host `child.on('spawn')` execFile mac `taskpolicy -b -p`/linux `ionice -c3`+`renice` + helper `os.setPriority` 兜底, CLI 失败降级不阻断) + 崩溃自愈 (`app.on('child-process-gone')` serviceName 判 reason 重 spawn) + `before-quit` 清理
-  - tests: `helper-host.test.ts` 注入假 execFile/假 child-gone 事件验降级与重 spawn; 单测命令
-  - verify: manual 真机 mac/linux `taskpolicy`/`ionice` 抽验 helper pid 优先级 (OS 行为静态推不出)
+- [x] C2: OS 节流 (helper-host `child.on('spawn')` execFile mac `taskpolicy -b -p`/linux `ionice -c3`+`renice`, CLI 失败降级不阻断, 可注入 applyThrottle) + 崩溃自愈 (`app.on('child-process-gone')` 判 serviceName log 因, host ensure 下次 scan 自 respawn) + 去无效 execArgv (NODE_OPTIONS 警告) + capabilities.osThrottleSupported 翻转
+  - tests: `tests/unit/helper-host.test.ts` +2 注入 applyThrottle spy 验 throttle 施 pid / osThrottle=false 跳过; `pnpm test`
+  - verify: 单测 + 全量门禁绿。**真机验 taskpolicy 实降 helper pid 优先级 → Phase C 统一 spike**
+  - 偏差: ① helper 内 `os.setPriority` 自降兜底未做 (host execFile 已 cover mac/linux; 自降列后续); ② 崩溃自愈是被动重 spawn (下次 scan), child-process-gone 仅 log 因
 - [ ] C3: `main/index.ts` 接线 (helper 单例生命周期 + 周期 timer 启动 + powerMonitor 注入 runtime)
   - tests: 不适用 (electron 装配, 经 C1/C2 单测 + e2e 覆盖); 例外理由: main 组合根无单测宿主
   - verify: `pnpm dev` 启动扫描跑在 helper 进程 (进程检测), 主 UI 不阻塞

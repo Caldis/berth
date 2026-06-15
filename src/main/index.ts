@@ -250,6 +250,14 @@ if (!gotTheLock) {
       getScanHelperHost().kill()
     })
 
+    // GH-135 C2: surface helper crashes/OOM (parentPort has no 'close' event). The
+    // host respawns on the next scan; this only logs the cause for diagnosis.
+    app.on('child-process-gone', (_event, details) => {
+      if (details.type === 'Utility' && details.serviceName === 'berth-scan-helper' && details.reason !== 'clean-exit') {
+        getMainLog().log('scan-helper', `helper gone: ${details.reason} (exit ${String(details.exitCode)}); respawns on next scan`)
+      }
+    })
+
     app.on('activate', () => {
       if (BrowserWindow.getAllWindows().length === 0) createWindow({ openDevTools })
     })
