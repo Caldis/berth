@@ -17,6 +17,9 @@ export interface AssetRuntimeScanner {
   getScanSourceGroups(): Promise<AgentScanSourceGroup[]>
   getProjectScopeCandidates(): ProjectScopeCandidate[]
   getProjectDir(): string | undefined
+  /** Abort an in-flight scan (cancel/pause, GH-135). The helper kills its process;
+   * the worker has no hard abort, so the coordinator drops its result instead. */
+  cancel?(): void
 }
 
 /** Everything a completed scan hands back for the runtime to commit. */
@@ -45,6 +48,7 @@ export interface ScanSink {
 export class ScanCoordinator {
   private scanner: AssetRuntimeScanner
   private inFlight: Promise<void> | null = null
+  private cancelled = false
 
   constructor(
     private readonly createScanner: (projectDir?: string) => AssetRuntimeScanner,
@@ -75,15 +79,25 @@ export class ScanCoordinator {
   /** Execute one scan; concurrent calls join the same in-flight promise. */
   run(sink: ScanSink): Promise<void> {
     if (this.inFlight) return this.inFlight
+    this.cancelled = false
     this.inFlight = this.execute(sink).finally(() => {
       this.inFlight = null
     })
     return this.inFlight
   }
 
+  /** Abort the in-flight scan (cancel/pause, GH-135): tell the scanner to stop
+   * (helper kills its process) and mark the run cancelled so the aborted scan's
+   * progress/result/failure is dropped, not committed. */
+  cancel(): void {
+    if (!this.inFlight) return
+    this.cancelled = true
+    this.scanner.cancel?.()
+  }
+
   private async execute(sink: ScanSink): Promise<void> {
     const scanner = this.scanner
-    const isCurrent = (): boolean => this.scanner === scanner
+    const isCurrent = (): boolean => this.scanner === scanner && !this.cancelled
     try {
       const scanResult = await scanner.scanAll({
         onProgress: (progress) => { if (isCurrent()) sink.onProgress(progress) },
@@ -96,6 +110,9 @@ export class ScanCoordinator {
       if (!isCurrent()) return
       sink.onCompleted({ scanResult, sources, projectCandidates, projectDir })
     } catch (error) {
+      // A cancelled scan rejects because the helper was killed — expected, not a
+      // failure; drop it silently. (GH-135)
+      if (this.cancelled) return
       // GH-115 T6: the single sink for all scan failures — log unconditionally
       // (even for a swapped-away generation) so the stack is never lost; only
       // the state transition is generation-guarded.

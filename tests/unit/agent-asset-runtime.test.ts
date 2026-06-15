@@ -131,8 +131,8 @@ describe('AgentAssetRuntime', () => {
       scopeMode: 'scan-on-miss',
       cacheMode: 'sqlite-swr',
       incrementalFileChanges: true,
-      pauseSupported: false,
-      cancelSupported: false,
+      pauseSupported: true,
+      cancelSupported: true,
       writableSettingsSupported: true
     })
     expect(info.scheduler).toEqual({
@@ -168,7 +168,7 @@ describe('AgentAssetRuntime', () => {
         }),
         expect.objectContaining({ id: 'scheduled-refresh', value: 'none', supported: true, editable: false }),
         expect.objectContaining({ id: 'queued-refresh', value: 'none', supported: true, editable: false }),
-        expect.objectContaining({ id: 'pause', supported: false, editable: false })
+        expect.objectContaining({ id: 'pause', supported: true, editable: false })
       ])
     )
   })
@@ -421,6 +421,74 @@ describe('AgentAssetRuntime', () => {
     expect(enriched).toBeDefined()
     expect(enriched?.elapsedMs).toBeGreaterThanOrEqual(2_000)
     expect(enriched?.ratePerSec).toBeGreaterThan(0)
+  })
+
+  it('cancel kills the in-flight scan, keeps already-scanned assets, and goes stale (GH-135)', async () => {
+    const deferred = createDeferred<ScanResult>()
+    const cancelSpy = vi.fn()
+    const scanner: AssetRuntimeScanner = {
+      scanAll: vi.fn(async (options) => {
+        options?.onPartial?.({ assets: [skillAsset('partial-1')], stats: { ...emptyStats, skills: 1 } })
+        return deferred.promise
+      }),
+      getScanSourceGroups: vi.fn(async () => []),
+      getProjectScopeCandidates: vi.fn(() => []),
+      getProjectDir: () => '/repo/berth',
+      cancel: cancelSpy
+    }
+    const runtime = createRuntime(scanner)
+    void runtime.refresh({ reason: 'startup' })
+    await vi.waitFor(() => expect(runtime.getSnapshot().assets.map((a) => a.id)).toEqual(['partial-1']))
+
+    runtime.cancel()
+
+    expect(cancelSpy).toHaveBeenCalled()
+    expect(runtime.getStatus().state).toBe('stale')
+    // Already-scanned assets survive the cancel.
+    expect(runtime.getSnapshot().assets.map((a) => a.id)).toEqual(['partial-1'])
+    // A late resolution of the aborted scan must not commit (dropped by the coordinator).
+    deferred.resolve({ assets: [skillAsset('late')], stats: { ...emptyStats, skills: 1 }, errors: [] })
+    await Promise.resolve()
+    expect(runtime.getSnapshot().assets.map((a) => a.id)).toEqual(['partial-1'])
+  })
+
+  it('pause stops scheduling and cancels the in-flight scan (GH-135)', async () => {
+    const deferred = createDeferred<ScanResult>()
+    const scanner: AssetRuntimeScanner = {
+      scanAll: vi.fn(() => deferred.promise),
+      getScanSourceGroups: vi.fn(async () => []),
+      getProjectScopeCandidates: vi.fn(() => []),
+      getProjectDir: () => '/repo/berth',
+      cancel: vi.fn()
+    }
+    const runtime = createRuntime(scanner)
+    void runtime.refresh({ reason: 'startup' })
+    await vi.waitFor(() => expect(runtime.getStatus().state).toBe('scanning'))
+
+    runtime.pause()
+
+    expect(runtime.getEngineInfo().scheduler.paused).toBe(true)
+    expect(runtime.getStatus().state).toBe('stale')
+    deferred.resolve({ assets: [], stats: emptyStats, errors: [] })
+  })
+
+  it('rebuild clears the persisted + in-memory index then rescans (GH-135)', async () => {
+    const clearSpy = vi.fn()
+    const scanner = createScanner({ assets: [skillAsset('fresh')], stats: { ...emptyStats, skills: 1 }, errors: [] })
+    const runtime = new AgentAssetRuntime({
+      projectDir: '/repo/berth',
+      createScanner: () => scanner,
+      now: () => '2026-06-07T00:00:00.000Z',
+      snapshotStore: { load: () => null, save: vi.fn(), clear: clearSpy }
+    })
+    await runtime.refresh({ reason: 'startup', wait: true })
+    expect(runtime.getSnapshot().assets.map((a) => a.id)).toEqual(['fresh'])
+
+    await runtime.rebuild({ wait: true })
+
+    expect(clearSpy).toHaveBeenCalled()
+    // A full rescan repopulated the index from scratch.
+    expect(runtime.getSnapshot().assets.map((a) => a.id)).toEqual(['fresh'])
   })
 
   it('emits a terminal ready status as the final progress event (P4.6 stuck-scan fix)', async () => {

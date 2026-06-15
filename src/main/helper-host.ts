@@ -141,9 +141,9 @@ export class HelperAssetScanner implements AssetRuntimeScanner {
   private sessionCache: AssetFileCacheSnapshot<Asset> = { entries: [] }
   private projectScanCache: AssetFileCacheSnapshot<Asset[]> = { entries: [] }
   private resolvedProjectDir?: string
-  private readonly host: Pick<ScanHelperHost, 'runScan'>
+  private readonly host: Pick<ScanHelperHost, 'runScan' | 'kill'>
 
-  constructor(private readonly projectDir?: string, host?: Pick<ScanHelperHost, 'runScan'>) {
+  constructor(private readonly projectDir?: string, host?: Pick<ScanHelperHost, 'runScan' | 'kill'>) {
     this.host = host ?? getScanHelperHost()
     this.resolvedProjectDir = projectDir
   }
@@ -175,6 +175,12 @@ export class HelperAssetScanner implements AssetRuntimeScanner {
 
   getProjectDir(): string | undefined {
     return this.resolvedProjectDir
+  }
+
+  /** Abort the in-flight scan by killing the helper (GH-135). The host respawns it
+   * on the next scan; partial assets already streamed are kept by the runtime. */
+  cancel(): void {
+    this.host.kill()
   }
 }
 

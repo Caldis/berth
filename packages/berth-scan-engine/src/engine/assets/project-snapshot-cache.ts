@@ -21,6 +21,11 @@ export class ProjectSnapshotCache {
   set(projectDir: string | undefined, snapshot: AssetSnapshot): void {
     this.entries.set(projectSnapshotKey(projectDir), snapshot)
   }
+
+  /** Drop every cached project snapshot (rebuild, GH-135). */
+  clear(): void {
+    this.entries.clear()
+  }
 }
 
 /** Stable per-project cache key (normalized; empty for no/global project).

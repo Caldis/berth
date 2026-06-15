@@ -33,9 +33,9 @@
   - tests: `tests/unit/agent-asset-runtime.test.ts` +2 (fold 保 shallow / enrichProgress scanned+elapsed); `tests/renderer/app-store.test.ts` 2 个 store-fold 测试改纯投影断言; `pnpm test`
   - verify: 不适用 (逻辑层); ETA/fold 时序最终经 F1/F2 e2e CDP 真跑
   - 偏差: category typeCounts 留 GUI 纯派生 (render 时纯函数, 非持有真源, §2.3); 未扩 AssetStats
-- [ ] B2: runtime pause/resume/cancel/rebuild 状态机 + `scheduler.paused` (cancel→helper kill, partial 保留; rebuild→clear+refresh)
-  - tests: 同 runtime 测试文件, 注入假 helper-host 验 status/scheduler 转移 + clear 调用 + 数据保留; 单测命令
-  - verify: 不适用
+- [x] B2: runtime pause/resume/cancel/rebuild 状态机 + `scheduler.paused` (cancel→coordinator.cancel→scanner.cancel/helper kill, partial 保留; rebuild→snapshotStore.clear+snapshotCache.clear+重扫) + capabilities/controls 翻 true
+  - tests: `tests/unit/agent-asset-runtime.test.ts` +3 (cancel 保留已扫+drop late / pause 停调度+取消 / rebuild clear+重扫); `pnpm test`
+  - verify: 不适用 (逻辑层); 端到端语义经 F2 e2e CDP 真跑
 - [ ] B3: runtime 周期调度 (递归 setTimeout + nextScanAt + idleOnly/acOnly 门控注入 powerMonitor)
   - tests: 同上, fake timer + 假 powerMonitor 验排程/门控/paused 不排; 单测命令
   - verify: 不适用

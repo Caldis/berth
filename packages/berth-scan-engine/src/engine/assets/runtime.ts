@@ -116,6 +116,7 @@ export class AgentAssetRuntime {
   private flushingPendingRefresh = false
   private lastWatcherRefreshStartedAtMs = 0
   private lastScanDurationMs: number | undefined
+  private schedulerPaused = false
 
   constructor(options: AssetRuntimeOptions = {}) {
     this.projectDir = options.projectDir
@@ -235,8 +236,8 @@ export class AgentAssetRuntime {
           supported: true
         },
         { id: 'scope-fallback', value: 'scan-on-miss', unit: 'mode', editable: false, supported: true },
-        { id: 'pause', value: 'unsupported', unit: 'state', editable: false, supported: false },
-        { id: 'cancel', value: 'unsupported', unit: 'state', editable: false, supported: false },
+        { id: 'pause', value: this.schedulerPaused ? 'paused' : 'active', unit: 'state', editable: false, supported: true },
+        { id: 'cancel', value: this.coordinator.isScanning() ? 'available' : 'idle', unit: 'state', editable: false, supported: true },
         { id: 'persisted-settings', value: 'available', unit: 'state', editable: false, supported: true }
       ],
       capabilities: {
@@ -245,8 +246,8 @@ export class AgentAssetRuntime {
         scopeMode: 'scan-on-miss',
         cacheMode: 'sqlite-swr',
         incrementalFileChanges: true,
-        pauseSupported: false,
-        cancelSupported: false,
+        pauseSupported: true,
+        cancelSupported: true,
         writableSettingsSupported: true,
         osThrottleSupported: this.settings.osThrottleEnabled && process.platform !== 'win32'
       },
@@ -361,6 +362,43 @@ export class AgentAssetRuntime {
     })
     if (options.wait) await run
     return this.status
+  }
+
+  /** Pause the periodic scheduler (GH-135): stop auto-rescans and cancel any
+   * in-flight scan (its already-scanned assets stay visible). Resume re-arms it.
+   * Pause is a scheduler state, not a scan state. */
+  pause(): void {
+    this.schedulerPaused = true
+    this.clearScheduledRefresh()
+    if (this.coordinator.isScanning()) this.cancel()
+  }
+
+  resume(): void {
+    this.schedulerPaused = false
+  }
+
+  /** Cancel the in-flight scan (GH-135): kill the helper, keep already-scanned
+   * assets, transition to stale (a fresh scan can be triggered any time). */
+  cancel(): void {
+    if (!this.coordinator.isScanning()) return
+    this.coordinator.cancel()
+    this.status = { ...this.status, state: 'stale', stale: true }
+    this.snapshot = { ...this.snapshot, status: this.status }
+    this.progressListener?.({ status: this.status })
+  }
+
+  /** Rebuild the index from scratch (GH-135): drop the persisted + in-memory index
+   * and trigger a full rescan. Destructive — the GUI gates this behind a warning. */
+  async rebuild(options: AssetRefreshOptions = {}): Promise<AssetRuntimeStatus> {
+    if (this.coordinator.isScanning()) this.cancel()
+    this.snapshotStore?.clear()
+    this.snapshotCache.clear()
+    this.lastScanDurationMs = undefined
+    this.assetMap.clear()
+    this.selectorCache.clear()
+    this.snapshot = this.createInitialSnapshot()
+    this.status = this.createIdleStatus()
+    return this.refresh({ reason: options.reason ?? 'manual', wait: options.wait })
   }
 
   scheduleRefresh(options: AssetScheduledRefreshOptions = {}): void {
@@ -620,7 +658,7 @@ export class AgentAssetRuntime {
     const scheduled = this.scheduledRefreshInfo
     return {
       scanning: this.coordinator.isScanning(),
-      paused: false,
+      paused: this.schedulerPaused,
       scheduledRefresh: scheduled
         ? {
             active: true,
