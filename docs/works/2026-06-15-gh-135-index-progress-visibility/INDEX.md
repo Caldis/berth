@@ -2,7 +2,7 @@
 task: 2026-06-15-gh-135-index-progress-visibility
 task_id: GH-135
 type: feature
-phase: explore
+phase: design
 created: 2026-06-15
 priority: P2
 target_date:
@@ -12,16 +12,16 @@ source:
     - docs/issues/2026-06-07-FEATURE-background-progressive-asset-indexer.md
 debt:
   estimate:
-    incurred: 5
+    incurred: 12
     repaid: 0
-    net: 5
+    net: 12
     scope: cross-process
-    risk: medium
+    risk: high
     areas:
-      - ui-ux
       - architecture
-    confidence: low
-    rationale: "0.0-new 初估: 跨引擎 worker 进度上报 + IPC 事件 + preload + renderer 进度面板/设置/重置确认; 含暂停/取消协作式状态机与 rebuild 数据安全。explore/design 后校准。"
+      - ui-ux
+    confidence: medium
+    rationale: "explore 三次范围扩张定型: B 策略周期调度 + 全参数 UI 可配 + 扫描内核独立 helper 进程 (utilityProcess, 用户拍板) + engine 单一真源/GUI 纯投影数据流重构。~22 文件 multi-process。risk high (进程架构变动 + 真源跨进程迁移 + 原生模块 helper 加载 + 取消/重置数据安全 + 业务逻辑上提 engine)。缓冲: runtime/sqlite-store 已 electron-free (迁 helper 顺), controls[] 已是可配框架, helper 并掉母 FEATURE 长驻 worker 主线 (含 repaid)。"
   final:
     incurred:
     repaid:
@@ -31,7 +31,12 @@ debt:
     areas: []
     confidence:
     rationale:
-  revisions: []
+  revisions:
+    - phase: explore
+      date: 2026-06-15
+      from: 5
+      to: 12
+      reason: "范围由 /goal + 对话三次扩张: 完整 B 策略周期调度 + 全参数 UI 可配 + 扫描内核 helper 进程迁移 + engine 单一真源数据流重构。blast radius 19→22 文件 multi-process, risk medium→high, architecture 升为主 area。"
 issue:
   number: 135
   repo: Caldis/berth
@@ -61,7 +66,7 @@ artifacts:
 
 ## 产物
 - [x] 00-PRD.md — 原始输入快照
-- [ ] 01-ANALYSIS.md — Explore 产物
+- [x] 01-ANALYSIS.md — Explore 产物
 - [ ] 02-SPEC.md — Design 产物
 - [ ] 03-PLAN.md — 活任务清单
 - [ ] 04-POLISH.md — 可选抛光记录
