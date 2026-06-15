@@ -16,6 +16,7 @@ import { autoUpdater } from 'electron-updater'
 import { createUpdaterController, setUpdaterRuntime } from './updater'
 import { readUpdatePreferences } from './update-preferences'
 import { createScanEngineSettingsStore } from './scan-engine-settings'
+import { HelperAssetScanner, getScanHelperHost } from './helper-host'
 import appIcon from '../../assets/icon/app_icon.png?asset'
 
 // GH-115 T5: 进程级兜底 — 打包应用 (无终端) 的故障此前零痕迹。日志仅落
@@ -202,6 +203,12 @@ if (!gotTheLock) {
     const userDataDir = app.getPath('userData')
     initAssetRuntime({
       projectDir,
+      // GH-135: scanning runs in a long-lived utilityProcess helper for OS-level
+      // throttle + crash/memory isolation + a real kill(). The engine's runtime
+      // stays the single source of truth in main; only the scan executor is the
+      // separate process. (方案 X) The engine package keeps WorkerAssetScanner
+      // (worker_threads) as its electron-free default for the CLI.
+      createScanner: (dir) => new HelperAssetScanner(dir),
       snapshotStore: createSqliteSnapshotStore(userDataDir, (file) => new Database(file)),
       settingsStore: createScanEngineSettingsStore(userDataDir)
     })
@@ -235,6 +242,12 @@ if (!gotTheLock) {
       for (const win of BrowserWindow.getAllWindows()) {
         if (!win.isDestroyed()) win.webContents.send('assets:progress', payload)
       }
+    })
+
+    // GH-135: terminate the scan helper before the app exits. Electron auto-kills
+    // utilityProcess children, but kill explicitly so it never lingers.
+    app.on('before-quit', () => {
+      getScanHelperHost().kill()
     })
 
     app.on('activate', () => {

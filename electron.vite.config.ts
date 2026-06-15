@@ -17,7 +17,9 @@ export default defineConfig({
       rollupOptions: {
         input: {
           index: resolve('src/main/index.ts'),
-          'asset-worker': resolve('packages/berth-scan-engine/src/engine/assets/worker.ts')
+          'asset-worker': resolve('packages/berth-scan-engine/src/engine/assets/worker.ts'),
+          // GH-135: utilityProcess scan helper entry (long-lived scan executor).
+          'scan-helper': resolve('src/main/scan-helper.ts')
         }
       }
     }

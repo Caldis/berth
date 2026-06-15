@@ -16,9 +16,10 @@
   - verify: 不适用
 
 ## Phase C — helper 进程迁移 (顺序, high risk 架构地基)
-- [ ] C1: `scan-helper.ts` 入口 (worker.ts→parentPort, 长驻收 scan/cancel) + `helper-host.ts` (worker-host→utilityProcess.fork, on 平移, `?modulePath`, createChild 注入接缝) + payload 去 `sessionCache/projectScanCache` (file-cache 留 helper 进程内)
-  - tests: `engine/assets/helper-host.test.ts` 注入假 child (on/postMessage/kill) 验 scan/progress/done/error 协议 + 长驻复用; 单测命令
-  - verify: 不适用; `electron.vite.config.ts` 删手写 input 改 `?modulePath` 后 `pnpm build` 通过
+- [x] C1: `src/main/scan-helper.ts` 入口 (utilityProcess child, process.parentPort 长驻收 scan) + `src/main/helper-host.ts` (ScanHelperHost 单例 long-lived fork + HelperAssetScanner 实现 AssetRuntimeScanner) + main 注入 createScanner + before-quit kill + 打包 input
+  - tests: `tests/unit/helper-host.test.ts` (5) 注入假 child 验 fork/spawn/scan/done/长驻复用/error/exit-respawn/kill; `pnpm test`
+  - verify: `pnpm build` 产出 out/main/scan-helper.js + scanner chunk (alias resolve OK); 全量 typecheck/lint/test 绿。**真机 spike (helper 进程实跑扫描) 待做**
+  - 偏差: ① helper 入口放 **src/main** (process.parentPort 是 electron API, 保引擎 electron-free; 引擎 WorkerAssetScanner/worker_threads 保留给 CLI); ② 打包沿用 `rollupOptions.input` (保守, 非 ?modulePath); ③ payload **暂保持 cache** (跨进程传), 去 cache (file-cache 留 helper) 列 C1b 后续; ④ cancel/OS节流/child-process-gone 自愈 → C2
 - [ ] C2: OS 节流 (helper-host `child.on('spawn')` execFile mac `taskpolicy -b -p`/linux `ionice -c3`+`renice` + helper `os.setPriority` 兜底, CLI 失败降级不阻断) + 崩溃自愈 (`app.on('child-process-gone')` serviceName 判 reason 重 spawn) + `before-quit` 清理
   - tests: `helper-host.test.ts` 注入假 execFile/假 child-gone 事件验降级与重 spawn; 单测命令
   - verify: manual 真机 mac/linux `taskpolicy`/`ionice` 抽验 helper pid 优先级 (OS 行为静态推不出)
