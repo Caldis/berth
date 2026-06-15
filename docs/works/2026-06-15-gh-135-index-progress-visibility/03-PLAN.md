@@ -36,9 +36,9 @@
 - [x] B2: runtime pause/resume/cancel/rebuild 状态机 + `scheduler.paused` (cancel→coordinator.cancel→scanner.cancel/helper kill, partial 保留; rebuild→snapshotStore.clear+snapshotCache.clear+重扫) + capabilities/controls 翻 true
   - tests: `tests/unit/agent-asset-runtime.test.ts` +3 (cancel 保留已扫+drop late / pause 停调度+取消 / rebuild clear+重扫); `pnpm test`
   - verify: 不适用 (逻辑层); 端到端语义经 F2 e2e CDP 真跑
-- [ ] B3: runtime 周期调度 (递归 setTimeout + nextScanAt + idleOnly/acOnly 门控注入 powerMonitor)
-  - tests: 同上, fake timer + 假 powerMonitor 验排程/门控/paused 不排; 单测命令
-  - verify: 不适用
+- [x] B3: runtime 周期调度 (schedulePeriodic 递归 setTimeout + nextScanAt 暴露 + idleOnly/acOnly 门控注入 PowerMonitorLike) + main 注入 electron powerMonitor + whenReady 启动; 周期 re-arm 在 runPeriodicScan 末尾 (非 commit)
+  - tests: `tests/unit/agent-asset-runtime.test.ts` +1 (fake timer + 假 powerMonitor 验 battery defer → AC scan); `pnpm test`
+  - verify: 不适用 (逻辑层); 真机周期/空闲行为经 F1 e2e / manual
 - [ ] B4: scanner 背压 (adapter 间 `sleep(batchPauseMs)`) + 排除路径过滤 (excludePaths/.gitignore 入口剔除)
   - tests: `engine/scanner.test.ts` sleep spy + 假 fs 验过滤 + 节流; 单测命令
   - verify: 不适用

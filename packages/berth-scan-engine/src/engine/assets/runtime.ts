@@ -63,8 +63,18 @@ export interface AssetRuntimeEnsureOptions {
   refresh?: boolean
 }
 
+/** OS power/idle signals for periodic-scan gating (GH-135 B3). Injected by the
+ * main process from Electron's powerMonitor; the engine stays electron-free. */
+export interface PowerMonitorLike {
+  /** Milliseconds since the last user input. */
+  getSystemIdleTimeMs(): number
+  /** True when the device is running on battery. */
+  onBatteryPower(): boolean
+}
+
 export interface AssetRuntimeOptions {
   projectDir?: string
+  powerMonitor?: PowerMonitorLike
   createScanner?: (projectDir?: string) => AssetRuntimeScanner
   now?: () => string
   createSnapshotId?: () => string
@@ -117,6 +127,9 @@ export class AgentAssetRuntime {
   private lastWatcherRefreshStartedAtMs = 0
   private lastScanDurationMs: number | undefined
   private schedulerPaused = false
+  private readonly powerMonitor?: PowerMonitorLike
+  private periodicTimer: ReturnType<typeof setTimeout> | null = null
+  private nextPeriodicScanAtMs: number | undefined
 
   constructor(options: AssetRuntimeOptions = {}) {
     this.projectDir = options.projectDir
@@ -125,6 +138,7 @@ export class AgentAssetRuntime {
     this.createSnapshotId = options.createSnapshotId ?? createDefaultSnapshotId
     this.snapshotStore = options.snapshotStore
     this.settingsStore = options.settingsStore
+    this.powerMonitor = options.powerMonitor
     this.settings = normalizeScanEngineSettings(this.settingsStore?.load())
     this.coordinator = new ScanCoordinator(
       options.createScanner ?? ((projectDir) => new WorkerAssetScanner(projectDir)),
@@ -370,11 +384,13 @@ export class AgentAssetRuntime {
   pause(): void {
     this.schedulerPaused = true
     this.clearScheduledRefresh()
+    this.clearPeriodic()
     if (this.coordinator.isScanning()) this.cancel()
   }
 
   resume(): void {
     this.schedulerPaused = false
+    this.schedulePeriodic()
   }
 
   /** Cancel the in-flight scan (GH-135): kill the helper, keep already-scanned
@@ -399,6 +415,46 @@ export class AgentAssetRuntime {
     this.snapshot = this.createInitialSnapshot()
     this.status = this.createIdleStatus()
     return this.refresh({ reason: options.reason ?? 'manual', wait: options.wait })
+  }
+
+  /** Arm the periodic full-rescan timer (GH-135 B3). Re-armed after each periodic
+   * scan; cleared on pause. No-op when disabled, interval<=0, or paused. */
+  schedulePeriodic(): void {
+    this.clearPeriodic()
+    if (!this.settings.periodicScanEnabled || this.schedulerPaused) return
+    const intervalMs = this.settings.periodicScanIntervalMs
+    if (intervalMs <= 0) return
+    this.nextPeriodicScanAtMs = Date.parse(this.now()) + intervalMs
+    this.periodicTimer = setTimeout(() => {
+      this.periodicTimer = null
+      this.nextPeriodicScanAtMs = undefined
+      void this.runPeriodicScan()
+    }, intervalMs)
+  }
+
+  /** Run a periodic full rescan, gated by idle + power policy (GH-135 B3). Defers
+   * (re-arms) when the user is active (idleOnly) or on battery (acOnlyFullScan). */
+  private async runPeriodicScan(): Promise<void> {
+    if (
+      this.settings.idleOnly &&
+      this.powerMonitor &&
+      this.powerMonitor.getSystemIdleTimeMs() < this.settings.idleThresholdMs
+    ) {
+      this.schedulePeriodic()
+      return
+    }
+    if (this.settings.acOnlyFullScan && this.powerMonitor?.onBatteryPower()) {
+      this.schedulePeriodic()
+      return
+    }
+    await this.refresh({ reason: 'manual' })
+    this.schedulePeriodic()
+  }
+
+  private clearPeriodic(): void {
+    if (this.periodicTimer) clearTimeout(this.periodicTimer)
+    this.periodicTimer = null
+    this.nextPeriodicScanAtMs = undefined
   }
 
   scheduleRefresh(options: AssetScheduledRefreshOptions = {}): void {
@@ -676,7 +732,10 @@ export class AgentAssetRuntime {
         : { active: false },
       periodicScan: {
         enabled: this.settings.periodicScanEnabled,
-        intervalMs: this.settings.periodicScanIntervalMs
+        intervalMs: this.settings.periodicScanIntervalMs,
+        nextScanAt: this.nextPeriodicScanAtMs !== undefined
+          ? new Date(this.nextPeriodicScanAtMs).toISOString()
+          : undefined
       },
       lastWatcherRefreshStartedAt: this.lastWatcherRefreshStartedAtMs > 0
         ? new Date(this.lastWatcherRefreshStartedAtMs).toISOString()

@@ -1,4 +1,4 @@
-import { app, BrowserWindow, dialog, session, shell } from 'electron'
+import { app, BrowserWindow, dialog, powerMonitor, session, shell } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { registerAllHandlers } from './ipc'
@@ -201,6 +201,14 @@ if (!gotTheLock) {
     // triggers a background refresh (SWR). better-sqlite3's Electron-ABI binding
     // loads only here in the main process — never in the unit-test host.
     const userDataDir = app.getPath('userData')
+    // GH-135 B3: track battery state for the periodic-scan power gate.
+    let onBatteryPower = false
+    powerMonitor.on('on-battery', () => {
+      onBatteryPower = true
+    })
+    powerMonitor.on('on-ac', () => {
+      onBatteryPower = false
+    })
     initAssetRuntime({
       projectDir,
       // GH-135: scanning runs in a long-lived utilityProcess helper for OS-level
@@ -210,7 +218,12 @@ if (!gotTheLock) {
       // (worker_threads) as its electron-free default for the CLI.
       createScanner: (dir) => new HelperAssetScanner(dir),
       snapshotStore: createSqliteSnapshotStore(userDataDir, (file) => new Database(file)),
-      settingsStore: createScanEngineSettingsStore(userDataDir)
+      settingsStore: createScanEngineSettingsStore(userDataDir),
+      // GH-135 B3: power/idle signals for periodic-scan gating (engine stays electron-free).
+      powerMonitor: {
+        getSystemIdleTimeMs: () => powerMonitor.getSystemIdleTime() * 1000,
+        onBatteryPower: () => onBatteryPower
+      }
     })
     const watcher = getWatcher()
 
@@ -243,6 +256,9 @@ if (!gotTheLock) {
         if (!win.isDestroyed()) win.webContents.send('assets:progress', payload)
       }
     })
+
+    // GH-135 B3: start the periodic full-rescan scheduler (idle/power-gated).
+    getAssetRuntime().schedulePeriodic()
 
     // GH-135: terminate the scan helper before the app exits. Electron auto-kills
     // utilityProcess children, but kill explicitly so it never lingers.

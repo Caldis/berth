@@ -491,6 +491,35 @@ describe('AgentAssetRuntime', () => {
     expect(runtime.getSnapshot().assets.map((a) => a.id)).toEqual(['fresh'])
   })
 
+  it('periodic scheduler runs a rescan after the interval; idle/battery gating defers it (GH-135 B3)', async () => {
+    vi.useFakeTimers()
+    let onBattery = false
+    const scanner = createScanner({ assets: [], stats: emptyStats, errors: [] })
+    const runtime = new AgentAssetRuntime({
+      projectDir: '/repo/berth',
+      createScanner: () => scanner,
+      settingsStore: {
+        load: () => ({ periodicScanIntervalMs: 3_600_000, idleOnly: true, idleThresholdMs: 60_000, acOnlyFullScan: true }),
+        save: vi.fn()
+      },
+      powerMonitor: { getSystemIdleTimeMs: () => 999_999, onBatteryPower: () => onBattery }
+    })
+
+    // On battery → the periodic scan defers (re-arms) without scanning.
+    onBattery = true
+    runtime.schedulePeriodic()
+    expect(runtime.getEngineInfo().scheduler.periodicScan.nextScanAt).toBeDefined()
+    await vi.advanceTimersByTimeAsync(3_600_000)
+    expect(scanner.scanAll).not.toHaveBeenCalled()
+
+    // Idle + back on AC → the periodic rescan runs.
+    onBattery = false
+    await vi.advanceTimersByTimeAsync(3_600_000)
+    expect(scanner.scanAll).toHaveBeenCalled()
+
+    vi.useRealTimers()
+  })
+
   it('emits a terminal ready status as the final progress event (P4.6 stuck-scan fix)', async () => {
     const scanner: AssetRuntimeScanner = {
       scanAll: vi.fn(async (options) => {
