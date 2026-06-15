@@ -50,8 +50,8 @@
   - verify: 不适用 (契约层)
 
 ## Phase E — renderer GUI 投影 (依赖 A/B/D; E2/E3/E4 文件不重叠可并行, E5 最后)
-- [ ] E1: `store/app.ts` 去 foldKeepingShallow (纯投影) + `use-ipc.ts` 加 pause/resume/cancel/rebuild actions + onProgress→loadInfo 节流 (250ms)
-  - tests: `stores/app.test.ts` 投影纯赋值; `hooks/use-ipc.test.ts` actions 发命令 + 节流; `pnpm test`
+- [x] E1: `store/app.ts` 去 foldKeepingShallow (纯投影, 已在 B1) + `use-ipc.ts` useScanEngineInfo 加 pause/resume/cancel/rebuild actions + onProgress→loadInfo 节流 250ms
+  - tests: app-store.test 纯投影断言 (B1); settings-page/use-asset-runtime 绿; actions 薄 wrapper 端到端经 E2/E3 + F; `pnpm test`
   - verify: 不适用 (逻辑层)
 - [ ] E2: `ScanProgressPanel` 扩展 (ETA/速率/下次扫描时间行, 读 engine 值) + 新 `ScanControlBar` (暂停/取消/重建按钮)
   - tests: `sidebar-scan-status.test.tsx` 渲染 eta/下次时间 + 按钮派发命令; `pnpm test`

@@ -238,9 +238,14 @@ export function useScanEngineInfo(): {
   reload: () => void
   refreshIndex: () => void
   saveSettings: (settings: Partial<ScanEngineSettings>) => void
+  pause: () => void
+  resume: () => void
+  cancel: () => void
+  rebuild: () => void
 } {
   const mountedRef = useRef(false)
   const infoRef = useRef<ScanEngineInfo | null>(null)
+  const lastInfoLoadAtRef = useRef(0)
   const [info, setInfo] = useState<ScanEngineInfo | null>(null)
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
@@ -307,6 +312,31 @@ export function useScanEngineInfo(): {
       })
   }, [])
 
+  // GH-135: index control actions. pause/resume return fresh engine-info; cancel/
+  // rebuild return status, so reload engine-info after to reflect scheduler state.
+  const applyEngineInfo = useCallback((next: ScanEngineInfo) => {
+    if (!mountedRef.current) return
+    infoRef.current = next
+    setInfo(next)
+    setError(null)
+  }, [])
+
+  const pause = useCallback(() => {
+    void window.api?.assets?.pause?.().then(applyEngineInfo).catch(() => undefined)
+  }, [applyEngineInfo])
+
+  const resume = useCallback(() => {
+    void window.api?.assets?.resume?.().then(applyEngineInfo).catch(() => undefined)
+  }, [applyEngineInfo])
+
+  const cancel = useCallback(() => {
+    void window.api?.assets?.cancel?.().then(() => loadInfo()).catch(() => undefined)
+  }, [loadInfo])
+
+  const rebuild = useCallback(() => {
+    void window.api?.assets?.rebuild?.().then(() => loadInfo()).catch(() => undefined)
+  }, [loadInfo])
+
   useEffect(() => {
     mountedRef.current = true
     setLoading(infoRef.current === null)
@@ -315,6 +345,11 @@ export function useScanEngineInfo(): {
       void loadInfo()
     })
     const unsubscribeProgress = window.api?.assets?.onProgress?.(() => {
+      // GH-135: engine-info reload isn't needed every progress tick (high-freq P4.6);
+      // throttle to ~4/s so scheduler/snapshot metrics update live but cheaply.
+      const now = Date.now()
+      if (now - lastInfoLoadAtRef.current < 250) return
+      lastInfoLoadAtRef.current = now
       void loadInfo()
     })
     return () => {
@@ -324,7 +359,7 @@ export function useScanEngineInfo(): {
     }
   }, [loadInfo, reloadNonce])
 
-  return { info, loading, refreshing, saving, error, reload, refreshIndex, saveSettings }
+  return { info, loading, refreshing, saving, error, reload, refreshIndex, saveSettings, pause, resume, cancel, rebuild }
 }
 
 export function useSessions(opts?: {
