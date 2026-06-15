@@ -246,7 +246,8 @@ export class AgentAssetRuntime {
         incrementalFileChanges: true,
         pauseSupported: false,
         cancelSupported: false,
-        writableSettingsSupported: true
+        writableSettingsSupported: true,
+        osThrottleSupported: false
       },
       limits: [
         { id: 'metadata-only-sensitive-files', level: 'info', enabled: true },
@@ -614,6 +615,7 @@ export class AgentAssetRuntime {
     const scheduled = this.scheduledRefreshInfo
     return {
       scanning: this.coordinator.isScanning(),
+      paused: false,
       scheduledRefresh: scheduled
         ? {
             active: true,
@@ -629,6 +631,10 @@ export class AgentAssetRuntime {
             reason: this.pendingRefresh.reason
           }
         : { active: false },
+      periodicScan: {
+        enabled: this.settings.periodicScanEnabled,
+        intervalMs: this.settings.periodicScanIntervalMs
+      },
       lastWatcherRefreshStartedAt: this.lastWatcherRefreshStartedAtMs > 0
         ? new Date(this.lastWatcherRefreshStartedAtMs).toISOString()
         : undefined

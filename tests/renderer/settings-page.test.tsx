@@ -33,8 +33,10 @@ describe('SettingsContent page chrome', () => {
       },
       scheduler: {
         scanning: false,
+        paused: false,
         scheduledRefresh: { active: false },
-        queuedRefresh: { active: false }
+        queuedRefresh: { active: false },
+        periodicScan: { enabled: true, intervalMs: 86_400_000 }
       },
       controls: [
         { id: 'manual-refresh', value: 'available', editable: false, supported: true },
@@ -72,7 +74,8 @@ describe('SettingsContent page chrome', () => {
         incrementalFileChanges: true,
         pauseSupported: false,
         cancelSupported: false,
-        writableSettingsSupported: true
+        writableSettingsSupported: true,
+        osThrottleSupported: false
       },
       limits: [
         { id: 'metadata-only-sensitive-files', level: 'info', enabled: true },

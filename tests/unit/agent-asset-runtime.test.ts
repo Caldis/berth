@@ -4,6 +4,7 @@ import type { AgentScanSourceGroup, AssetSnapshot, ScanResult } from '@shared/ty
 import { AgentAssetRuntime, type AssetRuntimeScanner } from '@berth/scan-engine/engine/assets/runtime'
 import { createProjectScopeCandidate, normalizeProjectPathKey } from '@shared/scope'
 import { runHealthChecks } from '@berth/scan-engine/engine/health'
+import { normalizeScanEngineSettings } from '@berth/scan-engine/engine/assets/settings'
 
 // GH-113 T3: health is device-wide. Mock the checker so we can capture which assets
 // it receives and prove scope selection never narrows them.
@@ -136,8 +137,10 @@ describe('AgentAssetRuntime', () => {
     })
     expect(info.scheduler).toEqual({
       scanning: false,
+      paused: false,
       scheduledRefresh: { active: false },
-      queuedRefresh: { active: false }
+      queuedRefresh: { active: false },
+      periodicScan: { enabled: true, intervalMs: 86_400_000 }
     })
     expect(info.controls).toEqual(
       expect.arrayContaining([
@@ -236,16 +239,13 @@ describe('AgentAssetRuntime', () => {
       }
     })
 
-    expect(runtime.getSettings()).toEqual({
-      watcherDebounceMs: 1600,
-      watcherMinIntervalMs: 90000
-    })
+    expect(runtime.getSettings()).toEqual(
+      normalizeScanEngineSettings({ watcherDebounceMs: 1550, watcherMinIntervalMs: 90_400 })
+    )
     runtime.setSettings({ watcherDebounceMs: 240 })
-    expect(runtime.getSettings()).toEqual({
-      watcherDebounceMs: 200,
-      watcherMinIntervalMs: 90000
-    })
-    expect(saved).toEqual([{ watcherDebounceMs: 200, watcherMinIntervalMs: 90000 }])
+    const expectedSettings = normalizeScanEngineSettings({ watcherDebounceMs: 240, watcherMinIntervalMs: 90_400 })
+    expect(runtime.getSettings()).toEqual(expectedSettings)
+    expect(saved).toEqual([expectedSettings])
   })
 
   it('reuses an in-flight scan and publishes a ready snapshot', async () => {

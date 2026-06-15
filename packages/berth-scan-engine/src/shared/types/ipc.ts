@@ -53,6 +53,16 @@ export interface AssetScanProgress {
   current: number
   total: number
   label?: string
+  /** Real assets scanned so far (= partial.assets.length). Engine-computed so the
+   * GUI renders a count, not deriving it — single source of truth (GH-135). */
+  scannedAssets?: number
+  /** Elapsed since scan start (ms). */
+  elapsedMs?: number
+  /** Estimated time remaining (ms) = max(0, lastScanDurationMs - elapsed). Absent
+   * on the first scan (no duration baseline yet) → UI shows indeterminate. */
+  etaMs?: number
+  /** Throughput: scannedAssets per second. */
+  ratePerSec?: number
 }
 
 /** Cumulative assets scanned so far, streamed mid-scan so the UI renders
@@ -91,9 +101,20 @@ export type ScanEngineControlId =
 
 export type ScanEngineControlUnit = 'ms' | 'mode' | 'state'
 
+export type ScanEngineControlKind = 'number' | 'boolean' | 'string-list' | 'enum' | 'readonly'
+
+export type ScanEngineControlGroup = 'preset' | 'schedule' | 'performance' | 'scope' | 'power' | 'watcher'
+
 export interface ScanEngineControlDescriptor {
   id: ScanEngineControlId
-  value: string | number | boolean
+  value: string | number | boolean | string[]
+  /** Renders the matching control in the settings panel (GH-135). Absent → legacy
+   * number/readonly inference by `value` type. */
+  kind?: ScanEngineControlKind
+  /** Visual grouping in the settings panel so 16 params don't flatten into one list. */
+  group?: ScanEngineControlGroup
+  /** Allowed values for `kind: 'enum'` (e.g. preset tiers). */
+  options?: readonly string[]
   unit?: ScanEngineControlUnit
   editable: boolean
   supported: boolean
@@ -112,10 +133,16 @@ export interface ScanEngineCapabilitySummary {
   pauseSupported: boolean
   cancelSupported: boolean
   writableSettingsSupported: boolean
+  /** OS-level I/O+CPU throttle applied to the scan helper pid (mac taskpolicy /
+   * linux ionice). False on win32 (no native binding yet) or when disabled. (GH-135) */
+  osThrottleSupported: boolean
 }
 
 export interface ScanEngineSchedulerSnapshot {
   scanning: boolean
+  /** User paused the periodic scheduler (GH-135). Pausing also cancels any in-flight
+   * scan; resume re-arms the periodic timer. Pause is a scheduler state, not a scan state. */
+  paused: boolean
   scheduledRefresh: {
     active: boolean
     reason?: AssetScanReason
@@ -127,7 +154,16 @@ export interface ScanEngineSchedulerSnapshot {
     active: boolean
     reason?: AssetScanReason
   }
+  /** Active periodic full-rescan schedule (GH-135). `nextScanAt` is the user-facing
+   * "next scan" time; absent when disabled/paused. */
+  periodicScan: {
+    enabled: boolean
+    intervalMs: number
+    nextScanAt?: string
+  }
   lastWatcherRefreshStartedAt?: string
+  /** Last completed full scan's wall-clock duration (ms) — the ETA baseline. */
+  lastScanDurationMs?: number
 }
 
 export type ScanEngineLimitId =
@@ -162,9 +198,31 @@ export interface ScanEngineInfo {
   limits: ScanEngineLimitDescriptor[]
 }
 
+export type ScanEnginePreset = 'eco' | 'balanced' | 'performance' | 'custom'
+
 export interface ScanEngineSettings {
+  /** Active tuning preset; editing any raw value flips this to 'custom' (GH-135). */
+  preset: ScanEnginePreset
+  // watcher (existing)
   watcherDebounceMs: number
   watcherMinIntervalMs: number
+  // scheduling (B-strategy periodic engine)
+  periodicScanEnabled: boolean
+  periodicScanIntervalMs: number
+  idleOnly: boolean
+  idleThresholdMs: number
+  // performance / backpressure
+  scanConcurrency: number
+  batchPauseMs: number
+  // power / resource gating
+  acOnlyFullScan: boolean
+  minFreeDiskMb: number
+  // scope (highest leverage)
+  excludePaths: string[]
+  respectGitignore: boolean
+  contentHash: boolean
+  // OS-level throttle (helper process; mac/linux only, win is future)
+  osThrottleEnabled: boolean
 }
 
 export interface AssetSnapshot {

@@ -34,6 +34,9 @@ function formatControlValue(
   if (typeof control.value === 'string') {
     return t(`settings.scanEngine.values.${control.value}`, { defaultValue: control.value })
   }
+  if (Array.isArray(control.value)) {
+    return control.value.join(', ')
+  }
   return formatCount(control.value, language)
 }
 

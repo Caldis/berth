@@ -59,8 +59,10 @@ const createMockScanEngineInfo = () => ({
   },
   scheduler: {
     scanning: false,
+    paused: false,
     scheduledRefresh: { active: false },
-    queuedRefresh: { active: false }
+    queuedRefresh: { active: false },
+    periodicScan: { enabled: true, intervalMs: 86_400_000 }
   },
   controls: [
     { id: 'manual-refresh' as const, value: 'available', editable: false, supported: true },
@@ -98,7 +100,8 @@ const createMockScanEngineInfo = () => ({
     incrementalFileChanges: true,
     pauseSupported: false,
     cancelSupported: false,
-    writableSettingsSupported: true
+    writableSettingsSupported: true,
+    osThrottleSupported: false
   },
   limits: [
     { id: 'metadata-only-sensitive-files' as const, level: 'info' as const, enabled: true },

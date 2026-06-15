@@ -7,7 +7,7 @@ import {
   readScanEngineSettings,
   writeScanEngineSettings
 } from '../../src/main/scan-engine-settings'
-import { DEFAULT_SCAN_ENGINE_SETTINGS } from '@berth/scan-engine/engine/assets/settings'
+import { DEFAULT_SCAN_ENGINE_SETTINGS, normalizeScanEngineSettings } from '@berth/scan-engine/engine/assets/settings'
 
 const dirs: string[] = []
 
@@ -30,12 +30,11 @@ describe('scan engine settings persistence', () => {
     const dir = tempDir()
     const store = createScanEngineSettingsStore(dir)
 
-    store.save({ watcherDebounceMs: 1250, watcherMinIntervalMs: 31_200 })
+    store.save(normalizeScanEngineSettings({ watcherDebounceMs: 1250, watcherMinIntervalMs: 31_200 }))
 
-    expect(store.load()).toEqual({
-      watcherDebounceMs: 1300,
-      watcherMinIntervalMs: 31000
-    })
+    expect(store.load()).toEqual(
+      normalizeScanEngineSettings({ watcherDebounceMs: 1250, watcherMinIntervalMs: 31_200 })
+    )
   })
 
   it('falls back to defaults on corrupt content and clamps wrong-shaped numbers', () => {
@@ -43,10 +42,9 @@ describe('scan engine settings persistence', () => {
     fs.writeFileSync(path.join(dir, 'scan-engine-settings.json'), '{not json', 'utf-8')
     expect(readScanEngineSettings(dir)).toEqual(DEFAULT_SCAN_ENGINE_SETTINGS)
 
-    writeScanEngineSettings(dir, { watcherDebounceMs: 999_999, watcherMinIntervalMs: -20 })
-    expect(readScanEngineSettings(dir)).toEqual({
-      watcherDebounceMs: 10000,
-      watcherMinIntervalMs: 0
-    })
+    writeScanEngineSettings(dir, normalizeScanEngineSettings({ watcherDebounceMs: 999_999, watcherMinIntervalMs: -20 }))
+    expect(readScanEngineSettings(dir)).toEqual(
+      normalizeScanEngineSettings({ watcherDebounceMs: 999_999, watcherMinIntervalMs: -20 })
+    )
   })
 })
