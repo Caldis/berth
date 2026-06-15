@@ -1500,6 +1500,7 @@
       "loading": "正在加载扫描引擎…",
       "loadError": "无法加载扫描引擎详情",
       "lastCompleted": "最近完成: {{value}}",
+      "nextScan": "下次扫描: {{value}}",
       "controls": "控制项",
       "saveControl": "保存",
       "saving": "保存中",

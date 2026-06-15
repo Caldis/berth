@@ -36,7 +36,7 @@ describe('SettingsContent page chrome', () => {
         paused: false,
         scheduledRefresh: { active: false },
         queuedRefresh: { active: false },
-        periodicScan: { enabled: true, intervalMs: 86_400_000 }
+        periodicScan: { enabled: true, intervalMs: 86_400_000, nextScanAt: '2026-06-16T02:00:00.000Z' }
       },
       controls: [
         { id: 'manual-refresh', value: 'available', editable: false, supported: true },
@@ -181,6 +181,8 @@ describe('SettingsContent page chrome', () => {
     expect(screen.getAllByText('None')).toHaveLength(2)
     expect(screen.getByText('Pause scanning')).toBeInTheDocument()
     expect(screen.getByText('Not supported yet')).toBeInTheDocument()
+    // GH-135: the next scheduled periodic scan is surfaced in the always-reachable panel.
+    expect(screen.getByText(/Next scan:/)).toBeInTheDocument()
   })
 
   it('saves editable scan engine controls', async () => {

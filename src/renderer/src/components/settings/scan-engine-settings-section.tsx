@@ -367,7 +367,16 @@ export function ScanEngineSettingsSection(): React.ReactElement {
                 <span>{info.snapshot.id}</span>
               </div>
               <div className="sm:text-right">
-                {t('settings.scanEngine.lastCompleted', { value: formatDate(info.status.lastCompletedAt, language) })}
+                <div>
+                  {t('settings.scanEngine.lastCompleted', { value: formatDate(info.status.lastCompletedAt, language) })}
+                </div>
+                {info.scheduler.periodicScan.enabled && info.scheduler.periodicScan.nextScanAt && (
+                  <div className="tabular-nums">
+                    {t('settings.scanEngine.nextScan', {
+                      value: formatDate(info.scheduler.periodicScan.nextScanAt, language)
+                    })}
+                  </div>
+                )}
               </div>
             </div>
 

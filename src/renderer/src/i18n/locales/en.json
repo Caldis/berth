@@ -1506,6 +1506,7 @@
       "loading": "Loading scan engine...",
       "loadError": "Could not load scan engine details",
       "lastCompleted": "Last completed: {{value}}",
+      "nextScan": "Next scan: {{value}}",
       "controls": "Controls",
       "saveControl": "Save",
       "saving": "Saving",
