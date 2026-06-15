@@ -19,6 +19,11 @@ export interface IndexActivity {
   pct: number
   /** Assets discovered so far — grows live as partial results stream in. */
   scanned: number
+  /** Engine-computed estimated seconds remaining (single source of truth, GH-135).
+   * Undefined until the engine has a baseline; never derived in the GUI. */
+  etaSeconds?: number
+  /** Engine-computed scan rate in assets/sec (GH-135), undefined until known. */
+  ratePerSec?: number
   errorCount: number
 }
 
@@ -32,6 +37,10 @@ export function useIndexActivity(): IndexActivity {
   const determinate =
     active && progress?.phase === 'parsing' && typeof progress.total === 'number' && progress.total > 0
   const pct = determinate ? Math.min(100, Math.round((progress!.current / progress!.total) * 100)) : 0
+  // Engine-computed ETA/rate ride the progress stream (B1 enrichProgress) — read
+  // them straight through; the GUI never recomputes a time estimate of its own.
+  const etaSeconds = progress?.etaMs !== undefined ? Math.ceil(progress.etaMs / 1000) : undefined
+  const ratePerSec = progress?.ratePerSec
 
   return {
     active,
@@ -40,6 +49,8 @@ export function useIndexActivity(): IndexActivity {
     determinate,
     pct,
     scanned,
+    etaSeconds,
+    ratePerSec,
     errorCount
   }
 }

@@ -58,7 +58,7 @@ export function IndexHairline(): React.ReactElement {
  */
 export function IndexingInline({ className }: { className?: string }): React.ReactElement | null {
   const { t } = useTranslation()
-  const { active, scanned } = useIndexActivity()
+  const { active, scanned, etaSeconds } = useIndexActivity()
   if (!active) return null
 
   return (
@@ -72,6 +72,7 @@ export function IndexingInline({ className }: { className?: string }): React.Rea
       <span className="tabular-nums">
         {t('nav.scanStatus.indexing')}
         {scanned > 0 ? ` · ${t('nav.scanStatus.found', { count: scanned })}` : ''}
+        {etaSeconds !== undefined ? ` · ${t('nav.scanStatus.eta', { seconds: etaSeconds })}` : ''}
       </span>
     </span>
   )

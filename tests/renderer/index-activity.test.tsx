@@ -56,6 +56,24 @@ describe('useIndexActivity', () => {
     expect(result.current.determinate).toBe(false)
     expect(result.current.pct).toBe(0)
   })
+
+  it('reads engine-computed eta/rate from the progress stream (GH-135 E4)', () => {
+    setStatus({
+      state: 'scanning',
+      progress: { phase: 'parsing', current: 30, total: 120, etaMs: 4200, ratePerSec: 18 }
+    })
+    const { result } = renderHook(() => useIndexActivity())
+    // ETA is rounded up to whole seconds; rate passes straight through.
+    expect(result.current.etaSeconds).toBe(5)
+    expect(result.current.ratePerSec).toBe(18)
+  })
+
+  it('leaves eta/rate undefined until the engine provides them (GH-135 E4)', () => {
+    setStatus({ state: 'scanning', progress: { phase: 'parsing', current: 1, total: 4 } })
+    const { result } = renderHook(() => useIndexActivity())
+    expect(result.current.etaSeconds).toBeUndefined()
+    expect(result.current.ratePerSec).toBeUndefined()
+  })
 })
 
 describe('IndexingInline', () => {
@@ -68,6 +86,15 @@ describe('IndexingInline', () => {
     setStatus({ state: 'ready' }, [asset('a')])
     rerender(<IndexingInline />)
     expect(screen.queryByTestId('indexing-inline')).not.toBeInTheDocument()
+  })
+
+  it('appends the engine ETA while indexing (GH-135 E4)', () => {
+    setStatus(
+      { state: 'scanning', progress: { phase: 'parsing', current: 2, total: 10, etaMs: 5000 } },
+      [asset('a'), asset('b')]
+    )
+    render(<IndexingInline />)
+    expect(screen.getByTestId('indexing-inline').textContent).toMatch(/~5s left/)
   })
 })
 
