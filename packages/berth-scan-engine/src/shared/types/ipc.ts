@@ -573,6 +573,10 @@ export interface IpcChannels {
   'assets:engine-info': { args: []; result: ScanEngineInfo }
   'assets:set-engine-settings': { args: [Partial<ScanEngineSettings>]; result: ScanEngineInfo }
   'assets:refresh': { args: [{ wait?: boolean }?]; result: AssetRuntimeStatus }
+  'assets:pause': { args: []; result: ScanEngineInfo }
+  'assets:resume': { args: []; result: ScanEngineInfo }
+  'assets:cancel': { args: []; result: AssetRuntimeStatus }
+  'assets:rebuild': { args: [{ wait?: boolean }?]; result: AssetRuntimeStatus }
   'assets:scan-sources': { args: []; result: AgentScanSourceGroup[] }
   'agent-plugins:list': { args: []; result: AgentCapabilityPluginListResult }
   'project-scope:candidates': { args: []; result: ProjectScopeCandidate[] }

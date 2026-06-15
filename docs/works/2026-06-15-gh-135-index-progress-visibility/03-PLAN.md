@@ -45,9 +45,9 @@
   - 偏差: ① excludePaths 是结果后过滤 (非 adapter 入口剔, 仅减结果集不减扫描成本); ② `respectGitignore` setting 未接 engine (列 issue, adapter 层深度); ③ batchPauseMs sleep 无专门单测 (时序节流不改结果) → 记 issue
 
 ## Phase D — main IPC + preload (顺序, 依赖 A/B)
-- [ ] D1: `handlers.ts` registerAssetHandlers 注册 pause/resume/cancel/rebuild 转发 runtime + `preload/index.ts` api.assets 落实 4 方法
-  - tests: `ipc-contract.test.ts` 复跑四方一致; `pnpm test`
-  - verify: 不适用
+- [x] D1: `ipc.ts` IpcChannels +pause/resume/cancel/rebuild + `handlers.ts` registerAssetHandlers 转发 runtime + `preload` api.assets 4 方法 + `tests/setup` mock 4 方法 (A1 挪此的 channel 四方同批)
+  - tests: `tests/unit/ipc-contract.test.ts` 四方对账 (IpcChannels==handlers==preload==mock); `pnpm test`
+  - verify: 不适用 (契约层)
 
 ## Phase E — renderer GUI 投影 (依赖 A/B/D; E2/E3/E4 文件不重叠可并行, E5 最后)
 - [ ] E1: `store/app.ts` 去 foldKeepingShallow (纯投影) + `use-ipc.ts` 加 pause/resume/cancel/rebuild actions + onProgress→loadInfo 节流 (250ms)

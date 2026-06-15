@@ -168,6 +168,27 @@ export function registerAssetHandlers(): void {
     return getAssetRuntime().refresh({ reason: 'manual', wait: opts.wait })
   })
 
+  // GH-135: index controls. pause/resume return engine-info (scheduler.paused +
+  // capabilities); cancel returns status (stale, partial kept); rebuild rescans.
+  ipcMain.handle('assets:pause', (): ScanEngineInfo => {
+    getAssetRuntime().pause()
+    return getAssetRuntime().getEngineInfo()
+  })
+
+  ipcMain.handle('assets:resume', (): ScanEngineInfo => {
+    getAssetRuntime().resume()
+    return getAssetRuntime().getEngineInfo()
+  })
+
+  ipcMain.handle('assets:cancel', (): AssetRuntimeStatus => {
+    getAssetRuntime().cancel()
+    return getAssetRuntime().getStatus()
+  })
+
+  ipcMain.handle('assets:rebuild', async (_event, opts: { wait?: boolean } = {}): Promise<AssetRuntimeStatus> => {
+    return getAssetRuntime().rebuild({ reason: 'manual', wait: opts.wait })
+  })
+
   ipcMain.handle('assets:scan-sources', async (): Promise<AgentScanSourceGroup[]> => {
     return getAssetRuntime().getScanSourceGroups()
   })

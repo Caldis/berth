@@ -43,6 +43,10 @@ const api = {
     setEngineSettings: (settings: IpcChannelArgs<'assets:set-engine-settings'>[0]) =>
       invoke('assets:set-engine-settings', settings),
     refresh: (opts?: { wait?: boolean }) => invoke('assets:refresh', opts),
+    pause: () => invoke('assets:pause'),
+    resume: () => invoke('assets:resume'),
+    cancel: () => invoke('assets:cancel'),
+    rebuild: (opts?: { wait?: boolean }) => invoke('assets:rebuild', opts),
     scanSources: () => invoke('assets:scan-sources'),
     get: (id: string) => invoke('assets:get', id),
     search: (query: string) => invoke('assets:search', query),
