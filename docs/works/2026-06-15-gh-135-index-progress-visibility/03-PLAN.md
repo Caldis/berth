@@ -24,14 +24,15 @@
   - tests: `tests/unit/helper-host.test.ts` +2 注入 applyThrottle spy 验 throttle 施 pid / osThrottle=false 跳过; `pnpm test`
   - verify: 单测 + 全量门禁绿。**真机验 taskpolicy 实降 helper pid 优先级 → Phase C 统一 spike**
   - 偏差: ① helper 内 `os.setPriority` 自降兜底未做 (host execFile 已 cover mac/linux; 自降列后续); ② 崩溃自愈是被动重 spawn (下次 scan), child-process-gone 仅 log 因
-- [ ] C3: `main/index.ts` 接线 (helper 单例生命周期 + 周期 timer 启动 + powerMonitor 注入 runtime)
-  - tests: 不适用 (electron 装配, 经 C1/C2 单测 + e2e 覆盖); 例外理由: main 组合根无单测宿主
-  - verify: `pnpm dev` 启动扫描跑在 helper 进程 (进程检测), 主 UI 不阻塞
+- [x] C3: `main/index.ts` 接线 — helper 单例生命周期 (createScanner 注入 + before-quit kill + child-process-gone) 已在 C1/C2 完成; 周期 timer + powerMonitor 注入 → B3 (runtime 调度就绪后接 main 启动)
+  - tests: 不适用 (electron 组合根无单测宿主); C1/C2 单测 + C1 真机 spike 覆盖
+  - verify: ✅ **C1 真机 spike 通过** — helper (node utility) 跑扫描 1213 资产 → berth-index.db 2MB, long-lived 不退出, 无崩溃, 主 UI 不阻塞
 
 ## Phase B — 引擎真源逻辑 (顺序, 依赖 A/C; 子项 B1/B4 与 B2/B3 文件局部可并行)
-- [ ] B1: runtime ETA + `lastScanDurationMs` + category stats 上提 (扩 AssetStats 覆盖 category) + `foldKeepingShallow` 上提 (从 store 移入 runtime commit/partial)
-  - tests: `engine/assets/agent-asset-runtime.test.ts` 注入 now/duration 验 eta/rate; fold 上提后 partial 含完整数据; 单测命令
-  - verify: 不适用
+- [x] B1: runtime ETA (enrichProgress: etaMs 基线/scannedAssets/ratePerSec/elapsedMs) + `lastScanDurationMs` 基线 + `foldKeepingShallow` 上提 (store→runtime applyPartial; store 退化纯投影)
+  - tests: `tests/unit/agent-asset-runtime.test.ts` +2 (fold 保 shallow / enrichProgress scanned+elapsed); `tests/renderer/app-store.test.ts` 2 个 store-fold 测试改纯投影断言; `pnpm test`
+  - verify: 不适用 (逻辑层); ETA/fold 时序最终经 F1/F2 e2e CDP 真跑
+  - 偏差: category typeCounts 留 GUI 纯派生 (render 时纯函数, 非持有真源, §2.3); 未扩 AssetStats
 - [ ] B2: runtime pause/resume/cancel/rebuild 状态机 + `scheduler.paused` (cancel→helper kill, partial 保留; rebuild→clear+refresh)
   - tests: 同 runtime 测试文件, 注入假 helper-host 验 status/scheduler 转移 + clear 调用 + 数据保留; 单测命令
   - verify: 不适用

@@ -115,6 +115,7 @@ export class AgentAssetRuntime {
   private pendingRefresh: AssetRefreshOptions | null = null
   private flushingPendingRefresh = false
   private lastWatcherRefreshStartedAtMs = 0
+  private lastScanDurationMs: number | undefined
 
   constructor(options: AssetRuntimeOptions = {}) {
     this.projectDir = options.projectDir
@@ -513,6 +514,10 @@ export class AgentAssetRuntime {
       stale: false
     }
 
+    // ETA baseline (GH-135): record how long this scan took for the next scan's ETA.
+    if (this.status.startedAt && status.lastCompletedAt) {
+      this.lastScanDurationMs = Math.max(0, Date.parse(status.lastCompletedAt) - Date.parse(this.status.startedAt))
+    }
     this.projectDir = projectDir
     this.status = status
     this.snapshot = {
@@ -637,14 +642,15 @@ export class AgentAssetRuntime {
       },
       lastWatcherRefreshStartedAt: this.lastWatcherRefreshStartedAtMs > 0
         ? new Date(this.lastWatcherRefreshStartedAtMs).toISOString()
-        : undefined
+        : undefined,
+      lastScanDurationMs: this.lastScanDurationMs
     }
   }
 
   private setProgress(progress: AssetScanProgress): void {
     this.status = {
       ...this.status,
-      progress
+      progress: this.enrichProgress(progress)
     }
     this.snapshot = {
       ...this.snapshot,
@@ -654,19 +660,42 @@ export class AgentAssetRuntime {
   }
 
   /**
+   * Enrich progress engine-side so the GUI renders ETA/rate/count rather than
+   * deriving them (GH-135 single source of truth). ETA uses the previous scan's
+   * wall-clock duration as the baseline; absent on the first scan (no baseline)
+   * → undefined → the UI shows an indeterminate bar.
+   */
+  private enrichProgress(progress: AssetScanProgress): AssetScanProgress {
+    const startedAt = this.status.startedAt
+    if (!startedAt) return progress
+    const elapsedMs = Math.max(0, Date.parse(this.now()) - Date.parse(startedAt))
+    const scannedAssets = this.snapshot.assets.length
+    const ratePerSec = elapsedMs > 0 ? Math.round((scannedAssets / elapsedMs) * 1000) : undefined
+    const etaMs =
+      this.lastScanDurationMs !== undefined ? Math.max(0, this.lastScanDurationMs - elapsedMs) : undefined
+    return { ...progress, elapsedMs, scannedAssets, etaMs, ratePerSec }
+  }
+
+  /**
    * Fold a cumulative partial into the live snapshot so the renderer can show
    * already-scanned assets mid-scan. The snapshot id is deliberately kept stable
    * (only `runRefresh` mints a fresh id on completion) so id-keyed consumers like
    * the plugin list don't re-fetch on every partial.
    */
   private applyPartial(partial: AssetScanPartial): void {
+    // Fold shallow (other-project) assets engine-side so the partial the GUI gets is
+    // render-ready — GUI stays a pure projection with no fold logic (GH-135 方案 X).
+    // The scanner streams deep-only partials (shallow lands in the final snapshot),
+    // so mid-scan we keep the previous shallow set until a partial carries its own.
+    const assets = foldKeepingShallow(partial.assets, this.snapshot.assets)
+    const stats = assets === partial.assets ? partial.stats : computeAssetStats(assets)
     this.snapshot = {
       ...this.snapshot,
-      assets: partial.assets,
-      stats: partial.stats
+      assets,
+      stats
     }
-    this.assetMap = new Map(partial.assets.map((asset) => [asset.id, asset]))
-    this.progressListener?.({ status: this.status, partial })
+    this.assetMap = new Map(assets.map((asset) => [asset.id, asset]))
+    this.progressListener?.({ status: this.status, partial: { assets, stats, errorCount: partial.errorCount } })
   }
 
   /**
@@ -710,6 +739,19 @@ function computeAssetStats(assets: Asset[]): AssetStats {
     commands: assets.filter((a) => a.type === 'command').length,
     subagents: assets.filter((a) => a.type === 'agent').length
   }
+}
+
+/**
+ * Keep shallow (other-project) assets when an incoming deep-only set would drop them
+ * (GH-113, moved engine-side GH-135). A read landing mid-scan — a deep-only partial —
+ * would otherwise flicker the global scope. Keep existing shallow until an incoming
+ * set actually carries shallow and replaces it wholesale. Identity-preserving when no
+ * shallow needs keeping, so the caller can skip a stats recompute.
+ */
+function foldKeepingShallow(incoming: Asset[], existing: Asset[]): Asset[] {
+  if (incoming.some((a) => a.meta?.scanDepth === 'shallow')) return incoming
+  const shallowKept = existing.filter((a) => a.meta?.scanDepth === 'shallow')
+  return shallowKept.length > 0 ? [...incoming, ...shallowKept] : incoming
 }
 
 /** Normalized per-file replacement key (GH-113). Set by parsers via

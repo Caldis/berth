@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { Asset, AssetStats } from '@shared/types/asset'
-import type { AgentScanSourceGroup, AssetSnapshot, ScanResult } from '@shared/types/ipc'
+import type { AgentScanSourceGroup, AssetScanProgress, AssetSnapshot, ScanResult } from '@shared/types/ipc'
 import { AgentAssetRuntime, type AssetRuntimeScanner } from '@berth/scan-engine/engine/assets/runtime'
 import { createProjectScopeCandidate, normalizeProjectPathKey } from '@shared/scope'
 import { runHealthChecks } from '@berth/scan-engine/engine/health'
@@ -140,7 +140,8 @@ describe('AgentAssetRuntime', () => {
       paused: false,
       scheduledRefresh: { active: false },
       queuedRefresh: { active: false },
-      periodicScan: { enabled: true, intervalMs: 86_400_000 }
+      periodicScan: { enabled: true, intervalMs: 86_400_000 },
+      lastScanDurationMs: expect.any(Number)
     })
     expect(info.controls).toEqual(
       expect.arrayContaining([
@@ -345,6 +346,81 @@ describe('AgentAssetRuntime', () => {
     expect(payloads.some((p) => !p.hasPartial)).toBe(true)
     // Final ready snapshot reflects the scanned assets.
     expect(runtime.getSnapshot().assets.map((a) => a.id)).toEqual(['session-partial'])
+  })
+
+  it('folds existing shallow assets into a deep-only partial engine-side (GH-135 flicker fix moved from store)', async () => {
+    const shallow: Asset = {
+      ...fileAsset('shallow-conv', 'k-shallow', 'claude-md'),
+      scope: 'project',
+      meta: { sourceKey: 'k-shallow', scanDepth: 'shallow', projectPath: '/other' }
+    }
+    const persisted: AssetSnapshot = {
+      id: 'persisted',
+      projectDir: '/repo/berth',
+      assets: [shallow],
+      stats: emptyStats,
+      errors: [],
+      sources: [],
+      projectCandidates: [],
+      status: { state: 'ready', stale: false }
+    }
+    const scanner: AssetRuntimeScanner = {
+      // The scanner streams a deep-only partial; shallow lands only in the final snapshot.
+      scanAll: vi.fn(async (options) => {
+        options?.onPartial?.({ assets: [skillAsset('deep-live')], stats: { ...emptyStats, skills: 1 } })
+        return { assets: [skillAsset('deep-live')], stats: { ...emptyStats, skills: 1 }, errors: [] }
+      }),
+      getScanSourceGroups: vi.fn(async () => []),
+      getProjectScopeCandidates: vi.fn(() => []),
+      getProjectDir: () => '/repo/berth'
+    }
+    const runtime = new AgentAssetRuntime({
+      projectDir: '/repo/berth',
+      createScanner: () => scanner,
+      now: () => '2026-06-07T00:00:00.000Z',
+      snapshotStore: { load: () => persisted, save: vi.fn(), clear: vi.fn() }
+    })
+    const partialIds: string[][] = []
+    runtime.setProgressListener((payload) => {
+      if (payload.partial) partialIds.push(payload.partial.assets.map((a) => a.id).sort())
+    })
+
+    await runtime.refresh({ reason: 'manual', wait: true })
+
+    // The deep-only partial was folded with the existing shallow before reaching the listener.
+    expect(partialIds.some((ids) => ids.includes('deep-live') && ids.includes('shallow-conv'))).toBe(true)
+  })
+
+  it('enriches progress with scanned count + elapsed time engine-side (GH-135 single source of truth)', async () => {
+    let nowMs = 10_000
+    const scanner: AssetRuntimeScanner = {
+      scanAll: vi.fn(async (options) => {
+        nowMs += 2_000 // 2s elapsed since the scan started
+        options?.onPartial?.({ assets: [skillAsset('s1'), skillAsset('s2')], stats: { ...emptyStats, skills: 2 } })
+        options?.onProgress?.({ phase: 'parsing', current: 1, total: 2 })
+        return { assets: [skillAsset('s1'), skillAsset('s2')], stats: { ...emptyStats, skills: 2 }, errors: [] }
+      }),
+      getScanSourceGroups: vi.fn(async () => []),
+      getProjectScopeCandidates: vi.fn(() => []),
+      getProjectDir: () => '/repo/berth'
+    }
+    const runtime = new AgentAssetRuntime({
+      projectDir: '/repo/berth',
+      createScanner: () => scanner,
+      now: () => new Date(nowMs).toISOString()
+    })
+    const ticks: AssetScanProgress[] = []
+    runtime.setProgressListener((payload) => {
+      if (payload.status.progress) ticks.push(payload.status.progress)
+    })
+
+    await runtime.refresh({ reason: 'startup', wait: true })
+
+    // The onProgress tick fired after the 2-asset partial at +2s elapsed.
+    const enriched = ticks.find((p) => p.scannedAssets === 2)
+    expect(enriched).toBeDefined()
+    expect(enriched?.elapsedMs).toBeGreaterThanOrEqual(2_000)
+    expect(enriched?.ratePerSec).toBeGreaterThan(0)
   })
 
   it('emits a terminal ready status as the final progress event (P4.6 stuck-scan fix)', async () => {

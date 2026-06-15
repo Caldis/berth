@@ -232,11 +232,11 @@ describe('useAppStore scope state', () => {
     expect(useAppStore.getState().assetRuntimeStatus.progress?.phase).toBe('indexing')
   })
 
-  it('keeps shallow (other-project) assets across a deep-only partial tick (GH-113 global flicker fix)', () => {
-    // The scanner streams deep-only partials; other projects' shallow conventions/
-    // capabilities arrive only in the final snapshot. A raw partial would drop them
-    // mid-scan and flicker the global scope in and out. Existing shallow assets must
-    // survive a partial that doesn't carry them.
+  it('projects partials as-is — engine folds shallow upstream now (GH-135 store is pure projection)', () => {
+    // foldKeepingShallow moved engine-side (GH-135 方案 X): the runtime folds shallow
+    // into the partial before it reaches the store, so the store no longer keeps shallow
+    // itself — it is a pure projection. The flicker-fix coverage now lives in the engine
+    // (agent-asset-runtime.test applyPartial fold).
     useAppStore.setState({
       assets: [
         {
@@ -271,16 +271,13 @@ describe('useAppStore scope state', () => {
       }
     })
 
-    const ids = useAppStore.getState().assets.map((a) => a.id)
-    expect(ids).toContain('skill-live')
-    expect(ids).toContain('shallow-conv')
+    // Engine folds shallow upstream (GH-135); the store projects the partial as-is.
+    expect(useAppStore.getState().assets.map((a) => a.id)).toEqual(['skill-live'])
   })
 
-  it('keeps shallow assets when a mid-scan snapshot is read via syncSnapshot (GH-113 cap-4 flicker, setAssetSnapshot path)', () => {
-    // assets:changed (cap-4) → onChanged → syncSnapshot → setAssetSnapshot reads the
-    // MAIN snapshot, which mid-scan carries only the deep set (scanner appends other-
-    // project shallow to the FINAL snapshot). Without preserving shallow on this path
-    // too, the global scope flickers — same failure as the progress path, different route.
+  it('projects a mid-scan snapshot as-is — engine folds shallow upstream (GH-135 setAssetSnapshot pure projection)', () => {
+    // setAssetSnapshot is a pure projection now (GH-135): the engine already folded
+    // shallow into the runtime snapshot, so the store assigns it verbatim.
     useAppStore.setState({
       assets: [{
         id: 'shallow-conv', agentId: 'claude-code', category: 'instruction', type: 'claude-md',
@@ -302,9 +299,8 @@ describe('useAppStore scope state', () => {
       status: { state: 'scanning', reason: 'watcher', stale: true }
     })
 
-    const ids = useAppStore.getState().assets.map((a) => a.id)
-    expect(ids).toContain('skill-live')
-    expect(ids).toContain('shallow-conv') // shallow survives a mid-scan deep-only read
+    // Engine folds shallow engine-side now (GH-135); store projects the snapshot as-is.
+    expect(useAppStore.getState().assets.map((a) => a.id)).toEqual(['skill-live'])
   })
 
   it('keeps committed visible assets stable when a mid-scan snapshot is read via syncSnapshot (GH-129)', () => {

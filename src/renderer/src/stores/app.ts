@@ -69,19 +69,6 @@ interface AppState {
   closeInspector: () => void
 }
 
-// During a scan, snapshots/partials carry only the deep (active-project) set; other
-// projects' shallow conventions/capabilities are appended to the FINAL snapshot
-// (scanner.ts appendShallowConventions). A read landing mid-scan — a deep-only partial
-// (progress channel) OR a deep-only snapshot via syncSnapshot (assets:changed → onChanged)
-// — would drop them and flicker the global scope. Keep existing shallow until an incoming
-// set actually carries shallow and replaces it wholesale. Both write paths use this so
-// they can't diverge. (GH-113)
-function foldKeepingShallow(incoming: Asset[], existing: Asset[]): Asset[] {
-  if (incoming.some((a) => a.meta?.scanDepth === 'shallow')) return incoming
-  const shallowKept = existing.filter((a) => a.meta?.scanDepth === 'shallow')
-  return shallowKept.length > 0 ? [...incoming, ...shallowKept] : incoming
-}
-
 function hasCommittedAssetSnapshot(snapshotId: string | null): boolean {
   return snapshotId != null && snapshotId !== 'initial'
 }
@@ -119,10 +106,8 @@ export const useAppStore = create<AppState>((set) => ({
         return { assetRuntimeStatus: snapshot.status }
       }
       return {
-        // Keep shallow (other-project) assets if this snapshot was read mid-scan and
-        // carries only the deep set — e.g. syncSnapshot via assets:changed → onChanged
-        // landing during a refresh. Same guard as applyAssetProgress, shared. (GH-113)
-        assets: foldKeepingShallow(snapshot.assets, state.assets),
+        // Engine folds shallow engine-side (GH-135 方案 X); GUI projects as-is.
+        assets: snapshot.assets,
         stats: snapshot.stats,
         projectCandidates: mergeProjectScopeCandidates(snapshot.projectCandidates),
         assetRuntimeStatus: snapshot.status,
@@ -140,8 +125,9 @@ export const useAppStore = create<AppState>((set) => ({
       const base = { assetRuntimeStatus: payload.status }
       if (!payload.partial) return base
       if (shouldPreserveVisibleAssetsDuringScan(payload.status, state)) return base
-      const assets = foldKeepingShallow(payload.partial.assets, state.assets)
-      return { ...base, assets, stats: payload.partial.stats }
+      // Engine folds shallow into the partial (GH-135 single source of truth); the
+      // GUI is a pure projection — no business logic, just assign.
+      return { ...base, assets: payload.partial.assets, stats: payload.partial.stats }
     }),
 
   inspectorOpen: false,
