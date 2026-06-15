@@ -27,6 +27,13 @@
       "scannedTotal": "{{count}} assets scanned",
       "indexing": "Indexing",
       "found": "{{count}} found",
+      "eta": "~{{seconds}}s left",
+      "rate": "{{rate}}/s",
+      "nextScan": "Next scan {{time}}",
+      "paused": "Paused",
+      "pause": "Pause",
+      "resume": "Resume",
+      "cancel": "Cancel",
       "phase": {
         "discovering": "Discovering sources",
         "parsing": "Reading assets",

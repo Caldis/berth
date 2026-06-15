@@ -1,13 +1,22 @@
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { AlertTriangle } from 'lucide-react'
+import { AlertTriangle, Pause, Play, X } from 'lucide-react'
 import type { AssetType } from '@shared/types/asset'
 import type { AssetRuntimeStatus } from '@shared/types/ipc'
 import { Chip, Progress } from '@/components/ui'
 import { FloatingPopover } from '@/components/shared/floating-popover'
 import { IndexPulse } from '@/components/shared/index-activity'
+import { useScanEngineInfo } from '@/hooks/use-ipc'
 import { cn } from '@/lib/utils'
 import { useAppStore } from '@/stores/app'
+
+/** Wall-clock HH:MM for the "next scan" hint (GH-135). */
+function formatClock(value: string | undefined, language: string): string {
+  if (!value) return ''
+  const time = new Date(value)
+  if (Number.isNaN(time.getTime())) return ''
+  return new Intl.DateTimeFormat(language, { hour: '2-digit', minute: '2-digit' }).format(time)
+}
 
 /**
  * Unified sidebar loading/scan indicator (GH-110 P4.1) with a hover progress
@@ -46,10 +55,12 @@ function scanningLabel(status: AssetRuntimeStatus, scanningText: string): string
 }
 
 function ScanProgressPanel(): React.ReactElement {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
+  const language = i18n.language || 'en'
   const status = useAppStore((s) => s.assetRuntimeStatus)
   const assets = useAppStore((s) => s.assets)
   const errorCount = useAppStore((s) => s.assetErrors.length)
+  const { info, pause, resume, cancel } = useScanEngineInfo()
 
   const typeCounts = useMemo(() => {
     const counts = new Map<string, number>()
@@ -65,12 +76,16 @@ function ScanProgressPanel(): React.ReactElement {
   // pretending to a 0% reset.
   const indeterminate = scanning && (progress?.phase !== 'parsing' || progress.total === 0)
   const phaseLabel = progress ? t(`nav.scanStatus.phase.${progress.phase}`) : ''
+  // GH-135: engine-computed ETA/rate (single source of truth) + next periodic scan.
+  const paused = info?.scheduler.paused ?? false
+  const nextScanAt = info?.scheduler.periodicScan.nextScanAt
+  const etaSeconds = progress?.etaMs !== undefined ? Math.ceil(progress.etaMs / 1000) : undefined
 
   return (
     <div className="flex w-64 flex-col gap-3 p-3">
       <div className="flex items-center justify-between gap-2">
         <span className="text-sm font-medium text-foreground">{t('nav.scanStatus.title')}</span>
-        <span className="text-xs text-muted-foreground">
+        <span className="text-xs text-muted-foreground tabular-nums">
           {t('nav.scanStatus.scannedTotal', { count: assets.length })}
         </span>
       </div>
@@ -90,7 +105,24 @@ function ScanProgressPanel(): React.ReactElement {
               {progress?.label ? ` · ${progress.label}` : ''}
             </span>
           )}
+          {(etaSeconds !== undefined || progress?.ratePerSec) && (
+            <span className="text-xs text-muted-foreground tabular-nums">
+              {etaSeconds !== undefined ? t('nav.scanStatus.eta', { seconds: etaSeconds }) : ''}
+              {progress?.ratePerSec
+                ? `${etaSeconds !== undefined ? ' · ' : ''}${t('nav.scanStatus.rate', { rate: progress.ratePerSec })}`
+                : ''}
+            </span>
+          )}
         </div>
+      )}
+
+      {!scanning && paused && (
+        <span className="text-xs text-muted-foreground">{t('nav.scanStatus.paused')}</span>
+      )}
+      {!scanning && !paused && nextScanAt && (
+        <span className="text-xs text-muted-foreground tabular-nums">
+          {t('nav.scanStatus.nextScan', { time: formatClock(nextScanAt, language) })}
+        </span>
       )}
 
       <ul className="grid grid-cols-2 gap-x-3 gap-y-1">
@@ -119,6 +151,39 @@ function ScanProgressPanel(): React.ReactElement {
           {status.error}
         </span>
       )}
+
+      {/* GH-135: index controls — quiet text buttons (no loud accent), per design taste. */}
+      <div className="flex items-center gap-3 border-t border-border pt-2">
+        {paused ? (
+          <button
+            type="button"
+            onClick={resume}
+            className="inline-flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
+          >
+            <Play className="h-3 w-3" aria-hidden="true" />
+            {t('nav.scanStatus.resume')}
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={pause}
+            className="inline-flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
+          >
+            <Pause className="h-3 w-3" aria-hidden="true" />
+            {t('nav.scanStatus.pause')}
+          </button>
+        )}
+        {scanning && (
+          <button
+            type="button"
+            onClick={cancel}
+            className="inline-flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
+          >
+            <X className="h-3 w-3" aria-hidden="true" />
+            {t('nav.scanStatus.cancel')}
+          </button>
+        )}
+      </div>
     </div>
   )
 }

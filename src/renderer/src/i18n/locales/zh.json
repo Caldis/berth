@@ -27,6 +27,13 @@
       "scannedTotal": "已扫描 {{count}} 项资产",
       "indexing": "索引中",
       "found": "已发现 {{count}} 项",
+      "eta": "约剩 {{seconds}}s",
+      "rate": "{{rate}}/s",
+      "nextScan": "下次扫描 {{time}}",
+      "paused": "已暂停",
+      "pause": "暂停",
+      "resume": "恢复",
+      "cancel": "取消",
       "phase": {
         "discovering": "发现来源",
         "parsing": "读取资产",
