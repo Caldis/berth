@@ -2,7 +2,7 @@
 task: 2026-06-16-gh-136-unify-collapsible-motion
 task_id: GH-136
 type: maintenance
-phase: explore
+phase: design
 created: 2026-06-16
 priority: P2
 target_date:
@@ -21,8 +21,8 @@ debt:
     risk: medium
     areas:
       - ui-ux
-    confidence: low
-    rationale: "0.0-new 初始估算; 抽共享 Collapsible 偿还 ui-ux 折叠一致性债 (area=18), 影响面 11 文件/13 处, explore/design 校准。"
+    confidence: medium
+    rationale: "explore 收口校准: 影响面经符号边界精判为 6 处/4 文件; 方案反转为提炼已有 grid-rows 范本 (零新依赖); net 方向不变。"
   final:
     incurred:
     repaid:
@@ -32,7 +32,18 @@ debt:
     areas: []
     confidence:
     rationale:
-  revisions: []
+  revisions:
+    - phase: explore
+      date: 2026-06-16
+      from:
+        blast: "11 files / 13 spots (grep 子串粗筛)"
+        confidence: low
+        approach: "framer-motion 新造 Collapsible"
+      to:
+        blast: "6 spots / 4 files (符号边界 JSX 使用点)"
+        confidence: medium
+        approach: "提炼 memory-view 已有 grid-rows 折叠范本"
+      reason: "1.0-explore 一手核实: memory-view NoteCard/TagFilter 已是生产级 grid-rows 折叠实现, instructions/capabilities 手写折叠为其退化版; grep 粗筛虚高影响面 (friction 20260606-heroui-migration)。"
 issue:
   number: 136
   repo: Caldis/berth
@@ -60,14 +71,15 @@ artifacts:
 
 ## 产物
 - [x] 00-PRD.md — 原始输入快照 (user-request)
-- [x] 01-ANALYSIS.md — Explore 初步产物 (静态分析已落盘; explore 收口需补官方文档验证, 见其"未决问题")
+- [x] 01-ANALYSIS.md — Explore 产物 (已收口: 官方文档验证 + 符号边界 blast radius + 方案反转)
 - [ ] 02-SPEC.md — Design 产物
 - [ ] 03-PLAN.md — 活任务清单
 - [ ] 04-POLISH.md — 可选抛光记录
 
 ## 交接提示 (多设备续跑)
-- 下一步: `harness-0.1-continue` (phase=explore)。explore 尚未收口, 需补两项官方文档验证 (HeroUI Accordion transition 行为 / react-virtuoso 动态高度在连续高度动画下的 re-measure), 再进 `harness-2.0-design`。
-- 核心约束已查清: 约定页折叠 card 套在 VirtualGroupedList (react-virtuoso) 内, 不可整页换 HeroUI Accordion; 推荐抽共享 Collapsible (方案 B)。详见 01-ANALYSIS.md。
+- 下一步: `harness-2.0-design` (phase=design)。
+- explore 收口结论: 影响面 6 处/4 文件 (符号边界); 方案反转 — 提炼 memory-view 已有 grid-rows 折叠范本为共享 `<Collapsible>` (非 framer-motion 新造); HeroUI 侧仅对齐 MOTION token。
+- design 待拍板: 任务范围 = 全部 6 处收敛 vs 最小验证切片 (见 01-ANALYSIS §11 未决问题 1)。
 
 ## 待澄清 (blocked 时填)
 (无)
