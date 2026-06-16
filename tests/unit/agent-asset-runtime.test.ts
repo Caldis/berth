@@ -145,7 +145,8 @@ describe('AgentAssetRuntime', () => {
     })
     expect(info.controls).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ id: 'manual-refresh', editable: false, supported: true }),
+        expect.objectContaining({ id: 'source-groups', editable: false, supported: true }),
+        expect.objectContaining({ id: 'last-scan-reason', editable: false, supported: true }),
         expect.objectContaining({
           id: 'watcher-debounce-ms',
           value: 1000,

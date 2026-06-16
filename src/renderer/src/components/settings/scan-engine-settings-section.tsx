@@ -58,27 +58,27 @@ const STATUS_TONE: Record<string, ChipTone> = {
   available: 'success',
   active: 'success',
   ready: 'success',
+  scanning: 'primary',
   paused: 'warning',
   stale: 'warning',
   none: 'neutral',
   idle: 'neutral',
   unsupported: 'neutral',
+  manual: 'neutral',
+  watcher: 'neutral',
+  startup: 'neutral',
+  'project-scope': 'neutral',
   error: 'danger'
 }
 
 // Full enum set per runtime-status control so the hover tooltip can show where the
-// current value sits among all possible states (GH-135 G3). Single-value modes list
-// only themselves — a fixed descriptor, not a position among alternatives.
+// current value sits among all possible states (GH-135 G3/G6).
 const STATUS_ENUMS: Record<string, string[]> = {
-  'manual-refresh': ['available'],
-  'worker-mode': ['one-shot'],
-  'scheduler-mode': ['single-flight-queued-project-scope'],
-  'scheduled-refresh': ['none', 'active'],
-  'queued-refresh': ['none', 'active'],
-  'scope-fallback': ['scan-on-miss'],
   pause: ['active', 'paused'],
-  cancel: ['available', 'idle'],
-  'persisted-settings': ['available']
+  cancel: ['scanning', 'idle'],
+  'scheduled-refresh': ['none', 'manual', 'watcher', 'project-scope'],
+  'queued-refresh': ['none', 'manual', 'watcher', 'project-scope'],
+  'last-scan-reason': ['startup', 'manual', 'watcher', 'project-scope', 'none']
 }
 
 function statusTone(value: string): ChipTone {
@@ -90,6 +90,19 @@ function statusTone(value: string): ChipTone {
 function formatInterval(ms: number, t: Translate): string {
   if (ms > 0 && ms % 3_600_000 === 0) return `${ms / 3_600_000} ${t('settings.scanEngine.units.h')}`
   return `${Math.round(ms / 60_000)} ${t('settings.scanEngine.units.min')}`
+}
+
+// GH-135 G6: numeric runtime-state values (last-scan duration, source group count)
+// render as plain text — they are measurements, not enum states.
+function formatStatusNumber(control: ScanEngineControlDescriptor, language: string, t: Translate): string {
+  const value = typeof control.value === 'number' ? control.value : 0
+  if (control.unit === 'ms') {
+    if (value <= 0) return '—'
+    return value < 1000
+      ? `${value} ${t('settings.scanEngine.units.ms')}`
+      : `${(value / 1000).toFixed(1)} ${t('settings.scanEngine.units.s')}`
+  }
+  return formatCount(value, language)
 }
 
 function formatCount(value: number, language: string): string {
@@ -707,7 +720,13 @@ export function ScanEngineSettingsSection(): React.ReactElement {
                   {statusControls.map((control) => (
                     <div key={control.id} className="flex items-center justify-between gap-2 p-3 text-sm">
                       <span className="font-medium">{t(`settings.scanEngine.controlLabels.${control.id}`)}</span>
-                      <StatusValueChip control={control} t={t} />
+                      {typeof control.value === 'number' ? (
+                        <span className="text-xs tabular-nums text-muted-foreground">
+                          {formatStatusNumber(control, language, t)}
+                        </span>
+                      ) : (
+                        <StatusValueChip control={control} t={t} />
+                      )}
                     </div>
                   ))}
                 </div>

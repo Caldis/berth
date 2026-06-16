@@ -247,10 +247,13 @@ export class AgentAssetRuntime {
       },
       scheduler: this.getSchedulerSnapshot(),
       controls: [
-        { id: 'manual-refresh', value: 'available', editable: false, supported: true },
         ...buildScanEngineSettingControls(this.settings, process.platform),
-        { id: 'worker-mode', value: 'one-shot', unit: 'mode', editable: false, supported: true },
-        { id: 'scheduler-mode', value: 'single-flight-queued-project-scope', unit: 'mode', editable: false, supported: true },
+        // Dynamic runtime state (GH-135 G6): only values that actually change and
+        // carry information for the user. Fixed implementation descriptors
+        // (manual-refresh / worker-mode / scheduler-mode / scope-fallback /
+        // persisted-settings) were dropped as noise — they never varied.
+        { id: 'pause', value: this.schedulerPaused ? 'paused' : 'active', unit: 'state', editable: false, supported: true },
+        { id: 'cancel', value: this.coordinator.isScanning() ? 'scanning' : 'idle', unit: 'state', editable: false, supported: true },
         {
           id: 'scheduled-refresh',
           value: this.scheduledRefreshInfo?.reason ?? 'none',
@@ -265,10 +268,9 @@ export class AgentAssetRuntime {
           editable: false,
           supported: true
         },
-        { id: 'scope-fallback', value: 'scan-on-miss', unit: 'mode', editable: false, supported: true },
-        { id: 'pause', value: this.schedulerPaused ? 'paused' : 'active', unit: 'state', editable: false, supported: true },
-        { id: 'cancel', value: this.coordinator.isScanning() ? 'available' : 'idle', unit: 'state', editable: false, supported: true },
-        { id: 'persisted-settings', value: 'available', unit: 'state', editable: false, supported: true }
+        { id: 'last-scan-reason', value: this.status.reason ?? 'none', unit: 'state', editable: false, supported: true },
+        { id: 'last-scan-duration', value: this.lastScanDurationMs ?? 0, unit: 'ms', editable: false, supported: true },
+        { id: 'source-groups', value: this.snapshot.sources.length, editable: false, supported: true }
       ],
       capabilities: {
         workerMode: 'one-shot',

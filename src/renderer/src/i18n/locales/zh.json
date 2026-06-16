@@ -1584,7 +1584,8 @@
         "custom": "自定义",
         "active": "运行中",
         "paused": "已暂停",
-        "idle": "空闲"
+        "idle": "空闲",
+        "scanning": "扫描中"
       },
       "controlLabels": {
         "manual-refresh": "手动刷新",
@@ -1610,7 +1611,10 @@
         "scope-fallback": "项目范围兜底",
         "pause": "暂停扫描",
         "cancel": "取消扫描",
-        "persisted-settings": "持久化设置"
+        "persisted-settings": "持久化设置",
+        "last-scan-reason": "上次扫描触发",
+        "last-scan-duration": "上次扫描耗时",
+        "source-groups": "已索引来源数"
       },
       "controlDescriptions": {
         "manual-refresh": "从设置里发起一次扫描。",
@@ -1636,7 +1640,10 @@
         "scope-fallback": "项目范围没有缓存快照时的行为。",
         "pause": "调度器当前是否处于暂停状态。",
         "cancel": "当前是否可以取消扫描。",
-        "persisted-settings": "把可调整的扫描引擎设置保存在本机。"
+        "persisted-settings": "把可调整的扫描引擎设置保存在本机。",
+        "last-scan-reason": "最近一次扫描是被什么触发的。",
+        "last-scan-duration": "最近一次扫描耗时。",
+        "source-groups": "索引覆盖的来源组数量。"
       }
     },
     "agentPlugins": "Agent 能力插件",

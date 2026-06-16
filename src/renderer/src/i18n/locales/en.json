@@ -1594,7 +1594,8 @@
         "custom": "Custom",
         "active": "Active",
         "paused": "Paused",
-        "idle": "Idle"
+        "idle": "Idle",
+        "scanning": "Scanning"
       },
       "controlLabels": {
         "manual-refresh": "Manual refresh",
@@ -1620,7 +1621,10 @@
         "scope-fallback": "Scope fallback",
         "pause": "Pause scanning",
         "cancel": "Cancel scan",
-        "persisted-settings": "Persisted settings"
+        "persisted-settings": "Persisted settings",
+        "last-scan-reason": "Last scan trigger",
+        "last-scan-duration": "Last scan duration",
+        "source-groups": "Indexed sources"
       },
       "controlDescriptions": {
         "manual-refresh": "Starts a scan from Settings.",
@@ -1646,7 +1650,10 @@
         "scope-fallback": "Behavior when a project scope has no cached snapshot.",
         "pause": "Whether the scheduler is currently paused.",
         "cancel": "Whether a scan can be cancelled right now.",
-        "persisted-settings": "Stores editable scan engine settings on this device."
+        "persisted-settings": "Stores editable scan engine settings on this device.",
+        "last-scan-reason": "What triggered the most recent scan.",
+        "last-scan-duration": "How long the most recent scan took.",
+        "source-groups": "Number of source groups covered by the index."
       }
     },
     "agentPlugins": "Agent Capability Plugins",

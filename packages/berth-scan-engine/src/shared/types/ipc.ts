@@ -111,6 +111,10 @@ export type ScanEngineControlId =
   | 'pause'
   | 'cancel'
   | 'persisted-settings'
+  // GH-135 G6: runtime-state controls that actually inform the user.
+  | 'last-scan-reason'
+  | 'last-scan-duration'
+  | 'source-groups'
 
 export type ScanEngineControlUnit = 'ms' | 'mode' | 'state'
 

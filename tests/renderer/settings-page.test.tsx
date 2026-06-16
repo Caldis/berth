@@ -41,7 +41,6 @@ describe('SettingsContent page chrome', () => {
         periodicScan: { enabled: true, intervalMs: 86_400_000, nextScanAt: '2026-06-16T02:00:00.000Z' }
       },
       controls: [
-        { id: 'manual-refresh', value: 'available', editable: false, supported: true },
         {
           id: 'watcher-debounce-ms',
           value: 1000,
@@ -71,6 +70,9 @@ describe('SettingsContent page chrome', () => {
         { id: 'scheduled-refresh', value: 'none', unit: 'state', editable: false, supported: true },
         { id: 'queued-refresh', value: 'none', unit: 'state', editable: false, supported: true },
         { id: 'pause', value: 'unsupported', editable: false, supported: false },
+        { id: 'last-scan-reason', value: 'manual', unit: 'state', editable: false, supported: true },
+        { id: 'last-scan-duration', value: 1234, unit: 'ms', editable: false, supported: true },
+        { id: 'source-groups', value: 3, editable: false, supported: true },
         {
           id: 'exclude-paths',
           value: ['/Users/me/tmp'],
@@ -195,6 +197,11 @@ describe('SettingsContent page chrome', () => {
     expect(screen.getByText('Not supported yet')).toBeInTheDocument()
     // GH-135: the next scheduled periodic scan is surfaced in the always-reachable panel.
     expect(screen.getByText(/Next scan:/)).toBeInTheDocument()
+    // GH-135 G6: fixed-descriptor noise removed; meaningful runtime info shown instead.
+    expect(screen.queryByText('Manual refresh')).not.toBeInTheDocument()
+    expect(screen.getByText('Last scan duration')).toBeInTheDocument()
+    expect(screen.getByText('1.2 s')).toBeInTheDocument()
+    expect(screen.getByText('Indexed sources')).toBeInTheDocument()
   })
 
   it('saves editable scan engine controls in display units (GH-135)', async () => {
