@@ -85,3 +85,14 @@
 
 ## verify 回写
 verify 不通过项作为新任务追加于此, phase 退回 implement。
+
+### 第二轮 verify 反馈 (2026-06-16, 用户 /goal 追加; phase 回 implement)
+5 项 UI 改进 + 1 个计数 bug。优先 G1 (用户重点)。
+
+- [ ] G1 (BUG): 顶部"资产/文件"指标扫描中从 0→1000+ 闪烁。**根因**: getEngineInfo 的 `indexedAssets = snapshot.assets.length` / `indexedFiles = countIndexedFiles(...)` 直接投影 `applyPartial` 正在累积的部分快照; 每次全量 refresh (启动/手动/周期/scope) 中, partial 从少量 deep 累积到全部 → 指标清零重涨。watcher 单文件是真增量 (applyFileChange, 不闪)。**修复**: engine 记 stable 基线 (restorePersistedSnapshot + commitScan 时更新), getEngineInfo 在 `state==='scanning' && stable>0` 时返回稳定基线 (首次 stable=0 仍渐进)。errors 指标不闪 (commitScan 才设)。侧栏"已扫描 N"是进度语义保持累积。
+  - tests: agent-asset-runtime.test 重扫中 indexedAssets 稳定 / 首次渐进 / commit 后更新
+  - verify: 真机重扫顶部指标不闪 (CDP 截图/录屏)
+- [ ] G2 (改进3): 顶部指标 hover 介绍 tooltip; 资产/文件/错误可点击展开 modal, 紧凑虚拟表格列出已扫描资产及基本属性 (信息密度大, 虚拟列表性能优化)
+- [ ] G3 (改进2): 运行时状态组右侧值改状态化标签 (chip 配色按语义), hover 显示该状态介绍 + 列出该控件所有枚举值 (让用户感知当前位置)
+- [ ] G4 (改进1): 排除路径 textarea → 列表 + 行内 +/- 按钮 + 拉起 electron 目录选择器 (dialog.showOpenDialog, 新 IPC)
+- [ ] G5 (改进4): "下次扫描"hover 显示计算公式说明 (= 上次完成/启动时刻 + 扫描间隔; idleOnly/acOnly 门控会推迟)

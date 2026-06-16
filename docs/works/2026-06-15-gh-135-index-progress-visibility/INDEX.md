@@ -2,7 +2,7 @@
 task: 2026-06-15-gh-135-index-progress-visibility
 task_id: GH-135
 type: feature
-phase: verify
+phase: implement
 created: 2026-06-15
 priority: P2
 target_date:
