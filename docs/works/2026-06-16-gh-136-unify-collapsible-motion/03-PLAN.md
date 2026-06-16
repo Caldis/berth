@@ -22,10 +22,10 @@
   - tests: ✅ instructions-guidance (7) + instructions-plugin-nav (3) 全绿 — 含 SkillCard/GenericAssetCard focused 跳转自动展开回归 + path 单次出现。
   - verify: ✅ typecheck:web + lint + 10 测试通过。展开过渡/chevron 旋转的视觉验收留 T7 CDP。
 
-- [ ] **T3 — capabilities McpServerCard 迁移** (依赖 T1; 与 T2/T4/T5 可并行)
-  McpServerCard `{expanded&&}` → `<Collapsible open>`; chevron 统一; 保留 focused `scrollIntoView`+展开 (`capabilities.tsx:89-93`)。
-  - tests: capabilities renderer 测试 (新/扩) — 展开/收起 + focused 自动展开。
-  - verify: 同 T2 视觉项; McpServerCard focused 行为不退化。
+- [x] **T3 — capabilities McpServerCard 迁移** (依赖 T1) ✅
+  McpServerCard `{expanded&&}` → `<Collapsible open unmountOnExit>`; chevron 换 CollapsibleChevron; trigger 加 aria; 保留 focused scrollIntoView+展开; 移除 ChevronDown import (ChevronRight 仍由 PluginCard line 310 用, 保留)。
+  - tests: ✅ capabilities 6 测试文件 20 用例全绿 (含 plugin-nav/hook-nav focused 自动展开)。
+  - verify: ✅ typecheck:web + lint + 20 测试通过。视觉验收留 T7。
 
 - [ ] **T4 — feature-guide-panel 迁移** (依赖 T1; 可并行)
   FeatureGuidePanel `{expanded&&hasDetails&&}` → `<Collapsible open>`; 现有 `rotate-180` chevron 是否换 `CollapsibleChevron` 留 verify taste。

@@ -8,7 +8,6 @@ import {
   Activity,
   Shield,
   Variable,
-  ChevronDown,
   ChevronRight,
   Circle,
   Check,
@@ -30,7 +29,7 @@ import { routeForAsset } from '@/lib/asset-route'
 import { useFocusTarget, FOCUS_HIGHLIGHT_CLASS } from '@/hooks/use-focus-target'
 import { pluginOriginOf } from '@/lib/plugin-origin'
 import { HooksLifecycleView } from '@/components/capabilities/hooks-lifecycle-view'
-import { Accordion, AccordionItem, Chip } from '@/components/ui'
+import { Accordion, AccordionItem, Chip, Collapsible, CollapsibleChevron } from '@/components/ui'
 import {
   buildFeatureGuideEvidence,
   capabilityGuideMap,
@@ -101,9 +100,11 @@ function McpServerCard({ asset, focused = false }: { asset: Asset; focused?: boo
       <div className="flex items-stretch">
         <button
           onClick={() => setExpanded(!expanded)}
+          aria-expanded={expanded}
+          aria-controls={`mcp-detail-${asset.id}`}
           className="flex min-w-0 flex-1 items-center gap-3 px-4 py-3 text-left"
         >
-          {expanded ? <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" /> : <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />}
+          <CollapsibleChevron open={expanded} />
           <Circle className={cn('h-2.5 w-2.5 shrink-0 fill-current', statusColor)} />
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
@@ -125,8 +126,12 @@ function McpServerCard({ asset, focused = false }: { asset: Asset; focused?: boo
         )}
       </div>
 
-      {expanded && (
-        <div className="border-t border-border px-4 py-3 space-y-2">
+      <Collapsible
+        open={expanded}
+        id={`mcp-detail-${asset.id}`}
+        className="border-t border-border px-4 py-3 space-y-2"
+        unmountOnExit
+      >
           {command && <DetailRow label={t('capabilities.mcp.command')} value={`${command} ${args.join(' ')}`} mono />}
           <DetailRow label={t('instructions.scope')} value={<ScopeBadge scope={asset.scope} />} />
 
@@ -148,8 +153,7 @@ function McpServerCard({ asset, focused = false }: { asset: Asset; focused?: boo
           <div className="flex gap-2 pt-1">
             <ViewRawButton asset={asset} />
           </div>
-        </div>
-      )}
+      </Collapsible>
     </div>
   )
 }
