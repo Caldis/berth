@@ -63,6 +63,7 @@ interface ScanPayload {
   usage?: unknown
   sessions?: unknown[]
   command?: { name: string; usage: string }
+  importChain?: unknown
 }
 interface CliResult {
   code: number
@@ -238,5 +239,26 @@ describe('berth-scan CLI E2E (isolated fixture HOME, in-process)', () => {
     expect(code).toBe(EXIT.OK)
     expect(payload.command?.name).toBe('search')
     expect(payload.command?.usage).toContain('berth-scan search')
+  })
+
+  it('help of an unknown command exits ERROR', async () => {
+    const { code, payload } = await runCli(['help', 'no-such-command', '--json'])
+    expect(code).toBe(EXIT.ERROR)
+    expect(payload.error?.code).toBe('unknown-command')
+  })
+
+  it('inspect --import-chain includes the resolved import chain', async () => {
+    const scan = await runCli(withFixture(['scan', '--json']))
+    const md = (scan.payload.assets ?? []).find((a) => a.type === 'claude-md')
+    expect(md?.id).toBeTruthy()
+    const { code, payload } = await runCli(withFixture(['inspect', md!.id!, '--import-chain', '--json']))
+    expect(code).toBe(EXIT.OK)
+    expect(payload.importChain).toBeDefined()
+  })
+
+  it('an unknown command exits ERROR', async () => {
+    const { code, payload } = await runCli(withFixture(['frobnicate', '--json']))
+    expect(code).toBe(EXIT.ERROR)
+    expect(payload.error?.code).toBe('unknown-command')
   })
 })
