@@ -15,9 +15,9 @@ import type { AgentTeamMember, AgentTeamSummary, AgentTeamTask } from '@shared/t
 /** A team counts as "recently active" when any of its files changed within this window. */
 export const TEAMS_RECENT_ACTIVITY_MS = 5 * 60_000
 
-const TASK_STATUS_TONE: Record<AgentTeamTask['status'], 'neutral' | 'primary' | 'success'> = {
+const TASK_STATUS_TONE: Record<AgentTeamTask['status'], 'neutral' | 'warning' | 'success'> = {
   pending: 'neutral',
-  in_progress: 'primary',
+  in_progress: 'warning',
   completed: 'success',
   unknown: 'neutral'
 }
@@ -241,7 +241,6 @@ function TeamCardDetail({ team }: { team: AgentTeamSummary }): React.ReactElemen
             <Button
               size="sm"
               variant="flat"
-              color="primary"
               startContent={<MessageSquare className="h-3.5 w-3.5" aria-hidden="true" />}
               onPress={() => navigate(`/sessions/session-${team.leadSessionId}`)}
             >
@@ -273,7 +272,7 @@ function TeamMemberRow({ member }: { member: AgentTeamMember }): React.ReactElem
         />
         <span className="text-xs font-medium text-foreground">{member.name}</span>
         {isLead ? (
-          <Chip tone="primary" size="sm">
+          <Chip tone="neutral" size="sm">
             {t('teams.card.lead')}
           </Chip>
         ) : (

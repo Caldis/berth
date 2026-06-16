@@ -11,7 +11,7 @@ interface CostSourceBadgeProps {
 // tints so the badge follows the theme + switchable accent (GH-105 AC6).
 const SOURCE_TONE: Record<CostSource, ChipTone> = {
   actual: 'success',
-  estimated: 'primary',
+  estimated: 'neutral',
   mixed: 'warning',
   unknown: 'neutral'
 }

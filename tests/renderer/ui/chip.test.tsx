@@ -26,7 +26,7 @@ describe('ui/Chip (semantic)', () => {
   it('forwards HeroUI props (onClose renders a close affordance)', () => {
     const onClose = vi.fn()
     renderChip(
-      <Chip tone="primary" onClose={onClose} data-testid="closable">
+      <Chip onClose={onClose} data-testid="closable">
         tag
       </Chip>
     )
