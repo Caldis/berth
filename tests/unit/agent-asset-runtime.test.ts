@@ -392,6 +392,73 @@ describe('AgentAssetRuntime', () => {
     expect(partialIds.some((ids) => ids.includes('deep-live') && ids.includes('shallow-conv'))).toBe(true)
   })
 
+  it('keeps the committed index size steady during a rescan instead of flickering 0→N (GH-135 G1)', async () => {
+    const persisted: AssetSnapshot = {
+      id: 'persisted',
+      projectDir: '/repo/berth',
+      assets: [skillAsset('a'), skillAsset('b'), skillAsset('c')],
+      stats: { ...emptyStats, skills: 3 },
+      errors: [],
+      sources: [],
+      projectCandidates: [],
+      status: { state: 'ready', stale: false }
+    }
+    let midScanAssets = -1
+    let runtime!: AgentAssetRuntime
+    const scanner: AssetRuntimeScanner = {
+      scanAll: vi.fn(async (options) => {
+        // A single deep partial lands mid-rebuild — the panel metric must NOT drop to 1.
+        options?.onPartial?.({ assets: [skillAsset('a')], stats: { ...emptyStats, skills: 1 } })
+        midScanAssets = runtime.getEngineInfo().snapshot.indexedAssets
+        return {
+          assets: [skillAsset('a'), skillAsset('b'), skillAsset('c'), skillAsset('d')],
+          stats: { ...emptyStats, skills: 4 },
+          errors: []
+        }
+      }),
+      getScanSourceGroups: vi.fn(async () => []),
+      getProjectScopeCandidates: vi.fn(() => []),
+      getProjectDir: () => '/repo/berth'
+    }
+    runtime = new AgentAssetRuntime({
+      projectDir: '/repo/berth',
+      createScanner: () => scanner,
+      snapshotStore: { load: () => persisted, save: vi.fn(), clear: vi.fn() }
+    })
+
+    await runtime.refresh({ reason: 'manual', wait: true })
+
+    // Mid-scan the metric holds at the committed 3, not the partial's 1.
+    expect(midScanAssets).toBe(3)
+    // After commit it updates to the fresh count.
+    expect(runtime.getEngineInfo().snapshot.indexedAssets).toBe(4)
+  })
+
+  it('still grows the index size progressively on the first build (no committed baseline) (GH-135 G1)', async () => {
+    let midScanAssets = -1
+    let runtime!: AgentAssetRuntime
+    const scanner: AssetRuntimeScanner = {
+      scanAll: vi.fn(async (options) => {
+        options?.onPartial?.({ assets: [skillAsset('a'), skillAsset('b')], stats: { ...emptyStats, skills: 2 } })
+        midScanAssets = runtime.getEngineInfo().snapshot.indexedAssets
+        return { assets: [skillAsset('a'), skillAsset('b')], stats: { ...emptyStats, skills: 2 }, errors: [] }
+      }),
+      getScanSourceGroups: vi.fn(async () => []),
+      getProjectScopeCandidates: vi.fn(() => []),
+      getProjectDir: () => '/repo/berth'
+    }
+    runtime = new AgentAssetRuntime({
+      projectDir: '/repo/berth',
+      createScanner: () => scanner,
+      snapshotStore: { load: () => null, save: vi.fn(), clear: vi.fn() }
+    })
+
+    await runtime.refresh({ reason: 'manual', wait: true })
+
+    // No committed baseline → the live partial drives the count (progressive growth).
+    expect(midScanAssets).toBe(2)
+  })
+
   it('enriches progress with scanned count + elapsed time engine-side (GH-135 single source of truth)', async () => {
     let nowMs = 10_000
     const scanner: AssetRuntimeScanner = {

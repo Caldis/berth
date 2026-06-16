@@ -127,6 +127,13 @@ export class AgentAssetRuntime {
   private flushingPendingRefresh = false
   private lastWatcherRefreshStartedAtMs = 0
   private lastScanDurationMs: number | undefined
+  // Stable index size shown while a rescan rebuilds the snapshot (GH-135 G1). The
+  // top-of-panel "assets / files" metrics read these during a scan so they don't
+  // flicker 0→N every full rescan; applyPartial still streams the live asset list
+  // for progressive display. 0 means "no committed scan yet" → fall back to the
+  // live count so the first index build still shows progressive growth.
+  private stableIndexedAssets = 0
+  private stableIndexedFiles = 0
   private schedulerPaused = false
   private readonly powerMonitor?: PowerMonitorLike
   private periodicTimer: ReturnType<typeof setTimeout> | null = null
@@ -168,8 +175,16 @@ export class AgentAssetRuntime {
     }
     this.status = status
     this.snapshot = { ...persisted, projectDir: this.projectDir, status }
+    this.setStableCounts(persisted.assets)
     this.assetMap = new Map(persisted.assets.map((asset) => [asset.id, asset]))
     this.snapshotCache.set(this.projectDir, this.snapshot)
+  }
+
+  /** Record the committed index size so the panel metrics hold steady during the
+   * next rescan instead of counting up from 0 (GH-135 G1). */
+  private setStableCounts(assets: Asset[]): void {
+    this.stableIndexedAssets = assets.length
+    this.stableIndexedFiles = countIndexedFiles(assets)
   }
 
   /** Register the sink that forwards live scan status + partial assets to the
@@ -209,6 +224,12 @@ export class AgentAssetRuntime {
 
   getEngineInfo(): ScanEngineInfo {
     const sourceRows = countScanSourceRows(this.snapshot.sources)
+    // While a rescan rebuilds the snapshot, report the last committed size so the
+    // metrics hold steady instead of counting up from 0 (GH-135 G1). Before the
+    // first commit (stable=0) fall through to the live count for progressive growth.
+    const rescanning = this.status.state === 'scanning' && this.stableIndexedAssets > 0
+    const indexedAssets = rescanning ? this.stableIndexedAssets : this.snapshot.assets.length
+    const indexedFiles = rescanning ? this.stableIndexedFiles : countIndexedFiles(this.snapshot.assets)
     return {
       engine: {
         name: SCAN_ENGINE_NAME,
@@ -218,8 +239,8 @@ export class AgentAssetRuntime {
       status: this.status,
       snapshot: {
         id: this.snapshot.id,
-        indexedAssets: this.snapshot.assets.length,
-        indexedFiles: countIndexedFiles(this.snapshot.assets),
+        indexedAssets,
+        indexedFiles,
         errors: this.snapshot.errors.length,
         sourceGroups: this.snapshot.sources.length,
         sourceRows
@@ -408,6 +429,8 @@ export class AgentAssetRuntime {
     this.snapshotStore?.clear()
     this.snapshotCache.clear()
     this.lastScanDurationMs = undefined
+    // Index cleared → drop the stable baseline so the rebuild shows growth from 0.
+    this.setStableCounts([])
     this.assetMap.clear()
     this.selectorCache.clear()
     this.snapshot = this.createInitialSnapshot()
@@ -622,6 +645,7 @@ export class AgentAssetRuntime {
       projectCandidates: outcome.projectCandidates,
       status
     }
+    this.setStableCounts(outcome.scanResult.assets)
     this.assetMap = new Map(outcome.scanResult.assets.map((asset) => [asset.id, asset]))
     this.snapshotCache.set(projectDir, this.snapshot)
     this.selectorCache.clear()
