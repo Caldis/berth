@@ -1535,6 +1535,13 @@
         "status": "运行时状态"
       },
       "excludePlaceholder": "每行一个路径",
+      "units": {
+        "ms": "毫秒",
+        "s": "秒",
+        "min": "分钟",
+        "h": "小时",
+        "mb": "MB"
+      },
       "rebuild": {
         "action": "重建索引",
         "title": "确认重建索引?",

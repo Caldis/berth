@@ -1545,6 +1545,13 @@
         "status": "Runtime status"
       },
       "excludePlaceholder": "One path per line",
+      "units": {
+        "ms": "ms",
+        "s": "s",
+        "min": "min",
+        "h": "h",
+        "mb": "MB"
+      },
       "rebuild": {
         "action": "Rebuild index",
         "title": "Rebuild the index?",

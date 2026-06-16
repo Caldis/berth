@@ -175,7 +175,8 @@ describe('SettingsContent page chrome', () => {
     expect(screen.getByText('7 files')).toBeInTheDocument()
     expect(screen.getByText('1 error')).toBeInTheDocument()
     expect(screen.getByText('Watcher debounce')).toBeInTheDocument()
-    expect(screen.getByLabelText('Watcher debounce')).toHaveValue(1000)
+    // GH-135: shown in seconds (engine stores 1000ms) with a unit suffix, not raw ms.
+    expect(screen.getByLabelText('Watcher debounce')).toHaveValue(1)
     expect(screen.getByText('Scheduled refresh')).toBeInTheDocument()
     expect(screen.getByText('Queued refresh')).toBeInTheDocument()
     expect(screen.getAllByText('None')).toHaveLength(2)
@@ -185,13 +186,15 @@ describe('SettingsContent page chrome', () => {
     expect(screen.getByText(/Next scan:/)).toBeInTheDocument()
   })
 
-  it('saves editable scan engine controls', async () => {
+  it('saves editable scan engine controls in display units (GH-135)', async () => {
     renderSettingsContent()
 
     const watcherDebounce = await screen.findByLabelText('Watcher debounce')
-    fireEvent.change(watcherDebounce, { target: { value: '1500' } })
     const row = watcherDebounce.closest('form')
     expect(row).not.toBeNull()
+    // The field carries a seconds unit suffix; entering 1.5s converts back to 1500ms.
+    expect(within(row!).getByText('s', { exact: true })).toBeInTheDocument()
+    fireEvent.change(watcherDebounce, { target: { value: '1.5' } })
     fireEvent.click(within(row!).getByRole('button', { name: 'Save' }))
 
     await waitFor(() => {

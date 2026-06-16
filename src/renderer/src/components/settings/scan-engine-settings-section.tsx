@@ -29,6 +29,22 @@ type Saver = (patch: Partial<ScanEngineSettings>) => void
 // read-only below. Preset leads so the user picks a tier before touching raw values.
 const SETTING_GROUPS: ScanEngineControlGroup[] = ['preset', 'schedule', 'performance', 'scope', 'power', 'watcher']
 
+// Human-friendly display unit per numeric setting (GH-135). The engine stores the
+// raw base value (ms / MB) as the single source of truth; this table is a pure
+// rendering choice — show each value at a magnitude a person can read, with a unit
+// suffix, and convert back to the base on save. Units are picked per-parameter, not
+// uniformly: batch-pause/debounce live at ms/sec scale, so "minutes" would be absurd
+// there; only genuinely large values use minutes/hours. settingKeys absent here
+// (e.g. scanConcurrency, a dimensionless count) render as a plain unit-less number.
+const NUMBER_DISPLAY: Record<string, { unit: string; divisor: number; step: number }> = {
+  periodicScanIntervalMs: { unit: 'h', divisor: 3_600_000, step: 1 },
+  idleThresholdMs: { unit: 'min', divisor: 60_000, step: 0.5 },
+  watcherDebounceMs: { unit: 's', divisor: 1_000, step: 0.1 },
+  watcherMinIntervalMs: { unit: 's', divisor: 1_000, step: 1 },
+  batchPauseMs: { unit: 'ms', divisor: 1, step: 10 },
+  minFreeDiskMb: { unit: 'mb', divisor: 1, step: 256 }
+}
+
 function formatCount(value: number, language: string): string {
   return new Intl.NumberFormat(language).format(value)
 }
@@ -102,27 +118,36 @@ function NumberControlInput({
   t: Translate
 }): React.ReactElement {
   const key = control.settingKey
+  const display = key ? NUMBER_DISPLAY[key] : undefined
+  const divisor = display?.divisor ?? 1
+  // base (ms/MB) → display value, trimming float noise (e.g. 90000/60000 = 1.5).
+  const toDisplay = (base: number): number => Math.round((base / divisor) * 1000) / 1000
+  const unitLabel = display ? t(`settings.scanEngine.units.${display.unit}`) : null
   return (
     <form
       onSubmit={(event) => {
         event.preventDefault()
         const raw = new FormData(event.currentTarget).get(control.id)
-        const value = typeof raw === 'string' ? Number(raw) : Number.NaN
-        if (key && Number.isFinite(value)) save({ [key]: value } as Partial<ScanEngineSettings>)
+        const entered = typeof raw === 'string' ? Number(raw) : Number.NaN
+        // display value → base; the engine re-clamps/steps on save, so rounding here is safe.
+        if (key && Number.isFinite(entered)) save({ [key]: Math.round(entered * divisor) } as Partial<ScanEngineSettings>)
       }}
       className="flex items-center gap-1.5"
     >
-      <input
-        key={`${control.id}-${String(control.value)}`}
-        aria-label={label}
-        name={control.id}
-        type="number"
-        defaultValue={typeof control.value === 'number' ? control.value : undefined}
-        min={control.min}
-        max={control.max}
-        step={control.step}
-        className="h-8 w-24 rounded-md border border-input bg-background px-2 text-right text-xs text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-ring/40"
-      />
+      <div className="flex h-8 w-28 items-center rounded-md border border-input bg-background focus-within:border-primary focus-within:ring-2 focus-within:ring-ring/40">
+        <input
+          key={`${control.id}-${String(control.value)}`}
+          aria-label={label}
+          name={control.id}
+          type="number"
+          defaultValue={typeof control.value === 'number' ? toDisplay(control.value) : undefined}
+          min={control.min !== undefined ? control.min / divisor : undefined}
+          max={control.max !== undefined ? control.max / divisor : undefined}
+          step={display?.step ?? control.step}
+          className="h-full min-w-0 flex-1 bg-transparent px-2 text-right text-xs text-foreground outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+        />
+        {unitLabel && <span className="shrink-0 pr-2 text-xs tabular-nums text-muted-foreground">{unitLabel}</span>}
+      </div>
       <button
         type="submit"
         disabled={saving}
