@@ -42,10 +42,16 @@ test('folds a newly-added watched skill into the snapshot incrementally (id stay
     await page.evaluate(async (p) => {
       await window.api.projectScope.activate({ projectPath: p })
     }, projectDir)
+    // Wait for the initial activate scan to COMMIT (id leaves 'initial'), not merely for
+    // the seed to surface: GH-135 progressive partials stream the seed into the snapshot
+    // while the id is still 'initial' (pre-commit). Latching before.id at that point pins
+    // 'initial'; the scan then commits a fresh id, so the later incremental add reads as a
+    // full rescan on slow runners (windows CI — GH-137). A committed baseline is what makes
+    // `afterId === before.id` a true incremental-stability assertion.
     await expect
       .poll(() => page.evaluate(async () => {
         const snap = await window.api.assets.snapshot()
-        return snap.assets.some((a) => a.type === 'skill' && a.name === 'seed')
+        return snap.id !== 'initial' && snap.assets.some((a) => a.type === 'skill' && a.name === 'seed')
       }), { timeout: 15000 })
       .toBe(true)
     const before = await page.evaluate(async () => {

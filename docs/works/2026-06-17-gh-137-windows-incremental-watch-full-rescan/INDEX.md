@@ -2,7 +2,7 @@
 task: 2026-06-17-gh-137-windows-incremental-watch-full-rescan
 task_id: GH-137
 type: bug
-phase: design
+phase: verify
 created: 2026-06-17
 priority: P1
 target_date: 
@@ -64,8 +64,8 @@ artifacts:
 ## 产物
 - [x] 00-BUG.md — 原始输入快照
 - [x] 01-ANALYSIS.md — Explore 产物 (真因: e2e 时序缺陷, 非产品 bug)
-- [ ] 02-SPEC.md — Design 产物
-- [ ] 03-PLAN.md — 活任务清单
+- [x] 02-SPEC.md — Design 产物 (纯测试修复; AC5 丢弃为冗余)
+- [x] 03-PLAN.md — 活任务清单
 - [ ] 04-POLISH.md — 可选抛光记录
 
 ## 待澄清 (blocked 时填)
