@@ -65,9 +65,9 @@ function MemoryCard({ asset }: { asset: Asset }): React.ReactElement {
         onClick={() => setExpanded(!expanded)}
         aria-expanded={expanded}
         aria-controls={`instruction-detail-${asset.id}`}
-        className="flex w-full items-start gap-3 px-4 py-3 text-left"
+        className="flex w-full items-center gap-3 px-4 py-3 text-left"
       >
-        <FileText className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+        <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             <span className="truncate text-sm font-medium text-foreground">{asset.name}</span>
@@ -80,7 +80,7 @@ function MemoryCard({ asset }: { asset: Asset }): React.ReactElement {
             {size > 1024 ? `${(size / 1024).toFixed(1)} KB` : `${size} B`}
           </span>
         )}
-        <CollapsibleChevron open={expanded} className="mt-1" />
+        <CollapsibleChevron open={expanded} />
       </button>
 
       <Collapsible

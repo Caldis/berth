@@ -54,7 +54,8 @@ export function Collapsible({
       setMounted(true)
       return
     }
-    if (!unmountOnExit) return
+    // Already unmounted (initial collapsed render or post-collapse) — no timer needed.
+    if (!unmountOnExit || !mounted) return
     timerRef.current = window.setTimeout(() => {
       setMounted(false)
       timerRef.current = null
@@ -65,7 +66,7 @@ export function Collapsible({
         timerRef.current = null
       }
     }
-  }, [open, unmountOnExit, unmountDelayMs])
+  }, [open, unmountOnExit, unmountDelayMs, mounted])
 
   const shouldRender = unmountOnExit ? mounted : true
 

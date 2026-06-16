@@ -59,4 +59,6 @@
 - card 容器圆角/hover/间距: 已一致 (rounded-lg border bg-card hover:bg-accent/5)。
 
 ## verify 回写
-verify 不通过项作为新任务追加于此, phase 退回 implement。
+- [x] **V1 — Collapsible 初始 timer 致 CI Unhandled** (macos pnpm test false-fail; 测试本身 1169 全 passed): `unmountOnExit` 初始 `open=false` 即启动无用收起 timer → memory-view 多 NoteCard 留 pending timer → Vitest teardown 报 "cancel timeouts" Unhandled Rejection。修: useEffect 加 `!mounted` guard + `mounted` 依赖, 初始/已卸载不启 timer。✅ 本地全量 test 无 Unhandled。
+- [x] **V2 — 约定页 MemoryCard head 未垂直居中** (用户反馈): button `items-start` → `items-center`, 移 FileText/chevron 的 `mt-*` 微调; head 元素垂直居中, 与 Skill/Generic/Mcp card 一致。✅ (真机截图复核)
+- 说明: CI windows `test:e2e` failure 属 GH-135 遗留 baseline (T1 纯新增组件即 failure 可证), 非本任务引入。
