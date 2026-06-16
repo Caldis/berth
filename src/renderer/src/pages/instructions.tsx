@@ -7,8 +7,6 @@ import {
   Terminal,
   Palette,
   Brain,
-  ChevronDown,
-  ChevronRight,
   FolderOpen,
   Link,
   FileCode,
@@ -39,6 +37,7 @@ import { useMemory } from '@/hooks/use-memory'
 import { usePageChrome, type PageChromeConfig } from '@/components/layout/page-chrome'
 import { VirtualGroupedList, type VirtualGroupedListHandle } from '@/components/shared/virtual-grouped-list'
 import { type VirtualListGroup } from '@/lib/virtual-list-model'
+import { Collapsible, CollapsibleChevron } from '@/components/ui'
 
 const tabTypeMap: Record<string, string[]> = {
   conventions: ['claude-md', 'gemini-md', 'agents-md'],
@@ -64,9 +63,11 @@ function MemoryCard({ asset }: { asset: Asset }): React.ReactElement {
     <div data-testid={`instruction-asset-card-${asset.id}`} className="rounded-lg border border-border bg-card transition-colors hover:bg-accent/5">
       <button
         onClick={() => setExpanded(!expanded)}
+        aria-expanded={expanded}
+        aria-controls={`instruction-detail-${asset.id}`}
         className="flex w-full items-start gap-3 px-4 py-3 text-left"
       >
-        {expanded ? <ChevronDown className="mt-1 h-3.5 w-3.5 shrink-0 text-muted-foreground" /> : <ChevronRight className="mt-1 h-3.5 w-3.5 shrink-0 text-muted-foreground" />}
+        <CollapsibleChevron open={expanded} className="mt-1" />
         <FileText className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
@@ -82,8 +83,12 @@ function MemoryCard({ asset }: { asset: Asset }): React.ReactElement {
         )}
       </button>
 
-      {expanded && (
-        <div className="border-t border-border px-4 py-3 space-y-2">
+      <Collapsible
+        open={expanded}
+        id={`instruction-detail-${asset.id}`}
+        className="border-t border-border px-4 py-3 space-y-2"
+        unmountOnExit
+      >
           <DetailRow label={t('instructions.scope')} value={<ScopeBadge scope={asset.scope} className="rounded-full px-2 font-semibold" />} />
           <DetailRow label={t('instructions.path')} value={asset.path} mono />
 
@@ -111,8 +116,7 @@ function MemoryCard({ asset }: { asset: Asset }): React.ReactElement {
               {t('instructions.showInExplorer')}
             </button>
           </div>
-        </div>
-      )}
+      </Collapsible>
     </div>
   )
 }
@@ -146,9 +150,11 @@ function SkillCard({ asset, focused = false }: { asset: Asset; focused?: boolean
       <div className="flex items-stretch">
         <button
           onClick={() => setExpanded(!expanded)}
+          aria-expanded={expanded}
+          aria-controls={`instruction-detail-${asset.id}`}
           className="flex min-w-0 flex-1 items-center gap-3 px-4 py-3 text-left"
         >
-          {expanded ? <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" /> : <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />}
+          <CollapsibleChevron open={expanded} />
           <Sparkles className="h-4 w-4 shrink-0 text-blue-500" />
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
@@ -181,8 +187,12 @@ function SkillCard({ asset, focused = false }: { asset: Asset; focused?: boolean
         )}
       </div>
 
-      {expanded && (
-        <div className="border-t border-border px-4 py-3 space-y-2">
+      <Collapsible
+        open={expanded}
+        id={`instruction-detail-${asset.id}`}
+        className="border-t border-border px-4 py-3 space-y-2"
+        unmountOnExit
+      >
           {description && (
             <DetailRow label={t('instructions.description')} value={description} />
           )}
@@ -213,8 +223,7 @@ function SkillCard({ asset, focused = false }: { asset: Asset; focused?: boolean
               {t('instructions.showInExplorer')}
             </button>
           </div>
-        </div>
-      )}
+      </Collapsible>
     </div>
   )
 }
@@ -246,9 +255,11 @@ function GenericAssetCard({ asset, icon: Icon, focused = false }: { asset: Asset
       <div className="flex items-stretch">
         <button
           onClick={() => setExpanded(!expanded)}
+          aria-expanded={expanded}
+          aria-controls={`instruction-detail-${asset.id}`}
           className="flex min-w-0 flex-1 items-center gap-3 px-4 py-3 text-left"
         >
-          {expanded ? <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" /> : <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />}
+          <CollapsibleChevron open={expanded} />
           <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
@@ -278,8 +289,12 @@ function GenericAssetCard({ asset, icon: Icon, focused = false }: { asset: Asset
         )}
       </div>
 
-      {expanded && (
-        <div className="border-t border-border px-4 py-3 space-y-2">
+      <Collapsible
+        open={expanded}
+        id={`instruction-detail-${asset.id}`}
+        className="border-t border-border px-4 py-3 space-y-2"
+        unmountOnExit
+      >
           {description && (
             <DetailRow label={t('instructions.description')} value={description} />
           )}
@@ -297,8 +312,7 @@ function GenericAssetCard({ asset, icon: Icon, focused = false }: { asset: Asset
               {t('instructions.showInExplorer')}
             </button>
           </div>
-        </div>
-      )}
+      </Collapsible>
     </div>
   )
 }

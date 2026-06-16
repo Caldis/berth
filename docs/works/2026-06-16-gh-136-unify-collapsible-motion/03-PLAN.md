@@ -16,10 +16,11 @@
   - tests: `tests/renderer/ui/collapsible.test.tsx` (新, 10 用例) — **偏差**: SPEC 写 `tests/unit/...`, 实际 renderer 组件测试在 `tests/renderer/ui/` (jsdom)。覆盖 open 切换 grid-rows/opacity + aria-hidden/inert; reduced-motion; unmountOnExit 延迟卸载 (fake timer); chevron rotate。
   - verify: ✅ typecheck:web + typecheck:test + lint 绿; 12 测试通过 (含 barrel)。测试文件需显式 `import React` (vitest classic JSX runtime; IDE 的 unused-React [6133] 是 automatic-runtime 噪音, 全测试通病)。
 
-- [ ] **T2 — instructions 三 card 迁移** (依赖 T1)
-  MemoryCard/SkillCard/GenericAssetCard: `{expanded&&<div>}` → `<Collapsible open>`; chevron 换 `CollapsibleChevron`; trigger 加 `aria-expanded`/`aria-controls`。
-  - tests: instructions renderer 测试扩展 — 展开/收起; SkillCard/GenericAssetCard focused 跳转自动展开回归。
-  - verify: 截图展开/收起有高度过渡 + chevron 旋转 (界面质量"交互反馈"); focused 自动展开正常 ("focus" 行); 头部布局无漂移 ("布局层级")。
+- [x] **T2 — instructions 三 card 迁移** (依赖 T1) ✅
+  MemoryCard/SkillCard/GenericAssetCard: `{expanded&&<div>}` → `<Collapsible open unmountOnExit>`; chevron 换 `CollapsibleChevron`; trigger 加 `aria-expanded`/`aria-controls`; 移除 ChevronDown/ChevronRight import。
+  - **决策**: instructions 三 card 用 `unmountOnExit` 还原原 `{expanded&&}` 的"收起即移出 DOM"语义 (+ 动画延迟卸载), 守住 instructions-guidance 的 `getAllByText(path)` 单次断言。
+  - tests: ✅ instructions-guidance (7) + instructions-plugin-nav (3) 全绿 — 含 SkillCard/GenericAssetCard focused 跳转自动展开回归 + path 单次出现。
+  - verify: ✅ typecheck:web + lint + 10 测试通过。展开过渡/chevron 旋转的视觉验收留 T7 CDP。
 
 - [ ] **T3 — capabilities McpServerCard 迁移** (依赖 T1; 与 T2/T4/T5 可并行)
   McpServerCard `{expanded&&}` → `<Collapsible open>`; chevron 统一; 保留 focused `scrollIntoView`+展开 (`capabilities.tsx:89-93`)。
