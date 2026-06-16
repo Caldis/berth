@@ -22,4 +22,20 @@ GH-135 实现期回归: master CI 在 GH-134 + GH-135 早期 windows 全绿, 自
 - 来源: GH-135 归档 (2026-06-16) 的 `harness:ci:baseline` 闸门捕获 — 见 `docs/works/_archive/2026-06-15-gh-135-index-progress-visibility/`。
 - CI 证据: 首红 run 27527220031 (`d4f5fe4`, 06-15) windows incremental-watch:72; 最新 run 27608429421 (`69c6227`, 06-16) 同; 末次全绿 run 27527108164 (`49ce1891`, 06-15)。
 - 用户决策 (2026-06-16): 记 issue + 完成 GH-135 归档, windows 修复留专项后续。
-- 状态: OPEN (windows-only 性能回归; 非阻塞 macOS/ubuntu; master CI 在 windows 上将持续红至本 issue 修复)。
+- 状态: RESOLVED (2026-06-17, GH-137)。
+
+# 解决 (2026-06-17, GH-137)
+**重分类: 非 windows 产品 bug, 实为 e2e 时序缺陷。** 本 issue 的两个产品根因候选 (matchCapabilityGlob/inferScope 路径归一致 deriveAssetsForPath 返回 null) 经 windows 实机证伪:
+- chokidar 4 在 win32 发反斜杠路径, `matchCapabilityGlob` 对 codex `.agents/skills` 规则匹配正常 (dirOk+nameOk), derive 不返回 null → 走 applyFileChange (保持 id), 不走全量。
+- `inferScope` 的 `sep='\\'` 与 `dedupePathKey` (`path.win32.resolve` 输出反斜杠) 本就一致, 无 bug。
+- 本地 windows 实机连跑 e2e 全绿 (不复现); 现有单测 `tests/unit/derive-asset.test.ts:120` (codex `.agents/skills`) windows CI 绿。
+
+真因 (CI ground truth: `before.id="initial"` vs `afterId="snapshot-..."`): GH-135 渐进 partial 让 seed skill 在 activate 首扫 **commit 前** (id 仍 `'initial'`) 即可见; 慢的 windows CI runner 上, e2e poll 抢在 commit 前捕获 `before.id='initial'`, 随后首扫 commit 铸新 id → `afterId !== before.id`。本地/macOS 快, before.id 已是 committed id → 绿。与 GH-117 同构 (e2e 时序非产品 bug)。
+
+修复: 纯测试健壮性 —— `tests/e2e/incremental-watch.e2e.ts` before-poll 谓词加 `snap.id !== 'initial'`, 等首扫 commit 后再捕获基线。零产品代码 (产品不变量 "applyFileChange 保持 snapshot id" 已由 `tests/unit/agent-asset-runtime.test.ts:1062` 平台无关覆盖)。
+
+- 关联 commit: `b060acf9` (fix, rebase 后 `3c012baa`)。
+- 验证: CI run 27632710696 `verify (windows-2022)` 全绿 5m21s 含 e2e — windows 转绿确认。
+- 归档: docs/works/_archive/2026-06-17-gh-137-windows-incremental-watch-full-rescan/。
+- friction: docs/friction/20260617-1.0-explore-issue-hypothesis-needs-ground-truth-before-fix.md (issue 根因候选是待验证假设, explore 需先取 ground truth)。
+- GitHub Issue #137 已关闭 (fix 并入 master + CI 绿)。

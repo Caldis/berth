@@ -2,7 +2,7 @@
 task: 2026-06-17-gh-137-windows-incremental-watch-full-rescan
 task_id: GH-137
 type: bug
-phase: verify
+phase: archive
 created: 2026-06-17
 priority: P1
 target_date: 
@@ -22,14 +22,15 @@ debt:
     confidence: high
     rationale: "explore 实机定位: 非 windows 产品 bug, 而是 e2e 未等首扫 commit 的时序缺陷 (before.id 捕获到 'initial')。修复仅改单一 e2e 文件, 不动产品代码。"
   final:
-    incurred:
-    repaid:
-    net:
-    scope:
-    risk:
-    areas: []
-    confidence:
-    rationale:
+    incurred: 1
+    repaid: 0
+    net: 1
+    scope: file
+    risk: low
+    areas:
+      - testability
+    confidence: high
+    rationale: "与 estimate 一致: 仅改单一 e2e 文件 (incremental-watch.e2e.ts 等首扫 commit 后再捕获基线), 零产品代码; windows CI run 27632710696 转绿确认。"
   revisions:
     - phase: explore
       date: 2026-06-17
@@ -47,7 +48,7 @@ gh_project:
   project_number: 6
   project_url: https://github.com/users/Caldis/projects/6
   item_id: PVTI_lAHOADXbEs4BZHvQzgv7lg8
-  item_status: In Progress
+  item_status: Done
   project_id: PVT_kwHOADXbEs4BZHvQ
 artifacts:
   source: 00-BUG.md
