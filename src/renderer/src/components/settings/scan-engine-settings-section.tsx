@@ -28,6 +28,7 @@ import {
 } from '@/components/ui'
 import type { ChipTone } from '@/components/ui'
 import { cn } from '@/lib/utils'
+import { ScanHistorySection } from './scan-history-section'
 
 type Translate = ReturnType<typeof useTranslation>['t']
 type Saver = (patch: Partial<ScanEngineSettings>) => void
@@ -655,6 +656,8 @@ export function ScanEngineSettingsSection(): React.ReactElement {
                 </Tooltip>
               ))}
             </div>
+
+            <ScanHistorySection history={info.scanHistory} />
 
             <div className="grid gap-2 text-xs text-muted-foreground sm:grid-cols-2">
               <div>

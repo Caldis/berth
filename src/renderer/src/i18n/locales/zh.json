@@ -1515,6 +1515,18 @@
         "errorsTitle": "扫描错误",
         "empty": "暂无内容。"
       },
+      "history": {
+        "title": "扫描历史",
+        "empty": "暂无扫描记录。",
+        "count_other": "{{count}} 次扫描",
+        "avg": "平均 {{value}}",
+        "lastGap": "间隔 {{value}}",
+        "tipReason": "触发",
+        "tipDuration": "耗时",
+        "tipResult": "{{assets}} 资产 · {{files}} 文件",
+        "tipErrors_other": "{{count}} 个错误",
+        "tipGap": "距上次"
+      },
       "controls": "控制项",
       "saveControl": "保存",
       "saving": "保存中",

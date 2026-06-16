@@ -294,6 +294,14 @@ describe('SettingsContent page chrome', () => {
     expect(await screen.findByText('Scanned assets')).toBeInTheDocument()
   })
 
+  it('shows the scan history trend block from engine data (GH-135 G7)', async () => {
+    renderSettingsContent()
+
+    // Title + UI-derived summary (count) from the engine's raw scanHistory (3 entries).
+    expect(await screen.findByText('Scan history')).toBeInTheDocument()
+    expect(screen.getByText('3 scans')).toBeInTheDocument()
+  })
+
   it('refreshes the scan engine from settings', async () => {
     renderSettingsContent()
 

@@ -1521,6 +1521,20 @@
         "errorsTitle": "Scan errors",
         "empty": "Nothing to show yet."
       },
+      "history": {
+        "title": "Scan history",
+        "empty": "No scans recorded yet.",
+        "count_one": "{{count}} scan",
+        "count_other": "{{count}} scans",
+        "avg": "avg {{value}}",
+        "lastGap": "gap {{value}}",
+        "tipReason": "Trigger",
+        "tipDuration": "Duration",
+        "tipResult": "{{assets}} assets · {{files}} files",
+        "tipErrors_one": "{{count}} error",
+        "tipErrors_other": "{{count}} errors",
+        "tipGap": "Since previous"
+      },
       "controls": "Controls",
       "saveControl": "Save",
       "saving": "Saving",
