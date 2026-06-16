@@ -519,12 +519,12 @@ function ScannedDetailModal({
   return (
     <Modal isOpen={metric !== null} onClose={onClose} size="2xl" scrollBehavior="inside">
       <ModalContent>
-        <ModalHeader className="flex flex-wrap items-center gap-2">
+        <ModalHeader className="flex flex-wrap items-center gap-2 pr-10">
           {metric && t(`settings.scanEngine.detail.${metric}Title`)}
           <span className="text-xs font-normal tabular-nums text-muted-foreground">{count}</span>
           {scanCompletedAt && (
-            <span className="ml-auto text-xs font-normal tabular-nums text-muted-foreground">
-              {t('settings.scanEngine.detail.scannedAt', { value: formatDate(scanCompletedAt, language) })}
+            <span className="text-xs font-normal tabular-nums text-muted-foreground">
+              · {t('settings.scanEngine.detail.scannedAt', { value: formatDate(scanCompletedAt, language) })}
             </span>
           )}
         </ModalHeader>
