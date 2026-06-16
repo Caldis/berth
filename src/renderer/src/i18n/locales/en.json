@@ -1509,6 +1509,18 @@
       "nextScan": "Next scan: {{value}}",
       "nextScanFormula": "Next scan = last completed + scan interval ({{interval}}). With 'scan only when idle' or 'AC power only' on, it defers until the condition is met.",
       "statusCurrent": "current",
+      "metricDescriptions": {
+        "status": "The current scan engine state.",
+        "assets": "Total indexed assets — click to list every scanned result.",
+        "files": "Distinct source files indexed — click to inspect.",
+        "errors": "Files that failed to parse — click to see details."
+      },
+      "detail": {
+        "assetsTitle": "Scanned assets",
+        "filesTitle": "Indexed files",
+        "errorsTitle": "Scan errors",
+        "empty": "Nothing to show yet."
+      },
       "controls": "Controls",
       "saveControl": "Save",
       "saving": "Saving",

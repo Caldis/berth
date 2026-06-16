@@ -5,6 +5,8 @@ import i18n from '../../src/renderer/src/i18n'
 import { ThemeProvider } from '../../src/renderer/src/components/theme-provider'
 import { SettingsContent } from '../../src/renderer/src/components/settings/settings-content'
 import type { AssetRuntimeStatus, ScanEngineInfo } from '@shared/types/ipc'
+import type { Asset } from '@shared/types/asset'
+import { useAppStore } from '../../src/renderer/src/stores/app'
 
 describe('SettingsContent page chrome', () => {
   beforeEach(async () => {
@@ -256,6 +258,28 @@ describe('SettingsContent page chrome', () => {
     await waitFor(() =>
       expect(window.api.assets.setEngineSettings).toHaveBeenCalledWith({ excludePaths: [] })
     )
+  })
+
+  it('opens the scanned-assets detail modal from the metric (GH-135 G2)', async () => {
+    useAppStore.setState({
+      assets: [
+        {
+          id: 's1',
+          agentId: 'claude-code',
+          category: 'capability',
+          type: 'skill',
+          scope: 'user',
+          name: 'Skill One',
+          path: '/x/s1',
+          meta: {}
+        } as Asset
+      ]
+    })
+    renderSettingsContent()
+
+    // The assets metric is a button; clicking it opens the scanned-results modal.
+    fireEvent.click(await screen.findByText('12 assets'))
+    expect(await screen.findByText('Scanned assets')).toBeInTheDocument()
   })
 
   it('refreshes the scan engine from settings', async () => {

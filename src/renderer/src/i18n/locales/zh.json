@@ -1503,6 +1503,18 @@
       "nextScan": "下次扫描: {{value}}",
       "nextScanFormula": "下次扫描 = 上次完成时刻 + 扫描间隔 ({{interval}})。若开启「仅空闲时扫描」或「仅交流供电时全量扫描」, 会推迟到满足条件再执行。",
       "statusCurrent": "当前",
+      "metricDescriptions": {
+        "status": "扫描引擎的当前状态。",
+        "assets": "已索引的资产总数 — 点击列出全部扫描结果。",
+        "files": "已索引的源文件数 — 点击查看。",
+        "errors": "解析失败的文件 — 点击查看详情。"
+      },
+      "detail": {
+        "assetsTitle": "已扫描资产",
+        "filesTitle": "已索引文件",
+        "errorsTitle": "扫描错误",
+        "empty": "暂无内容。"
+      },
       "controls": "控制项",
       "saveControl": "保存",
       "saving": "保存中",

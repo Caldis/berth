@@ -1,12 +1,17 @@
+import { useState } from 'react'
 import { Activity, AlertTriangle, Minus, Plus, RefreshCcw, Trash2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+import { Virtuoso } from 'react-virtuoso'
+import type { Asset } from '@shared/types/asset'
 import type {
   ScanEngineControlDescriptor,
   ScanEngineControlGroup,
   ScanEngineInfo,
-  ScanEngineSettings
+  ScanEngineSettings,
+  ScanError
 } from '@shared/types/ipc'
 import { useScanEngineInfo } from '@/hooks/use-ipc'
+import { useAppStore } from '@/stores/app'
 import {
   Button,
   Chip,
@@ -103,13 +108,16 @@ function formatDate(value: string | undefined, language: string): string {
   }).format(time)
 }
 
+type DetailMetric = 'assets' | 'files' | 'errors'
+
 function metricRows(
   info: ScanEngineInfo,
   language: string,
   t: Translate
-): Array<{ label: string; value: string }> {
+): Array<{ id: DetailMetric; label: string; value: string }> {
   return [
     {
+      id: 'assets',
       label: t('settings.scanEngine.metrics.assets'),
       value: t('settings.scanEngine.metrics.assetsValue', {
         count: info.snapshot.indexedAssets,
@@ -117,6 +125,7 @@ function metricRows(
       })
     },
     {
+      id: 'files',
       label: t('settings.scanEngine.metrics.files'),
       value: t('settings.scanEngine.metrics.filesValue', {
         count: info.snapshot.indexedFiles,
@@ -124,6 +133,7 @@ function metricRows(
       })
     },
     {
+      id: 'errors',
       label: t('settings.scanEngine.metrics.errors'),
       value: t('settings.scanEngine.metrics.errorsValue', {
         count: info.snapshot.errors,
@@ -432,11 +442,104 @@ function RebuildConfirmDialog({
   )
 }
 
+// GH-135 G2: one compact row in the scanned-assets detail modal. Virtualized, so
+// 1000+ rows stay smooth (react-virtuoso renders only the visible window).
+function AssetDetailRow({ asset }: { asset: Asset }): React.ReactElement {
+  return (
+    <div className="flex items-center gap-2 border-b border-border/40 px-3 py-1.5 text-xs">
+      <Chip size="sm" tone="neutral" className="shrink-0">
+        {asset.type}
+      </Chip>
+      <span className="min-w-0 flex-1 truncate font-medium text-foreground" title={asset.name}>
+        {asset.name}
+      </span>
+      <span className="shrink-0 text-[10px] uppercase tracking-wide text-muted-foreground">{asset.scope}</span>
+      <span className="min-w-0 max-w-[42%] shrink-0 truncate text-muted-foreground/70" title={asset.path}>
+        {asset.path}
+      </span>
+    </div>
+  )
+}
+
+function ScanErrorDetailRow({ error }: { error: ScanError }): React.ReactElement {
+  return (
+    <div className="border-b border-border/40 px-3 py-1.5 text-xs">
+      <div className="flex items-center gap-2">
+        <Chip size="sm" tone="danger" className="shrink-0">
+          {error.type}
+        </Chip>
+        <span className="min-w-0 flex-1 truncate text-muted-foreground/70" title={error.path}>
+          {error.path}
+        </span>
+      </div>
+      <p className="mt-0.5 break-words text-destructive">{error.message}</p>
+    </div>
+  )
+}
+
+// GH-135 G2: clicking the assets/files/errors metric opens a modal listing every
+// scanned result. Dense table, virtualized for the high row count.
+function ScannedDetailModal({
+  metric,
+  assets,
+  errors,
+  onClose,
+  t
+}: {
+  metric: DetailMetric | null
+  assets: Asset[]
+  errors: ScanError[]
+  onClose: () => void
+  t: Translate
+}): React.ReactElement {
+  const isErrors = metric === 'errors'
+  const count = isErrors ? errors.length : assets.length
+  return (
+    <Modal isOpen={metric !== null} onClose={onClose} size="2xl" scrollBehavior="inside">
+      <ModalContent>
+        <ModalHeader className="flex items-center gap-2">
+          {metric && t(`settings.scanEngine.detail.${metric}Title`)}
+          <span className="text-xs font-normal tabular-nums text-muted-foreground">{count}</span>
+        </ModalHeader>
+        <ModalBody className="p-0">
+          {count === 0 ? (
+            <p className="px-3 py-10 text-center text-sm text-muted-foreground">
+              {t('settings.scanEngine.detail.empty')}
+            </p>
+          ) : isErrors ? (
+            <Virtuoso
+              style={{ height: '60vh' }}
+              data={errors}
+              itemContent={(_, error) => <ScanErrorDetailRow error={error} />}
+            />
+          ) : (
+            <Virtuoso
+              style={{ height: '60vh' }}
+              data={assets}
+              itemContent={(_, asset) => <AssetDetailRow asset={asset} />}
+            />
+          )}
+        </ModalBody>
+        <ModalFooter>
+          <Button size="sm" variant="light" onPress={onClose}>
+            {t('common.close')}
+          </Button>
+        </ModalFooter>
+      </ModalContent>
+    </Modal>
+  )
+}
+
 export function ScanEngineSettingsSection(): React.ReactElement {
   const { t, i18n } = useTranslation()
   const language = i18n.language || 'en'
   const { info, loading, refreshing, saving, error, reload, refreshIndex, saveSettings, rebuild } = useScanEngineInfo()
   const rebuildDialog = useDisclosure()
+  // GH-135 G2: the scanned results live in the central store (engine projection);
+  // the detail modal lists them on demand.
+  const assets = useAppStore((s) => s.assets)
+  const scanErrors = useAppStore((s) => s.assetErrors)
+  const [detailMetric, setDetailMetric] = useState<DetailMetric | null>(null)
 
   const settingControls = info?.controls.filter((control) => control.group) ?? []
   const statusControls = info?.controls.filter((control) => !control.group) ?? []
@@ -503,19 +606,40 @@ export function ScanEngineSettingsSection(): React.ReactElement {
         {info && (
           <>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-              <div className="rounded-md border border-border p-3">
-                <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                  {t('settings.scanEngine.metrics.status')}
-                </p>
-                <p className="mt-1 truncate text-sm font-medium">
-                  {t(`settings.scanEngine.status.${info.status.state}`)}
-                </p>
-              </div>
-              {metricRows(info, language, t).map((row) => (
-                <div key={row.label} className="rounded-md border border-border p-3">
-                  <p className="text-[11px] uppercase tracking-wide text-muted-foreground">{row.label}</p>
-                  <p className="mt-1 truncate text-sm font-medium">{row.value}</p>
+              <Tooltip
+                placement="top"
+                content={
+                  <p className="max-w-[14rem] p-1 text-xs">{t('settings.scanEngine.metricDescriptions.status')}</p>
+                }
+              >
+                <div className="cursor-default rounded-md border border-border p-3">
+                  <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                    {t('settings.scanEngine.metrics.status')}
+                  </p>
+                  <p className="mt-1 truncate text-sm font-medium">
+                    {t(`settings.scanEngine.status.${info.status.state}`)}
+                  </p>
                 </div>
+              </Tooltip>
+              {metricRows(info, language, t).map((row) => (
+                <Tooltip
+                  key={row.id}
+                  placement="top"
+                  content={
+                    <p className="max-w-[14rem] p-1 text-xs">
+                      {t(`settings.scanEngine.metricDescriptions.${row.id}`)}
+                    </p>
+                  }
+                >
+                  <button
+                    type="button"
+                    onClick={() => setDetailMetric(row.id)}
+                    className="rounded-md border border-border p-3 text-left transition-colors hover:border-primary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    <p className="text-[11px] uppercase tracking-wide text-muted-foreground">{row.label}</p>
+                    <p className="mt-1 truncate text-sm font-medium">{row.value}</p>
+                  </button>
+                </Tooltip>
               ))}
             </div>
 
@@ -594,6 +718,13 @@ export function ScanEngineSettingsSection(): React.ReactElement {
       </div>
 
       <RebuildConfirmDialog isOpen={rebuildDialog.isOpen} onClose={rebuildDialog.onClose} onConfirm={rebuild} />
+      <ScannedDetailModal
+        metric={detailMetric}
+        assets={assets}
+        errors={scanErrors}
+        onClose={() => setDetailMetric(null)}
+        t={t}
+      />
     </div>
   )
 }
