@@ -89,10 +89,18 @@ verify 不通过项作为新任务追加于此, phase 退回 implement。
 ### 第二轮 verify 反馈 (2026-06-16, 用户 /goal 追加; phase 回 implement)
 5 项 UI 改进 + 1 个计数 bug。优先 G1 (用户重点)。
 
-- [ ] G1 (BUG): 顶部"资产/文件"指标扫描中从 0→1000+ 闪烁。**根因**: getEngineInfo 的 `indexedAssets = snapshot.assets.length` / `indexedFiles = countIndexedFiles(...)` 直接投影 `applyPartial` 正在累积的部分快照; 每次全量 refresh (启动/手动/周期/scope) 中, partial 从少量 deep 累积到全部 → 指标清零重涨。watcher 单文件是真增量 (applyFileChange, 不闪)。**修复**: engine 记 stable 基线 (restorePersistedSnapshot + commitScan 时更新), getEngineInfo 在 `state==='scanning' && stable>0` 时返回稳定基线 (首次 stable=0 仍渐进)。errors 指标不闪 (commitScan 才设)。侧栏"已扫描 N"是进度语义保持累积。
+- [x] G1 (BUG): 顶部"资产/文件"指标扫描中从 0→1000+ 闪烁。**根因**: getEngineInfo 的 `indexedAssets = snapshot.assets.length` / `indexedFiles = countIndexedFiles(...)` 直接投影 `applyPartial` 正在累积的部分快照; 每次全量 refresh (启动/手动/周期/scope) 中, partial 从少量 deep 累积到全部 → 指标清零重涨。watcher 单文件是真增量 (applyFileChange, 不闪)。**修复**: engine 记 stable 基线 (restorePersistedSnapshot + commitScan 时更新), getEngineInfo 在 `state==='scanning' && stable>0` 时返回稳定基线 (首次 stable=0 仍渐进)。errors 指标不闪 (commitScan 才设)。侧栏"已扫描 N"是进度语义保持累积。
   - tests: agent-asset-runtime.test 重扫中 indexedAssets 稳定 / 首次渐进 / commit 后更新
   - verify: 真机重扫顶部指标不闪 (CDP 截图/录屏)
-- [ ] G2 (改进3): 顶部指标 hover 介绍 tooltip; 资产/文件/错误可点击展开 modal, 紧凑虚拟表格列出已扫描资产及基本属性 (信息密度大, 虚拟列表性能优化)
-- [ ] G3 (改进2): 运行时状态组右侧值改状态化标签 (chip 配色按语义), hover 显示该状态介绍 + 列出该控件所有枚举值 (让用户感知当前位置)
-- [ ] G4 (改进1): 排除路径 textarea → 列表 + 行内 +/- 按钮 + 拉起 electron 目录选择器 (dialog.showOpenDialog, 新 IPC)
-- [ ] G5 (改进4): "下次扫描"hover 显示计算公式说明 (= 上次完成/启动时刻 + 扫描间隔; idleOnly/acOnly 门控会推迟)
+- [x] G2 (改进3): 顶部指标 hover 介绍 tooltip; 资产/文件/错误可点击展开 modal, 紧凑虚拟表格列出已扫描资产及基本属性 (信息密度大, 虚拟列表性能优化)
+- [x] G3 (改进2): 运行时状态组右侧值改状态化标签 (chip 配色按语义), hover 显示该状态介绍 + 列出该控件所有枚举值 (让用户感知当前位置)
+- [x] G4 (改进1): 排除路径 textarea → 列表 + 行内 +/- 按钮 + 拉起 electron 目录选择器 (dialog.showOpenDialog, 新 IPC)
+- [x] G5 (改进4): "下次扫描"hover 显示计算公式说明 (= 上次完成/启动时刻 + 扫描间隔; idleOnly/acOnly 门控会推迟)
+
+#### 第二轮真机验收 (2026-06-16, CDP zh; commits 5753437/e9c5d5e/84012f9/d404223)
+- G1 ✅: 状态"扫描中"时顶部仍显 262 资产/250 文件 (稳定基线非 0, 截图佐证) + 2 单测确定性证明 mid-scan getEngineInfo 稳定
+- G2 ✅: 点资产卡 → Modal react-virtuoso 虚拟表列 262 资产 (类型 chip/名称/USER scope/路径), 1000+ 行流畅
+- G3 ✅: 状态组语义 chip (可用/运行中=success, mode=neutral); hover「运行中」显介绍 + 枚举 [运行中(当前)/已暂停] 高亮当前
+- G4 ✅: 排除路径空态"暂无排除路径" + 「添加目录」按钮 (有路径时行内 - 删除)
+- G5 ✅: 下次扫描 hover 显公式"= 上次完成时刻 + 扫描间隔(24 小时); idleOnly/acOnly 推迟"
+- 全程无 raw key 泄漏; 1155 单测 + typecheck + lint + harness 绿
