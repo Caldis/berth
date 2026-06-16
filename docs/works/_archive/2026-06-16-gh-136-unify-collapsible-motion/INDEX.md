@@ -2,7 +2,7 @@
 task: 2026-06-16-gh-136-unify-collapsible-motion
 task_id: GH-136
 type: maintenance
-phase: verify
+phase: archive
 created: 2026-06-16
 priority: P2
 target_date:
@@ -25,14 +25,14 @@ debt:
     rationale: "design 校准: 范围全量 (新 Collapsible primitive + 8 迁移点, 含 TagFilter 通用容器 + 2 处 HeroUI motionProps 对齐); incurred 2->3, net 仍偿还为主。"
   final:
     incurred: 3
-    repaid: 6
-    net: -3
+    repaid: 7
+    net: -4
     scope: module
     risk: low
     areas:
       - ui-ux
     confidence: high
-    rationale: "全量统一落地: Collapsible primitive (grid-rows 提炼 NoteCard) + 8 迁移点 + chevron 右侧统一 (teams 风格 ChevronLeft) + HeroUI token 对齐; 全量 1169 测试绿 + 4 页真机截图验证 chevron 右侧。残余: T6 teams/PluginCard height-auto 真机展开未单独验 (渲染正常)。"
+    rationale: "全量统一落地: Collapsible primitive (grid-rows 提炼 NoteCard) + 8 迁移点 + chevron 右侧统一 (teams 风格 ChevronLeft) + HeroUI token 对齐 + ScopeBadge pill 焊默认/关 className 逃生舱 (审计延伸, 偿还 GH-105 遗留漂移 + ARCHITECTURE 纪律); 全量 1169 测试绿 + 真机截图验证 chevron/head/pill。残余: T6 height-auto 真机展开未单独点验 (渲染正常)。"
   revisions:
     - phase: explore
       date: 2026-06-16
@@ -65,7 +65,7 @@ gh_project:
   project_number: 6
   project_url: https://github.com/users/Caldis/projects/6
   item_id: PVTI_lAHOADXbEs4BZHvQzgv5_mA
-  item_status: In Progress
+  item_status: Done
   project_id: PVT_kwHOADXbEs4BZHvQ
 artifacts:
   source: 00-PRD.md
