@@ -190,7 +190,7 @@ export function ScanProgressPanel(): React.ReactElement {
   )
 }
 
-export function SidebarScanStatus({ collapsed }: { collapsed: boolean }): React.ReactElement {
+export function SidebarScanStatus({ collapsed }: { collapsed: boolean }): React.ReactElement | null {
   const { t } = useTranslation()
   const status = useAppStore((s) => s.assetRuntimeStatus)
   const errorCount = useAppStore((s) => s.assetErrors.length)
@@ -203,8 +203,11 @@ export function SidebarScanStatus({ collapsed }: { collapsed: boolean }): React.
   // of unmounting. The old conditional row in the top block unmounted on idle and
   // remounted on every watcher rescan, jumping the whole nav list below it;
   // reserving the slot here makes scan feedback layout-neutral. (GH-113)
+  // BUT when collapsed the footer stacks vertically, so an empty slot becomes a
+  // blank row that visibly inflates the footer (GH-135) — drop it there; reflow on
+  // scan start only nudges the footer's own height, not the nav above it.
   if (!scanning && !stale && !errored && errorCount === 0) {
-    return <div data-sidebar-scan-slot className="h-8 w-8 shrink-0" aria-hidden="true" />
+    return collapsed ? null : <div data-sidebar-scan-slot className="h-8 w-8 shrink-0" aria-hidden="true" />
   }
 
   const showSpinner = scanning || stale

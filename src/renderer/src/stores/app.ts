@@ -9,7 +9,10 @@ import {
 import type { Asset, AssetStats } from '@shared/types/asset'
 import type { AssetRuntimeStatus, AssetScanPartial, AssetSnapshot, ScanError } from '@shared/types/ipc'
 
-export const SIDEBAR_COLLAPSED_WIDTH = 64
+// Wide enough to clear the macOS traffic-light cluster (x:16 + ~3×18px ≈ 70px),
+// so a collapsed sidebar fully contains the buttons instead of letting them spill
+// onto the content area's header (GH-135).
+export const SIDEBAR_COLLAPSED_WIDTH = 80
 export const SIDEBAR_DEFAULT_WIDTH = 248
 export const SIDEBAR_MIN_WIDTH = 200
 export const SIDEBAR_MAX_WIDTH = 360
