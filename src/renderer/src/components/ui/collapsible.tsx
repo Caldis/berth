@@ -1,4 +1,4 @@
-import { ChevronRight } from 'lucide-react'
+import { ChevronLeft } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { cn } from '@/lib/utils'
 import { MOTION } from './motion'
@@ -88,8 +88,10 @@ export function Collapsible({
 }
 
 /**
- * Disclosure indicator for a Collapsible trigger. A single chevron that rotates
- * 90° on open (right → down), replacing the hand-rolled `{open ? <ChevronDown/> :
+ * Disclosure indicator for a Collapsible trigger, matching the teams page's
+ * HeroUI Accordion indicator: a left-pointing chevron (‹) when collapsed that
+ * rotates -90° to point down (▾) on open. Lives at the trailing (right) edge of
+ * the trigger row. Replaces the hand-rolled `{open ? <ChevronDown/> :
  * <ChevronRight/>}` icon swaps so the indicator animates with the panel.
  */
 export function CollapsibleChevron({
@@ -100,11 +102,11 @@ export function CollapsibleChevron({
   className?: string
 }): React.ReactElement {
   return (
-    <ChevronRight
+    <ChevronLeft
       aria-hidden="true"
       className={cn(
         'h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform duration-200',
-        open && 'rotate-90',
+        open && '-rotate-90',
         className
       )}
     />

@@ -67,7 +67,6 @@ function MemoryCard({ asset }: { asset: Asset }): React.ReactElement {
         aria-controls={`instruction-detail-${asset.id}`}
         className="flex w-full items-start gap-3 px-4 py-3 text-left"
       >
-        <CollapsibleChevron open={expanded} className="mt-1" />
         <FileText className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
@@ -81,6 +80,7 @@ function MemoryCard({ asset }: { asset: Asset }): React.ReactElement {
             {size > 1024 ? `${(size / 1024).toFixed(1)} KB` : `${size} B`}
           </span>
         )}
+        <CollapsibleChevron open={expanded} className="mt-1" />
       </button>
 
       <Collapsible
@@ -154,7 +154,6 @@ function SkillCard({ asset, focused = false }: { asset: Asset; focused?: boolean
           aria-controls={`instruction-detail-${asset.id}`}
           className="flex min-w-0 flex-1 items-center gap-3 px-4 py-3 text-left"
         >
-          <CollapsibleChevron open={expanded} />
           <Sparkles className="h-4 w-4 shrink-0 text-blue-500" />
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
@@ -179,6 +178,7 @@ function SkillCard({ asset, focused = false }: { asset: Asset; focused?: boolean
               </span>
             )}
           </div>
+          <CollapsibleChevron open={expanded} />
         </button>
         {origin && (
           <div className="flex shrink-0 items-center pr-3">
@@ -259,7 +259,6 @@ function GenericAssetCard({ asset, icon: Icon, focused = false }: { asset: Asset
           aria-controls={`instruction-detail-${asset.id}`}
           className="flex min-w-0 flex-1 items-center gap-3 px-4 py-3 text-left"
         >
-          <CollapsibleChevron open={expanded} />
           <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
@@ -281,6 +280,7 @@ function GenericAssetCard({ asset, icon: Icon, focused = false }: { asset: Asset
               <span>{agentCount} {t('instructions.agents')}</span>
             )}
           </div>
+          <CollapsibleChevron open={expanded} />
         </button>
         {origin && (
           <div className="flex shrink-0 items-center pr-3">

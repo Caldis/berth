@@ -104,7 +104,6 @@ function McpServerCard({ asset, focused = false }: { asset: Asset; focused?: boo
           aria-controls={`mcp-detail-${asset.id}`}
           className="flex min-w-0 flex-1 items-center gap-3 px-4 py-3 text-left"
         >
-          <CollapsibleChevron open={expanded} />
           <Circle className={cn('h-2.5 w-2.5 shrink-0 fill-current', statusColor)} />
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
@@ -118,6 +117,7 @@ function McpServerCard({ asset, focused = false }: { asset: Asset; focused?: boo
           <span className={cn('shrink-0 text-xs', statusColor)}>
             {t(`capabilities.mcp.status.${status}`)}
           </span>
+          <CollapsibleChevron open={expanded} />
         </button>
         {origin && (
           <div className="flex shrink-0 items-center pr-3">

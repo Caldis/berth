@@ -37,6 +37,11 @@
   - tests: ✅ memory 8 文件 71 用例全绿 (memory-view 15: grid-row motion state + missing note 展开 + TagFilter toggle/外点关闭; collapsible 11 含 testId 用例)。
   - verify: ✅ typecheck:web + lint + 71 测试通过。NoteCard 行为不退化。
 
+- [x] **T5.5 — chevron 右侧统一 (用户 implement 中追加)** ✅
+  统一为 teams HeroUI Accordion 风格右侧 indicator: `CollapsibleChevron` 改 `ChevronLeft`(‹) + open `-rotate-90`(→▾, 匹配 HeroUI `ChevronIcon` path `M15.5 19l-7-7 7-7` 指左 + open 旋转); instructions 3 card + capabilities McpServerCard + memory NoteCard 的 chevron 从 button 左侧移到右侧末尾。feature-guide-panel 是文字 toggle 按钮 (非卡片头折叠), chevron 暂留 ▼/▲ — 审计项, 交用户定。
+  - tests: ✅ collapsible chevron 方向测试更新 (-rotate-90 / 指左); instructions/capabilities/memory/collapsible 101 测试绿。
+  - verify: 真机截图对比 teams 留 T7 (位置/方向最终用户裁定, 不变量22)。
+
 - [ ] **T6 — HeroUI 侧对齐 MOTION token** (依赖 T1 + T3)
   teams.tsx Accordion (`105`) + capabilities PluginCard Accordion (`274`) 传 `motionProps={ACCORDION_MOTION_PROPS}`。
   - tests: renderer smoke (motionProps 不报错 + 仍可展开); height 动画时长 manual 实测 (jsdom 测不出)。

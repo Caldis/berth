@@ -104,16 +104,16 @@ describe('Collapsible', () => {
 })
 
 describe('CollapsibleChevron', () => {
-  it('rotates 90deg when open', () => {
+  it('rotates -90deg (points down) when open', () => {
     const { container } = render(<CollapsibleChevron open />)
     const svg = container.querySelector('svg') as SVGElement
-    expect(svg.getAttribute('class')).toContain('rotate-90')
+    expect(svg.getAttribute('class')).toContain('-rotate-90')
     expect(svg.getAttribute('class')).toContain('transition-transform')
   })
 
-  it('does not rotate when closed', () => {
+  it('points left without rotation when closed (matches HeroUI accordion indicator)', () => {
     const { container } = render(<CollapsibleChevron open={false} />)
     const svg = container.querySelector('svg') as SVGElement
-    expect(svg.getAttribute('class')).not.toContain('rotate-90')
+    expect(svg.getAttribute('class')).not.toContain('-rotate-90')
   })
 })

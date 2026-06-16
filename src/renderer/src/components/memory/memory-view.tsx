@@ -272,7 +272,6 @@ function NoteCard({
       )}
     >
       <button onClick={toggle} aria-expanded={expanded} className="flex w-full items-center gap-3 px-4 py-3 text-left">
-        <CollapsibleChevron open={expanded} />
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <span className="truncate text-sm font-medium text-foreground">{note.title || note.id}</span>
@@ -285,6 +284,7 @@ function NoteCard({
         {note.updatedAt && (
           <span title={note.updatedAt} className="shrink-0 text-[11px] text-muted-foreground">{formatOptionalRelativeTime(note.updatedAt)}</span>
         )}
+        <CollapsibleChevron open={expanded} />
       </button>
 
       <Collapsible
