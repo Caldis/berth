@@ -1,7 +1,8 @@
 import { BookOpen, ChevronDown, ExternalLink, Info } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useId, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib/utils'
+import { Collapsible } from '@/components/ui'
 import type { FeatureGuideDefinition, FeatureGuideEvidence } from '@/lib/feature-guidance'
 import type { AgentView } from '@shared/types/asset'
 
@@ -20,6 +21,7 @@ export function FeatureGuidePanel({
 }: FeatureGuidePanelProps): React.ReactElement {
   const { t } = useTranslation()
   const [expanded, setExpanded] = useState(false)
+  const detailsId = useId()
   const insights = useMemo(
     () => (guide.insightKeys ?? []).filter((item) => item.agentView == null || item.agentView === agentView),
     [agentView, guide.insightKeys]
@@ -66,6 +68,8 @@ export function FeatureGuidePanel({
               <button
                 type="button"
                 onClick={() => setExpanded((value) => !value)}
+                aria-expanded={expanded}
+                aria-controls={detailsId}
                 className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-muted/70 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background"
               >
                 {expanded ? t('assetGuide.hideDetails') : t('assetGuide.showDetails')}
@@ -82,8 +86,7 @@ export function FeatureGuidePanel({
             </div>
           )}
 
-          {expanded && hasDetails && (
-            <div className="mt-4 space-y-4 border-t border-border pt-3">
+          <Collapsible open={expanded && hasDetails} id={detailsId} unmountOnExit className="mt-4 space-y-4 border-t border-border pt-3">
               {insights.length > 0 && (
                 <div>
                   <p className="text-[11px] font-medium uppercase text-muted-foreground">{t('assetGuide.tips')}</p>
@@ -161,8 +164,7 @@ export function FeatureGuidePanel({
                   ))}
                 </div>
               )}
-            </div>
-          )}
+          </Collapsible>
         </div>
       </div>
     </section>

@@ -27,10 +27,10 @@
   - tests: ✅ capabilities 6 测试文件 20 用例全绿 (含 plugin-nav/hook-nav focused 自动展开)。
   - verify: ✅ typecheck:web + lint + 20 测试通过。视觉验收留 T7。
 
-- [ ] **T4 — feature-guide-panel 迁移** (依赖 T1; 可并行)
-  FeatureGuidePanel `{expanded&&hasDetails&&}` → `<Collapsible open>`; 现有 `rotate-180` chevron 是否换 `CollapsibleChevron` 留 verify taste。
-  - tests: feature-guide-panel 测试 (新/扩) — expanded 切换显隐 details。
-  - verify: 展开详情有高度过渡 (现状无); button focus ring 保留; chevron 方向 taste 交用户。
+- [x] **T4 — feature-guide-panel 迁移** (依赖 T1) ✅
+  FeatureGuidePanel `{expanded&&hasDetails&&}` → `<Collapsible open unmountOnExit>`; `useId` 关联 aria-controls; button 加 aria-expanded; chevron 保留现有 ChevronDown+rotate-180 (文字"显示详情"按钮场景; 右→下统一与否留 T7 taste)。
+  - tests: ✅ guidance (instructions/capabilities) + shared-guidance-primitives + teams 共 42 用例全绿。
+  - verify: ✅ typecheck:web + lint + 42 测试通过。展开过渡视觉验收留 T7。
 
 - [ ] **T5 — memory-view NoteCard 反向接入 + TagFilter 纳入** (依赖 T1; memory-view 独占, 内部顺序: 先 NoteCard 后 TagFilter)
   NoteCard 用 `<Collapsible unmountOnExit>` 替换其手写 grid-rows + detailsMounted/timer (**行为不退化**: 懒加载 body、aria/inert、focused 自动展开、reduced-motion、延迟卸载全保留); TagFilter 筛选网格 body 接 `<Collapsible open={showGrid}>` (保留外点关闭、aria-expanded)。
