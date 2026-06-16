@@ -43,6 +43,7 @@ afterAll(() => {
 })
 
 interface AssetLike {
+  id?: string
   type: string
   name: string
   scope: string
@@ -52,6 +53,16 @@ interface ScanPayload {
   stats?: { skills: number }
   sources?: unknown[]
   commands?: Array<{ name: string }>
+  counts?: { assets: number; errors: number; sources: number }
+  count?: number
+  results?: Array<{ asset?: AssetLike }>
+  error?: { code: string }
+  asset?: AssetLike
+  relations?: unknown[]
+  checks?: unknown[]
+  usage?: unknown
+  sessions?: unknown[]
+  command?: { name: string; usage: string }
 }
 interface CliResult {
   code: number
@@ -155,12 +166,77 @@ describe('berth-scan CLI E2E (isolated fixture HOME, in-process)', () => {
     const { code, payload } = await runCli(withFixture(['sources', '--json']))
     expect(code).toBe(EXIT.OK)
     expect(Array.isArray(payload.sources)).toBe(true)
-    expect(payload.sources.length).toBeGreaterThan(0)
+    expect((payload.sources ?? []).length).toBeGreaterThan(0)
   })
 
   it('help lists the full command surface', async () => {
     const { code, payload } = await runCli(['help', '--json'])
     expect(code).toBe(EXIT.OK)
     expect((payload.commands ?? []).map((c) => c.name)).toContain('scan')
+  })
+
+  // CLI completion: the 6 previously-unwired commands now run standalone.
+  it('snapshot returns counts without the full asset list', async () => {
+    const { code, payload } = await runCli(withFixture(['snapshot', '--json']))
+    expect(code).toBe(EXIT.OK)
+    expect(payload.counts?.assets).toBeGreaterThan(0)
+    expect(payload.assets).toBeUndefined()
+  })
+
+  it('search finds an asset by name', async () => {
+    const { code, payload } = await runCli(withFixture(['search', 'greet', '--json']))
+    expect(code).toBe(EXIT.OK)
+    expect((payload.results ?? []).some((r) => r.asset?.name === 'greet')).toBe(true)
+  })
+
+  it('search with no match exits NO_DATA', async () => {
+    // Single garbage token (no common subwords) → MiniSearch finds nothing.
+    const { code } = await runCli(withFixture(['search', 'qqqzzzxyywv', '--json']))
+    expect(code).toBe(EXIT.NO_DATA)
+  })
+
+  it('search without a query exits ERROR', async () => {
+    const { code, payload } = await runCli(withFixture(['search', '--json']))
+    expect(code).toBe(EXIT.ERROR)
+    expect(payload.error?.code).toBe('missing-query')
+  })
+
+  it('inspect shows a single asset by id with relations', async () => {
+    const scan = await runCli(withFixture(['scan', '--json']))
+    const greet = (scan.payload.assets ?? []).find((a) => a.type === 'skill' && a.name === 'greet')
+    expect(greet?.id).toBeTruthy()
+    const { code, payload } = await runCli(withFixture(['inspect', greet!.id!, '--relations', '--json']))
+    expect(code).toBe(EXIT.OK)
+    expect(payload.asset?.name).toBe('greet')
+    expect(Array.isArray(payload.relations)).toBe(true)
+  })
+
+  it('inspect of an unknown id exits NO_DATA', async () => {
+    const { code } = await runCli(withFixture(['inspect', 'no-such-id', '--json']))
+    expect(code).toBe(EXIT.NO_DATA)
+  })
+
+  it('health runs diagnostic checks', async () => {
+    const { code, payload } = await runCli(withFixture(['health', '--json']))
+    expect([EXIT.OK, EXIT.ATTENTION]).toContain(code)
+    expect(Array.isArray(payload.checks)).toBe(true)
+  })
+
+  it('usage returns a summary', async () => {
+    const { code, payload } = await runCli(withFixture(['usage', '--days', '7', '--json']))
+    expect(code).toBe(EXIT.OK)
+    expect(payload.usage).toBeDefined()
+  })
+
+  it('sessions enumerates session assets', async () => {
+    const { code } = await runCli(withFixture(['sessions', '--limit', '5', '--json']))
+    expect([EXIT.OK, EXIT.NO_DATA]).toContain(code)
+  })
+
+  it('help <command> returns the detailed manual for one command', async () => {
+    const { code, payload } = await runCli(['help', 'search', '--json'])
+    expect(code).toBe(EXIT.OK)
+    expect(payload.command?.name).toBe('search')
+    expect(payload.command?.usage).toContain('berth-scan search')
   })
 })

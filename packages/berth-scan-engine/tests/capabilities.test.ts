@@ -15,12 +15,19 @@ describe('engine command manifest', () => {
       'health',
       'usage',
       'sources',
-      'status'
+      'status',
+      'version',
+      'help'
     ])
   })
 
   it('every command is side-effect free (read-only engine)', () => {
     expect(engineCommandManifest().every((c) => c.sideEffectFree)).toBe(true)
+  })
+
+  it('every command carries a usage string for the agent manual (CLI completion)', () => {
+    // help/manual completeness: each command is self-documenting via `usage`.
+    expect(engineCommandManifest().every((c) => typeof c.usage === 'string' && c.usage.length > 0)).toBe(true)
   })
 
   it('declares package identity', () => {
