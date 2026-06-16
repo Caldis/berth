@@ -1513,7 +1513,8 @@
         "assetsTitle": "已扫描资产",
         "filesTitle": "已索引文件",
         "errorsTitle": "扫描错误",
-        "empty": "暂无内容。"
+        "empty": "暂无内容。",
+        "scannedAt": "扫描于 {{value}}"
       },
       "history": {
         "title": "扫描历史",
@@ -1525,7 +1526,11 @@
         "tipDuration": "耗时",
         "tipResult": "{{assets}} 资产 · {{files}} 文件",
         "tipErrors_other": "{{count}} 个错误",
-        "tipGap": "距上次"
+        "tipGap": "距上次",
+        "tipDelta": "较上次 {{assets}} 资产 · {{files}} 文件",
+        "tipNoChange": "较上次无变化",
+        "tipScope": "范围: {{scope}} · {{sources}} 来源",
+        "scopeGlobal": "全局"
       },
       "controls": "控制项",
       "saveControl": "保存",

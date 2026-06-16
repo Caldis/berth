@@ -664,7 +664,9 @@ export class AgentAssetRuntime {
       assetCount: outcome.scanResult.assets.length,
       fileCount: countIndexedFiles(outcome.scanResult.assets),
       errorCount: outcome.scanResult.errors.length,
-      ok: true
+      ok: true,
+      projectDir,
+      sourceCount: outcome.sources.length
     })
     this.assetMap = new Map(outcome.scanResult.assets.map((asset) => [asset.id, asset]))
     this.snapshotCache.set(projectDir, this.snapshot)
@@ -699,7 +701,9 @@ export class AgentAssetRuntime {
       assetCount: this.snapshot.assets.length,
       fileCount: countIndexedFiles(this.snapshot.assets),
       errorCount: this.snapshot.errors.length + 1,
-      ok: false
+      ok: false,
+      projectDir: this.projectDir,
+      sourceCount: this.snapshot.sources.length
     })
     this.progressListener?.({ status: this.status })
   }

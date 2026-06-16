@@ -212,6 +212,10 @@ export interface ScanHistoryEntry {
   errorCount: number
   /** True when the scan completed; false when it failed. */
   ok: boolean
+  /** Project root scanned (absent = global / all home dirs) — the scan's scope. */
+  projectDir?: string
+  /** Number of scan-source groups (dirs/origins) covered — the scan's breadth. */
+  sourceCount: number
 }
 
 export interface ScanEngineInfo {

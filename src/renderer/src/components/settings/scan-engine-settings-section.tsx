@@ -245,11 +245,9 @@ function ExcludePathsControl({
     save({ [key]: paths.filter((p) => p !== path) } as Partial<ScanEngineSettings>)
   }
   return (
-    <div className="w-full max-w-sm space-y-1.5 sm:w-72">
-      {paths.length === 0 ? (
-        <p className="text-xs text-muted-foreground">{t('settings.scanEngine.excludeEmpty')}</p>
-      ) : (
-        <ul className="space-y-1">
+    <div className="flex w-full max-w-sm flex-col items-end gap-1.5 sm:w-72">
+      {paths.length > 0 && (
+        <ul className="w-full space-y-1">
           {paths.map((path) => (
             <li key={path} className="flex items-center gap-2 rounded-md border border-border bg-background px-2 py-1">
               <span className="min-w-0 flex-1 truncate text-xs text-foreground" title={path}>
@@ -460,7 +458,10 @@ function RebuildConfirmDialog({
 
 // GH-135 G2: one compact row in the scanned-assets detail modal. Virtualized, so
 // 1000+ rows stay smooth (react-virtuoso renders only the visible window).
-function AssetDetailRow({ asset }: { asset: Asset }): React.ReactElement {
+function AssetDetailRow({ asset, language }: { asset: Asset; language: string }): React.ReactElement {
+  // The source file's modified time was stat'd at scan time (asset.meta.modifiedAt),
+  // so showing it here is free — no extra IO or stored data (GH-135).
+  const modifiedAt = typeof asset.meta?.modifiedAt === 'string' ? asset.meta.modifiedAt : undefined
   return (
     <div className="flex items-center gap-2 border-b border-border/40 px-3 py-1.5 text-xs">
       <Chip size="sm" tone="neutral" className="shrink-0">
@@ -470,9 +471,10 @@ function AssetDetailRow({ asset }: { asset: Asset }): React.ReactElement {
         {asset.name}
       </span>
       <span className="shrink-0 text-[10px] uppercase tracking-wide text-muted-foreground">{asset.scope}</span>
-      <span className="min-w-0 max-w-[42%] shrink-0 truncate text-muted-foreground/70" title={asset.path}>
+      <span className="min-w-0 max-w-[34%] shrink-0 truncate text-muted-foreground/70" title={asset.path}>
         {asset.path}
       </span>
+      <span className="shrink-0 tabular-nums text-muted-foreground/60">{modifiedAt ? formatDate(modifiedAt, language) : '—'}</span>
     </div>
   )
 }
@@ -500,22 +502,31 @@ function ScannedDetailModal({
   assets,
   errors,
   onClose,
-  t
+  t,
+  language,
+  scanCompletedAt
 }: {
   metric: DetailMetric | null
   assets: Asset[]
   errors: ScanError[]
   onClose: () => void
   t: Translate
+  language: string
+  scanCompletedAt?: string
 }): React.ReactElement {
   const isErrors = metric === 'errors'
   const count = isErrors ? errors.length : assets.length
   return (
     <Modal isOpen={metric !== null} onClose={onClose} size="2xl" scrollBehavior="inside">
       <ModalContent>
-        <ModalHeader className="flex items-center gap-2">
+        <ModalHeader className="flex flex-wrap items-center gap-2">
           {metric && t(`settings.scanEngine.detail.${metric}Title`)}
           <span className="text-xs font-normal tabular-nums text-muted-foreground">{count}</span>
+          {scanCompletedAt && (
+            <span className="ml-auto text-xs font-normal tabular-nums text-muted-foreground">
+              {t('settings.scanEngine.detail.scannedAt', { value: formatDate(scanCompletedAt, language) })}
+            </span>
+          )}
         </ModalHeader>
         <ModalBody className="p-0">
           {count === 0 ? (
@@ -532,7 +543,7 @@ function ScannedDetailModal({
             <Virtuoso
               style={{ height: '60vh' }}
               data={assets}
-              itemContent={(_, asset) => <AssetDetailRow asset={asset} />}
+              itemContent={(_, asset) => <AssetDetailRow asset={asset} language={language} />}
             />
           )}
         </ModalBody>
@@ -748,6 +759,8 @@ export function ScanEngineSettingsSection(): React.ReactElement {
         errors={scanErrors}
         onClose={() => setDetailMetric(null)}
         t={t}
+        language={language}
+        scanCompletedAt={info?.status.lastCompletedAt}
       />
     </div>
   )

@@ -99,9 +99,9 @@ describe('SettingsContent page chrome', () => {
         { id: 'third-party-code-not-executed', level: 'info', enabled: true }
       ],
       scanHistory: [
-        { at: '2026-06-16T10:00:00.000Z', reason: 'startup', durationMs: 3200, assetCount: 1229, fileCount: 1146, errorCount: 0, ok: true },
-        { at: '2026-06-16T11:00:00.000Z', reason: 'watcher', durationMs: 2800, assetCount: 1230, fileCount: 1147, errorCount: 0, ok: true },
-        { at: '2026-06-16T12:00:00.000Z', reason: 'manual', durationMs: 3500, assetCount: 1231, fileCount: 1148, errorCount: 1, ok: true }
+        { at: '2026-06-16T10:00:00.000Z', reason: 'startup', durationMs: 3200, assetCount: 1229, fileCount: 1146, errorCount: 0, ok: true, sourceCount: 12 },
+        { at: '2026-06-16T11:00:00.000Z', reason: 'watcher', durationMs: 2800, assetCount: 1230, fileCount: 1147, errorCount: 0, ok: true, sourceCount: 12 },
+        { at: '2026-06-16T12:00:00.000Z', reason: 'manual', durationMs: 3500, assetCount: 1231, fileCount: 1148, errorCount: 1, ok: true, projectDir: '/repo/app', sourceCount: 3 }
       ]
     }))
     window.api.assets.setEngineSettings = vi.fn(async () => window.api.assets.engineInfo())

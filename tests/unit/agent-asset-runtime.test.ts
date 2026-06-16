@@ -491,7 +491,7 @@ describe('AgentAssetRuntime', () => {
 
   it('restores persisted scan history on cold start (GH-135 G7)', () => {
     const persisted: ScanHistoryEntry[] = [
-      { at: '2026-06-15T00:00:00.000Z', reason: 'startup', durationMs: 1000, assetCount: 5, fileCount: 5, errorCount: 0, ok: true }
+      { at: '2026-06-15T00:00:00.000Z', reason: 'startup', durationMs: 1000, assetCount: 5, fileCount: 5, errorCount: 0, ok: true, sourceCount: 2 }
     ]
     const runtime = new AgentAssetRuntime({
       projectDir: '/repo/berth',

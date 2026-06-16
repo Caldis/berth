@@ -115,6 +115,8 @@ const createMockScanEngineInfo = () => ({
     fileCount: number
     errorCount: number
     ok: boolean
+    projectDir?: string
+    sourceCount: number
   }>
 })
 

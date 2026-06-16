@@ -11,7 +11,17 @@ import type { ScanHistoryEntry } from '@shared/types/ipc'
  * their bar destructive so regressions are visible at a glance.
  */
 
-type ChartDatum = ScanHistoryEntry & { durationSec: number; intervalMs: number }
+type ChartDatum = ScanHistoryEntry & {
+  durationSec: number
+  intervalMs: number
+  /** Asset/file count change vs the previous scan (UI-derived from raw counts). */
+  assetDelta: number
+  fileDelta: number
+}
+
+function signed(n: number): string {
+  return n > 0 ? `+${n}` : `${n}`
+}
 
 function formatMs(ms: number): string {
   if (ms <= 0) return '—'
@@ -53,6 +63,21 @@ function HistoryTooltip({
         <div>
           {t('settings.scanEngine.history.tipResult', { assets: d.assetCount, files: d.fileCount })}
         </div>
+        {/* File/asset delta vs the previous scan — the "did anything change" signal. */}
+        {d.intervalMs > 0 &&
+          (d.assetDelta !== 0 || d.fileDelta !== 0 ? (
+            <div className="text-foreground">
+              {t('settings.scanEngine.history.tipDelta', { assets: signed(d.assetDelta), files: signed(d.fileDelta) })}
+            </div>
+          ) : (
+            <div>{t('settings.scanEngine.history.tipNoChange')}</div>
+          ))}
+        <div>
+          {t('settings.scanEngine.history.tipScope', {
+            scope: d.projectDir ?? t('settings.scanEngine.history.scopeGlobal'),
+            sources: d.sourceCount
+          })}
+        </div>
         {d.errorCount > 0 && (
           <div className="text-destructive">
             {t('settings.scanEngine.history.tipErrors', { count: d.errorCount })}
@@ -86,11 +111,16 @@ export function ScanHistorySection({ history }: { history: ScanHistoryEntry[] })
 
   // UI-side integration of the raw engine entries (intervals / average / last gap).
   const recent = history.slice(-24)
-  const data: ChartDatum[] = recent.map((entry, i) => ({
-    ...entry,
-    durationSec: Math.round(entry.durationMs / 100) / 10,
-    intervalMs: i > 0 ? Math.max(0, Date.parse(entry.at) - Date.parse(recent[i - 1].at)) : 0
-  }))
+  const data: ChartDatum[] = recent.map((entry, i) => {
+    const prev = i > 0 ? recent[i - 1] : undefined
+    return {
+      ...entry,
+      durationSec: Math.round(entry.durationMs / 100) / 10,
+      intervalMs: prev ? Math.max(0, Date.parse(entry.at) - Date.parse(prev.at)) : 0,
+      assetDelta: prev ? entry.assetCount - prev.assetCount : 0,
+      fileDelta: prev ? entry.fileCount - prev.fileCount : 0
+    }
+  })
   const avgMs = Math.round(history.reduce((sum, e) => sum + e.durationMs, 0) / history.length)
   const last = history[history.length - 1]
   const lastGapMs = history.length > 1 ? Date.parse(last.at) - Date.parse(history[history.length - 2].at) : 0

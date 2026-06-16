@@ -1519,7 +1519,8 @@
         "assetsTitle": "Scanned assets",
         "filesTitle": "Indexed files",
         "errorsTitle": "Scan errors",
-        "empty": "Nothing to show yet."
+        "empty": "Nothing to show yet.",
+        "scannedAt": "Scanned {{value}}"
       },
       "history": {
         "title": "Scan history",
@@ -1533,7 +1534,11 @@
         "tipResult": "{{assets}} assets · {{files}} files",
         "tipErrors_one": "{{count}} error",
         "tipErrors_other": "{{count}} errors",
-        "tipGap": "Since previous"
+        "tipGap": "Since previous",
+        "tipDelta": "Δ {{assets}} assets · {{files}} files",
+        "tipNoChange": "no change since previous",
+        "tipScope": "Scope: {{scope}} · {{sources}} sources",
+        "scopeGlobal": "global"
       },
       "controls": "Controls",
       "saveControl": "Save",
