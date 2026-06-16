@@ -22,3 +22,34 @@ export const fadeRise = {
   animate: { opacity: 1, y: 0 },
   transition: { duration: MOTION.duration.base, ease: MOTION.ease.standard }
 } as const
+
+/**
+ * Shared HeroUI Accordion motionProps (GH-136). Aligns the Accordion's
+ * framer-motion expand/collapse timing to the MOTION tokens so component-library
+ * accordions (teams page, plugin cards) match the hand-rolled Collapsible's
+ * cadence. HeroUI v2's default durations are not publicly documented; this
+ * overrides them. If it regresses HeroUI's height-auto behavior, drop it and
+ * accept the defaults (GH-136 02-SPEC fallback).
+ */
+export const ACCORDION_MOTION_PROPS = {
+  variants: {
+    enter: {
+      y: 0,
+      opacity: 1,
+      height: 'auto',
+      transition: {
+        height: { type: 'spring', stiffness: 500, damping: 30, duration: MOTION.duration.base },
+        opacity: { easings: 'ease', duration: MOTION.duration.base }
+      }
+    },
+    exit: {
+      y: -3,
+      opacity: 0,
+      height: 0,
+      transition: {
+        height: { easings: 'ease', duration: MOTION.duration.base },
+        opacity: { easings: 'ease', duration: MOTION.duration.fast }
+      }
+    }
+  }
+} as const

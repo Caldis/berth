@@ -38,6 +38,8 @@ describe('components/ui barrel', () => {
       'Listbox',
       'Kbd',
       'Alert',
+      'Collapsible',
+      'CollapsibleChevron',
       'useDisclosure'
     ]) {
       expect(UI[name as keyof typeof UI], `missing export: ${name}`).toBeDefined()

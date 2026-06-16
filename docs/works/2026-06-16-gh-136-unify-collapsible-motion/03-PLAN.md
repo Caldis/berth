@@ -11,10 +11,10 @@
 
 ---
 
-- [ ] **T1 — 共享 Collapsible primitive** (基础, 先行)
-  新建 `src/renderer/src/components/ui/collapsible.tsx`: `Collapsible` (受控 grid-rows body 容器 + `aria-hidden`/`inert` + `motion-reduce` + 可选 `unmountOnExit` 延迟卸载) + `CollapsibleChevron` (ChevronRight + `rotate-90` 过渡); `components/ui/motion.ts` 新增 `ACCORDION_MOTION_PROPS`; `@/components/ui` 出口导出三者。
-  - tests: `tests/unit/components/ui/collapsible.test.tsx` (新) — open 切换 → grid-rows/opacity class + aria-hidden + inert; reduced-motion 分支; unmountOnExit + 延迟卸载 (fake timer); chevron rotate class。
-  - verify: `pnpm test` 绿; props 契约符合 02-SPEC; 不适用界面截图 (纯 primitive, 由迁移点体现)。
+- [x] **T1 — 共享 Collapsible primitive** (基础, 先行) ✅
+  新建 `src/renderer/src/components/ui/collapsible.tsx`: `Collapsible` (受控 grid-rows body 容器 + `aria-hidden`/`inert` + `motion-reduce` + 可选 `unmountOnExit` 延迟卸载) + `CollapsibleChevron` (ChevronRight + `rotate-90` 过渡); `components/ui/motion.ts` 新增 `ACCORDION_MOTION_PROPS`; `@/components/ui` 出口导出三者; barrel.test 增项。
+  - tests: `tests/renderer/ui/collapsible.test.tsx` (新, 10 用例) — **偏差**: SPEC 写 `tests/unit/...`, 实际 renderer 组件测试在 `tests/renderer/ui/` (jsdom)。覆盖 open 切换 grid-rows/opacity + aria-hidden/inert; reduced-motion; unmountOnExit 延迟卸载 (fake timer); chevron rotate。
+  - verify: ✅ typecheck:web + typecheck:test + lint 绿; 12 测试通过 (含 barrel)。测试文件需显式 `import React` (vitest classic JSX runtime; IDE 的 unused-React [6133] 是 automatic-runtime 噪音, 全测试通病)。
 
 - [ ] **T2 — instructions 三 card 迁移** (依赖 T1)
   MemoryCard/SkillCard/GenericAssetCard: `{expanded&&<div>}` → `<Collapsible open>`; chevron 换 `CollapsibleChevron`; trigger 加 `aria-expanded`/`aria-controls`。
