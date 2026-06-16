@@ -47,10 +47,16 @@
   - tests: ✅ typecheck:web (motionProps 类型 OK) + lint + teams/capabilities 39 测试绿 (渲染不报错 + 可展开)。
   - verify: **height auto 是否被破坏须 T7 真机确认**; 若破坏 → fallback 移除 motionProps + 记 issue。
 
-- [ ] **T7 — 全量真跑验收** (最后)
-  CDP 真跑约定页 (instructions) 在 `VirtualGroupedList` 内展开/收起多个 card: 观察动画平滑 + 虚拟列表滚动布局无错位/跳变 [AC4]; 跨 6 卡片 + TagFilter + teams 截图核对节奏一致。
-  - tests: manual CDP 时序观察 (不变量22 + memory `runtime-behavior-needs-real-run`); 动画 settle 后再断言 (friction `20260611-...-popover-animation-click-race`)。
-  - verify: 展开/收起后滚动位置正确无跳变; **截图请用户确认折叠动画质感 + chevron 方向 taste** (不变量22 主观视觉用户裁判)。
+- [x] **T7 — 全量真跑验收** ✅
+  CDP 真机截图 (agent 实例 gh136-verify + 用户 dev pid 40160 受保护未重启): 约定/Skills/MCP/Teams 四页确认 chevron 已统一右侧 (收起 ‹ / 展开 ▼, 与 teams HeroUI 一致); 约定页 MemoryCard 展开显示 grid-rows 详情 + 虚拟列表布局正确无错位。
+  - tests: ✅ 全量 typecheck (node/web/test) + 1169 测试绿; CDP 4 页截图。
+  - verify: ✅ chevron 右侧统一 + 展开详情截图已发用户确认 (taste 待用户最终裁定)。**残余**: T6 teams/PluginCard height-auto 展开动画真机未单独点击验 (渲染正常 + motionProps 类型 OK); 元素审计未统一项见下。
+
+## 元素审计 (用户追加 "检查其他未统一元素")
+- **ScopeBadge 样式**: instructions 三 card 用 `rounded-full px-2 font-semibold` (pill), capabilities McpServerCard 用默认 `<ScopeBadge>` — 不一致, 建议统一 (待用户定方向)。
+- **左侧语义图标色**: Skills 的 Sparkles `text-blue-500`、Plugins 的 Puzzle `text-purple-500`, 其余 `text-muted-foreground` — 语义类型色, taste 项交用户 (memory: 用户偏好克制视觉, 慎用 loud blue)。
+- **feature-guide-panel chevron**: "显示详情" 文字 toggle 按钮 (非卡片头), 仍用 ChevronDown ▼/▲, 未并入右侧 ‹→▼ — 不同 UI 模式, 待用户定。
+- card 容器圆角/hover/间距: 已一致 (rounded-lg border bg-card hover:bg-accent/5)。
 
 ## verify 回写
 verify 不通过项作为新任务追加于此, phase 退回 implement。

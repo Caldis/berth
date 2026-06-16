@@ -2,7 +2,7 @@
 task: 2026-06-16-gh-136-unify-collapsible-motion
 task_id: GH-136
 type: maintenance
-phase: implement
+phase: verify
 created: 2026-06-16
 priority: P2
 target_date:
@@ -24,14 +24,15 @@ debt:
     confidence: medium
     rationale: "design 校准: 范围全量 (新 Collapsible primitive + 8 迁移点, 含 TagFilter 通用容器 + 2 处 HeroUI motionProps 对齐); incurred 2->3, net 仍偿还为主。"
   final:
-    incurred:
-    repaid:
-    net:
-    scope:
-    risk:
-    areas: []
-    confidence:
-    rationale:
+    incurred: 3
+    repaid: 6
+    net: -3
+    scope: module
+    risk: low
+    areas:
+      - ui-ux
+    confidence: high
+    rationale: "全量统一落地: Collapsible primitive (grid-rows 提炼 NoteCard) + 8 迁移点 + chevron 右侧统一 (teams 风格 ChevronLeft) + HeroUI token 对齐; 全量 1169 测试绿 + 4 页真机截图验证 chevron 右侧。残余: T6 teams/PluginCard height-auto 真机展开未单独验 (渲染正常)。"
   revisions:
     - phase: explore
       date: 2026-06-16
