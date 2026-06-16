@@ -19,6 +19,8 @@ export interface CollapsibleProps {
   unmountOnExit?: boolean
   /** With `unmountOnExit`, delay before unmounting so the collapse animation can finish. Defaults to MOTION.durationMs.base. */
   unmountDelayMs?: number
+  /** Forwarded to the outer (always-mounted) grid wrapper as `data-testid`. */
+  testId?: string
 }
 
 /**
@@ -37,7 +39,8 @@ export function Collapsible({
   id,
   className,
   unmountOnExit = false,
-  unmountDelayMs = MOTION.durationMs.base
+  unmountDelayMs = MOTION.durationMs.base,
+  testId
 }: CollapsibleProps): React.ReactElement {
   const [mounted, setMounted] = useState(open)
   const timerRef = useRef<number | null>(null)
@@ -69,6 +72,7 @@ export function Collapsible({
   return (
     <div
       id={id}
+      data-testid={testId}
       aria-hidden={!open}
       inert={!open}
       className={cn(

@@ -51,6 +51,15 @@ describe('Collapsible', () => {
     expect(queryByText('hello')).not.toBeNull()
   })
 
+  it('forwards testId to the always-mounted grid root (survives collapse)', () => {
+    const { getByTestId } = render(
+      <Collapsible open={false} testId="my-collapsible">
+        body
+      </Collapsible>
+    )
+    expect(getByTestId('my-collapsible').className).toContain('grid-rows-[0fr]')
+  })
+
   describe('unmountOnExit', () => {
     beforeEach(() => vi.useFakeTimers())
     afterEach(() => vi.useRealTimers())

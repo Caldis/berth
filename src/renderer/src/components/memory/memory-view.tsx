@@ -6,7 +6,6 @@ import {
   Brain,
   Database,
   ChevronDown,
-  ChevronRight,
   FolderOpen,
   Tag,
   Loader2,
@@ -17,7 +16,7 @@ import {
   X
 } from 'lucide-react'
 import { cn, truncatePath, formatOptionalRelativeTime } from '@/lib/utils'
-import { Input, Chip } from '@/components/ui'
+import { Input, Chip, Collapsible, CollapsibleChevron } from '@/components/ui'
 import { useMemory } from '@/hooks/use-memory'
 import { EmptyState, PAGE_EMPTY_FILL } from '@/components/shared/empty-state'
 import { ErrorState } from '@/components/shared/error-state'
@@ -220,11 +219,9 @@ function NoteCard({
 }): React.ReactElement {
   const { t } = useTranslation()
   const [expanded, setExpanded] = useState(false)
-  const [detailsMounted, setDetailsMounted] = useState(false)
   const [body, setBody] = useState<string | null>(note.body ?? null)
   const [loadingBody, setLoadingBody] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
-  const collapseTimerRef = useRef<number | null>(null)
 
   const ensureBody = useCallback(async (): Promise<string> => {
     if (note.missing) return ''
@@ -246,37 +243,13 @@ function NoteCard({
 
   const toggle = useCallback(async () => {
     const next = !expanded
-    if (collapseTimerRef.current !== null) {
-      window.clearTimeout(collapseTimerRef.current)
-      collapseTimerRef.current = null
-    }
-    if (next) setDetailsMounted(true)
     setExpanded(next)
     if (next && !note.missing) void ensureBody()
   }, [expanded, ensureBody, note.missing])
 
-  useEffect(() => {
-    if (expanded || !detailsMounted) return
-    collapseTimerRef.current = window.setTimeout(() => {
-      setDetailsMounted(false)
-      collapseTimerRef.current = null
-    }, DETAILS_COLLAPSE_MS)
-    return () => {
-      if (collapseTimerRef.current !== null) {
-        window.clearTimeout(collapseTimerRef.current)
-        collapseTimerRef.current = null
-      }
-    }
-  }, [detailsMounted, expanded])
-
   // When this card becomes the navigation target, expand + scroll into view.
   useEffect(() => {
     if (focused) {
-      if (collapseTimerRef.current !== null) {
-        window.clearTimeout(collapseTimerRef.current)
-        collapseTimerRef.current = null
-      }
-      setDetailsMounted(true)
       setExpanded(true)
       if (!note.missing) void ensureBody()
       ref.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
@@ -298,8 +271,8 @@ function NoteCard({
         focused ? 'border-primary ring-1 ring-primary motion-safe:animate-pulse' : 'border-border'
       )}
     >
-      <button onClick={toggle} className="flex w-full items-center gap-3 px-4 py-3 text-left">
-        {expanded ? <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" /> : <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />}
+      <button onClick={toggle} aria-expanded={expanded} className="flex w-full items-center gap-3 px-4 py-3 text-left">
+        <CollapsibleChevron open={expanded} />
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <span className="truncate text-sm font-medium text-foreground">{note.title || note.id}</span>
@@ -314,18 +287,13 @@ function NoteCard({
         )}
       </button>
 
-      <div
-        data-testid={`memory-note-details-${note.id}`}
-        aria-hidden={!expanded}
-        inert={!expanded}
-        className={cn(
-          'grid overflow-hidden transition-[grid-template-rows,opacity] duration-200 ease-out motion-reduce:transition-none',
-          expanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
-        )}
+      <Collapsible
+        open={expanded}
+        testId={`memory-note-details-${note.id}`}
+        unmountOnExit
+        unmountDelayMs={DETAILS_COLLAPSE_MS}
+        className="space-y-2 border-t border-border px-4 py-3"
       >
-        <div className="min-h-0 overflow-hidden">
-          {detailsMounted && (
-            <div className="space-y-2 border-t border-border px-4 py-3">
               {note.tags.length > 0 && (
                 <div className="flex flex-wrap items-center gap-1">
                   <Tag className="h-3 w-3 text-muted-foreground" />
@@ -378,10 +346,7 @@ function NoteCard({
                   )}
                 </div>
               </div>
-            </div>
-          )}
-        </div>
-      </div>
+      </Collapsible>
     </div>
   )
 }
@@ -588,16 +553,7 @@ function TagFilter({
           </div>
         )}
 
-        <div
-          aria-hidden={!showGrid}
-          inert={!showGrid}
-          data-testid={testId ? `${testId}-grid` : undefined}
-          className={cn(
-            'grid transition-[grid-template-rows] duration-200 ease-out motion-reduce:transition-none',
-            showGrid ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
-          )}
-        >
-          <div className="overflow-hidden">
+        <Collapsible open={showGrid} testId={testId ? `${testId}-grid` : undefined}>
             <div
               data-testid={testId ? `${testId}-panel` : undefined}
               className="max-h-[12rem] overflow-y-auto rounded-md border border-border bg-muted/20 p-2"
@@ -626,8 +582,7 @@ function TagFilter({
                 <p className="px-1 py-6 text-center text-xs text-muted-foreground">{emptyText}</p>
               )}
             </div>
-          </div>
-        </div>
+        </Collapsible>
       </div>
     </div>
   )

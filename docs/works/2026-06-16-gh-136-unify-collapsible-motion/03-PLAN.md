@@ -32,10 +32,10 @@
   - tests: ✅ guidance (instructions/capabilities) + shared-guidance-primitives + teams 共 42 用例全绿。
   - verify: ✅ typecheck:web + lint + 42 测试通过。展开过渡视觉验收留 T7。
 
-- [ ] **T5 — memory-view NoteCard 反向接入 + TagFilter 纳入** (依赖 T1; memory-view 独占, 内部顺序: 先 NoteCard 后 TagFilter)
-  NoteCard 用 `<Collapsible unmountOnExit>` 替换其手写 grid-rows + detailsMounted/timer (**行为不退化**: 懒加载 body、aria/inert、focused 自动展开、reduced-motion、延迟卸载全保留); TagFilter 筛选网格 body 接 `<Collapsible open={showGrid}>` (保留外点关闭、aria-expanded)。
-  - tests: memory-view 测试扩展 — NoteCard 懒加载+focused 不退化 (现有测试须仍绿); TagFilter toggle/输入显隐/外点关闭。
-  - verify: NoteCard 与迁移前观感/行为一致; TagFilter 展开网格过渡平滑。
+- [x] **T5 — memory-view NoteCard 反向接入 + TagFilter 纳入** (依赖 T1) ✅
+  NoteCard: 手写 grid-rows + detailsMounted/collapseTimerRef → `<Collapsible open unmountOnExit unmountDelayMs={DETAILS_COLLAPSE_MS} testId>`; 移除收起 useEffect (Collapsible 内建延迟卸载); 保留懒加载 ensureBody / focused 自动展开 / reduced-motion; chevron → CollapsibleChevron。TagFilter 筛选网格 → `<Collapsible open={showGrid} testId>` (保留 `-grid` testid + 外点关闭)。**Collapsible 增 `testId` prop** 透传外层 always-mounted grid div (守 `memory-note-details`/`-grid` testid 断言)。
+  - tests: ✅ memory 8 文件 71 用例全绿 (memory-view 15: grid-row motion state + missing note 展开 + TagFilter toggle/外点关闭; collapsible 11 含 testId 用例)。
+  - verify: ✅ typecheck:web + lint + 71 测试通过。NoteCard 行为不退化。
 
 - [ ] **T6 — HeroUI 侧对齐 MOTION token** (依赖 T1 + T3)
   teams.tsx Accordion (`105`) + capabilities PluginCard Accordion (`274`) 传 `motionProps={ACCORDION_MOTION_PROPS}`。
