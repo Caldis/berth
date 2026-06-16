@@ -39,7 +39,20 @@ GH-113 已落地本 FEATURE 的地基与核心数据通路 (详见归档 INDEX�
 - 这与本 FEATURE 的目标模型「切换仅是对已扫完整结果的 narrow-down 过滤, 不触发扫描」直接冲突 — activate 的全量重扫路径属于待消灭行为; 调度/背压落地时应一并收敛。
 - 证据来源: `docs/works/2026-06-11-gh-117-project-scope-e2e-macos/01-ANALYSIS.md` 探针 C (GH-117 本体修 e2e 隔离, 性能旁支只在此处跟踪)。
 
+# 进展 (2026-06-16, GH-135 归档)
+GH-135 (`docs/works/_archive/2026-06-15-gh-135-index-progress-visibility/`) 完成本 FEATURE「仍 OPEN」主线大部:
+- **T4 可暂停/可控**: runtime pause/resume/cancel/rebuild 状态机 (cancel 保留已扫 + drop late tick, rebuild 清库重扫); F2 e2e 真链路验证。
+- **设置档位**: 全参数 UI 可配 (频率/间隔/并发/排除路径/背压/重建...) + 3 档预设 + 高级裸值; engine `buildScanEngineSettingControls` 产 typed 控制描述, GUI 按 kind/group 纯渲染 (符单一真源)。
+- **调度/背压/限流**: 周期调度 (递归 setTimeout + nextScanAt + idleOnly/acOnly 门控 powerMonitor) + adapter 间 sleep 背压 + 排除路径过滤。
+- **长驻 scan worker** (自 scan-worker-long-lived 并入主线): 落为 **utilityProcess 长驻 helper** (`src/main/scan-helper.ts` + `helper-host.ts`), 跨扫描复用, OS 节流 (mac taskpolicy / linux ionice+renice) + 崩溃自愈 (child-process-gone → 下次 scan respawn); F3/F4 真机 spike 通过。
+- **可观测性深化**: ETA/速率/已扫数 (engine enrichProgress 单一真源) + 扫描历史 recharts 趋势 + 顶部指标 modal/状态 chip; engine 单一真源 / GUI 纯投影数据流重构落地。
+
+**仍 OPEN (本 FEATURE 剩余)**:
+- cap-5 行级 SQLite delta (`replaceBySourceKey`, 低优先) — 未做。
+- GH-117 activate 全量重扫消灭 (切换仅 narrow-down 不触发扫描): 周期/背压已落, 但 activate 路径全量重扫的消灭未单独验证, 需后续确认。
+- 下沉 issue: [[2026-06-15-IMPROVEMENT-scan-exclude-adapter-level]] (excludePaths adapter 入口剔 + respectGitignore) / [[2026-06-15-IMPROVEMENT-windows-os-level-index-throttling]] (windows IO 降优先级跨平台补全) / [[2026-06-16-IMPROVEMENT-sidebar-file-level-scan-progress]] (逐文件进度流动感)。
+
 # 来源 / 关联
 - 用户在 GH-113 收尾澄清 (2026-06-07): "全局意味着完全完整的扫描结果, 切换只是 narrow down; 启动即扫全部; conventions-only 是 BUG; 扫描应像 spotlight/windows 索引: 后台渐进增量可控可暂停 + 可配置"。
 - 关联 `docs/works/_archive/2026-06-07-gh-113-scope-refactor-convergence/`。
-- 状态: OPEN (主线进行中; 地基/全局完整结果/增量写/SQLite 已落地, 余 T4 可暂停+设置档位+调度背压)。
+- 状态: OPEN (主线大部已落; GH-135 完成 T4 可暂停+设置档位+调度背压+长驻 helper+可观测性深化, 余 cap-5 行级 delta + activate 全量重扫消灭 + 3 项下沉 issue, 见上「进展 (2026-06-16)」)。

@@ -12,5 +12,5 @@ GH-135 B4 落地了批间 sleep 背压 + 排除路径过滤, 但排除是**结�
 - batchPauseMs: e2e CDP 时序或 sleep spy 端到端测背压生效。
 
 # 来源 / 关联
-- GH-135 B4 偏差 (`docs/works/2026-06-15-gh-135-index-progress-visibility/03-PLAN.md` B4)。
+- GH-135 B4 偏差 (`docs/works/_archive/2026-06-15-gh-135-index-progress-visibility/03-PLAN.md` B4)。
 - 状态: OPEN (future, 非阻塞 GH-135; excludePaths 结果过滤已可用)。

@@ -11,6 +11,6 @@ berth 扫描内核迁独立 helper 进程后 (GH-135), mac/linux 已能对 helpe
 - helper 自降 (进程内调用) 优于父进程对 pid 施加 (Windows `PROCESS_MODE_BACKGROUND_BEGIN` 限自身进程)。
 
 # 来源 / 关联
-- GH-135 explore 识别: `docs/works/2026-06-15-gh-135-index-progress-visibility/01-ANALYSIS.md` §2.1 / §8.1。
+- GH-135 explore 识别: `docs/works/_archive/2026-06-15-gh-135-index-progress-visibility/01-ANALYSIS.md` §2.1 / §8.1。
 - 用户 `/goal` 选定 "helper + mac/linux 节流" 档, 明确 Windows 列后续。
 - 状态: OPEN (future, 非阻塞 GH-135 主线)。

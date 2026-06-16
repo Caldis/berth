@@ -14,5 +14,5 @@
 
 # 来源 / 关联
 - 来源: GH-135 frontend-design 反馈 case 1 的后半段 (前半段顶栏去扫描文本已落地, commit cbda635)。
-- 关联: `2026-06-07-FEATURE-background-progressive-asset-indexer` (helper 迁移); `docs/works/2026-06-15-gh-135-index-progress-visibility/`。
+- 关联: `2026-06-07-FEATURE-background-progressive-asset-indexer` (helper 迁移); `docs/works/_archive/2026-06-15-gh-135-index-progress-visibility/`。
 - 状态: OPEN (future, 非阻塞 GH-135; 当前 adapter 级进度已可用, 仅缺逐文件流动感)。
