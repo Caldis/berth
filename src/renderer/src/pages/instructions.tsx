@@ -71,7 +71,7 @@ function MemoryCard({ asset }: { asset: Asset }): React.ReactElement {
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             <span className="truncate text-sm font-medium text-foreground">{asset.name}</span>
-            <ScopeBadge scope={asset.scope} className="rounded-full px-2 font-semibold" />
+            <ScopeBadge scope={asset.scope} />
           </div>
           <p className="whitespace-normal break-all text-xs leading-relaxed text-muted-foreground font-mono">{asset.path}</p>
         </div>
@@ -89,7 +89,7 @@ function MemoryCard({ asset }: { asset: Asset }): React.ReactElement {
         className="border-t border-border px-4 py-3 space-y-2"
         unmountOnExit
       >
-          <DetailRow label={t('instructions.scope')} value={<ScopeBadge scope={asset.scope} className="rounded-full px-2 font-semibold" />} />
+          <DetailRow label={t('instructions.scope')} value={<ScopeBadge scope={asset.scope} />} />
           <DetailRow label={t('instructions.path')} value={asset.path} mono />
 
           {imports.length > 0 && (
@@ -158,7 +158,7 @@ function SkillCard({ asset, focused = false }: { asset: Asset; focused?: boolean
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
               <span className="truncate text-sm font-medium text-foreground">{asset.name}</span>
-              <ScopeBadge scope={asset.scope} className="rounded-full px-2 font-semibold" />
+              <ScopeBadge scope={asset.scope} />
             </div>
             {description && (
               <p className="mt-0.5 truncate text-xs text-muted-foreground">{description}</p>
@@ -197,7 +197,7 @@ function SkillCard({ asset, focused = false }: { asset: Asset; focused?: boolean
             <DetailRow label={t('instructions.description')} value={description} />
           )}
           <DetailRow label={t('instructions.trigger')} value={triggerType} />
-          <DetailRow label={t('instructions.scope')} value={<ScopeBadge scope={asset.scope} className="rounded-full px-2 font-semibold" />} />
+          <DetailRow label={t('instructions.scope')} value={<ScopeBadge scope={asset.scope} />} />
           <DetailRow label={t('instructions.path')} value={asset.path} mono />
 
           {tools.length > 0 && (
@@ -265,7 +265,7 @@ function GenericAssetCard({ asset, icon: Icon, focused = false }: { asset: Asset
               <span className="truncate text-sm font-medium text-foreground">
                 {asset.type === 'command' ? `/${asset.name}` : asset.name}
               </span>
-              <ScopeBadge scope={asset.scope} className="rounded-full px-2 font-semibold" />
+              <ScopeBadge scope={asset.scope} />
             </div>
             {description && (
               <p className="mt-0.5 truncate text-xs text-muted-foreground">{description}</p>
@@ -299,7 +299,7 @@ function GenericAssetCard({ asset, icon: Icon, focused = false }: { asset: Asset
             <DetailRow label={t('instructions.description')} value={description} />
           )}
           {model && <DetailRow label={t('instructions.model')} value={model} />}
-          <DetailRow label={t('instructions.scope')} value={<ScopeBadge scope={asset.scope} className="rounded-full px-2 font-semibold" />} />
+          <DetailRow label={t('instructions.scope')} value={<ScopeBadge scope={asset.scope} />} />
           <DetailRow label={t('instructions.path')} value={asset.path} mono />
 
           <div className="flex gap-2 pt-1">

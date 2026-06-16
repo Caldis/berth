@@ -53,9 +53,9 @@
   - verify: ✅ chevron 右侧统一 + 展开详情截图已发用户确认 (taste 待用户最终裁定)。**残余**: T6 teams/PluginCard height-auto 展开动画真机未单独点击验 (渲染正常 + motionProps 类型 OK); 元素审计未统一项见下。
 
 ## 元素审计 (用户追加 "检查其他未统一元素")
-- **ScopeBadge 样式**: instructions 三 card 用 `rounded-full px-2 font-semibold` (pill), capabilities McpServerCard 用默认 `<ScopeBadge>` — 不一致, 建议统一 (待用户定方向)。
-- **左侧语义图标色**: Skills 的 Sparkles `text-blue-500`、Plugins 的 Puzzle `text-purple-500`, 其余 `text-muted-foreground` — 语义类型色, taste 项交用户 (memory: 用户偏好克制视觉, 慎用 loud blue)。
-- **feature-guide-panel chevron**: "显示详情" 文字 toggle 按钮 (非卡片头), 仍用 ChevronDown ▼/▲, 未并入右侧 ‹→▼ — 不同 UI 模式, 待用户定。
+- [x] **ScopeBadge 样式** ✅ (用户确认改进 1, 已落地): pill (radius full + px-2 font-semibold) 焊进 ScopeBadge 默认 + **移除 className prop** (关外观逃生舱); 全局 14 调用点统一 pill (instructions 删 6 处冗余 className; capabilities/session-detail/hooks 8 处自动一致)。`docs/ARCHITECTURE.md` 准入规则 6 增补 composite 不暴露改外观 className 纪律。**根因**: GH-105 收敛了组件来源 (Chip-based) 但保留 className 口子, 调用点传得不一致 → 漂移; 修复 = 把表现焊进组件默认。
+- **左侧语义图标色** (未做, 用户保留): Skills Sparkles `text-blue-500`/Plugins Puzzle `text-purple-500` 为语义类型色, 用户认可现状。
+- **feature-guide-panel chevron** (未做, 用户保留): "显示详情" 文字 toggle 按钮非卡片头, 保留 ▼/▲。
 - card 容器圆角/hover/间距: 已一致 (rounded-lg border bg-card hover:bg-accent/5)。
 
 ## verify 回写

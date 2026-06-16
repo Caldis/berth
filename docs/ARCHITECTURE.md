@@ -103,7 +103,7 @@
 3. electron 值 import 白名单: `index.ts`、`dev-instance.ts`、`devtools.ts`、`ipc/`; 其余模块出现即违规。
 4. 依赖方向: agent-plugins → adapters → shared 单向; adapters 禁止 import engine/agent-plugins; engine 对 adapter 的新访问一律经 `engine/agent-capabilities.ts` 漏斗, 存量直连只减不增。
 5. 纯函数归属: 无 node 依赖 → `src/shared`; 有 node 依赖且仅 adapters 域内 → `adapters/_shared`; **非 adapters 模块禁止 import `adapters/_shared`** (需要的先升 shared)。
-6. renderer 准入: `@heroui/react` 仅 `components/ui/`; `components/shared/` 准入 ≥2 页消费, 单页专属住 `components/<feature>/`; 页面内联无 React 依赖纯逻辑 >~50 行下沉 `lib/` 配直测。
+6. renderer 准入: `@heroui/react` 仅 `components/ui/`; `components/shared/` 准入 ≥2 页消费, 单页专属住 `components/<feature>/`; 页面内联无 React 依赖纯逻辑 >~50 行下沉 `lib/` 配直测。成品语义 composite (如 `ScopeBadge`/`Collapsible`) 把表现焊进组件、只暴露语义 prop (scope/open/tone), **不暴露改外观 (radius/间距/颜色) 的 `className` 逃生舱** — 表现固定在组件内, 不靠调用点传一致 className (GH-136: 收敛来源 ≠ 约束表现; className 暴露给"内容容器"可以, 给"组件机制"会漂移)。
 7. store 资产写路径唯一 `setAssetSnapshot` (fold 不变量); 禁止新增裸替换 action。
 8. 错误处理: 禁止裸 catch 吞错 — 转 ScanError/HealthCheck 记账或调 `log(scope, err)`; 日志仅落 `userData/logs`, 禁止网络出口。
 9. 删除纪律: 删代码同批连带专属测试 / setup.ts mock / i18n key / README 声明; 触碰被源码文本断言钉住的文件时同批改写为行为断言。
