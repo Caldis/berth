@@ -104,3 +104,12 @@ verify 不通过项作为新任务追加于此, phase 退回 implement。
 - G4 ✅: 排除路径空态"暂无排除路径" + 「添加目录」按钮 (有路径时行内 - 删除)
 - G5 ✅: 下次扫描 hover 显公式"= 上次完成时刻 + 扫描间隔(24 小时); idleOnly/acOnly 推迟"
 - 全程无 raw key 泄漏; 1155 单测 + typecheck + lint + harness 绿
+
+### 第三轮 verify 反馈 (2026-06-16, 用户: 状态组去噪 + 增信息)
+- [x] G6: 运行时状态组去无意义固定描述符 + 增有意义运行时信息 (commit c6b20ab)
+  - 移除 5 (manual-refresh/worker-mode/scheduler-mode/scope-fallback/persisted-settings — 永不变固定描述符)
+  - 保留 4 动态 (pause/cancel<改 scanning|idle>/scheduled-refresh/queued-refresh)
+  - 新增 3 有信息项 (last-scan-reason 上次触发/last-scan-duration 上次耗时/source-groups 来源组数)
+  - GUI 状态渲染按 value 类型分派: 枚举走 chip+hover 枚举, 数值走纯文本; ipc +3 id; i18n en+zh
+  - 真机验收 ✅: 暂停「运行中」(绿)/取消「空闲」/已安排刷新「文件监听」/上次扫描触发「文件监听」(chip)/上次扫描耗时「3.2 秒」/已索引来源数「8」(文本); 移除项不再出现
+  - 1155 单测 + typecheck + lint + harness 绿
