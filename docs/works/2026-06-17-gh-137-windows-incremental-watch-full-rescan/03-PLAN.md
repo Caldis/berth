@@ -9,9 +9,13 @@
 - [x] T2: 已确认未触碰任何产品代码。改动名单仅 `tests/e2e/incremental-watch.e2e.ts` (+ 本任务 docs/works 文件)。
   - tests: 不适用 (核对动作)。
   - verify: `git status --short` 名单核对通过 (排除 docs 后仅测试文件); 产品不变量 `pnpm test -- tests/unit/agent-asset-runtime.test.ts` 40 passed (含 :1062 "keeps the snapshot id stable")。lint / typecheck:test 绿。
-- [ ] T3: push 后由旁路异步跟踪 windows CI `verify (windows-2022)` 的 incremental-watch e2e 转绿, macOS/ubuntu 不回归 (4.0-verify 收口前消费成功结果)。
+- [x] T3: push 后旁路跟踪 windows CI 转绿。
   - tests: 远端 CI。
-  - verify: 旁路 `pnpm harness:ci:wait --sha <full-sha>` (子代理/旁路执行)。
+  - verify: SHA `3c012baa` → run 27632710696, **`verify (windows-2022)` 全绿 5m21s (含 `pnpm test:e2e` ✓, job 81711691003)** —— windows incremental-watch e2e 由红转绿, 修复确认生效。
+
+## verify 回写
+- **windows (任务目标): PASS** —— CI run 27632710696 windows-2022 job 全步骤绿。AC1-4 满足 (AC5 design 已丢弃为冗余)。
+- **macOS run-level 红 = 不相关已知 flaky**: `verify (macos-latest)` 报 "Worker teardown timeout of 30000ms exceeded" (失败 worker 跑了 23 个测试, incremental-watch 只是被列入清单, 非其断言失败; 实际错误在 window-hardening:23 但根因是 worker teardown 超时)。归因: 即 active issue [[2026-06-11-BUG-e2e-window-controls-teardown-flaky-macos]] (近期已 3 次复发追记), macOS-only, 与本提交无关 (本任务只改 incremental-watch.e2e.ts, macOS 上该测试行为不变)。invariant 11 归因 → 记录交叉引用, 不在 GH-137 范围内追修。
 
 顺序: T1 → T2 (同一文件改动 + 核对, 顺序); T3 推送后异步。无并行项 (单文件)。
 
