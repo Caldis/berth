@@ -42,10 +42,10 @@
   - tests: ✅ collapsible chevron 方向测试更新 (-rotate-90 / 指左); instructions/capabilities/memory/collapsible 101 测试绿。
   - verify: 真机截图对比 teams 留 T7 (位置/方向最终用户裁定, 不变量22)。
 
-- [ ] **T6 — HeroUI 侧对齐 MOTION token** (依赖 T1 + T3)
-  teams.tsx Accordion (`105`) + capabilities PluginCard Accordion (`274`) 传 `motionProps={ACCORDION_MOTION_PROPS}`。
-  - tests: renderer smoke (motionProps 不报错 + 仍可展开); height 动画时长 manual 实测 (jsdom 测不出)。
-  - verify: teams/PluginCard 展开节奏与手写侧一致 [AC5]; **若实测破坏 height auto → fallback 不传 motionProps + 记 docs/issues**, 当任务此项标记 fallback 完成。
+- [x] **T6 — HeroUI 侧对齐 MOTION token** (依赖 T1 + T3) ✅ (真机待 T7)
+  teams.tsx + capabilities PluginCard 的 AccordionItem 传 `motionProps={ACCORDION_MOTION_PROPS}` (height auto + opacity, 时长走 MOTION.duration.base)。
+  - tests: ✅ typecheck:web (motionProps 类型 OK) + lint + teams/capabilities 39 测试绿 (渲染不报错 + 可展开)。
+  - verify: **height auto 是否被破坏须 T7 真机确认**; 若破坏 → fallback 移除 motionProps + 记 issue。
 
 - [ ] **T7 — 全量真跑验收** (最后)
   CDP 真跑约定页 (instructions) 在 `VirtualGroupedList` 内展开/收起多个 card: 观察动画平滑 + 虚拟列表滚动布局无错位/跳变 [AC4]; 跨 6 卡片 + TagFilter + teams 截图核对节奏一致。

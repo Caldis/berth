@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { UsersRound, Inbox, FolderOpen, MessageSquare } from 'lucide-react'
 import { cn, formatRelativeTime } from '@/lib/utils'
-import { Accordion, AccordionItem, Button, Chip } from '@/components/ui'
+import { Accordion, AccordionItem, Button, Chip, ACCORDION_MOTION_PROPS } from '@/components/ui'
 import { EmptyState, PAGE_EMPTY_FILL } from '@/components/shared/empty-state'
 import { ErrorState } from '@/components/shared/error-state'
 import { LoadingState } from '@/components/shared/loading-state'
@@ -116,6 +116,7 @@ export function Teams(): React.ReactElement {
             <AccordionItem
               key={team.dirPath}
               aria-label={team.name}
+              motionProps={ACCORDION_MOTION_PROPS}
               title={<TeamCardHeader team={team} recentlyActive={isRecentlyActive(team, now)} />}
             >
               <TeamCardDetail team={team} />

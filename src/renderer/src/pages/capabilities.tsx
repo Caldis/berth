@@ -29,7 +29,7 @@ import { routeForAsset } from '@/lib/asset-route'
 import { useFocusTarget, FOCUS_HIGHLIGHT_CLASS } from '@/hooks/use-focus-target'
 import { pluginOriginOf } from '@/lib/plugin-origin'
 import { HooksLifecycleView } from '@/components/capabilities/hooks-lifecycle-view'
-import { Accordion, AccordionItem, Chip, Collapsible, CollapsibleChevron } from '@/components/ui'
+import { Accordion, AccordionItem, Chip, Collapsible, CollapsibleChevron, ACCORDION_MOTION_PROPS } from '@/components/ui'
 import {
   buildFeatureGuideEvidence,
   capabilityGuideMap,
@@ -286,6 +286,7 @@ function PluginCard({
               <AccordionItem
                 key={group.type}
                 aria-label={pluginComponentLabel(t, group.type)}
+                motionProps={ACCORDION_MOTION_PROPS}
                 title={
                   <span className="flex items-center gap-2 text-sm font-medium text-foreground">
                     {pluginComponentLabel(t, group.type)}
