@@ -1501,6 +1501,8 @@
       "loadError": "无法加载扫描引擎详情",
       "lastCompleted": "最近完成: {{value}}",
       "nextScan": "下次扫描: {{value}}",
+      "nextScanFormula": "下次扫描 = 上次完成时刻 + 扫描间隔 ({{interval}})。若开启「仅空闲时扫描」或「仅交流供电时全量扫描」, 会推迟到满足条件再执行。",
+      "statusCurrent": "当前",
       "controls": "控制项",
       "saveControl": "保存",
       "saving": "保存中",

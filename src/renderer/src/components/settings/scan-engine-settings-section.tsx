@@ -9,6 +9,7 @@ import type {
 import { useScanEngineInfo } from '@/hooks/use-ipc'
 import {
   Button,
+  Chip,
   Modal,
   ModalBody,
   ModalContent,
@@ -18,8 +19,10 @@ import {
   SelectItem,
   Switch,
   Textarea,
+  Tooltip,
   useDisclosure
 } from '@/components/ui'
+import type { ChipTone } from '@/components/ui'
 import { cn } from '@/lib/utils'
 
 type Translate = ReturnType<typeof useTranslation>['t']
@@ -43,6 +46,46 @@ const NUMBER_DISPLAY: Record<string, { unit: string; divisor: number; step: numb
   watcherMinIntervalMs: { unit: 's', divisor: 1_000, step: 1 },
   batchPauseMs: { unit: 'ms', divisor: 1, step: 10 },
   minFreeDiskMb: { unit: 'mb', divisor: 1, step: 256 }
+}
+
+// Status value → semantic chip tone (GH-135 G3). Active/healthy reads green,
+// transient (paused/stale) amber, errors red, neutral modes gray.
+const STATUS_TONE: Record<string, ChipTone> = {
+  available: 'success',
+  active: 'success',
+  ready: 'success',
+  paused: 'warning',
+  stale: 'warning',
+  none: 'neutral',
+  idle: 'neutral',
+  unsupported: 'neutral',
+  error: 'danger'
+}
+
+// Full enum set per runtime-status control so the hover tooltip can show where the
+// current value sits among all possible states (GH-135 G3). Single-value modes list
+// only themselves — a fixed descriptor, not a position among alternatives.
+const STATUS_ENUMS: Record<string, string[]> = {
+  'manual-refresh': ['available'],
+  'worker-mode': ['one-shot'],
+  'scheduler-mode': ['single-flight-queued-project-scope'],
+  'scheduled-refresh': ['none', 'active'],
+  'queued-refresh': ['none', 'active'],
+  'scope-fallback': ['scan-on-miss'],
+  pause: ['active', 'paused'],
+  cancel: ['available', 'idle'],
+  'persisted-settings': ['available']
+}
+
+function statusTone(value: string): ChipTone {
+  return STATUS_TONE[value] ?? 'neutral'
+}
+
+/** Format a periodic-scan interval (ms) at a human magnitude for the next-scan
+ * tooltip — whole hours when it divides evenly, else minutes. */
+function formatInterval(ms: number, t: Translate): string {
+  if (ms > 0 && ms % 3_600_000 === 0) return `${ms / 3_600_000} ${t('settings.scanEngine.units.h')}`
+  return `${Math.round(ms / 60_000)} ${t('settings.scanEngine.units.min')}`
 }
 
 function formatCount(value: number, language: string): string {
@@ -102,6 +145,51 @@ function readonlyValue(control: ScanEngineControlDescriptor, language: string, t
   }
   if (Array.isArray(control.value)) return control.value.join(', ') || '—'
   return formatCount(control.value, language)
+}
+
+// GH-135 G3: a runtime-status value as a semantic chip; hovering shows the control's
+// description and the full enum set with the current value marked, so the user can
+// place "where am I" among all possible states.
+function StatusValueChip({ control, t }: { control: ScanEngineControlDescriptor; t: Translate }): React.ReactElement {
+  const supported = control.supported
+  const value = supported ? String(control.value) : 'unsupported'
+  const label = supported
+    ? t(`settings.scanEngine.values.${value}`, { defaultValue: value })
+    : t('settings.scanEngine.unsupported')
+  const enums = STATUS_ENUMS[control.id] ?? [value]
+  const description = t(`settings.scanEngine.controlDescriptions.${control.id}`, { defaultValue: '' })
+  const tooltip = (
+    <div className="max-w-[15rem] space-y-1.5 p-1">
+      {description && <p className="text-xs text-foreground">{description}</p>}
+      <ul className="space-y-1">
+        {enums.map((v) => {
+          const current = v === value
+          return (
+            <li
+              key={v}
+              className={cn('flex items-center gap-1.5 text-xs', current ? 'text-foreground' : 'text-muted-foreground')}
+            >
+              <span
+                className={cn('h-1.5 w-1.5 shrink-0 rounded-full', current ? 'bg-primary' : 'bg-muted-foreground/30')}
+                aria-hidden="true"
+              />
+              <span>{t(`settings.scanEngine.values.${v}`, { defaultValue: v })}</span>
+              {current && <span className="text-[10px] uppercase text-primary">{t('settings.scanEngine.statusCurrent')}</span>}
+            </li>
+          )
+        })}
+      </ul>
+    </div>
+  )
+  return (
+    <Tooltip content={tooltip} placement="left" closeDelay={0}>
+      <span className="cursor-default">
+        <Chip tone={statusTone(value)} size="sm">
+          {label}
+        </Chip>
+      </span>
+    </Tooltip>
+  )
 }
 
 function NumberControlInput({
@@ -396,11 +484,22 @@ export function ScanEngineSettingsSection(): React.ReactElement {
                   {t('settings.scanEngine.lastCompleted', { value: formatDate(info.status.lastCompletedAt, language) })}
                 </div>
                 {info.scheduler.periodicScan.enabled && info.scheduler.periodicScan.nextScanAt && (
-                  <div className="tabular-nums">
-                    {t('settings.scanEngine.nextScan', {
-                      value: formatDate(info.scheduler.periodicScan.nextScanAt, language)
-                    })}
-                  </div>
+                  <Tooltip
+                    placement="left"
+                    content={
+                      <p className="max-w-[16rem] p-1 text-xs">
+                        {t('settings.scanEngine.nextScanFormula', {
+                          interval: formatInterval(info.scheduler.periodicScan.intervalMs, t)
+                        })}
+                      </p>
+                    }
+                  >
+                    <div className="inline-block cursor-default tabular-nums underline decoration-dotted decoration-muted-foreground/40 underline-offset-2">
+                      {t('settings.scanEngine.nextScan', {
+                        value: formatDate(info.scheduler.periodicScan.nextScanAt, language)
+                      })}
+                    </div>
+                  </Tooltip>
                 )}
               </div>
             </div>
@@ -438,7 +537,7 @@ export function ScanEngineSettingsSection(): React.ReactElement {
                   {statusControls.map((control) => (
                     <div key={control.id} className="flex items-center justify-between gap-2 p-3 text-sm">
                       <span className="font-medium">{t(`settings.scanEngine.controlLabels.${control.id}`)}</span>
-                      <span className="text-xs text-muted-foreground">{readonlyValue(control, language, t)}</span>
+                      <StatusValueChip control={control} t={t} />
                     </div>
                   ))}
                 </div>

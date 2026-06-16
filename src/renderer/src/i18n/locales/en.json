@@ -1507,6 +1507,8 @@
       "loadError": "Could not load scan engine details",
       "lastCompleted": "Last completed: {{value}}",
       "nextScan": "Next scan: {{value}}",
+      "nextScanFormula": "Next scan = last completed + scan interval ({{interval}}). With 'scan only when idle' or 'AC power only' on, it defers until the condition is met.",
+      "statusCurrent": "current",
       "controls": "Controls",
       "saveControl": "Save",
       "saving": "Saving",
