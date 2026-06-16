@@ -68,7 +68,16 @@ describe('SettingsContent page chrome', () => {
         },
         { id: 'scheduled-refresh', value: 'none', unit: 'state', editable: false, supported: true },
         { id: 'queued-refresh', value: 'none', unit: 'state', editable: false, supported: true },
-        { id: 'pause', value: 'unsupported', editable: false, supported: false }
+        { id: 'pause', value: 'unsupported', editable: false, supported: false },
+        {
+          id: 'exclude-paths',
+          value: ['/Users/me/tmp'],
+          kind: 'string-list',
+          group: 'scope',
+          editable: true,
+          supported: true,
+          settingKey: 'excludePaths'
+        }
       ],
       capabilities: {
         workerMode: 'one-shot',
@@ -220,6 +229,33 @@ describe('SettingsContent page chrome', () => {
 
     fireEvent.click(confirm)
     await waitFor(() => expect(window.api.assets.rebuild).toHaveBeenCalled())
+  })
+
+  it('manages excluded paths via the native directory picker (GH-135 G4)', async () => {
+    window.api.dialog.openDirectory = vi.fn(async () => ['/Users/me/new-dir'])
+    renderSettingsContent()
+
+    // Existing excluded path renders as a removable row (no free-text textarea).
+    expect(await screen.findByText('/Users/me/tmp')).toBeInTheDocument()
+
+    // Adding via the native picker merges + de-dupes, then saves the engine setting.
+    fireEvent.click(screen.getByRole('button', { name: 'Add directory' }))
+    await waitFor(() => expect(window.api.dialog.openDirectory).toHaveBeenCalled())
+    await waitFor(() =>
+      expect(window.api.assets.setEngineSettings).toHaveBeenCalledWith({
+        excludePaths: ['/Users/me/tmp', '/Users/me/new-dir']
+      })
+    )
+  })
+
+  it('removes an excluded path (GH-135 G4)', async () => {
+    renderSettingsContent()
+
+    const removeButton = await screen.findByRole('button', { name: 'Remove /Users/me/tmp' })
+    fireEvent.click(removeButton)
+    await waitFor(() =>
+      expect(window.api.assets.setEngineSettings).toHaveBeenCalledWith({ excludePaths: [] })
+    )
   })
 
   it('refreshes the scan engine from settings', async () => {

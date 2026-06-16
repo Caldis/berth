@@ -1,4 +1,4 @@
-import { Activity, AlertTriangle, RefreshCcw, Trash2 } from 'lucide-react'
+import { Activity, AlertTriangle, Minus, Plus, RefreshCcw, Trash2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import type {
   ScanEngineControlDescriptor,
@@ -18,7 +18,6 @@ import {
   Select,
   SelectItem,
   Switch,
-  Textarea,
   Tooltip,
   useDisclosure
 } from '@/components/ui'
@@ -192,6 +191,70 @@ function StatusValueChip({ control, t }: { control: ScanEngineControlDescriptor;
   )
 }
 
+// GH-135 G4: scan-exclude list as a standard path-add control — a removable row per
+// path plus an "add directory" button that opens the native picker (multi-select),
+// instead of a free-text textarea. The engine stays the source of truth; picks are
+// merged + de-duped and written back via save().
+function ExcludePathsControl({
+  control,
+  save,
+  saving,
+  t
+}: {
+  control: ScanEngineControlDescriptor
+  save: Saver
+  saving: boolean
+  t: Translate
+}): React.ReactElement {
+  const key = control.settingKey
+  const paths = Array.isArray(control.value) ? control.value : []
+  const addDirectory = async (): Promise<void> => {
+    const picked = await window.api.dialog.openDirectory()
+    if (!key || picked.length === 0) return
+    const next = Array.from(new Set([...paths, ...picked]))
+    if (next.length !== paths.length) save({ [key]: next } as Partial<ScanEngineSettings>)
+  }
+  const removePath = (path: string): void => {
+    if (!key) return
+    save({ [key]: paths.filter((p) => p !== path) } as Partial<ScanEngineSettings>)
+  }
+  return (
+    <div className="w-full max-w-sm space-y-1.5 sm:w-72">
+      {paths.length === 0 ? (
+        <p className="text-xs text-muted-foreground">{t('settings.scanEngine.excludeEmpty')}</p>
+      ) : (
+        <ul className="space-y-1">
+          {paths.map((path) => (
+            <li key={path} className="flex items-center gap-2 rounded-md border border-border bg-background px-2 py-1">
+              <span className="min-w-0 flex-1 truncate text-xs text-foreground" title={path}>
+                {path}
+              </span>
+              <button
+                type="button"
+                onClick={() => removePath(path)}
+                disabled={saving}
+                aria-label={t('settings.scanEngine.excludeRemove', { path })}
+                className="flex h-5 w-5 shrink-0 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive disabled:opacity-60"
+              >
+                <Minus className="h-3 w-3" aria-hidden="true" />
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+      <button
+        type="button"
+        onClick={addDirectory}
+        disabled={saving}
+        className="inline-flex h-8 items-center gap-1.5 rounded-md border border-border px-2.5 text-xs font-medium transition-colors hover:border-primary/50 disabled:cursor-not-allowed disabled:opacity-60"
+      >
+        <Plus className="h-3.5 w-3.5" aria-hidden="true" />
+        {t('settings.scanEngine.excludeAdd')}
+      </button>
+    </div>
+  )
+}
+
 function NumberControlInput({
   control,
   save,
@@ -293,24 +356,7 @@ function ControlInput({
     )
   }
   if (control.kind === 'string-list' && key) {
-    return (
-      <Textarea
-        size="sm"
-        aria-label={label}
-        minRows={1}
-        className="w-52"
-        defaultValue={(control.value as string[]).join('\n')}
-        placeholder={t('settings.scanEngine.excludePlaceholder')}
-        onBlur={(event) =>
-          save({
-            [key]: event.target.value
-              .split('\n')
-              .map((line) => line.trim())
-              .filter(Boolean)
-          } as Partial<ScanEngineSettings>)
-        }
-      />
-    )
+    return <ExcludePathsControl control={control} save={save} saving={saving} t={t} />
   }
   if (control.kind === 'number' && control.editable && key && typeof control.value === 'number') {
     return <NumberControlInput control={control} save={save} saving={saving} label={label} t={t} />

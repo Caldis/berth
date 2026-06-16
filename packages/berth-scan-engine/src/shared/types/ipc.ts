@@ -610,6 +610,9 @@ export interface IpcChannels {
   'theme:set': { args: ['light' | 'dark' | 'system']; result: void }
   'shell:openPath': { args: [string]; result: void }
   'shell:openExternal': { args: [string]; result: void }
+  /** Native directory picker for the scan-exclude list (GH-135 G4). Returns the
+   * chosen absolute dir paths, or [] when the user cancels. */
+  'dialog:open-directory': { args: []; result: string[] }
   'update:check': { args: []; result: void }
   'update:download': { args: []; result: void }
   'update:install': { args: []; result: void }

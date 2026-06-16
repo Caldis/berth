@@ -1547,6 +1547,9 @@
         "status": "Runtime status"
       },
       "excludePlaceholder": "One path per line",
+      "excludeEmpty": "No excluded paths yet",
+      "excludeAdd": "Add directory",
+      "excludeRemove": "Remove {{path}}",
       "units": {
         "ms": "ms",
         "s": "s",

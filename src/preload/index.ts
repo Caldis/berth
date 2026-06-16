@@ -88,6 +88,9 @@ const api = {
     openPath: (path: string) => invoke('shell:openPath', path),
     openExternal: (url: string) => invoke('shell:openExternal', url)
   },
+  dialog: {
+    openDirectory: () => invoke('dialog:open-directory')
+  },
   update: {
     check: () => invoke('update:check'),
     download: () => invoke('update:download'),

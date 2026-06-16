@@ -211,6 +211,9 @@ export const mockApi = {
     openPath: async () => {},
     openExternal: async () => {}
   },
+  dialog: {
+    openDirectory: async () => []
+  },
   update: {
     check: async () => {},
     download: async () => {},

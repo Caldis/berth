@@ -1,5 +1,5 @@
 import * as os from 'os'
-import { BrowserWindow, ipcMain, nativeTheme, shell, app } from 'electron'
+import { BrowserWindow, dialog, ipcMain, nativeTheme, shell, app } from 'electron'
 import type { IpcMainInvokeEvent } from 'electron'
 import type { AgentView, Asset, CostMode, UsageSummary } from '@shared/types/asset'
 import type {
@@ -114,6 +114,17 @@ export function registerSystemHandlers(): void {
       return
     }
     shell.openExternal(url)
+  })
+
+  // GH-135 G4: native directory picker for the scan-exclude list. Modal to the
+  // focused window; returns [] on cancel.
+  ipcMain.handle('dialog:open-directory', async () => {
+    const win = BrowserWindow.getFocusedWindow()
+    const options = {
+      properties: ['openDirectory', 'multiSelections', 'createDirectory'] as Array<'openDirectory' | 'multiSelections' | 'createDirectory'>
+    }
+    const result = win ? await dialog.showOpenDialog(win, options) : await dialog.showOpenDialog(options)
+    return result.canceled ? [] : result.filePaths
   })
 }
 

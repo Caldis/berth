@@ -1537,6 +1537,9 @@
         "status": "运行时状态"
       },
       "excludePlaceholder": "每行一个路径",
+      "excludeEmpty": "暂无排除路径",
+      "excludeAdd": "添加目录",
+      "excludeRemove": "移除 {{path}}",
       "units": {
         "ms": "毫秒",
         "s": "秒",
