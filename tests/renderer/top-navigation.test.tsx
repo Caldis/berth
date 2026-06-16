@@ -43,22 +43,20 @@ describe('TopNavigation', () => {
     })
   })
 
-  it('shows the parent section and page heading for top-level routes', () => {
+  it('shows just the page heading for top-level routes (no redundant section eyebrow)', () => {
     renderTopNavigation('/usage')
 
-    const breadcrumb = screen.getByRole('navigation', { name: 'Breadcrumb' })
-    expect(within(breadcrumb).getByText('RUN')).toBeInTheDocument()
-    expect(within(breadcrumb).queryByText('Usage')).not.toBeInTheDocument()
+    // GH-135: the section eyebrow duplicated the highlighted sidebar nav, inflating
+    // the header to 3 lines — flat pages now show heading + subtitle only.
     expect(screen.getByRole('heading', { name: 'Usage' })).toBeInTheDocument()
+    expect(screen.queryByRole('navigation', { name: 'Breadcrumb' })).not.toBeInTheDocument()
   })
 
-  it('shows promoted capability pages under the capability section with the current page label', () => {
+  it('shows promoted capability pages by their heading without a section eyebrow', () => {
     renderTopNavigation('/capabilities/hooks')
 
-    const breadcrumb = screen.getByRole('navigation', { name: 'Breadcrumb' })
-    expect(within(breadcrumb).getByText('CAPABILITIES')).toBeInTheDocument()
-    expect(within(breadcrumb).queryByText('Hooks')).not.toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Hooks' })).toBeInTheDocument()
+    expect(screen.queryByRole('navigation', { name: 'Breadcrumb' })).not.toBeInTheDocument()
   })
 
   it('fuses the session detail back button and breadcrumb into the navigation bar', () => {

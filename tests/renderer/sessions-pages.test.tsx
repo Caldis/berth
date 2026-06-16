@@ -971,9 +971,8 @@ describe('session pages', () => {
     renderUsagePage()
 
     expect(await screen.findByRole('heading', { name: 'Usage' })).toBeInTheDocument()
-    const breadcrumb = screen.getByRole('navigation', { name: 'Breadcrumb' })
-    expect(within(breadcrumb).getByText('RUN')).toBeInTheDocument()
-    expect(within(breadcrumb).queryByText('Usage')).not.toBeInTheDocument()
+    // GH-135: flat-page header is heading + subtitle only (no redundant section eyebrow).
+    expect(screen.queryByRole('navigation', { name: 'Breadcrumb' })).not.toBeInTheDocument()
     expect(screen.getByText('Local token and cost data from scanned Claude Code and Codex sessions.')).toBeInTheDocument()
     expect(await screen.findByText('Input: 10')).toBeInTheDocument()
     expect(screen.getByText('Output: 5')).toBeInTheDocument()

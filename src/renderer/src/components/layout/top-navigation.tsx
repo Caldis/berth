@@ -8,7 +8,6 @@ import { isMacPlatform } from '@/lib/platform'
 import { useAppStore } from '@/stores/app'
 import { FeatureGuidePanel } from '@/components/shared/feature-guide-panel'
 import { FloatingPopover } from '@/components/shared/floating-popover'
-import { IndexingInline } from '@/components/shared/index-activity'
 import { useCurrentPageChrome, useRegisterPageSearchFocus } from './page-chrome'
 import { ChromeSearchInput, isPageSearchShortcut, pageSearchShortcutLabel } from './search-control'
 
@@ -101,7 +100,10 @@ export function TopNavigation({ isWindows }: TopNavigationProps): React.ReactEle
             </div>
           )}
           <div className="min-w-0">
-            {breadcrumbs.length > 0 && (
+            {/* Section eyebrow is redundant with the highlighted sidebar nav, so a
+                flat page (no parent) shows just title + subtitle — 2 lines, not 3
+                (GH-135). Nested pages keep the section › title breadcrumb. */}
+            {usesNestedBreadcrumb && breadcrumbs.length > 0 && (
               <nav
                 className={cn(
                   'titlebar-no-drag flex min-w-0 items-center gap-1 motion-safe:animate-in motion-safe:fade-in motion-safe:duration-150',
@@ -143,7 +145,6 @@ export function TopNavigation({ isWindows }: TopNavigationProps): React.ReactEle
           data-testid="top-navigation-actions"
           className="titlebar-no-drag ml-auto flex min-w-0 max-w-[min(52rem,62%)] shrink-0 items-center justify-end gap-2 overflow-hidden motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-right-2 motion-safe:duration-150"
         >
-          <IndexingInline className="mr-0.5" />
           {pageChrome.actions}
           {pageChrome.search && (
             <ChromeSearchInput
