@@ -113,3 +113,11 @@ verify 不通过项作为新任务追加于此, phase 退回 implement。
   - GUI 状态渲染按 value 类型分派: 枚举走 chip+hover 枚举, 数值走纯文本; ipc +3 id; i18n en+zh
   - 真机验收 ✅: 暂停「运行中」(绿)/取消「空闲」/已安排刷新「文件监听」/上次扫描触发「文件监听」(chip)/上次扫描耗时「3.2 秒」/已索引来源数「8」(文本); 移除项不再出现
   - 1155 单测 + typecheck + lint + harness 绿
+
+### 第四轮 verify 反馈 (2026-06-16, 用户: 扫描历史块)
+- [x] G7: 扫描历史趋势块 (commit ac363a1 引擎 + 1cf0433 GUI + 6465d74 柱宽)
+  - 引擎 (方案 X 单一真源): ScanHistoryEntry 原始数组 (at/reason/durationMs/assetCount/fileCount/errorCount/ok); commitScan/failScan 记录限 50 条滚动; sqlite snapshot_meta 的 scan-history key 持久化; clear()(重建) 保留历史 (审计); getEngineInfo.scanHistory 暴露
+  - UI (整合+可视化): 派生 间隔/平均/最近间隔; recharts 柱状趋势图 (最近 24 次耗时, 有错误染 destructive, hover tooltip 显 时间/触发/耗时/资产·文件/错误/间隔); 汇总行 + 空态; maxBarSize 限柱宽
+  - 真机验收 ✅: 8 次扫描 平均 6.3s 间隔 29s + 趋势柱状图 (startup 冷扫撑满, 热扫矮)
+  - 1158 单测 + typecheck + lint + harness 绿
+- 后续: CLI 命令补全 (新 goal, 优先级 2); 蓝字灰底 UI 根因 → subagent 调查中
