@@ -59,7 +59,9 @@ const STATUS_TONE: Record<string, ChipTone> = {
   available: 'success',
   active: 'success',
   ready: 'success',
-  scanning: 'primary',
+  // 'scanning' is an activity state, not a CTA — neutral, never primary/blue, to
+  // avoid the flat+primary "blue-on-gray" anti-pattern (GH-105 SPEC: blue = CTA/data only).
+  scanning: 'neutral',
   paused: 'warning',
   stale: 'warning',
   none: 'neutral',
