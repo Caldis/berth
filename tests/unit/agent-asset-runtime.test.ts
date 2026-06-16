@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { Asset, AssetStats } from '@shared/types/asset'
-import type { AgentScanSourceGroup, AssetScanProgress, AssetSnapshot, ScanResult } from '@shared/types/ipc'
+import type { AgentScanSourceGroup, AssetScanProgress, AssetSnapshot, ScanHistoryEntry, ScanResult } from '@shared/types/ipc'
 import { AgentAssetRuntime, type AssetRuntimeScanner } from '@berth/scan-engine/engine/assets/runtime'
 import { createProjectScopeCandidate, normalizeProjectPathKey } from '@shared/scope'
 import { runHealthChecks } from '@berth/scan-engine/engine/health'
@@ -458,6 +458,54 @@ describe('AgentAssetRuntime', () => {
 
     // No committed baseline → the live partial drives the count (progressive growth).
     expect(midScanAssets).toBe(2)
+  })
+
+  it('records scan history on completion and persists it (GH-135 G7)', async () => {
+    const saved: ScanHistoryEntry[][] = []
+    const scanner = createScanner({
+      assets: [skillAsset('a'), skillAsset('b')],
+      stats: { ...emptyStats, skills: 2 },
+      errors: []
+    })
+    const runtime = new AgentAssetRuntime({
+      projectDir: '/repo/berth',
+      createScanner: () => scanner,
+      now: () => '2026-06-16T10:00:00.000Z',
+      snapshotStore: {
+        load: () => null,
+        save: vi.fn(),
+        clear: vi.fn(),
+        loadScanHistory: () => [],
+        saveScanHistory: (entries: ScanHistoryEntry[]) => saved.push(entries)
+      }
+    })
+
+    await runtime.refresh({ reason: 'manual', wait: true })
+
+    const history = runtime.getEngineInfo().scanHistory
+    expect(history).toHaveLength(1)
+    expect(history[0]).toMatchObject({ reason: 'manual', assetCount: 2, ok: true })
+    // The bounded list was persisted through the store.
+    expect(saved.at(-1)).toHaveLength(1)
+  })
+
+  it('restores persisted scan history on cold start (GH-135 G7)', () => {
+    const persisted: ScanHistoryEntry[] = [
+      { at: '2026-06-15T00:00:00.000Z', reason: 'startup', durationMs: 1000, assetCount: 5, fileCount: 5, errorCount: 0, ok: true }
+    ]
+    const runtime = new AgentAssetRuntime({
+      projectDir: '/repo/berth',
+      createScanner: () => createScanner({ assets: [], stats: emptyStats, errors: [] }),
+      snapshotStore: {
+        load: () => null,
+        save: vi.fn(),
+        clear: vi.fn(),
+        loadScanHistory: () => persisted,
+        saveScanHistory: vi.fn()
+      }
+    })
+
+    expect(runtime.getEngineInfo().scanHistory).toEqual(persisted)
   })
 
   it('enriches progress with scanned count + elapsed time engine-side (GH-135 single source of truth)', async () => {

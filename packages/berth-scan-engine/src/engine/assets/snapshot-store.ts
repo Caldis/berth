@@ -1,5 +1,5 @@
 import type { Asset } from '@shared/types/asset'
-import type { AssetSnapshot } from '@shared/types/ipc'
+import type { AssetSnapshot, ScanHistoryEntry } from '@shared/types/ipc'
 
 export interface SnapshotStore {
   load(): AssetSnapshot | null
@@ -7,6 +7,11 @@ export interface SnapshotStore {
   /** Drop the persisted index so the next scan repopulates from scratch (rebuild,
    * GH-135). Best-effort like load/save — a failure must never break scanning. */
   clear(): void
+  /** Persisted scan history for the trend view (GH-135 G7), oldest→newest.
+   * Optional so existing stores/tests need no change; absence → no history.
+   * History survives `clear()` (rebuild) — it is an audit trail, not index data. */
+  loadScanHistory?(): ScanHistoryEntry[]
+  saveScanHistory?(entries: ScanHistoryEntry[]): void
 }
 
 // GH-115 T13: JSON 后端 createSnapshotStore 已删除 — 生产装配 (main/index.ts) 自 GH-113 I3

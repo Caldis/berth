@@ -106,7 +106,16 @@ const createMockScanEngineInfo = () => ({
   limits: [
     { id: 'metadata-only-sensitive-files' as const, level: 'info' as const, enabled: true },
     { id: 'third-party-code-not-executed' as const, level: 'info' as const, enabled: true }
-  ]
+  ],
+  scanHistory: [] as Array<{
+    at: string
+    reason: 'startup' | 'manual' | 'watcher' | 'project-scope' | 'legacy-scan-all'
+    durationMs: number
+    assetCount: number
+    fileCount: number
+    errorCount: number
+    ok: boolean
+  }>
 })
 
 // Mock window.api for renderer tests。

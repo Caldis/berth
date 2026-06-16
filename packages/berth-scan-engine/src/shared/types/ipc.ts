@@ -194,6 +194,26 @@ export interface ScanEngineLimitDescriptor {
   enabled: boolean
 }
 
+/** One completed scan's record for the history/trend view (GH-135 G7). The engine
+ * stores these raw, oldest→newest; the UI derives intervals / averages / rates and
+ * renders the trend chart (engine = source of truth, UI = integration + viz). */
+export interface ScanHistoryEntry {
+  /** Completion time, ISO 8601. */
+  at: string
+  /** What triggered this scan. */
+  reason: AssetScanReason
+  /** Wall-clock scan duration in ms. */
+  durationMs: number
+  /** Assets indexed by this scan. */
+  assetCount: number
+  /** Distinct source files indexed. */
+  fileCount: number
+  /** Errors encountered during this scan. */
+  errorCount: number
+  /** True when the scan completed; false when it failed. */
+  ok: boolean
+}
+
 export interface ScanEngineInfo {
   engine: {
     name: string
@@ -213,6 +233,8 @@ export interface ScanEngineInfo {
   capabilities: ScanEngineCapabilitySummary
   scheduler: ScanEngineSchedulerSnapshot
   limits: ScanEngineLimitDescriptor[]
+  /** Recent completed scans, oldest→newest (GH-135 G7). UI charts the trend. */
+  scanHistory: ScanHistoryEntry[]
 }
 
 export type ScanEnginePreset = 'eco' | 'balanced' | 'performance' | 'custom'

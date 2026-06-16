@@ -13,6 +13,7 @@ import type {
   ScanEngineInfo,
   ScanEngineSchedulerSnapshot,
   ScanEngineSettings,
+  ScanHistoryEntry,
   ScanResult
 } from '@shared/types/ipc'
 import type { AppScopeSelection, ProjectScopeCandidate } from '@shared/scope'
@@ -92,6 +93,10 @@ interface ScheduledRefreshState {
   dueAtMs: number
 }
 
+/** Cap on retained scan-history entries (GH-135 G7) — enough to chart a trend,
+ * bounded so the persisted blob stays small. Oldest entries roll off. */
+const SCAN_HISTORY_LIMIT = 50
+
 const EMPTY_ASSET_STATS: AssetStats = {
   skills: 0,
   mcpServers: 0,
@@ -134,6 +139,9 @@ export class AgentAssetRuntime {
   // live count so the first index build still shows progressive growth.
   private stableIndexedAssets = 0
   private stableIndexedFiles = 0
+  // Raw scan history (GH-135 G7), oldest→newest. The engine only records; the UI
+  // derives intervals / averages / rates and charts the trend.
+  private scanHistory: ScanHistoryEntry[] = []
   private schedulerPaused = false
   private readonly powerMonitor?: PowerMonitorLike
   private periodicTimer: ReturnType<typeof setTimeout> | null = null
@@ -156,6 +164,7 @@ export class AgentAssetRuntime {
     this.status = this.createIdleStatus()
     this.snapshot = this.createInitialSnapshot()
     this.restorePersistedSnapshot()
+    this.scanHistory = this.snapshotStore?.loadScanHistory?.() ?? []
   }
 
   /**
@@ -287,7 +296,8 @@ export class AgentAssetRuntime {
         { id: 'metadata-only-sensitive-files', level: 'info', enabled: true },
         { id: 'third-party-code-not-executed', level: 'info', enabled: true },
         { id: 'unsupported-plugin-bundled-incremental', level: 'warning', enabled: true }
-      ]
+      ],
+      scanHistory: this.scanHistory
     }
   }
 
@@ -648,6 +658,14 @@ export class AgentAssetRuntime {
       status
     }
     this.setStableCounts(outcome.scanResult.assets)
+    this.recordScanHistory({
+      reason,
+      durationMs: this.lastScanDurationMs ?? 0,
+      assetCount: outcome.scanResult.assets.length,
+      fileCount: countIndexedFiles(outcome.scanResult.assets),
+      errorCount: outcome.scanResult.errors.length,
+      ok: true
+    })
     this.assetMap = new Map(outcome.scanResult.assets.map((asset) => [asset.id, asset]))
     this.snapshotCache.set(projectDir, this.snapshot)
     this.selectorCache.clear()
@@ -675,7 +693,22 @@ export class AgentAssetRuntime {
       ...this.snapshot,
       status: this.status
     }
+    this.recordScanHistory({
+      reason,
+      durationMs: this.status.startedAt ? Math.max(0, Date.parse(this.now()) - Date.parse(this.status.startedAt)) : 0,
+      assetCount: this.snapshot.assets.length,
+      fileCount: countIndexedFiles(this.snapshot.assets),
+      errorCount: this.snapshot.errors.length + 1,
+      ok: false
+    })
     this.progressListener?.({ status: this.status })
+  }
+
+  /** Append a completed/failed scan to the bounded history and persist it (GH-135
+   * G7). Engine records raw entries only; the UI derives intervals/averages/rates. */
+  private recordScanHistory(entry: Omit<ScanHistoryEntry, 'at'>): void {
+    this.scanHistory = [...this.scanHistory, { at: this.now(), ...entry }].slice(-SCAN_HISTORY_LIMIT)
+    this.snapshotStore?.saveScanHistory?.(this.scanHistory)
   }
 
   /** Persist only the default/global view so the next cold start restores the

@@ -2,7 +2,7 @@ import * as fs from 'fs'
 import { getMainLog } from '../../log'
 import * as path from 'path'
 import type { Asset } from '@shared/types/asset'
-import type { AssetSnapshot } from '@shared/types/ipc'
+import type { AssetSnapshot, ScanHistoryEntry } from '@shared/types/ipc'
 import { stripRaw, type SnapshotStore } from './snapshot-store'
 
 /**
@@ -47,6 +47,7 @@ const FILE_NAME = 'berth-index.db'
 // leftover can never be consumed again — clean it up once SQLite is live.
 const LEGACY_JSON_FILE = 'berth-snapshot.json'
 const ENVELOPE_KEY = 'envelope'
+const SCAN_HISTORY_KEY = 'scan-history'
 
 export function createSqliteSnapshotStore(dir: string, openDatabase: OpenSqliteDatabase): SnapshotStore {
   const file = path.join(dir, FILE_NAME)
@@ -111,16 +112,43 @@ export function createSqliteSnapshotStore(dir: string, openDatabase: OpenSqliteD
       }
     },
     clear(): void {
-      // Rebuild (GH-135): drop every indexed asset + the envelope so the next scan
-      // starts from an empty index. Same best-effort contract as load/save.
+      // Rebuild (GH-135): drop every indexed asset + the snapshot envelope so the
+      // next scan starts from an empty index. Scan history is deliberately KEPT —
+      // it is an audit trail, not index data (G7). Best-effort like load/save.
       try {
         const handle = getDb()
         if (!handle) return
         const run = handle.transaction(() => {
           handle.prepare('DELETE FROM asset').run()
-          handle.prepare('DELETE FROM snapshot_meta').run()
+          handle.prepare('DELETE FROM snapshot_meta WHERE key = ?').run(ENVELOPE_KEY)
         })
         run()
+      } catch (err) {
+        getMainLog().log('sqlite-snapshot-store', err)
+      }
+    },
+    loadScanHistory(): ScanHistoryEntry[] {
+      try {
+        const handle = getDb()
+        if (!handle) return []
+        const row = handle.prepare('SELECT value_json FROM snapshot_meta WHERE key = ?').get(SCAN_HISTORY_KEY) as
+          | { value_json?: string }
+          | undefined
+        if (!row?.value_json) return []
+        const parsed = JSON.parse(row.value_json) as ScanHistoryEntry[]
+        return Array.isArray(parsed) ? parsed : []
+      } catch (err) {
+        getMainLog().log('sqlite-snapshot-store', err)
+        return []
+      }
+    },
+    saveScanHistory(entries: ScanHistoryEntry[]): void {
+      try {
+        const handle = getDb()
+        if (!handle) return
+        handle
+          .prepare('INSERT OR REPLACE INTO snapshot_meta (key, value_json) VALUES (?, ?)')
+          .run(SCAN_HISTORY_KEY, JSON.stringify(entries))
       } catch (err) {
         getMainLog().log('sqlite-snapshot-store', err)
       }
