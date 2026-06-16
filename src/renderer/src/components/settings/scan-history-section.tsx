@@ -124,7 +124,7 @@ export function ScanHistorySection({ history }: { history: ScanHistoryEntry[] })
                 />
               )}
             />
-            <Bar dataKey="durationSec" radius={[2, 2, 0, 0]} isAnimationActive={false}>
+            <Bar dataKey="durationSec" radius={[2, 2, 0, 0]} maxBarSize={20} isAnimationActive={false}>
               {data.map((d) => (
                 <Cell key={d.at} fill={d.errorCount > 0 ? 'hsl(var(--destructive))' : 'hsl(var(--primary))'} />
               ))}
