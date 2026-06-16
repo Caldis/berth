@@ -124,32 +124,33 @@ test.describe('App Shell', () => {
     const heading = topNavigation().getByRole('heading', { name: /^(Sessions|会话)$/ })
     await expect(heading).toContainText(/Sessions|会话/)
 
-    const breadcrumb = topBreadcrumb()
-    await expect(breadcrumb).toContainText(/WORK|工作/)
+    // GH-135: flat (non-nested) pages show the heading only — the section eyebrow was
+    // redundant with the highlighted sidebar nav, so no breadcrumb nav is rendered.
+    await expect(topBreadcrumb()).toHaveCount(0)
   })
 
   test('can navigate to promoted instruction pages', async () => {
     await navButton(navNames.skills).click()
     const heading = topNavigation().getByRole('heading', { name: /^Skills$/ })
     await expect(heading).toContainText(/Skills/)
-    const breadcrumb = topBreadcrumb()
-    await expect(breadcrumb).toContainText(/INSTRUCTIONS|指令/)
+    // GH-135: promoted flat pages show heading only, no section breadcrumb.
+    await expect(topBreadcrumb()).toHaveCount(0)
   })
 
   test('can navigate to promoted capability pages', async () => {
     await navButton(navNames.hooks).click()
     const heading = topNavigation().getByRole('heading', { name: /^Hooks$/ })
     await expect(heading).toContainText(/Hooks/)
-    const breadcrumb = topBreadcrumb()
-    await expect(breadcrumb).toContainText(/CAPABILITIES|能力/)
+    // GH-135: promoted flat pages show heading only, no section breadcrumb.
+    await expect(topBreadcrumb()).toHaveCount(0)
   })
 
   test('can navigate to usage', async () => {
     await navButton(navNames.usage).click()
     const heading = topNavigation().getByRole('heading', { name: /^(Usage|用量)$/ })
     await expect(heading).toContainText(/Usage|用量/)
-    const breadcrumb = topBreadcrumb()
-    await expect(breadcrumb).toContainText(/RUN|运行/)
+    // GH-135: flat pages show heading only, no section breadcrumb.
+    await expect(topBreadcrumb()).toHaveCount(0)
   })
 
   test('settings is not a regular navigation item', async () => {
