@@ -31,3 +31,8 @@
   `packages/berth-scan-engine/src/agent-plugins/adapter-registry.ts`; `agentSplit` 由
   `engine/activity-insights.ts buildActivityInsights` 产出。
 - 关联 bug: `2026-06-18-BUG-session-row-mislabels-non-claude-codex-agents` (同属 agent identity 主题)。
+
+# 更新 (2026-06-18, GH-138 — 首页维度 DONE)
+- **首页已实现** (团队并行 + lead 集成): 泛化 `AgentView`→任意 agentId + 共享 `matchesAgentView`; 重加全局 `agentView` store 生产者; `AgentScopeSwitcher` (Overview 工具栏, 选项取未过滤在场 agent); `useDashboardInsights`/`useUsageSummary` 透传 ('all' 归一为不过滤)。CDP 实测全部 widget 按 agent 重过滤通过; typecheck/lint/1216 单测/24 e2e 绿。详见 resolved/2026-06-10-...-agent-view-store-vestige 的"重加执行"。
+- **仍 OPEN**: (a) 把过滤推广到其它页面 (sessions/usage/instructions/capabilities) 实现真·全局; (b) 切换器是否上提侧栏全局 chrome; (c) provenance 透明 (agent 特定维度如 skill/mcp 在多 agent 在场时标注口径) — 已被"选 Codex→skill 0/MOST USED 空"自然体现, 但跨页一致性待做。
+- 状态: 首页 (GH-138) DONE; 全应用全局推广 OPEN。
