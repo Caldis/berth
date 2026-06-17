@@ -136,6 +136,17 @@ describe('buildPeakMetrics', () => {
       totalSessions: 3
     })
   })
+
+  it('excludes implausible (>24h, stale/unclosed) session durations from longest task', () => {
+    const peak = buildPeakMetrics([
+      session({ startedAt: '2026-06-17T01:00:00.000Z', totalTokens: 10, duration: 7200 }), // 2h — real
+      session({ startedAt: '2026-06-10T01:00:00.000Z', totalTokens: 10, duration: 6_400_000 }) // ~74d — stale
+    ])
+    // longest task ignores the 74-day span; stale session still counts for tokens/total
+    expect(peak.maxSessionDurationSeconds).toBe(7200)
+    expect(peak.cumulativeTokens).toBe(20)
+    expect(peak.totalSessions).toBe(2)
+  })
 })
 
 describe('buildTopUsage', () => {

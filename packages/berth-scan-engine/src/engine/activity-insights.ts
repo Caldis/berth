@@ -15,6 +15,11 @@ import { readNumber, readString, readStringArray } from '@shared/object-guards'
 // 只读 session 资产 meta (复用 toSessionSummary 同口径字段), 不引 session-detail 的重依赖。
 // 日界与 usage.ts 一致: startedAt 字符串前 10 位; 范围按 UTC 日materialize。now 可注入以保证可测。
 
+// 「最长任务」sanity cap: session.meta.duration 取 endedAt-startedAt 墙钟跨度, 长期未关闭的
+// session 会产出数十天的异常值 (非真实任务时长)。>24h 视为 stale/未关闭, 从峰值时长剔除。
+// (理想是用活跃时长而非墙钟跨度; 见 docs/issues/2026-06-17-...-duration-outlier)
+const MAX_PLAUSIBLE_SESSION_SECONDS = 24 * 60 * 60
+
 interface SessionRecord {
   agentId: string
   day: string | null
@@ -157,7 +162,11 @@ export function buildPeakMetrics(assets: Asset[]): PeakMetrics {
     const record = toRecord(asset)
     cumulativeTokens += record.tokens
     if (record.tokens > peakSessionTokens) peakSessionTokens = record.tokens
-    if (record.durationSeconds && record.durationSeconds > maxSessionDurationSeconds) {
+    if (
+      record.durationSeconds &&
+      record.durationSeconds <= MAX_PLAUSIBLE_SESSION_SECONDS &&
+      record.durationSeconds > maxSessionDurationSeconds
+    ) {
       maxSessionDurationSeconds = record.durationSeconds
     }
     if (record.day) dailyTokens.set(record.day, (dailyTokens.get(record.day) ?? 0) + record.tokens)

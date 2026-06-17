@@ -20,6 +20,12 @@ GH-138 首页仪表盘「指标带」的「最长任务」(longest task) 显示 
 
 # 来源 / 关联
 - 来源: GH-138 首页仪表盘截图验收时发现 (stats-band「最长任务」1793h)。
-- 关联: `docs/works/2026-06-17-gh-138-overview-modular-dashboard` (当前任务仅交叉引用, 不在本次
-  验收范围内修 — 属上游数据质量, 非仪表盘 UI 主线)。
-- 状态: OPEN (非阻塞 GH-138; 仪表盘其余指标正常)。
+- 关联: `docs/works/2026-06-17-gh-138-overview-modular-dashboard`。
+
+# 更新 (2026-06-17, GH-138 3.1-polish)
+- **已缓解 (mitigated)**: `buildPeakMetrics` 加 `MAX_PLAUSIBLE_SESSION_SECONDS = 24h` cap,
+  墙钟跨度 >24h 的 session 视为 stale/未关闭, 从「最长任务」剔除 (其 token/计数仍计)。新增单测
+  `excludes implausible (>24h ...) session durations`。「最长任务」回到有意义值。
+- **遗留 (理想方案, 可选未来)**: cap 是启发式 — 真正正确的是用**活跃时长**而非 endedAt-startedAt
+  墙钟跨度 (需 session-detail 解析活跃区间)。在此之前 24h cap 可能剔除极少数真实超长会话。
+- 状态: MITIGATED (cap 已上线; 活跃时长方案 OPEN, 非阻塞)。
