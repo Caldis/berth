@@ -103,7 +103,7 @@ export function ActivityRhythmWidget({ size }: WidgetRenderProps): React.ReactEl
                   <div
                     key={hour}
                     title={title}
-                    className={cn('aspect-square w-full rounded-[2px]', LEVEL_CLASS[intensity(count, rhythm.maxSessions)])}
+                    className={cn('h-[14px] w-full rounded-[2px]', LEVEL_CLASS[intensity(count, rhythm.maxSessions)])}
                   />
                 )
               })}
