@@ -160,6 +160,55 @@
     }
   },
   "overview": {
+    "widgets": {
+      "statsBand": "概览",
+      "activityHeatmap": "活动",
+      "activityInsights": "洞察",
+      "topUsage": "最常用",
+      "recentSessions": "最近会话",
+      "usageTrend": "用量",
+      "quickActions": "快捷入口",
+      "tokenBreakdown": "Token 构成",
+      "modelDistribution": "模型"
+    },
+    "dashboard": {
+      "customize": "自定义",
+      "done": "完成",
+      "reset": "重置布局",
+      "addWidget": "添加 widget",
+      "hiddenWidgets": "隐藏的 widget",
+      "allVisible": "已显示全部 widget",
+      "emptyCanvas": "所有 widget 已隐藏 —— 添加一个开始。",
+      "metrics": {
+        "cumulativeTokens": "累计 Token",
+        "peakDailyTokens": "单日峰值",
+        "peakSessionTokens": "单任务峰值",
+        "longestSession": "最长任务",
+        "currentStreak": "当前连续",
+        "longestStreak": "最长连续",
+        "totalSessions": "会话数",
+        "dayUnit": "{{count}} 天"
+      },
+      "heatmap": {
+        "less": "少",
+        "more": "多",
+        "summary": "过去一年 {{count}} 个会话",
+        "empty": "暂无活动记录"
+      },
+      "insights": {
+        "skillsExplored": "已探索技能",
+        "skillInvocations": "技能调用",
+        "totalSessions": "会话总数",
+        "topModel": "常用模型",
+        "pluginsInstalled": "插件"
+      },
+      "topUsage": {
+        "skill": "技能",
+        "mcp": "MCP",
+        "empty": "暂无使用记录",
+        "runs": "{{count}} 次"
+      }
+    },
     "title": "总览",
     "kicker": "本地工作区",
     "subtitle": "当前范围内的 Agent 资产、最近活动、用量和健康检查。",

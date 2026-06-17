@@ -162,6 +162,55 @@
     }
   },
   "overview": {
+    "widgets": {
+      "statsBand": "At a glance",
+      "activityHeatmap": "Activity",
+      "activityInsights": "Insights",
+      "topUsage": "Most used",
+      "recentSessions": "Recent sessions",
+      "usageTrend": "Usage",
+      "quickActions": "Quick actions",
+      "tokenBreakdown": "Token breakdown",
+      "modelDistribution": "Models"
+    },
+    "dashboard": {
+      "customize": "Customize",
+      "done": "Done",
+      "reset": "Reset layout",
+      "addWidget": "Add widget",
+      "hiddenWidgets": "Hidden widgets",
+      "allVisible": "All widgets are shown",
+      "emptyCanvas": "All widgets are hidden — add one to get started.",
+      "metrics": {
+        "cumulativeTokens": "Cumulative tokens",
+        "peakDailyTokens": "Peak / day",
+        "peakSessionTokens": "Peak / task",
+        "longestSession": "Longest task",
+        "currentStreak": "Current streak",
+        "longestStreak": "Longest streak",
+        "totalSessions": "Sessions",
+        "dayUnit": "{{count}}d"
+      },
+      "heatmap": {
+        "less": "Less",
+        "more": "More",
+        "summary": "{{count}} sessions in the last year",
+        "empty": "No activity recorded yet"
+      },
+      "insights": {
+        "skillsExplored": "Skills explored",
+        "skillInvocations": "Skill runs",
+        "totalSessions": "Total sessions",
+        "topModel": "Top model",
+        "pluginsInstalled": "Plugins"
+      },
+      "topUsage": {
+        "skill": "Skills",
+        "mcp": "MCP",
+        "empty": "No usage recorded yet",
+        "runs": "{{count}} runs"
+      }
+    },
     "title": "Overview",
     "kicker": "Local workspace",
     "subtitle": "Current agent assets, recent activity, usage and health checks for the selected scope.",
