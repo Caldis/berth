@@ -210,6 +210,30 @@ export const mockApi = {
       rateLimits: []
     })
   },
+  insights: {
+    dashboard: async () => ({
+      heatmap: { days: [], maxSessions: 0, maxTokens: 0, rangeStart: '', rangeEnd: '' },
+      streak: { current: 0, longest: 0, lastActiveDate: null },
+      peak: {
+        cumulativeTokens: 0,
+        peakDailyTokens: 0,
+        peakSessionTokens: 0,
+        maxSessionDurationSeconds: 0,
+        totalSessions: 0
+      },
+      topSkills: [],
+      topMcpServers: [],
+      insights: {
+        totalSessions: 0,
+        skillsExplored: 0,
+        pluginsInstalled: 0,
+        mcpServersConfigured: 0,
+        totalSkillInvocations: 0,
+        topModel: null,
+        agentSplit: []
+      }
+    })
+  },
   hooks: {
     setHookEnabled: async (request: { hookKey: string; enabled: boolean }) => ({
       hookKey: request.hookKey,

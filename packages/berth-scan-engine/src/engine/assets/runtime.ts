@@ -1,4 +1,5 @@
 import type { AgentView, Asset, AssetStats, CostMode, UsageSummary } from '@shared/types/asset'
+import type { DashboardInsights } from '@shared/types/insights'
 import type {
   AgentScanSourceGroup,
   AssetScanPartial,
@@ -22,6 +23,7 @@ import { assetMatchesProjectPath } from '../../project-scope'
 import { runHealthChecks } from '../health'
 import { getSearch } from '../search'
 import { buildUsageSummary } from '../usage'
+import { buildDashboardInsights } from '../activity-insights'
 import { WorkerAssetScanner } from './worker-host'
 import { mergeSharedConventions } from '../scanner'
 import { toSessionSummary } from '../session-detail'
@@ -587,6 +589,20 @@ export class AgentAssetRuntime {
       snapshot.assets.filter((asset) => sessionMatchesAgentView(asset, opts.agentView)),
       { days: opts.days, costMode: opts.costMode, projectPath: opts.projectPath }
     ))
+  }
+
+  async getDashboardInsights(
+    opts: { days?: number; agentView?: AgentView; projectPath?: string } = {}
+  ): Promise<DashboardInsights> {
+    const snapshot = await this.ensureReady({ reason: 'manual' })
+    const cacheKey = `insights:${JSON.stringify(opts)}`
+    return this.select(cacheKey, () => {
+      const projectPath = opts.projectPath
+      let assets = snapshot.assets.filter((asset) => sessionMatchesAgentView(asset, opts.agentView))
+      if (projectPath) assets = assets.filter((asset) => assetMatchesProjectPath(asset, projectPath))
+      // stats 用全局清单计数: "已探索技能/已装插件/已配 mcp" 本就是 inventory, 不随 agent/project 过滤。
+      return buildDashboardInsights(assets, snapshot.stats, { days: opts.days })
+    })
   }
 
   async listSessions(opts: { projectFilter?: string; projectPath?: string; limit?: number; agentView?: AgentView }): Promise<SessionListResult> {

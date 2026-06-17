@@ -73,6 +73,9 @@ const api = {
   usage: {
     summary: (opts: IpcChannelArgs<'usage:summary'>[0]) => invoke('usage:summary', opts)
   },
+  insights: {
+    dashboard: (opts?: IpcChannelArgs<'insights:dashboard'>[0]) => invoke('insights:dashboard', opts)
+  },
   memory: {
     list: () => invoke('memory:list'),
     get: (id: string) => invoke('memory:get', id)

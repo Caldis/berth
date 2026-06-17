@@ -13,6 +13,7 @@ import type {
 import type { MemoryListResult, MemoryNote } from './memory'
 import type { AgentCapabilityPluginListResult } from './agent-plugin'
 import type { AppScopeSelection, ProjectScopeCandidate } from '../scope'
+import type { DashboardInsights } from './insights'
 
 export interface PlatformInfo {
   platform: NodeJS.Platform
@@ -633,6 +634,7 @@ export interface IpcChannels {
   'sessions:events': { args: [string]; result: SessionReplayResult | null }
   'sessions:event-payload': { args: [string, string]; result: SessionReplayEventPayload | null }
   'usage:summary': { args: [{ days: number; agentView?: AgentView; costMode?: CostMode; projectPath?: string }]; result: UsageSummary }
+  'insights:dashboard': { args: [{ days?: number; agentView?: AgentView; projectPath?: string }?]; result: DashboardInsights }
   'memory:list': { args: []; result: MemoryListResult }
   'memory:get': { args: [string]; result: MemoryNote | null }
   'teams:list': { args: []; result: AgentTeamListResult }

@@ -22,6 +22,7 @@ import type {
   UpdatePreferences
 } from '@shared/types/ipc'
 import type { AgentCapabilityPluginListResult } from '@shared/types/agent-plugin'
+import type { DashboardInsights } from '@shared/types/insights'
 import { getAssetRuntime } from '@berth/scan-engine/engine/assets/runtime'
 import { setHookEnabled } from '@berth/scan-engine/engine/hooks-manager'
 import { buildSessionDetail } from '@berth/scan-engine/engine/session-detail'
@@ -290,6 +291,16 @@ export function registerSessionHandlers(): void {
     'usage:summary',
     async (_event, opts: { days: number; agentView?: AgentView; costMode?: CostMode; projectPath?: string }): Promise<UsageSummary> => {
       return getAssetRuntime().getUsageSummary(opts)
+    }
+  )
+
+  ipcMain.handle(
+    'insights:dashboard',
+    async (
+      _event,
+      opts: { days?: number; agentView?: AgentView; projectPath?: string } = {}
+    ): Promise<DashboardInsights> => {
+      return getAssetRuntime().getDashboardInsights(opts)
     }
   )
 
