@@ -6,6 +6,7 @@ import { useAppStore } from '@/stores/app'
 import { projectPathForScope } from '@shared/scope'
 import { DashboardInsightsProvider } from '@/components/dashboard/insights-context'
 import { DashboardGrid } from '@/components/dashboard/dashboard-grid'
+import { WidgetLibrary } from '@/components/dashboard/widget-library'
 import { useDashboardLayout } from '@/components/dashboard/use-dashboard-layout'
 import { HealthEntry } from '@/components/dashboard/health/health-entry'
 
@@ -16,7 +17,7 @@ export function Overview(): React.ReactElement {
   const scopeSelection = useAppStore((s) => s.scopeSelection)
   const projectPath = projectPathForScope(scopeSelection)
   const [isEditing, setIsEditing] = useState(false)
-  const { visibleWidgets, reorder, cycleSize, hide, reset } = useDashboardLayout()
+  const { visibleWidgets, hiddenWidgets, reorder, cycleSize, hide, show, reset } = useDashboardLayout()
 
   return (
     <div className="space-y-6 pb-8">
@@ -54,6 +55,7 @@ export function Overview(): React.ReactElement {
           onCycleSize={cycleSize}
           onHide={hide}
         />
+        {isEditing && <WidgetLibrary hidden={hiddenWidgets} onAdd={show} />}
       </DashboardInsightsProvider>
     </div>
   )

@@ -44,9 +44,9 @@
 
 ## Phase E — 组装 + 自定义
 
-- [~] E1: overview.tsx 瘦身为 host (toolbar: 标题+health-entry+自定义切换+重置) + DashboardGrid 组装 — done。**待续**: `widget-library` (编辑态添加已隐藏 widget) + 重载布局保留的 CDP 实测。
-  - tests: 布局 action 经 B2 纯函数覆盖; overview-dashboard 测 customize 切换/编辑态 affordance
-  - verify: 默认无 chrome ✓、编辑态 affordance ✓、reset ✓; 添加隐藏 widget + 重载保留待 verify [AC4][AC2]
+- [x] E1: overview.tsx host (toolbar: 标题+health-entry+自定义切换+重置) + DashboardGrid + `widget-library` (编辑态列出隐藏 widget 一键加回) — done, 完成增/删/显隐/重排/缩放闭环
+  - tests: 布局 action 经 B2 纯函数覆盖; overview-dashboard 测 customize 切换/编辑态 affordance; 触 overview 后 build+app.e2e 全过 (friction 纪律)
+  - verify: 默认无 chrome ✓、编辑态 affordance+library ✓、reset ✓; **重载布局保留**的 CDP 实测待 4.0 [AC4][AC2]
 
 ## Phase F — Onboarding + i18n + 抛光/性能
 
