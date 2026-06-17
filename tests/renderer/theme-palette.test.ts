@@ -5,7 +5,10 @@ import { describe, expect, it } from 'vitest'
 const root = process.cwd()
 const globalsCss = fs.readFileSync(path.join(root, 'src/renderer/src/styles/globals.css'), 'utf8')
 const usagePage = fs.readFileSync(path.join(root, 'src/renderer/src/pages/usage.tsx'), 'utf8')
-const overviewPage = fs.readFileSync(path.join(root, 'src/renderer/src/pages/overview.tsx'), 'utf8')
+const usageTrendWidget = fs.readFileSync(
+  path.join(root, 'src/renderer/src/components/dashboard/widgets/usage-trend.widget.tsx'),
+  'utf8'
+)
 
 describe('renderer theme palette', () => {
   it('defaults to neutral primary with switchable accents incl. blue (GH-106 A)', () => {
@@ -58,9 +61,10 @@ describe('renderer theme palette', () => {
   })
 
   it('renders homogeneous series charts with the neutral primary single color', () => {
-    // 首页「近 7 天费用」用单色 CHART_SERIES_FILL, 不再按索引循环 --chart-${...}
-    expect(overviewPage).toContain('CHART_SERIES_FILL')
-    expect(overviewPage).not.toMatch(/--chart-\$\{/)
+    // GH-138: 「近 7 天费用」图随 Overview 重构迁入 usage-trend widget; 仍用单色
+    // CHART_SERIES_FILL, 不按索引循环 --chart-${...}
+    expect(usageTrendWidget).toContain('CHART_SERIES_FILL')
+    expect(usageTrendWidget).not.toMatch(/--chart-\$\{/)
   })
 
   it('keeps Usage chart colors tied to shared chart tokens', () => {

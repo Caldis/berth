@@ -19,18 +19,18 @@
 - [x] B2: `widget-types.ts` 契约 + `widget-catalog.ts` (元数据单一真源, 与渲染解耦) + `lib/dashboard-layout.ts` 纯函数 (default/migrate/parse/serialize/reset) — done。registry (icon/component 绑定) 推迟到 C 各 widget 落地时填充。
   - tests: `tests/unit/widget-catalog.test.ts` (5: id 自洽/sizes 合法/defaultSize∈sizes/titleKey/order 唯一) + `tests/unit/dashboard-layout.test.ts` (9: migrate 丢未知+追加新+钳尺寸+去重+保序 / parse corrupt→default / round-trip) — 14 全过, typecheck/lint clean
   - verify: 不适用 (纯逻辑)
-- [ ] B3: `widget-shell.tsx` (无边框语义容器 + hover/edit affordance) + `dashboard-grid.tsx` (CSS Grid 尺寸跨度 + DndContext/SortableContext rectSortingStrategy 重排) + `use-dashboard-layout.ts` (localStorage 读写 + reorder/resize/toggle)
-  - tests: dashboard-layout 已 B2 覆盖; shell/grid 行为属交互 → 运行实测
-  - verify: 编辑态 affordance 显隐、拖拽重排、尺寸循环、键盘排序 (CDP/实机) [AC4]
+- [x] B3: `widget-shell.tsx` (无边框语义容器 + hover/edit affordance) + `dashboard-grid.tsx` (CSS Grid 尺寸跨度 + DndContext/SortableContext rectSortingStrategy 重排) + `use-dashboard-layout.ts` (localStorage 读写 + reorder/cycleSize/hide/show/reset) — done
+  - tests: dashboard-layout 已 B2 覆盖; overview-dashboard 测编辑态 affordance/drag handle 出现
+  - verify: 编辑态 affordance 显隐 ✓; 拖拽重排/键盘排序待 CDP 实测 [AC4]
 
 ## Phase C — Widget 实现 (各自独立数据 hook + memo)
 
-- [ ] C1: 移植现有 → widget: `quick-actions` (现 metrics 卡) / `recent-sessions` (现 panel) / `usage-trend` (泛化现 7d 图, 复用 Recharts + chart-colors)
-  - tests: 移植不改数据契约, 既有数据 hook 测试不回归; 渲染 smoke
-  - verify: 三 widget 在 grid 内正确渲染 + loading/empty/error 态 [AC2]
-- [ ] C2: 新数据 widget (上半): `stats-band` (累计/峰值token/最长时长/streak/会话数, tabular-nums) + `activity-heatmap` (年度方格 + 每日/周/累计切换, 单色相 ramp)
-  - tests: 消费 A1/A2 数据; 取数 hook (SWR) smoke; 热力图分桶映射可加 unit
-  - verify: 热力图色阶/对齐/切换、指标带数字格式 — 截图裁定 [AC3][AC9]
+- [x] C1: 移植现有 → widget: `quick-actions` / `recent-sessions` / `usage-trend` (单色 CHART_SERIES_FILL, theme-palette 测试重指向至此) — done, 去卡片框
+  - tests: sessions-pages/theme-palette 重指向新结构后绿; 全套件 1194 无回归
+  - verify: 截图已确认 (quick-actions 出数, recent-sessions 真实会话, usage-trend 7d 图)
+- [x] C2: 新数据 widget (上半): `stats-band` (累计/峰值/最长时长/streak, tabular) + `activity-heatmap` (年度方格, 单色相 berth 强调色 ramp) — done; 用户截图确认 taste + 配色保持单色相
+  - tests: 消费 A1/A2 经 insights-context; 截图实测填充正确
+  - verify: 截图已裁定 (18.66B/1.40B/1793h/streak; 949 sessions 热力图)
 - [ ] C3: 新数据 widget (下半): `activity-insights` (M) + `top-usage` (skill/mcp/subagent 切换排行) + `token-breakdown` (input/output/cache/reasoning) + `model-distribution`
   - tests: 取数 hook smoke; top-usage 数据来自 A1
   - verify: 排行/构成/分布渲染 + 空态 [AC3]
@@ -38,15 +38,15 @@
 
 ## Phase D — 健康检查弹窗 [AC1]
 
-- [ ] D1: `health/health-modal.tsx` (HeroUI Modal+useDisclosure, 复用 useHealthChecks + 现 HealthCheckRow/分组/导航/fix snippet/info 忽略) + `health/health-entry.tsx` (toolbar 入口: worst severity+count) + 从 overview 删平铺 `HealthWorklistPanel` 及其在 grid 的位置
-  - tests: `tests/unit/health-modal.test.tsx` (open/close/Esc/列表渲染); 删除同批清理孤儿 (ARCHITECTURE 删除纪律)
-  - verify: 入口点击开弹窗、focus-trap、Esc、导航/复制可用、首页不再平铺 [AC1]
+- [x] D1: `health/health-entry.tsx` (toolbar 状态入口 → HeroUI Modal+useDisclosure, 复用 useHealthChecks + 移植 HealthCheckRow/分组/导航/fix snippet/info 忽略) + overview 删平铺 HealthWorklistPanel — done
+  - tests: `overview-dashboard.test.tsx` 弹窗开合/分组/copy/ignore 全过; 旧 overview-health-checks(内联)同批删除 (删除纪律)
+  - verify: 截图确认健康收拢为「Needs review·N」入口, 首页不再平铺 [AC1]
 
 ## Phase E — 组装 + 自定义
 
-- [ ] E1: `dashboard-toolbar.tsx` (标题+scope+health-entry+自定义切换) + `widget-library.tsx` (编辑态添加隐藏 widget + 重置默认) + `overview.tsx` 瘦身为 host (toolbar + grid)
-  - tests: 布局 action 经 B2 纯函数覆盖; 组装属集成 → 运行实测
-  - verify: 默认视图无 chrome、进编辑态全 affordance、添加/隐藏/重置、**重载后布局保留** (CDP) [AC4][AC2]
+- [~] E1: overview.tsx 瘦身为 host (toolbar: 标题+health-entry+自定义切换+重置) + DashboardGrid 组装 — done。**待续**: `widget-library` (编辑态添加已隐藏 widget) + 重载布局保留的 CDP 实测。
+  - tests: 布局 action 经 B2 纯函数覆盖; overview-dashboard 测 customize 切换/编辑态 affordance
+  - verify: 默认无 chrome ✓、编辑态 affordance ✓、reset ✓; 添加隐藏 widget + 重载保留待 verify [AC4][AC2]
 
 ## Phase F — Onboarding + i18n + 抛光/性能
 
