@@ -10,12 +10,15 @@
 - [x] P2 activity-heatmap: 左侧 Mon/Wed/Fri 星期标签 (本地化 Intl weekday, 与月份标签 w-7 spacer 对齐)。
 - [x] P3 activity-heatmap: cell tooltip 本地化 (dayTooltip/noneTooltip: "N 个会话 · 日期")。
 
+### 批次 2 — 拖拽交互手感 (done)
+- [x] P4 拖拽抬起反馈: 拖拽中 widget 改为实心抬起面 (bg-card + shadow-xl + 实心 ring + z-20), 替代旧的 opacity-50 淡出, 更有"拿起"手感; 编辑非拖拽态保持虚线环。
+
 ### 候选 (待截图复盘 + 用户反馈后排期)
-- widget hover / 编辑态进出过渡的微动效。
-- 拖拽中的 cursor / overlay 反馈。
+- 编辑态进出的微动效 (affordance 渐显)。
 - 空态视觉一致性 (各 widget 空态对齐)。
 - 响应式断点在窄屏的 widget 跨度复核。
 - 间距/节奏微调 (区块间留白)。
+- stats-band「最长任务」异常值 (见 issue, 需 ground truth)。
 
 ## 验证
 每批改动: typecheck/lint/单测 + (触 overview/renderer DOM 时) e2e + CDP/截图复盘请用户裁定 taste。

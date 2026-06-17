@@ -32,8 +32,9 @@ export function WidgetShell({
     <section
       className={cn(
         'group/widget relative flex h-full min-w-0 flex-col gap-2.5 rounded-lg transition-shadow',
-        isEditing && 'p-3 ring-1 ring-dashed ring-border',
-        isDragging && 'opacity-50'
+        isEditing && !isDragging && 'p-3 ring-1 ring-dashed ring-border',
+        // 拖拽中: 实心抬起面 + 阴影 (替代淡出, 更有"拿起"手感)
+        isDragging && 'p-3 bg-card shadow-xl ring-1 ring-border'
       )}
     >
       <header className="flex h-5 items-center justify-between gap-2">

@@ -108,7 +108,7 @@ function SortableWidget({
       className={cn(
         SIZE_CLASS[item.size],
         'motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-3 motion-safe:fill-mode-both motion-safe:duration-500',
-        isDragging && 'z-10'
+        isDragging && 'z-20'
       )}
     >
       <WidgetShell
