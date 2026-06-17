@@ -233,6 +233,10 @@
       "agentFilter": {
         "all": "全部 agent",
         "label": "Agent"
+      },
+      "recentSessions": {
+        "today": "今天",
+        "yesterday": "昨天"
       }
     },
     "title": "总览",

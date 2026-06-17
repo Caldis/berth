@@ -235,6 +235,10 @@
       "agentFilter": {
         "all": "All agents",
         "label": "Agent"
+      },
+      "recentSessions": {
+        "today": "Today",
+        "yesterday": "Yesterday"
       }
     },
     "title": "Overview",
