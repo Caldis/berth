@@ -1,10 +1,10 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Check, Settings2 } from 'lucide-react'
 import { Button } from '@/components/ui'
 import { useAppStore } from '@/stores/app'
-import { projectPathForScope } from '@shared/scope'
-import { DashboardInsightsProvider, useInsights } from '@/components/dashboard/insights-context'
+import { assetMatchesAppScope, projectPathForScope } from '@shared/scope'
+import { DashboardInsightsProvider } from '@/components/dashboard/insights-context'
 import { AgentScopeSwitcher } from '@/components/dashboard/agent-scope-switcher'
 import { DashboardGrid } from '@/components/dashboard/dashboard-grid'
 import { WidgetLibrary } from '@/components/dashboard/widget-library'
@@ -29,8 +29,21 @@ function OverviewContent(): React.ReactElement {
   const { t } = useTranslation()
   const agentView = useAppStore((s) => s.agentView)
   const setAgentView = useAppStore((s) => s.setAgentView)
-  const { insights } = useInsights()
-  const agentSplit = insights?.insights.agentSplit ?? []
+  const assets = useAppStore((s) => s.assets)
+  const scopeSelection = useAppStore((s) => s.scopeSelection)
+  // 切换器选项 = 当前 scope 内"全部在场 agent", 且**不随 agentView 过滤收缩** — 必须取未过滤源,
+  // 否则选中某 agent 后 insights.agentSplit 收缩到 1 项, 切换器自我隐藏 → 无法切回 (CDP 实测发现)。
+  const agentSplit = useMemo(() => {
+    const counts = new Map<string, number>()
+    for (const asset of assets) {
+      if (asset.type === 'session' && assetMatchesAppScope(asset, scopeSelection)) {
+        counts.set(asset.agentId, (counts.get(asset.agentId) ?? 0) + 1)
+      }
+    }
+    return [...counts.entries()]
+      .map(([agentId, count]) => ({ agentId, count }))
+      .sort((a, z) => z.count - a.count || a.agentId.localeCompare(z.agentId))
+  }, [assets, scopeSelection])
   const [isEditing, setIsEditing] = useState(false)
   const [onboarded, setOnboarded] = useState(readOnboarded)
   const { visibleWidgets, hiddenWidgets, reorder, setSize, setChartType, hide, show, reset } = useDashboardLayout()
