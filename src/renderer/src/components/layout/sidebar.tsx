@@ -110,7 +110,10 @@ export function Sidebar(): React.ReactElement {
           </div>
         </div>
 
-        <nav className="flex-1 overflow-y-auto px-3 py-1">
+        <nav
+          className="flex-1 overflow-y-auto px-3 py-1"
+          style={collapsed ? { scrollbarGutter: 'stable both-edges' } : undefined}
+        >
           {navSections.map((section, sectionIndex) => (
             <div key={sectionIndex} className="mb-1">
               {section.labelKey && !collapsed && (
