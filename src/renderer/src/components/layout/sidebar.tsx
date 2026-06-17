@@ -82,7 +82,7 @@ export function Sidebar(): React.ReactElement {
             giving the logo below comfortable clearance from the buttons. */}
         {isMac && <div className="titlebar-drag h-9 w-full shrink-0" />}
 
-        <div className="titlebar-drag flex h-14 shrink-0 items-center gap-2 px-4">
+        <div className={cn('titlebar-drag flex h-14 shrink-0 items-center gap-2 px-4', collapsed && 'justify-center')}>
           <div className="titlebar-no-drag flex min-w-0 items-center gap-2">
             <img src={appIconUrl} alt="" aria-hidden="true" className="h-7 w-7 shrink-0 rounded-md" />
             {!collapsed && (
