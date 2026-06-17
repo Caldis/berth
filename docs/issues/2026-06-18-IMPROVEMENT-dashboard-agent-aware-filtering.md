@@ -34,5 +34,12 @@
 
 # 更新 (2026-06-18, GH-138 — 首页维度 DONE)
 - **首页已实现** (团队并行 + lead 集成): 泛化 `AgentView`→任意 agentId + 共享 `matchesAgentView`; 重加全局 `agentView` store 生产者; `AgentScopeSwitcher` (Overview 工具栏, 选项取未过滤在场 agent); `useDashboardInsights`/`useUsageSummary` 透传 ('all' 归一为不过滤)。CDP 实测全部 widget 按 agent 重过滤通过; typecheck/lint/1216 单测/24 e2e 绿。详见 resolved/2026-06-10-...-agent-view-store-vestige 的"重加执行"。
-- **仍 OPEN**: (a) 把过滤推广到其它页面 (sessions/usage/instructions/capabilities) 实现真·全局; (b) 切换器是否上提侧栏全局 chrome; (c) provenance 透明 (agent 特定维度如 skill/mcp 在多 agent 在场时标注口径) — 已被"选 Codex→skill 0/MOST USED 空"自然体现, 但跨页一致性待做。
+- **仍 OPEN**: (a) 把过滤推广到其它页面 (sessions/usage/instructions/capabilities) 实现真·全局过滤; (c) provenance 透明 (agent 特定维度如 skill/mcp 在多 agent 在场时标注口径) — 已被"选 Codex→skill 0/MOST USED 空"自然体现, 但跨页一致性待做。
 - 状态: 首页 (GH-138) DONE; 全应用全局推广 OPEN。
+
+# 更新 2 (2026-06-18, 切换器全局化 + 对齐能力插件)
+- 用户要求: agent 筛选是全局功能, 应与 scope 筛选器并列于侧栏 (项目/文件系统维度 vs agent 维度), 且支持范围对齐 agent 能力插件。
+- 已落地 (上条 OPEN (b) → DONE): AgentScopeSwitcher 重写为侧栏自包含组件 (镜像 ProjectScopeSwitcher, collapsed 感知), 挂在 ProjectScopeSwitcher 之下成一对; 移出 overview toolbar。
+- **范围对齐能力插件**: 选项取 `useAgentCapabilityPlugins()` 的已探测 agent (`agentCompatibility.agentId` + `displayName`), 非会话派生 — 实测列出 6 个 (Claude Code/Codex/Cursor/Gemini CLI/GitHub Copilot CLI/OpenCode), 比会话派生(仅 2)更全。
+- CDP 实测: 侧栏选 Claude Code → 全局 store.agentView 驱动首页全部 widget 过滤 (950→180 会话, 19.26B→13.07B)。
+- 剩余 OPEN: (a) 真·全局过滤 (sessions/usage 等其它页面读 store.agentView)。
