@@ -231,6 +231,12 @@ export const mockApi = {
         totalSkillInvocations: 0,
         topModel: null,
         agentSplit: []
+      },
+      rhythm: {
+        grid: Array.from({ length: 7 }, () => new Array(24).fill(0)),
+        maxSessions: 0,
+        totalSessions: 0,
+        peak: null
       }
     })
   },

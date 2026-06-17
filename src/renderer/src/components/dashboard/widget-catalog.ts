@@ -75,6 +75,14 @@ export const WIDGET_CATALOG: Record<WidgetId, WidgetMeta> = {
     sizes: ['M', 'L'],
     defaultOrder: 8,
     defaultHidden: true
+  },
+  'activity-rhythm': {
+    id: 'activity-rhythm',
+    titleKey: 'overview.widgets.activityRhythm',
+    defaultSize: 'Wide',
+    sizes: ['Wide', 'XL'],
+    defaultOrder: 9,
+    defaultHidden: false
   }
 }
 

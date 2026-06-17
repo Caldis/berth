@@ -4,6 +4,7 @@ import {
   buildActivityHeatmap,
   buildActivityInsights,
   buildDashboardInsights,
+  buildHourlyRhythm,
   buildPeakMetrics,
   buildStreakStats,
   buildTopUsage
@@ -49,6 +50,45 @@ const stats: AssetStats = {
   commands: 4,
   subagents: 1
 }
+
+describe('buildHourlyRhythm', () => {
+  // 2023-01-01 (UTC) 为周日 → getUTCDay()=0; 2023-01-02 为周一=1。
+  it('buckets sessions into weekday×hour cells (UTC when tz offset 0)', () => {
+    const rhythm = buildHourlyRhythm([
+      session({ startedAt: '2023-01-01T09:30:00.000Z' }), // Sun 09
+      session({ startedAt: '2023-01-01T09:45:00.000Z' }), // Sun 09 (same cell)
+      session({ startedAt: '2023-01-02T23:00:00.000Z' }) // Mon 23
+    ])
+    expect(rhythm.grid[0][9]).toBe(2)
+    expect(rhythm.grid[1][23]).toBe(1)
+    expect(rhythm.totalSessions).toBe(3)
+    expect(rhythm.maxSessions).toBe(2)
+    expect(rhythm.peak).toEqual({ weekday: 0, hour: 9, sessions: 2 })
+  })
+
+  it('shifts to local wall-clock by tzOffsetMinutes (can cross day/weekday)', () => {
+    // 23:30 UTC Sun + 60min → 00:30 Mon local
+    const rhythm = buildHourlyRhythm([session({ startedAt: '2023-01-01T23:30:00.000Z' })], {
+      tzOffsetMinutes: 60
+    })
+    expect(rhythm.grid[1][0]).toBe(1)
+    expect(rhythm.grid[0][23]).toBe(0)
+    expect(rhythm.peak).toEqual({ weekday: 1, hour: 0, sessions: 1 })
+  })
+
+  it('ignores non-session assets and missing/invalid startedAt; empty → null peak', () => {
+    const empty = buildHourlyRhythm([
+      other('skill'),
+      session({}), // no startedAt
+      session({ startedAt: 'not-a-date' })
+    ])
+    expect(empty.totalSessions).toBe(0)
+    expect(empty.maxSessions).toBe(0)
+    expect(empty.peak).toBeNull()
+    expect(empty.grid).toHaveLength(7)
+    expect(empty.grid[0]).toHaveLength(24)
+  })
+})
 
 describe('buildActivityHeatmap', () => {
   it('materializes a continuous day range with zero-fill and per-day buckets', () => {

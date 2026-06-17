@@ -55,6 +55,18 @@ export interface ActivityInsights {
   agentSplit: Array<{ agentId: string; count: number }>
 }
 
+/** 活动节律 (punch-card): 按本地时区的 星期×小时 会话分布, 看"何时工作"。 */
+export interface HourlyRhythm {
+  /** 7 行 (0=周日..6=周六) × 24 列 (0..23 时) 的会话计数矩阵 (本地时区)。 */
+  grid: number[][]
+  /** 单格最大会话数 (强度归一化用)。 */
+  maxSessions: number
+  /** 全矩阵会话总数 (空态判定)。 */
+  totalSessions: number
+  /** 最忙的 (星期,小时); 无数据为 null。 */
+  peak: { weekday: number; hour: number; sessions: number } | null
+}
+
 /** insights:dashboard 的合并 payload — 一次往返取回首页全部聚合数据。 */
 export interface DashboardInsights {
   heatmap: ActivityHeatmap
@@ -63,4 +75,5 @@ export interface DashboardInsights {
   topSkills: TopUsageEntry[]
   topMcpServers: TopUsageEntry[]
   insights: ActivityInsights
+  rhythm: HourlyRhythm
 }

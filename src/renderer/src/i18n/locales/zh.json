@@ -169,7 +169,8 @@
       "usageTrend": "用量",
       "quickActions": "快捷入口",
       "tokenBreakdown": "Token 构成",
-      "modelDistribution": "模型"
+      "modelDistribution": "模型",
+      "activityRhythm": "活动节律"
     },
     "dashboard": {
       "customize": "自定义",
@@ -210,6 +211,11 @@
         "empty": "暂无活动记录",
         "dayTooltip": "{{count}} 个会话 · {{date}}",
         "noneTooltip": "无会话 · {{date}}"
+      },
+      "rhythm": {
+        "empty": "暂无活动记录",
+        "peakInsight": "最活跃时段 · {{weekday}} {{time}}",
+        "cellTooltip": "{{count}} 个会话 · {{weekday}} {{time}}"
       },
       "insights": {
         "skillsExplored": "已探索技能",

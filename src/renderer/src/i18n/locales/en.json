@@ -171,7 +171,8 @@
       "usageTrend": "Usage",
       "quickActions": "Quick actions",
       "tokenBreakdown": "Token breakdown",
-      "modelDistribution": "Models"
+      "modelDistribution": "Models",
+      "activityRhythm": "Activity rhythm"
     },
     "dashboard": {
       "customize": "Customize",
@@ -212,6 +213,11 @@
         "empty": "No activity recorded yet",
         "dayTooltip": "{{count}} sessions · {{date}}",
         "noneTooltip": "No sessions · {{date}}"
+      },
+      "rhythm": {
+        "empty": "No activity recorded yet",
+        "peakInsight": "Most active around {{weekday}} {{time}}",
+        "cellTooltip": "{{count}} sessions · {{weekday}} {{time}}"
       },
       "insights": {
         "skillsExplored": "Skills explored",

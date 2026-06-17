@@ -4,6 +4,7 @@ import type {
   ActivityInsights,
   DashboardInsights,
   HeatmapDay,
+  HourlyRhythm,
   PeakMetrics,
   StreakStats,
   TopUsageEntry
@@ -206,6 +207,40 @@ export function buildTopUsage(
     .slice(0, limit)
 }
 
+/**
+ * 活动节律 punch-card: 按 星期×小时 统计会话分布。
+ * startedAt 为 UTC 瞬时, 偏移 tzOffsetMinutes (= 本地相对 UTC 的分钟数, 如 UTC+8 传 480)
+ * 后用 UTC 取值器读"本地墙钟"星期/小时 — 保证纯函数可测 (注入偏移) 且呈现的是用户本地作息。
+ */
+export function buildHourlyRhythm(assets: Asset[], opts: { tzOffsetMinutes?: number } = {}): HourlyRhythm {
+  const tz = Number.isFinite(opts.tzOffsetMinutes) ? (opts.tzOffsetMinutes as number) : 0
+  const grid: number[][] = Array.from({ length: 7 }, () => new Array<number>(24).fill(0))
+  let totalSessions = 0
+  for (const asset of sessionAssets(assets)) {
+    const started = readString(asset.meta, 'startedAt')
+    if (!started) continue
+    const instant = new Date(started)
+    if (Number.isNaN(instant.getTime())) continue
+    const local = new Date(instant.getTime() + tz * 60_000)
+    grid[local.getUTCDay()][local.getUTCHours()] += 1
+    totalSessions += 1
+  }
+
+  let maxSessions = 0
+  let peak: HourlyRhythm['peak'] = null
+  for (let weekday = 0; weekday < 7; weekday++) {
+    for (let hour = 0; hour < 24; hour++) {
+      const sessions = grid[weekday][hour]
+      if (sessions > maxSessions) {
+        maxSessions = sessions
+        peak = { weekday, hour, sessions }
+      }
+    }
+  }
+
+  return { grid, maxSessions, totalSessions, peak }
+}
+
 /** 活动洞察 — 只产出 berth 数据可支撑字段。 */
 export function buildActivityInsights(assets: Asset[], stats: AssetStats): ActivityInsights {
   const sessions = sessionAssets(assets)
@@ -247,7 +282,7 @@ export function buildActivityInsights(assets: Asset[], stats: AssetStats): Activ
 export function buildDashboardInsights(
   assets: Asset[],
   stats: AssetStats,
-  opts: { days?: number; now?: Date | string } = {}
+  opts: { days?: number; now?: Date | string; tzOffsetMinutes?: number } = {}
 ): DashboardInsights {
   const sessions = sessionAssets(assets)
   return {
@@ -256,6 +291,7 @@ export function buildDashboardInsights(
     peak: buildPeakMetrics(sessions),
     topSkills: buildTopUsage(sessions, { kind: 'skill' }),
     topMcpServers: buildTopUsage(sessions, { kind: 'mcp' }),
-    insights: buildActivityInsights(sessions, stats)
+    insights: buildActivityInsights(sessions, stats),
+    rhythm: buildHourlyRhythm(sessions, { tzOffsetMinutes: opts.tzOffsetMinutes })
   }
 }

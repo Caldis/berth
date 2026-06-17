@@ -16,6 +16,7 @@ export type WidgetId =
   | 'quick-actions'
   | 'token-breakdown'
   | 'model-distribution'
+  | 'activity-rhythm'
 
 /** widget 纯元数据 — 与渲染解耦; 新增 widget 在 widget-catalog 加一条。 */
 export interface WidgetMeta {

@@ -601,7 +601,11 @@ export class AgentAssetRuntime {
       let assets = snapshot.assets.filter((asset) => sessionMatchesAgentView(asset, opts.agentView))
       if (projectPath) assets = assets.filter((asset) => assetMatchesProjectPath(asset, projectPath))
       // stats 用全局清单计数: "已探索技能/已装插件/已配 mcp" 本就是 inventory, 不随 agent/project 过滤。
-      return buildDashboardInsights(assets, snapshot.stats, { days: opts.days })
+      // tzOffsetMinutes: 主进程 = 用户本机, 取本地相对 UTC 偏移, 让 rhythm 按用户本地作息呈现。
+      return buildDashboardInsights(assets, snapshot.stats, {
+        days: opts.days,
+        tzOffsetMinutes: -new Date().getTimezoneOffset()
+      })
     })
   }
 
