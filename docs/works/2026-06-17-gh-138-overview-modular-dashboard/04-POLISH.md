@@ -62,10 +62,11 @@
 ### R2-B 可视化形态可切换 (用户重点, 推广)
 viz widget 提供形态切换 (用户选展现形式), 例: token-breakdown 支持 条形/饼图/空心饼(donut)。
 - 设计: 复用 Recharts (已在仓); 加一个 ChartType 切换 (分段控件, 与 size/range 同风格); 形态状态可持久化 (localStorage per-widget 或并入 layout)。
-- [ ] token-breakdown: 堆叠条 / 饼图 / 空心饼 (donut) 切换
-- [ ] usage-trend: 柱状 / 折线 / 面积 切换
-- [ ] model-distribution: 横条榜 / 饼图 / donut 切换
-- [ ] 抽象一个可复用 `<ChartTypeToggle>` + 各 widget 接入; 考虑 widget 配置 (size + chartType + range) 统一进 layout 持久化
+- [x] token-breakdown: 堆叠条 / 饼图 / 空心饼 (donut) 切换 (commit 7427e29)
+- [x] usage-trend: 柱状 / 折线 / 面积 切换 + 尺寸驱动密度 (commit aa006ae, 面积形态已实测渲染)
+- [x] model-distribution: 横条榜 / 饼图 / donut 切换 + M5/L8 密度 (commit aa006ae)
+- [x] 抽象可复用 `<ChartTypeToggle>` + useChartForm (受控/非受控) + chartType 并入 layout 持久化 + 单测 (commit 7427e29)
+- 范围 (range/days) 暂留组件本地态, 未并入 layout 持久化 (避免本轮过度扩 schema)。
 
 ### R2-C 维度/组件丰富度
 - [ ] 评估补充更多维度 widget (如: 每日/每周活跃时段、cost 趋势分模型、skill/mcp 增长、agent 对比等) — 视数据可得性
@@ -74,6 +75,22 @@ viz widget 提供形态切换 (用户选展现形式), 例: token-breakdown 支�
 ### R2-D 架构级 (都要做)
 - [ ] U5 drag-out: dnd-kit 跨容器 (gallery DndContext 与 grid 共享), 从画廊直接拖入网格 (现为点击取用)
 - [ ] U7 真·瀑布流: 列式 masonry 打包 + 动态高度彻底消除空隙 (现 dense 部分); 需与 dnd sortable 协调 (多列 sortable 或自定义)
+
+### R2-E 超额交付 (举一反三 — 用户中途显式授权 "我说一你做5, 给我惊喜")
+见 friction 20260617-extrapolate-beyond-literal-ask + memory user-wants-extrapolative-delivery。
+把每个显式需求当意图样本, 围绕统一主题系统扩展 (非散点堆功能), 主动做用户没说但顶尖专家会做的。
+主题: **让仪表盘"活起来" + 尺寸即信息设计**。
+- [ ] T1 尺寸即信息设计 (推广 R2-A): S=速览 hero (单值/Top-3, 去 chrome) · M=紧凑 · L=丰富
+      (更多条目 + 更大图 + 轴/网格细节)。给所有适用 widget 补 S, 让 S/M/L 是三种**信息密度设计**
+      而非仅宽度。已: usage-trend(M/L/Wide 高度+轴密度)、model-distribution(M5/L8)。
+- [ ] T2 让数据活起来: 环比 delta (本周期 vs 上周期 ▲▼%) + sparkline 注入指标卡; (依赖 Explore 数据可得性结论)
+- [~] T3 新维度 widget (Explore 已给可行性图): **活动节律 hour×weekday 已落地** (commit fe684e5,
+      buildHourlyRhythm 纯函数 + punch-card widget, 已实测真数据"周二14:00最活跃"渲染正确)。
+      候选续做 (数据已确认可得): 会话时长分布 (histogram, 新聚合)、tokens/session 效率分模型 (新聚合)、
+      skill/mcp 榜 (现成, 提 limit)、模型成本趋势分模型 (跨层, 较重)。
+- [x] T4 形态切换推广: token-breakdown / usage-trend / model-distribution 已接入可复用 ChartTypeToggle + 持久化。
+- [ ] T5 交互/动效升级: 布局预设 (Focus/Analytics/Minimal 一键)、per-widget 设置 popover (维度+范围+形态集中)、
+      重排 FLIP 动效、U5 拖出、U7 真瀑布流。
 
 ### 执行方式 (context 友好)
 - 用子代理做**逐组件设计评审**: 子代理读单个 widget 源 + 返回简明 findings (尺寸/留白/美学/形态建议), 主 Agent 落地, 不把大段分析灌入主上下文。
