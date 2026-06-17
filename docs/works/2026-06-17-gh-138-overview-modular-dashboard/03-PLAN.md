@@ -6,7 +6,7 @@
 
 ## Phase A — 数据后端 (engine + IPC, 自底向上可独立测)
 
-- [ ] A1: `engine/activity-insights.ts` 聚合纯函数 (buildActivityHeatmap/buildStreakStats/buildPeakMetrics/buildTopUsage/buildActivityInsights/buildDashboardInsights) + `DashboardInsights` 类型
+- [x] A1: `engine/activity-insights.ts` 聚合纯函数 (buildActivityHeatmap/buildStreakStats/buildPeakMetrics/buildTopUsage/buildActivityInsights/buildDashboardInsights) + `DashboardInsights` 类型 — done: shared/types/insights.ts + 12 单测全过, typecheck/lint clean
   - tests: `tests/unit/activity-insights.test.ts` — heatmap 本地日分桶、streak 跨空档/单日、peak max、topUsage 计数+排序+并列、insights 计数; fixtures 构造 session Asset[]
   - verify: 不适用 (纯逻辑)
 - [ ] A2: 新 IPC `insights:dashboard` 四方对账 (ipc.ts IpcChannels+类型 / handlers registerInsightsHandlers / preload window.api.insights.dashboard / tests/setup.ts mock) + `runtime.getDashboardInsights` selector-cache
