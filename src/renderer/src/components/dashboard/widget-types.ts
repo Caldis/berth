@@ -30,9 +30,13 @@ export interface WidgetMeta {
   defaultHidden: boolean
 }
 
-/** widget 渲染契约 — widget 自行经 hooks 取数, 仅接收尺寸。 */
+/** widget 渲染契约 — widget 自行经 hooks 取数; 接收尺寸 + (可选) 持久化的可视化形态。 */
 export interface WidgetRenderProps {
   size: WidgetSize
+  /** 已持久化的图表形态 (来自 layout); 未设时 widget 用自身默认。 */
+  chartType?: string
+  /** 用户切换形态时回调 (持久化进 layout); 缺省时 widget 退化为本地态 (如库内预览)。 */
+  onChartTypeChange?: (chartType: string) => void
 }
 
 /** widget 完整定义 = 元数据 + 渲染绑定 (registry 用; 渲染层填充 icon/component)。 */

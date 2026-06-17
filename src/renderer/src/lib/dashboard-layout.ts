@@ -12,6 +12,8 @@ export interface WidgetLayoutItem {
   id: WidgetId
   size: WidgetSize
   hidden: boolean
+  /** 可视化形态 (bar/pie/donut/line/area…); 各 widget 自行解释与容错回落, 布局层只透传持久化。 */
+  chartType?: string
 }
 
 export interface DashboardLayout {
@@ -46,7 +48,9 @@ export function migrateLayout(layout: DashboardLayout, catalog: Catalog = WIDGET
       typeof item.size === 'string' && meta.sizes.includes(item.size as WidgetSize)
         ? (item.size as WidgetSize)
         : meta.defaultSize
-    widgets.push({ id, size, hidden: Boolean(item.hidden) })
+    const next: WidgetLayoutItem = { id, size, hidden: Boolean(item.hidden) }
+    if (typeof item.chartType === 'string' && item.chartType) next.chartType = item.chartType
+    widgets.push(next)
     seen.add(id)
   }
 

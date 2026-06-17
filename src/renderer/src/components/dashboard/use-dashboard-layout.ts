@@ -24,6 +24,7 @@ export interface DashboardLayoutController {
   hiddenWidgets: WidgetLayoutItem[]
   reorder: (activeId: WidgetId, overId: WidgetId) => void
   setSize: (id: WidgetId, size: WidgetSize) => void
+  setChartType: (id: WidgetId, chartType: string) => void
   hide: (id: WidgetId) => void
   show: (id: WidgetId) => void
   reset: () => void
@@ -68,6 +69,16 @@ export function useDashboardLayout(): DashboardLayoutController {
     [apply]
   )
 
+  const setChartType = useCallback(
+    (id: WidgetId, chartType: string) => {
+      apply((current) => ({
+        ...current,
+        widgets: current.widgets.map((w) => (w.id === id ? { ...w, chartType } : w))
+      }))
+    },
+    [apply]
+  )
+
   const setHidden = useCallback(
     (id: WidgetId, hidden: boolean) => {
       apply((current) => ({
@@ -85,5 +96,5 @@ export function useDashboardLayout(): DashboardLayoutController {
   const visibleWidgets = useMemo(() => layout.widgets.filter((w) => !w.hidden), [layout])
   const hiddenWidgets = useMemo(() => layout.widgets.filter((w) => w.hidden), [layout])
 
-  return { layout, visibleWidgets, hiddenWidgets, reorder, setSize, hide, show, reset }
+  return { layout, visibleWidgets, hiddenWidgets, reorder, setSize, setChartType, hide, show, reset }
 }

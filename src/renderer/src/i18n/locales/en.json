@@ -181,6 +181,14 @@
       "hiddenWidgets": "Hidden widgets",
       "allVisible": "All widgets are shown",
       "emptyCanvas": "All widgets are hidden — add one to get started.",
+      "chartForm": {
+        "label": "Chart type",
+        "bar": "Bar",
+        "pie": "Pie",
+        "donut": "Donut",
+        "line": "Line",
+        "area": "Area"
+      },
       "onboarding": {
         "title": "Welcome to your overview",
         "body": "A customizable dashboard of your local Claude Code and Codex activity. Widgets fill in as Berth scans your agents — rearrange, resize, hide or add them, and your layout is saved.",

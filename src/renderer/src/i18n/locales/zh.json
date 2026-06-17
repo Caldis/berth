@@ -179,6 +179,14 @@
       "hiddenWidgets": "隐藏的 widget",
       "allVisible": "已显示全部 widget",
       "emptyCanvas": "所有 widget 已隐藏 —— 添加一个开始。",
+      "chartForm": {
+        "label": "图表形态",
+        "bar": "条形",
+        "pie": "饼图",
+        "donut": "环形",
+        "line": "折线",
+        "area": "面积"
+      },
       "onboarding": {
         "title": "欢迎来到你的总览",
         "body": "这是你本地 Claude Code 与 Codex 活动的可自定义仪表盘。widget 会随 Berth 扫描你的 agent 逐步填充 —— 可拖拽重排、调整大小、隐藏或添加，布局自动保存。",

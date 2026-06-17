@@ -88,6 +88,40 @@ describe('migrateLayout', () => {
   })
 })
 
+describe('migrateLayout chartType', () => {
+  it('preserves a stored chartType string', () => {
+    const stored = {
+      version: 1,
+      widgets: [{ id: 'token-breakdown', size: 'M', hidden: false, chartType: 'donut' }]
+    } as unknown as DashboardLayout
+    const out = migrateLayout(stored)
+    expect(out.widgets[0]).toEqual({ id: 'token-breakdown', size: 'M', hidden: false, chartType: 'donut' })
+  })
+
+  it('omits a non-string / empty chartType (no key added)', () => {
+    const stored = {
+      version: 1,
+      widgets: [
+        { id: 'token-breakdown', size: 'M', hidden: false, chartType: 123 },
+        { id: 'model-distribution', size: 'M', hidden: false, chartType: '' }
+      ]
+    } as unknown as DashboardLayout
+    const out = migrateLayout(stored)
+    const byId = Object.fromEntries(out.widgets.map((w) => [w.id, w]))
+    expect('chartType' in byId['token-breakdown']).toBe(false)
+    expect('chartType' in byId['model-distribution']).toBe(false)
+  })
+
+  it('round-trips chartType through serialize → parse', () => {
+    const stored: DashboardLayout = {
+      version: 1,
+      widgets: [{ id: 'usage-trend', size: 'Wide', hidden: false, chartType: 'area' }]
+    }
+    const out = parseLayout(serializeLayout(stored))
+    expect(out.widgets[0]).toEqual({ id: 'usage-trend', size: 'Wide', hidden: false, chartType: 'area' })
+  })
+})
+
 describe('parseLayout', () => {
   it('falls back to default for empty / corrupt / shapeless input', () => {
     expect(parseLayout(null)).toEqual(defaultLayout())

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts'
 import { BarChartHorizontal, ChartPie, Donut } from 'lucide-react'
@@ -6,9 +6,10 @@ import { tokenUsageSegments, type TokenUsageSegmentId } from '@shared/token-usag
 import { useUsageSummary } from '@/hooks/use-ipc'
 import { useAppStore } from '@/stores/app'
 import { TOKEN_SEGMENT_COLOR_VAR } from '@/lib/chart-colors'
-import { cn, formatCompactNumber } from '@/lib/utils'
+import { formatCompactNumber } from '@/lib/utils'
 import { projectPathForScope } from '@shared/scope'
 import type { WidgetRenderProps } from '../widget-types'
+import { ChartTypeToggle, useChartForm, type ChartFormOption } from './chart-type-toggle'
 
 const SEGMENT_LABEL_KEYS: Record<TokenUsageSegmentId, string> = {
   input: 'usage.inputTokens',
@@ -24,20 +25,27 @@ function segmentColor(id: TokenUsageSegmentId): string {
 }
 
 type ChartForm = 'bar' | 'pie' | 'donut'
-const FORMS: { id: ChartForm; icon: typeof ChartPie }[] = [
-  { id: 'bar', icon: BarChartHorizontal },
-  { id: 'pie', icon: ChartPie },
-  { id: 'donut', icon: Donut }
-]
+const FORM_IDS = ['bar', 'pie', 'donut'] as const
+const FORM_ICONS: Record<ChartForm, ChartFormOption<ChartForm>['icon']> = {
+  bar: BarChartHorizontal,
+  pie: ChartPie,
+  donut: Donut
+}
 
 // GH-138 R2-B: Token 构成 widget — 支持 堆叠条 / 饼图 / 空心饼(donut) 形态切换 (用户可选展现形式)。
 // token 分段是语义分类, 用分类色 (TOKEN_SEGMENT_COLOR_VAR)。L 尺寸显示更大图形。
-export function TokenBreakdownWidget({ size }: WidgetRenderProps): React.ReactElement {
+// 形态经 layout 持久化 (chartType/onChartTypeChange); 库内预览缺回调时退化为本地态。
+export function TokenBreakdownWidget({ size, chartType, onChartTypeChange }: WidgetRenderProps): React.ReactElement {
   const { t } = useTranslation()
   const scopeSelection = useAppStore((s) => s.scopeSelection)
   const projectPath = projectPathForScope(scopeSelection)
   const { usage, loading } = useUsageSummary(30, undefined, projectPath)
-  const [form, setForm] = useState<ChartForm>('bar')
+  const [form, setForm] = useChartForm(FORM_IDS, 'bar', chartType, onChartTypeChange)
+  const formOptions: ChartFormOption<ChartForm>[] = FORM_IDS.map((id) => ({
+    id,
+    icon: FORM_ICONS[id],
+    label: t(`overview.dashboard.chartForm.${id}`)
+  }))
 
   const tokenUsage = usage?.tokenUsage
   const segments = useMemo(
@@ -74,23 +82,7 @@ export function TokenBreakdownWidget({ size }: WidgetRenderProps): React.ReactEl
   return (
     <div className="flex h-full flex-col gap-3">
       <div className="flex justify-end">
-        <div className="inline-flex items-center gap-0.5 rounded-md bg-muted/50 p-0.5">
-          {FORMS.map(({ id, icon: Icon }) => (
-            <button
-              key={id}
-              type="button"
-              onClick={() => setForm(id)}
-              aria-label={`Chart form ${id}`}
-              aria-pressed={form === id}
-              className={cn(
-                'rounded p-1 transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
-                form === id ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
-              )}
-            >
-              <Icon className="h-3.5 w-3.5" />
-            </button>
-          ))}
-        </div>
+        <ChartTypeToggle options={formOptions} value={form} onChange={setForm} />
       </div>
 
       {form === 'bar' ? (

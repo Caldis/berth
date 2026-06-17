@@ -35,10 +35,18 @@ interface DashboardGridProps {
   isEditing: boolean
   onReorder: (activeId: WidgetId, overId: WidgetId) => void
   onSetSize: (id: WidgetId, size: WidgetSize) => void
+  onSetChartType: (id: WidgetId, chartType: string) => void
   onHide: (id: WidgetId) => void
 }
 
-export function DashboardGrid({ widgets, isEditing, onReorder, onSetSize, onHide }: DashboardGridProps): React.ReactElement {
+export function DashboardGrid({
+  widgets,
+  isEditing,
+  onReorder,
+  onSetSize,
+  onSetChartType,
+  onHide
+}: DashboardGridProps): React.ReactElement {
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
@@ -65,6 +73,7 @@ export function DashboardGrid({ widgets, isEditing, onReorder, onSetSize, onHide
               index={index}
               isEditing={isEditing}
               onSetSize={onSetSize}
+              onSetChartType={onSetChartType}
               onHide={onHide}
             />
           ))}
@@ -79,12 +88,14 @@ function SortableWidget({
   index,
   isEditing,
   onSetSize,
+  onSetChartType,
   onHide
 }: {
   item: WidgetLayoutItem
   index: number
   isEditing: boolean
   onSetSize: (id: WidgetId, size: WidgetSize) => void
+  onSetChartType: (id: WidgetId, chartType: string) => void
   onHide: (id: WidgetId) => void
 }): React.ReactElement | null {
   const { t } = useTranslation()
@@ -124,7 +135,11 @@ function SortableWidget({
         onHide={() => onHide(item.id)}
         dragHandleProps={{ ...attributes, ...listeners }}
       >
-        <Component size={item.size} />
+        <Component
+          size={item.size}
+          chartType={item.chartType}
+          onChartTypeChange={(c) => onSetChartType(item.id, c)}
+        />
       </WidgetShell>
     </div>
   )
