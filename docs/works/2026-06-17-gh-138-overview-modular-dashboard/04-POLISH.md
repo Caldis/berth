@@ -36,7 +36,9 @@
 - [x] U2 洞察/常用 增实质: insights 加 Codex/Claude agent 占比条 + 更醒目值; top-usage 加排名序号 + 更粗条。
 - [x] U6 M/L 区分: 内容驱动 — recent-sessions L 显示 8 条(M 5), top-usage L 显示 10(M 5); 自然更高更有用 (避免强制行高撑空短组件)。
 - [~] U7 空隙回填: grid-flow-dense 回填可填空隙 (部分)。**真·瀑布流** (变高列式打包 + 动态高度) 需列式重构 + dnd 多容器 sortable, 属更大改造, 见候选。
-- [ ] U5 隐藏 widget → 底部 sticky 毛玻璃浮动画廊, 预览渲染(非标题), 可直接拖出 (iOS 小组件库) — 架构级, 进行中。
+- [x] U5 iOS 小组件库式画廊: 隐藏 widget 改为底部 sticky 毛玻璃浮动面板 (backdrop-blur 悬浮于网格上方),
+  以**缩放实时预览**呈现 (渲染真实 widget 内容如 token 构成堆叠条/模型榜, 非标题), 点击取用加入网格。
+  美学/哲学对齐 iOS widget gallery。**遗留增强**: 直接拖拽出来 (需 dnd-kit 跨容器 gallery→grid, 列候选)。
 
 ## 验证
 每批改动: typecheck/lint/单测 + (触 overview/renderer DOM 时) e2e + CDP/截图复盘请用户裁定 taste。
