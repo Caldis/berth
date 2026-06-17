@@ -94,7 +94,8 @@ describe('overview dashboard', () => {
 
   it('routes quick-action widget metrics to first-level pages', async () => {
     renderOverview()
-    fireEvent.click(await screen.findByRole('button', { name: /Skills/ }))
+    // quick-actions 的 Skills 按钮名含数值 (如 "3 Skills"), 与 top-usage 的 "Skills" 切换区分
+    fireEvent.click(await screen.findByRole('button', { name: /\d+\s*Skills/ }))
     expect(await screen.findByText('/instructions/skills')).toBeInTheDocument()
   })
 
