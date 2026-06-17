@@ -6,7 +6,7 @@ import {
   type AppScopeSelection,
   type ProjectScopeCandidate
 } from '@shared/scope'
-import type { Asset, AssetStats } from '@shared/types/asset'
+import type { AgentView, Asset, AssetStats } from '@shared/types/asset'
 import type { AssetRuntimeStatus, AssetScanPartial, AssetSnapshot, ScanError } from '@shared/types/ipc'
 
 // Wide enough to clear the macOS traffic-light cluster (x:16 + ~3×18px ≈ 70px),
@@ -53,6 +53,11 @@ interface AppState {
   setScopeSelection: (selection: Partial<AppScopeSelection>) => void
   setProjectCandidates: (candidates: ProjectScopeCandidate[]) => void
 
+  // GH-138: 全局 agent 维度过滤 (与 scopeSelection 正交)。'all' = 全部; 否则为精确 agentId。
+  // 经 useDashboardInsights / useUsageSummary 下沉 runtime (matchesAgentView), 让首页可只看某个 agent。
+  agentView: AgentView
+  setAgentView: (agentView: AgentView) => void
+
   // GH-115 T4: 资产快照唯一写落点是 setAssetSnapshot / applyAssetProgress (foldKeepingShallow
   // 不变量); 裸替换 action (setAssets/setStats) 已删除, 使不变量在类型层不可绕过。
   assets: Asset[]
@@ -95,6 +100,9 @@ export const useAppStore = create<AppState>((set) => ({
   projectCandidates: [],
   setScopeSelection: (scopeSelection) => set({ scopeSelection: normalizeScopeSelection(scopeSelection) }),
   setProjectCandidates: (projectCandidates) => set({ projectCandidates: mergeProjectScopeCandidates(projectCandidates) }),
+
+  agentView: 'all',
+  setAgentView: (agentView) => set({ agentView }),
 
   assets: [],
   stats: EMPTY_ASSET_STATS,

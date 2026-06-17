@@ -18,7 +18,7 @@ import type {
   ScanResult
 } from '@shared/types/ipc'
 import type { AppScopeSelection, ProjectScopeCandidate } from '@shared/scope'
-import { assetMatchesAppScope, DEFAULT_SCOPE_SELECTION, normalizeScopeSelection } from '@shared/scope'
+import { assetMatchesAppScope, DEFAULT_SCOPE_SELECTION, matchesAgentView, normalizeScopeSelection } from '@shared/scope'
 import { assetMatchesProjectPath } from '../../project-scope'
 import { runHealthChecks } from '../health'
 import { getSearch } from '../search'
@@ -981,9 +981,9 @@ function createDefaultSnapshotId(): string {
 
 
 function sessionMatchesAgentView(asset: Asset, view: AgentView | undefined): boolean {
-  if (!view || view === 'all') return true
-  if (view === 'claude') return asset.agentId === 'claude-code' || asset.agentId === 'claude'
-  return asset.agentId === 'codex'
+  // 泛化: 委托共享 matcher — 'all'/'claude'/'codex' 行为不变, 其它值按精确 agentId 过滤
+  // (cursor/gemini-cli/… 等全部已扫描 agent 现在也可被过滤)。
+  return matchesAgentView(asset.agentId, view)
 }
 
 function sessionMatchesProjectFilter(asset: Asset, filter: string): boolean {

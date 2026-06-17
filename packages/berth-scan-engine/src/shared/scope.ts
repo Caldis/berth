@@ -1,4 +1,4 @@
-import type { Asset } from './types/asset'
+import type { AgentView, Asset } from './types/asset'
 
 
 export type ProjectScopeCandidateSource = 'current' | 'session' | 'scan-source'
@@ -61,6 +61,17 @@ export function normalizeScopeSelection(selection: Partial<AppScopeSelection> | 
 
 export function projectPathForScope(selection: AppScopeSelection): string | undefined {
   return selection.mode === 'project' ? selection.projectPath : undefined
+}
+
+/**
+ * agentId 是否匹配 agent 过滤视图 (纯函数, 引擎过滤与渲染 selector 共用单一真源)。
+ * 'all'/空 = 全部; 'claude' = claude-code/claude 别名; 'codex' = codex; 其它 = 精确 agentId 匹配。
+ */
+export function matchesAgentView(agentId: string, view: AgentView | undefined): boolean {
+  if (!view || view === 'all') return true
+  if (view === 'claude') return agentId === 'claude-code' || agentId === 'claude'
+  if (view === 'codex') return agentId === 'codex'
+  return agentId === view
 }
 
 export function assetProjectPath(asset: Asset): string | undefined {

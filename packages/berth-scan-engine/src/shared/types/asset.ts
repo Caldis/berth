@@ -7,7 +7,10 @@ export type AssetCategory =
 
 export type AssetScope = 'user' | 'project' | 'enterprise' | 'session'
 
-export type AgentView = 'all' | 'claude' | 'codex'
+// 'all'=全部 agent; 'claude'=claude-code/claude 别名; 'codex'=codex; 其它字符串按精确 agentId 匹配
+// (支持 berth 已扫描的全部 agent: cursor/gemini-cli/github-copilot-cli/opencode/openclaw/hermes-agent…)。
+// (string & Record<never, never>) 保留三个已知字面量的自动补全, 同时放开任意 agentId。
+export type AgentView = 'all' | 'claude' | 'codex' | (string & Record<never, never>)
 
 export type ScanSourceKind = 'directory' | 'file' | 'policy'
 
