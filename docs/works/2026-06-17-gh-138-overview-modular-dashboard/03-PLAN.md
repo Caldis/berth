@@ -50,8 +50,9 @@
 
 ## Phase F — Onboarding + i18n + 抛光/性能
 
-- [x] F1: onboarding/空数据态 — 每 widget 独立引导空态 (recent-sessions/top-usage/heatmap/token-breakdown/model-distribution 均有"暂无…"引导) + 默认布局即引导; en/zh i18n 全覆盖; formatCompactNumber + format-compact unit (4) 。dedicated 首run 流程未做 (per-widget 空态已覆盖 onboarding 诉求)。
-  - verify: insights 未填充时各 widget skeleton→空态; quick-actions/stats 即时出数 [AC8]
+- [x] F1: onboarding (用户指定加强) — `OnboardingBanner` 首次欢迎横幅 (介绍可自定义仪表盘 + widget 随活动填充, Customize CTA 直接进编辑态, 可关闭 localStorage `berth-dashboard-onboarded` 持久化) + 每 widget 独立引导空态 + 默认布局即引导; en/zh i18n 全覆盖。
+  - tests: overview-dashboard 5 测含 banner 不破坏 (exact 'Customize' 仅匹配 toolbar); e2e Customize 断言锚定 `/^(Customize|自定义)$/` 区分 banner CTA; build+e2e 全过
+  - verify: 首run 显横幅, dismiss 后持久化不再显; CTA 进编辑态 [AC8]
 - [x] F2: staggered 入场 — CSS animate-in (motion-safe 门控 reduced-motion, inline animationDelay 阶梯, 上限 8 格; 不碰 transform 避开 dnd 冲突, 仅首挂载/新增跑)。性能: 各 widget 独立数据 hook + insights 单次共享; 重排只移 DOM 不重算; localStorage 写在 action 时。
   - verify: CDP 实测 entrance=true ✓ [AC6]
 

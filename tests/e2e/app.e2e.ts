@@ -117,8 +117,8 @@ test.describe('App Shell', () => {
     await expect(heading).toContainText(/Overview|总览/)
     // health checks collapsed into a toolbar entry button (no longer a flat panel heading)
     await expect(page.getByRole('button', { name: /Health Checks|健康检查/ })).toBeVisible()
-    // customize toggle present
-    await expect(page.getByRole('button', { name: /Customize|自定义/ })).toBeVisible()
+    // customize toggle present (anchored — distinct from onboarding banner's "Customize layout" CTA)
+    await expect(page.getByRole('button', { name: /^(Customize|自定义)$/ })).toBeVisible()
     // dashboard widgets render (quick actions widget title)
     await expect(page.getByText(/Quick actions|快捷入口/).first()).toBeVisible()
   })
