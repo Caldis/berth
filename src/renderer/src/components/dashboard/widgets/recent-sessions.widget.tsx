@@ -66,7 +66,7 @@ export function RecentSessionsWidget({ size }: WidgetRenderProps): React.ReactEl
   const navigate = useNavigate()
   const scopeSelection = useAppStore((s) => s.scopeSelection)
   const projectPath = projectPathForScope(scopeSelection)
-  const limit = size === 'L' ? 8 : 5
+  const limit = size === 'L' ? 8 : size === 'S' ? 3 : 5
   const { sessions, loading } = useSessions({ limit, projectPath })
 
   const groups = useMemo(() => clusterByDay(sessions), [sessions])
@@ -92,6 +92,30 @@ export function RecentSessionsWidget({ size }: WidgetRenderProps): React.ReactEl
         description={t('overview.empty.sessionsDescription')}
         className="border-0 py-8"
       />
+    )
+  }
+
+  // S: 太窄, 收敛为最近 3 条 — 每行 = 当日时刻 + 标题 (单行截断), 丢日分组头/竖轴/meta, 保留点击进入。
+  if (size === 'S') {
+    return (
+      <ul className="flex flex-col">
+        {sessions.slice(0, 3).map((session) => (
+          <li key={session.id}>
+            <button
+              type="button"
+              onClick={() => navigate(`/sessions/${session.id}`)}
+              className="flex w-full items-baseline gap-2.5 rounded-md py-1.5 pl-1 pr-2 text-left transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-ring"
+            >
+              <span className="w-9 shrink-0 text-xs tabular-nums text-muted-foreground/80">
+                {formatTimeOfDay(session.startedAt, i18n.language)}
+              </span>
+              <span className="min-w-0 flex-1 truncate text-sm text-foreground">
+                {session.title || t('sessions.fallbackTitle', { id: session.id.slice(0, 8) })}
+              </span>
+            </button>
+          </li>
+        ))}
+      </ul>
     )
   }
 

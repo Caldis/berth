@@ -63,6 +63,24 @@ export function TokenBreakdownWidget({ size, chartType, onChartTypeChange }: Wid
     return <p className="py-8 text-center text-sm text-muted-foreground">{t('usage.breakdownUnavailable')}</p>
   }
 
+  // S: 极简一瞥 — 全宽细堆叠条 (复用 bar 形态分段) + 总量 headline; 无图例/饼图/形态切换 (只读)。
+  if (size === 'S') {
+    return (
+      <div className="flex h-full flex-col gap-2">
+        <div className="text-lg font-semibold tabular-nums text-foreground">{formatCompactNumber(total)}</div>
+        <div className="flex h-2 w-full overflow-hidden rounded-full bg-muted/40">
+          {segments.map((seg) => (
+            <div
+              key={seg.id}
+              style={{ width: `${(seg.tokens / total) * 100}%`, backgroundColor: segmentColor(seg.id) }}
+              title={`${t(SEGMENT_LABEL_KEYS[seg.id])}: ${formatCompactNumber(seg.tokens)}`}
+            />
+          ))}
+        </div>
+      </div>
+    )
+  }
+
   const legend = (
     <dl className="grid grid-cols-2 gap-x-4 gap-y-2">
       {segments.map((seg) => (

@@ -17,6 +17,38 @@ export function TopUsageWidget({ size }: WidgetRenderProps): React.ReactElement 
   const entries = all.slice(0, size === 'L' ? 10 : 5)
   const max = entries.length > 0 ? entries[0].count : 0
 
+  // S: 太窄, 收敛为 skill Top-3 (无切换、无占比条) — 仅排名 + 名称 + 次数。
+  if (size === 'S') {
+    const top = (insights?.topSkills ?? []).slice(0, 3)
+    if (loading && !insights) {
+      return (
+        <div className="space-y-2.5">
+          {Array.from({ length: 3 }, (_, i) => (
+            <div key={i} className="h-3 w-full animate-pulse rounded bg-muted/60" />
+          ))}
+        </div>
+      )
+    }
+    if (top.length === 0) {
+      return <p className="py-6 text-center text-sm text-muted-foreground">{t('overview.dashboard.topUsage.empty')}</p>
+    }
+    return (
+      <ul className="space-y-2.5">
+        {top.map((entry, i) => (
+          <li key={entry.name} className="flex items-baseline justify-between gap-3">
+            <span className="flex min-w-0 items-baseline gap-2">
+              <span className="w-4 shrink-0 text-right text-xs tabular-nums text-muted-foreground/50">{i + 1}</span>
+              <span className="min-w-0 truncate text-sm text-foreground">{entry.name}</span>
+            </span>
+            <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
+              {t('overview.dashboard.topUsage.runs', { count: entry.count })}
+            </span>
+          </li>
+        ))}
+      </ul>
+    )
+  }
+
   return (
     <div className="flex flex-col gap-3">
       <div className="inline-flex w-fit items-center gap-0.5 rounded-md bg-muted/50 p-0.5 text-[11px]">

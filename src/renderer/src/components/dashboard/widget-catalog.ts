@@ -24,7 +24,7 @@ export const WIDGET_CATALOG: Record<WidgetId, WidgetMeta> = {
     id: 'activity-insights',
     titleKey: 'overview.widgets.activityInsights',
     defaultSize: 'M',
-    sizes: ['M', 'L'],
+    sizes: ['S', 'M', 'L'],
     defaultOrder: 2,
     defaultHidden: false
   },
@@ -32,7 +32,7 @@ export const WIDGET_CATALOG: Record<WidgetId, WidgetMeta> = {
     id: 'top-usage',
     titleKey: 'overview.widgets.topUsage',
     defaultSize: 'M',
-    sizes: ['M', 'L'],
+    sizes: ['S', 'M', 'L'],
     defaultOrder: 3,
     defaultHidden: false
   },
@@ -40,7 +40,7 @@ export const WIDGET_CATALOG: Record<WidgetId, WidgetMeta> = {
     id: 'recent-sessions',
     titleKey: 'overview.widgets.recentSessions',
     defaultSize: 'L',
-    sizes: ['M', 'L'],
+    sizes: ['S', 'M', 'L'],
     defaultOrder: 4,
     defaultHidden: false
   },
@@ -64,7 +64,7 @@ export const WIDGET_CATALOG: Record<WidgetId, WidgetMeta> = {
     id: 'token-breakdown',
     titleKey: 'overview.widgets.tokenBreakdown',
     defaultSize: 'M',
-    sizes: ['M', 'L'],
+    sizes: ['S', 'M', 'L'],
     defaultOrder: 7,
     defaultHidden: true
   },
@@ -72,7 +72,7 @@ export const WIDGET_CATALOG: Record<WidgetId, WidgetMeta> = {
     id: 'model-distribution',
     titleKey: 'overview.widgets.modelDistribution',
     defaultSize: 'M',
-    sizes: ['M', 'L'],
+    sizes: ['S', 'M', 'L'],
     defaultOrder: 8,
     defaultHidden: true
   },

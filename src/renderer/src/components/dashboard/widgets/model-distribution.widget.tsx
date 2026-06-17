@@ -59,6 +59,28 @@ export function ModelDistributionWidget({ size, chartType, onChartTypeChange }: 
     return <p className="py-8 text-center text-sm text-muted-foreground">{t('overview.dashboard.heatmap.empty')}</p>
   }
 
+  // S: 极简一瞥 — 仅 Top-3 排行条 (复用单色 mini bar); 无图表/图例/形态切换 (只读)。
+  if (size === 'S') {
+    return (
+      <ul className="flex h-full flex-col justify-center gap-2">
+        {models.slice(0, 3).map((entry) => (
+          <li key={entry.model} className="space-y-1">
+            <div className="flex items-baseline justify-between gap-3">
+              <span className="min-w-0 truncate text-sm text-foreground">{entry.model}</span>
+              <span className="shrink-0 text-xs tabular-nums text-muted-foreground">{entry.percentage}%</span>
+            </div>
+            <div className="h-1 overflow-hidden rounded-full bg-muted/50">
+              <div
+                className="h-full rounded-full bg-primary/70"
+                style={{ width: `${max > 0 ? Math.max(4, (entry.tokens / max) * 100) : 0}%` }}
+              />
+            </div>
+          </li>
+        ))}
+      </ul>
+    )
+  }
+
   const toggle = (
     <div className="flex justify-end">
       <ChartTypeToggle options={formOptions} value={form} onChange={setForm} />
