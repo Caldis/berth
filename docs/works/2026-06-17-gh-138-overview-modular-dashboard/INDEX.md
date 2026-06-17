@@ -2,7 +2,7 @@
 task: 2026-06-17-gh-138-overview-modular-dashboard
 task_id: GH-138
 type: feature
-phase: explore
+phase: design
 created: 2026-06-17
 priority: P2
 target_date: 
@@ -12,15 +12,15 @@ source:
     - https://github.com/Caldis/berth/issues/138
 debt:
   estimate:
-    incurred: 14
+    incurred: 16
     repaid: 0
-    net: 14
+    net: 16
     scope: cross-process
     risk: high
     areas:
       - ui-ux
       - architecture
-    confidence: low
+    confidence: medium
     rationale: "0.0-new 初始估算; 三轮累积为模块化可拖拽/可缩放/可持久化的 widget 仪表盘系统 + 多 widget 数据聚合 (可能新增 IPC 选择器, 四方对账) + 健康检查弹窗 + onboarding。架构 (widget 注册表/布局引擎/配置持久化/复用契约) 与 ui-ux 双重负债; 性能为硬约束。explore 后校准 scope/incurred (DnD 网格库可得性 + 现有 session/token 聚合复用度)。"
   final:
     incurred:
@@ -31,7 +31,12 @@ debt:
     areas: []
     confidence:
     rationale:
-  revisions: []
+  revisions:
+    - phase: explore
+      date: 2026-06-17
+      from: "incurred 14 / net 14 / confidence low"
+      to: "incurred 16 / net 16 / confidence medium"
+      reason: "explore 确认 cross-process 后端工作量 (~5 新 insights IPC 通道 + engine 聚合 + 可能 scanner 扩展 + DnD 库集成 + widget framework + localStorage 持久化); 现状已摸清, confidence 升 medium, 唯一大未知为 RGL React 19 实测。"
 issue:
   number: 138
   repo: Caldis/berth
@@ -61,7 +66,7 @@ artifacts:
 
 ## 产物
 - [x] 00-PRD.md — 原始输入快照 (三轮需求累积)
-- [ ] 01-ANALYSIS.md — Explore 产物
+- [x] 01-ANALYSIS.md — Explore 产物
 - [ ] 02-SPEC.md — Design 产物
 - [ ] 03-PLAN.md — 活任务清单
 - [ ] 04-POLISH.md — 可选抛光记录
