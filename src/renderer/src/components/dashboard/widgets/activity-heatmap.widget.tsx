@@ -58,6 +58,12 @@ function monthLabels(weeks: (HeatmapDay | null)[][], locale: string): (string | 
   return labels
 }
 
+// 仅 Mon/Wed/Fri 显标签 (GitHub 风格); row 0=周日。2023-01-01(UTC) 为周日, +row 取星期。
+function weekdayLabel(row: number, locale: string): string {
+  if (row !== 1 && row !== 3 && row !== 5) return ''
+  return new Date(Date.UTC(2023, 0, 1 + row)).toLocaleDateString(locale, { weekday: 'short', timeZone: 'UTC' })
+}
+
 export function ActivityHeatmapWidget(): React.ReactElement {
   const { t, i18n } = useTranslation()
   const { insights, loading } = useInsights()
@@ -83,6 +89,7 @@ export function ActivityHeatmapWidget(): React.ReactElement {
       <div className="overflow-x-auto pb-1">
         <div className="inline-flex flex-col gap-1">
           <div className="flex gap-[3px]">
+            <div className="w-7 shrink-0" />
             {labels.map((label, i) => (
               <div key={i} className="w-[11px] text-[10px] leading-none text-muted-foreground">
                 {label ? <span className="relative -left-px whitespace-nowrap">{label}</span> : null}
@@ -90,19 +97,35 @@ export function ActivityHeatmapWidget(): React.ReactElement {
             ))}
           </div>
           <div className="flex gap-[3px]">
+            <div className="flex w-7 shrink-0 flex-col gap-[3px] pr-1 text-[9px] leading-none text-muted-foreground">
+              {[0, 1, 2, 3, 4, 5, 6].map((row) => (
+                <div key={row} className="flex h-[11px] items-center justify-end">
+                  {weekdayLabel(row, i18n.language)}
+                </div>
+              ))}
+            </div>
             {weeks.map((week, wi) => (
               <div key={wi} className="flex flex-col gap-[3px]">
-                {week.map((cell, di) =>
-                  cell ? (
+                {week.map((cell, di) => {
+                  if (!cell) return <div key={di} className="h-[11px] w-[11px]" />
+                  const localeDate = new Date(`${cell.date}T00:00:00Z`).toLocaleDateString(i18n.language, {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric',
+                    timeZone: 'UTC'
+                  })
+                  const title =
+                    cell.sessions > 0
+                      ? t('overview.dashboard.heatmap.dayTooltip', { count: cell.sessions, date: localeDate })
+                      : t('overview.dashboard.heatmap.noneTooltip', { date: localeDate })
+                  return (
                     <div
                       key={di}
-                      title={`${cell.date} · ${cell.sessions}`}
+                      title={title}
                       className={cn('h-[11px] w-[11px] rounded-[2px]', LEVEL_CLASS[intensity(cell.sessions, heatmap.maxSessions)])}
                     />
-                  ) : (
-                    <div key={di} className="h-[11px] w-[11px]" />
                   )
-                )}
+                })}
               </div>
             ))}
           </div>

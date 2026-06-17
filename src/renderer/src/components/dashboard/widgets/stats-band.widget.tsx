@@ -34,9 +34,12 @@ export function StatsBandWidget(): React.ReactElement {
   ]
 
   return (
-    <div className="grid grid-cols-2 gap-x-6 gap-y-5 sm:grid-cols-3 lg:grid-cols-5">
+    <div className="grid grid-cols-2 gap-x-6 gap-y-5 sm:grid-cols-3 lg:grid-cols-5 lg:gap-x-0">
       {metrics.map((m) => (
-        <div key={m.label} className="min-w-0">
+        <div
+          key={m.label}
+          className="min-w-0 lg:border-l lg:border-border/50 lg:pl-6 lg:first:border-l-0 lg:first:pl-0"
+        >
           <div className="truncate text-[26px] font-semibold leading-none tracking-tight tabular-nums text-foreground">
             {m.value}
           </div>

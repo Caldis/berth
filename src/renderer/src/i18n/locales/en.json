@@ -201,7 +201,9 @@
         "less": "Less",
         "more": "More",
         "summary": "{{count}} sessions in the last year",
-        "empty": "No activity recorded yet"
+        "empty": "No activity recorded yet",
+        "dayTooltip": "{{count}} sessions · {{date}}",
+        "noneTooltip": "No sessions · {{date}}"
       },
       "insights": {
         "skillsExplored": "Skills explored",

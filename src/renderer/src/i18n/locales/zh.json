@@ -199,7 +199,9 @@
         "less": "少",
         "more": "多",
         "summary": "过去一年 {{count}} 个会话",
-        "empty": "暂无活动记录"
+        "empty": "暂无活动记录",
+        "dayTooltip": "{{count}} 个会话 · {{date}}",
+        "noneTooltip": "无会话 · {{date}}"
       },
       "insights": {
         "skillsExplored": "已探索技能",
