@@ -31,10 +31,10 @@
 - [x] C2: 新数据 widget (上半): `stats-band` (累计/峰值/最长时长/streak, tabular) + `activity-heatmap` (年度方格, 单色相 berth 强调色 ramp) — done; 用户截图确认 taste + 配色保持单色相
   - tests: 消费 A1/A2 经 insights-context; 截图实测填充正确
   - verify: 截图已裁定 (18.66B/1.40B/1793h/streak; 949 sessions 热力图)
-- [ ] C3: 新数据 widget (下半): `activity-insights` (M) + `top-usage` (skill/mcp/subagent 切换排行) + `token-breakdown` (input/output/cache/reasoning) + `model-distribution`
-  - tests: 取数 hook smoke; top-usage 数据来自 A1
-  - verify: 排行/构成/分布渲染 + 空态 [AC3]
-  - 注: plugin 用量若源数据不可得 → top-usage 不含 plugin, 记 docs/issues 跟踪 (交叉引用)
+- [x] C3: 新数据 widget (下半): `activity-insights` + `top-usage` (skill/mcp 切换排行) + `token-breakdown` (input/output/cache/reasoning 堆叠 + 分类色) + `model-distribution` (byModel Top-N) — done, 全 9 widget 注册完成
+  - tests: `widget-registry.test.tsx` 守护全 catalog 已注册 (icon+component); 取数复用 insights-context / useUsageSummary
+  - verify: 渲染/空态待 4.0 统一 CDP 实测 [AC3]
+  - 注: top-usage 暂含 skill/mcp (subagent/plugin 用量源数据未采集); plugin 排行降级已记 (插件计数走 quick-actions)
 
 ## Phase D — 健康检查弹窗 [AC1]
 

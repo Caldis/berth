@@ -1,4 +1,14 @@
-import { Activity, BarChart3, LayoutDashboard, Lightbulb, ListOrdered, MessageSquare, Zap } from 'lucide-react'
+import {
+  Activity,
+  BarChart3,
+  Cpu,
+  LayoutDashboard,
+  Lightbulb,
+  ListOrdered,
+  MessageSquare,
+  PieChart,
+  Zap
+} from 'lucide-react'
 import type { WidgetDefinition, WidgetId } from './widget-types'
 import { WIDGET_CATALOG } from './widget-catalog'
 import { StatsBandWidget } from './widgets/stats-band.widget'
@@ -8,6 +18,8 @@ import { TopUsageWidget } from './widgets/top-usage.widget'
 import { RecentSessionsWidget } from './widgets/recent-sessions.widget'
 import { QuickActionsWidget } from './widgets/quick-actions.widget'
 import { UsageTrendWidget } from './widgets/usage-trend.widget'
+import { TokenBreakdownWidget } from './widgets/token-breakdown.widget'
+import { ModelDistributionWidget } from './widgets/model-distribution.widget'
 
 // GH-138: widget 渲染绑定 (元数据来自 widget-catalog, 此处补 icon + component)。
 // 新增 widget: 建 *.widget.tsx + 在此注册一条; 未注册的 id 由 grid 优雅跳过。
@@ -19,7 +31,9 @@ const REGISTRY: Partial<Record<WidgetId, WidgetDefinition>> = {
   'top-usage': { ...WIDGET_CATALOG['top-usage'], icon: ListOrdered, component: TopUsageWidget },
   'recent-sessions': { ...WIDGET_CATALOG['recent-sessions'], icon: MessageSquare, component: RecentSessionsWidget },
   'usage-trend': { ...WIDGET_CATALOG['usage-trend'], icon: BarChart3, component: UsageTrendWidget },
-  'quick-actions': { ...WIDGET_CATALOG['quick-actions'], icon: Zap, component: QuickActionsWidget }
+  'quick-actions': { ...WIDGET_CATALOG['quick-actions'], icon: Zap, component: QuickActionsWidget },
+  'token-breakdown': { ...WIDGET_CATALOG['token-breakdown'], icon: PieChart, component: TokenBreakdownWidget },
+  'model-distribution': { ...WIDGET_CATALOG['model-distribution'], icon: Cpu, component: ModelDistributionWidget }
 }
 
 export function getWidgetDefinition(id: WidgetId): WidgetDefinition | undefined {
