@@ -2,7 +2,7 @@
 task: 2026-06-17-gh-139-e2e-window-controls-teardown-flaky-macos
 task_id: GH-139
 type: bug
-phase: verify
+phase: archive
 created: 2026-06-17
 priority: P1
 target_date: 
@@ -22,14 +22,15 @@ debt:
     confidence: high
     rationale: "单文件 e2e 修复: 非 win32 不启 app + 守卫 afterEach close。根因已在来源 issue + 本机分析钉死, 改动面小。"
   final:
-    incurred:
-    repaid:
-    net:
-    scope:
-    risk:
-    areas: []
-    confidence:
-    rationale:
+    incurred: 1
+    repaid: 1
+    net: 0
+    scope: file
+    risk: low
+    areas:
+      - testability
+    confidence: high
+    rationale: "单文件 e2e 修复 (非 win32 不启 app + afterEach 守卫); 消除反复污染 master CI 的 macOS teardown flaky, 净偿还 testability debt。CI run 27701562554 三平台全绿 (macOS test:e2e ✓)。"
   revisions: []
 issue:
   number: 139
@@ -42,7 +43,7 @@ gh_project:
   project_number: 6
   project_url: https://github.com/users/Caldis/projects/6
   item_id: PVTI_lAHOADXbEs4BZHvQzgwDU_U
-  item_status: In Progress
+  item_status: Done
   project_id: PVT_kwHOADXbEs4BZHvQ
 artifacts:
   source: 00-BUG.md
