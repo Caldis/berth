@@ -7,14 +7,17 @@ import { formatOptionalCurrency, formatOptionalRelativeTime, truncatePath } from
 import { EmptyState } from '@/components/shared/empty-state'
 import { TokenUsageDisplay } from '@/components/shared/token-usage-display'
 import { projectPathForScope } from '@shared/scope'
+import type { WidgetRenderProps } from '../widget-types'
 
 // GH-138: 最近会话 widget (移植自旧 Overview panel, 去卡片框, 发丝线分隔)。
-export function RecentSessionsWidget(): React.ReactElement {
+// 内容驱动 M/L 区分: L 显示更多会话 (自然更高更有用)。
+export function RecentSessionsWidget({ size }: WidgetRenderProps): React.ReactElement {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const scopeSelection = useAppStore((s) => s.scopeSelection)
   const projectPath = projectPathForScope(scopeSelection)
-  const { sessions, loading } = useSessions({ limit: 5, projectPath })
+  const limit = size === 'L' ? 8 : 5
+  const { sessions, loading } = useSessions({ limit, projectPath })
 
   if (loading && sessions.length === 0) {
     return (

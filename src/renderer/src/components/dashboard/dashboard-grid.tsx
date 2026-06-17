@@ -20,6 +20,8 @@ import type { WidgetLayoutItem } from '@/lib/dashboard-layout'
 // GH-138: 导轨式仪表盘网格 — 响应式 CSS Grid + 尺寸预设跨度; dnd-kit sortable 重排 (仅编辑态)。
 // 尺寸→跨度用字面类名 (Tailwind JIT 不识别插值)。未注册的 widget 优雅跳过。
 
+// 尺寸跨度 = 列跨 (内容决定高度, 不强制行高以免短组件被撑空)。M/L 的高度区分由 widget 内容
+// 驱动 (列表类 widget 在 L 显示更多条目, 自然更高更有用)。grid-flow-dense 回填空隙 (U7)。
 const SIZE_CLASS: Record<WidgetSize, string> = {
   S: 'col-span-1',
   M: 'col-span-1 md:col-span-1 xl:col-span-2',
@@ -55,7 +57,7 @@ export function DashboardGrid({ widgets, isEditing, onReorder, onSetSize, onHide
   return (
     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
       <SortableContext items={ids} strategy={rectSortingStrategy}>
-        <div className="grid grid-cols-1 gap-x-6 gap-y-7 md:grid-cols-2 xl:grid-cols-4">
+        <div className="grid grid-cols-1 gap-x-6 gap-y-7 md:grid-cols-2 md:grid-flow-row-dense xl:grid-cols-4">
           {rendered.map((item, index) => (
             <SortableWidget
               key={item.id}

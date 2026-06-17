@@ -1,22 +1,27 @@
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { Coins } from 'lucide-react'
 import { useUsageSummary } from '@/hooks/use-ipc'
 import { useAppStore } from '@/stores/app'
 import { CHART_SERIES_FILL } from '@/lib/chart-colors'
-import { formatCurrency } from '@/lib/utils'
+import { cn, formatCurrency } from '@/lib/utils'
 import { projectPathForScope } from '@shared/scope'
 import { EmptyState } from '@/components/shared/empty-state'
 import { ErrorState } from '@/components/shared/error-state'
 import { CostSourceBadge } from '@/components/shared/cost-source-badge'
 
+const RANGE_OPTIONS = [30, 90, 180] as const
+
 // GH-138: 用量趋势 widget (移植自旧 Overview UsageSnapshotPanel, 去卡片框)。
-// 同质时间序列用单色 CHART_SERIES_FILL, 不按索引循环分类色 (theme-palette 不变量)。
+// 范围可配置 (30/90/180d, 默认 30d 起 — 7d 太短不合适)。同质时间序列用单色 CHART_SERIES_FILL,
+// 不按索引循环分类色 (theme-palette 不变量)。
 export function UsageTrendWidget(): React.ReactElement {
   const { t } = useTranslation()
   const scopeSelection = useAppStore((s) => s.scopeSelection)
   const projectPath = projectPathForScope(scopeSelection)
-  const { usage, loading, error, reload } = useUsageSummary(7, undefined, projectPath)
+  const [days, setDays] = useState<number>(30)
+  const { usage, loading, error, reload } = useUsageSummary(days, undefined, projectPath)
 
   const dailyCosts = usage?.dailyCosts ?? []
   const hasKnownCost = usage != null && usage.costSource !== 'unknown'
@@ -24,10 +29,28 @@ export function UsageTrendWidget(): React.ReactElement {
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between gap-2">
-        <CostSourceBadge source={usage?.costSource ?? 'unknown'} />
-        <span className="text-sm font-semibold tabular-nums text-foreground">
-          {hasKnownCost ? formatCurrency(usage.totalCost) : '—'}
-        </span>
+        <div className="inline-flex items-center gap-0.5 rounded-md bg-muted/50 p-0.5 text-[11px]">
+          {RANGE_OPTIONS.map((option) => (
+            <button
+              key={option}
+              type="button"
+              onClick={() => setDays(option)}
+              aria-pressed={days === option}
+              className={cn(
+                'rounded px-2 py-0.5 font-medium tabular-nums transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
+                days === option ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+              )}
+            >
+              {option}d
+            </button>
+          ))}
+        </div>
+        <div className="flex items-center gap-2">
+          <CostSourceBadge source={usage?.costSource ?? 'unknown'} />
+          <span className="text-sm font-semibold tabular-nums text-foreground">
+            {hasKnownCost ? formatCurrency(usage.totalCost) : '—'}
+          </span>
+        </div>
       </div>
       {loading && dailyCosts.length === 0 ? (
         <div aria-label={t('overview.loadingUsage')} className="h-[160px] animate-pulse rounded-lg bg-muted/40" />
@@ -48,6 +71,8 @@ export function UsageTrendWidget(): React.ReactElement {
               tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
               tickLine={false}
               axisLine={false}
+              minTickGap={24}
+              interval="preserveStartEnd"
               tickFormatter={(v: string) => {
                 const d = new Date(v)
                 return `${d.getMonth() + 1}/${d.getDate()}`

@@ -86,48 +86,53 @@ export function ActivityHeatmapWidget(): React.ReactElement {
 
   return (
     <div className="flex flex-col gap-2.5">
-      <div className="overflow-x-auto pb-1">
-        <div className="inline-flex flex-col gap-1">
+      <div className="pb-1">
+        {/* 周列 flex-1 + 格 aspect-square: 随宽放大并占满横向空间 (不留右侧死白); 保持方格。 */}
+        <div className="flex flex-col gap-1">
           <div className="flex gap-[3px]">
             <div className="w-7 shrink-0" />
-            {labels.map((label, i) => (
-              <div key={i} className="w-[11px] text-[10px] leading-none text-muted-foreground">
-                {label ? <span className="relative -left-px whitespace-nowrap">{label}</span> : null}
-              </div>
-            ))}
+            <div className="flex flex-1 gap-[3px]">
+              {labels.map((label, i) => (
+                <div key={i} className="min-w-0 flex-1 text-[10px] leading-none text-muted-foreground">
+                  {label ? <span className="whitespace-nowrap">{label}</span> : null}
+                </div>
+              ))}
+            </div>
           </div>
-          <div className="flex gap-[3px]">
+          <div className="flex items-stretch gap-[3px]">
             <div className="flex w-7 shrink-0 flex-col gap-[3px] pr-1 text-[9px] leading-none text-muted-foreground">
               {[0, 1, 2, 3, 4, 5, 6].map((row) => (
-                <div key={row} className="flex h-[11px] items-center justify-end">
+                <div key={row} className="flex flex-1 items-center justify-end">
                   {weekdayLabel(row, i18n.language)}
                 </div>
               ))}
             </div>
-            {weeks.map((week, wi) => (
-              <div key={wi} className="flex flex-col gap-[3px]">
-                {week.map((cell, di) => {
-                  if (!cell) return <div key={di} className="h-[11px] w-[11px]" />
-                  const localeDate = new Date(`${cell.date}T00:00:00Z`).toLocaleDateString(i18n.language, {
-                    month: 'short',
-                    day: 'numeric',
-                    year: 'numeric',
-                    timeZone: 'UTC'
-                  })
-                  const title =
-                    cell.sessions > 0
-                      ? t('overview.dashboard.heatmap.dayTooltip', { count: cell.sessions, date: localeDate })
-                      : t('overview.dashboard.heatmap.noneTooltip', { date: localeDate })
-                  return (
-                    <div
-                      key={di}
-                      title={title}
-                      className={cn('h-[11px] w-[11px] rounded-[2px]', LEVEL_CLASS[intensity(cell.sessions, heatmap.maxSessions)])}
-                    />
-                  )
-                })}
-              </div>
-            ))}
+            <div className="flex flex-1 gap-[3px]">
+              {weeks.map((week, wi) => (
+                <div key={wi} className="flex min-w-0 flex-1 flex-col gap-[3px]">
+                  {week.map((cell, di) => {
+                    if (!cell) return <div key={di} className="aspect-square w-full" />
+                    const localeDate = new Date(`${cell.date}T00:00:00Z`).toLocaleDateString(i18n.language, {
+                      month: 'short',
+                      day: 'numeric',
+                      year: 'numeric',
+                      timeZone: 'UTC'
+                    })
+                    const title =
+                      cell.sessions > 0
+                        ? t('overview.dashboard.heatmap.dayTooltip', { count: cell.sessions, date: localeDate })
+                        : t('overview.dashboard.heatmap.noneTooltip', { date: localeDate })
+                    return (
+                      <div
+                        key={di}
+                        title={title}
+                        className={cn('aspect-square w-full rounded-[2px]', LEVEL_CLASS[intensity(cell.sessions, heatmap.maxSessions)])}
+                      />
+                    )
+                  })}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
