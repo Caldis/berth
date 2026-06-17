@@ -1,13 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { useInsights } from '../insights-context'
 import { cn, formatCompactNumber } from '@/lib/utils'
-
-// claude-code/claude → Claude, codex → Codex; 其余回退原 id。
-function agentLabel(agentId: string): string {
-  if (agentId === 'claude-code' || agentId === 'claude') return 'Claude Code'
-  if (agentId === 'codex') return 'Codex'
-  return agentId
-}
+import { agentDisplayName } from '@/lib/agent-meta'
 
 const AGENT_BAR_CLASS = ['bg-primary/80', 'bg-primary/45', 'bg-primary/25']
 
@@ -67,7 +61,7 @@ export function ActivityInsightsWidget(): React.ReactElement {
             {split.map((agent, i) => (
               <span key={agent.agentId} className="inline-flex items-center gap-1.5">
                 <span className={cn('h-2 w-2 rounded-[2px]', AGENT_BAR_CLASS[i] ?? 'bg-primary/15')} />
-                {agentLabel(agent.agentId)}
+                {agentDisplayName(agent.agentId)}
                 <span className="tabular-nums text-foreground/70">{agent.count}</span>
               </span>
             ))}
