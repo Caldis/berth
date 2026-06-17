@@ -42,8 +42,9 @@ export function UsageTrendWidget({ size, chartType, onChartTypeChange }: WidgetR
   const { t } = useTranslation()
   const scopeSelection = useAppStore((s) => s.scopeSelection)
   const projectPath = projectPathForScope(scopeSelection)
+  const agentView = useAppStore((s) => s.agentView)
   const [rangeDays, setRangeDays] = useState<number>(30)
-  const { usage, loading, error, reload } = useUsageSummary(rangeDays, undefined, projectPath)
+  const { usage, loading, error, reload } = useUsageSummary(rangeDays, agentView, projectPath)
   const [form, setForm] = useChartForm(FORM_IDS, 'bar', chartType, onChartTypeChange)
   const formOptions: ChartFormOption<TrendForm>[] = FORM_IDS.map((id) => ({
     id,

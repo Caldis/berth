@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useState } from 'react'
+import type { AgentView } from '@shared/types/asset'
 import type { DashboardInsights } from '@shared/types/insights'
 
 // GH-138: 首页仪表盘聚合数据 hook。SWR 取向 — 出错保留上一份数据 (不清屏), assets 变更软刷新。
 // 单次往返取回 insights:dashboard 全部聚合 (热力图/streak/峰值/排行/洞察), 各 widget 共享此结果。
 export function useDashboardInsights(
   days = 365,
-  projectPath?: string
+  projectPath?: string,
+  agentView?: AgentView
 ): {
   insights: DashboardInsights | null
   loading: boolean
@@ -27,7 +29,11 @@ export function useDashboardInsights(
     let cancelled = false
     setLoading(true)
     setError(null)
-    const request = { days, ...(projectPath ? { projectPath } : {}) }
+    const request = {
+      days,
+      ...(projectPath ? { projectPath } : {}),
+      ...(agentView && agentView !== 'all' ? { agentView } : {})
+    }
     window.api.insights
       .dashboard(request)
       .then((result) => {
@@ -45,7 +51,7 @@ export function useDashboardInsights(
     return () => {
       cancelled = true
     }
-  }, [days, projectPath, reloadNonce])
+  }, [days, projectPath, agentView, reloadNonce])
 
   useEffect(() => {
     const unsubscribe = window.api?.assets?.onChanged?.(() => reload())

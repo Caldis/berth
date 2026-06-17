@@ -29,7 +29,8 @@ export function ModelDistributionWidget({ size, chartType, onChartTypeChange }: 
   const { t } = useTranslation()
   const scopeSelection = useAppStore((s) => s.scopeSelection)
   const projectPath = projectPathForScope(scopeSelection)
-  const { usage, loading } = useUsageSummary(30, undefined, projectPath)
+  const agentView = useAppStore((s) => s.agentView)
+  const { usage, loading } = useUsageSummary(30, agentView, projectPath)
   const [form, setForm] = useChartForm(FORM_IDS, 'bar', chartType, onChartTypeChange)
   const formOptions: ChartFormOption<ModelForm>[] = FORM_IDS.map((id) => ({
     id,

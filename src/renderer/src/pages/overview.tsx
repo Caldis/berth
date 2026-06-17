@@ -4,7 +4,8 @@ import { Check, Settings2 } from 'lucide-react'
 import { Button } from '@/components/ui'
 import { useAppStore } from '@/stores/app'
 import { projectPathForScope } from '@shared/scope'
-import { DashboardInsightsProvider } from '@/components/dashboard/insights-context'
+import { DashboardInsightsProvider, useInsights } from '@/components/dashboard/insights-context'
+import { AgentScopeSwitcher } from '@/components/dashboard/agent-scope-switcher'
 import { DashboardGrid } from '@/components/dashboard/dashboard-grid'
 import { WidgetLibrary } from '@/components/dashboard/widget-library'
 import { OnboardingBanner } from '@/components/dashboard/onboarding-banner'
@@ -23,10 +24,13 @@ function readOnboarded(): boolean {
 
 // GH-138: Overview 重构为模块化可拖拽自定义仪表盘 host。toolbar (标题+健康入口+自定义切换)
 // + DashboardGrid (widget 网格)。健康检查收拢进 HealthEntry 弹窗, 不再平铺。
-export function Overview(): React.ReactElement {
+// Provider 上移到整页外层 (OverviewContent 经 useInsights 取 agentSplit 给 toolbar 的 agent 切换器)。
+function OverviewContent(): React.ReactElement {
   const { t } = useTranslation()
-  const scopeSelection = useAppStore((s) => s.scopeSelection)
-  const projectPath = projectPathForScope(scopeSelection)
+  const agentView = useAppStore((s) => s.agentView)
+  const setAgentView = useAppStore((s) => s.setAgentView)
+  const { insights } = useInsights()
+  const agentSplit = insights?.insights.agentSplit ?? []
   const [isEditing, setIsEditing] = useState(false)
   const [onboarded, setOnboarded] = useState(readOnboarded)
   const { visibleWidgets, hiddenWidgets, reorder, setSize, setChartType, hide, show, reset } = useDashboardLayout()
@@ -50,6 +54,7 @@ export function Overview(): React.ReactElement {
           <h1 className="mt-1.5 text-2xl font-semibold tracking-tight text-foreground">{t('overview.title')}</h1>
         </div>
         <div className="flex items-center gap-2">
+          <AgentScopeSwitcher agents={agentSplit} value={agentView} onChange={setAgentView} />
           <HealthEntry />
           {isEditing && (
             <Button size="sm" variant="light" onPress={reset}>
@@ -78,17 +83,26 @@ export function Overview(): React.ReactElement {
         />
       )}
 
-      <DashboardInsightsProvider projectPath={projectPath}>
-        <DashboardGrid
-          widgets={visibleWidgets}
-          isEditing={isEditing}
-          onReorder={reorder}
-          onSetSize={setSize}
-          onSetChartType={setChartType}
-          onHide={hide}
-        />
-        {isEditing && <WidgetLibrary hidden={hiddenWidgets} onAdd={show} />}
-      </DashboardInsightsProvider>
+      <DashboardGrid
+        widgets={visibleWidgets}
+        isEditing={isEditing}
+        onReorder={reorder}
+        onSetSize={setSize}
+        onSetChartType={setChartType}
+        onHide={hide}
+      />
+      {isEditing && <WidgetLibrary hidden={hiddenWidgets} onAdd={show} />}
     </div>
+  )
+}
+
+export function Overview(): React.ReactElement {
+  const scopeSelection = useAppStore((s) => s.scopeSelection)
+  const projectPath = projectPathForScope(scopeSelection)
+
+  return (
+    <DashboardInsightsProvider projectPath={projectPath}>
+      <OverviewContent />
+    </DashboardInsightsProvider>
   )
 }

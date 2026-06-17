@@ -567,7 +567,8 @@ export function useUsageSummary(days: number, agentView?: AgentView, projectPath
     setError(null)
     const request = {
       days,
-      agentView,
+      // 'all'/未设 = 不过滤: 省略 agentView 键 (与 useDashboardInsights 一致, 保持默认请求形状不变)。
+      ...(agentView && agentView !== 'all' ? { agentView } : {}),
       ...(projectPath ? { projectPath } : {})
     }
     window.api.usage

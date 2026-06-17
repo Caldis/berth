@@ -32,8 +32,10 @@ describe('Sidebar', () => {
     )
 
     expect(screen.queryByRole('group', { name: 'Agent view' })).not.toBeInTheDocument()
-    // agentView store 残迹已删除 (issue agent-view-store-vestige): 状态不复存在
-    expect('agentView' in useAppStore.getState()).toBe(false)
+    // GH-138: agentView 已按 issue agent-view-store-vestige 的"后续重加"路线重新引入 —
+    // 现由 Overview 工具栏的 agent 范围筛选器作为 producer 真实使用 (非死残迹)。
+    // 侧栏仍无 footer 版切换器 (筛选器落在 Overview 工具栏), 故上面的 group 断言保持。
+    expect('agentView' in useAppStore.getState()).toBe(true)
   })
 
   it('localizes the sidebar collapse toggle label in Chinese', async () => {
