@@ -16,9 +16,9 @@
 ## Phase B — Widget 框架
 
 - [x] B1: 安装 `@dnd-kit/core@6.3.1 @dnd-kit/sortable@10 @dnd-kit/utilities@3` (devDependencies) + React19 smoke spike — done: tests/renderer/dnd-kit-smoke.test.tsx 挂载通过 (aria-roledescription=sortable, ref-based 无 findDOMNode), typecheck/lint clean。注: renderer 渲染测试须放 `tests/renderer/` (jsdom env), 纯逻辑放 `tests/unit/` (node env); 后续 health-modal/widget 组件测试同此约定。
-- [ ] B2: `widget-types.ts` 契约 + `widget-registry.ts` (WidgetId/WidgetDefinition 注册表) + `lib/dashboard-layout.ts` 纯函数 (parse/migrate/serialize/reset)
-  - tests: `tests/unit/widget-registry.test.ts` (每 def 必填+合法 size); `tests/unit/dashboard-layout.test.ts` (migrate 丢未知+追加新 / corrupt→default / 序保持)
-  - verify: 不适用
+- [x] B2: `widget-types.ts` 契约 + `widget-catalog.ts` (元数据单一真源, 与渲染解耦) + `lib/dashboard-layout.ts` 纯函数 (default/migrate/parse/serialize/reset) — done。registry (icon/component 绑定) 推迟到 C 各 widget 落地时填充。
+  - tests: `tests/unit/widget-catalog.test.ts` (5: id 自洽/sizes 合法/defaultSize∈sizes/titleKey/order 唯一) + `tests/unit/dashboard-layout.test.ts` (9: migrate 丢未知+追加新+钳尺寸+去重+保序 / parse corrupt→default / round-trip) — 14 全过, typecheck/lint clean
+  - verify: 不适用 (纯逻辑)
 - [ ] B3: `widget-shell.tsx` (无边框语义容器 + hover/edit affordance) + `dashboard-grid.tsx` (CSS Grid 尺寸跨度 + DndContext/SortableContext rectSortingStrategy 重排) + `use-dashboard-layout.ts` (localStorage 读写 + reorder/resize/toggle)
   - tests: dashboard-layout 已 B2 覆盖; shell/grid 行为属交互 → 运行实测
   - verify: 编辑态 affordance 显隐、拖拽重排、尺寸循环、键盘排序 (CDP/实机) [AC4]
