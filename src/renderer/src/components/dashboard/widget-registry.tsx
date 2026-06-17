@@ -1,8 +1,10 @@
-import { Activity, BarChart3, LayoutDashboard, MessageSquare, Zap } from 'lucide-react'
+import { Activity, BarChart3, LayoutDashboard, Lightbulb, ListOrdered, MessageSquare, Zap } from 'lucide-react'
 import type { WidgetDefinition, WidgetId } from './widget-types'
 import { WIDGET_CATALOG } from './widget-catalog'
 import { StatsBandWidget } from './widgets/stats-band.widget'
 import { ActivityHeatmapWidget } from './widgets/activity-heatmap.widget'
+import { ActivityInsightsWidget } from './widgets/activity-insights.widget'
+import { TopUsageWidget } from './widgets/top-usage.widget'
 import { RecentSessionsWidget } from './widgets/recent-sessions.widget'
 import { QuickActionsWidget } from './widgets/quick-actions.widget'
 import { UsageTrendWidget } from './widgets/usage-trend.widget'
@@ -13,6 +15,8 @@ import { UsageTrendWidget } from './widgets/usage-trend.widget'
 const REGISTRY: Partial<Record<WidgetId, WidgetDefinition>> = {
   'stats-band': { ...WIDGET_CATALOG['stats-band'], icon: LayoutDashboard, component: StatsBandWidget },
   'activity-heatmap': { ...WIDGET_CATALOG['activity-heatmap'], icon: Activity, component: ActivityHeatmapWidget },
+  'activity-insights': { ...WIDGET_CATALOG['activity-insights'], icon: Lightbulb, component: ActivityInsightsWidget },
+  'top-usage': { ...WIDGET_CATALOG['top-usage'], icon: ListOrdered, component: TopUsageWidget },
   'recent-sessions': { ...WIDGET_CATALOG['recent-sessions'], icon: MessageSquare, component: RecentSessionsWidget },
   'usage-trend': { ...WIDGET_CATALOG['usage-trend'], icon: BarChart3, component: UsageTrendWidget },
   'quick-actions': { ...WIDGET_CATALOG['quick-actions'], icon: Zap, component: QuickActionsWidget }
