@@ -110,13 +110,17 @@ test.describe('App Shell', () => {
   })
 
   test('overview page loads by default', async () => {
+    // GH-138: Overview 重构为模块化仪表盘 — hero 收敛为 toolbar (标题 + 健康入口 + 自定义),
+    // 健康检查收拢进弹窗 (toolbar 状态按钮), 区块改为 widget。
     const heading = page.getByTestId('overview-hero').getByRole('heading', { name: /^(Overview|总览)$/ })
     await expect(heading).toBeVisible()
     await expect(heading).toContainText(/Overview|总览/)
-    await expect(page.getByTestId('overview-hero')).toContainText(/Current agent|当前 Agent/)
-    await expect(page.getByTestId('overview-hero')).toContainText(/Project scope|项目范围/)
-    await expect(page.getByRole('region', { name: /Overview quick actions|总览快捷入口/ })).toBeVisible()
-    await expect(page.getByRole('heading', { name: /Health Checks|健康检查/ })).toBeVisible()
+    // health checks collapsed into a toolbar entry button (no longer a flat panel heading)
+    await expect(page.getByRole('button', { name: /Health Checks|健康检查/ })).toBeVisible()
+    // customize toggle present
+    await expect(page.getByRole('button', { name: /Customize|自定义/ })).toBeVisible()
+    // dashboard widgets render (quick actions widget title)
+    await expect(page.getByText(/Quick actions|快捷入口/).first()).toBeVisible()
   })
 
   test('can navigate to sessions', async () => {

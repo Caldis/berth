@@ -20,7 +20,7 @@ export function Overview(): React.ReactElement {
 
   return (
     <div className="space-y-6 pb-8">
-      <header className="flex flex-wrap items-end justify-between gap-3">
+      <header data-testid="overview-hero" className="flex flex-wrap items-end justify-between gap-3">
         <div className="min-w-0">
           <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
             {t('overview.kicker')}
