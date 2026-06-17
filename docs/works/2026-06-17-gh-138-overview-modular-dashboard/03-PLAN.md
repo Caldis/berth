@@ -15,9 +15,7 @@
 
 ## Phase B — Widget 框架
 
-- [ ] B1: 安装 `@dnd-kit/core@^6.3.1 @dnd-kit/sortable@^10 @dnd-kit/utilities@^3` (devDependencies) + React19 smoke spike (最小 sortable 渲染+拖拽不报错)
-  - tests: 安装后 `pnpm typecheck` + dev 启动无 findDOMNode/peer 报错 (spike 实证)
-  - verify: spike 截图/控制台无错
+- [x] B1: 安装 `@dnd-kit/core@6.3.1 @dnd-kit/sortable@10 @dnd-kit/utilities@3` (devDependencies) + React19 smoke spike — done: tests/renderer/dnd-kit-smoke.test.tsx 挂载通过 (aria-roledescription=sortable, ref-based 无 findDOMNode), typecheck/lint clean。注: renderer 渲染测试须放 `tests/renderer/` (jsdom env), 纯逻辑放 `tests/unit/` (node env); 后续 health-modal/widget 组件测试同此约定。
 - [ ] B2: `widget-types.ts` 契约 + `widget-registry.ts` (WidgetId/WidgetDefinition 注册表) + `lib/dashboard-layout.ts` 纯函数 (parse/migrate/serialize/reset)
   - tests: `tests/unit/widget-registry.test.ts` (每 def 必填+合法 size); `tests/unit/dashboard-layout.test.ts` (migrate 丢未知+追加新 / corrupt→default / 序保持)
   - verify: 不适用
