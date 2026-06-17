@@ -8,6 +8,7 @@ import { navItemMatchesLocation, navSections } from './nav-config'
 import { isMacPlatform } from '@/lib/platform'
 import { SettingsDialog } from './settings-dialog'
 import { ProjectScopeSwitcher } from './project-scope-switcher'
+import { AgentScopeSwitcher } from '@/components/dashboard/agent-scope-switcher'
 import { SidebarScanStatus } from './sidebar-scan-status'
 import { SearchTriggerButton, globalSearchShortcutLabel } from './search-control'
 import appIconUrl from '../../../../../assets/icon/app_icon.png'
@@ -96,6 +97,7 @@ export function Sidebar(): React.ReactElement {
         <div className="px-3 pb-2">
           <div className={cn('flex flex-col gap-1', collapsed && 'items-center')}>
             <ProjectScopeSwitcher collapsed={collapsed} />
+            <AgentScopeSwitcher collapsed={collapsed} />
             <SearchTriggerButton
               label={t('search.placeholder')}
               title={collapsed ? t('search.placeholder') : undefined}
