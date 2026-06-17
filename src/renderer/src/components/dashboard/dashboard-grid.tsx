@@ -55,10 +55,11 @@ export function DashboardGrid({ widgets, isEditing, onReorder, onCycleSize, onHi
     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
       <SortableContext items={ids} strategy={rectSortingStrategy}>
         <div className="grid grid-cols-1 gap-x-6 gap-y-7 md:grid-cols-2 xl:grid-cols-4">
-          {rendered.map((item) => (
+          {rendered.map((item, index) => (
             <SortableWidget
               key={item.id}
               item={item}
+              index={index}
               isEditing={isEditing}
               onCycleSize={onCycleSize}
               onHide={onHide}
@@ -72,11 +73,13 @@ export function DashboardGrid({ widgets, isEditing, onReorder, onCycleSize, onHi
 
 function SortableWidget({
   item,
+  index,
   isEditing,
   onCycleSize,
   onHide
 }: {
   item: WidgetLayoutItem
+  index: number
   isEditing: boolean
   onCycleSize: (id: WidgetId) => void
   onHide: (id: WidgetId) => void
@@ -90,10 +93,24 @@ function SortableWidget({
 
   if (!def) return null
   const Component = def.component
-  const style = { transform: CSS.Transform.toString(transform), transition }
+  // 入场 stagger: CSS animate-in (不碰 transform, 与 dnd 不冲突), 仅首挂载/新增时跑;
+  // animationDelay 阶梯 (上限 8 格), motion-safe 门控 reduced-motion。
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    animationDelay: `${Math.min(index, 8) * 45}ms`
+  }
 
   return (
-    <div ref={setNodeRef} style={style} className={cn(SIZE_CLASS[item.size], isDragging && 'z-10')}>
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={cn(
+        SIZE_CLASS[item.size],
+        'motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-3 motion-safe:fill-mode-both motion-safe:duration-500',
+        isDragging && 'z-10'
+      )}
+    >
       <WidgetShell
         title={t(def.titleKey)}
         isEditing={isEditing}

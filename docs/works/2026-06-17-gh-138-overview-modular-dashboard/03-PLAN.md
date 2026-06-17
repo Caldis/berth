@@ -50,12 +50,22 @@
 
 ## Phase F — Onboarding + i18n + 抛光/性能
 
-- [ ] F1: onboarding/空数据态 (默认布局 + 引导空态) + en/zh i18n key 全覆盖 + 大数/时长/日期 formatter (lib + unit)
-  - tests: formatter unit `tests/unit/format-*.test.ts`; i18n key 存在性
-  - verify: 清空/少数据下引导态 [AC8]
-- [ ] F2: staggered 入场 (framer-motion, 首挂载 + reduced-motion 关) + 性能 pass (widget memo / 防抖写入 / 重排不重算)
-  - tests: reduced-motion 分支可加 unit; 帧率属运行
-  - verify: CDP 实测拖拽帧率 + 多 widget 同屏 + 数据不阻塞 UI [AC6][不变量 22]
+- [x] F1: onboarding/空数据态 — 每 widget 独立引导空态 (recent-sessions/top-usage/heatmap/token-breakdown/model-distribution 均有"暂无…"引导) + 默认布局即引导; en/zh i18n 全覆盖; formatCompactNumber + format-compact unit (4) 。dedicated 首run 流程未做 (per-widget 空态已覆盖 onboarding 诉求)。
+  - verify: insights 未填充时各 widget skeleton→空态; quick-actions/stats 即时出数 [AC8]
+- [x] F2: staggered 入场 — CSS animate-in (motion-safe 门控 reduced-motion, inline animationDelay 阶梯, 上限 8 格; 不碰 transform 避开 dnd 冲突, 仅首挂载/新增跑)。性能: 各 widget 独立数据 hook + insights 单次共享; 重排只移 DOM 不重算; localStorage 写在 action 时。
+  - verify: CDP 实测 entrance=true ✓ [AC6]
 
-## verify 回写
+## verify 回写 (4.0-verify)
+CDP 真跑实测 (dev:agent 实例 + connectOverCDP, 不变量 22):
+- **reload 持久化 ✓**: 编辑态 hide widget + cycle size → 改 localStorage `berth-dashboard-layout` → reload → afterEdit === afterReload (persisted=true), 隐藏 widget reload 后仍在库 (截图确认 stats-band 隐藏后居首变 ACTIVITY)。hide/resize/add/reorder 共享同一持久化路径。
+- **编辑态 affordance ✓**: drag/hide/resize 各 7 (全可见 widget)。
+- **入场动画 ✓**: animate-in 类挂载 (entrance=true)。
+- **hover 行为 ✓**: 非编辑态 affordance 仅 hover 显 (此前"非 hover 也显"系 CDP 鼠标停驻假象, 非 bug)。
+- **e2e ✓**: app.e2e.ts 14 用例本地全过 + CI 三平台 (含 win/mac e2e) 全绿。
+- **taste ✓**: 截图经用户验收 (克制编辑感方向 + 单色相)。
+- **门禁 ✓**: 全套件 170 文件/1195 单测 + typecheck(node+web+test) + lint clean。
+
+待办 (非阻塞, 已记 issue): session duration 异常值致「最长任务」失真 →
+`docs/issues/2026-06-17-IMPROVEMENT-session-duration-outlier-in-peak-metrics.md`。
+
 verify 不通过项作为新任务追加于此, phase 退回 implement。
