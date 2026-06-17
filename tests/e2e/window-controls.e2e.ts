@@ -11,6 +11,12 @@ const windowControlNames = {
 }
 
 test.beforeEach(async ({ browserName: _browserName }, testInfo) => {
+  // Windows-only spec: skip BEFORE launching so non-win32 (macOS CI) never starts an
+  // Electron app for tests that immediately skip. Launching it only to close it in
+  // afterEach is what intermittently hung macOS worker teardown — a per-spec flaky
+  // that got amplified into a run-level `pnpm test:e2e` failure (GH-139).
+  test.skip(process.platform !== 'win32', 'Windows titlebar hit testing is only meaningful on Windows')
+
   const dirs = prepareIsolatedDirs(testInfo.outputPath('window-controls-fixture'))
 
   const launched = await launchBerthApp(dirs)
@@ -19,7 +25,10 @@ test.beforeEach(async ({ browserName: _browserName }, testInfo) => {
 })
 
 test.afterEach(async () => {
-  await app.close()
+  // `app` is only assigned on win32 (the beforeEach skip fires before launch elsewhere);
+  // guard the close so an unset app can never hang teardown.
+  const launchedApp: ElectronApplication | undefined = app
+  if (launchedApp) await launchedApp.close()
 })
 
 test('Windows custom titlebar buttons toggle maximize through Electron', async () => {
