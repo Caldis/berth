@@ -29,7 +29,7 @@ export function Overview(): React.ReactElement {
   const projectPath = projectPathForScope(scopeSelection)
   const [isEditing, setIsEditing] = useState(false)
   const [onboarded, setOnboarded] = useState(readOnboarded)
-  const { visibleWidgets, hiddenWidgets, reorder, cycleSize, hide, show, reset } = useDashboardLayout()
+  const { visibleWidgets, hiddenWidgets, reorder, setSize, hide, show, reset } = useDashboardLayout()
 
   const dismissOnboarding = (): void => {
     setOnboarded(true)
@@ -83,7 +83,7 @@ export function Overview(): React.ReactElement {
           widgets={visibleWidgets}
           isEditing={isEditing}
           onReorder={reorder}
-          onCycleSize={cycleSize}
+          onSetSize={setSize}
           onHide={hide}
         />
         {isEditing && <WidgetLibrary hidden={hiddenWidgets} onAdd={show} />}

@@ -8,10 +8,9 @@ import {
   type DashboardLayout,
   type WidgetLayoutItem
 } from '@/lib/dashboard-layout'
-import { WIDGET_CATALOG } from './widget-catalog'
-import type { WidgetId } from './widget-types'
+import type { WidgetId, WidgetSize } from './widget-types'
 
-// GH-138: 仪表盘布局状态 + localStorage 持久化 + 动作 (reorder/cycleSize/hide/show/reset)。
+// GH-138: 仪表盘布局状态 + localStorage 持久化 + 动作 (reorder/setSize/hide/show/reset)。
 // 函数式 setState 避免并发更新的陈旧闭包; 写入失败 (配额) 静默降级为内存态。
 
 function readInitial(): DashboardLayout {
@@ -24,7 +23,7 @@ export interface DashboardLayoutController {
   visibleWidgets: WidgetLayoutItem[]
   hiddenWidgets: WidgetLayoutItem[]
   reorder: (activeId: WidgetId, overId: WidgetId) => void
-  cycleSize: (id: WidgetId) => void
+  setSize: (id: WidgetId, size: WidgetSize) => void
   hide: (id: WidgetId) => void
   show: (id: WidgetId) => void
   reset: () => void
@@ -59,16 +58,11 @@ export function useDashboardLayout(): DashboardLayoutController {
     [apply]
   )
 
-  const cycleSize = useCallback(
-    (id: WidgetId) => {
+  const setSize = useCallback(
+    (id: WidgetId, size: WidgetSize) => {
       apply((current) => ({
         ...current,
-        widgets: current.widgets.map((w) => {
-          if (w.id !== id) return w
-          const sizes = WIDGET_CATALOG[id].sizes
-          const idx = sizes.indexOf(w.size)
-          return { ...w, size: sizes[(idx + 1) % sizes.length] }
-        })
+        widgets: current.widgets.map((w) => (w.id === id ? { ...w, size } : w))
       }))
     },
     [apply]
@@ -91,5 +85,5 @@ export function useDashboardLayout(): DashboardLayoutController {
   const visibleWidgets = useMemo(() => layout.widgets.filter((w) => !w.hidden), [layout])
   const hiddenWidgets = useMemo(() => layout.widgets.filter((w) => w.hidden), [layout])
 
-  return { layout, visibleWidgets, hiddenWidgets, reorder, cycleSize, hide, show, reset }
+  return { layout, visibleWidgets, hiddenWidgets, reorder, setSize, hide, show, reset }
 }

@@ -11,7 +11,6 @@
 
 // ── HeroUI primitives (re-exported as berth's canonical primitives) ──
 export {
-  Button,
   ButtonGroup,
   Card,
   CardHeader,
@@ -73,6 +72,8 @@ export {
 } from '@heroui/react'
 
 // ── berth composites & tokens ──
+export { Button } from './button'
+export type { ButtonProps } from './button'
 export { Chip } from './chip'
 export type { ChipTone, ChipUIProps } from './chip'
 export { FilterSelect } from './filter-select'

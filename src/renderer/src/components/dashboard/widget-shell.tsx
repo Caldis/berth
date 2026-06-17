@@ -1,6 +1,7 @@
 import type { HTMLAttributes, ReactNode } from 'react'
 import { GripVertical, EyeOff } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import type { WidgetSize } from './widget-types'
 
 // GH-138: 无边框语义容器 (克制编辑感)。默认仅一个安静的 uppercase 标签 + 内容, 靠留白分区;
 // affordance (拖拽柄/尺寸循环/隐藏) 悬停或编辑态才显。编辑态加虚线环标识可拖拽。
@@ -10,8 +11,9 @@ interface WidgetShellProps {
   title: string
   isEditing?: boolean
   isDragging?: boolean
-  sizeLabel?: string
-  onCycleSize?: () => void
+  size?: WidgetSize
+  sizes?: WidgetSize[]
+  onSetSize?: (size: WidgetSize) => void
   onHide?: () => void
   /** dnd-kit useSortable 的 attributes+listeners, 绑到拖拽柄。 */
   dragHandleProps?: HTMLAttributes<HTMLButtonElement>
@@ -22,8 +24,9 @@ export function WidgetShell({
   title,
   isEditing = false,
   isDragging = false,
-  sizeLabel,
-  onCycleSize,
+  size,
+  sizes,
+  onSetSize,
   onHide,
   dragHandleProps,
   children
@@ -55,20 +58,29 @@ export function WidgetShell({
         </div>
         <div
           className={cn(
-            'flex items-center gap-0.5 transition-opacity',
+            'flex items-center gap-1 transition-opacity',
             isEditing ? 'opacity-100' : 'pointer-events-none opacity-0 group-hover/widget:pointer-events-auto group-hover/widget:opacity-100'
           )}
         >
-          {onCycleSize && sizeLabel && (
-            <button
-              type="button"
-              onClick={onCycleSize}
-              aria-label={`Resize widget (current ${sizeLabel})`}
-              title={`Resize (${sizeLabel})`}
-              className="rounded px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-            >
-              {sizeLabel}
-            </button>
+          {onSetSize && sizes && sizes.length > 1 && (
+            // 枚举式尺寸选择 (一眼看全所有尺寸, 一次点击命中目标, 不轮换试错)
+            <div role="group" aria-label="Widget size" className="inline-flex items-center gap-0.5 rounded-md bg-muted/50 p-0.5">
+              {sizes.map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => onSetSize(s)}
+                  aria-label={`Size ${s}`}
+                  aria-pressed={s === size}
+                  className={cn(
+                    'rounded px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
+                    s === size ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+                  )}
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
           )}
           {onHide && (
             <button

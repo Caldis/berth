@@ -13,6 +13,7 @@ import { CSS } from '@dnd-kit/utilities'
 import { cn } from '@/lib/utils'
 import { WidgetShell } from './widget-shell'
 import { getWidgetDefinition } from './widget-registry'
+import { WIDGET_CATALOG } from './widget-catalog'
 import type { WidgetId, WidgetSize } from './widget-types'
 import type { WidgetLayoutItem } from '@/lib/dashboard-layout'
 
@@ -31,11 +32,11 @@ interface DashboardGridProps {
   widgets: WidgetLayoutItem[]
   isEditing: boolean
   onReorder: (activeId: WidgetId, overId: WidgetId) => void
-  onCycleSize: (id: WidgetId) => void
+  onSetSize: (id: WidgetId, size: WidgetSize) => void
   onHide: (id: WidgetId) => void
 }
 
-export function DashboardGrid({ widgets, isEditing, onReorder, onCycleSize, onHide }: DashboardGridProps): React.ReactElement {
+export function DashboardGrid({ widgets, isEditing, onReorder, onSetSize, onHide }: DashboardGridProps): React.ReactElement {
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
@@ -61,7 +62,7 @@ export function DashboardGrid({ widgets, isEditing, onReorder, onCycleSize, onHi
               item={item}
               index={index}
               isEditing={isEditing}
-              onCycleSize={onCycleSize}
+              onSetSize={onSetSize}
               onHide={onHide}
             />
           ))}
@@ -75,13 +76,13 @@ function SortableWidget({
   item,
   index,
   isEditing,
-  onCycleSize,
+  onSetSize,
   onHide
 }: {
   item: WidgetLayoutItem
   index: number
   isEditing: boolean
-  onCycleSize: (id: WidgetId) => void
+  onSetSize: (id: WidgetId, size: WidgetSize) => void
   onHide: (id: WidgetId) => void
 }): React.ReactElement | null {
   const { t } = useTranslation()
@@ -115,8 +116,9 @@ function SortableWidget({
         title={t(def.titleKey)}
         isEditing={isEditing}
         isDragging={isDragging}
-        sizeLabel={item.size}
-        onCycleSize={() => onCycleSize(item.id)}
+        size={item.size}
+        sizes={WIDGET_CATALOG[item.id].sizes}
+        onSetSize={(s) => onSetSize(item.id, s)}
         onHide={() => onHide(item.id)}
         dragHandleProps={{ ...attributes, ...listeners }}
       >
