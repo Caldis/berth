@@ -231,6 +231,10 @@
         "mcp": "MCP",
         "empty": "No usage recorded yet",
         "runs": "{{count}} runs"
+      },
+      "agentFilter": {
+        "all": "All agents",
+        "label": "Agent"
       }
     },
     "title": "Overview",

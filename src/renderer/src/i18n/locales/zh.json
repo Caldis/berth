@@ -229,6 +229,10 @@
         "mcp": "MCP",
         "empty": "暂无使用记录",
         "runs": "{{count}} 次"
+      },
+      "agentFilter": {
+        "all": "全部 agent",
+        "label": "Agent"
       }
     },
     "title": "总览",
