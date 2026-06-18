@@ -99,17 +99,29 @@ export class AssetSearch {
 }
 
 function buildSearchDocs(assets: Asset[]): SearchDoc[] {
-  return assets.map((asset) => ({
-    id: asset.id,
-    name: asset.name,
-    type: asset.type,
-    scope: asset.scope,
-    category: asset.category,
-    path: asset.path,
-    agentId: asset.agentId,
-    summary: extractSearchSummary(asset),
-    metadata: extractSearchMetadata(asset)
-  }))
+  // Dedupe by id (GH-140): under SWR a derived read can be served the snapshot
+  // mid-rescan, where the live asset list transiently carries the same id twice
+  // (partial fold across a project-scope switch). The committed snapshot is
+  // dup-free, but MiniSearch.addAll throws on duplicate ids — guard the transient
+  // read by keeping the first occurrence.
+  const seen = new Set<string>()
+  const docs: SearchDoc[] = []
+  for (const asset of assets) {
+    if (seen.has(asset.id)) continue
+    seen.add(asset.id)
+    docs.push({
+      id: asset.id,
+      name: asset.name,
+      type: asset.type,
+      scope: asset.scope,
+      category: asset.category,
+      path: asset.path,
+      agentId: asset.agentId,
+      summary: extractSearchSummary(asset),
+      metadata: extractSearchMetadata(asset)
+    })
+  }
+  return docs
 }
 
 function createIndexSignature(docs: SearchDoc[]): string {

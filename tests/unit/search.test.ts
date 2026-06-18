@@ -85,4 +85,20 @@ describe('AssetSearch', () => {
     expect(search.search('beta', second).map((result) => result.id)).toEqual(['session-1'])
     expect(search.search('alpha', second)).toEqual([])
   })
+
+  it('dedupes duplicate asset ids without throwing — transient mid-scan snapshot (GH-140)', () => {
+    const search = new AssetSearch()
+    // Under SWR a derived read can hit the snapshot mid-rescan, where the live
+    // asset list transiently carries the same id twice. MiniSearch.addAll throws
+    // on duplicate ids; buildSearchDocs must dedupe (keep first) so search stays up.
+    const assets = [
+      asset('skill-dup', 'skill', { description: 'first occurrence' }, { name: 'Dup Skill' }),
+      asset('skill-dup', 'skill', { description: 'second occurrence' }, { name: 'Dup Skill' }),
+      asset('skill-unique', 'skill', { description: 'standalone entry' }, { name: 'Unique Skill' })
+    ]
+
+    expect(() => search.ensureIndexed(assets)).not.toThrow()
+    expect(search.search('Dup Skill', assets).map((result) => result.id)).toContain('skill-dup')
+    expect(search.search('standalone', assets).map((result) => result.id)).toContain('skill-unique')
+  })
 })

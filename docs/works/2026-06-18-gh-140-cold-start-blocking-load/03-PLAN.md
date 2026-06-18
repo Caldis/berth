@@ -19,4 +19,6 @@
   - 验证陷阱见 friction 20260619-4.0-verify-dev-agent-stop-no-wal-checkpoint
 
 ## verify 回写
-verify 不通过项作为新任务追加于此, phase 退回 implement。
+- [x] 任务 4 (verify 发现回归, 已修): windows e2e `project-scope.e2e.ts:53` 报 `MiniSearch: duplicate ID` — SWR 让 `search` 在 project-scope 切换的 scanning 中间态读 snapshot.assets (改前 search `await` scan 读的是无重复的 commitScan final), 中间态 partial fold 瞬时含重复 id, `MiniSearch.addAll` 抛错。修: `search.ts` `buildSearchDocs` 按 id 去重 (保留首个; final 仍无重复, 只防瞬时读)。
+  - tests: ✓ `search.test.ts` 新增 dedupe 用例; 本地 `pnpm build` + `playwright test project-scope` **1 passed** (改前 windows 红的 spec); 全量 1237 绿 (settings-dialog 1 项 flaky, 隔离重跑 4 绿 — friction 20260610-vitest-flaky-singlefork, 与本改动无关)。
+  - verify: e2e 端到端通过 (ubuntu CI 不跑 Electron e2e, 修复由 windows CI 最终验证)。
