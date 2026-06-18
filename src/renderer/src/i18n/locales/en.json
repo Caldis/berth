@@ -177,7 +177,8 @@
       "cumulativeGrowth": "Growth",
       "modelEfficiency": "Token intensity",
       "projectAllocation": "Projects",
-      "modelTrend": "Model mix"
+      "modelTrend": "Model mix",
+      "spend": "Spend"
     },
     "dashboard": {
       "customize": "Customize",
@@ -250,6 +251,11 @@
       "modelTrend": {
         "others": "Others",
         "subtitle": "Token mix · last 30 days"
+      },
+      "spend": {
+        "subtitle": "Spend · last 30 days",
+        "actual": "Actual",
+        "estimated": "Estimated"
       },
       "insights": {
         "skillsExplored": "Skills explored",

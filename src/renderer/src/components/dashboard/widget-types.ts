@@ -22,6 +22,7 @@ export type WidgetId =
   | 'model-efficiency'
   | 'project-allocation'
   | 'model-trend'
+  | 'spend'
 
 /** widget 纯元数据 — 与渲染解耦; 新增 widget 在 widget-catalog 加一条。 */
 export interface WidgetMeta {

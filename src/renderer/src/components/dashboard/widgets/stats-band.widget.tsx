@@ -2,29 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { useInsights } from '../insights-context'
 import { formatCompactNumber, formatOptionalDuration } from '@/lib/utils'
 import { tokenTrend } from '@/lib/activity-trend'
-
-// 内联 sparkline (无依赖 SVG, 单色 primary) — 近 14 天每日 token 走势。
-function Sparkline({ data }: { data: number[] }): React.ReactElement | null {
-  if (data.length < 2) return null
-  const max = Math.max(...data, 1)
-  const w = 64
-  const h = 16
-  const step = w / (data.length - 1)
-  const points = data.map((v, i) => `${(i * step).toFixed(1)},${(h - (v / max) * h).toFixed(1)}`).join(' ')
-  return (
-    <svg viewBox={`0 0 ${w} ${h}`} className="h-4 w-16" preserveAspectRatio="none" aria-hidden="true">
-      <polyline
-        points={points}
-        fill="none"
-        stroke="hsl(var(--primary))"
-        strokeWidth={1.5}
-        vectorEffect="non-scaling-stroke"
-        strokeLinejoin="round"
-        strokeLinecap="round"
-      />
-    </svg>
-  )
-}
+import { Sparkline } from './sparkline'
 
 // GH-138: Codex 风格指标带 (克制编辑感) — 大字号等宽数字 + 安静 uppercase 标签, 无卡片框。
 // 头部「累计 token」cell 注入近况 (14 天 sparkline + 周环比 ▲▼%), 让指标带"活"起来;

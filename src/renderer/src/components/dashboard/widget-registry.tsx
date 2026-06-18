@@ -13,6 +13,7 @@ import {
   MessageSquare,
   PieChart,
   TrendingUp,
+  Wallet,
   Zap
 } from 'lucide-react'
 import type { WidgetDefinition, WidgetId } from './widget-types'
@@ -32,6 +33,7 @@ import { CumulativeGrowthWidget } from './widgets/cumulative-growth.widget'
 import { ModelEfficiencyWidget } from './widgets/model-efficiency.widget'
 import { ProjectAllocationWidget } from './widgets/project-allocation.widget'
 import { ModelTrendWidget } from './widgets/model-trend.widget'
+import { SpendWidget } from './widgets/spend.widget'
 
 // GH-138: widget 渲染绑定 (元数据来自 widget-catalog, 此处补 icon + component)。
 // 新增 widget: 建 *.widget.tsx + 在此注册一条; 未注册的 id 由 grid 优雅跳过。
@@ -51,7 +53,8 @@ const REGISTRY: Partial<Record<WidgetId, WidgetDefinition>> = {
   'cumulative-growth': { ...WIDGET_CATALOG['cumulative-growth'], icon: TrendingUp, component: CumulativeGrowthWidget },
   'model-efficiency': { ...WIDGET_CATALOG['model-efficiency'], icon: Gauge, component: ModelEfficiencyWidget },
   'project-allocation': { ...WIDGET_CATALOG['project-allocation'], icon: FolderTree, component: ProjectAllocationWidget },
-  'model-trend': { ...WIDGET_CATALOG['model-trend'], icon: Layers, component: ModelTrendWidget }
+  'model-trend': { ...WIDGET_CATALOG['model-trend'], icon: Layers, component: ModelTrendWidget },
+  spend: { ...WIDGET_CATALOG['spend'], icon: Wallet, component: SpendWidget }
 }
 
 export function getWidgetDefinition(id: WidgetId): WidgetDefinition | undefined {

@@ -175,7 +175,8 @@
       "cumulativeGrowth": "累计增长",
       "modelEfficiency": "Token 强度",
       "projectAllocation": "项目分布",
-      "modelTrend": "模型趋势"
+      "modelTrend": "模型趋势",
+      "spend": "花费"
     },
     "dashboard": {
       "customize": "自定义",
@@ -248,6 +249,11 @@
       "modelTrend": {
         "others": "其他",
         "subtitle": "Token 构成 · 近 30 天"
+      },
+      "spend": {
+        "subtitle": "花费 · 近 30 天",
+        "actual": "实际",
+        "estimated": "估算"
       },
       "insights": {
         "skillsExplored": "已探索技能",

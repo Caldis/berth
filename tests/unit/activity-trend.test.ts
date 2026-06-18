@@ -1,9 +1,13 @@
 import { describe, expect, it } from 'vitest'
-import { cumulativeSeries, tokenTrend } from '@/lib/activity-trend'
+import { costTrend, cumulativeSeries, tokenTrend } from '@/lib/activity-trend'
 import type { HeatmapDay } from '@shared/types/insights'
 
 function days(tokens: number[]): HeatmapDay[] {
   return tokens.map((t, i) => ({ date: `2026-01-${String(i + 1).padStart(2, '0')}`, sessions: t > 0 ? 1 : 0, tokens: t }))
+}
+
+function costs(values: number[]): { date: string; cost: number }[] {
+  return values.map((c, i) => ({ date: `2026-01-${String(i + 1).padStart(2, '0')}`, cost: c }))
 }
 
 describe('tokenTrend', () => {
@@ -28,6 +32,24 @@ describe('tokenTrend', () => {
   it('returns null delta when there is no prior-window baseline', () => {
     expect(tokenTrend(days([1, 2, 3]), 7, 14).deltaPct).toBeNull()
     expect(tokenTrend([], 7, 14)).toEqual({ series: [], deltaPct: null })
+  })
+})
+
+describe('costTrend', () => {
+  it('returns the last sparkDays of the daily cost series', () => {
+    const series = costTrend(costs(Array.from({ length: 30 }, (_, i) => i + 1)), 7, 14).series
+    expect(series).toHaveLength(14)
+    expect(series.at(-1)).toBe(30)
+  })
+
+  it('computes week-over-week cost delta (recent 7 vs prior 7)', () => {
+    const trend = costTrend(costs([...Array(7).fill(10), ...Array(7).fill(11)]), 7, 14)
+    expect(Math.round(trend.deltaPct as number)).toBe(10)
+  })
+
+  it('returns null delta when there is no prior-window baseline', () => {
+    expect(costTrend(costs([1, 2, 3]), 7, 14).deltaPct).toBeNull()
+    expect(costTrend([], 7, 14)).toEqual({ series: [], deltaPct: null })
   })
 })
 

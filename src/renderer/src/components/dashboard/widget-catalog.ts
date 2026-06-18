@@ -123,6 +123,14 @@ export const WIDGET_CATALOG: Record<WidgetId, WidgetMeta> = {
     sizes: ['M', 'L', 'Wide'],
     defaultOrder: 14,
     defaultHidden: true
+  },
+  spend: {
+    id: 'spend',
+    titleKey: 'overview.widgets.spend',
+    defaultSize: 'M',
+    sizes: ['S', 'M', 'L'],
+    defaultOrder: 15,
+    defaultHidden: true
   }
 }
 
