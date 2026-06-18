@@ -170,7 +170,8 @@
       "quickActions": "快捷入口",
       "tokenBreakdown": "Token 构成",
       "modelDistribution": "模型",
-      "activityRhythm": "活动节律"
+      "activityRhythm": "活动节律",
+      "sessionDuration": "会话时长"
     },
     "dashboard": {
       "customize": "自定义",
@@ -217,6 +218,14 @@
         "empty": "暂无活动记录",
         "peakInsight": "最活跃时段 · {{weekday}} {{time}}",
         "cellTooltip": "{{count}} 个会话 · {{weekday}} {{time}}"
+      },
+      "duration": {
+        "lt5m": "5 分钟内",
+        "lt15m": "5–15 分钟",
+        "lt1h": "15–60 分钟",
+        "lt4h": "1–4 小时",
+        "gte4h": "4 小时+",
+        "summary": "{{count}} 个计时会话 · 多为 {{bucket}}"
       },
       "insights": {
         "skillsExplored": "已探索技能",

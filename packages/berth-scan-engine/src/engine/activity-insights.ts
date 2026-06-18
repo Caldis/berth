@@ -6,6 +6,7 @@ import type {
   HeatmapDay,
   HourlyRhythm,
   PeakMetrics,
+  SessionDurationHistogram,
   StreakStats,
   TopUsageEntry
 } from '@shared/types/insights'
@@ -241,6 +242,28 @@ export function buildHourlyRhythm(assets: Asset[], opts: { tzOffsetMinutes?: num
   return { grid, maxSessions, totalSessions, peak }
 }
 
+/**
+ * 会话时长分布: 按 <5m / 5-15m / 15-60m / 1-4h / 4h+ 分桶 ("快修 vs 长跑")。
+ * 排除无/非正时长 + >24h 的 stale 会话 (墙钟跨度异常, 与 buildPeakMetrics 同口径)。
+ */
+const DURATION_BUCKET_BOUNDS = [5 * 60, 15 * 60, 60 * 60, 4 * 60 * 60] as const
+const DURATION_BUCKET_IDS = ['lt5m', 'lt15m', 'lt1h', 'lt4h', 'gte4h'] as const
+
+export function buildSessionDurationHistogram(assets: Asset[]): SessionDurationHistogram {
+  const counts = [0, 0, 0, 0, 0]
+  for (const asset of sessionAssets(assets)) {
+    const duration = readNumber(asset.meta, 'duration')
+    if (duration == null || duration <= 0 || duration > MAX_PLAUSIBLE_SESSION_SECONDS) continue
+    let index = DURATION_BUCKET_BOUNDS.findIndex((bound) => duration < bound)
+    if (index < 0) index = DURATION_BUCKET_BOUNDS.length // >= 4h → 最后一桶
+    counts[index] += 1
+  }
+  const buckets = DURATION_BUCKET_IDS.map((id, i) => ({ id, count: counts[i] }))
+  const total = counts.reduce((sum, n) => sum + n, 0)
+  const maxCount = counts.reduce((max, n) => (n > max ? n : max), 0)
+  return { buckets, total, maxCount }
+}
+
 /** 活动洞察 — 只产出 berth 数据可支撑字段。 */
 export function buildActivityInsights(assets: Asset[], stats: AssetStats): ActivityInsights {
   const sessions = sessionAssets(assets)
@@ -292,6 +315,7 @@ export function buildDashboardInsights(
     topSkills: buildTopUsage(sessions, { kind: 'skill' }),
     topMcpServers: buildTopUsage(sessions, { kind: 'mcp' }),
     insights: buildActivityInsights(sessions, stats),
-    rhythm: buildHourlyRhythm(sessions, { tzOffsetMinutes: opts.tzOffsetMinutes })
+    rhythm: buildHourlyRhythm(sessions, { tzOffsetMinutes: opts.tzOffsetMinutes }),
+    durationHistogram: buildSessionDurationHistogram(sessions)
   }
 }

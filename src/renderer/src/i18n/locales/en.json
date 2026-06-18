@@ -172,7 +172,8 @@
       "quickActions": "Quick actions",
       "tokenBreakdown": "Token breakdown",
       "modelDistribution": "Models",
-      "activityRhythm": "Activity rhythm"
+      "activityRhythm": "Activity rhythm",
+      "sessionDuration": "Session length"
     },
     "dashboard": {
       "customize": "Customize",
@@ -219,6 +220,14 @@
         "empty": "No activity recorded yet",
         "peakInsight": "Most active around {{weekday}} {{time}}",
         "cellTooltip": "{{count}} sessions · {{weekday}} {{time}}"
+      },
+      "duration": {
+        "lt5m": "Under 5 min",
+        "lt15m": "5–15 min",
+        "lt1h": "15–60 min",
+        "lt4h": "1–4 h",
+        "gte4h": "4 h+",
+        "summary": "{{count}} timed sessions · most run {{bucket}}"
       },
       "insights": {
         "skillsExplored": "Skills explored",

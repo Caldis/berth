@@ -28,7 +28,8 @@ const EMPTY_INSIGHTS = {
     topModel: null,
     agentSplit: []
   },
-  rhythm: { grid: [], maxSessions: 0, totalSessions: 0, peak: null }
+  rhythm: { grid: [], maxSessions: 0, totalSessions: 0, peak: null },
+  durationHistogram: { buckets: [], total: 0, maxCount: 0 }
 }
 
 describe('useDashboardInsights — agentView threading (GH-138)', () => {

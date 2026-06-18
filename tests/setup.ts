@@ -237,6 +237,17 @@ export const mockApi = {
         maxSessions: 0,
         totalSessions: 0,
         peak: null
+      },
+      durationHistogram: {
+        buckets: [
+          { id: 'lt5m', count: 0 },
+          { id: 'lt15m', count: 0 },
+          { id: 'lt1h', count: 0 },
+          { id: 'lt4h', count: 0 },
+          { id: 'gte4h', count: 0 }
+        ],
+        total: 0,
+        maxCount: 0
       }
     })
   },

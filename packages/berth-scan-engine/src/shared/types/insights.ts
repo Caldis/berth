@@ -67,6 +67,16 @@ export interface HourlyRhythm {
   peak: { weekday: number; hour: number; sessions: number } | null
 }
 
+/** 会话时长分布: 按时长区间分桶, 看"快修 vs 长跑"。 */
+export interface SessionDurationHistogram {
+  /** 固定 5 桶 (<5m / 5-15m / 15-60m / 1-4h / 4h+), 顺序固定; id 由 widget 映射标签。 */
+  buckets: Array<{ id: 'lt5m' | 'lt15m' | 'lt1h' | 'lt4h' | 'gte4h'; count: number }>
+  /** 计入的会话总数 (有有效时长且非 stale)。 */
+  total: number
+  /** 单桶最大计数 (条形归一化用)。 */
+  maxCount: number
+}
+
 /** insights:dashboard 的合并 payload — 一次往返取回首页全部聚合数据。 */
 export interface DashboardInsights {
   heatmap: ActivityHeatmap
@@ -76,4 +86,5 @@ export interface DashboardInsights {
   topMcpServers: TopUsageEntry[]
   insights: ActivityInsights
   rhythm: HourlyRhythm
+  durationHistogram: SessionDurationHistogram
 }

@@ -83,6 +83,14 @@ export const WIDGET_CATALOG: Record<WidgetId, WidgetMeta> = {
     sizes: ['Wide', 'XL'],
     defaultOrder: 9,
     defaultHidden: false
+  },
+  'session-duration': {
+    id: 'session-duration',
+    titleKey: 'overview.widgets.sessionDuration',
+    defaultSize: 'M',
+    sizes: ['M', 'L'],
+    defaultOrder: 10,
+    defaultHidden: false
   }
 }
 

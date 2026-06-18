@@ -6,6 +6,7 @@ import {
   buildDashboardInsights,
   buildHourlyRhythm,
   buildPeakMetrics,
+  buildSessionDurationHistogram,
   buildStreakStats,
   buildTopUsage
 } from '@berth/scan-engine/engine/activity-insights'
@@ -50,6 +51,51 @@ const stats: AssetStats = {
   commands: 4,
   subagents: 1
 }
+
+describe('buildSessionDurationHistogram', () => {
+  const countOf = (hist: ReturnType<typeof buildSessionDurationHistogram>, id: string): number =>
+    hist.buckets.find((b) => b.id === id)?.count ?? -1
+
+  it('buckets sessions by duration into the five fixed ranges', () => {
+    const hist = buildSessionDurationHistogram([
+      session({ startedAt: '2026-06-01T00:00:00.000Z', duration: 60 }), // 1m → lt5m
+      session({ startedAt: '2026-06-01T00:00:00.000Z', duration: 600 }), // 10m → lt15m
+      session({ startedAt: '2026-06-01T00:00:00.000Z', duration: 1800 }), // 30m → lt1h
+      session({ startedAt: '2026-06-01T00:00:00.000Z', duration: 7200 }), // 2h → lt4h
+      session({ startedAt: '2026-06-01T00:00:00.000Z', duration: 18000 }) // 5h → gte4h
+    ])
+    expect(countOf(hist, 'lt5m')).toBe(1)
+    expect(countOf(hist, 'lt15m')).toBe(1)
+    expect(countOf(hist, 'lt1h')).toBe(1)
+    expect(countOf(hist, 'lt4h')).toBe(1)
+    expect(countOf(hist, 'gte4h')).toBe(1)
+    expect(hist.total).toBe(5)
+    expect(hist.maxCount).toBe(1)
+  })
+
+  it('puts boundary values into the upper bucket (5m → 5-15m, 1h → 1-4h)', () => {
+    const hist = buildSessionDurationHistogram([
+      session({ startedAt: '2026-06-01T00:00:00.000Z', duration: 300 }), // exactly 5m → lt15m
+      session({ startedAt: '2026-06-01T00:00:00.000Z', duration: 3600 }) // exactly 1h → lt4h
+    ])
+    expect(countOf(hist, 'lt5m')).toBe(0)
+    expect(countOf(hist, 'lt15m')).toBe(1)
+    expect(countOf(hist, 'lt1h')).toBe(0)
+    expect(countOf(hist, 'lt4h')).toBe(1)
+  })
+
+  it('excludes missing/non-positive durations and >24h stale sessions', () => {
+    const hist = buildSessionDurationHistogram([
+      session({ startedAt: '2026-06-01T00:00:00.000Z' }), // no duration
+      session({ startedAt: '2026-06-01T00:00:00.000Z', duration: 0 }),
+      session({ startedAt: '2026-06-01T00:00:00.000Z', duration: 25 * 60 * 60 }), // >24h stale
+      other('skill')
+    ])
+    expect(hist.total).toBe(0)
+    expect(hist.maxCount).toBe(0)
+    expect(hist.buckets).toHaveLength(5)
+  })
+})
 
 describe('buildHourlyRhythm', () => {
   // 2023-01-01 (UTC) 为周日 → getUTCDay()=0; 2023-01-02 为周一=1。
