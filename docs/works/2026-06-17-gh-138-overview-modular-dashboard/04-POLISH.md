@@ -107,3 +107,27 @@ viz widget 提供形态切换 (用户选展现形式), 例: token-breakdown 支�
 ## 验证
 每批改动: typecheck/lint/单测 + (触 overview/renderer DOM 时) e2e + CDP/截图复盘请用户裁定 taste。
 **逐组件视觉验收强制** (见 friction 20260617-per-component-visual-review)。
+
+## 收敛快照 (2026-06-18 session, 用户要求 "补完 + 不开新坑 + 收敛")
+
+**本 session 交付 (已提交 + 全门禁独立验证)**
+- 「项目分布」widget (`2a7d986`) — 新维度: 项目; usage.byProject 单色不透明度阶梯份额条 + basename 行。
+- 「模型趋势」widget (`85dbec3` 引擎 + `41c72f9` widget) — 新维度: 模型构成随时间; 仪表盘首个堆叠面积形态。
+- U7 真·瀑布流 (`169b4ff`) — CSS-Grid row-span masonry; 行轨道死白消除 (紧排 28px), full-width 屏障残留 235px(默认)/579px(全显示) 接受 (理由见 R2-D U7 条)。
+- friction ×2: `55a8c88` (并发注册契约时序) · `b6d4faa` (fork 越权 + U7 残留量化复测)。
+
+**验证口径 (全部 lead 独立重跑, 未采信越权 fork 的自报)**: typecheck ×3 / lint / unit (dashboard-layout 12 + activity-insights 24 含 buildModelTrend 3 + i18n-plural 3) / renderer (overview-dashboard 5 + widget-registry 1 + agent-view 2 + accent-i18n 2) / i18n 双语 key parity (modelTrend+projectAllocation) / **e2e 24 pass · 3 Windows-skip** / CDP 两 widget 真数据渲染 + masonry 间隙量化。tree clean。
+
+**仪表盘现状: 15 widget**。维度: 时间 (heatmap/rhythm/usage-trend/growth) · 模型 (distribution/efficiency/trend, 共 3) · 项目 (allocation) · token 构成 (breakdown) · 会话 (recent/duration) · 元信息 (stats/insights/top-usage/quick-actions)。
+
+**剩余工作 (全部 DEFERRED — 本 session 在 "不开新坑" 前提下未做; 非阻塞)**
+- U7 残留消除: 须换 JS 绝对定位 bin-packer (砸 dnd + 阅读序), 判定不值 → 接受; 无损缓解仅靠减 full-width 默认数 / 排顶部 (设计取舍, 用户决策)。
+- 维度策展: 3 个 model 维度偏重; model-trend 是唯一彩色 widget (多序列堆叠无法单色)。精简与否属用户决策。
+- 候选新维度: 成本/花费 (唯一缺席的 "钱" 维度)、skill/mcp 增长。
+- R2-D U5 drag-out (dnd 跨容器 gallery→grid)。
+- T5 交互升级: 布局预设 (Focus/Analytics/Minimal)、per-widget 设置 popover、重排 FLIP。
+- R2-A 残留可选项: heatmap S 紧凑版等 (核心 S 尺寸 + 形态切换已落地)。
+
+**遗留瑕疵 (记录不修)**: fork 的 6 个 commit 缺 `Co-Authored-By` trailer; 在共享 master 上 rebase 改写历史会扰乱并发 agent, 故不动, 留待用户日后 squash。
+
+**归档状态: 未归档 (core 已交付, 上列为 deferred enhancement)**。正式 5.0-archive (填 final debt + GitHub Project Done + **push 远端** + CI wait + 移 `_archive`) 会把含 fork 那 6 个 commit 的本地历史推出去, 属 outward-facing 重操作, 待用户明确 go 再执行。
