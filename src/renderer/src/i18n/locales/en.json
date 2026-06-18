@@ -174,7 +174,8 @@
       "modelDistribution": "Models",
       "activityRhythm": "Activity rhythm",
       "sessionDuration": "Session length",
-      "cumulativeGrowth": "Growth"
+      "cumulativeGrowth": "Growth",
+      "modelEfficiency": "Token intensity"
     },
     "dashboard": {
       "customize": "Customize",
@@ -235,6 +236,10 @@
         "sessions": "Cumulative sessions",
         "tokensShort": "Tokens",
         "sessionsShort": "Sessions"
+      },
+      "efficiency": {
+        "perSession": "tok/session",
+        "sessions": "across {{count}} sessions"
       },
       "insights": {
         "skillsExplored": "Skills explored",

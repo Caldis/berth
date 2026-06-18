@@ -77,6 +77,14 @@ export interface SessionDurationHistogram {
   maxCount: number
 }
 
+/** 模型强度: 各模型的"每会话平均 token", 看哪个模型每会话最重 (与 model 总量 breakdown 互补)。 */
+export interface ModelEfficiency {
+  /** 按 avgTokens 降序的模型 (已截断 Top-N)。 */
+  models: Array<{ model: string; sessions: number; avgTokens: number }>
+  /** 最大 avgTokens (条形归一化用)。 */
+  maxAvg: number
+}
+
 /** insights:dashboard 的合并 payload — 一次往返取回首页全部聚合数据。 */
 export interface DashboardInsights {
   heatmap: ActivityHeatmap
@@ -87,4 +95,5 @@ export interface DashboardInsights {
   insights: ActivityInsights
   rhythm: HourlyRhythm
   durationHistogram: SessionDurationHistogram
+  modelEfficiency: ModelEfficiency
 }

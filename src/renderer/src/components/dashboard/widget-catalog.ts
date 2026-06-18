@@ -99,6 +99,14 @@ export const WIDGET_CATALOG: Record<WidgetId, WidgetMeta> = {
     sizes: ['M', 'L', 'Wide'],
     defaultOrder: 11,
     defaultHidden: false
+  },
+  'model-efficiency': {
+    id: 'model-efficiency',
+    titleKey: 'overview.widgets.modelEfficiency',
+    defaultSize: 'M',
+    sizes: ['M', 'L'],
+    defaultOrder: 12,
+    defaultHidden: true
   }
 }
 

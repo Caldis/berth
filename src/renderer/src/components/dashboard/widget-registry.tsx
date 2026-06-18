@@ -3,6 +3,7 @@ import {
   BarChart3,
   Clock,
   Cpu,
+  Gauge,
   Timer,
   LayoutDashboard,
   Lightbulb,
@@ -26,6 +27,7 @@ import { ModelDistributionWidget } from './widgets/model-distribution.widget'
 import { ActivityRhythmWidget } from './widgets/activity-rhythm.widget'
 import { SessionDurationWidget } from './widgets/session-duration.widget'
 import { CumulativeGrowthWidget } from './widgets/cumulative-growth.widget'
+import { ModelEfficiencyWidget } from './widgets/model-efficiency.widget'
 
 // GH-138: widget 渲染绑定 (元数据来自 widget-catalog, 此处补 icon + component)。
 // 新增 widget: 建 *.widget.tsx + 在此注册一条; 未注册的 id 由 grid 优雅跳过。
@@ -42,7 +44,8 @@ const REGISTRY: Partial<Record<WidgetId, WidgetDefinition>> = {
   'model-distribution': { ...WIDGET_CATALOG['model-distribution'], icon: Cpu, component: ModelDistributionWidget },
   'activity-rhythm': { ...WIDGET_CATALOG['activity-rhythm'], icon: Clock, component: ActivityRhythmWidget },
   'session-duration': { ...WIDGET_CATALOG['session-duration'], icon: Timer, component: SessionDurationWidget },
-  'cumulative-growth': { ...WIDGET_CATALOG['cumulative-growth'], icon: TrendingUp, component: CumulativeGrowthWidget }
+  'cumulative-growth': { ...WIDGET_CATALOG['cumulative-growth'], icon: TrendingUp, component: CumulativeGrowthWidget },
+  'model-efficiency': { ...WIDGET_CATALOG['model-efficiency'], icon: Gauge, component: ModelEfficiencyWidget }
 }
 
 export function getWidgetDefinition(id: WidgetId): WidgetDefinition | undefined {

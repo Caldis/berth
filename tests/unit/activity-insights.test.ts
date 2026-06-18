@@ -5,6 +5,7 @@ import {
   buildActivityInsights,
   buildDashboardInsights,
   buildHourlyRhythm,
+  buildModelEfficiency,
   buildPeakMetrics,
   buildSessionDurationHistogram,
   buildStreakStats,
@@ -51,6 +52,30 @@ const stats: AssetStats = {
   commands: 4,
   subagents: 1
 }
+
+describe('buildModelEfficiency', () => {
+  it('computes avg tokens per session per model, sorted by avg desc', () => {
+    const eff = buildModelEfficiency([
+      session({ model: 'gpt-5.5', totalTokens: 1000 }),
+      session({ model: 'gpt-5.5', totalTokens: 3000 }),
+      session({ model: 'claude-opus', totalTokens: 500 })
+    ])
+    expect(eff.models.map((m) => m.model)).toEqual(['gpt-5.5', 'claude-opus'])
+    expect(eff.models[0]).toEqual({ model: 'gpt-5.5', sessions: 2, avgTokens: 2000 })
+    expect(eff.models[1]).toEqual({ model: 'claude-opus', sessions: 1, avgTokens: 500 })
+    expect(eff.maxAvg).toBe(2000)
+  })
+
+  it('excludes sessions without a model or with zero tokens', () => {
+    const eff = buildModelEfficiency([
+      session({ totalTokens: 1000 }), // no model
+      session({ model: 'x', totalTokens: 0 }), // zero tokens → avg 0 → filtered
+      other('skill')
+    ])
+    expect(eff.models).toEqual([])
+    expect(eff.maxAvg).toBe(0)
+  })
+})
 
 describe('buildSessionDurationHistogram', () => {
   const countOf = (hist: ReturnType<typeof buildSessionDurationHistogram>, id: string): number =>

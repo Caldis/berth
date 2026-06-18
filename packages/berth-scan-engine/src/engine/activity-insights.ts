@@ -5,6 +5,7 @@ import type {
   DashboardInsights,
   HeatmapDay,
   HourlyRhythm,
+  ModelEfficiency,
   PeakMetrics,
   SessionDurationHistogram,
   StreakStats,
@@ -264,6 +265,30 @@ export function buildSessionDurationHistogram(assets: Asset[]): SessionDurationH
   return { buckets, total, maxCount }
 }
 
+/** 模型强度: 各模型"每会话平均 token" Top-N (看哪个模型每会话最重)。复用 toRecord (model + tokens)。 */
+export function buildModelEfficiency(assets: Asset[], limit = 8): ModelEfficiency {
+  const acc = new Map<string, { sessions: number; tokens: number }>()
+  for (const asset of sessionAssets(assets)) {
+    const record = toRecord(asset)
+    if (!record.model) continue
+    const entry = acc.get(record.model) ?? { sessions: 0, tokens: 0 }
+    entry.sessions += 1
+    entry.tokens += record.tokens
+    acc.set(record.model, entry)
+  }
+  const models = [...acc.entries()]
+    .map(([model, e]) => ({
+      model,
+      sessions: e.sessions,
+      avgTokens: e.sessions > 0 ? Math.round(e.tokens / e.sessions) : 0
+    }))
+    .filter((m) => m.avgTokens > 0)
+    .sort((a, b) => b.avgTokens - a.avgTokens || a.model.localeCompare(b.model))
+    .slice(0, limit)
+  const maxAvg = models.reduce((max, m) => (m.avgTokens > max ? m.avgTokens : max), 0)
+  return { models, maxAvg }
+}
+
 /** 活动洞察 — 只产出 berth 数据可支撑字段。 */
 export function buildActivityInsights(assets: Asset[], stats: AssetStats): ActivityInsights {
   const sessions = sessionAssets(assets)
@@ -316,6 +341,7 @@ export function buildDashboardInsights(
     topMcpServers: buildTopUsage(sessions, { kind: 'mcp' }),
     insights: buildActivityInsights(sessions, stats),
     rhythm: buildHourlyRhythm(sessions, { tzOffsetMinutes: opts.tzOffsetMinutes }),
-    durationHistogram: buildSessionDurationHistogram(sessions)
+    durationHistogram: buildSessionDurationHistogram(sessions),
+    modelEfficiency: buildModelEfficiency(sessions)
   }
 }

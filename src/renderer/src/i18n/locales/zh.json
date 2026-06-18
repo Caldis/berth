@@ -172,7 +172,8 @@
       "modelDistribution": "模型",
       "activityRhythm": "活动节律",
       "sessionDuration": "会话时长",
-      "cumulativeGrowth": "累计增长"
+      "cumulativeGrowth": "累计增长",
+      "modelEfficiency": "Token 强度"
     },
     "dashboard": {
       "customize": "自定义",
@@ -233,6 +234,10 @@
         "sessions": "累计会话",
         "tokensShort": "Token",
         "sessionsShort": "会话"
+      },
+      "efficiency": {
+        "perSession": "tok/会话",
+        "sessions": "共 {{count}} 个会话"
       },
       "insights": {
         "skillsExplored": "已探索技能",

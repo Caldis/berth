@@ -248,7 +248,8 @@ export const mockApi = {
         ],
         total: 0,
         maxCount: 0
-      }
+      },
+      modelEfficiency: { models: [], maxAvg: 0 }
     })
   },
   hooks: {
