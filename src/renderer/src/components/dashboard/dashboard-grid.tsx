@@ -16,12 +16,15 @@ import { getWidgetDefinition } from './widget-registry'
 import { WIDGET_CATALOG } from './widget-catalog'
 import type { WidgetId, WidgetSize } from './widget-types'
 import type { WidgetLayoutItem } from '@/lib/dashboard-layout'
+import { useMasonryRowSpan } from './use-masonry-rows'
 
 // GH-138: 导轨式仪表盘网格 — 响应式 CSS Grid + 尺寸预设跨度; dnd-kit sortable 重排 (仅编辑态)。
 // 尺寸→跨度用字面类名 (Tailwind JIT 不识别插值)。未注册的 widget 优雅跳过。
 
 // 尺寸跨度 = 列跨 (内容决定高度, 不强制行高以免短组件被撑空)。M/L 的高度区分由 widget 内容
-// 驱动 (列表类 widget 在 L 显示更多条目, 自然更高更有用)。grid-flow-dense 回填空隙 (U7)。
+// 驱动 (列表类 widget 在 L 显示更多条目, 自然更高更有用)。
+// U7 真·瀑布流: row-span masonry (use-masonry-rows 按内容高算 gridRowEnd) + grid-flow-row-dense
+// 彻底消除竖向死白 (变高 widget 不再受行轨道对齐撑空); col-span 宽度变体不变。
 const SIZE_CLASS: Record<WidgetSize, string> = {
   S: 'col-span-1',
   M: 'col-span-1 md:col-span-1 xl:col-span-2',
@@ -65,7 +68,10 @@ export function DashboardGrid({
   return (
     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
       <SortableContext items={ids} strategy={rectSortingStrategy}>
-        <div className="grid grid-cols-1 gap-x-6 gap-y-7 md:grid-cols-2 md:grid-flow-row-dense xl:grid-cols-4">
+        <div
+          className="grid grid-cols-1 items-start gap-x-6 md:grid-cols-2 md:grid-flow-row-dense xl:grid-cols-4"
+          style={{ gridAutoRows: '1px' }}
+        >
           {rendered.map((item, index) => (
             <SortableWidget
               key={item.id}
@@ -104,20 +110,28 @@ function SortableWidget({
     id: item.id,
     disabled: !isEditing
   })
+  // U7 masonry: 按内容真实高度算 row 跨度, 与 dnd setNodeRef 合并到同一网格项元素。
+  const { setRef: setMasonryRef, span } = useMasonryRowSpan()
+  const setRefs = (node: HTMLDivElement | null): void => {
+    setNodeRef(node)
+    setMasonryRef(node)
+  }
 
   if (!def) return null
   const Component = def.component
   // 入场 stagger: CSS animate-in (不碰 transform, 与 dnd 不冲突), 仅首挂载/新增时跑;
   // animationDelay 阶梯 (上限 8 格), motion-safe 门控 reduced-motion。
+  // gridRowEnd: masonry 跨度 (内容高 + 间距); 容器 grid-auto-rows:1px + items-start 下精确占位。
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    animationDelay: `${Math.min(index, 8) * 45}ms`
+    animationDelay: `${Math.min(index, 8) * 45}ms`,
+    gridRowEnd: span ? `span ${span}` : undefined
   }
 
   return (
     <div
-      ref={setNodeRef}
+      ref={setRefs}
       style={style}
       className={cn(
         SIZE_CLASS[item.size],
