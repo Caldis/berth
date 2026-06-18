@@ -35,7 +35,7 @@
 - [x] U1 活动热力图占满横向空间: 周列 flex-1 + 格 aspect-square (随宽放大保持方形), 星期列 items-stretch 自动对齐动态格高。
 - [x] U2 洞察/常用 增实质: insights 加 Codex/Claude agent 占比条 + 更醒目值; top-usage 加排名序号 + 更粗条。
 - [x] U6 M/L 区分: 内容驱动 — recent-sessions L 显示 8 条(M 5), top-usage L 显示 10(M 5); 自然更高更有用 (避免强制行高撑空短组件)。
-- [~] U7 空隙回填: grid-flow-dense 回填可填空隙 (部分)。**真·瀑布流** (变高列式打包 + 动态高度) 需列式重构 + dnd 多容器 sortable, 属更大改造, 见候选。
+- [x] U7 空隙回填 → **真·瀑布流已落地** (commit 169b4ff): CSS-Grid row-span masonry (grid-auto-rows:1px + ResizeObserver 测内容高算 gridRowEnd + items-start 防反馈回环) + grid-flow-row-dense。无需绝对定位/JS bin-packer, dnd-kit sortable 不受影响。CDP 实测竖向间距收敛至 28px, 仅 full-width (Wide/XL) 屏障处残留结构性间隙 (无小 widget 可回填时, CSS grid 固有)。
 - [x] U5 iOS 小组件库式画廊: 隐藏 widget 改为底部 sticky 毛玻璃浮动面板 (backdrop-blur 悬浮于网格上方),
   以**缩放实时预览**呈现 (渲染真实 widget 内容如 token 构成堆叠条/模型榜, 非标题), 点击取用加入网格。
   美学/哲学对齐 iOS widget gallery。**遗留增强**: 直接拖拽出来 (需 dnd-kit 跨容器 gallery→grid, 列候选)。
@@ -74,7 +74,7 @@ viz widget 提供形态切换 (用户选展现形式), 例: token-breakdown 支�
 
 ### R2-D 架构级 (都要做)
 - [ ] U5 drag-out: dnd-kit 跨容器 (gallery DndContext 与 grid 共享), 从画廊直接拖入网格 (现为点击取用)
-- [ ] U7 真·瀑布流: 列式 masonry 打包 + 动态高度彻底消除空隙 (现 dense 部分); 需与 dnd sortable 协调 (多列 sortable 或自定义)
+- [x] U7 真·瀑布流 (commit 169b4ff): CSS-Grid row-span masonry — grid-auto-rows:1px + 每项 ResizeObserver 测内容高算 gridRowEnd span + grid-flow-row-dense 回填; items-start 使项盒=内容高避免测量反馈回环。dnd-kit sortable 零改动兼容。CDP+app e2e 14/14 验证通过。
 
 ### R2-E 超额交付 (举一反三 — 用户中途显式授权 "我说一你做5, 给我惊喜")
 见 friction 20260617-extrapolate-beyond-literal-ask + memory user-wants-extrapolative-delivery。
@@ -90,10 +90,11 @@ viz widget 提供形态切换 (用户选展现形式), 例: token-breakdown 支�
       ⑤ 项目分布 byProject 份额 (2a7d986, 并发 agent 交付); ⑥ 模型趋势 tokens 分模型**堆叠面积**
       (engine buildModelTrend 85dbec3 + widget 41c72f9, 仪表盘首个"随时间堆叠"形态)。
       各为纯函数聚合 + 单测 + 全链路注册 (catalog/registry/types/i18n/layout-test)。
-      候选续做: skill/mcp 增长 (现成数据)、模型成本趋势分模型 (跨层, 较重)。CDP 视觉验收: model-trend 待与 U7 masonry 合并验证。
+      候选续做: skill/mcp 增长 (现成数据)、模型成本趋势分模型 (跨层, 较重)。
+      CDP 视觉验收: model-trend 已与 U7 masonry 合并实测 — 6 段堆叠面积真数据渲染正确 (claude-opus-4-8 等 5 模型 + others, 25/30 天有数据)。
 - [x] T4 形态切换推广: token-breakdown / usage-trend / model-distribution 已接入可复用 ChartTypeToggle + 持久化。
 - [ ] T5 交互/动效升级: 布局预设 (Focus/Analytics/Minimal 一键)、per-widget 设置 popover (维度+范围+形态集中)、
-      重排 FLIP 动效、U5 拖出、U7 真瀑布流。
+      重排 FLIP 动效、U5 拖出。(U7 真瀑布流已完成, 见 R2-D。)
 
 ### 执行方式 (context 友好)
 - 用子代理做**逐组件设计评审**: 子代理读单个 widget 源 + 返回简明 findings (尺寸/留白/美学/形态建议), 主 Agent 落地, 不把大段分析灌入主上下文。
