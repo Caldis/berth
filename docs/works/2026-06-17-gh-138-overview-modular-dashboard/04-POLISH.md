@@ -35,7 +35,9 @@
 - [x] U1 活动热力图占满横向空间: 周列 flex-1 + 格 aspect-square (随宽放大保持方形), 星期列 items-stretch 自动对齐动态格高。
 - [x] U2 洞察/常用 增实质: insights 加 Codex/Claude agent 占比条 + 更醒目值; top-usage 加排名序号 + 更粗条。
 - [x] U6 M/L 区分: 内容驱动 — recent-sessions L 显示 8 条(M 5), top-usage L 显示 10(M 5); 自然更高更有用 (避免强制行高撑空短组件)。
-- [x] U7 空隙回填 → **真·瀑布流已落地** (commit 169b4ff): CSS-Grid row-span masonry (grid-auto-rows:1px + ResizeObserver 测内容高算 gridRowEnd + items-start 防反馈回环) + grid-flow-row-dense。无需绝对定位/JS bin-packer, dnd-kit sortable 不受影响。CDP 实测竖向间距收敛至 28px, 仅 full-width (Wide/XL) 屏障处残留结构性间隙 (无小 widget 可回填时, CSS grid 固有)。
+- [x] U7 空隙回填 → **真·瀑布流已落地** (commit 169b4ff): CSS-Grid row-span masonry (grid-auto-rows:1px + ResizeObserver 测内容高算 gridRowEnd + items-start 防反馈回环) + grid-flow-row-dense。无需绝对定位/JS bin-packer, dnd-kit sortable 不受影响。
+  - **lead 独立 CDP 复测 (量化, 勿只信"收敛至 28px"的笼统说法)**: 普通变高 widget 已紧排至 28px 间距 (行轨道对齐死白确已消除, 核心目标达成)。但 full-width (Wide/XL) 屏障上方残留**可观**间隙: 默认布局 (10 widget) 实测单洞约 235px; 全 15 widget 显示时最大约 579px (Models→Usage 132px、Recent sessions→Growth 579px)。成因: col-span-4 屏障强制清空所有列, 其上方较矮列无小 widget 可回填即留洞, 是 CSS-grid dense + dnd-kit rect sortable 约束下的**固有**残留, 非 bug。
+  - **工程判定**: 要 100% 消除须改 JS 绝对定位 bin-packer (Pinterest 式), 会破坏 dnd-kit 的 rect 碰撞排序 + DOM 阅读序 + 入场动效, 代价远大于收益 → **接受此残留**。缓解只能靠减少 full-width 默认 widget 数 (设计取舍, 属用户决策) 或把 full-width widget 排在布局顶部 (其上无内容则无洞)。
 - [x] U5 iOS 小组件库式画廊: 隐藏 widget 改为底部 sticky 毛玻璃浮动面板 (backdrop-blur 悬浮于网格上方),
   以**缩放实时预览**呈现 (渲染真实 widget 内容如 token 构成堆叠条/模型榜, 非标题), 点击取用加入网格。
   美学/哲学对齐 iOS widget gallery。**遗留增强**: 直接拖拽出来 (需 dnd-kit 跨容器 gallery→grid, 列候选)。
