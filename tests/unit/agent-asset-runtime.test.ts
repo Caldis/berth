@@ -76,6 +76,41 @@ function createScanner(scanResult: ScanResult): AssetRuntimeScanner {
   }
 }
 
+// GH-140: a scanner whose scanAll never settles — models a slow full rescan, so a
+// test that finishes proves ensureReady did NOT await it (SWR), and one that hangs
+// proves it blocked.
+function pendingScanner(): AssetRuntimeScanner {
+  return {
+    scanAll: vi.fn(() => new Promise<ScanResult>(() => {})),
+    getScanSourceGroups: vi.fn(async () => []),
+    getProjectScopeCandidates: vi.fn(() => []),
+    getProjectDir: () => '/repo/berth'
+  }
+}
+
+// GH-140: a runtime cold-started from a persisted snapshot — status 'stale', data
+// already seeded, no scan run yet (mirrors restorePersistedSnapshot).
+function staleRuntime(assets: Asset[], scanner: AssetRuntimeScanner): AgentAssetRuntime {
+  const persisted: AssetSnapshot = {
+    id: 'persisted',
+    projectDir: '/repo/berth',
+    assets,
+    stats: emptyStats,
+    errors: [],
+    sources: [],
+    projectCandidates: [],
+    status: { state: 'ready', stale: false, lastCompletedAt: '2026-06-06T00:00:00.000Z' }
+  }
+  const store = { load: vi.fn(() => persisted), save: vi.fn(), clear: vi.fn() }
+  return new AgentAssetRuntime({
+    projectDir: '/repo/berth',
+    createScanner: () => scanner,
+    now: () => '2026-06-07T00:00:00.000Z',
+    createSnapshotId: () => 'snapshot-swr',
+    snapshotStore: store
+  })
+}
+
 describe('AgentAssetRuntime', () => {
   afterEach(() => {
     vi.useRealTimers()
@@ -931,6 +966,63 @@ describe('AgentAssetRuntime', () => {
     expect(runtime.getStatus().state).toBe('stale')
     expect(runtime.getStatus().stale).toBe(true)
     expect(scanner.scanAll).not.toHaveBeenCalled()
+  })
+
+  it('GH-140: ensureReady serves the stale persisted snapshot immediately and refreshes in the background', async () => {
+    const scanner = pendingScanner()
+    const runtime = staleRuntime([skillAsset('cached')], scanner)
+    expect(runtime.getStatus().state).toBe('stale')
+
+    // Must resolve WITHOUT awaiting the never-resolving rescan — SWR, not a block.
+    const snapshot = await runtime.ensureReady({ reason: 'manual' })
+
+    expect(snapshot.assets.map((a) => a.id)).toEqual(['cached']) // old data served immediately
+    expect(scanner.scanAll).toHaveBeenCalledTimes(1) // background refresh kicked off
+    expect(runtime.getStatus().state).toBe('scanning') // rescan now in flight
+  }, 1000)
+
+  it('GH-140: listSessions serves stale sessions immediately without blocking on the rescan', async () => {
+    const scanner = pendingScanner()
+    const runtime = staleRuntime([sessionAsset('s1'), sessionAsset('s2')], scanner)
+
+    const result = await runtime.listSessions({})
+
+    expect(result.sessions).toHaveLength(2) // served from the stale snapshot
+    expect(scanner.scanAll).toHaveBeenCalledTimes(1) // background refresh kicked off
+  }, 1000)
+
+  it('GH-140: ensureReady does not re-block when a scan is already in flight and a snapshot exists', async () => {
+    const scanner = pendingScanner()
+    const runtime = staleRuntime([skillAsset('cached')], scanner)
+    void runtime.refresh({ reason: 'manual', wait: false }) // scan already in flight
+    expect(runtime.getStatus().state).toBe('scanning')
+
+    const snapshot = await runtime.ensureReady({ reason: 'manual' })
+
+    expect(snapshot.assets.map((a) => a.id)).toEqual(['cached'])
+    expect(scanner.scanAll).toHaveBeenCalledTimes(1) // single-flight: no duplicate scan
+  }, 1000)
+
+  it('GH-140: ensureReady still awaits the first scan when there is no persisted snapshot', async () => {
+    const scanner = createScanner({ assets: [skillAsset('fresh')], stats: { ...emptyStats, skills: 1 }, errors: [] })
+    const runtime = createRuntime(scanner)
+    expect(runtime.getStatus().state).toBe('idle')
+
+    const snapshot = await runtime.ensureReady({ reason: 'manual' })
+
+    expect(snapshot.assets.map((a) => a.id)).toEqual(['fresh']) // awaited the first scan (no data otherwise)
+    expect(snapshot.status.state).toBe('ready')
+  })
+
+  it('GH-140: ensureReady({ refresh: true }) still awaits a fresh scan even with a ready snapshot', async () => {
+    const scanner = createScanner({ assets: [skillAsset('x')], stats: { ...emptyStats, skills: 1 }, errors: [] })
+    const runtime = createRuntime(scanner)
+    await runtime.refresh({ reason: 'startup', wait: true })
+    expect(scanner.scanAll).toHaveBeenCalledTimes(1)
+
+    await runtime.ensureReady({ refresh: true })
+
+    expect(scanner.scanAll).toHaveBeenCalledTimes(2) // forced rescan awaited
   })
 
   it('persists the default-project snapshot on refresh complete, not other projects (GH-113 T1)', async () => {

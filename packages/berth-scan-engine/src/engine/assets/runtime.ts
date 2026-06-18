@@ -523,18 +523,32 @@ export class AgentAssetRuntime {
     return this.selectorCache.select(key, this.snapshot, derive)
   }
 
+  /**
+   * Serve the current snapshot to a derived read, refreshing per SWR (GH-140).
+   *
+   * The cold-start stall fix: `restorePersistedSnapshot` marks the runtime `stale`
+   * on every cold start, and `ensureReady` used to `await refresh({ wait: true })`
+   * on `stale` — so every derived read (dashboard insights, usage, sessions,
+   * health, search, …) blocked behind the full rescan, freezing the first screen
+   * behind the top loading bar for the whole 30s–1min scan. Now: with any usable
+   * snapshot in hand (`id !== 'initial'`), return it instantly and, if it's stale,
+   * kick a background refresh (no await). The renderer reacts to the eventual
+   * `assets:changed` and reloads (SWR). Only an empty index (`initial` — first ever
+   * launch, or an error before the first commit) genuinely has nothing to show, so
+   * it still blocks on the first scan. An explicit `refresh` always blocks.
+   */
   async ensureReady(options: AssetRuntimeEnsureOptions = {}): Promise<AssetSnapshot> {
-    if (options.refresh || this.status.state === 'idle' || this.status.state === 'stale') {
+    if (options.refresh) {
       await this.refresh({ reason: options.reason ?? 'manual', wait: true })
       return this.snapshot
     }
-    if (this.status.state === 'scanning') {
-      await this.refresh({ wait: true })
+    if (this.snapshot.id !== 'initial') {
+      if (this.status.state === 'stale') {
+        void this.refresh({ reason: options.reason ?? 'manual', wait: false })
+      }
       return this.snapshot
     }
-    if (this.status.state === 'error' && this.snapshot.id === 'initial') {
-      await this.refresh({ reason: options.reason ?? 'manual', wait: true })
-    }
+    await this.refresh({ reason: options.reason ?? 'manual', wait: true })
     return this.snapshot
   }
 

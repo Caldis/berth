@@ -2,7 +2,7 @@
 task: 2026-06-18-gh-140-cold-start-blocking-load
 task_id: GH-140
 type: bug
-phase: implement
+phase: verify
 created: 2026-06-18
 priority: P1
 target_date:
