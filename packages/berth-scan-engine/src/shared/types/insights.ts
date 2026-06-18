@@ -85,6 +85,33 @@ export interface ModelEfficiency {
   maxAvg: number
 }
 
+/** others 聚合桶的模型键 (哨兵, 不与真实 model id 冲突; widget 映射为本地化 "其他")。契约单一真源, engine 与 renderer 共用。 */
+export const MODEL_TREND_OTHERS = '__others__'
+
+/** 模型趋势的单日点: 当日各模型 token (零填充) + 当日总量。 */
+export interface ModelTrendPoint {
+  /** ISO 日 (UTC)。 */
+  date: string
+  /** 当日总 token (仅计入 models 内的键, 已含 others 桶)。 */
+  total: number
+  /** model 键 → 当日 token; 对 models 中每个键都有值 (零填充, 便于堆叠图直接消费)。 */
+  tokens: Record<string, number>
+}
+
+/** 模型趋势: tokens 分模型随时间分布 (堆叠面积), 看"模型构成随时间如何迁移"。 */
+export interface ModelTrend {
+  /** 连续日序列 (升序, 含零活动日)。 */
+  days: string[]
+  /** 堆叠顺序的模型键 (Top-N 按窗口内总量降序 + 可能的 others 桶, 桶 id = MODEL_TREND_OTHERS)。 */
+  models: string[]
+  /** 每日一个点 (与 days 同序)。 */
+  points: ModelTrendPoint[]
+  /** 单日最大总 token (轴归一化用)。 */
+  maxTotal: number
+  rangeStart: string
+  rangeEnd: string
+}
+
 /** insights:dashboard 的合并 payload — 一次往返取回首页全部聚合数据。 */
 export interface DashboardInsights {
   heatmap: ActivityHeatmap
@@ -96,4 +123,5 @@ export interface DashboardInsights {
   rhythm: HourlyRhythm
   durationHistogram: SessionDurationHistogram
   modelEfficiency: ModelEfficiency
+  modelTrend: ModelTrend
 }

@@ -6,13 +6,18 @@ import type {
   HeatmapDay,
   HourlyRhythm,
   ModelEfficiency,
+  ModelTrend,
+  ModelTrendPoint,
   PeakMetrics,
   SessionDurationHistogram,
   StreakStats,
   TopUsageEntry
 } from '@shared/types/insights'
+import { MODEL_TREND_OTHERS } from '@shared/types/insights'
 import { normalizeTokenUsage } from '@shared/token-usage'
 import { readNumber, readString, readStringArray } from '@shared/object-guards'
+
+export { MODEL_TREND_OTHERS }
 
 // GH-138: 首页仪表盘聚合纯函数。输入为已扫描资产 (调用方按 project/agent 预过滤);
 // 只读 session 资产 meta (复用 toSessionSummary 同口径字段), 不引 session-detail 的重依赖。
@@ -289,6 +294,62 @@ export function buildModelEfficiency(assets: Asset[], limit = 8): ModelEfficienc
   return { models, maxAvg }
 }
 
+// 模型趋势: 窗口内按总量取 Top-N 模型, 其余并入 others 桶; 逐日零填充, 供堆叠面积消费。
+const MODEL_TREND_TOP_N = 5
+const MODEL_TREND_DEFAULT_DAYS = 30
+
+/** tokens 分模型随时间分布: 看模型构成如何迁移 (与 model 总量/强度互补)。复用 toRecord (model+tokens+day)。 */
+export function buildModelTrend(
+  assets: Asset[],
+  opts: { days?: number; now?: Date | string; topN?: number } = {}
+): ModelTrend {
+  const days = opts.days && opts.days > 0 ? Math.floor(opts.days) : MODEL_TREND_DEFAULT_DAYS
+  const topN = opts.topN && opts.topN > 0 ? Math.floor(opts.topN) : MODEL_TREND_TOP_N
+  const end = startOfUtcDay(resolveNow(opts.now))
+  const start = addUtcDays(end, -(days - 1))
+  const startKey = isoDay(start)
+  const endKey = isoDay(end)
+
+  const modelTotals = new Map<string, number>()
+  const byDayModel = new Map<string, Map<string, number>>()
+  for (const asset of sessionAssets(assets)) {
+    const record = toRecord(asset)
+    if (!record.day || !record.model || record.tokens <= 0) continue
+    if (record.day < startKey || record.day > endKey) continue
+    modelTotals.set(record.model, (modelTotals.get(record.model) ?? 0) + record.tokens)
+    const dayMap = byDayModel.get(record.day) ?? new Map<string, number>()
+    dayMap.set(record.model, (dayMap.get(record.model) ?? 0) + record.tokens)
+    byDayModel.set(record.day, dayMap)
+  }
+
+  const ranked = [...modelTotals.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+  const topModels = ranked.slice(0, topN).map(([model]) => model)
+  const topSet = new Set(topModels)
+  const hasOthers = ranked.length > topModels.length
+  const models = hasOthers ? [...topModels, MODEL_TREND_OTHERS] : topModels
+
+  const points: ModelTrendPoint[] = []
+  let maxTotal = 0
+  for (let i = 0; i < days; i++) {
+    const date = isoDay(addUtcDays(start, i))
+    const tokens: Record<string, number> = {}
+    for (const model of models) tokens[model] = 0
+    let total = 0
+    const dayMap = byDayModel.get(date)
+    if (dayMap) {
+      for (const [model, tok] of dayMap) {
+        const key = topSet.has(model) ? model : MODEL_TREND_OTHERS
+        tokens[key] += tok
+        total += tok
+      }
+    }
+    points.push({ date, total, tokens })
+    if (total > maxTotal) maxTotal = total
+  }
+
+  return { days: points.map((p) => p.date), models, points, maxTotal, rangeStart: startKey, rangeEnd: endKey }
+}
+
 /** 活动洞察 — 只产出 berth 数据可支撑字段。 */
 export function buildActivityInsights(assets: Asset[], stats: AssetStats): ActivityInsights {
   const sessions = sessionAssets(assets)
@@ -342,6 +403,7 @@ export function buildDashboardInsights(
     insights: buildActivityInsights(sessions, stats),
     rhythm: buildHourlyRhythm(sessions, { tzOffsetMinutes: opts.tzOffsetMinutes }),
     durationHistogram: buildSessionDurationHistogram(sessions),
-    modelEfficiency: buildModelEfficiency(sessions)
+    modelEfficiency: buildModelEfficiency(sessions),
+    modelTrend: buildModelTrend(sessions, { now: opts.now })
   }
 }

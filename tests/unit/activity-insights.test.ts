@@ -6,10 +6,12 @@ import {
   buildDashboardInsights,
   buildHourlyRhythm,
   buildModelEfficiency,
+  buildModelTrend,
   buildPeakMetrics,
   buildSessionDurationHistogram,
   buildStreakStats,
-  buildTopUsage
+  buildTopUsage,
+  MODEL_TREND_OTHERS
 } from '@berth/scan-engine/engine/activity-insights'
 
 const NOW = '2026-06-17T12:00:00.000Z' // today=2026-06-17, yesterday=2026-06-16
@@ -74,6 +76,58 @@ describe('buildModelEfficiency', () => {
     ])
     expect(eff.models).toEqual([])
     expect(eff.maxAvg).toBe(0)
+  })
+})
+
+describe('buildModelTrend', () => {
+  it('materializes a continuous zero-filled daily series with per-model tokens', () => {
+    const trend = buildModelTrend(
+      [
+        session({ startedAt: '2026-06-16T09:00:00.000Z', model: 'gpt-5.5', totalTokens: 100 }),
+        session({ startedAt: '2026-06-16T18:00:00.000Z', model: 'claude-opus', totalTokens: 40 }),
+        session({ startedAt: '2026-06-17T09:00:00.000Z', model: 'gpt-5.5', totalTokens: 60 })
+      ],
+      { now: NOW, days: 3 } // window = 06-15..06-17
+    )
+    expect(trend.days).toEqual(['2026-06-15', '2026-06-16', '2026-06-17'])
+    expect(trend.models).toEqual(['gpt-5.5', 'claude-opus']) // ranked by window total desc
+    expect(trend.points[0]).toEqual({ date: '2026-06-15', total: 0, tokens: { 'gpt-5.5': 0, 'claude-opus': 0 } })
+    expect(trend.points[1]).toEqual({
+      date: '2026-06-16',
+      total: 140,
+      tokens: { 'gpt-5.5': 100, 'claude-opus': 40 }
+    })
+    expect(trend.points[2].tokens['gpt-5.5']).toBe(60)
+    expect(trend.maxTotal).toBe(140)
+  })
+
+  it('aggregates models beyond Top-N into the others bucket', () => {
+    const trend = buildModelTrend(
+      [
+        session({ startedAt: '2026-06-17T09:00:00.000Z', model: 'm1', totalTokens: 600 }),
+        session({ startedAt: '2026-06-17T09:00:00.000Z', model: 'm2', totalTokens: 500 }),
+        session({ startedAt: '2026-06-17T09:00:00.000Z', model: 'm3', totalTokens: 50 })
+      ],
+      { now: NOW, days: 1, topN: 2 }
+    )
+    expect(trend.models).toEqual(['m1', 'm2', MODEL_TREND_OTHERS])
+    expect(trend.points[0].tokens[MODEL_TREND_OTHERS]).toBe(50) // m3 folded into others
+    expect(trend.points[0].total).toBe(1150)
+  })
+
+  it('skips sessions outside the window, without a model, or with zero tokens', () => {
+    const trend = buildModelTrend(
+      [
+        session({ startedAt: '2026-01-01T09:00:00.000Z', model: 'old', totalTokens: 999 }), // before window
+        session({ startedAt: '2026-06-17T09:00:00.000Z', totalTokens: 100 }), // no model
+        session({ startedAt: '2026-06-17T09:00:00.000Z', model: 'z', totalTokens: 0 }), // zero tokens
+        other('skill')
+      ],
+      { now: NOW, days: 2 }
+    )
+    expect(trend.models).toEqual([])
+    expect(trend.maxTotal).toBe(0)
+    expect(trend.points.every((p) => p.total === 0)).toBe(true)
   })
 })
 

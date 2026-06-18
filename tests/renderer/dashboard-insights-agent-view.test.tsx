@@ -30,7 +30,8 @@ const EMPTY_INSIGHTS = {
   },
   rhythm: { grid: [], maxSessions: 0, totalSessions: 0, peak: null },
   durationHistogram: { buckets: [], total: 0, maxCount: 0 },
-  modelEfficiency: { models: [], maxAvg: 0 }
+  modelEfficiency: { models: [], maxAvg: 0 },
+  modelTrend: { days: [], models: [], points: [], maxTotal: 0, rangeStart: '', rangeEnd: '' }
 }
 
 describe('useDashboardInsights — agentView threading (GH-138)', () => {
