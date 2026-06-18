@@ -84,10 +84,13 @@ viz widget 提供形态切换 (用户选展现形式), 例: token-breakdown 支�
       (更多条目 + 更大图 + 轴/网格细节)。给所有适用 widget 补 S, 让 S/M/L 是三种**信息密度设计**
       而非仅宽度。已: usage-trend(M/L/Wide 高度+轴密度)、model-distribution(M5/L8)。
 - [ ] T2 让数据活起来: 环比 delta (本周期 vs 上周期 ▲▼%) + sparkline 注入指标卡; (依赖 Explore 数据可得性结论)
-- [~] T3 新维度 widget (Explore 已给可行性图): **活动节律 hour×weekday 已落地** (commit fe684e5,
-      buildHourlyRhythm 纯函数 + punch-card widget, 已实测真数据"周二14:00最活跃"渲染正确)。
-      候选续做 (数据已确认可得): 会话时长分布 (histogram, 新聚合)、tokens/session 效率分模型 (新聚合)、
-      skill/mcp 榜 (现成, 提 limit)、模型成本趋势分模型 (跨层, 较重)。
+- [~] T3 新维度 widget (Explore 已给可行性图): 已落地 6 个新维度, 刻意分散视觉形态避免重复 —
+      ① 活动节律 hour×weekday punch-card (fe684e5); ② 会话时长分布 histogram (c4717bb);
+      ③ 累计增长曲线 area (c5ed81e); ④ Token 强度 tokens/session 分模型 bar (948d173);
+      ⑤ 项目分布 byProject 份额 (2a7d986, 并发 agent 交付); ⑥ 模型趋势 tokens 分模型**堆叠面积**
+      (engine buildModelTrend 85dbec3 + widget 41c72f9, 仪表盘首个"随时间堆叠"形态)。
+      各为纯函数聚合 + 单测 + 全链路注册 (catalog/registry/types/i18n/layout-test)。
+      候选续做: skill/mcp 增长 (现成数据)、模型成本趋势分模型 (跨层, 较重)。CDP 视觉验收: model-trend 待与 U7 masonry 合并验证。
 - [x] T4 形态切换推广: token-breakdown / usage-trend / model-distribution 已接入可复用 ChartTypeToggle + 持久化。
 - [ ] T5 交互/动效升级: 布局预设 (Focus/Analytics/Minimal 一键)、per-widget 设置 popover (维度+范围+形态集中)、
       重排 FLIP 动效、U5 拖出、U7 真瀑布流。
