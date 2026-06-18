@@ -18,3 +18,17 @@ export function tokenTrend(days: HeatmapDay[], window = 7, sparkDays = 14): Toke
   const deltaPct = prior > 0 ? ((recent - prior) / prior) * 100 : null
   return { series, deltaPct }
 }
+
+export interface CumulativePoint {
+  date: string
+  value: number
+}
+
+/** 累计运行总和序列 (单调增长): 逐日把 tokens/sessions 累加, 画"累计增长曲线"。纯函数。 */
+export function cumulativeSeries(days: HeatmapDay[], pick: 'tokens' | 'sessions'): CumulativePoint[] {
+  let acc = 0
+  return days.map((day) => {
+    acc += (pick === 'tokens' ? day.tokens : day.sessions) || 0
+    return { date: day.date, value: acc }
+  })
+}

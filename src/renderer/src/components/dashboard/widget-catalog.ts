@@ -91,6 +91,14 @@ export const WIDGET_CATALOG: Record<WidgetId, WidgetMeta> = {
     sizes: ['M', 'L'],
     defaultOrder: 10,
     defaultHidden: false
+  },
+  'cumulative-growth': {
+    id: 'cumulative-growth',
+    titleKey: 'overview.widgets.cumulativeGrowth',
+    defaultSize: 'M',
+    sizes: ['M', 'L', 'Wide'],
+    defaultOrder: 11,
+    defaultHidden: false
   }
 }
 

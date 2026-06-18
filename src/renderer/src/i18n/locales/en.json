@@ -173,7 +173,8 @@
       "tokenBreakdown": "Token breakdown",
       "modelDistribution": "Models",
       "activityRhythm": "Activity rhythm",
-      "sessionDuration": "Session length"
+      "sessionDuration": "Session length",
+      "cumulativeGrowth": "Growth"
     },
     "dashboard": {
       "customize": "Customize",
@@ -228,6 +229,12 @@
         "lt4h": "1–4 h",
         "gte4h": "4 h+",
         "summary": "{{count}} timed sessions · most run {{bucket}}"
+      },
+      "cumulative": {
+        "tokens": "Cumulative tokens",
+        "sessions": "Cumulative sessions",
+        "tokensShort": "Tokens",
+        "sessionsShort": "Sessions"
       },
       "insights": {
         "skillsExplored": "Skills explored",

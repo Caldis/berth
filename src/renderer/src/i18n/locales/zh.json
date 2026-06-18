@@ -171,7 +171,8 @@
       "tokenBreakdown": "Token 构成",
       "modelDistribution": "模型",
       "activityRhythm": "活动节律",
-      "sessionDuration": "会话时长"
+      "sessionDuration": "会话时长",
+      "cumulativeGrowth": "累计增长"
     },
     "dashboard": {
       "customize": "自定义",
@@ -226,6 +227,12 @@
         "lt4h": "1–4 小时",
         "gte4h": "4 小时+",
         "summary": "{{count}} 个计时会话 · 多为 {{bucket}}"
+      },
+      "cumulative": {
+        "tokens": "累计 Token",
+        "sessions": "累计会话",
+        "tokensShort": "Token",
+        "sessionsShort": "会话"
       },
       "insights": {
         "skillsExplored": "已探索技能",

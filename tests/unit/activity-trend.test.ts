@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { tokenTrend } from '@/lib/activity-trend'
+import { cumulativeSeries, tokenTrend } from '@/lib/activity-trend'
 import type { HeatmapDay } from '@shared/types/insights'
 
 function days(tokens: number[]): HeatmapDay[] {
@@ -28,5 +28,21 @@ describe('tokenTrend', () => {
   it('returns null delta when there is no prior-window baseline', () => {
     expect(tokenTrend(days([1, 2, 3]), 7, 14).deltaPct).toBeNull()
     expect(tokenTrend([], 7, 14)).toEqual({ series: [], deltaPct: null })
+  })
+})
+
+describe('cumulativeSeries', () => {
+  it('accumulates tokens into a monotonic running total', () => {
+    const series = cumulativeSeries(days([10, 20, 30]), 'tokens')
+    expect(series.map((p) => p.value)).toEqual([10, 30, 60])
+    expect(series[2].date).toBe('2026-01-03')
+  })
+
+  it('accumulates sessions (one per active day here)', () => {
+    expect(cumulativeSeries(days([5, 0, 7, 7]), 'sessions').map((p) => p.value)).toEqual([1, 1, 2, 3])
+  })
+
+  it('returns [] for no days', () => {
+    expect(cumulativeSeries([], 'tokens')).toEqual([])
   })
 })

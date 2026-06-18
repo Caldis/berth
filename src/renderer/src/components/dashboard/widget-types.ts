@@ -18,6 +18,7 @@ export type WidgetId =
   | 'model-distribution'
   | 'activity-rhythm'
   | 'session-duration'
+  | 'cumulative-growth'
 
 /** widget 纯元数据 — 与渲染解耦; 新增 widget 在 widget-catalog 加一条。 */
 export interface WidgetMeta {
