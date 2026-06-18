@@ -35,7 +35,8 @@ export function Sessions(): React.ReactElement {
   const navigate = useNavigate()
   const scopeSelection = useAppStore((s) => s.scopeSelection)
   const projectPath = projectPathForScope(scopeSelection)
-  const { sessions, loading, stale, error, reload } = useSessions({ projectPath })
+  const agentView = useAppStore((s) => s.agentView)
+  const { sessions, loading, stale, error, reload } = useSessions({ projectPath, agentView })
 
   const [filter, setFilter] = useState('')
   const deferredFilter = useDeferredValue(filter)

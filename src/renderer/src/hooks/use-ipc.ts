@@ -79,7 +79,8 @@ function createSessionListRequest(opts?: SessionListRequest): SessionListRequest
   return {
     projectFilter: opts?.projectFilter,
     limit: opts?.limit,
-    agentView: opts?.agentView,
+    // 'all'/未设 = 不过滤: 归一为 undefined (请求/缓存键与默认态一致, 不影响既有行为)。
+    agentView: opts?.agentView && opts.agentView !== 'all' ? opts.agentView : undefined,
     ...(opts?.projectPath ? { projectPath: opts.projectPath } : {})
   }
 }

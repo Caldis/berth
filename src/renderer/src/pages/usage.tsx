@@ -297,6 +297,7 @@ export function Usage(): React.ReactElement {
   const [pricingOverrideCopied, setPricingOverrideCopied] = useState(false)
   const scopeSelection = useAppStore((s) => s.scopeSelection)
   const projectPath = projectPathForScope(scopeSelection)
+  const agentView = useAppStore((s) => s.agentView)
 
   useEffect(() => {
     let cancelled = false
@@ -304,6 +305,8 @@ export function Usage(): React.ReactElement {
     const request = {
       days,
       costMode,
+      // 'all'/未设 = 不过滤 (与 useDashboardInsights/useUsageSummary 一致)。
+      ...(agentView && agentView !== 'all' ? { agentView } : {}),
       ...(projectPath ? { projectPath } : {})
     }
     window.api?.usage
@@ -324,7 +327,7 @@ export function Usage(): React.ReactElement {
     return () => {
       cancelled = true
     }
-  }, [costMode, days, projectPath, reloadKey])
+  }, [costMode, days, projectPath, agentView, reloadKey])
 
   const hasCostData = usage && usage.dailyCosts.length > 0
   const hasModelData = usage && usage.byModel.length > 0
