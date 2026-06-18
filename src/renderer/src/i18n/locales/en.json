@@ -176,7 +176,8 @@
       "sessionDuration": "Session length",
       "cumulativeGrowth": "Growth",
       "modelEfficiency": "Token intensity",
-      "projectAllocation": "Projects"
+      "projectAllocation": "Projects",
+      "modelTrend": "Model mix"
     },
     "dashboard": {
       "customize": "Customize",
@@ -245,6 +246,10 @@
       "projectAllocation": {
         "others": "Others",
         "acrossProjects": "across {{count}} projects"
+      },
+      "modelTrend": {
+        "others": "Others",
+        "subtitle": "Token mix · last 30 days"
       },
       "insights": {
         "skillsExplored": "Skills explored",

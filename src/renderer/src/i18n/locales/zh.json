@@ -174,7 +174,8 @@
       "sessionDuration": "会话时长",
       "cumulativeGrowth": "累计增长",
       "modelEfficiency": "Token 强度",
-      "projectAllocation": "项目分布"
+      "projectAllocation": "项目分布",
+      "modelTrend": "模型趋势"
     },
     "dashboard": {
       "customize": "自定义",
@@ -243,6 +244,10 @@
       "projectAllocation": {
         "others": "其他",
         "acrossProjects": "共 {{count}} 个项目"
+      },
+      "modelTrend": {
+        "others": "其他",
+        "subtitle": "Token 构成 · 近 30 天"
       },
       "insights": {
         "skillsExplored": "已探索技能",

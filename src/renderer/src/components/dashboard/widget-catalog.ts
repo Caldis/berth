@@ -115,6 +115,14 @@ export const WIDGET_CATALOG: Record<WidgetId, WidgetMeta> = {
     sizes: ['S', 'M', 'L'],
     defaultOrder: 13,
     defaultHidden: true
+  },
+  'model-trend': {
+    id: 'model-trend',
+    titleKey: 'overview.widgets.modelTrend',
+    defaultSize: 'M',
+    sizes: ['M', 'L', 'Wide'],
+    defaultOrder: 14,
+    defaultHidden: true
   }
 }
 
