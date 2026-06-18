@@ -21,18 +21,22 @@ debt:
     confidence: medium
     rationale: "explore 校准: 直接根因 = ensureReady 在 stale 状态阻塞全量 scan (SWR 失效, 静态确证); 等待时长由 968 session 全量 parse + OS throttle 决定。核心修复为单方法语义 + 测试, 修正既有设计缺陷计小幅偿还。"
   final:
-    incurred:
-    repaid:
-    net:
-    scope:
-    risk:
-    areas: []
-    confidence:
-    rationale:
+    incurred: 2
+    repaid: 1
+    net: 1
+    scope: cross-process
+    risk: low
+    areas:
+      - performance
+    confidence: high
+    rationale: "实际单方法修复 (ensureReady stale 分支); 真跑确认 SWR (insights 21ms vs 改前 28.8s, 冷启动首屏秒显)。45+1237 单测绿。根因B 首扫 36.3s 成本未动 (转后台不阻塞首屏), 留 issue。"
   revisions:
     - phase: explore
       date: 2026-06-18
       reason: "根因定位为 ensureReady stale 分支阻塞 (单方法修复), 范围比初估收敛; 修正设计缺陷计 repaid 1。net 4→2, confidence low→medium。"
+    - phase: verify
+      date: 2026-06-19
+      reason: "真跑验证后定稿: net 2→1 (改动仅单方法), risk medium→low (45+1237 单测 + CDP 真跑时序双验), confidence medium→high。"
 issue:
   number: 140
   repo: Caldis/berth

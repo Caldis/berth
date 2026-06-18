@@ -13,9 +13,10 @@
 - [x] 任务 3a: 全门禁 (implement 末)
   - tests: ✓ `pnpm typecheck` + `eslint`(改动文件) + `pnpm test` (175 文件 / 1237 用例) 全绿
   - verify: 不适用
-- [ ] 任务 3b: 真跑冷启动验收 (verify 阶段)
-  - tests: not needed - 时序/可观测正确性, 走下方 verify 真跑
-  - verify: CDP 真跑 (memory runtime-behavior-needs-real-run) — 持久 DB 存在时冷启动录屏/时序采集, 断言 dashboard 数据在扫描完成前已可见 (首屏 <1.5s), stale→fresh 刷新不整屏闪烁; 与改前基线对比 (改前: 等扫描完成才显示)。截图/录屏请用户确认首屏体感 (不变量 22)。
+- [x] 任务 3b: 真跑冷启动验收 (verify 阶段) — 通过
+  - tests: not needed - 时序/可观测正确性, 走 verify 真跑
+  - verify: ✓ CDP 真跑 agent 实例 (植入 checkpoint 完整快照模拟有持久快照的冷启动)。结果 statusBefore=stale → statusAfter=scanning (后台全量 scan 进行中), insights.dashboard **21ms** 立即返回旧数据 (hasData=true), sessions.list 11ms 返回 968 条; 对比改前/idle 路径 insightsMs=**28777** (28.8s 阻塞)。截图确认首屏完整渲染 dashboard 数据 (19.49B tokens / 活动热力图 / INSIGHTS / MOST USED), 非 loading 骨架, 侧栏扫描指示后台亮。根因B (首扫实测 36.3s) 未动, 已转后台不阻塞首屏。
+  - 验证陷阱见 friction 20260619-4.0-verify-dev-agent-stop-no-wal-checkpoint
 
 ## verify 回写
 verify 不通过项作为新任务追加于此, phase 退回 implement。
