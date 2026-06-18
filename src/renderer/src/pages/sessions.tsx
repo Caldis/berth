@@ -11,7 +11,7 @@ import { useAppStore } from '@/stores/app'
 import { SessionRow } from '@/components/sessions/session-row'
 import { SessionFilterBar } from '@/components/sessions/session-filter-bar'
 import { sessionGuide, type FeatureGuideEvidence } from '@/lib/feature-guidance'
-import { projectPathForScope } from '@shared/scope'
+import { matchesAgentView, projectPathForScope } from '@shared/scope'
 import { usePageChrome, type PageChromeConfig } from '@/components/layout/page-chrome'
 import { VirtualGroupedList, type VirtualGroupedListHandle } from '@/components/shared/virtual-grouped-list'
 import { CategoryJumpNav } from '@/components/sessions/category-jump-nav'
@@ -20,6 +20,7 @@ import { buildSessionProjectGroups } from '@/lib/session-location-groups'
 import {
   SESSION_DATE_BUCKET_ORDER,
   applySessionFilters,
+  isClaudeAgent,
   sessionAgentCounts,
   sessionDateBucket,
   sessionModelOptions,
@@ -36,12 +37,18 @@ export function Sessions(): React.ReactElement {
   const scopeSelection = useAppStore((s) => s.scopeSelection)
   const projectPath = projectPathForScope(scopeSelection)
   const agentView = useAppStore((s) => s.agentView)
-  const { sessions, loading, stale, error, reload } = useSessions({ projectPath, agentView })
+  const setAgentView = useAppStore((s) => s.setAgentView)
+  // Sessions 页取全量 (用于虚拟列表 + 客户端文本/模型过滤 + 准确的 agent 计数); agent 维度在客户端
+  // 按全局 store.agentView 过滤 (matchesAgentView 支持全部 agent), 与侧栏切换器同一真源, 无双重过滤。
+  const { sessions, loading, stale, error, reload } = useSessions({ projectPath })
 
   const [filter, setFilter] = useState('')
   const deferredFilter = useDeferredValue(filter)
   const [groupBy, setGroupBy] = useState<SessionGroupBy>('project')
-  const [agentFilter, setAgentFilter] = useState<SessionAgentFilter>('all')
+  // GH-138: agent 维度统一走全局 store.agentView (侧栏切换器与这组 tab 是同一真源, 无双重过滤)。
+  // tab 仅作 agentView 在 sessions 页的视图; 非 claude/codex 的全局选择 (cursor 等) 回落到 All tab。
+  const agentTab: SessionAgentFilter =
+    agentView === 'codex' ? 'codex' : isClaudeAgent(agentView) ? 'claude' : 'all'
   const [modelFilter, setModelFilter] = useState<Set<string>>(new Set())
   const [sortBy, setSortBy] = useState<SessionSortBy>('recent')
   const [activeGroupId, setActiveGroupId] = useState<string | undefined>(undefined)
@@ -60,10 +67,16 @@ export function Sessions(): React.ReactElement {
     )
   }, [sessions, deferredFilter])
   const filtered = useMemo(
-    () => applySessionFilters(textFiltered, { agent: agentFilter, models: modelFilter }),
-    [agentFilter, modelFilter, textFiltered]
+    // agent 维度按全局 store.agentView 客户端过滤 (matchesAgentView, 支持全部 agent); 再叠加 model 过滤。
+    () =>
+      applySessionFilters(
+        textFiltered.filter((s) => matchesAgentView(s.agentId, agentView)),
+        { agent: 'all', models: modelFilter }
+      ),
+    [agentView, modelFilter, textFiltered]
   )
   const sorted = useMemo(() => sortSessions(filtered, sortBy), [filtered, sortBy])
+  // tab 计数取 agent-**未过滤**的 textFiltered (全 agent), 否则选中某 agent 后其余 tab 计数塌缩 (switcher 同教训)。
   const agentCounts = useMemo(() => sessionAgentCounts(textFiltered), [textFiltered])
   const modelOptions = useMemo(() => sessionModelOptions(sessions), [sessions])
 
@@ -103,7 +116,7 @@ export function Sessions(): React.ReactElement {
     ]
   }, [sessions])
 
-  const hasAnyFilter = filter.trim().length > 0 || agentFilter !== 'all' || modelFilter.size > 0
+  const hasAnyFilter = filter.trim().length > 0 || agentView !== 'all' || modelFilter.size > 0
   const showInitialLoading = loading && sessions.length === 0
   const toolbarStatus = useMemo(() => {
     if (loading && stale && sessions.length > 0) {
@@ -179,8 +192,8 @@ export function Sessions(): React.ReactElement {
       ) : (
         <>
           <SessionFilterBar
-            agentFilter={agentFilter}
-            onAgentFilterChange={setAgentFilter}
+            agentFilter={agentTab}
+            onAgentFilterChange={(tab) => setAgentView(tab)}
             agentCounts={agentCounts}
             modelOptions={modelOptions}
             modelFilter={modelFilter}

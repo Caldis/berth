@@ -1,6 +1,6 @@
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import React from 'react'
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import i18n from '../../src/renderer/src/i18n'
 import { Overview } from '../../src/renderer/src/pages/overview'
@@ -359,6 +359,11 @@ function renderUsagePage(): ReturnType<typeof render> {
 }
 
 describe('session pages', () => {
+  beforeEach(() => {
+    // GH-138: agent tab 现写全局 store.agentView (与侧栏切换器同一真源); 重置避免点击 tab 的用例污染后续用例。
+    useAppStore.setState({ agentView: 'all' })
+  })
+
   it('renders overview recent sessions with readable path, tokens, and unknown cost', async () => {
     mockSessionApis()
 
