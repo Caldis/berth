@@ -173,7 +173,8 @@
       "activityRhythm": "活动节律",
       "sessionDuration": "会话时长",
       "cumulativeGrowth": "累计增长",
-      "modelEfficiency": "Token 强度"
+      "modelEfficiency": "Token 强度",
+      "projectAllocation": "项目分布"
     },
     "dashboard": {
       "customize": "自定义",
@@ -238,6 +239,10 @@
       "efficiency": {
         "perSession": "tok/会话",
         "sessions": "共 {{count}} 个会话"
+      },
+      "projectAllocation": {
+        "others": "其他",
+        "acrossProjects": "共 {{count}} 个项目"
       },
       "insights": {
         "skillsExplored": "已探索技能",

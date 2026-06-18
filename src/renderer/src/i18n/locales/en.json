@@ -175,7 +175,8 @@
       "activityRhythm": "Activity rhythm",
       "sessionDuration": "Session length",
       "cumulativeGrowth": "Growth",
-      "modelEfficiency": "Token intensity"
+      "modelEfficiency": "Token intensity",
+      "projectAllocation": "Projects"
     },
     "dashboard": {
       "customize": "Customize",
@@ -240,6 +241,10 @@
       "efficiency": {
         "perSession": "tok/session",
         "sessions": "across {{count}} sessions"
+      },
+      "projectAllocation": {
+        "others": "Others",
+        "acrossProjects": "across {{count}} projects"
       },
       "insights": {
         "skillsExplored": "Skills explored",

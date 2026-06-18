@@ -107,6 +107,14 @@ export const WIDGET_CATALOG: Record<WidgetId, WidgetMeta> = {
     sizes: ['M', 'L'],
     defaultOrder: 12,
     defaultHidden: true
+  },
+  'project-allocation': {
+    id: 'project-allocation',
+    titleKey: 'overview.widgets.projectAllocation',
+    defaultSize: 'M',
+    sizes: ['S', 'M', 'L'],
+    defaultOrder: 13,
+    defaultHidden: true
   }
 }
 

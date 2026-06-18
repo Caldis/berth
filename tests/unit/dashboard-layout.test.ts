@@ -13,9 +13,9 @@ describe('defaultLayout', () => {
   it('lists all catalog widgets ordered by defaultOrder with default sizes/visibility', () => {
     const layout = defaultLayout()
     expect(layout.version).toBe(DASHBOARD_LAYOUT_VERSION)
-    expect(layout.widgets).toHaveLength(13)
+    expect(layout.widgets).toHaveLength(14)
     expect(layout.widgets[0].id).toBe('stats-band')
-    expect(layout.widgets.at(-1)?.id).toBe('model-efficiency')
+    expect(layout.widgets.at(-1)?.id).toBe('project-allocation')
     const byId = Object.fromEntries(layout.widgets.map((w) => [w.id, w]))
     expect(byId['stats-band'].size).toBe('Wide')
     expect(byId['activity-heatmap'].size).toBe('XL')
@@ -32,7 +32,7 @@ describe('migrateLayout', () => {
       widgets: [{ id: 'recent-sessions', size: 'M', hidden: true }]
     }
     const out = migrateLayout(stored)
-    expect(out.widgets).toHaveLength(13)
+    expect(out.widgets).toHaveLength(14)
     expect(out.widgets[0]).toEqual({ id: 'recent-sessions', size: 'M', hidden: true })
     expect(out.widgets.slice(1).map((w) => w.id)).toEqual([
       'stats-band',
@@ -46,7 +46,8 @@ describe('migrateLayout', () => {
       'activity-rhythm',
       'session-duration',
       'cumulative-growth',
-      'model-efficiency'
+      'model-efficiency',
+      'project-allocation'
     ])
     // appended widgets inherit catalog defaults
     const appended = Object.fromEntries(out.widgets.slice(1).map((w) => [w.id, w]))
@@ -60,7 +61,7 @@ describe('migrateLayout', () => {
       widgets: [{ id: 'ghost-widget', size: 'M', hidden: false }]
     } as unknown as DashboardLayout
     const out = migrateLayout(stored)
-    expect(out.widgets).toHaveLength(13)
+    expect(out.widgets).toHaveLength(14)
     expect(out.widgets.some((w) => w.id === ('ghost-widget' as never))).toBe(false)
   })
 
@@ -139,7 +140,7 @@ describe('parseLayout', () => {
     const stored: DashboardLayout = { version: 1, widgets: [{ id: 'usage-trend', size: 'L', hidden: false }] }
     const out = parseLayout(serializeLayout(stored))
     expect(out.widgets[0]).toEqual({ id: 'usage-trend', size: 'L', hidden: false })
-    expect(out.widgets).toHaveLength(13)
+    expect(out.widgets).toHaveLength(14)
   })
 })
 
