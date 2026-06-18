@@ -204,7 +204,8 @@
         "currentStreak": "Current streak",
         "longestStreak": "Longest streak",
         "totalSessions": "Sessions",
-        "dayUnit": "{{count}}d"
+        "dayUnit": "{{count}}d",
+        "vsLastWeek": "Last 14 days · vs previous week"
       },
       "heatmap": {
         "less": "Less",

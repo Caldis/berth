@@ -1,0 +1,32 @@
+import { describe, expect, it } from 'vitest'
+import { tokenTrend } from '@/lib/activity-trend'
+import type { HeatmapDay } from '@shared/types/insights'
+
+function days(tokens: number[]): HeatmapDay[] {
+  return tokens.map((t, i) => ({ date: `2026-01-${String(i + 1).padStart(2, '0')}`, sessions: t > 0 ? 1 : 0, tokens: t }))
+}
+
+describe('tokenTrend', () => {
+  it('returns the last sparkDays of the daily token series', () => {
+    const series = tokenTrend(days(Array.from({ length: 30 }, (_, i) => i + 1)), 7, 14).series
+    expect(series).toHaveLength(14)
+    expect(series[0]).toBe(17) // day 17 (30 - 14 + 1) value = index+1
+    expect(series.at(-1)).toBe(30)
+  })
+
+  it('computes week-over-week token delta (recent 7 vs prior 7)', () => {
+    // prior 7 = all 100 (700), recent 7 = all 110 (770) → +10%
+    const trend = tokenTrend(days([...Array(7).fill(100), ...Array(7).fill(110)]), 7, 14)
+    expect(Math.round(trend.deltaPct as number)).toBe(10)
+  })
+
+  it('reports a negative delta when usage drops', () => {
+    const trend = tokenTrend(days([...Array(7).fill(200), ...Array(7).fill(100)]), 7, 14)
+    expect(Math.round(trend.deltaPct as number)).toBe(-50)
+  })
+
+  it('returns null delta when there is no prior-window baseline', () => {
+    expect(tokenTrend(days([1, 2, 3]), 7, 14).deltaPct).toBeNull()
+    expect(tokenTrend([], 7, 14)).toEqual({ series: [], deltaPct: null })
+  })
+})

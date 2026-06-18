@@ -202,7 +202,8 @@
         "currentStreak": "当前连续",
         "longestStreak": "最长连续",
         "totalSessions": "会话数",
-        "dayUnit": "{{count}} 天"
+        "dayUnit": "{{count}} 天",
+        "vsLastWeek": "近 14 天 · 较上周"
       },
       "heatmap": {
         "less": "少",
