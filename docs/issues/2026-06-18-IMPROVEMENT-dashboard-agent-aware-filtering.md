@@ -42,4 +42,12 @@
 - 已落地 (上条 OPEN (b) → DONE): AgentScopeSwitcher 重写为侧栏自包含组件 (镜像 ProjectScopeSwitcher, collapsed 感知), 挂在 ProjectScopeSwitcher 之下成一对; 移出 overview toolbar。
 - **范围对齐能力插件**: 选项取 `useAgentCapabilityPlugins()` 的已探测 agent (`agentCompatibility.agentId` + `displayName`), 非会话派生 — 实测列出 6 个 (Claude Code/Codex/Cursor/Gemini CLI/GitHub Copilot CLI/OpenCode), 比会话派生(仅 2)更全。
 - CDP 实测: 侧栏选 Claude Code → 全局 store.agentView 驱动首页全部 widget 过滤 (950→180 会话, 19.26B→13.07B)。
-- 剩余 OPEN: (a) 真·全局过滤 (sessions/usage 等其它页面读 store.agentView)。
+
+# 更新 3 (2026-06-18, 跨页真·全局过滤 — 数据页 DONE)
+- 上条剩余 OPEN (a) 部分落地: 把全局 `store.agentView` 下沉到**数据页** —
+  `sessions` 页 + `recent-sessions` widget (useSessions 传 agentView)、`usage` 页 (取数请求带 agentView);
+  `createSessionListRequest` 'all'→undefined 归一 (请求/缓存键与默认态一致)。
+- CDP 实测: 侧栏选 Codex → Sessions 列表只剩 Codex (780 Codex / 0 Claude, 全 Codex chip)。typecheck/lint/1218 测试绿。
+- **剩余 OPEN**:
+  - **Sessions 页冗余**: 该页自带 All/Claude/Codex 本地 tab, 与全局过滤双重过滤 (global=Codex + 本地 tab=Claude → 空, 死胡同)。需统一 — 本地 tab 随全局收敛 / 隐藏 / 复用 store.agentView。
+  - **asset 页 (instructions/capabilities/memory)**: 这些按 asset 过滤, 其 agentView 匹配器只认 claude/codex/all (如 hooks-lifecycle-view healthCheckMatchesAgent), 接全局前需先泛化匹配器到任意 agentId — 独立增量, 本轮未做 (capabilities.tsx 的 agentView="all" 暂保留)。
