@@ -7,7 +7,7 @@
   - 范围: 迁 `buildSessionSignals` + `countSignalHighlights` + `getToolDurationMs` (+ SessionSignals 类型) 到新 lib export; session-detail.tsx 删内联改 import (调用点不变)。
   - tests: `tests/renderer/session-signals.test.ts` (新) — buildSessionSignals 空 timeline→null / 失败计数 / avgToolDurationMs / slowestTool / tokenRate·cacheReadShare 边界; countSignalHighlights 阈值; getToolDurationMs durationMs 优先 + startedAt/endedAt fallback。
   - verify: 不适用 UI。新直测绿 + 现有 session-detail 组件测试不破 (行为不变, AC1/AC4)。
-- [ ] 任务 2: `lib/status-line-models.ts` 提取 + capabilities 改用
+- [x] 任务 2: `lib/status-line-models.ts` 提取 + capabilities 改用
   - 范围: 迁 `buildStatusLineViewModels` + `getStatusLineDiagnostics` + `getWorstDiagnosticLevel` + `getStatusLineGroupKey` + `rankStatusLineAsset` + `commandLooksLikeScriptReference` (+ 相关类型) 到新 lib; capabilities.tsx 删内联改 import; 复用已 export 的 redactStatusLineCommand。
   - tests: `tests/renderer/status-line-models.test.ts` (新) — buildStatusLineViewModels scope 优先级排序 (enterprise>project>user>session) + 覆盖检测; getStatusLineDiagnostics 各分支 (overridden/hidden/disabled/missingCommand/unresolvedEntry); getWorstDiagnosticLevel 枚举 (blocked>warning>ok)。
   - verify: 不适用 UI。新直测绿 + 现有 status-line-section.test.tsx 8 cases 不破 (行为不变, AC2/AC4)。

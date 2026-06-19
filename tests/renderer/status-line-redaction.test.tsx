@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { redactStatusLineCommand } from '@/pages/capabilities'
+import { redactStatusLineCommand } from '@/lib/status-line-models'
 
 // GH-115 T0: "凭证不进渲染进程" 安全边界的最后一道 UI 防线是这组正则。
 // 枚举测试钉死脱敏行为, 任何下沉/重构 (god-page issue) 都必须先过此网。

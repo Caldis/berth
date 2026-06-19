@@ -46,8 +46,14 @@ import {
   type PermissionRuleKind,
   type PermissionRuleRow
 } from '@/lib/capability-assets'
-import type { AgentView, Asset, AssetScope } from '@shared/types/asset'
+import type { AgentView, Asset } from '@shared/types/asset'
 import { filterAssetsByAppScope } from '@shared/scope'
+import {
+  buildStatusLineViewModels,
+  getWorstDiagnosticLevel,
+  type StatusLineDiagnostic,
+  type StatusLineViewModel
+} from '@/lib/status-line-models'
 import { usePageChrome, type PageChromeConfig } from '@/components/layout/page-chrome'
 
 const DEFAULT_CAPABILITY_TAB = 'mcp'
@@ -334,134 +340,9 @@ function asStringArray(value: unknown): string[] {
   return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : []
 }
 
-type StatusLineDiagnosticLevel = 'ok' | 'warning' | 'blocked'
-
-interface StatusLineDiagnostic {
-  level: StatusLineDiagnosticLevel
-  key: string
-  values?: Record<string, unknown>
-}
-
-interface StatusLineViewModel {
-  asset: Asset
-  effective: boolean
-  overriddenBy?: Asset
-  diagnostics: StatusLineDiagnostic[]
-  commandView: {
-    value: string
-    redacted: boolean
-  }
-}
-
 const CODEX_DEFAULT_STATUS_LINE_ITEMS = ['model-with-reasoning', 'current-dir']
-const SCOPE_RANK: Record<AssetScope, number> = {
-  enterprise: 4,
-  project: 3,
-  user: 2,
-  session: 1
-}
-
 function formatCodexStatusLineItemLabel(t: ReturnType<typeof useTranslation>['t'], item: string): string {
   return t(`capabilities.statusLine.itemLabels.${item}`, { defaultValue: item })
-}
-
-function getStatusLineGroupKey(asset: Asset): string {
-  const provider = (asset.meta.provider as string | undefined) ?? asset.agentId
-  if (provider === 'codex') return 'codex:footer-items'
-  return `${provider}:${String(asset.meta.statusLineKind ?? asset.meta.settingKey ?? asset.name)}`
-}
-
-function rankStatusLineAsset(asset: Asset): number {
-  return SCOPE_RANK[asset.scope] ?? 0
-}
-
-function buildStatusLineViewModels(assets: Asset[]): StatusLineViewModel[] {
-  const bestByGroup = new Map<string, Asset>()
-
-  assets.forEach((asset) => {
-    const key = getStatusLineGroupKey(asset)
-    const current = bestByGroup.get(key)
-    if (!current || rankStatusLineAsset(asset) > rankStatusLineAsset(current)) {
-      bestByGroup.set(key, asset)
-    }
-  })
-
-  return assets.map((asset) => {
-    const effective = bestByGroup.get(getStatusLineGroupKey(asset))?.id === asset.id
-    const overriddenBy = effective ? undefined : bestByGroup.get(getStatusLineGroupKey(asset))
-    const command = (asset.meta.command as string | undefined) ?? ''
-    const commandView = redactStatusLineCommand(command)
-    return {
-      asset,
-      effective,
-      overriddenBy,
-      commandView,
-      diagnostics: getStatusLineDiagnostics(asset, effective, overriddenBy)
-    }
-  })
-}
-
-// GH-115 T0: export 仅为凭证脱敏枚举测试 ("凭证不进渲染进程"边界的回归网); 下沉 lib/ 归属 god-page issue。
-export function redactStatusLineCommand(command: string): { value: string; redacted: boolean } {
-  const patterns: Array<[RegExp, string]> = [
-    [
-      /\b([A-Z0-9_]*(?:TOKEN|SECRET|PASSWORD|PASSWD|API_KEY|APIKEY|AUTHORIZATION|BEARER)[A-Z0-9_]*\s*=\s*)(?:"[^"]*"|'[^']*'|[^\s]+)/gi,
-      '$1[redacted]'
-    ],
-    [
-      /(\s--(?:token|api-key|apikey|password|secret|authorization)\s+)(?:"[^"]*"|'[^']*'|[^\s]+)/gi,
-      '$1[redacted]'
-    ],
-    [/\b(Bearer\s+)[A-Za-z0-9._~+/=-]+/gi, '$1[redacted]']
-  ]
-  const value = patterns.reduce((next, [pattern, replacement]) => next.replace(pattern, replacement), command)
-  return { value, redacted: value !== command }
-}
-
-function commandLooksLikeScriptReference(command: string): boolean {
-  return /(?:^|\s)(?:~[\\/]|\.{0,2}[\\/]|[A-Za-z]:\\)[^\s'"]+\.(?:sh|bash|zsh|ps1|py|js|mjs|cjs|bat|cmd)\b/i.test(command) ||
-    /\.(?:sh|bash|zsh|ps1|py|js|mjs|cjs|bat|cmd)(?:\s|$)/i.test(command)
-}
-
-function getStatusLineDiagnostics(asset: Asset, effective: boolean, overriddenBy?: Asset): StatusLineDiagnostic[] {
-  const provider = (asset.meta.provider as string | undefined) ?? asset.agentId
-  const command = (asset.meta.command as string | undefined) ?? ''
-  const entryPaths = asStringArray(asset.meta.entryPaths)
-  const unknownItems = asStringArray(asset.meta.unknownItems)
-  const diagnostics: StatusLineDiagnostic[] = []
-
-  if (!effective && overriddenBy) {
-    diagnostics.push({
-      level: 'warning',
-      key: 'overridden',
-      values: { scope: overriddenBy.scope }
-    })
-  }
-
-  if (provider === 'codex') {
-    if (asset.meta.hidden === true) diagnostics.push({ level: 'blocked', key: 'hidden' })
-    if (unknownItems.length > 0) {
-      diagnostics.push({
-        level: 'warning',
-        key: 'unknownItems',
-        values: { count: unknownItems.length }
-      })
-    }
-  } else {
-    if (asset.meta.disabledByDisableAllHooks === true) diagnostics.push({ level: 'blocked', key: 'disabled' })
-    if (!command.trim()) diagnostics.push({ level: 'warning', key: 'missingCommand' })
-    if (command && entryPaths.length === 0 && commandLooksLikeScriptReference(command)) {
-      diagnostics.push({ level: 'warning', key: 'unresolvedEntry' })
-    }
-  }
-
-  return diagnostics.length > 0 ? diagnostics : [{ level: 'ok', key: 'ok' }]
-}
-
-function getWorstDiagnosticLevel(diagnostics: StatusLineDiagnostic[]): StatusLineDiagnosticLevel {
-  if (diagnostics.some((diagnostic) => diagnostic.level === 'blocked')) return 'blocked'
-  if (diagnostics.some((diagnostic) => diagnostic.level === 'warning')) return 'warning'
-  return 'ok'
 }
 
 function StatusLineSummary({ viewModels }: { viewModels: StatusLineViewModel[] }): React.ReactElement {
