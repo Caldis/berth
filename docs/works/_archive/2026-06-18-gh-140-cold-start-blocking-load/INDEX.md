@@ -2,7 +2,7 @@
 task: 2026-06-18-gh-140-cold-start-blocking-load
 task_id: GH-140
 type: bug
-phase: verify
+phase: archive
 created: 2026-06-18
 priority: P1
 target_date:
@@ -49,7 +49,7 @@ gh_project:
   project_number: 6
   project_url: https://github.com/users/Caldis/projects/6
   item_id: PVTI_lAHOADXbEs4BZHvQzgwI3Fc
-  item_status: In Progress
+  item_status: Done
 artifacts:
   source: 00-BUG.md
   analysis: 01-ANALYSIS.md

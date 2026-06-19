@@ -14,4 +14,4 @@
 
 # 解决方案
 - 待设计: session 写入走增量路径 (`deriveAssetsForPath` 支持 session 类型, 或按 sourceKey 单文件 re-parse + fold), 让任意会话写入只重算该 session, 不触发全库 scan。
-- 来源 / 关联: GH-140 冷启动慢主线 explore 时发现 (`docs/works/2026-06-18-gh-140-cold-start-blocking-load`)。同根问题: session JSONL parse 是全量 scan 的主成本, 既拖慢冷启动首扫, 又被 watcher 高频触发。边界: 属稳态后台性能优化, 不在 GH-140 主线 (首屏阻塞) 顺手改, 待排期。
+- 来源 / 关联: GH-140 冷启动慢主线 explore 时发现 (`docs/works/_archive/2026-06-18-gh-140-cold-start-blocking-load`)。同根问题: session JSONL parse 是全量 scan 的主成本, 既拖慢冷启动首扫, 又被 watcher 高频触发。边界: 属稳态后台性能优化, 不在 GH-140 主线 (首屏阻塞) 顺手改, 待排期。

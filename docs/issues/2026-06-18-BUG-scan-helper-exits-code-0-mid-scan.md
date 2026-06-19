@@ -15,4 +15,4 @@ scan-helper utilityProcess (`src/main/scan-helper.ts`) 设计为 long-lived (完
 
 # 解决方案
 - 待查: 确认 helper 退出的精确触发条件; 让 parentPort 监听 ref 住 event loop, 或 host 对中途 exit 做 respawn + retry 而非直接 reject 整轮。
-- 来源 / 关联: GH-140 冷启动慢主线 explore 时发现 (`docs/works/2026-06-18-gh-140-cold-start-blocking-load`)。冷启动首扫若同样中途 exit, 会触发失败 + 重试, 进一步加剧首屏等待。边界: 属 scan 可靠性旁支, 不在 GH-140 主线顺手修, 待排期或用户扩大范围。
+- 来源 / 关联: GH-140 冷启动慢主线 explore 时发现 (`docs/works/_archive/2026-06-18-gh-140-cold-start-blocking-load`)。冷启动首扫若同样中途 exit, 会触发失败 + 重试, 进一步加剧首屏等待。边界: 属 scan 可靠性旁支, 不在 GH-140 主线顺手修, 待排期或用户扩大范围。
