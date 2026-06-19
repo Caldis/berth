@@ -37,6 +37,7 @@ import { useMemory } from '@/hooks/use-memory'
 import { usePageChrome, type PageChromeConfig } from '@/components/layout/page-chrome'
 import { VirtualGroupedList, type VirtualGroupedListHandle } from '@/components/shared/virtual-grouped-list'
 import { type VirtualListGroup } from '@/lib/virtual-list-model'
+import { shouldShowScanningState } from '@/lib/runtime-state'
 import { Collapsible, CollapsibleChevron } from '@/components/ui'
 
 const tabTypeMap: Record<string, string[]> = {
@@ -547,7 +548,7 @@ export function Instructions({ activeSection }: { activeSection?: string } = {})
       const Icon = tabIconMap[activeTab] ?? FileText
       // Still scanning and this category hasn't been reached yet — skeleton, not a
       // misleading empty (the snapshot is partial). (GH-113 不误导虚假完整)
-      if (scanning || (runtimeState === 'idle' && assets.length === 0)) {
+      if (shouldShowScanningState(scanning, runtimeState, assets.length)) {
         return <LoadingState title={t('nav.scanStatus.scanning')} icon={Icon} />
       }
       return <EmptyState fullHeight icon={Icon} message={t('common.empty')} />

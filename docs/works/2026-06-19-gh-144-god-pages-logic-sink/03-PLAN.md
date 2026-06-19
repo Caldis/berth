@@ -11,7 +11,7 @@
   - 范围: 迁 `buildStatusLineViewModels` + `getStatusLineDiagnostics` + `getWorstDiagnosticLevel` + `getStatusLineGroupKey` + `rankStatusLineAsset` + `commandLooksLikeScriptReference` (+ 相关类型) 到新 lib; capabilities.tsx 删内联改 import; 复用已 export 的 redactStatusLineCommand。
   - tests: `tests/renderer/status-line-models.test.ts` (新) — buildStatusLineViewModels scope 优先级排序 (enterprise>project>user>session) + 覆盖检测; getStatusLineDiagnostics 各分支 (overridden/hidden/disabled/missingCommand/unresolvedEntry); getWorstDiagnosticLevel 枚举 (blocked>warning>ok)。
   - verify: 不适用 UI。新直测绿 + 现有 status-line-section.test.tsx 8 cases 不破 (行为不变, AC2/AC4)。
-- [ ] 任务 3: `lib/runtime-state.ts` shouldShowScanningState + 去重
+- [x] 任务 3: `lib/runtime-state.ts` shouldShowScanningState + 去重
   - 范围: 新增 `shouldShowScanningState(scanning, runtimeState, assetCount)` (抽 capabilities:978 / instructions 重复); 两页改用。
   - tests: `tests/renderer/runtime-state.test.ts` (新) — scanning=true→true / idle+empty→true / has-assets→false 组合 (AC3)。
   - verify: 不适用 UI。直测绿 + 两页空态渲染不破。

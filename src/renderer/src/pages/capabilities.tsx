@@ -54,6 +54,7 @@ import {
   type StatusLineDiagnostic,
   type StatusLineViewModel
 } from '@/lib/status-line-models'
+import { shouldShowScanningState } from '@/lib/runtime-state'
 import { usePageChrome, type PageChromeConfig } from '@/components/layout/page-chrome'
 
 const DEFAULT_CAPABILITY_TAB = 'mcp'
@@ -856,7 +857,7 @@ export function Capabilities({ activeSection }: { activeSection?: string } = {})
     // A full scan is still in flight and this tab's category hasn't been reached yet
     // — show a skeleton, not a misleading "nothing here" (the snapshot is partial,
     // not complete-and-empty). (GH-113 不误导虚假完整)
-    if (filteredAssets.length === 0 && (scanning || (runtimeState === 'idle' && assets.length === 0))) {
+    if (filteredAssets.length === 0 && shouldShowScanningState(scanning, runtimeState, assets.length)) {
       return <LoadingState title={t('nav.scanStatus.scanning')} icon={tabIconMap[activeTab] ?? Plug} />
     }
     switch (activeTab) {
