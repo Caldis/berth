@@ -14,6 +14,8 @@ export interface AssetRuntimeScanOptions {
   batchPauseMs?: number
   /** Paths to exclude from the scan result (GH-135 B4). */
   excludePaths?: string[]
+  /** Respect project .gitignore/.berthignore during enumeration (GH-142). */
+  respectGitignore?: boolean
 }
 
 export interface AssetRuntimeScanner {
@@ -107,7 +109,8 @@ export class ScanCoordinator {
         onProgress: (progress) => { if (isCurrent()) sink.onProgress(progress) },
         onPartial: (partial) => { if (isCurrent()) sink.onPartial(partial) },
         batchPauseMs: scanOptions?.batchPauseMs,
-        excludePaths: scanOptions?.excludePaths
+        excludePaths: scanOptions?.excludePaths,
+        respectGitignore: scanOptions?.respectGitignore
       })
       if (!isCurrent()) return
       const sources = await scanner.getScanSourceGroups()

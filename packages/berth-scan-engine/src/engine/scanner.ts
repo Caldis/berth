@@ -45,6 +45,9 @@ export interface AssetScanStreamOptions {
   /** Paths to exclude from the result (GH-135 B4): any asset whose path is inside
    * one of these is dropped. */
   excludePaths?: string[]
+  /** Respect project .gitignore/.berthignore during project-tree enumeration
+   * (GH-142): nested-convention recursion skips ignored subtrees. */
+  respectGitignore?: boolean
 }
 
 export class AssetScanner {

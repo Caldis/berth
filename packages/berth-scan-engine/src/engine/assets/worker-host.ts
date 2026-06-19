@@ -18,6 +18,8 @@ export interface AssetWorkerData {
   /** Backpressure passed through to the scanner (GH-135 B4). */
   batchPauseMs?: number
   excludePaths?: string[]
+  /** Respect project .gitignore/.berthignore during enumeration (GH-142). */
+  respectGitignore?: boolean
 }
 
 export interface AssetWorkerScanPayload {
@@ -127,7 +129,8 @@ export class WorkerAssetScanner implements AssetRuntimeScanner {
       sessionCache: this.sessionCache,
       projectScanCache: this.projectScanCache,
       batchPauseMs: options.batchPauseMs,
-      excludePaths: options.excludePaths
+      excludePaths: options.excludePaths,
+      respectGitignore: options.respectGitignore
     }, {
       onProgress: options.onProgress,
       onPartial: options.onPartial

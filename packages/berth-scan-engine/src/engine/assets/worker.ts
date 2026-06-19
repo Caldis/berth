@@ -20,7 +20,8 @@ async function run(): Promise<void> {
     onProgress: (progress) => post({ type: 'progress', progress }),
     onPartial: (partial) => post({ type: 'partial', partial }),
     batchPauseMs: data.batchPauseMs,
-    excludePaths: data.excludePaths
+    excludePaths: data.excludePaths,
+    respectGitignore: data.respectGitignore
   })
 
   post({

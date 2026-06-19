@@ -402,7 +402,8 @@ export class AgentAssetRuntime {
 
     const run = this.coordinator.run(this.createScanSink(reason), {
       batchPauseMs: this.settings.batchPauseMs,
-      excludePaths: this.settings.excludePaths
+      excludePaths: this.settings.excludePaths,
+      respectGitignore: this.settings.respectGitignore
     })
     void run.finally(() => {
       void this.flushPendingRefresh()
