@@ -124,21 +124,36 @@ function buildSearchDocs(assets: Asset[]): SearchDoc[] {
   return docs
 }
 
+const FIELD_SEPARATOR = '\u001f'
+const ROW_SEPARATOR = '\u001e'
+
+// Escape both separators out of each field so distinct doc rows cannot collapse
+// to the same signature (e.g. path='a\u001fb' vs path='a' + name='b'). A separator
+// byte appearing inside a path/metadata value would otherwise forge row equality
+// and make `ensureIndexed` skip a needed rebuild.
+function signatureField(value: string): string {
+  return value.replaceAll(FIELD_SEPARATOR, ' ').replaceAll(ROW_SEPARATOR, ' ')
+}
+
 function createIndexSignature(docs: SearchDoc[]): string {
   return docs
-    .map((doc) => [
-      doc.id,
-      doc.name,
-      doc.type,
-      doc.scope,
-      doc.category,
-      doc.path,
-      doc.agentId,
-      doc.summary,
-      doc.metadata
-    ].join('\u001f'))
+    .map((doc) =>
+      [
+        doc.id,
+        doc.name,
+        doc.type,
+        doc.scope,
+        doc.category,
+        doc.path,
+        doc.agentId,
+        doc.summary,
+        doc.metadata
+      ]
+        .map(signatureField)
+        .join(FIELD_SEPARATOR)
+    )
     .sort()
-    .join('\u001e')
+    .join(ROW_SEPARATOR)
 }
 
 function extractSearchSummary(asset: Asset): string {

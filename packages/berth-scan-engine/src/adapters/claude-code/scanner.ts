@@ -4,7 +4,7 @@ import { glob } from 'glob'
 import type { Asset, AssetScope } from '../types'
 import type { ScanError } from '@shared/types/ipc'
 import type { AssetFileCache } from '../../engine/assets/file-cache'
-import { buildScanIgnore, loadProjectIgnore } from '../../engine/scan-ignore'
+import { buildScanIgnore, loadNestedProjectIgnore } from '../../engine/scan-ignore'
 import {
   parseClaudeMd,
   parseAgentsMd,
@@ -142,7 +142,11 @@ export function scanInstructions(ctx: ScanContext): Asset[] {
         ignore: buildScanIgnore({
           projectDir,
           excludePaths: ctx.excludePaths,
-          projectIgnore: loadProjectIgnore(projectDir, { respectGitignore: ctx.respectGitignore }),
+          // GH-145: merge nested-subtree .gitignore/.berthignore (each subdir's
+          // rules relativized to the projectDir root), not just the project root.
+          projectIgnore: loadNestedProjectIgnore(projectDir, projectDir, {
+            respectGitignore: ctx.respectGitignore
+          }),
           defaultPatterns: NESTED_CONVENTION_IGNORE
         })
       })

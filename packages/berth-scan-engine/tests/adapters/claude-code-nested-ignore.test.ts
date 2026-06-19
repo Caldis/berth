@@ -75,3 +75,46 @@ describe('claude-code nested CLAUDE.md enumeration ignores (GH-142)', () => {
     expect(paths.some((p) => p.includes(`${path.sep}skipme${path.sep}`))).toBe(false)
   })
 })
+
+// GH-145: nested-subtree .gitignore must stack — a `sub/.gitignore` scopes only
+// its own subtree, relativized to the project root by loadNestedProjectIgnore.
+describe('claude-code nested CLAUDE.md honors subdirectory .gitignore (GH-145)', () => {
+  it('applies a subdirectory .gitignore to that subtree only', () => {
+    const proj = tmpProject()
+    fs.mkdirSync(path.join(proj, 'sub'), { recursive: true })
+    fs.writeFileSync(path.join(proj, 'sub', '.gitignore'), 'secret/\n')
+    writeClaude(path.join(proj, 'sub', 'CLAUDE.md'))
+    writeClaude(path.join(proj, 'sub', 'secret', 'CLAUDE.md'))
+    // A same-named `secret/` OUTSIDE sub is unaffected (rule is scoped to sub).
+    writeClaude(path.join(proj, 'secret', 'CLAUDE.md'))
+    const paths = claudePaths(scanInstructions(ctxFor(proj, { respectGitignore: true })))
+    expect(paths).toContain(path.join(proj, 'sub', 'CLAUDE.md'))
+    expect(paths).toContain(path.join(proj, 'secret', 'CLAUDE.md'))
+    expect(paths).not.toContain(path.join(proj, 'sub', 'secret', 'CLAUDE.md'))
+  })
+
+  it('combines root and subdirectory .gitignore rules', () => {
+    const proj = tmpProject()
+    fs.writeFileSync(path.join(proj, '.gitignore'), 'vendor/\n')
+    fs.mkdirSync(path.join(proj, 'pkg'), { recursive: true })
+    fs.writeFileSync(path.join(proj, 'pkg', '.gitignore'), 'tmp/\n')
+    writeClaude(path.join(proj, 'CLAUDE.md'))
+    writeClaude(path.join(proj, 'vendor', 'CLAUDE.md')) // root rule
+    writeClaude(path.join(proj, 'pkg', 'CLAUDE.md'))
+    writeClaude(path.join(proj, 'pkg', 'tmp', 'CLAUDE.md')) // sub rule
+    const paths = claudePaths(scanInstructions(ctxFor(proj, { respectGitignore: true })))
+    expect(paths).toContain(path.join(proj, 'CLAUDE.md'))
+    expect(paths).toContain(path.join(proj, 'pkg', 'CLAUDE.md'))
+    expect(paths).not.toContain(path.join(proj, 'vendor', 'CLAUDE.md'))
+    expect(paths).not.toContain(path.join(proj, 'pkg', 'tmp', 'CLAUDE.md'))
+  })
+
+  it('does NOT read subdirectory .gitignore when respectGitignore is off', () => {
+    const proj = tmpProject()
+    fs.mkdirSync(path.join(proj, 'sub'), { recursive: true })
+    fs.writeFileSync(path.join(proj, 'sub', '.gitignore'), 'secret/\n')
+    writeClaude(path.join(proj, 'sub', 'secret', 'CLAUDE.md'))
+    const paths = claudePaths(scanInstructions(ctxFor(proj, { respectGitignore: false })))
+    expect(paths).toContain(path.join(proj, 'sub', 'secret', 'CLAUDE.md'))
+  })
+})
