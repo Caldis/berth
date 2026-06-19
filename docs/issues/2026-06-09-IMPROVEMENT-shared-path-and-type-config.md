@@ -29,3 +29,7 @@
 - **signature 收敛仍 OPEN**: `lib/result-signature.ts` + `engine/search.ts` (3 处 createIndexSignature) 两套签名构造仍并存, 抽通用 signature 构造器仍有价值 (有界小重构, 低优)。
 - **盘根 canonical**: normalizeProjectPath + normalizeProjectPathKey 现同在 `shared/scope.ts`, 未深核实是否仍分叉, 暂留。
 - 结论: 保持 OPEN, 聚焦剩 signature 收敛 (低优); asset-type 配置表项标过期不做。
+
+# 落地更新 (2026-06-20, GH-145)
+- **signature 收敛: 部分 DONE + 转义方向更正** — explore 核实 issue 把转义方向写反: 需补转义的是 `search.ts` (引擎侧 createIndexSignature 字段不转义, 有伪相等风险), 非 result-signature (renderer 已转义)。GH-145 给 search.ts 加 signatureField 转义 (**修了潜在伪相等 bug**: path/metadata 含分隔符字节漏触发 ensureIndexed 重建)。result-signature 已转义+已复用 row, near-no-op 按 surgical 跳过。跨 package 物理隔离 → 未抽"单一真源"共享模块 (不可达, 两侧镜像)。
+- 余: 习语完全统一仍可低优收尾; asset-type 配置表过期不做; 盘根 canonical 暂留。work: `docs/works/_archive/2026-06-19-gh-145-scan-engine-nested-ignore-signature`。

@@ -7,4 +7,9 @@ GH-115 实施期显式 defer 的残项 (避撞或未验证, 不静默丢弃):
 
 # 来源 · 关联
 - GH-115 架构全面分析 (2026-06-10), 完整证据见 `docs/works/2026-06-10-gh-115-architecture-refactor/01-ANALYSIS.md`。关联 docs/works/2026-06-04-gh-103-unify-chart-colors/。
-- 状态: OPEN。
+- 状态: 4 项全部收口, 可关闭 (2026-06-20, GH-146 + GH-147)。
+
+# 落地更新 (2026-06-20, GH-146 + GH-147)
+- **第2项 i18n 快审残键复核: DONE (GH-146)** — LocalSources 家族 9 死键经字面+拼接双重核验确认零消费, en/zh 对称删除: `settings.{localSources, localSourcesEmpty, sourceCount_one/_other, sourceNotFound, sourceNotFoundDesc, sourceSummary, detected, notFound, noSourceRoots}`。同名异命名空间活键 (`projectScope.sourceCount` / `capabilities.*.notFound` / `plugin.detected`) 已区分保留。work: `docs/works/_archive/2026-06-19-gh-146-i18n-source-dict-and-deadkeys`。
+- **第3项 死代码扫描工具入 CI: DONE (GH-147)** — knip (非 ts-prune) 入 CI 软门禁。根因: root 经 path-alias 消费引擎源码 → 单项目 + paths + ignoreWorkspaces(scan-engine) + ignoreDependencies(@berth/scan-engine 假阳性)。knip:ci (--no-exit-code) 仅 ubuntu。首次报告 unused deps 4/devDeps 3/unlisted 3/binaries 4/hints 18 **软门禁记录, 本批不删码** (删码+硬门禁升级留后续)。work: `docs/works/_archive/2026-06-19-gh-147-knip-deadcode-ci`。
+- 第1项 (globals.css 死 token) + 第4项 (app_icon) 此前已 DONE。**本 issue 4 项全部收口**。

@@ -2,7 +2,7 @@
 task: 2026-06-19-gh-145-scan-engine-nested-ignore-signature
 task_id: GH-145
 type: maintenance
-phase: implement
+phase: archive
 created: 2026-06-19
 priority: P2
 target_date:
@@ -25,14 +25,15 @@ debt:
     confidence: low
     rationale: "嵌套 gitignore 相对化新逻辑 + search field 转义 (incurred 2); 修 search 伪相等潜在 bug + signature 习语跨 renderer/engine 统一 + gitignore per-directory 正确性 (repaid 3); maintenance net -1。explore 已证伪 #13(a) 其他 adapter 下沉 (无真项目树递归), 范围缩小; verify 后校准。"
   final:
-    incurred:
-    repaid:
-    net:
-    scope:
-    risk:
-    areas: []
-    confidence:
-    rationale:
+    incurred: 2
+    repaid: 4
+    net: -2
+    scope: module
+    risk: medium
+    areas:
+      - architecture
+    confidence: high
+    rationale: "verify 校准: search.ts signatureField 转义修伪相等 (额外捞出的真 bug) + scan-ignore loadNestedProjectIgnore 嵌套累积 (relativizeRule 锚定/非锚定/否定) + claude-code scanner 切换; 99 scan-engine test + use-memory-cache 身份保持绿, 护栏经反向证伪 (去转义→红/换根级 ignore→红)。incurred 2 (嵌套 gitignore 127 行新逻辑 + search 转义), repaid 4 (修伪相等 bug + gitignore per-directory 正确性 + 习语 + 锚定实支持优于预期), net -2。explore 证伪 #13(a) 范围缩小。confidence high。"
   revisions: []
 issue:
   number: 145
@@ -44,7 +45,7 @@ gh_project:
   status: tracked
   project_number: 6
   project_url: https://github.com/users/Caldis/projects/6
-  item_status: In Progress
+  item_status: Done
   project_id: PVT_kwHOADXbEs4BZHvQ
   item_id: PVTI_lAHOADXbEs4BZHvQzgwRpeI
 artifacts:

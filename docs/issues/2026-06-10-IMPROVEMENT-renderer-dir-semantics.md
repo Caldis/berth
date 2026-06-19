@@ -10,4 +10,8 @@
 
 # 来源 · 关联
 - GH-115 架构全面分析 (2026-06-10), 完整证据见 `docs/works/_archive/2026-06-10-gh-115-architecture-refactor/01-ANALYSIS.md` (R32, 低优)。与 renderer-god-pages 同窗口顺做。
-- 状态: OPEN (余 #2 memory-view chrome 上提 + #3 字典并入 i18next)。
+- 状态: OPEN (余 #2 memory-view chrome 上提; #3 字典并入 i18next 已 DONE) (2026-06-20, GH-146)。
+
+# 落地更新 (2026-06-20, GH-146)
+- **#3 local-source-copy 字典并入 i18next: DONE** — EN_SOURCE_COPY/ZH_SOURCE_COPY + getScanSourceStatusLabel 内联双语并入新建**顶层 sources.*** (code/status/statusCount), 3 函数改吃 t(); 唯一消费点 project-scope-switcher 三处传 t。注: issue 建议的 sources.* 前缀实际用顶层 (projectScope.sources.* 已占用)。en 渲染逐字不变 + ZH missing=未发现 双锁。发现第二份平行字典 settings.agentPluginSources.* (41 叶, 文案不同), 本批不动记后续。work: `docs/works/_archive/2026-06-19-gh-146-i18n-source-dict-and-deadkeys`。
+- **#2 memory-view chrome 上提: 未做** (偏视觉/布局, A 组稳健批排除需视觉验收项)。

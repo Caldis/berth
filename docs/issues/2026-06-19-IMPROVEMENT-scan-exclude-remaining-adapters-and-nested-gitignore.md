@@ -14,4 +14,10 @@ GH-142 把 excludePaths 下沉到 adapter 枚举层 + respectGitignore 接入, �
 # 来源 / 关联
 - GH-142 (`docs/works/2026-06-19-gh-142-scan-exclude-adapter-level`) design 聚焦边界 (02-SPEC「聚焦策略」)。
 - 接续原 issue `2026-06-15-IMPROVEMENT-scan-exclude-adapter-level` (核心 excludePaths 下沉 + respectGitignore 已由 GH-142 兑现)。
-- 状态: OPEN (future, 非阻塞; filterExcludedPaths 兜底保证正确性)。
+- 状态: 基本收口 (余低优 (c)) (2026-06-20, GH-145)。
+
+# 落地更新 (2026-06-20, GH-145)
+- **(b) 嵌套累积 gitignore: DONE** — `loadNestedProjectIgnore` (scan-ignore.ts) 子树 glob .gitignore/.berthignore + relativizeRule 相对化; claude-code `**/CLAUDE.md` 切换。覆盖锚定/非锚定/单层否定; **已知限制**: 跨目录多层否定 last-match-wins 不复现 git per-directory 语义 (测试显式断言当前行为)。
+- **(a) 其他 adapter 下沉: 关闭** — explore 逐一核实 8 adapter, 除 claude-code 外无项目树递归 glob (全固定浅 config 子目录), 抽共享枚举零收益。
+- **(c) claude-code 其他 scanDir: 未做** (低优, 留 future)。
+- work: `docs/works/_archive/2026-06-19-gh-145-scan-engine-nested-ignore-signature`。
