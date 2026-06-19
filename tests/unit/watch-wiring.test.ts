@@ -83,10 +83,36 @@ describe('applyWatchEvent (GH-113 I1 watcher wiring)', () => {
     expect(runtime.refresh).not.toHaveBeenCalled()
   })
 
-  it('schedules a coalesced refresh for a genuinely unsupported file (session jsonl)', () => {
+  it('GH-141: folds a claude session (projects/{name}/*.jsonl) incrementally', () => {
+    const filePath = path.join(dir, 'projects', 'proj', 'sess.jsonl')
+    fs.mkdirSync(path.dirname(filePath), { recursive: true })
+    fs.writeFileSync(filePath, JSON.stringify({ type: 'last-prompt', sessionId: 's', timestamp: '2026-06-19T00:00:00.000Z' }) + '\n')
+    const runtime = { ...fakeRuntime(dir), scheduleRefresh: vi.fn() }
+
+    applyWatchEvent(event('changed', filePath), runtime)
+
+    expect(runtime.applyFileChange).toHaveBeenCalledTimes(1)
+    expect((runtime.applyFileChange.mock.calls[0][1] as { type: string }[]).map((a) => a.type)).toEqual(['session'])
+    expect(runtime.scheduleRefresh).not.toHaveBeenCalled()
+    expect(runtime.refresh).not.toHaveBeenCalled()
+  })
+
+  it('GH-141: folds a codex session (rollout-*.jsonl) incrementally', () => {
     const filePath = path.join(dir, 'sessions', 'rollout-x.jsonl')
     fs.mkdirSync(path.dirname(filePath), { recursive: true })
-    fs.writeFileSync(filePath, '{}')
+    fs.writeFileSync(filePath, JSON.stringify({ type: 'session_meta', timestamp: '2026-06-19T00:00:00.000Z', payload: { id: 'x', cwd: '/repo' } }) + '\n')
+    const runtime = { ...fakeRuntime(dir), scheduleRefresh: vi.fn() }
+
+    applyWatchEvent(event('changed', filePath), runtime)
+
+    expect(runtime.applyFileChange).toHaveBeenCalledTimes(1)
+    expect((runtime.applyFileChange.mock.calls[0][1] as { type: string }[]).map((a) => a.type)).toEqual(['session'])
+    expect(runtime.scheduleRefresh).not.toHaveBeenCalled()
+  })
+
+  it('schedules a coalesced refresh for a genuinely unsupported file', () => {
+    const filePath = path.join(dir, 'unsupported.dat')
+    fs.writeFileSync(filePath, 'x')
     const runtime = { ...fakeRuntime(dir), scheduleRefresh: vi.fn() }
 
     applyWatchEvent(event('changed', filePath), runtime)
@@ -97,9 +123,8 @@ describe('applyWatchEvent (GH-113 I1 watcher wiring)', () => {
   })
 
   it('falls back to immediate refresh for unsupported events when the runtime cannot schedule', () => {
-    const filePath = path.join(dir, 'sessions', 'rollout-x.jsonl')
-    fs.mkdirSync(path.dirname(filePath), { recursive: true })
-    fs.writeFileSync(filePath, '{}')
+    const filePath = path.join(dir, 'unsupported.dat')
+    fs.writeFileSync(filePath, 'x')
     const runtime = fakeRuntime(dir)
 
     applyWatchEvent(event('changed', filePath), runtime)

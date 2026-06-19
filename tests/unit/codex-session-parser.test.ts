@@ -8,6 +8,7 @@ import {
   readCodexSessionTitleIndex
 } from '@berth/scan-engine/adapters/codex/parsers'
 import { AssetFileCache } from '@berth/scan-engine/engine/assets/file-cache'
+import { dedupePathKey } from '@shared/asset-dedupe'
 import type { Asset } from '@shared/types/asset'
 
 let tempDir: string | null = null
@@ -20,6 +21,17 @@ afterEach(() => {
 })
 
 describe('Codex session parser', () => {
+  it('sets meta.sourceKey to dedupePathKey(filePath) for incremental replace (GH-141)', () => {
+    tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'berth-codex-sk-'))
+    const rolloutPath = path.join(tempDir, 'rollout-2026-06-13T10-00-00-sk.jsonl')
+    fs.writeFileSync(
+      rolloutPath,
+      JSON.stringify({ type: 'session_meta', timestamp: '2026-06-13T10:00:00.000Z', payload: { id: 'sk1', cwd: 'D:\\Code\\berth' } }) + '\n'
+    )
+    const asset = parseCodexSessionMeta(rolloutPath, {})
+    expect(asset.meta.sourceKey).toBe(dedupePathKey(rolloutPath))
+  })
+
   it('uses session_index thread names for rollout titles', () => {
     tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'berth-codex-session-title-'))
     const rolloutPath = path.join(tempDir, 'rollout-2026-06-13T10-00-00-codex-title.jsonl')

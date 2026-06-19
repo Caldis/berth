@@ -672,7 +672,10 @@ export function parseSessionMeta(filePath: string, projectName: string): Asset {
   const meta: Record<string, unknown> = {
     sessionId,
     projectDirName: projectName,
-    transcriptPath: filePath
+    transcriptPath: filePath,
+    // GH-141: per-file replacement key so a session write goes through the
+    // incremental applyFileChange path instead of a full rescan.
+    sourceKey: dedupePathKey(filePath)
   }
 
   try {

@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { parseSessionMeta } from '@berth/scan-engine/adapters/claude-code/parsers'
 import { parseClaudeSessionDetail } from '@berth/scan-engine/adapters/claude-code/session-detail'
 import { AssetFileCache } from '@berth/scan-engine/engine/assets/file-cache'
+import { dedupePathKey } from '@shared/asset-dedupe'
 import type { Asset } from '@shared/types/asset'
 
 let tempDir: string | null = null
@@ -17,6 +18,17 @@ afterEach(() => {
 })
 
 describe('parseSessionMeta', () => {
+  it('sets meta.sourceKey to dedupePathKey(transcriptPath) for incremental replace (GH-141)', () => {
+    tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'berth-session-sk-'))
+    const transcriptPath = path.join(tempDir, 'sk-session.jsonl')
+    fs.writeFileSync(
+      transcriptPath,
+      JSON.stringify({ type: 'last-prompt', sessionId: 's1', timestamp: '2026-05-30T01:00:00.000Z' }) + '\n'
+    )
+    const asset = parseSessionMeta(transcriptPath, 'proj')
+    expect(asset.meta.sourceKey).toBe(dedupePathKey(transcriptPath))
+  })
+
   it('extracts current Claude JSONL session metadata without storing message bodies', () => {
     tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'berth-session-'))
     const transcriptPath = path.join(tempDir, 'fallback-session.jsonl')

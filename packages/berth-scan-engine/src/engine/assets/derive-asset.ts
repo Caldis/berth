@@ -1,5 +1,8 @@
+import * as fs from 'fs'
 import * as path from 'path'
 import { getMainLog } from '../../log'
+import { parseSessionMeta } from '../../adapters/claude-code/parsers'
+import { parseCodexSessionMeta, readCodexSessionTitleIndex } from '../../adapters/codex/parsers'
 import type { Asset, AssetScope } from '@shared/types/asset'
 import { dedupePathKey } from '@shared/asset-dedupe'
 import {
@@ -104,7 +107,61 @@ export function deriveAssetsForPath(filePath: string, ctx: DeriveContext): Asset
     }
   }
 
+  // GH-141: session incremental slice. A session write (claude projects/*.jsonl or
+  // codex rollout-*.jsonl) re-derives just that one session via the same parser the
+  // full scan uses, so the watcher folds it in by sourceKey instead of full-rescanning
+  // the whole index (sessions are 70%+ of assets). engine→adapter session-parser direct
+  // call,同 session-detail/replay 例外族。
+  const claudeSessionProject = matchClaudeSession(filePath)
+  if (claudeSessionProject !== null) {
+    if (!fs.existsSync(filePath)) return []
+    try {
+      return [parseSessionMeta(filePath, claudeSessionProject)]
+    } catch (err) {
+      getMainLog().log('derive-asset', err)
+      return []
+    }
+  }
+
+  const codexSession = matchCodexSession(filePath)
+  if (codexSession) {
+    if (!fs.existsSync(filePath)) return []
+    try {
+      const titleIndex = readCodexSessionTitleIndex(codexSession.codexDir)
+      const asset = parseCodexSessionMeta(filePath, { titleIndex })
+      if (codexSession.archived) asset.meta.archived = true
+      return [asset]
+    } catch (err) {
+      getMainLog().log('derive-asset', err)
+      return []
+    }
+  }
+
   return null
+}
+
+/** GH-141: a claude session is a top-level project JSONL (`projects/{name}/*.jsonl`).
+ * Nested `subagents/*.jsonl` are execution children — not standalone sessions. Returns
+ * the project dir name (for `parseSessionMeta`) or null. */
+function matchClaudeSession(filePath: string): string | null {
+  if (path.extname(filePath) !== '.jsonl') return null
+  const dir = path.dirname(filePath)
+  if (path.basename(path.dirname(dir)) !== 'projects') return null
+  return path.basename(dir)
+}
+
+/** GH-141: a codex session is a `rollout-*.jsonl` under `sessions/` or
+ * `archived_sessions/`. Returns the codex dir (for the title index) + archived flag,
+ * or null. */
+function matchCodexSession(filePath: string): { codexDir: string; archived: boolean } | null {
+  const base = path.basename(filePath)
+  if (!base.startsWith('rollout-') || path.extname(base) !== '.jsonl') return null
+  const parts = filePath.split(path.sep)
+  const sessionsIdx = parts.lastIndexOf('sessions')
+  const archivedIdx = parts.lastIndexOf('archived_sessions')
+  const segIdx = Math.max(sessionsIdx, archivedIdx)
+  if (segIdx <= 0) return null
+  return { codexDir: parts.slice(0, segIdx).join(path.sep), archived: archivedIdx > sessionsIdx }
 }
 
 /** Match a single-file multi-asset capability config by normalized path suffix

@@ -66,6 +66,15 @@ async function runScan(data: AssetWorkerData): Promise<void> {
   }
 }
 
+// GH-141: keep the utilityProcess child alive between scans. In a *packaged* app the
+// child exits as soon as the script finishes (Electron #42978) — `parentPort.on`
+// alone does NOT ref the event loop there (dev does, which is why this only bit
+// production). A long no-op interval refs the loop so the helper is truly long-lived;
+// the host's `kill()` (cancel / before-quit) still terminates the process outright.
+// Without this, the child exits code 0 right after posting `done`, racing the host's
+// done-handler → onExit reject → scan-history ok=0.
+setInterval(() => {}, 2_147_483_647)
+
 // Long-lived: the host posts one `{ type: 'scan', data }` per scan; this process
 // stays alive between scans (unlike the one-shot worker_threads model), so the
 // next scan reuses the warm process instead of paying a fresh fork each time.

@@ -27,6 +27,43 @@ function write(rel: string, body = '# body'): string {
 }
 
 describe('deriveAssetsForPath (GH-113 I1)', () => {
+  // GH-141: session incremental slice — a session write re-derives just that
+  // session instead of triggering a full rescan.
+  it('GH-141: derives a single session asset from a claude projects/{name}/*.jsonl', () => {
+    const filePath = write(
+      path.join('projects', 'my-proj', 'sess-1.jsonl'),
+      JSON.stringify({ type: 'last-prompt', sessionId: 'sess-1', timestamp: '2026-06-19T00:00:00.000Z' }) + '\n'
+    )
+    const assets = deriveAssetsForPath(filePath, { projectRoots: [projectRoot] })
+    expect(assets).toHaveLength(1)
+    expect(assets![0].type).toBe('session')
+    expect(assets![0].meta.sourceKey).toBe(dedupePathKey(filePath))
+  })
+
+  it('GH-141: does NOT treat nested subagents/*.jsonl as a session (falls back to full refresh)', () => {
+    const filePath = write(
+      path.join('projects', 'my-proj', 'subagents', 'child.jsonl'),
+      JSON.stringify({ type: 'last-prompt', sessionId: 'child', timestamp: '2026-06-19T00:00:00.000Z' }) + '\n'
+    )
+    expect(deriveAssetsForPath(filePath, { projectRoots: [projectRoot] })).toBeNull()
+  })
+
+  it('GH-141: derives a single session asset from a codex rollout-*.jsonl (sessions + archived)', () => {
+    const filePath = write(
+      path.join('sessions', '2026', '06', 'rollout-2026-06-19T00-00-00-x.jsonl'),
+      JSON.stringify({ type: 'session_meta', timestamp: '2026-06-19T00:00:00.000Z', payload: { id: 'x', cwd: '/repo' } }) + '\n'
+    )
+    const assets = deriveAssetsForPath(filePath, { projectRoots: [projectRoot] })
+    expect(assets).toHaveLength(1)
+    expect(assets![0].type).toBe('session')
+    expect(assets![0].meta.sourceKey).toBe(dedupePathKey(filePath))
+  })
+
+  it('GH-141: returns [] for a deleted session file', () => {
+    const filePath = path.join(projectRoot, 'projects', 'my-proj', 'gone.jsonl')
+    expect(deriveAssetsForPath(filePath, { projectRoots: [projectRoot] })).toEqual([])
+  })
+
   it('derives a project-scoped claude-md from CLAUDE.md', () => {
     const filePath = write('CLAUDE.md', '# project conventions')
     const assets = deriveAssetsForPath(filePath, { projectRoots: [projectRoot] })

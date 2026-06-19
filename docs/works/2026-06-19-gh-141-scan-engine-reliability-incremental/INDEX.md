@@ -2,7 +2,7 @@
 task: 2026-06-19-gh-141-scan-engine-reliability-incremental
 task_id: GH-141
 type: maintenance
-phase: implement
+phase: verify
 created: 2026-06-19
 priority: P2
 target_date:

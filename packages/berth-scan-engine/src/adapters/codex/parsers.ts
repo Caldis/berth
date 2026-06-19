@@ -433,7 +433,10 @@ export function parseCodexSessionMeta(filePath: string, options: ParseCodexSessi
 
   const meta: Record<string, unknown> = {
     sessionId,
-    transcriptPath: filePath
+    transcriptPath: filePath,
+    // GH-141: per-file replacement key so a session write goes through the
+    // incremental applyFileChange path instead of a full rescan.
+    sourceKey: dedupePathKey(filePath)
   }
 
   try {
