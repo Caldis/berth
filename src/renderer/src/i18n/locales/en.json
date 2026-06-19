@@ -2081,16 +2081,6 @@
       "codexWrite": "Berth writes only user-level Codex hook state in config.toml, including features.hooks and hooks.state entries.",
       "plannedRead": "Read only declared local files for this planned adapter. Sensitive state, logs, and credential files are metadata-only."
     },
-    "localSources": "Local Sources",
-    "localSourcesEmpty": "No supported local sources found.",
-    "sourceCount_one": "{{count}} source",
-    "sourceCount_other": "{{count}} sources",
-    "sourceNotFound": "Local data source not found",
-    "sourceNotFoundDesc": "No supported user or project sources were found for this agent.",
-    "sourceSummary": "Shows the directories and files Berth actually reads for this agent.",
-    "detected": "Detected",
-    "notFound": "Not found",
-    "noSourceRoots": "No readable source path was found for this agent.",
     "automatic": "Automatic",
     "fileWatching": "File Watching",
     "fileWatchingDesc": "Detected source folders are watched automatically while Berth is running",
@@ -2183,6 +2173,106 @@
     "noResults": {
       "title": "No matching memories",
       "hint": "No notes match the current search or source filter."
+    }
+  },
+  "sources": {
+    "status": {
+      "scanned": "Scanned",
+      "missing": "Missing",
+      "not-scanned": "Not scanned"
+    },
+    "statusCount": "{{count}} {{label}}",
+    "code": {
+      "claude.user.data-directory": {
+        "title": "Claude Code data directory",
+        "summary": "Includes instructions, skills, agents, commands, hooks, plugins, status line, sessions, plans, todos, usage data, and integration state."
+      },
+      "claude.user.global-config": {
+        "title": "Claude Code global config file",
+        "summary": "Includes global MCP server definitions."
+      },
+      "claude.project.directory": {
+        "title": "Project Claude Code directory",
+        "summary": "Includes project instructions, skills, agents, commands, hooks, permissions, environment variables, and teams."
+      },
+      "claude.project.mcp-config": {
+        "title": "Project MCP config file",
+        "summary": "Includes project MCP server definitions."
+      },
+      "claude.enterprise.managed-settings": {
+        "title": "Claude Code managed settings file",
+        "summary": "Includes policy-managed hooks, permissions, environment variables, and status line settings."
+      },
+      "claude.enterprise.managed-mcp": {
+        "title": "Claude Code managed MCP file",
+        "summary": "Includes policy-managed MCP server definitions."
+      },
+      "codex.user.config": {
+        "title": "Codex config file",
+        "summary": "Includes MCP servers and user-level Codex configuration."
+      },
+      "codex.user.hooks": {
+        "title": "Codex hooks file",
+        "summary": "Includes user-level hook definitions."
+      },
+      "codex.user.agents-md": {
+        "title": "Codex user instructions",
+        "summary": "Includes user-level Codex instructions."
+      },
+      "codex.user.agents-directory": {
+        "title": "Codex user agents directory",
+        "summary": "Includes user-level custom Codex agents."
+      },
+      "codex.user.codex-home-skills": {
+        "title": "Codex user skills directory",
+        "summary": "Includes user-level Codex skills under CODEX_HOME."
+      },
+      "codex.user.shared-skills": {
+        "title": "Shared user skills directory",
+        "summary": "Includes user-level Codex skills."
+      },
+      "codex.user.session-index": {
+        "title": "Codex session index",
+        "summary": "Includes Codex thread names and session index metadata."
+      },
+      "codex.user.sessions": {
+        "title": "Codex session history directory",
+        "summary": "Includes Codex rollout session history."
+      },
+      "codex.session.archived-sessions": {
+        "title": "Codex archived session history directory",
+        "summary": "Includes archived Codex rollout session history."
+      },
+      "codex.project.agents-md": {
+        "title": "Codex project instructions",
+        "summary": "Includes project-level Codex instructions."
+      },
+      "codex.project.config": {
+        "title": "Codex project config file",
+        "summary": "Includes project-level Codex configuration."
+      },
+      "codex.project.hooks": {
+        "title": "Codex project hooks file",
+        "summary": "Includes project-level hook definitions."
+      },
+      "codex.project.agents-directory": {
+        "title": "Codex project agents directory",
+        "summary": "Includes project-level custom Codex agents."
+      },
+      "codex.project.skills": {
+        "title": "Codex project skills directory",
+        "summary": "Includes project-level Codex skills."
+      },
+      "project.current-candidate": {
+        "title": "Project source candidate",
+        "summary": "Current project was checked for known project-level source files.",
+        "actionHint": "Current project checked. Add a supported project-level source file to include it."
+      },
+      "project.session-derived-candidate": {
+        "title": "Project source candidate",
+        "summary": "Referenced by local session history, but Berth has not scanned this project directory.",
+        "actionHint": "Open this project, then Berth will scan its project-level sources."
+      }
     }
   },
   "common": {

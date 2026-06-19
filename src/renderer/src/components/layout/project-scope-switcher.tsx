@@ -324,7 +324,7 @@ function ProjectOption({
   selected: boolean
   onClick: () => void
 }): React.ReactElement {
-  const { t, i18n } = useTranslation()
+  const { t } = useTranslation()
   return (
     <button
       type="button"
@@ -372,7 +372,7 @@ function ProjectOption({
                 key={status}
                 className="inline-flex rounded border border-border px-1.5 py-0.5 text-[10px] leading-3 text-muted-foreground"
               >
-                {formatScanSourceStatusCount(status, count, i18n.language)}
+                {formatScanSourceStatusCount(t, status, count)}
               </span>
             )
           })}
@@ -447,9 +447,9 @@ function SelectedProjectSources({
 }
 
 function ProjectSourceRow({ source }: { source: ScanRoot }): React.ReactElement {
-  const { t, i18n } = useTranslation()
+  const { t } = useTranslation()
   const status = source.status ?? 'scanned'
-  const copy = getScanSourceCopy(source, i18n.language)
+  const copy = getScanSourceCopy(t, source)
   const Icon = source.kind === 'file' ? FileText : Folder
   const summary = copy.actionHint ?? copy.summary
 
@@ -496,11 +496,11 @@ function ProjectSourceRow({ source }: { source: ScanRoot }): React.ReactElement 
 }
 
 function ProjectSourceStatusBadge({ status }: { status: ScanSourceStatus }): React.ReactElement {
-  const { i18n } = useTranslation()
+  const { t } = useTranslation()
 
   return (
     <span className="shrink-0 rounded border border-border px-1.5 py-0.5 text-[10px] leading-3 text-muted-foreground">
-      {getScanSourceStatusLabel(status, i18n.language)}
+      {getScanSourceStatusLabel(t, status)}
     </span>
   )
 }

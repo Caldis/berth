@@ -2066,15 +2066,6 @@
       "codexWrite": "Berth 只写用户级 Codex Hook 状态, 包括 config.toml 中的 features.hooks 和 hooks.state 条目。",
       "plannedRead": "只读取这个计划中 adapter 声明的本地文件。敏感状态、日志和凭据文件只采集元数据。"
     },
-    "localSources": "本地来源",
-    "localSourcesEmpty": "未发现支持的本地来源。",
-    "sourceCount_other": "{{count}} 个来源",
-    "sourceNotFound": "未发现本地数据来源",
-    "sourceNotFoundDesc": "没有发现这个 Agent 支持的用户级或项目级来源。",
-    "sourceSummary": "这里显示 Berth 实际读取的目录和文件。",
-    "detected": "已发现",
-    "notFound": "未发现",
-    "noSourceRoots": "这个 Agent 暂无可读取的来源路径。",
     "automatic": "自动",
     "fileWatching": "文件监听",
     "fileWatchingDesc": "Berth 运行时会自动监听已发现的来源目录",
@@ -2167,6 +2158,106 @@
     "noResults": {
       "title": "没有匹配的记忆",
       "hint": "当前搜索或来源筛选下没有匹配笔记。"
+    }
+  },
+  "sources": {
+    "status": {
+      "scanned": "已扫描",
+      "missing": "未发现",
+      "not-scanned": "未扫描"
+    },
+    "statusCount": "{{label}} {{count}}",
+    "code": {
+      "claude.user.data-directory": {
+        "title": "Claude Code 数据目录",
+        "summary": "包含指令、技能、子代理、命令、Hooks、插件、状态栏、会话、计划、待办、用量数据和集成状态。"
+      },
+      "claude.user.global-config": {
+        "title": "Claude Code 全局配置文件",
+        "summary": "包含全局 MCP server 定义。"
+      },
+      "claude.project.directory": {
+        "title": "项目 Claude Code 目录",
+        "summary": "包含项目指令、技能、子代理、命令、Hooks、权限、环境变量和团队配置。"
+      },
+      "claude.project.mcp-config": {
+        "title": "项目 MCP 配置文件",
+        "summary": "包含项目级 MCP server 定义。"
+      },
+      "claude.enterprise.managed-settings": {
+        "title": "Claude Code 托管设置文件",
+        "summary": "包含由策略管理的 Hooks、权限、环境变量和状态栏设置。"
+      },
+      "claude.enterprise.managed-mcp": {
+        "title": "Claude Code 托管 MCP 文件",
+        "summary": "包含由策略管理的 MCP server 定义。"
+      },
+      "codex.user.config": {
+        "title": "Codex 配置文件",
+        "summary": "包含 MCP servers 和用户级 Codex 配置。"
+      },
+      "codex.user.hooks": {
+        "title": "Codex Hooks 文件",
+        "summary": "包含用户级 Hook 定义。"
+      },
+      "codex.user.agents-md": {
+        "title": "Codex 用户指令",
+        "summary": "包含用户级 Codex 指令。"
+      },
+      "codex.user.agents-directory": {
+        "title": "Codex 用户 agents 目录",
+        "summary": "包含用户级自定义 Codex agents。"
+      },
+      "codex.user.codex-home-skills": {
+        "title": "Codex 用户 skills 目录",
+        "summary": "包含 CODEX_HOME 下的用户级 Codex skills。"
+      },
+      "codex.user.shared-skills": {
+        "title": "共享用户 skills 目录",
+        "summary": "包含用户级 Codex skills。"
+      },
+      "codex.user.session-index": {
+        "title": "Codex 会话索引",
+        "summary": "包含 Codex 线程名称和会话索引元数据。"
+      },
+      "codex.user.sessions": {
+        "title": "Codex 会话历史目录",
+        "summary": "包含 Codex rollout 会话历史。"
+      },
+      "codex.session.archived-sessions": {
+        "title": "Codex 归档会话历史目录",
+        "summary": "包含归档后的 Codex rollout 会话历史。"
+      },
+      "codex.project.agents-md": {
+        "title": "Codex 项目指令",
+        "summary": "包含项目级 Codex 指令。"
+      },
+      "codex.project.config": {
+        "title": "Codex 项目配置文件",
+        "summary": "包含项目级 Codex 配置。"
+      },
+      "codex.project.hooks": {
+        "title": "Codex 项目 Hooks 文件",
+        "summary": "包含项目级 Hook 定义。"
+      },
+      "codex.project.agents-directory": {
+        "title": "Codex 项目 agents 目录",
+        "summary": "包含项目级自定义 Codex agents。"
+      },
+      "codex.project.skills": {
+        "title": "Codex 项目 skills 目录",
+        "summary": "包含项目级 Codex skills。"
+      },
+      "project.current-candidate": {
+        "title": "项目来源候选",
+        "summary": "当前项目已经检查过已知项目级来源文件。",
+        "actionHint": "已检查当前项目。添加支持的项目级来源文件后会纳入。"
+      },
+      "project.session-derived-candidate": {
+        "title": "项目来源候选",
+        "summary": "这个目录来自本机会话历史, 但 Berth 没有扫描这个项目目录。",
+        "actionHint": "打开这个项目后, Berth 会扫描它的项目级来源。"
+      }
     }
   },
   "common": {
