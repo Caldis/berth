@@ -7,7 +7,7 @@ import {
   TOKEN_BREAKDOWN_ALIAS_KEYS
 } from '@shared/token-usage'
 import { buildHookHash, buildHookKey, buildHookScenarioHash } from '@shared/hook-identity'
-import { assetEntityId, dedupePathKey } from '@shared/asset-dedupe'
+import { assetEntityId, dedupePathKey, sessionAssetId } from '@shared/asset-dedupe'
 import { extractCommandEntryPaths } from '../command-entry-paths'
 import { stampSourceKey, stampSourceKeys } from '../source-key'
 import {
@@ -430,6 +430,7 @@ export function parseCodexSessionMeta(filePath: string, options: ParseCodexSessi
   const skillsUsed = new Set<string>()
   const mcpServers = new Set<string>()
   const hookEventCounts = new Map<string, number>()
+  let malformedLineCount = 0
 
   const meta: Record<string, unknown> = {
     sessionId,
@@ -444,7 +445,7 @@ export function parseCodexSessionMeta(filePath: string, options: ParseCodexSessi
     meta.sizeBytes = stat.size
     meta.modifiedAt = stat.mtime.toISOString()
 
-    for (const record of readJsonLines(filePath)) {
+    for (const record of readJsonLines(filePath, () => { malformedLineCount += 1 })) {
       const timestamp = readValidDateString(record, 'timestamp')
       if (timestamp) {
         firstTimestamp ??= timestamp
@@ -535,9 +536,11 @@ export function parseCodexSessionMeta(filePath: string, options: ParseCodexSessi
   meta.mcpServers = Array.from(mcpServers).sort()
   meta.hooksFired = Array.from(hookEventCounts.values()).reduce((sum, count) => sum + count, 0)
   meta.hookEventCounts = hookCountsObject
+  // GH-143: expose malformed line count like claude (data-quality parity).
+  if (malformedLineCount > 0) meta.malformedLineCount = malformedLineCount
 
   return {
-    id: `codex-session-${sessionId}-${hashString(filePath)}`,
+    id: sessionAssetId('codex', sessionId, filePath),
     agentId: 'codex',
     category: 'state',
     type: 'session',
@@ -664,7 +667,10 @@ export function parseCodexSessionDetail(filePath: string): ParsedCodexSessionDet
   }
 }
 
-function readJsonLines(filePath: string): Record<string, unknown>[] {
+function readJsonLines(
+  filePath: string,
+  onMalformed?: () => void
+): Record<string, unknown>[] {
   const records: Record<string, unknown>[] = []
   const raw = fs.readFileSync(filePath, 'utf-8')
   for (const line of raw.split(/\r?\n/)) {
@@ -673,7 +679,9 @@ function readJsonLines(filePath: string): Record<string, unknown>[] {
       const parsed: unknown = JSON.parse(line)
       if (isRecord(parsed)) records.push(parsed)
     } catch {
-      // Ignore partial or malformed rollout lines.
+      // GH-143: count malformed rollout lines so codex session meta exposes
+      // malformedLineCount like claude (data-quality parity), not silent drop.
+      onMalformed?.()
     }
   }
   return records
@@ -937,14 +945,6 @@ function normalizeSessionTitle(value: string | undefined): string | undefined {
   const normalized = value?.replace(/\s+/g, ' ').trim()
   if (!normalized) return undefined
   return truncate(normalized, CODEX_SESSION_TITLE_MAX_LENGTH)
-}
-
-function hashString(value: string): string {
-  let hash = 0
-  for (let i = 0; i < value.length; i += 1) {
-    hash = (hash * 31 + value.charCodeAt(i)) >>> 0
-  }
-  return hash.toString(36)
 }
 
 function cloneJson<T>(value: T): T {

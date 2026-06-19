@@ -12,6 +12,7 @@ import * as path from 'path'
 import { isRecord, readNumber, readString } from '@shared/object-guards'
 import { resolveClaudeDirs } from '@berth/scan-engine/agent-homes'
 import type { AgentTeamMember, AgentTeamSummary, AgentTeamTask } from '@shared/types/ipc'
+import { sessionAssetId } from '@shared/asset-dedupe'
 
 const TASK_STATUSES = new Set(['pending', 'in_progress', 'completed'])
 
@@ -49,7 +50,7 @@ export function markLeadSessionAvailability(
 ): AgentTeamSummary[] {
   return teams.map((team) => {
     if (!team.leadSessionId) return team
-    const asset = getAsset(`session-${team.leadSessionId}`)
+    const asset = getAsset(sessionAssetId('claude-code', team.leadSessionId))
     return { ...team, leadSessionAvailable: asset?.type === 'session' }
   })
 }

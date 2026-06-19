@@ -7,7 +7,7 @@ import {
   normalizeTokenUsage
 } from '@shared/token-usage'
 import { buildHookHash, buildHookKey, buildHookScenarioHash } from '@shared/hook-identity'
-import { assetEntityId, dedupePathKey } from '@shared/asset-dedupe'
+import { assetEntityId, dedupePathKey, sessionAssetId } from '@shared/asset-dedupe'
 import { samePath } from '@shared/path-utils'
 import {
   isRecord,
@@ -802,7 +802,7 @@ export function parseSessionMeta(filePath: string, projectName: string): Asset {
   if (totalCost != null) meta.totalCost = totalCost
 
   return {
-    id: `session-${sessionId}`,
+    id: sessionAssetId('claude-code', sessionId),
     agentId: 'claude-code',
     category: 'state',
     type: 'session',

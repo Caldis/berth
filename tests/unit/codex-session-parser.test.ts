@@ -32,6 +32,33 @@ describe('Codex session parser', () => {
     expect(asset.meta.sourceKey).toBe(dedupePathKey(rolloutPath))
   })
 
+  it('counts malformed rollout lines into meta.malformedLineCount (GH-143 parity with claude)', () => {
+    tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'berth-codex-malformed-'))
+    const rolloutPath = path.join(tempDir, 'rollout-2026-06-13T10-00-00-malformed.jsonl')
+    fs.writeFileSync(
+      rolloutPath,
+      [
+        JSON.stringify({ type: 'session_meta', timestamp: '2026-06-13T10:00:00.000Z', payload: { id: 'mal1', cwd: '/x' } }),
+        '{ broken json line',
+        'also not json',
+        JSON.stringify({ type: 'turn_context', timestamp: '2026-06-13T10:01:00.000Z' })
+      ].join('\n')
+    )
+    const asset = parseCodexSessionMeta(rolloutPath, {})
+    expect(asset.meta.malformedLineCount).toBe(2)
+  })
+
+  it('omits malformedLineCount when all rollout lines are valid (GH-143)', () => {
+    tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'berth-codex-clean-'))
+    const rolloutPath = path.join(tempDir, 'rollout-clean.jsonl')
+    fs.writeFileSync(
+      rolloutPath,
+      JSON.stringify({ type: 'session_meta', timestamp: '2026-06-13T10:00:00.000Z', payload: { id: 'clean1', cwd: '/x' } }) + '\n'
+    )
+    const asset = parseCodexSessionMeta(rolloutPath, {})
+    expect(asset.meta.malformedLineCount).toBeUndefined()
+  })
+
   it('uses session_index thread names for rollout titles', () => {
     tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'berth-codex-session-title-'))
     const rolloutPath = path.join(tempDir, 'rollout-2026-06-13T10-00-00-codex-title.jsonl')

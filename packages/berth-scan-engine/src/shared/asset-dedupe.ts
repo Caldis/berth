@@ -47,3 +47,28 @@ export function assetEntityId(
 ): string {
   return `${type}-${scope}-${stableAssetHash(`${dedupePathKey(sourcePath, platform)}:${entityKey}`)}`
 }
+
+/**
+ * Session-id path hash: djb2-style 32-bit folded to base36. NOT `stableAssetHash`
+ * (SHA-256) — session asset ids are pre-existing opaque renderer handles whose
+ * exact bytes must stay identical (GH-143), so this reproduces the codex adapter's
+ * historical hash verbatim. Only used by `sessionAssetId`.
+ */
+export function sessionPathHash(value: string): string {
+  let hash = 0
+  for (let i = 0; i < value.length; i += 1) {
+    hash = (hash * 31 + value.charCodeAt(i)) >>> 0
+  }
+  return hash.toString(36)
+}
+
+/**
+ * Single source for session asset ids (GH-143). Preserves the two historical
+ * formats EXACTLY — renderer handles and agent-teams' `session-${id}` lookup
+ * depend on them: codex carries a file-path hash for uniqueness across same-id
+ * rollouts, every other agent uses the bare `session-${id}`.
+ */
+export function sessionAssetId(agentId: string, sessionId: string, filePath?: string): string {
+  if (agentId === 'codex') return `codex-session-${sessionId}-${sessionPathHash(filePath ?? '')}`
+  return `session-${sessionId}`
+}
