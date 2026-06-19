@@ -22,3 +22,10 @@
 # 追记 (GH-115 进展+新证据, 2026-06-10)
 - **isPathInside 收敛 DONE** (T7): shared/path-utils 增 isPathInside({includeEqual,platform}), memory ×2 与 engine/scanner 三处互相矛盾的包含判定收敛, win32 折叠对齐 samePath 先例。
 - R30 新证据: normalizeProjectPath 双实现 Windows 盘根分叉 ('X:' vs 'X:/', sessions 分组键 vs scope 过滤键不等); 签名习语两侧独立 (result-signature vs search, main 侧不转义有伪相等风险); engine/usage 私有重定义 emptyUsageSummary/costSourceToFormula。仍 OPEN: asset-type 配置表、signature 收敛、盘根 canonical 定案 — session-location-groups/result-signature 是 gh-98 verify 足迹, 待收口。
+
+# 核实更新 (2026-06-19, harness-5.2-issues 续做)
+- **asset-type 配置表项过期, 不做**: 核实 `lib/asset-route.ts` 已是单一真源 route switch (注释自述 single source of truth); issue 原列的 `lib/asset-guidance.ts` / `lib/agent-view.ts` 已删 (后续重构), `capability-assets.ts` 的 'mcp'/'hooks' 是 EnvVarGroup 非 asset-type 映射。"4 处分散漏改"前提不再成立, 建统一 asset-type-config 收益极低。
+- **路径统一**: DONE (samePath + isPathInside 已收敛)。
+- **signature 收敛仍 OPEN**: `lib/result-signature.ts` + `engine/search.ts` (3 处 createIndexSignature) 两套签名构造仍并存, 抽通用 signature 构造器仍有价值 (有界小重构, 低优)。
+- **盘根 canonical**: normalizeProjectPath + normalizeProjectPathKey 现同在 `shared/scope.ts`, 未深核实是否仍分叉, 暂留。
+- 结论: 保持 OPEN, 聚焦剩 signature 收敛 (低优); asset-type 配置表项标过期不做。
