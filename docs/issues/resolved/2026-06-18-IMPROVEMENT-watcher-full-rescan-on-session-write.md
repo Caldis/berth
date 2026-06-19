@@ -13,5 +13,6 @@
 - sessions 占 73% 资产 (968/1319), 是全量 scan 的主成本, 却最频繁触发全量重扫。
 
 # 解决方案
-- 待设计: session 写入走增量路径 (`deriveAssetsForPath` 支持 session 类型, 或按 sourceKey 单文件 re-parse + fold), 让任意会话写入只重算该 session, 不触发全库 scan。
-- 来源 / 关联: GH-140 冷启动慢主线 explore 时发现 (`docs/works/_archive/2026-06-18-gh-140-cold-start-blocking-load`)。同根问题: session JSONL parse 是全量 scan 的主成本, 既拖慢冷启动首扫, 又被 watcher 高频触发。边界: 属稳态后台性能优化, 不在 GH-140 主线 (首屏阻塞) 顺手改, 待排期。
+**已修复** (GH-141, 2026-06-19, commit fcae252; 发版 0.4.2)。session asset 补 `meta.sourceKey = dedupePathKey(filePath)`; `deriveAssetsForPath` 加 claude `projects/{name}/*.jsonl` + codex `rollout-*.jsonl` 增量 dispatch (subagents 排除)。会话写入走 `applyFileChange` 增量, 不再触发全库全量 scan。e2e 端到端铁证 (incremental-watch.e2e.ts: session 写入后 snapshot id 不变 = 增量, 非全量重扫)。
+- 归档: `docs/works/_archive/2026-06-19-gh-141-scan-engine-reliability-incremental`
+- 来源: GH-140 冷启动慢 explore 时发现 (session parse 是全量 scan 主成本)。

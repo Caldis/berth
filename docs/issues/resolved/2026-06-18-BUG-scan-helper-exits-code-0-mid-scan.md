@@ -14,5 +14,6 @@ scan-helper utilityProcess (`src/main/scan-helper.ts`) 设计为 long-lived (完
 - helper 在 scan 完成前 clean-exit, 而非保持存活。根因待查: utilityProcess 的 event loop 是否被 `parentPort.on('message')` ref 住 / 被回收 / graceful OOM。
 
 # 解决方案
-- 待查: 确认 helper 退出的精确触发条件; 让 parentPort 监听 ref 住 event loop, 或 host 对中途 exit 做 respawn + retry 而非直接 reject 整轮。
-- 来源 / 关联: GH-140 冷启动慢主线 explore 时发现 (`docs/works/_archive/2026-06-18-gh-140-cold-start-blocking-load`)。冷启动首扫若同样中途 exit, 会触发失败 + 重试, 进一步加剧首屏等待。边界: 属 scan 可靠性旁支, 不在 GH-140 主线顺手修, 待排期或用户扩大范围。
+**已修复** (GH-141, 2026-06-19, commit fcae252; 发版 0.4.2)。根因确证 (Electron 官方 #42978): utilityProcess child 在 **packaged 应用** script 完即退出 (dev 保持运行), `parentPort.on('message')` 不 ref event loop。修复: `scan-helper.ts` 加 `setInterval(()=>{}, 2_147_483_647)` keep-alive ref 住 event loop, helper 在 packaged 真正 long-lived; host `kill()` 仍正常终止。dev e2e 不回归 + 逻辑确证; packaged 发布后观察 main.log 不再 `exit code 0`。
+- 归档: `docs/works/_archive/2026-06-19-gh-141-scan-engine-reliability-incremental`
+- 来源: GH-140 冷启动慢 explore 时发现。
