@@ -25,15 +25,19 @@ debt:
     confidence: medium
     rationale: "explore 校准: 根因1 = Electron utilityProcess packaged child script 完即退出 (#42978 确证, 修复 keep-alive); 根因2 = session 增量 (GH-113 未实现 slice, 需补 sourceKey + claude/codex dispatch)。session 比初估复杂 incurred+1, 偿还面更大 repaid+1。"
   final:
-    incurred:
-    repaid:
-    net:
-    scope:
-    risk:
-    areas: []
-    confidence:
-    rationale:
+    incurred: 4
+    repaid: 6
+    net: -2
+    scope: cross-process
+    risk: medium
+    areas:
+      - architecture
+    confidence: high
+    rationale: "session 增量 (sourceKey + derive dispatch) e2e 端到端铁证 (snapshot id 不变); helper keep-alive 逻辑确证 (#42978) + dev 不回归。偿还 helper 可靠性 + session 全量低效 + 完成 GH-113 session slice。"
   revisions:
+    - phase: verify
+      date: 2026-06-19
+      reason: "真跑后定稿: session 增量 e2e 铁证, helper 逻辑+dev 验证。final = estimate (4/6/-2), confidence medium→high。"
     - phase: explore
       date: 2026-06-19
       reason: "根因确证 (helper = Electron packaged child 退出 #42978; session = GH-113 未实现增量 slice + sourceKey 缺口)。session 增量比初估复杂, incurred 3→4, repaid 5→6, confidence low→medium。"

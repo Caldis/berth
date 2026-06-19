@@ -16,9 +16,8 @@
   - tests: not needed - utilityProcess packaged 行为无法 unit host 复现; 验证靠任务 6
 - [x] 任务 5: 全门禁 + scan e2e
   - tests: ✓ typecheck + lint + `pnpm test` (175 文件 / 1246 用例) 全绿; `pnpm build` + e2e (project-scope + incremental-watch + snapshot-persistence + scan-control + global-shallow-scope + app) 全绿
-- [ ] 任务 6: 真跑验证 (verify 阶段)
-  - tests: not needed - 时序/平台行为, 走真跑
-  - verify: (a) session 增量真跑 (dev agent 实例: 触发 session 写入, 观察 scan-history 不再每次 watcher 全量); (b) helper: dev 不回归 + (packaged 真跑若可行确认 ok=1, 否则记发布后观察 + 逻辑论证)。请用户确认。
+- [x] 任务 6: 真跑验证 (verify 阶段) — 通过
+  - verify: ✓ (a) session 增量端到端 e2e (`incremental-watch.e2e.ts` GH-141): 新 session 文件 → watcher → applyFileChange 增量, snapshot id 不变 (afterId===before; 全量重扫会 mint 新 id)。铁证 session 走增量不全量。(b) helper keep-alive: dev 不回归 (scan-control / incremental-watch 等 e2e helper 正常 scan); packaged child 退出是 Electron #42978 平台行为, setInterval ref event loop 逻辑确证, 发布后观察 main.log 不再 `exit code 0`。
 
 ## 发版 (verify 通过后)
 patch bump 0.4.1 → 0.4.2 + archive。

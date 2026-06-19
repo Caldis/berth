@@ -81,3 +81,55 @@ test('folds a newly-added watched skill into the snapshot incrementally (id stay
     rmSync(tempDir, { recursive: true, force: true })
   }
 })
+
+// GH-141: a session write must fold incrementally too — before this slice, any
+// session change fell through to a full rescan (scheduleRefresh), which on a real
+// machine with hundreds of sessions is the 3-6s full scan we are eliminating. The
+// stable snapshot id is the same incremental-vs-full proof used above.
+test('GH-141: folds a newly-added session incrementally (id stays stable, not a full rescan)', async ({ browserName: _b }, info) => {
+  tempDir = info.outputPath('incremental-watch-session')
+  const dirs = prepareIsolatedDirs(tempDir)
+  const sessionsDir = join(dirs.codexHome, 'sessions')
+  mkdirSync(sessionsDir, { recursive: true })
+  writeFileSync(
+    join(sessionsDir, 'rollout-seed.jsonl'),
+    JSON.stringify({ type: 'session_meta', timestamp: '2026-06-02T00:00:00.000Z', payload: { id: 'seed-session', cwd: '/repo', model: 'gpt-5' } }) + '\n'
+  )
+
+  const launched = await launchBerthApp(dirs)
+  const app: ElectronApplication = launched.app
+  try {
+    const page = launched.page
+    await page.locator('aside').first().waitFor()
+
+    // Wait for the initial scan to COMMIT (id leaves 'initial') with the seed session present.
+    await expect
+      .poll(() => page.evaluate(async () => {
+        const snap = await window.api.assets.snapshot()
+        return snap.id !== 'initial' && snap.assets.some((a) => a.type === 'session' && a.meta.sessionId === 'seed-session')
+      }), { timeout: 15000 })
+      .toBe(true)
+    const before = await page.evaluate(async () => (await window.api.assets.snapshot()).id)
+
+    // Real filesystem change: a new session rollout appears under the watched codex home.
+    writeFileSync(
+      join(sessionsDir, 'rollout-added.jsonl'),
+      JSON.stringify({ type: 'session_meta', timestamp: '2026-06-03T00:00:00.000Z', payload: { id: 'added-session', cwd: '/repo', model: 'gpt-5' } }) + '\n'
+    )
+
+    // The watcher re-derives just that session and folds it in.
+    await expect
+      .poll(() => page.evaluate(async () => {
+        const snap = await window.api.assets.snapshot()
+        return snap.assets.some((a) => a.type === 'session' && a.meta.sessionId === 'added-session')
+      }), { timeout: 15000 })
+      .toBe(true)
+
+    // Incremental, not a full rescan: the snapshot id is unchanged (GH-141).
+    const afterId = await page.evaluate(async () => (await window.api.assets.snapshot()).id)
+    expect(afterId).toBe(before)
+  } finally {
+    await app.close()
+    rmSync(tempDir, { recursive: true, force: true })
+  }
+})
