@@ -8,4 +8,17 @@
 
 # 来源 · 关联
 - GH-115 架构全面分析 (2026-06-10), 完整证据见 `docs/works/2026-06-10-gh-115-architecture-refactor/01-ANALYSIS.md` (R16)。关联 2026-06-10-IMPROVEMENT-expandable-asset-card-convergence.md (同窗口)。
-- 状态: OPEN。
+- 状态: RESOLVED (核心由 GH-144 兑现, 2026-06-19)。
+
+# 解决 (2026-06-19, GH-144)
+- 核心兑现 (`docs/works/_archive/2026-06-19-gh-144-god-pages-logic-sink`): session-detail/capabilities
+  核心纯逻辑下沉到 3 个 lib + 31 直测 (此前核心聚合器/诊断零直测, 仅组件间接覆盖):
+  - `lib/session-signals.ts`: buildSessionSignals + getToolDurationMs + countSignalHighlights (13 直测)。
+  - `lib/status-line-models.ts`: buildStatusLineViewModels + getStatusLineDiagnostics + getWorstDiagnosticLevel
+    + group/rank/scriptRef/redact + 类型 (14 直测)。
+  - `lib/runtime-state.ts`: shouldShowScanningState 去重 capabilities/instructions 逐字相同空态判定 (4 直测)。
+  - 行为不变 (现有 status-line-section 8 / redaction 5 / sessions-pages + 全量 1279 不破)。
+  - 关联 commit: 57fb8ee1 / 94daa23e / 0b38dda1。
+- 剩余 (低优可选未来, 不阻塞): formatters 提取 (session-detail 格式器群 6 + 日期 3); asStringArray 统一
+  (页面宽松 → lib 严格, 行为变更需回归); i18n formatters / sessionTabMeta / pluginComponentLabel 保留内联。
+- 收敛: 核心已兑现, 移入 resolved/。

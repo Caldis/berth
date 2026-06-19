@@ -2,7 +2,7 @@
 task: 2026-06-19-gh-144-god-pages-logic-sink
 task_id: GH-144
 type: maintenance
-phase: implement
+phase: archive
 created: 2026-06-19
 priority: P2
 target_date:
@@ -24,14 +24,15 @@ debt:
     confidence: low
     rationale: "0.0-new 初始: 提取 session-detail/capabilities 内联纯函数到 lib + 直测 (incurred 少, 行为不变); 提升可测试性 + 减页面行数 (repaid); maintenance net -2; explore 以当前代码重新盘点纯函数后校准。"
   final:
-    incurred:
-    repaid:
-    net:
-    scope:
-    risk:
-    areas: []
-    confidence:
-    rationale:
+    incurred: 1
+    repaid: 3
+    net: -2
+    scope: module
+    risk: low
+    areas:
+      - testability
+    confidence: high
+    rationale: "verify 校准: 3 lib 提取 (session-signals + status-line-models + runtime-state) 行为不变 + 31 直测 (13+14+4, 核心聚合器/诊断此前零测→直测); formatters/asStringArray 列后续。incurred 1 (纯提取少量新代码), repaid 3 (可测试性 + 去重 + 减页面行数), net -2。全量 1279 + 组件回归 (status-line-section 8/redaction 5/sessions-pages) 不破 = 行为不变铁证, confidence high。"
   revisions: []
 issue:
   number: 144
@@ -44,7 +45,7 @@ gh_project:
   project_number: 6
   project_url: https://github.com/users/Caldis/projects/6
   item_id: PVTI_lAHOADXbEs4BZHvQzgwQXLM
-  item_status: In Progress
+  item_status: Done
   project_id: PVT_kwHOADXbEs4BZHvQ
 artifacts:
   source: 00-PRD.md

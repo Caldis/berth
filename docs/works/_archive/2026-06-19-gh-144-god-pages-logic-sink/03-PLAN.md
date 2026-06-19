@@ -15,7 +15,7 @@
   - 范围: 新增 `shouldShowScanningState(scanning, runtimeState, assetCount)` (抽 capabilities:978 / instructions 重复); 两页改用。
   - tests: `tests/renderer/runtime-state.test.ts` (新) — scanning=true→true / idle+empty→true / has-assets→false 组合 (AC3)。
   - verify: 不适用 UI。直测绿 + 两页空态渲染不破。
-- [ ] 任务 4 (收尾, 非实现): 记后续 issue
+- [x] 任务 4 (收尾, 非实现): 剩余并入原 issue 收敛 (archive 步骤7)
   - formatters 提取 (session-detail 格式器群 6 + 日期 3, D1) + asStringArray 统一 (宽松→严格行为变更, D2)。原 god-pages issue 收敛说明记剩余 (首版聚焦核心聚合器)。
 
 ## verify 回写
