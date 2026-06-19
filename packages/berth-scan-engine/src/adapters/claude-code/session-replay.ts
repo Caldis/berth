@@ -1,7 +1,7 @@
-import * as fs from 'fs'
 import type { SessionReplayEvent } from '@shared/types/ipc'
 import { replayEventId, replaySummary } from '@shared/session-replay'
 import { isRecord, readNumber, readString, readValidDateString } from '../_shared/parser-helpers'
+import { iterateJsonlLinesWithIndex } from '../_shared/jsonl-stream'
 
 // GH-116: full-event replay view of a Claude Code transcript. Unlike
 // session-detail (tool timeline only) this surfaces user/assistant/thinking
@@ -25,16 +25,13 @@ export function parseClaudeSessionReplay(filePath: string): SessionReplayEvent[]
   const toolByCallId = new Map<string, SessionReplayEvent>()
   let lastUsageMessageId: string | null = null
 
-  let raw: string
+  // GH-148: stream lines with their index instead of readFileSync+split. The
+  // lineIndex MUST match split(/\r?\n/) exactly (empty lines occupy a slot) — it
+  // is the payload-lookup key baked into the replay id `L{lineIndex}B{n}`. The
+  // generator runs inside the try so a locked/truncated transcript returns the
+  // events parsed so far (and a missing file throws on open → [] as before).
   try {
-    raw = fs.readFileSync(filePath, 'utf-8')
-  } catch {
-    return []
-  }
-
-  const lines = raw.split(/\r?\n/)
-  for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
-    const line = lines[lineIndex]
+    for (const { index: lineIndex, line } of iterateJsonlLinesWithIndex(filePath)) {
     if (!line.trim()) continue
     let parsed: unknown
     try {
@@ -198,6 +195,10 @@ export function parseClaudeSessionReplay(filePath: string): SessionReplayEvent[]
         }
       }
     }
+    }
+  } catch {
+    // Locked/truncated transcript: return events parsed so far (a missing file
+    // throws on open before any event is collected → []).
   }
 
   return events

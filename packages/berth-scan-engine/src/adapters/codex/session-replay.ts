@@ -1,7 +1,7 @@
-import * as fs from 'fs'
 import type { SessionReplayEvent } from '@shared/types/ipc'
 import { replayEventId, replaySummary } from '@shared/session-replay'
 import { isRecord, readNumber, readString } from '../_shared/parser-helpers'
+import { iterateJsonlLinesWithIndex } from '../_shared/jsonl-stream'
 import {
   isCodexToolCall,
   isCodexToolOutput,
@@ -26,16 +26,13 @@ export function parseCodexSessionReplay(filePath: string): SessionReplayEvent[] 
   const events: SessionReplayEvent[] = []
   const toolByCallId = new Map<string, SessionReplayEvent>()
 
-  let raw: string
+  // GH-148: stream lines with their index instead of readFileSync+split. lineIndex
+  // MUST match split(/\r?\n/) exactly (empty lines occupy a slot) — it is the
+  // payload-lookup key in the replay id `L{lineIndex}B{n}`. Generator runs inside
+  // the try so a locked/truncated rollout returns events parsed so far (missing
+  // file throws on open → [] as before).
   try {
-    raw = fs.readFileSync(filePath, 'utf-8')
-  } catch {
-    return []
-  }
-
-  const lines = raw.split(/\r?\n/)
-  for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
-    const line = lines[lineIndex]
+    for (const { index: lineIndex, line } of iterateJsonlLinesWithIndex(filePath)) {
     if (!line.trim()) continue
     let parsed: unknown
     try {
@@ -162,6 +159,10 @@ export function parseCodexSessionReplay(filePath: string): SessionReplayEvent[] 
         status
       })
     }
+    }
+  } catch {
+    // Locked/truncated rollout: return events parsed so far (missing file throws
+    // on open before any event is collected → []).
   }
 
   return events

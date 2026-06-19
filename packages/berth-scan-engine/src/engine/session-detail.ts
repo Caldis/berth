@@ -244,7 +244,14 @@ interface ParsedExecutionDetail {
 }
 
 // GH-116: detail 解析按文件指纹缓存 — 重复打开同一会话不再整文件重解析。
-const executionDetailCache = new AssetFileCache<ParsedExecutionDetail>()
+// GH-148: previously unbounded — cap by entry count (recency-LRU) so browsing
+// through many sessions evicts the oldest parsed detail instead of growing
+// without limit. Each entry is a bounded tool-timeline + artifacts summary, so an
+// entry-count cap (not byte cap) is the right granularity.
+const EXECUTION_DETAIL_CACHE_MAX_ENTRIES = 256
+const executionDetailCache = new AssetFileCache<ParsedExecutionDetail>({
+  maxEntries: EXECUTION_DETAIL_CACHE_MAX_ENTRIES
+})
 
 function parseSessionExecutionDetail(asset: Asset): ParsedExecutionDetail {
   const parse = executionDetailParserFor(asset.agentId)

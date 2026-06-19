@@ -21,14 +21,41 @@ export type AssetFileCacheReadResult<T> =
   | { status: 'deleted'; path: string }
   | { status: 'error'; path: string; fingerprint?: FileFingerprint; error: unknown }
 
+/**
+ * GH-148: optional LRU bounds. Default = NONE (unbounded), so existing callers
+ * (sessionCache / projectScanCache / fromSnapshot) keep byte-identical behaviour
+ * — sessionCache must stay unbounded because it has snapshot persistence + a
+ * pruneTo contract. Only the unbounded-growth module caches (replayCache,
+ * executionDetailCache) pass bounds.
+ */
+export interface AssetFileCacheOptions<T> {
+  /** Cap on entry count; oldest (least-recently-read) evicted past the cap. */
+  maxEntries?: number
+  /** Cap on summed `sizeOf(value)`; oldest evicted until within the cap. */
+  maxBytes?: number
+  /** Required when `maxBytes` is set — byte weight of one cached value. */
+  sizeOf?: (value: T) => number
+}
+
 export class AssetFileCache<T> {
   private readonly entries = new Map<string, AssetFileCacheEntry<T>>()
+  private readonly options: AssetFileCacheOptions<T>
+  private readonly bounded: boolean
 
-  static fromSnapshot<T>(snapshot?: AssetFileCacheSnapshot<T>): AssetFileCache<T> {
-    const cache = new AssetFileCache<T>()
+  constructor(options: AssetFileCacheOptions<T> = {}) {
+    this.options = options
+    this.bounded = options.maxEntries != null || options.maxBytes != null
+  }
+
+  static fromSnapshot<T>(
+    snapshot?: AssetFileCacheSnapshot<T>,
+    options: AssetFileCacheOptions<T> = {}
+  ): AssetFileCache<T> {
+    const cache = new AssetFileCache<T>(options)
     for (const entry of snapshot?.entries ?? []) {
       cache.entries.set(entry.fingerprint.path, entry)
     }
+    cache.evictToBounds()
     return cache
   }
 
@@ -48,16 +75,56 @@ export class AssetFileCache<T> {
 
     const cached = this.entries.get(filePath)
     if (cached && sameFingerprint(cached.fingerprint, fingerprint)) {
+      // LRU recency: move the hit entry to the tail. Gated on `bounded` so an
+      // unbounded cache (sessionCache) never reorders its Map — its snapshot
+      // round-trip stays byte-identical to pre-GH-148.
+      if (this.bounded) {
+        this.entries.delete(filePath)
+        this.entries.set(filePath, cached)
+      }
       return { status: 'hit', fingerprint, value: cached.value }
     }
 
     try {
       const value = parse()
+      // Bounded caches re-insert at the tail (delete first) so a refreshed entry
+      // counts as newest for LRU. Unbounded caches keep the original in-place
+      // `set` so sessionCache's Map order (and thus its snapshot) is unchanged.
+      if (this.bounded) this.entries.delete(filePath)
       this.entries.set(filePath, { fingerprint, value })
+      this.evictToBounds()
       return { status: 'miss', fingerprint, value }
     } catch (error) {
       this.entries.delete(filePath)
       return { status: 'error', path: filePath, fingerprint, error }
+    }
+  }
+
+  /** Evict oldest entries (Map head) until within maxEntries / maxBytes. */
+  private evictToBounds(): void {
+    if (!this.bounded) return
+    const { maxEntries, maxBytes, sizeOf } = this.options
+
+    if (maxEntries != null) {
+      while (this.entries.size > maxEntries) {
+        const oldest = this.entries.keys().next().value
+        if (oldest === undefined) break
+        this.entries.delete(oldest)
+      }
+    }
+
+    if (maxBytes != null && sizeOf) {
+      let total = 0
+      for (const entry of this.entries.values()) total += sizeOf(entry.value)
+      // Keep evicting the oldest while over budget, but never drop the last entry
+      // (a single oversized value still gets to live, matching a simple LRU).
+      while (total > maxBytes && this.entries.size > 1) {
+        const oldestKey = this.entries.keys().next().value
+        if (oldestKey === undefined) break
+        const oldest = this.entries.get(oldestKey)
+        if (oldest) total -= sizeOf(oldest.value)
+        this.entries.delete(oldestKey)
+      }
     }
   }
 

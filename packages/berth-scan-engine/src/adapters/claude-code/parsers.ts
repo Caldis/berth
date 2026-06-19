@@ -18,6 +18,7 @@ import {
   uniqueStrings
 } from '../_shared/parser-helpers'
 import { extractAtImports, splitFrontmatter } from '../_shared/markdown'
+import { iterateJsonlLines } from '../_shared/jsonl-stream'
 import { parseMcpToolName } from '../_shared/session-artifacts'
 import { calculateDurationSeconds, projectNameFromPath } from '../_shared/session-meta'
 import { normalizeProjectPathKey } from '@shared/scope'
@@ -683,8 +684,11 @@ export function parseSessionMeta(filePath: string, projectName: string): Asset {
     meta.sizeBytes = stat.size
     meta.modifiedAt = stat.mtime.toISOString()
 
-    const raw = fs.readFileSync(filePath, 'utf-8')
-    for (const line of raw.split(/\r?\n/)) {
+    // GH-148: stream lines instead of readFileSync+split so a multi-MB transcript
+    // never materialises whole. iterateJsonlLines is byte-for-byte equivalent to
+    // split(/\r?\n/); the generator runs inside this try so a truncated/locked
+    // file still yields the lines read so far before throwing (partial result).
+    for (const line of iterateJsonlLines(filePath)) {
       if (!line.trim()) continue
       let parsed: unknown
       try {

@@ -1,4 +1,3 @@
-import * as fs from 'fs'
 import * as path from 'path'
 import type {
   SessionArtifactCheckpoint,
@@ -19,6 +18,7 @@ import {
   uniqueStrings
 } from '../_shared/parser-helpers'
 import { extractPaths, parseMcpToolName, upsertFile } from '../_shared/session-artifacts'
+import { iterateJsonlLines } from '../_shared/jsonl-stream'
 
 export interface ParsedSessionDetail {
   toolTimeline: SessionToolEvent[]
@@ -39,8 +39,10 @@ export function parseClaudeSessionDetail(filePath: string): ParsedSessionDetail 
   let sequence = 0
 
   try {
-    const raw = fs.readFileSync(filePath, 'utf-8')
-    for (const line of raw.split(/\r?\n/)) {
+    // GH-148: stream lines (byte-for-byte equal to split(/\r?\n/)) instead of
+    // holding the whole transcript as one string. Generator runs inside this try
+    // so a locked/truncated transcript still yields parsed-so-far events.
+    for (const line of iterateJsonlLines(filePath)) {
       if (!line.trim()) continue
       let parsed: unknown
       try {

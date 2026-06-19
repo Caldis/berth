@@ -21,6 +21,7 @@ import {
   uniqueStrings
 } from '../_shared/parser-helpers'
 import { extractAtImports, splitFrontmatter } from '../_shared/markdown'
+import { iterateJsonlLines } from '../_shared/jsonl-stream'
 import { extractPaths, parseMcpToolName, upsertFile } from '../_shared/session-artifacts'
 import { calculateDurationSeconds, projectNameFromPath } from '../_shared/session-meta'
 import type { Asset, AssetScope } from '../types'
@@ -667,24 +668,28 @@ export function parseCodexSessionDetail(filePath: string): ParsedCodexSessionDet
   }
 }
 
-function readJsonLines(
+// GH-148: a single-pass generator (was a materialised Record[]). It streams the
+// file line-by-line via iterateJsonlLines (byte-for-byte equal to split(/\r?\n/)),
+// so meta/detail no longer hold every rollout record in memory at once.
+// IMPORTANT: this is a one-shot generator — iterate it ONCE per call. All current
+// callers (parseCodexSessionMeta, parseCodexSessionDetail, readCodexSessionTitleIndex)
+// do a single `for...of`. Do NOT re-iterate, index, take .length, or spread the
+// return value; call readJsonLines again (re-streams the file) if you need a second pass.
+function* readJsonLines(
   filePath: string,
   onMalformed?: () => void
-): Record<string, unknown>[] {
-  const records: Record<string, unknown>[] = []
-  const raw = fs.readFileSync(filePath, 'utf-8')
-  for (const line of raw.split(/\r?\n/)) {
+): Generator<Record<string, unknown>> {
+  for (const line of iterateJsonlLines(filePath)) {
     if (!line.trim()) continue
     try {
       const parsed: unknown = JSON.parse(line)
-      if (isRecord(parsed)) records.push(parsed)
+      if (isRecord(parsed)) yield parsed
     } catch {
       // GH-143: count malformed rollout lines so codex session meta exposes
       // malformedLineCount like claude (data-quality parity), not silent drop.
       onMalformed?.()
     }
   }
-  return records
 }
 
 export function isCodexToolCall(itemType: string | undefined): boolean {
