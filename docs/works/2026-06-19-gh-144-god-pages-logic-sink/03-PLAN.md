@@ -3,7 +3,7 @@
 从 02-SPEC 拆解。顺序执行 (每个 lib 提取 + 改页面 + 直测 + 验证行为不变), 不同 lib/页面但顺序稳。
 每项有测试证据或明确例外。纯提取**行为不变**, 现有组件测试是回归铁证。
 
-- [ ] 任务 1: `lib/session-signals.ts` 提取 + session-detail 改用
+- [x] 任务 1: `lib/session-signals.ts` 提取 + session-detail 改用
   - 范围: 迁 `buildSessionSignals` + `countSignalHighlights` + `getToolDurationMs` (+ SessionSignals 类型) 到新 lib export; session-detail.tsx 删内联改 import (调用点不变)。
   - tests: `tests/renderer/session-signals.test.ts` (新) — buildSessionSignals 空 timeline→null / 失败计数 / avgToolDurationMs / slowestTool / tokenRate·cacheReadShare 边界; countSignalHighlights 阈值; getToolDurationMs durationMs 优先 + startedAt/endedAt fallback。
   - verify: 不适用 UI。新直测绿 + 现有 session-detail 组件测试不破 (行为不变, AC1/AC4)。
