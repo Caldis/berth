@@ -23,3 +23,15 @@ gemini-cli/github-copilot-cli/opencode/openclaw/hermes-agent), 因此 Cursor/Gem
 - 关联: `docs/works/2026-06-17-gh-138-overview-modular-dashboard`; 统一映射 `lib/agent-meta.ts`;
   仪表盘侧已在 `activity-insights.widget` 接入修复。
 - 边界: 属 sessions 功能旁支 bug, 按 AGENTS.md 不在 GH-138 内顺手改; 待排期或用户扩大范围。
+
+# 解决 (2026-06-19, harness-5.2-issues 收敛, commit 97fc084)
+- 核心修复: `session-row.tsx:37` 二元判定 (`agentId === 'codex' ? 'Codex' : 'Claude'`) 改用单一真源
+  `agentDisplayName(session.agentId)` (`lib/agent-meta.ts` 覆盖 8 个 agent + 未知 id Title Case 回退);
+  Cursor/Gemini/Copilot 等非 claude/codex agent 不再被误标为 Claude。
+- claude-code chip 文案修正为正确的 "Claude Code", 同步 `tests/renderer/sessions-pages.test.tsx:455` 断言。
+- 验证: sessions-pages 29/29 + lint + typecheck:web 全通过。
+- 可选后续 (非阻塞, 不阻塞本 BUG 闭环): 其余 agent 标签散落点 (hooks-lifecycle-view / memory-view /
+  search-dialog / session-list-filters) 统一接入 `agent-meta` 的审计批次未做 — 这些点未逐一核实是否真误标,
+  且与 [[2026-06-18-IMPROVEMENT-dashboard-agent-aware-filtering]] 的「各匹配器泛化到任意 agentId」主题重叠,
+  线索保留在该 IMPROVEMENT 下; 如确认有误标再单独处理。
+- 收敛: 核心 BUG 已修, 移入 resolved/。

@@ -29,3 +29,13 @@ GH-138 首页仪表盘「指标带」的「最长任务」(longest task) 显示 
 - **遗留 (理想方案, 可选未来)**: cap 是启发式 — 真正正确的是用**活跃时长**而非 endedAt-startedAt
   墙钟跨度 (需 session-detail 解析活跃区间)。在此之前 24h cap 可能剔除极少数真实超长会话。
 - 状态: MITIGATED (cap 已上线; 活跃时长方案 OPEN, 非阻塞)。
+
+# 解决 (2026-06-19, harness-5.2-issues 收敛)
+- 核实当前代码: `packages/berth-scan-engine/src/engine/activity-insights.ts:29`
+  `MAX_PLAUSIBLE_SESSION_SECONDS = 24h` 在线, `buildPeakMetrics` (L175) 与活动聚合 (L262) 双处
+  过滤墙钟跨度 >24h 的 stale session; 单测 `tests/unit/activity-insights.test.ts:166,305` 覆盖
+  (excludes >24h stale / implausible longest task)。
+- 用户可见的失真现象 (最长任务 1793h) 已消除, 「最长任务」回到有意义值 — 主问题闭环。
+- 理想方案 (用活跃时长替代 endedAt-startedAt 墙钟跨度, 需 session-detail 解析活跃区间) 为可选
+  future enhancement, 24h cap 仅可能误剔极少数真实超长会话; 非阻塞, 不再单独追踪。需要时再新立。
+- 收敛: 已修复 (主问题), 移入 resolved/。
