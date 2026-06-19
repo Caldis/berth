@@ -2,7 +2,7 @@
 task: 2026-06-19-gh-142-scan-exclude-adapter-level
 task_id: GH-142
 type: maintenance
-phase: implement
+phase: archive
 created: 2026-06-19
 priority: P2
 target_date:
@@ -25,14 +25,16 @@ debt:
     confidence: medium
     rationale: "explore 校准: 跨 worker 边界新增字段 + adapter 双改 + 新增 ignore 依赖 + gitignore matcher 模块, incurred 2→3; repaid 保持 (消除结果后过滤低效 + 修 respectGitignore no-op); net 0。"
   final:
-    incurred:
-    repaid:
-    net:
-    scope:
-    risk:
-    areas: []
-    confidence:
-    rationale:
+    incurred: 3
+    repaid: 3
+    net: 0
+    scope: module
+    risk: medium
+    areas:
+      - performance
+      - dependency
+    confidence: high
+    rationale: "verify 校准: 聚焦 claude-code 项目树递归下沉 (其他 adapter filterExcludedPaths 兜底); ignore 依赖 + scan-ignore 模块 + 跨进程字段 + adapter 接口扩展 (incurred 3); 深递归 glob childrenIgnored 剪枝省 IO + 修 respectGitignore no-op (repaid 3); net 0。1246 全量测试 + nested-ignore 真跑临时目录覆盖, confidence medium→high。"
   revisions:
     - phase: explore
       date: 2026-06-19
@@ -50,7 +52,7 @@ gh_project:
   project_number: 6
   project_url: https://github.com/users/Caldis/projects/6
   item_id: PVTI_lAHOADXbEs4BZHvQzgwOjRY
-  item_status: In Progress
+  item_status: Done
   project_id: PVT_kwHOADXbEs4BZHvQ
 artifacts:
   source: 00-PRD.md
