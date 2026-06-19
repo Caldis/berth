@@ -42,7 +42,7 @@ function detailWith(over: {
     activityMetrics: {
       tokenRatePerMinute: 12,
       tokenRateDurationSeconds: 60,
-      tokenRateSource: null,
+      tokenRateSource: 'unavailable',
       tokenRateStartedAt: null,
       tokenRateEndedAt: null,
       tokenRateTokenCount: null,
@@ -120,7 +120,7 @@ describe('buildSessionSignals', () => {
 describe('countSignalHighlights', () => {
   const base: SessionSignals = {
     toolCount: 0, failedCount: 0, failedRate: null, avgToolDurationMs: null, slowestTool: null,
-    tokenRatePerMinute: null, tokenRateDurationSeconds: null, tokenRateSource: null,
+    tokenRatePerMinute: null, tokenRateDurationSeconds: null, tokenRateSource: 'unavailable',
     tokenRateStartedAt: null, tokenRateEndedAt: null, tokenRateTokenCount: null,
     tokenRateSampleCount: 0, tokenRateIdleGapSeconds: 0, cacheReadShare: null, costRatePerMinute: null
   }
