@@ -49,5 +49,5 @@
   `createSessionListRequest` 'all'→undefined 归一 (请求/缓存键与默认态一致)。
 - CDP 实测: 侧栏选 Codex → Sessions 列表只剩 Codex (780 Codex / 0 Claude, 全 Codex chip)。typecheck/lint/1218 测试绿。
 - **剩余 OPEN**:
-  - **Sessions 页冗余**: 该页自带 All/Claude/Codex 本地 tab, 与全局过滤双重过滤 (global=Codex + 本地 tab=Claude → 空, 死胡同)。需统一 — 本地 tab 随全局收敛 / 隐藏 / 复用 store.agentView。
+  - **Sessions 页冗余 — 已修复 (2026-06-19 核实)**: `sessions.tsx:50-51` agentTab 从全局 `agentView` 派生 (非独立本地 state), 过滤 (`sessions.tsx:73` matchesAgentView, 支持全部 agent) 只用全局 agentView 单一源, tab 改即 `setAgentView` (`sessions.tsx:196`) — 本地 tab 是全局投影, 双重过滤死胡同 (global=Codex + tab=Claude → 空) 不存在。GH-138 后续已统一, 此项 issue 状态滞后未更新。
   - **asset 页 (instructions/capabilities/memory)**: 这些按 asset 过滤, 其 agentView 匹配器只认 claude/codex/all (如 hooks-lifecycle-view healthCheckMatchesAgent), 接全局前需先泛化匹配器到任意 agentId — 独立增量, 本轮未做 (capabilities.tsx 的 agentView="all" 暂保留)。
