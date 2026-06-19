@@ -2,7 +2,7 @@
 task: 2026-06-19-gh-143-session-id-contract
 task_id: GH-143
 type: maintenance
-phase: implement
+phase: archive
 created: 2026-06-19
 priority: P2
 target_date:
@@ -24,14 +24,15 @@ debt:
     confidence: low
     rationale: "0.0-new 初始估算: sessionAssetId 单点函数 + codex onMalformed 记账 + agent-teams 改调用 (incurred 少); 消除 id 隐式契约风险 + codex 数据质量对等 (repaid); maintenance 降 debt net -2; explore/design 后校准。"
   final:
-    incurred:
-    repaid:
-    net:
-    scope:
-    risk:
-    areas: []
-    confidence:
-    rationale:
+    incurred: 1
+    repaid: 3
+    net: -2
+    scope: module
+    risk: medium
+    areas:
+      - architecture
+    confidence: high
+    rationale: "verify 校准: sessionPathHash + sessionAssetId 单点化 (删 codex 本地 hashString 抵消部分 incurred) + codex 坏行记账 + agent-teams 契约; 消除 id 隐式契约风险 + 数据质量对等 (repaid 3); maintenance net -2。session-id golden 7 + codex 坏行 2 + 1248 全量回归 (id 不变) 覆盖, confidence high。"
   revisions: []
 issue:
   number: 143
@@ -44,7 +45,7 @@ gh_project:
   project_number: 6
   project_url: https://github.com/users/Caldis/projects/6
   item_id: PVTI_lAHOADXbEs4BZHvQzgwO3Nc
-  item_status: In Progress
+  item_status: Done
   project_id: PVT_kwHOADXbEs4BZHvQ
 artifacts:
   source: 00-PRD.md

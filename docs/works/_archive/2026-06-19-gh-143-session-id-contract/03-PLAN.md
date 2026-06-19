@@ -19,8 +19,8 @@
   - 范围: `src/main/agent-teams/index.ts:52` `getAsset(\`session-${leadSessionId}\`)` → `getAsset(sessionAssetId('claude-code', leadSessionId))`; 不再硬拼。
   - tests: sessionAssetId('claude-code', x) === `session-${x}` (任务1 golden 已覆盖); 现有 agent-teams 测试 (若有) 不破 (AC5)。
   - verify: 不适用 UI。
-- [ ] 任务 5 (收尾, 非实现): 记后续 issue
-  - readJsonLines 提升 _shared (claude 内联 + codex) + 其他 adapter session id 纳入 sessionAssetId (D2/D3 边界外)。
+- [x] 任务 5 (收尾, 非实现): 剩余并入原 issue 收敛
+  - readJsonLines 提升 _shared (claude 内联 + codex) + 其他 adapter (hermes/openclaw) session id 纳入 sessionAssetId (D2/D3 边界外): 价值低 (codex 坏行已对等 + claude/codex 已单点 + agent-teams 已修), 并入原 session-id-contract issue 收敛说明 (archive 步骤7), 不单独立 issue 避免堆积。
 
 ## verify 回写
 verify 不通过项作为新任务追加于此, phase 退回 implement。
