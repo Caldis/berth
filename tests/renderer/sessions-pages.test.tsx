@@ -452,7 +452,7 @@ describe('session pages', () => {
     expect(within(row).getByLabelText(/Input 10 \/ Output 5/)).toBeInTheDocument()
     expect(within(row).getByLabelText(/frontend-design/)).toBeInTheDocument()
     expect(within(row).getByLabelText(/plugin_playwright_playwright/)).toBeInTheDocument()
-    expect(within(row).getByText('Claude')).toBeInTheDocument()
+    expect(within(row).getByText('Claude Code')).toBeInTheDocument()
     expect(within(row).queryByText('$0.00')).not.toBeInTheDocument()
   })
 

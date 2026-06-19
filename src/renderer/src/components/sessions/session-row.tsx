@@ -6,6 +6,7 @@ import {
   formatOptionalDuration,
   formatOptionalRelativeTime
 } from '@/lib/utils'
+import { agentDisplayName } from '@/lib/agent-meta'
 import { AssetCountChip } from './asset-count-chip'
 import { TokenSparkBar } from './token-spark-bar'
 
@@ -34,7 +35,7 @@ export function SessionRow({
   showProject = false,
   onOpen
 }: SessionRowProps): React.ReactElement {
-  const agentLabel = session.agentId === 'codex' ? 'Codex' : 'Claude'
+  const agentLabel = agentDisplayName(session.agentId)
   return (
     <div className="px-2">
       <button
