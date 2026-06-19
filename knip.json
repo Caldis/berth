@@ -1,0 +1,44 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "entry": [
+    "src/main/index.ts",
+    "src/main/scan-helper.ts",
+    "src/preload/index.ts",
+    "src/renderer/src/main.tsx",
+    "packages/berth-scan-engine/src/index.ts",
+    "packages/berth-scan-engine/src/adapter-api.ts",
+    "packages/berth-scan-engine/src/cli-bin.ts",
+    "packages/berth-scan-engine/src/engine/assets/worker.ts",
+    "scripts/*.mjs",
+    "tests/**/*.test.{ts,tsx}",
+    "tests/setup.ts",
+    "packages/berth-scan-engine/tests/**/*.test.ts"
+  ],
+  "project": [
+    "src/**/*.{ts,tsx}",
+    "packages/berth-scan-engine/src/**/*.ts",
+    "scripts/**/*.mjs",
+    "tests/**/*.{ts,tsx}",
+    "packages/berth-scan-engine/tests/**/*.ts"
+  ],
+  "paths": {
+    "@/*": ["./src/renderer/src/*"],
+    "@shared/*": ["./packages/berth-scan-engine/src/shared/*"],
+    "@berth/scan-engine": ["./packages/berth-scan-engine/src/index.ts"],
+    "@berth/scan-engine/*": ["./packages/berth-scan-engine/src/*"]
+  },
+  "ignore": [
+    "**/*.d.ts",
+    "out/**",
+    "dist/**",
+    "build/**",
+    "release/**",
+    "coverage/**",
+    "test-results/**",
+    "playwright-report/**",
+    "website/**"
+  ],
+  "ignoreExportsUsedInFile": true,
+  "ignoreWorkspaces": ["packages/berth-scan-engine"],
+  "ignoreDependencies": ["@berth/scan-engine"]
+}

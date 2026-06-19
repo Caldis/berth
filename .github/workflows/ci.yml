@@ -22,6 +22,8 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm lint
+      - run: pnpm knip:ci # 死代码扫描软门禁 (GH-147); 报告非空不阻断, allowlist 清零后改 pnpm knip 硬门禁
+        if: matrix.os == 'ubuntu-latest' # 静态分析与 OS 无关, 单平台跑一次即可
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm --filter @berth/scan-engine typecheck
