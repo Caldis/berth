@@ -13,6 +13,11 @@
 - 不允许把多个已完成阶段长时间堆在工作区最后一次性提交。若因为风险或依赖关系不能提交, 必须在当轮说明阻塞原因。
 - archive / 收尾提交不能替代 implementation 过程中的小步提交。
 
+# RELEASE
+- "发版" 完成的唯一定义 = GitHub Release 页面出现目标版本 (含全平台 assets + `latest*.yml`)。改 `package.json` version + commit **不是发版**, 不触发任何发布。
+- 唯一发布触发: 推 `vX.Y.Z` annotated tag (匹配既有 tag 风格) → `release.yml` (`on: push tags 'v*'`) 跑多平台构建 + mac 公证 + 建 release。tag 必须指向 package.json version 与之相等的 commit; 未发布过的中间 patch 可跳过 (changelog 取 上一 tag..当前 tag, 不丢 commit)。
+- 宣称发版完成前必须 `gh release view vX.Y.Z` 回读到目标版本; 只看到 tag 已推 / run 已触发不算完成。细节见 `docs/friction/20260619-5.0-archive-release-needs-tag-push-not-just-version-bump.md`。
+
 # DOCS
 存放冷文档目录; harness 操作态例外为 `docs/works/`、`docs/friction/`、`docs/issues/`
 
