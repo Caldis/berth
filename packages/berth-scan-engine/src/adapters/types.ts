@@ -1,4 +1,5 @@
 export type {
+  AdapterScanOptions,
   AgentAdapter,
   Asset,
   AssetCategory,

@@ -4,6 +4,7 @@ import { glob } from 'glob'
 import type { Asset, AssetScope } from '../types'
 import type { ScanError } from '@shared/types/ipc'
 import type { AssetFileCache } from '../../engine/assets/file-cache'
+import { buildScanIgnore, loadProjectIgnore } from '../../engine/scan-ignore'
 import {
   parseClaudeMd,
   parseAgentsMd,
@@ -34,7 +35,13 @@ export interface ScanContext {
   managedDir?: string // file-based managed settings directory
   errors: ScanError[]
   sessionCache?: AssetFileCache<Asset>
+  excludePaths?: string[] // GH-142: lowered to nested-glob enumeration
+  respectGitignore?: boolean // GH-142: honor project .gitignore/.berthignore
 }
+
+/** Vendored / build dirs always skipped during nested CLAUDE.md recursion
+ * (GH-142: gitignore-style, merged into buildScanIgnore defaultPatterns). */
+const NESTED_CONVENTION_IGNORE = ['node_modules/', '.git/', 'dist/', 'out/', 'build/', '.next/']
 
 function safeScan<T>(
   ctx: ScanContext,
@@ -132,7 +139,12 @@ export function scanInstructions(ctx: ScanContext): Asset[] {
         cwd: projectDir,
         absolute: true,
         windowsPathsNoEscape: true,
-        ignore: ['**/node_modules/**', '**/.git/**', '**/dist/**', '**/out/**', '**/build/**', '**/.next/**']
+        ignore: buildScanIgnore({
+          projectDir,
+          excludePaths: ctx.excludePaths,
+          projectIgnore: loadProjectIgnore(projectDir, { respectGitignore: ctx.respectGitignore }),
+          defaultPatterns: NESTED_CONVENTION_IGNORE
+        })
       })
     } catch {
       nested = []

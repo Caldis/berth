@@ -11,7 +11,7 @@
   - 范围: `loadProjectIgnore(projectDir,{respectGitignore})` 读 .gitignore/.berthignore → Ignore|null;`buildScanIgnore({projectDir,excludePaths,projectIgnore})` → IgnoreLike (ignored/childrenIgnored, fullpath excludePaths + relPosix gitignore + isPathValid 预过滤)。
   - tests: `tests/scan-ignore.test.ts` (新): respectGitignore=false→null;无 ignore 文件→null;.gitignore 排除匹配;.berthignore 合并;excludePaths fullpath 命中;gitignore relPosix 命中;childrenIgnored 剪枝;isPathValid 拒绝非法路径。
   - verify: 不适用 UI。新单测全绿 (AC1/3/4/6/8 单元层)。
-- [ ] 任务 3: claude-code 项目树递归 glob 注入 buildScanIgnore
+- [x] 任务 3: claude-code 项目树递归 glob 注入 buildScanIgnore
   - 范围: `adapters/claude-code/scanner.ts:128-136` 硬编码 ignore → 合并 buildScanIgnore (6 项默认 + excludePaths + projectIgnore);adapter scanAll/ScanContext 携带 excludePaths+respectGitignore (scanner.ts:71-94 续传)。
   - tests: `tests/adapters/claude-code-nested-ignore.test.ts` (新): 被 excludePaths/gitignore 命中的 nested CLAUDE.md 路径**不产生 parser 调用** (spy parseClaudeMd);未命中正常 parse。
   - verify: 不适用 UI。spy 断言被忽略文件 parse 次数为 0 (AC1/AC8 真实剪枝)。

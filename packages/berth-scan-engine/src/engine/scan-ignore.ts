@@ -52,29 +52,33 @@ export function buildScanIgnore(params: {
   projectDir: string
   excludePaths?: string[]
   projectIgnore?: Ignore | null
+  /** Always-ignored gitignore-style patterns (e.g. vendored/build dirs) applied
+   * regardless of respectGitignore — preserves the nested-glob hardcoded skips. */
+  defaultPatterns?: string[]
 }): ScanIgnoreLike {
-  const { projectDir, excludePaths, projectIgnore } = params
+  const { projectDir, excludePaths, projectIgnore, defaultPatterns } = params
+  const baseIgnore =
+    defaultPatterns && defaultPatterns.length ? ignore().add(defaultPatterns) : null
 
   const excludeHit = (full: string): boolean =>
     !!excludePaths?.some((ex) => isPathInside(full, ex, { includeEqual: true }))
 
   // node-ignore needs a relative posix path; querying both `rel` and `rel/`
   // covers file rules and directory rules (`node_modules/`) alike.
-  const gitignoreHit = (full: string): boolean => {
-    if (!projectIgnore) return false
+  const matcherHit = (ig: Ignore, full: string): boolean => {
     let rel = path.relative(projectDir, full)
     if (!rel || rel.startsWith('..')) return false
     rel = rel.split(path.sep).join('/')
     const asDir = rel.endsWith('/') ? rel : rel + '/'
-    return (
-      (isPathValid(rel) && projectIgnore.ignores(rel)) ||
-      (isPathValid(asDir) && projectIgnore.ignores(asDir))
-    )
+    return (isPathValid(rel) && ig.ignores(rel)) || (isPathValid(asDir) && ig.ignores(asDir))
   }
 
   const hit = (p: GlobPathLike): boolean => {
     const full = p.fullpath()
-    return excludeHit(full) || gitignoreHit(full)
+    if (excludeHit(full)) return true
+    if (baseIgnore && matcherHit(baseIgnore, full)) return true
+    if (projectIgnore && matcherHit(projectIgnore, full)) return true
+    return false
   }
 
   return { ignored: hit, childrenIgnored: hit }

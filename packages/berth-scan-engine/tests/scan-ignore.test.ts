@@ -100,4 +100,25 @@ describe('buildScanIgnore', () => {
     expect(si.ignored(globPath('/proj/a.log'))).toBe(true) // gitignore
     expect(si.ignored(globPath('/proj/src/a.ts'))).toBe(false)
   })
+
+  it('applies defaultPatterns regardless of project ignore (preserves hardcoded skips)', () => {
+    const si = buildScanIgnore({ projectDir: '/proj', defaultPatterns: ['node_modules/', 'dist/'] })
+    expect(si.ignored(globPath('/proj/node_modules/pkg/CLAUDE.md'))).toBe(true)
+    expect(si.childrenIgnored(globPath('/proj/dist'))).toBe(true)
+    expect(si.ignored(globPath('/proj/src/CLAUDE.md'))).toBe(false)
+  })
+
+  it('combines defaultPatterns, excludePaths, and gitignore', () => {
+    const ig = ignore().add('*.local.md\n')
+    const si = buildScanIgnore({
+      projectDir: '/proj',
+      excludePaths: ['/proj/vendor'],
+      projectIgnore: ig,
+      defaultPatterns: ['node_modules/']
+    })
+    expect(si.ignored(globPath('/proj/node_modules/x/CLAUDE.md'))).toBe(true) // default
+    expect(si.ignored(globPath('/proj/vendor/CLAUDE.md'))).toBe(true) // excludePaths
+    expect(si.ignored(globPath('/proj/notes.local.md'))).toBe(true) // gitignore
+    expect(si.ignored(globPath('/proj/src/CLAUDE.md'))).toBe(false)
+  })
 })

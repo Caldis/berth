@@ -94,7 +94,10 @@ export class AssetScanner {
     for (const adapter of this.adapters) {
       options.onProgress?.({ phase: 'parsing', current: index, total, label: adapter.displayName })
       try {
-        const result = await adapter.scanAll()
+        const result = await adapter.scanAll({
+          excludePaths: options.excludePaths,
+          respectGitignore: options.respectGitignore
+        })
         assets.push(...result.assets)
         errors.push(...result.errors)
       } catch (err) {

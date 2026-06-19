@@ -129,13 +129,20 @@ export interface WatchEvent {
   asset?: Asset
 }
 
+/** Per-scan options lowered to adapters (GH-142): excludePaths + respectGitignore
+ * let adapters skip excluded / gitignored subtrees during glob enumeration. */
+export interface AdapterScanOptions {
+  excludePaths?: string[]
+  respectGitignore?: boolean
+}
+
 export interface AgentAdapter {
   readonly id: string
   readonly displayName: string
   detect(): Promise<DetectResult>
   scanRoots(): Promise<ScanRoot[]>
   scanSourceCoverage?(): Promise<ScanRoot[]>
-  scanAll(): Promise<{ assets: Asset[]; errors: { path: string; type: string; message: string }[] }>
+  scanAll(options?: AdapterScanOptions): Promise<{ assets: Asset[]; errors: { path: string; type: string; message: string }[] }>
 }
 // GH-115 T8: scanAssets/watchAssets/resolveRelations 三方法零调用 (实现全带桩), 已从契约删除。
 // 真实缺口 (per-file 派生 / session 解析 / health / watch 路径) 的契约化随 engine 成包 issue 扩展。

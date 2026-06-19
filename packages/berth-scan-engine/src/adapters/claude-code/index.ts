@@ -1,7 +1,7 @@
 import * as fs from 'fs'
 import * as path from 'path'
 import * as os from 'os'
-import type { AgentAdapter, Asset, DetectResult, ScanRoot } from '../types'
+import type { AdapterScanOptions, AgentAdapter, Asset, DetectResult, ScanRoot } from '../types'
 import type { ScanError } from '@shared/types/ipc'
 import {
   scanInstructions,
@@ -108,10 +108,10 @@ export class ClaudeCodeAdapter implements AgentAdapter {
   }
 
 
-  async scanAll(): Promise<{ assets: Asset[]; errors: ScanError[] }> {
+  async scanAll(options: AdapterScanOptions = {}): Promise<{ assets: Asset[]; errors: ScanError[] }> {
     const errors: ScanError[] = []
     const assets: Asset[] = []
-    for (const ctx of this.createContexts(errors)) {
+    for (const ctx of this.createContexts(errors, options)) {
       assets.push(
         ...scanInstructions(ctx),
         ...scanCapabilities(ctx),
@@ -124,14 +124,16 @@ export class ClaudeCodeAdapter implements AgentAdapter {
   }
 
 
-  private createContexts(errors: ScanError[]): ScanContext[] {
+  private createContexts(errors: ScanError[], options: AdapterScanOptions = {}): ScanContext[] {
     return this.claudeDirs.map((claudeDir, index) => ({
       claudeDir,
       projectDir: index === 0 ? this.projectDir : undefined,
       projectDirs: index === 0 ? this.projectDirs : undefined,
       managedDir: index === 0 ? this.managedDir : undefined,
       errors,
-      sessionCache: this.sessionCache
+      sessionCache: this.sessionCache,
+      excludePaths: options.excludePaths,
+      respectGitignore: options.respectGitignore
     }))
   }
 }
