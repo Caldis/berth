@@ -17,3 +17,6 @@ CI ubuntu `pnpm test` 偶发 exit 1: **1297 测试全 passed 但 8 个 `Unhandle
 
 ## 来源
 GH-148 archive docs commit `46afad71` CI (ubuntu verify) flaky 归因 (2026-06-20)。
+
+## 修复 (GH-149, A1 止血)
+`settings-sources.test.tsx` 加 unmount + `await act` flush microtasks (commit `f1ebc30f`), drain SettingsContent 挂载的 4 条 window.api promise chain 在 jsdom teardown 前。确定性修复 (unmount 忽略 teardown 后 setState + flush drain pending), 非降概率。根因系统性 (SettingsContent IPC 无 mounted 守卫 + setup 无 afterEach cleanup + 同模式 settings-page/accent 潜在 flaky), 根治 (C) 与测试 cleanup 标准化 (B, 受 fake-timer 约束) 见 `docs/issues/2026-06-20-IMPROVEMENT-settingscontent-mount-ipc-mounted-guard-and-test-cleanup.md`。
