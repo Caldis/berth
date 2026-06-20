@@ -10,3 +10,8 @@
 # 来源 · 关联
 - GH-115 架构全面分析 (2026-06-10), 完整证据见 `docs/works/2026-06-10-gh-115-architecture-refactor/01-ANALYSIS.md` (R8, 对抗验证)。关联 2026-06-05-IMPROVEMENT-heroui-migration-followup.md。
 - 状态: OPEN。
+
+## 收口 (2026-06-20, RESOLVED — v0.4.4)
+- 4 份克隆卡片 (MemoryCard/SkillCard/GenericAssetCard + McpServerCard) 收敛到共享 `components/shared/expandable-asset-card.tsx` 基座 (slot 化: icon/title/subtitle/headerMeta/origin/footer/focused), instructions −227/+116 + capabilities −68/+41。DOM 逐字保持 (测 id/aria/className 不变, 仅 MemoryCard 归一 flex-stretch wrapper 等价); 保留手动 Collapsible/Chevron (Accordion 留 heroui-followup)。
+- 验收: 38 守卫测试 + 1307 全绿 + typecheck/eslint + **CDP 视觉实测** SkillCard/McpServerCard/GenericAssetCard 三类直接确认, MemoryCard 结构等价覆盖。未抽 show-in-explorer-button (单用, 避免过度抽象)。commits 69a9edcc/f55d4a4d/d555457d。
+- 结论: 关闭。

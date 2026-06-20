@@ -62,3 +62,9 @@ GH-135 (`docs/works/_archive/2026-06-15-gh-135-index-progress-visibility/`) 完�
 - **不做激进 narrow-down (有意 STOP)**: 把 activate 改为对全局快照纯过滤会丢新激活项目的嵌套能力 — 非活动项目当前仅浅索引 (root-level + conventions, 无 `**/*.md`/`.claude/` 深扫), 全局快照非完整深结果, 故后台 deep refresh 必要不可消。正确性 > 速度。
 - **cap-5 行级 SQLite delta: 仍 defer** (SqliteSnapshotStore 仅全量 save; 加 replaceBySourceKey 需接口改 + applyFileChange 接线 + ord 排序 + 持久化正确性测试, 非平凡, 低优)。
 - **剩余主线 (大件, 需独立 design+cross-review)**: 后台渐进 **deep-index 全部项目** (使 [全局] 真完整 → activate 可成纯 narrow-down 零扫描)。这是 FEATURE 架构主线最大剩余块, 非 activate-path 微调; 保持 OPEN。
+
+# 设计输入 (2026-06-20, deep-index 全项目 — 已 scope, 待 cross-review + 产品决策)
+现状不对称 (scope 核实): `scanner.ts:312 appendShallowConventions` 仅对**非活动**项目浅扫 (root-level AGENTS/CLAUDE + root-level `.claude/*` 能力, **无嵌套** `**/*.md` / 深层 `.claude/`); 活动项目才全深扫。故非活动项目嵌套 skill/mcp 在 [全局] **不可见** until 激活 —— 即用户定义的 BUG。
+**推荐方案 (Option C, bounded first slice, ~250 行, 不动 activate/snapshot 语义)**: AgentAssetRuntime 加 `backgroundIndexQueue`, 启动后枚举所有 projectCandidates 入队, 复用 GH-135 现成 scheduler (idle/AC 门控) + 长驻 helper + backpressure, 低优逐项目 deep-scan + 增量持久化; activate 路径不变 (cache-hit 即时 / miss 后台刷新)。
+**未决风险/问题 (为何 issue spec 要求调研 + Codex 两轮对抗 review)**: ① snapshot.id churn → 每项目重扫 mint 新 id 致下游 (search/health/insights) 缓存反复失效 (需 global id 与 per-project id 解耦, 或 global 按需投影不持久化); ② overfetch (用户激活队列中项目时撞扫); ③ scheduler 语义混淆 (周期重扫 active vs 队列扫 non-active 两套, 设置 UI 须澄清); ④ [全局] 完整性 SLA (eventual consistency 可能数小时, "global=complete" 心智模型); ⑤ 队列顺序 (频率/大小/随机) + 可见性 (进度 UI); ⑥ cap-5 增量 delta 耦合 (否则 N 项目 N 次全量 SQLite 重写)。①④⑤含产品决策。
+**处置**: 设计已就绪 (详见本次 scope, 文件锚点: scanner.ts:312 / runtime.ts:456 scheduler / sqlite-snapshot-store / project-scope-runtime.ts:24 activate)。**本批不自主落地** —— 触及核心 scan/scope runtime + 6 项未决 (含产品决策) + issue spec 明确要 Codex 两轮对抗 review, 而 codex CLI 当前 auth 失效 (refresh_token_reused, 需 `codex login` 重登)。待 Codex 重新可用 + ①④⑤产品决策后, 按 Option C 落地。保持 OPEN。

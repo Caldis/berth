@@ -16,3 +16,9 @@
 - 来源: GH-135 frontend-design 反馈 case 1 的后半段 (前半段顶栏去扫描文本已落地, commit cbda635)。
 - 关联: `2026-06-07-FEATURE-background-progressive-asset-indexer` (helper 迁移); `docs/works/_archive/2026-06-15-gh-135-index-progress-visibility/`。
 - 状态: OPEN (future, 非阻塞 GH-135; 当前 adapter 级进度已可用, 仅缺逐文件流动感)。
+
+## 收口 (2026-06-20, RESOLVED — v0.4.5)
+- **IPC coalescing 先行 (硬前置)**: 新建 `engine/assets/progress-coalescer.ts` (commit 1c804a07) — 时间窗 latest-wins (~50ms, 时间基非 setTimeout 因重负载循环同步), 首事件/phase 变更即发, flush 必送终态; 置于引擎 emit 边界 (electron-free), worker + scan-helper 双 transport 免改共享。7 单测 (含限速 1000→≤22、终态不丢)。
+- **逐文件 currentPath**: `AssetScanProgress` 加可选 `currentPath` (向后兼容), claude-code session JSONL 循环 (最高基数) 冒泡; sidebar `ScanProgressPanel` 显示流动 basename (fallback adapter label)。commit 1a01ed0a。
+- 验收: coalescer 7 + scanner 集成 2 + 全 1309 + engine 115 + typecheck/eslint 绿; app 冷启冒烟 sidebar 渲染正常 (scan 太快未捕到流动瞬态, 数据流单测已证 + 优雅降级)。
+- 结论: 关闭。
