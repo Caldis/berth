@@ -51,3 +51,8 @@
 - **剩余 OPEN**:
   - **Sessions 页冗余 — 已修复 (2026-06-19 核实)**: `sessions.tsx:50-51` agentTab 从全局 `agentView` 派生 (非独立本地 state), 过滤 (`sessions.tsx:73` matchesAgentView, 支持全部 agent) 只用全局 agentView 单一源, tab 改即 `setAgentView` (`sessions.tsx:196`) — 本地 tab 是全局投影, 双重过滤死胡同 (global=Codex + tab=Claude → 空) 不存在。GH-138 后续已统一, 此项 issue 状态滞后未更新。
   - **asset 页 (instructions/capabilities/memory)**: 这些按 asset 过滤, 其 agentView 匹配器只认 claude/codex/all (如 hooks-lifecycle-view healthCheckMatchesAgent), 接全局前需先泛化匹配器到任意 agentId — 独立增量, 本轮未做 (capabilities.tsx 的 agentView="all" 暂保留)。
+
+## 收口 (2026-06-20, RESOLVED — v0.4.3)
+- 残项「asset 页 agentView 匹配器泛化」DONE (commit f5fdacaa): hooks-lifecycle-view `healthCheckMatchesAgent` 改用共享 `matchesAgentView` (保留 agentId==='all' 恒显短路, **修复任意 agent 过滤误落 codex 的 bug**); capabilities/instructions 资产页接全局 `agentView` store + `matchesAgentView(asset.agentId, view)` 过滤; StatusLineSection 对非 claude/codex agent 归一显示口径避免缺失 i18n key。memory 无 agentId 维度 (per-user) 故不过滤。
+- 首页 (GH-138) + 数据页 (sessions/usage) 此前已 DONE; 本次补齐资产页, 全应用 agent 全局过滤闭环完成。
+- 结论: 关闭。

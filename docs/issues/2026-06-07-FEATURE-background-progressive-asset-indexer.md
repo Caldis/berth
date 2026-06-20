@@ -56,3 +56,9 @@ GH-135 (`docs/works/_archive/2026-06-15-gh-135-index-progress-visibility/`) 完�
 - 用户在 GH-113 收尾澄清 (2026-06-07): "全局意味着完全完整的扫描结果, 切换只是 narrow down; 启动即扫全部; conventions-only 是 BUG; 扫描应像 spotlight/windows 索引: 后台渐进增量可控可暂停 + 可配置"。
 - 关联 `docs/works/_archive/2026-06-07-gh-113-scope-refactor-convergence/`。
 - 状态: OPEN (主线大部已落; GH-135 完成 T4 可暂停+设置档位+调度背压+长驻 helper+可观测性深化, 余 cap-5 行级 delta + activate 全量重扫消灭 + 3 项下沉 issue, 见上「进展 (2026-06-16)」)。
+
+# 进展 (2026-06-20, 残项核实)
+- **GH-117 activate 全量重扫 (10s 卡顿症状): 已消除 + 加回归守卫**。核实路径: `project-scope:activate` (handlers.ts:221) → `activateProjectScope` (project-scope-runtime.ts:24) cache miss 走 `void runtime.refresh({ wait: false })` (line 42, 非阻塞后台刷新), cache hit 由 setProjectDir 即时取缓存; global/user 切换走 set-scope 纯客户端 narrow-down 不扫描。10047ms 阻塞路径由 commit `2786c84c` (2026-06-13, 先于 GH-135) 将 `wait:true`→`wait:false` 消除。本批加 7 行回归守卫注释 (commit `bcd9a82b`) 钉死 wait:false 防回退。49 项 project-scope/runtime 单测绿。
+- **不做激进 narrow-down (有意 STOP)**: 把 activate 改为对全局快照纯过滤会丢新激活项目的嵌套能力 — 非活动项目当前仅浅索引 (root-level + conventions, 无 `**/*.md`/`.claude/` 深扫), 全局快照非完整深结果, 故后台 deep refresh 必要不可消。正确性 > 速度。
+- **cap-5 行级 SQLite delta: 仍 defer** (SqliteSnapshotStore 仅全量 save; 加 replaceBySourceKey 需接口改 + applyFileChange 接线 + ord 排序 + 持久化正确性测试, 非平凡, 低优)。
+- **剩余主线 (大件, 需独立 design+cross-review)**: 后台渐进 **deep-index 全部项目** (使 [全局] 真完整 → activate 可成纯 narrow-down 零扫描)。这是 FEATURE 架构主线最大剩余块, 非 activate-path 微调; 保持 OPEN。

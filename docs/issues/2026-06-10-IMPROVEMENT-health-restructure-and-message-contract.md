@@ -9,4 +9,11 @@
 
 # 来源 · 关联
 - GH-115 架构全面分析 (2026-06-10), 完整证据见 `docs/works/2026-06-10-gh-115-architecture-refactor/01-ANALYSIS.md` (R15+R20 合立, panel 嫁接决策)。关联 2026-06-09-IMPROVEMENT-shared-path-and-type-config.md (路由表)。
-- 状态: OPEN。
+- 状态: OPEN (Phase 1 已发 v0.4.3; Phase 2 待常规 harness 任务, 见下)。
+
+# 进展 (2026-06-20, Phase 1 行为保持拆分 DONE, 随 v0.4.3)
+- **Phase 1 (纯结构拆分) DONE**: `health.ts` 1446 → 45 行 (纯编排入口); 抽出 `engine/health/` 13 个内聚模块 (value-guards / fs-utils / command-heuristics / markdown / constants / types / hooks / make-check / shared-checks / claude / codex / cross-agent / paths)。公共导出不变 (`runHealthChecks` + `HealthCheckOptions`)。行为保持以**逐字节 golden oracle** 钉死 (claude+codex+project+sessions+scan-errors × win32/darwin, 每次增量 diff 字节相同)。engine typecheck/lint/108 测试 + 根 health-check 16 测试绿; 8 次小绿提交 (0d4c3ac0..3a36c0c1)。
+- **Phase 2 (DEFER, 仍 OPEN — 触及 renderer/@shared/agent-plugins, 需常规 harness + renderer 协调)**, 三独立工作流:
+  - **A messageKey+params 契约**: HealthCheck 增可选 messageKey+params (与 legacy message 双带迁移); 各 makeCheck 调用点 (现已按 provider 模块隔离, 改动局部化) 派生稳定 key; 渲染层 health-check-i18n 由 EXACT_TEXT_KEYS 逐字匹配改 key 查表 (golden 兜底至全部携带 key 后删 EXACT_TEXT)。
+  - **B healthCheckDescriptors ↔ agent-plugins 对齐**: 定义 HealthCheckProvider 接口, claude/codex provider (Phase 1 已统一 `(paths,platform)=>HealthCheck[]` 签名) 按 agentId 注册 agent-plugin registry, runHealthChecks 由 registry 驱动 (manifest agent 经同路径贡献检查)。
+  - **C registry 静态数据 + HEALTH_TARGET_ROUTES 收敛**: registry.ts 静态描述符拆 builtin-{claude-code,codex}.ts; asset-type→route 映射 (现 make-check.ts / 主 HEALTH_TARGET_ROUTES / renderer asset-route.ts 三处) 收敛 @shared 单源 (可独立先落)。

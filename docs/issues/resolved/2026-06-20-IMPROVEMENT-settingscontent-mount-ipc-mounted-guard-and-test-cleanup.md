@@ -15,3 +15,9 @@ GH-149 用 A1 (settings-sources.test.tsx 专属 unmount+flush, commit f1ebc30f) 
 
 ## 来源
 GH-149 (`docs/works/_archive/2026-06-20-gh-149-settings-sources-flaky-fix`) explore+design 显式 defer 的 C/B 治理项。A1 已止血当前 CI 红。
+
+## 收口 (2026-06-20, RESOLVED — v0.4.3)
+- **(C) prod 健壮性 DONE** (commit 48cf9eae): `platform.info` (settings-content.tsx) + `getPreferences` (use-update.ts) 两条原未守卫的 chain 加 cancelled 守卫; 另两条 (`useAgentCapabilityPlugins` use-ipc.ts cancelled flag / `useScanEngineInfo` mountedRef) 核实已有守卫, surgical 不重复。
+- **(B) 测试 cleanup 标准化 DONE** (commit d327e6e1): tests/setup.ts 全局 afterEach 用 `await act(async()=>{})` flush 微任务 (gate `hasDomEnvironment`, 不用 setTimeout 故不撞 fake timer) — 即本 issue item 3 prescribed 的 fake-timer-safe 方案; RTL auto-cleanup 已处理 unmount。4 个 fake-timer 文件 + 全 1297 测试绿。
+- item 2 (settings-page/accent 潜在 flaky) 由全局 (B) 覆盖。
+- 结论: 关闭。
