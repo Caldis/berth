@@ -31,7 +31,7 @@ import {
   type InstructionGuideId
 } from '@/lib/feature-guidance'
 import type { Asset } from '@shared/types/asset'
-import { filterAssetsByAppScope } from '@shared/scope'
+import { filterAssetsByAppScope, matchesAgentView } from '@shared/scope'
 import { MemoryView } from '@/components/memory/memory-view'
 import { useMemory } from '@/hooks/use-memory'
 import { usePageChrome, type PageChromeConfig } from '@/components/layout/page-chrome'
@@ -444,6 +444,7 @@ export function Instructions({ activeSection }: { activeSection?: string } = {})
   const scopeSelection = useAppStore((s) => s.scopeSelection)
   const scanning = useAppStore((s) => s.assetRuntimeStatus.state === 'scanning')
   const runtimeState = useAppStore((s) => s.assetRuntimeStatus.state)
+  const agentView = useAppStore((s) => s.agentView)
   const { result: memoryResult } = useMemory()
   const activeTab = normalizeInstructionSection(activeSection)
   const [search, setSearch] = useState('')
@@ -485,6 +486,7 @@ export function Instructions({ activeSection }: { activeSection?: string } = {})
   // Filter assets for active tab
   const filteredAssets = useMemo(() => {
     return scopeAssets.filter((a) => {
+      if (!matchesAgentView(a.agentId, agentView)) return false
       if (scope !== 'all' && a.scope !== scope) return false
       if (deferredSearch) {
         const q = deferredSearch.toLowerCase()
@@ -494,7 +496,7 @@ export function Instructions({ activeSection }: { activeSection?: string } = {})
       }
       return true
     })
-  }, [scopeAssets, deferredSearch, scope])
+  }, [scopeAssets, deferredSearch, scope, agentView])
   const assetGroups = useMemo(() => buildInstructionGroups(filteredAssets, t), [filteredAssets, t])
 
   const activeGuide = instructionGuideMap[activeTab as InstructionGuideId]

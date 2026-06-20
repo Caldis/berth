@@ -35,6 +35,7 @@ import {
 } from '@/lib/hook-lifecycle'
 import { localizeHealthCheck, localizeHealthCheckScope } from '@/lib/health-check-i18n'
 import type { AgentView, Asset, AssetScope } from '@shared/types/asset'
+import { matchesAgentView } from '@shared/scope'
 import type {
   AgentCapabilityPlugin,
   AgentCapabilityPluginHookHandlerDescriptor,
@@ -1493,10 +1494,10 @@ function isHookHealthCheck(check: HealthCheck): boolean {
 }
 
 function healthCheckMatchesAgent(check: HealthCheck, agentView: AgentView): boolean {
+  // agentId==='all' 的健康检查对所有 agent 恒显; 其余走共享任意-agentId 匹配器
+  // (取代旧的 claude/codex 钳死分支, 修复任意 agent 过滤时误落 codex 的 bug)。
   if (check.agentId === 'all') return true
-  if (agentView === 'all') return check.agentId === 'claude-code' || check.agentId === 'codex'
-  if (agentView === 'claude') return check.agentId === 'claude-code'
-  return check.agentId === 'codex'
+  return matchesAgentView(check.agentId, agentView)
 }
 
 function countHealthSeverities(checks: HealthCheck[]): Record<HealthCheck['severity'], number> {

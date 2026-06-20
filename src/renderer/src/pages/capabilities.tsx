@@ -47,7 +47,7 @@ import {
   type PermissionRuleRow
 } from '@/lib/capability-assets'
 import type { AgentView, Asset } from '@shared/types/asset'
-import { filterAssetsByAppScope } from '@shared/scope'
+import { filterAssetsByAppScope, matchesAgentView } from '@shared/scope'
 import {
   buildStatusLineViewModels,
   getWorstDiagnosticLevel,
@@ -555,13 +555,15 @@ export function StatusLineSection({ assets, agentView }: { assets: Asset[]; agen
   const { t } = useTranslation()
   const viewModels = useMemo(() => buildStatusLineViewModels(assets), [assets])
   const hasCodexAsset = assets.some((asset) => asset.agentId === 'codex')
-  const showCodexDefault = agentView !== 'claude' && !hasCodexAsset
+  // statusLine 是 claude-code/codex 特有概念; 任意其它 agent 归一到 'all' 显示口径 (空态文案/默认预览)
+  const displayView = agentView === 'claude' || agentView === 'codex' ? agentView : 'all'
+  const showCodexDefault = displayView !== 'claude' && !hasCodexAsset
 
   return (
     <div className="flex flex-1 flex-col gap-3">
       {assets.length === 0 ? (
         <>
-          <EmptyState fullHeight icon={Activity} message={t(`capabilities.statusLine.empty.${agentView}`)} />
+          <EmptyState fullHeight icon={Activity} message={t(`capabilities.statusLine.empty.${displayView}`)} />
           {showCodexDefault && <CodexDefaultStatusLine />}
         </>
       ) : (
@@ -815,6 +817,7 @@ export function Capabilities({ activeSection }: { activeSection?: string } = {})
   const scopeSelection = useAppStore((s) => s.scopeSelection)
   const scanning = useAppStore((s) => s.assetRuntimeStatus.state === 'scanning')
   const runtimeState = useAppStore((s) => s.assetRuntimeStatus.state)
+  const agentView = useAppStore((s) => s.agentView)
   const { plugins } = useAgentCapabilityPlugins()
   const { isFocused } = useFocusTarget()
   const activeTab = normalizeCapabilityTab(activeSection)
@@ -830,6 +833,7 @@ export function Capabilities({ activeSection }: { activeSection?: string } = {})
     const types = tabTypeMap[activeTab] ?? []
     return visibleAssets.filter((a) => {
       if (!types.includes(a.type)) return false
+      if (!matchesAgentView(a.agentId, agentView)) return false
       if (scope !== 'all' && a.scope !== scope) return false
       if (search) {
         const q = search.toLowerCase()
@@ -839,7 +843,7 @@ export function Capabilities({ activeSection }: { activeSection?: string } = {})
       }
       return true
     })
-  }, [visibleAssets, activeTab, search, scope])
+  }, [visibleAssets, activeTab, search, scope, agentView])
 
   const showFilter = activeTab !== 'permissions'
   const activeGuide = capabilityGuideMap[activeTab as CapabilityGuideId]
@@ -873,7 +877,7 @@ export function Capabilities({ activeSection }: { activeSection?: string } = {})
         )
 
       case 'hooks': {
-        return <HooksLifecycleView assets={filteredAssets} agentView="all" search={search} scope={scope} plugins={plugins} />
+        return <HooksLifecycleView assets={filteredAssets} agentView={agentView} search={search} scope={scope} plugins={plugins} />
       }
 
       case 'plugins': {
@@ -902,7 +906,7 @@ export function Capabilities({ activeSection }: { activeSection?: string } = {})
       }
 
       case 'statusLine':
-        return <StatusLineSection assets={filteredAssets} agentView="all" />
+        return <StatusLineSection assets={filteredAssets} agentView={agentView} />
 
       case 'permissions':
         return <PermissionsSection assets={filteredAssets} />
