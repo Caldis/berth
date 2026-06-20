@@ -3,27 +3,8 @@
 exports[`health i18n golden (GH #6 Phase-2 contract) > darwin: full prose + emitted i18n keys/params 1`] = `
 [
   {
-    "evidence": [
-      "Claude Code settings",
-    ],
-    "fix": {
-      "description": "Use this only for trusted local workflows.",
-      "label": "Suggested fix",
-    },
-    "i18nKeys": {
-      "fixDescription": "healthChecks.text.suggestions.claudeBypassPermissions",
-      "fixLabel": "healthChecks.text.fixLabels.suggestedFix",
-      "message": "healthChecks.text.messages.claudeBypassPermissions",
-      "suggestion": "healthChecks.text.suggestions.claudeBypassPermissions",
-      "title": "healthChecks.text.titles.claudeBypassPermissions",
-    },
-    "id": "claude-code:configuration:project-permission-bypass",
-    "message": "permissionMode is set to bypassPermissions.",
-    "params": undefined,
-    "suggestion": "Use this only for trusted local workflows.",
-    "title": "Claude Code bypass permissions enabled",
-  },
-  {
+    "agentId": "claude-code",
+    "category": "configuration",
     "evidence": [
       "Claude Code hooks",
     ],
@@ -38,34 +19,15 @@ exports[`health i18n golden (GH #6 Phase-2 contract) > darwin: full prose + emit
       "suggestion": "healthChecks.text.suggestions.claudeHookShellIgnored",
       "title": "healthChecks.text.titles.claudeHookShellIgnored",
     },
-    "id": "claude-code:configuration:user-hook-shell-ignored-with-args",
     "message": "A command hook defines args and shell; Claude Code ignores shell in this shape.",
     "params": undefined,
+    "severity": "info",
     "suggestion": "Remove shell or move the full command into command when shell selection matters.",
     "title": "Claude hook shell is ignored when args are set",
   },
   {
-    "evidence": [
-      "Claude Code settings",
-    ],
-    "fix": {
-      "description": "Prefer narrower command allow rules.",
-      "label": "Suggested fix",
-    },
-    "i18nKeys": {
-      "fixDescription": "healthChecks.text.suggestions.claudeBroadBashPermission",
-      "fixLabel": "healthChecks.text.fixLabels.suggestedFix",
-      "message": "healthChecks.text.messages.claudeBroadBashPermission",
-      "suggestion": "healthChecks.text.suggestions.claudeBroadBashPermission",
-      "title": "healthChecks.text.titles.claudeBroadBashPermission",
-    },
-    "id": "claude-code:configuration:user-permission-broad-bash",
-    "message": "permissions.allow contains Bash(*).",
-    "params": undefined,
-    "suggestion": "Prefer narrower command allow rules.",
-    "title": "Broad Bash permission rule",
-  },
-  {
+    "agentId": "claude-code",
+    "category": "configuration",
     "evidence": [
       "Claude Code settings",
     ],
@@ -80,15 +42,157 @@ exports[`health i18n golden (GH #6 Phase-2 contract) > darwin: full prose + emit
       "suggestion": "healthChecks.text.suggestions.addClaudeSettingsSchema",
       "title": "healthChecks.text.titles.claudeSettingsSchemaMissing",
     },
-    "id": "claude-code:configuration:user-settings-schema-missing",
     "message": "settings.json does not declare the Claude Code settings JSON schema.",
     "params": {
       "name": "settings.json",
     },
+    "severity": "info",
     "suggestion": "Add $schema if you want editor validation for Claude Code settings.",
     "title": "Claude settings schema is not declared",
   },
   {
+    "agentId": "codex",
+    "category": "configuration",
+    "evidence": [
+      "Codex hooks",
+    ],
+    "fix": {
+      "description": "Remove async when this hook should run today.",
+      "label": "Suggested fix",
+    },
+    "i18nKeys": {
+      "fixDescription": "healthChecks.text.suggestions.codexAsyncHookSkipped",
+      "fixLabel": "healthChecks.text.fixLabels.suggestedFix",
+      "message": "healthChecks.text.messages.codexAsyncHookSkipped",
+      "suggestion": "healthChecks.text.suggestions.codexAsyncHookSkipped",
+      "title": "healthChecks.text.titles.codexAsyncHookSkipped",
+    },
+    "message": "Codex parses async hook handlers, but async command hooks are not supported yet.",
+    "params": undefined,
+    "severity": "info",
+    "suggestion": "Remove async when this hook should run today.",
+    "title": "Codex async hook is skipped",
+  },
+  {
+    "agentId": "codex",
+    "category": "configuration",
+    "evidence": [
+      "Codex config reference",
+    ],
+    "fix": {
+      "description": "Add the official Codex TOML schema comment near the top of config.toml.",
+      "label": "Add Codex config schema",
+    },
+    "i18nKeys": {
+      "fixDescription": "healthChecks.text.fixDescriptions.addCodexConfigSchema",
+      "fixLabel": "healthChecks.text.fixLabels.addCodexConfigSchema",
+      "message": "healthChecks.text.messages.codexConfigSchemaMissing",
+      "suggestion": "healthChecks.text.suggestions.codexConfigSchemaMissing",
+      "title": "healthChecks.text.titles.codexConfigSchemaMissing",
+    },
+    "message": "config.toml does not include the official Codex TOML schema comment.",
+    "params": undefined,
+    "severity": "info",
+    "suggestion": "Add the Codex schema comment if you want editor validation for config.toml.",
+    "title": "Codex config schema comment is not declared",
+  },
+  {
+    "agentId": "codex",
+    "category": "configuration",
+    "evidence": [
+      "Codex hooks",
+    ],
+    "fix": {
+      "description": "Use type = "command" when this hook should run today.",
+      "label": "Suggested fix",
+    },
+    "i18nKeys": {
+      "fixDescription": "healthChecks.text.suggestions.codexHookSkippedType",
+      "fixLabel": "healthChecks.text.fixLabels.suggestedFix",
+      "message": "healthChecks.text.messages.codexHookSkippedType",
+      "suggestion": "healthChecks.text.suggestions.codexHookSkippedType",
+      "title": "healthChecks.text.titles.codexHookSkippedType",
+    },
+    "message": "Codex currently parses prompt hooks but only command hooks run.",
+    "params": {
+      "type": "prompt",
+    },
+    "severity": "info",
+    "suggestion": "Use type = "command" when this hook should run today.",
+    "title": "Codex hook type is parsed but skipped",
+  },
+  {
+    "agentId": "claude-code",
+    "category": "configuration",
+    "evidence": [
+      "Claude Code settings",
+    ],
+    "fix": {
+      "description": "Prefer narrower command allow rules.",
+      "label": "Suggested fix",
+    },
+    "i18nKeys": {
+      "fixDescription": "healthChecks.text.suggestions.claudeBroadBashPermission",
+      "fixLabel": "healthChecks.text.fixLabels.suggestedFix",
+      "message": "healthChecks.text.messages.claudeBroadBashPermission",
+      "suggestion": "healthChecks.text.suggestions.claudeBroadBashPermission",
+      "title": "healthChecks.text.titles.claudeBroadBashPermission",
+    },
+    "message": "permissions.allow contains Bash(*).",
+    "params": undefined,
+    "severity": "warning",
+    "suggestion": "Prefer narrower command allow rules.",
+    "title": "Broad Bash permission rule",
+  },
+  {
+    "agentId": "claude-code",
+    "category": "configuration",
+    "evidence": [
+      "Claude Code settings",
+    ],
+    "fix": {
+      "description": "Use this only for trusted local workflows.",
+      "label": "Suggested fix",
+    },
+    "i18nKeys": {
+      "fixDescription": "healthChecks.text.suggestions.claudeBypassPermissions",
+      "fixLabel": "healthChecks.text.fixLabels.suggestedFix",
+      "message": "healthChecks.text.messages.claudeBypassPermissions",
+      "suggestion": "healthChecks.text.suggestions.claudeBypassPermissions",
+      "title": "healthChecks.text.titles.claudeBypassPermissions",
+    },
+    "message": "permissionMode is set to bypassPermissions.",
+    "params": undefined,
+    "severity": "warning",
+    "suggestion": "Use this only for trusted local workflows.",
+    "title": "Claude Code bypass permissions enabled",
+  },
+  {
+    "agentId": "codex",
+    "category": "configuration",
+    "evidence": [
+      "Codex hooks",
+    ],
+    "fix": {
+      "description": "Keep both only if you expect Codex to merge and warn about this layer.",
+      "label": "Suggested fix",
+    },
+    "i18nKeys": {
+      "fixDescription": "healthChecks.text.suggestions.codexHooksDuplicated",
+      "fixLabel": "healthChecks.text.fixLabels.suggestedFix",
+      "message": "healthChecks.text.messages.codexHooksDuplicated",
+      "suggestion": "healthChecks.text.suggestions.codexHooksDuplicated",
+      "title": "healthChecks.text.titles.codexHooksDuplicated",
+    },
+    "message": "Codex has hooks in config.toml and hooks.json at the same scope.",
+    "params": undefined,
+    "severity": "warning",
+    "suggestion": "Keep both only if you expect Codex to merge and warn about this layer.",
+    "title": "Codex hooks defined twice",
+  },
+  {
+    "agentId": "claude-code",
+    "category": "reference",
     "evidence": [
       "Claude Code memory",
     ],
@@ -103,13 +207,15 @@ exports[`health i18n golden (GH #6 Phase-2 contract) > darwin: full prose + emit
       "suggestion": "healthChecks.text.suggestions.claudeProjectAgentsNotImported",
       "title": "healthChecks.text.titles.claudeProjectAgentsNotImported",
     },
-    "id": "claude-code:reference:project-agents-md-not-imported",
     "message": "This project has AGENTS.md, but Claude Code reads CLAUDE.md and only imports files referenced from it.",
     "params": undefined,
+    "severity": "info",
     "suggestion": "Add @AGENTS.md to project CLAUDE.md if those shared instructions should apply to Claude Code.",
     "title": "Project CLAUDE.md does not import AGENTS.md",
   },
   {
+    "agentId": "claude-code",
+    "category": "reference",
     "evidence": [
       "Claude Code memory",
     ],
@@ -124,16 +230,44 @@ exports[`health i18n golden (GH #6 Phase-2 contract) > darwin: full prose + emit
       "suggestion": "healthChecks.text.suggestions.instructionImportMissing",
       "title": "healthChecks.text.titles.instructionImportMissing",
     },
-    "id": "claude-code:reference:user-agents-md-missing-import-19txyg7",
     "message": "missing-agents.md referenced by AGENTS.md does not exist.",
     "params": {
       "file": "AGENTS.md",
       "importPath": "missing-agents.md",
     },
+    "severity": "warning",
     "suggestion": "Create the imported file or remove the @path reference.",
     "title": "Instruction import is missing",
   },
   {
+    "agentId": "codex",
+    "category": "reference",
+    "evidence": [
+      "Codex AGENTS.md",
+    ],
+    "fix": {
+      "description": "Create the imported file or remove the @path reference.",
+      "label": "Suggested fix",
+    },
+    "i18nKeys": {
+      "fixDescription": "healthChecks.text.suggestions.instructionImportMissing",
+      "fixLabel": "healthChecks.text.fixLabels.suggestedFix",
+      "message": "healthChecks.text.messages.instructionImportMissing",
+      "suggestion": "healthChecks.text.suggestions.instructionImportMissing",
+      "title": "healthChecks.text.titles.instructionImportMissing",
+    },
+    "message": "missing-codex.md referenced by AGENTS.md does not exist.",
+    "params": {
+      "file": "AGENTS.md",
+      "importPath": "missing-codex.md",
+    },
+    "severity": "warning",
+    "suggestion": "Create the imported file or remove the @path reference.",
+    "title": "Instruction import is missing",
+  },
+  {
+    "agentId": "claude-code",
+    "category": "session",
     "evidence": [
       "Claude Code sessions",
     ],
@@ -148,15 +282,17 @@ exports[`health i18n golden (GH #6 Phase-2 contract) > darwin: full prose + emit
       "suggestion": "healthChecks.text.suggestions.claudeEmptyProjectDirs",
       "title": "healthChecks.text.titles.claudeEmptyProjectDirs",
     },
-    "id": "claude-code:session:empty-project-dirs",
     "message": "1 empty project directories found in ~/.claude/projects/.",
     "params": {
       "count": 1,
     },
+    "severity": "info",
     "suggestion": "This is usually harmless. Remove stale directories if they are no longer useful.",
     "title": "Empty Claude project directories",
   },
   {
+    "agentId": "claude-code",
+    "category": "session",
     "evidence": [
       "Claude Code sessions",
     ],
@@ -171,421 +307,17 @@ exports[`health i18n golden (GH #6 Phase-2 contract) > darwin: full prose + emit
       "suggestion": "healthChecks.text.suggestions.sessionMetadataIncomplete",
       "title": "healthChecks.text.titles.sessionMetadataIncomplete",
     },
-    "id": "claude-code:session:metadata-missing-1rte1f6",
     "message": "orphan-session.jsonl is missing start time or project path metadata.",
     "params": {
       "name": "orphan-session.jsonl",
     },
+    "severity": "info",
     "suggestion": "This can happen with partial or legacy transcripts.",
     "title": "Session metadata is incomplete",
   },
   {
-    "evidence": [
-      "Claude Code settings",
-    ],
-    "fix": {
-      "description": "Create ~/.claude/CLAUDE.md if you want shared Claude Code instructions.",
-      "label": "Suggested fix",
-    },
-    "i18nKeys": {
-      "fixDescription": "healthChecks.text.fixDescriptions.createUserClaudeMd",
-      "fixLabel": "healthChecks.text.fixLabels.suggestedFix",
-      "message": "healthChecks.text.messages.noUserClaudeMd",
-      "suggestion": "healthChecks.text.fixDescriptions.createUserClaudeMd",
-      "title": "healthChecks.text.titles.userClaudeMdNotFound",
-    },
-    "id": "claude-code:source:user-claude-md-missing",
-    "message": "No user-level CLAUDE.md found.",
-    "params": undefined,
-    "suggestion": "Create ~/.claude/CLAUDE.md if you want shared Claude Code instructions.",
-    "title": "User CLAUDE.md not found",
-  },
-  {
-    "evidence": [
-      "Claude Code MCP",
-    ],
-    "fix": {
-      "description": "Add the transport field required by the agent configuration.",
-      "label": "Suggested fix",
-    },
-    "i18nKeys": {
-      "fixDescription": "healthChecks.text.suggestions.mcpServerNoTransport",
-      "fixLabel": "healthChecks.text.fixLabels.suggestedFix",
-      "message": "healthChecks.text.messages.mcpServerNoTransport",
-      "suggestion": "healthChecks.text.suggestions.mcpServerNoTransport",
-      "title": "healthChecks.text.titles.mcpServerNoTransport",
-    },
-    "id": "claude-code:structure:project-mcp-empty-missing-transport",
-    "message": "empty has no command, url, type, or transport field.",
-    "params": {
-      "name": "empty",
-    },
-    "suggestion": "Add the transport field required by the agent configuration.",
-    "title": "MCP server has no transport",
-  },
-  {
-    "evidence": [
-      "Claude Code subagents",
-    ],
-    "fix": {
-      "description": "Claude Code subagents require Markdown files with name and description frontmatter.",
-      "label": "Suggested fix",
-    },
-    "i18nKeys": {
-      "fixDescription": "healthChecks.text.suggestions.claudeSubagentIncomplete",
-      "fixLabel": "healthChecks.text.fixLabels.suggestedFix",
-      "message": "healthChecks.text.messages.claudeSubagentIncomplete",
-      "suggestion": "healthChecks.text.suggestions.claudeSubagentIncomplete",
-      "title": "healthChecks.text.titles.claudeSubagentIncomplete",
-    },
-    "id": "claude-code:structure:user-agent-broken",
-    "message": "broken is missing name or description frontmatter.",
-    "params": {
-      "name": "broken",
-    },
-    "suggestion": "Claude Code subagents require Markdown files with name and description frontmatter.",
-    "title": "Claude subagent metadata is incomplete",
-  },
-  {
-    "evidence": [
-      "Claude Code hooks",
-    ],
-    "fix": {
-      "description": "Add a prompt value or remove the hook entry.",
-      "label": "Suggested fix",
-    },
-    "i18nKeys": {
-      "fixDescription": "healthChecks.text.suggestions.addHookPrompt",
-      "fixLabel": "healthChecks.text.fixLabels.suggestedFix",
-      "message": "healthChecks.text.messages.claudeHookMissingPrompt",
-      "suggestion": "healthChecks.text.suggestions.addHookPrompt",
-      "title": "healthChecks.text.titles.claudeHookMissingPrompt",
-    },
-    "id": "claude-code:structure:user-hook-pretooluse-agent-missing-prompt",
-    "message": "PreToolUse contains a agent hook without a prompt.",
-    "params": {
-      "event": "PreToolUse",
-      "type": "agent",
-    },
-    "suggestion": "Add a prompt value or remove the hook entry.",
-    "title": "Claude prompt hook is missing prompt",
-  },
-  {
-    "evidence": [
-      "Claude Code hooks",
-    ],
-    "fix": {
-      "description": "Add a url value or remove the hook entry.",
-      "label": "Suggested fix",
-    },
-    "i18nKeys": {
-      "fixDescription": "healthChecks.text.suggestions.addHookUrl",
-      "fixLabel": "healthChecks.text.fixLabels.suggestedFix",
-      "message": "healthChecks.text.messages.claudeHookMissingUrl",
-      "suggestion": "healthChecks.text.suggestions.addHookUrl",
-      "title": "healthChecks.text.titles.claudeHookMissingUrl",
-    },
-    "id": "claude-code:structure:user-hook-pretooluse-http-missing-url",
-    "message": "PreToolUse contains an http hook without a url.",
-    "params": {
-      "event": "PreToolUse",
-    },
-    "suggestion": "Add a url value or remove the hook entry.",
-    "title": "Claude HTTP hook is missing url",
-  },
-  {
-    "evidence": [
-      "Claude Code hooks",
-    ],
-    "fix": {
-      "description": "Add both server and tool values, or remove the hook entry.",
-      "label": "Suggested fix",
-    },
-    "i18nKeys": {
-      "fixDescription": "healthChecks.text.suggestions.addMcpToolFields",
-      "fixLabel": "healthChecks.text.fixLabels.suggestedFix",
-      "message": "healthChecks.text.messages.claudeHookMcpToolIncomplete",
-      "suggestion": "healthChecks.text.suggestions.addMcpToolFields",
-      "title": "healthChecks.text.titles.claudeHookMcpToolIncomplete",
-    },
-    "id": "claude-code:structure:user-hook-pretooluse-mcp-tool-missing-tool",
-    "message": "PreToolUse contains an mcp_tool hook without tool.",
-    "params": {
-      "event": "PreToolUse",
-      "field": "tool",
-    },
-    "suggestion": "Add both server and tool values, or remove the hook entry.",
-    "title": "Claude MCP tool hook is incomplete",
-  },
-  {
-    "evidence": [
-      "Claude Code hooks",
-    ],
-    "fix": {
-      "description": "Add a command value or remove the hook entry.",
-      "label": "Suggested fix",
-    },
-    "i18nKeys": {
-      "fixDescription": "healthChecks.text.fixDescriptions.addHookCommand",
-      "fixLabel": "healthChecks.text.fixLabels.suggestedFix",
-      "message": "healthChecks.text.messages.claudeHookMissingCommand",
-      "suggestion": "healthChecks.text.fixDescriptions.addHookCommand",
-      "title": "healthChecks.text.titles.claudeHookMissingCommand",
-    },
-    "id": "claude-code:structure:user-hook-pretooluse-missing-command",
-    "message": "PreToolUse contains a command hook without a command.",
-    "params": {
-      "event": "PreToolUse",
-    },
-    "suggestion": "Add a command value or remove the hook entry.",
-    "title": "Claude Code hook is missing command",
-  },
-  {
-    "evidence": [
-      "Claude Code hooks",
-    ],
-    "fix": {
-      "description": "Add a prompt value or remove the hook entry.",
-      "label": "Suggested fix",
-    },
-    "i18nKeys": {
-      "fixDescription": "healthChecks.text.suggestions.addHookPrompt",
-      "fixLabel": "healthChecks.text.fixLabels.suggestedFix",
-      "message": "healthChecks.text.messages.claudeHookMissingPrompt",
-      "suggestion": "healthChecks.text.suggestions.addHookPrompt",
-      "title": "healthChecks.text.titles.claudeHookMissingPrompt",
-    },
-    "id": "claude-code:structure:user-hook-pretooluse-prompt-missing-prompt",
-    "message": "PreToolUse contains a prompt hook without a prompt.",
-    "params": {
-      "event": "PreToolUse",
-      "type": "prompt",
-    },
-    "suggestion": "Add a prompt value or remove the hook entry.",
-    "title": "Claude prompt hook is missing prompt",
-  },
-  {
-    "evidence": [
-      "Claude Code hooks",
-    ],
-    "fix": {
-      "description": "Use a documented hook type, such as command, http, mcp_tool, prompt, or agent.",
-      "label": "Suggested fix",
-    },
-    "i18nKeys": {
-      "fixDescription": "healthChecks.text.suggestions.useDocumentedHookType",
-      "fixLabel": "healthChecks.text.fixLabels.suggestedFix",
-      "message": "healthChecks.text.messages.claudeHookUnknownType",
-      "suggestion": "healthChecks.text.suggestions.useDocumentedHookType",
-      "title": "healthChecks.text.titles.claudeHookUnknownType",
-    },
-    "id": "claude-code:structure:user-hook-pretooluse-unknown-type-frobnicate",
-    "message": "PreToolUse uses hook type "frobnicate".",
-    "params": {
-      "event": "PreToolUse",
-      "type": "frobnicate",
-    },
-    "suggestion": "Use a documented hook type, such as command, http, mcp_tool, prompt, or agent.",
-    "title": "Claude hook type is not documented",
-  },
-  {
-    "evidence": [
-      "Claude Code MCP",
-    ],
-    "fix": {
-      "description": "Add the transport field required by the agent configuration.",
-      "label": "Suggested fix",
-    },
-    "i18nKeys": {
-      "fixDescription": "healthChecks.text.suggestions.mcpServerNoTransport",
-      "fixLabel": "healthChecks.text.fixLabels.suggestedFix",
-      "message": "healthChecks.text.messages.mcpServerNoTransport",
-      "suggestion": "healthChecks.text.suggestions.mcpServerNoTransport",
-      "title": "healthChecks.text.titles.mcpServerNoTransport",
-    },
-    "id": "claude-code:structure:user-mcp-notransport-missing-transport",
-    "message": "noTransport has no command, url, type, or transport field.",
-    "params": {
-      "name": "noTransport",
-    },
-    "suggestion": "Add the transport field required by the agent configuration.",
-    "title": "MCP server has no transport",
-  },
-  {
-    "evidence": [
-      "Claude Code skills",
-    ],
-    "fix": {
-      "description": "Add SKILL.md or move non-skill files outside the skills directory.",
-      "label": "Suggested fix",
-    },
-    "i18nKeys": {
-      "fixDescription": "healthChecks.text.fixDescriptions.addSkillEntryPoint",
-      "fixLabel": "healthChecks.text.fixLabels.suggestedFix",
-      "message": "healthChecks.text.messages.skillMissingEntryPoint",
-      "suggestion": "healthChecks.text.fixDescriptions.addSkillEntryPoint",
-      "title": "healthChecks.text.titles.skillMissingEntryPoint",
-    },
-    "id": "claude-code:structure:user-skill-broken-skill-missing-entrypoint",
-    "message": "broken-skill has no SKILL.md entrypoint.",
-    "params": {
-      "name": "broken-skill",
-    },
-    "suggestion": "Add SKILL.md or move non-skill files outside the skills directory.",
-    "title": "Skill is missing SKILL.md",
-  },
-  {
-    "evidence": [
-      "Claude Code hooks",
-    ],
-    "fix": {
-      "description": "Fix the JSON syntax in .claude/settings.json.",
-      "label": "Suggested fix",
-    },
-    "i18nKeys": {
-      "fixDescription": "healthChecks.text.suggestions.fixClaudeProjectSettings",
-      "fixLabel": "healthChecks.text.fixLabels.suggestedFix",
-      "message": undefined,
-      "suggestion": "healthChecks.text.suggestions.fixClaudeProjectSettings",
-      "title": "healthChecks.text.titles.invalidClaudeProjectSettings",
-    },
-    "id": "claude-code:syntax:project-settings-invalid",
-    "message": "Expected property name or '}' in JSON at position 2 (line 1 column 3)",
-    "params": undefined,
-    "suggestion": "Fix the JSON syntax in .claude/settings.json.",
-    "title": "Invalid project settings.json",
-  },
-  {
-    "evidence": [
-      "Claude Code hooks",
-    ],
-    "fix": {
-      "description": "Fix the file syntax, then refresh Berth.",
-      "label": "Suggested fix",
-    },
-    "i18nKeys": {
-      "fixDescription": "healthChecks.text.suggestions.scannerParserError",
-      "fixLabel": "healthChecks.text.fixLabels.suggestedFix",
-      "suggestion": "healthChecks.text.suggestions.scannerParserError",
-      "title": "healthChecks.text.titles.scannerParserError",
-    },
-    "id": "claude-code:syntax:scan-error-138qd17",
-    "message": "Trailing comma not allowed.",
-    "params": undefined,
-    "suggestion": "Fix the file syntax, then refresh Berth.",
-    "title": "Scanner parser error",
-  },
-  {
-    "evidence": [
-      "Codex config reference",
-    ],
-    "fix": {
-      "description": "Add the official Codex TOML schema comment near the top of config.toml.",
-      "label": "Add Codex config schema",
-    },
-    "i18nKeys": {
-      "fixDescription": "healthChecks.text.fixDescriptions.addCodexConfigSchema",
-      "fixLabel": "healthChecks.text.fixLabels.addCodexConfigSchema",
-      "message": "healthChecks.text.messages.codexConfigSchemaMissing",
-      "suggestion": "healthChecks.text.suggestions.codexConfigSchemaMissing",
-      "title": "healthChecks.text.titles.codexConfigSchemaMissing",
-    },
-    "id": "codex:configuration:user-config-schema-comment-missing",
-    "message": "config.toml does not include the official Codex TOML schema comment.",
-    "params": undefined,
-    "suggestion": "Add the Codex schema comment if you want editor validation for config.toml.",
-    "title": "Codex config schema comment is not declared",
-  },
-  {
-    "evidence": [
-      "Codex hooks",
-    ],
-    "fix": {
-      "description": "Remove async when this hook should run today.",
-      "label": "Suggested fix",
-    },
-    "i18nKeys": {
-      "fixDescription": "healthChecks.text.suggestions.codexAsyncHookSkipped",
-      "fixLabel": "healthChecks.text.fixLabels.suggestedFix",
-      "message": "healthChecks.text.messages.codexAsyncHookSkipped",
-      "suggestion": "healthChecks.text.suggestions.codexAsyncHookSkipped",
-      "title": "healthChecks.text.titles.codexAsyncHookSkipped",
-    },
-    "id": "codex:configuration:user-hook-stop-async-skipped",
-    "message": "Codex parses async hook handlers, but async command hooks are not supported yet.",
-    "params": undefined,
-    "suggestion": "Remove async when this hook should run today.",
-    "title": "Codex async hook is skipped",
-  },
-  {
-    "evidence": [
-      "Codex hooks",
-    ],
-    "fix": {
-      "description": "Use type = "command" when this hook should run today.",
-      "label": "Suggested fix",
-    },
-    "i18nKeys": {
-      "fixDescription": "healthChecks.text.suggestions.codexHookSkippedType",
-      "fixLabel": "healthChecks.text.fixLabels.suggestedFix",
-      "message": "healthChecks.text.messages.codexHookSkippedType",
-      "suggestion": "healthChecks.text.suggestions.codexHookSkippedType",
-      "title": "healthChecks.text.titles.codexHookSkippedType",
-    },
-    "id": "codex:configuration:user-hook-stop-skipped-type-prompt",
-    "message": "Codex currently parses prompt hooks but only command hooks run.",
-    "params": {
-      "type": "prompt",
-    },
-    "suggestion": "Use type = "command" when this hook should run today.",
-    "title": "Codex hook type is parsed but skipped",
-  },
-  {
-    "evidence": [
-      "Codex hooks",
-    ],
-    "fix": {
-      "description": "Keep both only if you expect Codex to merge and warn about this layer.",
-      "label": "Suggested fix",
-    },
-    "i18nKeys": {
-      "fixDescription": "healthChecks.text.suggestions.codexHooksDuplicated",
-      "fixLabel": "healthChecks.text.fixLabels.suggestedFix",
-      "message": "healthChecks.text.messages.codexHooksDuplicated",
-      "suggestion": "healthChecks.text.suggestions.codexHooksDuplicated",
-      "title": "healthChecks.text.titles.codexHooksDuplicated",
-    },
-    "id": "codex:configuration:user-hooks-duplicated",
-    "message": "Codex has hooks in config.toml and hooks.json at the same scope.",
-    "params": undefined,
-    "suggestion": "Keep both only if you expect Codex to merge and warn about this layer.",
-    "title": "Codex hooks defined twice",
-  },
-  {
-    "evidence": [
-      "Codex AGENTS.md",
-    ],
-    "fix": {
-      "description": "Create the imported file or remove the @path reference.",
-      "label": "Suggested fix",
-    },
-    "i18nKeys": {
-      "fixDescription": "healthChecks.text.suggestions.instructionImportMissing",
-      "fixLabel": "healthChecks.text.fixLabels.suggestedFix",
-      "message": "healthChecks.text.messages.instructionImportMissing",
-      "suggestion": "healthChecks.text.suggestions.instructionImportMissing",
-      "title": "healthChecks.text.titles.instructionImportMissing",
-    },
-    "id": "codex:reference:user-agents-md-missing-import-1iqhmi5",
-    "message": "missing-codex.md referenced by AGENTS.md does not exist.",
-    "params": {
-      "file": "AGENTS.md",
-      "importPath": "missing-codex.md",
-    },
-    "suggestion": "Create the imported file or remove the @path reference.",
-    "title": "Instruction import is missing",
-  },
-  {
+    "agentId": "codex",
+    "category": "session",
     "evidence": [
       "Codex Windows and WSL homes",
     ],
@@ -600,36 +332,166 @@ exports[`health i18n golden (GH #6 Phase-2 contract) > darwin: full prose + emit
       "suggestion": "healthChecks.text.suggestions.codexNoSessionTranscripts",
       "title": "healthChecks.text.titles.codexNoSessionTranscripts",
     },
-    "id": "codex:session:user-sessions-empty",
     "message": "Codex sessions directory exists but contains no rollout transcripts.",
     "params": undefined,
+    "severity": "info",
     "suggestion": "Run Codex once, then refresh Berth.",
     "title": "No Codex session transcripts found",
   },
   {
+    "agentId": "claude-code",
+    "category": "source",
     "evidence": [
-      "Codex custom agents",
+      "Claude Code settings",
     ],
     "fix": {
-      "description": "Codex custom agents require name, description, and developer_instructions.",
+      "description": "Create ~/.claude/CLAUDE.md if you want shared Claude Code instructions.",
       "label": "Suggested fix",
     },
     "i18nKeys": {
-      "fixDescription": "healthChecks.text.suggestions.codexAgentIncomplete",
+      "fixDescription": "healthChecks.text.fixDescriptions.createUserClaudeMd",
       "fixLabel": "healthChecks.text.fixLabels.suggestedFix",
-      "message": "healthChecks.text.messages.codexAgentIncomplete",
-      "suggestion": "healthChecks.text.suggestions.codexAgentIncomplete",
-      "title": "healthChecks.text.titles.codexAgentIncomplete",
+      "message": "healthChecks.text.messages.noUserClaudeMd",
+      "suggestion": "healthChecks.text.fixDescriptions.createUserClaudeMd",
+      "title": "healthChecks.text.titles.userClaudeMdNotFound",
     },
-    "id": "codex:structure:user-agent-broken",
-    "message": "broken is missing name, description, or developer_instructions.",
-    "params": {
-      "name": "broken",
-    },
-    "suggestion": "Codex custom agents require name, description, and developer_instructions.",
-    "title": "Codex custom agent metadata is incomplete",
+    "message": "No user-level CLAUDE.md found.",
+    "params": undefined,
+    "severity": "info",
+    "suggestion": "Create ~/.claude/CLAUDE.md if you want shared Claude Code instructions.",
+    "title": "User CLAUDE.md not found",
   },
   {
+    "agentId": "claude-code",
+    "category": "structure",
+    "evidence": [
+      "Claude Code hooks",
+    ],
+    "fix": {
+      "description": "Add both server and tool values, or remove the hook entry.",
+      "label": "Suggested fix",
+    },
+    "i18nKeys": {
+      "fixDescription": "healthChecks.text.suggestions.addMcpToolFields",
+      "fixLabel": "healthChecks.text.fixLabels.suggestedFix",
+      "message": "healthChecks.text.messages.claudeHookMcpToolIncomplete",
+      "suggestion": "healthChecks.text.suggestions.addMcpToolFields",
+      "title": "healthChecks.text.titles.claudeHookMcpToolIncomplete",
+    },
+    "message": "PreToolUse contains an mcp_tool hook without tool.",
+    "params": {
+      "event": "PreToolUse",
+      "field": "tool",
+    },
+    "severity": "error",
+    "suggestion": "Add both server and tool values, or remove the hook entry.",
+    "title": "Claude MCP tool hook is incomplete",
+  },
+  {
+    "agentId": "claude-code",
+    "category": "structure",
+    "evidence": [
+      "Claude Code hooks",
+    ],
+    "fix": {
+      "description": "Add a command value or remove the hook entry.",
+      "label": "Suggested fix",
+    },
+    "i18nKeys": {
+      "fixDescription": "healthChecks.text.fixDescriptions.addHookCommand",
+      "fixLabel": "healthChecks.text.fixLabels.suggestedFix",
+      "message": "healthChecks.text.messages.claudeHookMissingCommand",
+      "suggestion": "healthChecks.text.fixDescriptions.addHookCommand",
+      "title": "healthChecks.text.titles.claudeHookMissingCommand",
+    },
+    "message": "PreToolUse contains a command hook without a command.",
+    "params": {
+      "event": "PreToolUse",
+    },
+    "severity": "error",
+    "suggestion": "Add a command value or remove the hook entry.",
+    "title": "Claude Code hook is missing command",
+  },
+  {
+    "agentId": "claude-code",
+    "category": "structure",
+    "evidence": [
+      "Claude Code hooks",
+    ],
+    "fix": {
+      "description": "Add a prompt value or remove the hook entry.",
+      "label": "Suggested fix",
+    },
+    "i18nKeys": {
+      "fixDescription": "healthChecks.text.suggestions.addHookPrompt",
+      "fixLabel": "healthChecks.text.fixLabels.suggestedFix",
+      "message": "healthChecks.text.messages.claudeHookMissingPrompt",
+      "suggestion": "healthChecks.text.suggestions.addHookPrompt",
+      "title": "healthChecks.text.titles.claudeHookMissingPrompt",
+    },
+    "message": "PreToolUse contains a agent hook without a prompt.",
+    "params": {
+      "event": "PreToolUse",
+      "type": "agent",
+    },
+    "severity": "error",
+    "suggestion": "Add a prompt value or remove the hook entry.",
+    "title": "Claude prompt hook is missing prompt",
+  },
+  {
+    "agentId": "claude-code",
+    "category": "structure",
+    "evidence": [
+      "Claude Code hooks",
+    ],
+    "fix": {
+      "description": "Add a prompt value or remove the hook entry.",
+      "label": "Suggested fix",
+    },
+    "i18nKeys": {
+      "fixDescription": "healthChecks.text.suggestions.addHookPrompt",
+      "fixLabel": "healthChecks.text.fixLabels.suggestedFix",
+      "message": "healthChecks.text.messages.claudeHookMissingPrompt",
+      "suggestion": "healthChecks.text.suggestions.addHookPrompt",
+      "title": "healthChecks.text.titles.claudeHookMissingPrompt",
+    },
+    "message": "PreToolUse contains a prompt hook without a prompt.",
+    "params": {
+      "event": "PreToolUse",
+      "type": "prompt",
+    },
+    "severity": "error",
+    "suggestion": "Add a prompt value or remove the hook entry.",
+    "title": "Claude prompt hook is missing prompt",
+  },
+  {
+    "agentId": "claude-code",
+    "category": "structure",
+    "evidence": [
+      "Claude Code hooks",
+    ],
+    "fix": {
+      "description": "Add a url value or remove the hook entry.",
+      "label": "Suggested fix",
+    },
+    "i18nKeys": {
+      "fixDescription": "healthChecks.text.suggestions.addHookUrl",
+      "fixLabel": "healthChecks.text.fixLabels.suggestedFix",
+      "message": "healthChecks.text.messages.claudeHookMissingUrl",
+      "suggestion": "healthChecks.text.suggestions.addHookUrl",
+      "title": "healthChecks.text.titles.claudeHookMissingUrl",
+    },
+    "message": "PreToolUse contains an http hook without a url.",
+    "params": {
+      "event": "PreToolUse",
+    },
+    "severity": "error",
+    "suggestion": "Add a url value or remove the hook entry.",
+    "title": "Claude HTTP hook is missing url",
+  },
+  {
+    "agentId": "codex",
+    "category": "structure",
     "evidence": [
       "Codex hooks",
     ],
@@ -644,15 +506,168 @@ exports[`health i18n golden (GH #6 Phase-2 contract) > darwin: full prose + emit
       "suggestion": "healthChecks.text.fixDescriptions.addHookCommand",
       "title": "healthChecks.text.titles.codexHookMissingCommand",
     },
-    "id": "codex:structure:user-hook-notification-missing-command",
     "message": "Notification contains a command hook without a command.",
     "params": {
       "event": "Notification",
     },
+    "severity": "error",
     "suggestion": "Add a command value or remove the hook entry.",
     "title": "Codex hook is missing command",
   },
   {
+    "agentId": "claude-code",
+    "category": "structure",
+    "evidence": [
+      "Claude Code hooks",
+    ],
+    "fix": {
+      "description": "Use a documented hook type, such as command, http, mcp_tool, prompt, or agent.",
+      "label": "Suggested fix",
+    },
+    "i18nKeys": {
+      "fixDescription": "healthChecks.text.suggestions.useDocumentedHookType",
+      "fixLabel": "healthChecks.text.fixLabels.suggestedFix",
+      "message": "healthChecks.text.messages.claudeHookUnknownType",
+      "suggestion": "healthChecks.text.suggestions.useDocumentedHookType",
+      "title": "healthChecks.text.titles.claudeHookUnknownType",
+    },
+    "message": "PreToolUse uses hook type "frobnicate".",
+    "params": {
+      "event": "PreToolUse",
+      "type": "frobnicate",
+    },
+    "severity": "warning",
+    "suggestion": "Use a documented hook type, such as command, http, mcp_tool, prompt, or agent.",
+    "title": "Claude hook type is not documented",
+  },
+  {
+    "agentId": "claude-code",
+    "category": "structure",
+    "evidence": [
+      "Claude Code subagents",
+    ],
+    "fix": {
+      "description": "Claude Code subagents require Markdown files with name and description frontmatter.",
+      "label": "Suggested fix",
+    },
+    "i18nKeys": {
+      "fixDescription": "healthChecks.text.suggestions.claudeSubagentIncomplete",
+      "fixLabel": "healthChecks.text.fixLabels.suggestedFix",
+      "message": "healthChecks.text.messages.claudeSubagentIncomplete",
+      "suggestion": "healthChecks.text.suggestions.claudeSubagentIncomplete",
+      "title": "healthChecks.text.titles.claudeSubagentIncomplete",
+    },
+    "message": "broken is missing name or description frontmatter.",
+    "params": {
+      "name": "broken",
+    },
+    "severity": "warning",
+    "suggestion": "Claude Code subagents require Markdown files with name and description frontmatter.",
+    "title": "Claude subagent metadata is incomplete",
+  },
+  {
+    "agentId": "claude-code",
+    "category": "structure",
+    "evidence": [
+      "Claude Code MCP",
+    ],
+    "fix": {
+      "description": "Add the transport field required by the agent configuration.",
+      "label": "Suggested fix",
+    },
+    "i18nKeys": {
+      "fixDescription": "healthChecks.text.suggestions.mcpServerNoTransport",
+      "fixLabel": "healthChecks.text.fixLabels.suggestedFix",
+      "message": "healthChecks.text.messages.mcpServerNoTransport",
+      "suggestion": "healthChecks.text.suggestions.mcpServerNoTransport",
+      "title": "healthChecks.text.titles.mcpServerNoTransport",
+    },
+    "message": "empty has no command, url, type, or transport field.",
+    "params": {
+      "name": "empty",
+    },
+    "severity": "warning",
+    "suggestion": "Add the transport field required by the agent configuration.",
+    "title": "MCP server has no transport",
+  },
+  {
+    "agentId": "claude-code",
+    "category": "structure",
+    "evidence": [
+      "Claude Code MCP",
+    ],
+    "fix": {
+      "description": "Add the transport field required by the agent configuration.",
+      "label": "Suggested fix",
+    },
+    "i18nKeys": {
+      "fixDescription": "healthChecks.text.suggestions.mcpServerNoTransport",
+      "fixLabel": "healthChecks.text.fixLabels.suggestedFix",
+      "message": "healthChecks.text.messages.mcpServerNoTransport",
+      "suggestion": "healthChecks.text.suggestions.mcpServerNoTransport",
+      "title": "healthChecks.text.titles.mcpServerNoTransport",
+    },
+    "message": "noTransport has no command, url, type, or transport field.",
+    "params": {
+      "name": "noTransport",
+    },
+    "severity": "warning",
+    "suggestion": "Add the transport field required by the agent configuration.",
+    "title": "MCP server has no transport",
+  },
+  {
+    "agentId": "claude-code",
+    "category": "structure",
+    "evidence": [
+      "Claude Code skills",
+    ],
+    "fix": {
+      "description": "Add SKILL.md or move non-skill files outside the skills directory.",
+      "label": "Suggested fix",
+    },
+    "i18nKeys": {
+      "fixDescription": "healthChecks.text.fixDescriptions.addSkillEntryPoint",
+      "fixLabel": "healthChecks.text.fixLabels.suggestedFix",
+      "message": "healthChecks.text.messages.skillMissingEntryPoint",
+      "suggestion": "healthChecks.text.fixDescriptions.addSkillEntryPoint",
+      "title": "healthChecks.text.titles.skillMissingEntryPoint",
+    },
+    "message": "broken-skill has no SKILL.md entrypoint.",
+    "params": {
+      "name": "broken-skill",
+    },
+    "severity": "warning",
+    "suggestion": "Add SKILL.md or move non-skill files outside the skills directory.",
+    "title": "Skill is missing SKILL.md",
+  },
+  {
+    "agentId": "codex",
+    "category": "structure",
+    "evidence": [
+      "Codex custom agents",
+    ],
+    "fix": {
+      "description": "Codex custom agents require name, description, and developer_instructions.",
+      "label": "Suggested fix",
+    },
+    "i18nKeys": {
+      "fixDescription": "healthChecks.text.suggestions.codexAgentIncomplete",
+      "fixLabel": "healthChecks.text.fixLabels.suggestedFix",
+      "message": "healthChecks.text.messages.codexAgentIncomplete",
+      "suggestion": "healthChecks.text.suggestions.codexAgentIncomplete",
+      "title": "healthChecks.text.titles.codexAgentIncomplete",
+    },
+    "message": "broken is missing name, description, or developer_instructions.",
+    "params": {
+      "name": "broken",
+    },
+    "severity": "warning",
+    "suggestion": "Codex custom agents require name, description, and developer_instructions.",
+    "title": "Codex custom agent metadata is incomplete",
+  },
+  {
+    "agentId": "codex",
+    "category": "structure",
     "evidence": [
       "Codex skills",
     ],
@@ -667,15 +682,62 @@ exports[`health i18n golden (GH #6 Phase-2 contract) > darwin: full prose + emit
       "suggestion": "healthChecks.text.fixDescriptions.addSkillEntryPoint",
       "title": "healthChecks.text.titles.skillMissingEntryPoint",
     },
-    "id": "codex:structure:user-skill-codex-broken-skill-missing-entrypoint",
     "message": "codex-broken-skill has no SKILL.md entrypoint.",
     "params": {
       "name": "codex-broken-skill",
     },
+    "severity": "warning",
     "suggestion": "Add SKILL.md or move non-skill files outside the skills directory.",
     "title": "Skill is missing SKILL.md",
   },
   {
+    "agentId": "claude-code",
+    "category": "syntax",
+    "evidence": [
+      "Claude Code hooks",
+    ],
+    "fix": {
+      "description": "Fix the JSON syntax in .claude/settings.json.",
+      "label": "Suggested fix",
+    },
+    "i18nKeys": {
+      "fixDescription": "healthChecks.text.suggestions.fixClaudeProjectSettings",
+      "fixLabel": "healthChecks.text.fixLabels.suggestedFix",
+      "message": undefined,
+      "suggestion": "healthChecks.text.suggestions.fixClaudeProjectSettings",
+      "title": "healthChecks.text.titles.invalidClaudeProjectSettings",
+    },
+    "message": "<unkeyed>",
+    "params": undefined,
+    "severity": "error",
+    "suggestion": "Fix the JSON syntax in .claude/settings.json.",
+    "title": "Invalid project settings.json",
+  },
+  {
+    "agentId": "claude-code",
+    "category": "syntax",
+    "evidence": [
+      "Claude Code hooks",
+    ],
+    "fix": {
+      "description": "Fix the file syntax, then refresh Berth.",
+      "label": "Suggested fix",
+    },
+    "i18nKeys": {
+      "fixDescription": "healthChecks.text.suggestions.scannerParserError",
+      "fixLabel": "healthChecks.text.fixLabels.suggestedFix",
+      "suggestion": "healthChecks.text.suggestions.scannerParserError",
+      "title": "healthChecks.text.titles.scannerParserError",
+    },
+    "message": "<unkeyed>",
+    "params": undefined,
+    "severity": "error",
+    "suggestion": "Fix the file syntax, then refresh Berth.",
+    "title": "Scanner parser error",
+  },
+  {
+    "agentId": "codex",
+    "category": "syntax",
     "evidence": [
       "Codex config reference",
     ],
@@ -690,18 +752,15 @@ exports[`health i18n golden (GH #6 Phase-2 contract) > darwin: full prose + emit
       "suggestion": "healthChecks.text.fixDescriptions.fixCodexToml",
       "title": "healthChecks.text.titles.invalidCodexConfig",
     },
-    "id": "codex:syntax:project-config-invalid",
-    "message": "Invalid TOML document: incomplete key-value: cannot find end of key
-
-1:  [mcp_servers.bad
-     ^
-2:  command = "bad"
-",
+    "message": "<unkeyed>",
     "params": undefined,
+    "severity": "error",
     "suggestion": "Fix the TOML syntax in Codex config.toml.",
     "title": "Invalid Codex config.toml",
   },
   {
+    "agentId": "codex",
+    "category": "syntax",
     "evidence": [
       "Codex custom agents",
     ],
@@ -715,9 +774,9 @@ exports[`health i18n golden (GH #6 Phase-2 contract) > darwin: full prose + emit
       "suggestion": "healthChecks.text.suggestions.scannerParserError",
       "title": "healthChecks.text.titles.scannerParserError",
     },
-    "id": "codex:syntax:scan-error-f9b3ba",
-    "message": "Unexpected token at line 3.",
+    "message": "<unkeyed>",
     "params": undefined,
+    "severity": "error",
     "suggestion": "Fix the file syntax, then refresh Berth.",
     "title": "Scanner parser error",
   },
@@ -727,27 +786,8 @@ exports[`health i18n golden (GH #6 Phase-2 contract) > darwin: full prose + emit
 exports[`health i18n golden (GH #6 Phase-2 contract) > win32: full prose + emitted i18n keys/params 1`] = `
 [
   {
-    "evidence": [
-      "Claude Code settings",
-    ],
-    "fix": {
-      "description": "Use this only for trusted local workflows.",
-      "label": "Suggested fix",
-    },
-    "i18nKeys": {
-      "fixDescription": "healthChecks.text.suggestions.claudeBypassPermissions",
-      "fixLabel": "healthChecks.text.fixLabels.suggestedFix",
-      "message": "healthChecks.text.messages.claudeBypassPermissions",
-      "suggestion": "healthChecks.text.suggestions.claudeBypassPermissions",
-      "title": "healthChecks.text.titles.claudeBypassPermissions",
-    },
-    "id": "claude-code:configuration:project-permission-bypass",
-    "message": "permissionMode is set to bypassPermissions.",
-    "params": undefined,
-    "suggestion": "Use this only for trusted local workflows.",
-    "title": "Claude Code bypass permissions enabled",
-  },
-  {
+    "agentId": "claude-code",
+    "category": "configuration",
     "evidence": [
       "Claude Code hooks",
     ],
@@ -762,55 +802,15 @@ exports[`health i18n golden (GH #6 Phase-2 contract) > win32: full prose + emitt
       "suggestion": "healthChecks.text.suggestions.claudeHookShellIgnored",
       "title": "healthChecks.text.titles.claudeHookShellIgnored",
     },
-    "id": "claude-code:configuration:user-hook-shell-ignored-with-args",
     "message": "A command hook defines args and shell; Claude Code ignores shell in this shape.",
     "params": undefined,
+    "severity": "info",
     "suggestion": "Remove shell or move the full command into command when shell selection matters.",
     "title": "Claude hook shell is ignored when args are set",
   },
   {
-    "evidence": [
-      "Claude Code hooks",
-    ],
-    "fix": {
-      "description": "Set "shell": "powershell" when the hook command is written for PowerShell.",
-      "label": "Suggested fix",
-    },
-    "i18nKeys": {
-      "fixDescription": "healthChecks.text.suggestions.claudeHookNoWindowsShell",
-      "fixLabel": "healthChecks.text.fixLabels.suggestedFix",
-      "message": "healthChecks.text.messages.claudeHookNoWindowsShell",
-      "suggestion": "healthChecks.text.suggestions.claudeHookNoWindowsShell",
-      "title": "healthChecks.text.titles.claudeHookNoWindowsShell",
-    },
-    "id": "claude-code:configuration:user-hook-windows-shell",
-    "message": "A command hook is configured without shell: powershell on Windows.",
-    "params": undefined,
-    "suggestion": "Set "shell": "powershell" when the hook command is written for PowerShell.",
-    "title": "Claude hook has no Windows shell hint",
-  },
-  {
-    "evidence": [
-      "Claude Code settings",
-    ],
-    "fix": {
-      "description": "Prefer narrower command allow rules.",
-      "label": "Suggested fix",
-    },
-    "i18nKeys": {
-      "fixDescription": "healthChecks.text.suggestions.claudeBroadBashPermission",
-      "fixLabel": "healthChecks.text.fixLabels.suggestedFix",
-      "message": "healthChecks.text.messages.claudeBroadBashPermission",
-      "suggestion": "healthChecks.text.suggestions.claudeBroadBashPermission",
-      "title": "healthChecks.text.titles.claudeBroadBashPermission",
-    },
-    "id": "claude-code:configuration:user-permission-broad-bash",
-    "message": "permissions.allow contains Bash(*).",
-    "params": undefined,
-    "suggestion": "Prefer narrower command allow rules.",
-    "title": "Broad Bash permission rule",
-  },
-  {
+    "agentId": "claude-code",
+    "category": "configuration",
     "evidence": [
       "Claude Code settings",
     ],
@@ -825,380 +825,17 @@ exports[`health i18n golden (GH #6 Phase-2 contract) > win32: full prose + emitt
       "suggestion": "healthChecks.text.suggestions.addClaudeSettingsSchema",
       "title": "healthChecks.text.titles.claudeSettingsSchemaMissing",
     },
-    "id": "claude-code:configuration:user-settings-schema-missing",
     "message": "settings.json does not declare the Claude Code settings JSON schema.",
     "params": {
       "name": "settings.json",
     },
+    "severity": "info",
     "suggestion": "Add $schema if you want editor validation for Claude Code settings.",
     "title": "Claude settings schema is not declared",
   },
   {
-    "evidence": [
-      "Claude Code memory",
-    ],
-    "fix": {
-      "description": "Add a Claude memory import for the shared project instructions.",
-      "label": "Import AGENTS.md",
-    },
-    "i18nKeys": {
-      "fixDescription": "healthChecks.text.fixDescriptions.importAgentsMd",
-      "fixLabel": "healthChecks.text.fixLabels.importAgentsMd",
-      "message": "healthChecks.text.messages.claudeProjectAgentsNotImported",
-      "suggestion": "healthChecks.text.suggestions.claudeProjectAgentsNotImported",
-      "title": "healthChecks.text.titles.claudeProjectAgentsNotImported",
-    },
-    "id": "claude-code:reference:project-agents-md-not-imported",
-    "message": "This project has AGENTS.md, but Claude Code reads CLAUDE.md and only imports files referenced from it.",
-    "params": undefined,
-    "suggestion": "Add @AGENTS.md to project CLAUDE.md if those shared instructions should apply to Claude Code.",
-    "title": "Project CLAUDE.md does not import AGENTS.md",
-  },
-  {
-    "evidence": [
-      "Claude Code memory",
-    ],
-    "fix": {
-      "description": "Create the imported file or remove the @path reference.",
-      "label": "Suggested fix",
-    },
-    "i18nKeys": {
-      "fixDescription": "healthChecks.text.suggestions.instructionImportMissing",
-      "fixLabel": "healthChecks.text.fixLabels.suggestedFix",
-      "message": "healthChecks.text.messages.instructionImportMissing",
-      "suggestion": "healthChecks.text.suggestions.instructionImportMissing",
-      "title": "healthChecks.text.titles.instructionImportMissing",
-    },
-    "id": "claude-code:reference:user-agents-md-missing-import-19txyg7",
-    "message": "missing-agents.md referenced by AGENTS.md does not exist.",
-    "params": {
-      "file": "AGENTS.md",
-      "importPath": "missing-agents.md",
-    },
-    "suggestion": "Create the imported file or remove the @path reference.",
-    "title": "Instruction import is missing",
-  },
-  {
-    "evidence": [
-      "Claude Code sessions",
-    ],
-    "fix": {
-      "description": "This is usually harmless. Remove stale directories if they are no longer useful.",
-      "label": "Suggested fix",
-    },
-    "i18nKeys": {
-      "fixDescription": "healthChecks.text.suggestions.claudeEmptyProjectDirs",
-      "fixLabel": "healthChecks.text.fixLabels.suggestedFix",
-      "message": "healthChecks.text.messages.claudeEmptyProjectDirs",
-      "suggestion": "healthChecks.text.suggestions.claudeEmptyProjectDirs",
-      "title": "healthChecks.text.titles.claudeEmptyProjectDirs",
-    },
-    "id": "claude-code:session:empty-project-dirs",
-    "message": "1 empty project directories found in ~/.claude/projects/.",
-    "params": {
-      "count": 1,
-    },
-    "suggestion": "This is usually harmless. Remove stale directories if they are no longer useful.",
-    "title": "Empty Claude project directories",
-  },
-  {
-    "evidence": [
-      "Claude Code settings",
-    ],
-    "fix": {
-      "description": "Create ~/.claude/CLAUDE.md if you want shared Claude Code instructions.",
-      "label": "Suggested fix",
-    },
-    "i18nKeys": {
-      "fixDescription": "healthChecks.text.fixDescriptions.createUserClaudeMd",
-      "fixLabel": "healthChecks.text.fixLabels.suggestedFix",
-      "message": "healthChecks.text.messages.noUserClaudeMd",
-      "suggestion": "healthChecks.text.fixDescriptions.createUserClaudeMd",
-      "title": "healthChecks.text.titles.userClaudeMdNotFound",
-    },
-    "id": "claude-code:source:user-claude-md-missing",
-    "message": "No user-level CLAUDE.md found.",
-    "params": undefined,
-    "suggestion": "Create ~/.claude/CLAUDE.md if you want shared Claude Code instructions.",
-    "title": "User CLAUDE.md not found",
-  },
-  {
-    "evidence": [
-      "Claude Code MCP",
-    ],
-    "fix": {
-      "description": "Add the transport field required by the agent configuration.",
-      "label": "Suggested fix",
-    },
-    "i18nKeys": {
-      "fixDescription": "healthChecks.text.suggestions.mcpServerNoTransport",
-      "fixLabel": "healthChecks.text.fixLabels.suggestedFix",
-      "message": "healthChecks.text.messages.mcpServerNoTransport",
-      "suggestion": "healthChecks.text.suggestions.mcpServerNoTransport",
-      "title": "healthChecks.text.titles.mcpServerNoTransport",
-    },
-    "id": "claude-code:structure:project-mcp-empty-missing-transport",
-    "message": "empty has no command, url, type, or transport field.",
-    "params": {
-      "name": "empty",
-    },
-    "suggestion": "Add the transport field required by the agent configuration.",
-    "title": "MCP server has no transport",
-  },
-  {
-    "evidence": [
-      "Claude Code subagents",
-    ],
-    "fix": {
-      "description": "Claude Code subagents require Markdown files with name and description frontmatter.",
-      "label": "Suggested fix",
-    },
-    "i18nKeys": {
-      "fixDescription": "healthChecks.text.suggestions.claudeSubagentIncomplete",
-      "fixLabel": "healthChecks.text.fixLabels.suggestedFix",
-      "message": "healthChecks.text.messages.claudeSubagentIncomplete",
-      "suggestion": "healthChecks.text.suggestions.claudeSubagentIncomplete",
-      "title": "healthChecks.text.titles.claudeSubagentIncomplete",
-    },
-    "id": "claude-code:structure:user-agent-broken",
-    "message": "broken is missing name or description frontmatter.",
-    "params": {
-      "name": "broken",
-    },
-    "suggestion": "Claude Code subagents require Markdown files with name and description frontmatter.",
-    "title": "Claude subagent metadata is incomplete",
-  },
-  {
-    "evidence": [
-      "Claude Code hooks",
-    ],
-    "fix": {
-      "description": "Add a prompt value or remove the hook entry.",
-      "label": "Suggested fix",
-    },
-    "i18nKeys": {
-      "fixDescription": "healthChecks.text.suggestions.addHookPrompt",
-      "fixLabel": "healthChecks.text.fixLabels.suggestedFix",
-      "message": "healthChecks.text.messages.claudeHookMissingPrompt",
-      "suggestion": "healthChecks.text.suggestions.addHookPrompt",
-      "title": "healthChecks.text.titles.claudeHookMissingPrompt",
-    },
-    "id": "claude-code:structure:user-hook-pretooluse-agent-missing-prompt",
-    "message": "PreToolUse contains a agent hook without a prompt.",
-    "params": {
-      "event": "PreToolUse",
-      "type": "agent",
-    },
-    "suggestion": "Add a prompt value or remove the hook entry.",
-    "title": "Claude prompt hook is missing prompt",
-  },
-  {
-    "evidence": [
-      "Claude Code hooks",
-    ],
-    "fix": {
-      "description": "Add a url value or remove the hook entry.",
-      "label": "Suggested fix",
-    },
-    "i18nKeys": {
-      "fixDescription": "healthChecks.text.suggestions.addHookUrl",
-      "fixLabel": "healthChecks.text.fixLabels.suggestedFix",
-      "message": "healthChecks.text.messages.claudeHookMissingUrl",
-      "suggestion": "healthChecks.text.suggestions.addHookUrl",
-      "title": "healthChecks.text.titles.claudeHookMissingUrl",
-    },
-    "id": "claude-code:structure:user-hook-pretooluse-http-missing-url",
-    "message": "PreToolUse contains an http hook without a url.",
-    "params": {
-      "event": "PreToolUse",
-    },
-    "suggestion": "Add a url value or remove the hook entry.",
-    "title": "Claude HTTP hook is missing url",
-  },
-  {
-    "evidence": [
-      "Claude Code hooks",
-    ],
-    "fix": {
-      "description": "Add both server and tool values, or remove the hook entry.",
-      "label": "Suggested fix",
-    },
-    "i18nKeys": {
-      "fixDescription": "healthChecks.text.suggestions.addMcpToolFields",
-      "fixLabel": "healthChecks.text.fixLabels.suggestedFix",
-      "message": "healthChecks.text.messages.claudeHookMcpToolIncomplete",
-      "suggestion": "healthChecks.text.suggestions.addMcpToolFields",
-      "title": "healthChecks.text.titles.claudeHookMcpToolIncomplete",
-    },
-    "id": "claude-code:structure:user-hook-pretooluse-mcp-tool-missing-tool",
-    "message": "PreToolUse contains an mcp_tool hook without tool.",
-    "params": {
-      "event": "PreToolUse",
-      "field": "tool",
-    },
-    "suggestion": "Add both server and tool values, or remove the hook entry.",
-    "title": "Claude MCP tool hook is incomplete",
-  },
-  {
-    "evidence": [
-      "Claude Code hooks",
-    ],
-    "fix": {
-      "description": "Add a command value or remove the hook entry.",
-      "label": "Suggested fix",
-    },
-    "i18nKeys": {
-      "fixDescription": "healthChecks.text.fixDescriptions.addHookCommand",
-      "fixLabel": "healthChecks.text.fixLabels.suggestedFix",
-      "message": "healthChecks.text.messages.claudeHookMissingCommand",
-      "suggestion": "healthChecks.text.fixDescriptions.addHookCommand",
-      "title": "healthChecks.text.titles.claudeHookMissingCommand",
-    },
-    "id": "claude-code:structure:user-hook-pretooluse-missing-command",
-    "message": "PreToolUse contains a command hook without a command.",
-    "params": {
-      "event": "PreToolUse",
-    },
-    "suggestion": "Add a command value or remove the hook entry.",
-    "title": "Claude Code hook is missing command",
-  },
-  {
-    "evidence": [
-      "Claude Code hooks",
-    ],
-    "fix": {
-      "description": "Add a prompt value or remove the hook entry.",
-      "label": "Suggested fix",
-    },
-    "i18nKeys": {
-      "fixDescription": "healthChecks.text.suggestions.addHookPrompt",
-      "fixLabel": "healthChecks.text.fixLabels.suggestedFix",
-      "message": "healthChecks.text.messages.claudeHookMissingPrompt",
-      "suggestion": "healthChecks.text.suggestions.addHookPrompt",
-      "title": "healthChecks.text.titles.claudeHookMissingPrompt",
-    },
-    "id": "claude-code:structure:user-hook-pretooluse-prompt-missing-prompt",
-    "message": "PreToolUse contains a prompt hook without a prompt.",
-    "params": {
-      "event": "PreToolUse",
-      "type": "prompt",
-    },
-    "suggestion": "Add a prompt value or remove the hook entry.",
-    "title": "Claude prompt hook is missing prompt",
-  },
-  {
-    "evidence": [
-      "Claude Code hooks",
-    ],
-    "fix": {
-      "description": "Use a documented hook type, such as command, http, mcp_tool, prompt, or agent.",
-      "label": "Suggested fix",
-    },
-    "i18nKeys": {
-      "fixDescription": "healthChecks.text.suggestions.useDocumentedHookType",
-      "fixLabel": "healthChecks.text.fixLabels.suggestedFix",
-      "message": "healthChecks.text.messages.claudeHookUnknownType",
-      "suggestion": "healthChecks.text.suggestions.useDocumentedHookType",
-      "title": "healthChecks.text.titles.claudeHookUnknownType",
-    },
-    "id": "claude-code:structure:user-hook-pretooluse-unknown-type-frobnicate",
-    "message": "PreToolUse uses hook type "frobnicate".",
-    "params": {
-      "event": "PreToolUse",
-      "type": "frobnicate",
-    },
-    "suggestion": "Use a documented hook type, such as command, http, mcp_tool, prompt, or agent.",
-    "title": "Claude hook type is not documented",
-  },
-  {
-    "evidence": [
-      "Claude Code MCP",
-    ],
-    "fix": {
-      "description": "Add the transport field required by the agent configuration.",
-      "label": "Suggested fix",
-    },
-    "i18nKeys": {
-      "fixDescription": "healthChecks.text.suggestions.mcpServerNoTransport",
-      "fixLabel": "healthChecks.text.fixLabels.suggestedFix",
-      "message": "healthChecks.text.messages.mcpServerNoTransport",
-      "suggestion": "healthChecks.text.suggestions.mcpServerNoTransport",
-      "title": "healthChecks.text.titles.mcpServerNoTransport",
-    },
-    "id": "claude-code:structure:user-mcp-notransport-missing-transport",
-    "message": "noTransport has no command, url, type, or transport field.",
-    "params": {
-      "name": "noTransport",
-    },
-    "suggestion": "Add the transport field required by the agent configuration.",
-    "title": "MCP server has no transport",
-  },
-  {
-    "evidence": [
-      "Claude Code skills",
-    ],
-    "fix": {
-      "description": "Add SKILL.md or move non-skill files outside the skills directory.",
-      "label": "Suggested fix",
-    },
-    "i18nKeys": {
-      "fixDescription": "healthChecks.text.fixDescriptions.addSkillEntryPoint",
-      "fixLabel": "healthChecks.text.fixLabels.suggestedFix",
-      "message": "healthChecks.text.messages.skillMissingEntryPoint",
-      "suggestion": "healthChecks.text.fixDescriptions.addSkillEntryPoint",
-      "title": "healthChecks.text.titles.skillMissingEntryPoint",
-    },
-    "id": "claude-code:structure:user-skill-broken-skill-missing-entrypoint",
-    "message": "broken-skill has no SKILL.md entrypoint.",
-    "params": {
-      "name": "broken-skill",
-    },
-    "suggestion": "Add SKILL.md or move non-skill files outside the skills directory.",
-    "title": "Skill is missing SKILL.md",
-  },
-  {
-    "evidence": [
-      "Claude Code hooks",
-    ],
-    "fix": {
-      "description": "Fix the JSON syntax in .claude/settings.json.",
-      "label": "Suggested fix",
-    },
-    "i18nKeys": {
-      "fixDescription": "healthChecks.text.suggestions.fixClaudeProjectSettings",
-      "fixLabel": "healthChecks.text.fixLabels.suggestedFix",
-      "message": undefined,
-      "suggestion": "healthChecks.text.suggestions.fixClaudeProjectSettings",
-      "title": "healthChecks.text.titles.invalidClaudeProjectSettings",
-    },
-    "id": "claude-code:syntax:project-settings-invalid",
-    "message": "Expected property name or '}' in JSON at position 2 (line 1 column 3)",
-    "params": undefined,
-    "suggestion": "Fix the JSON syntax in .claude/settings.json.",
-    "title": "Invalid project settings.json",
-  },
-  {
-    "evidence": [
-      "Codex config reference",
-    ],
-    "fix": {
-      "description": "Add the official Codex TOML schema comment near the top of config.toml.",
-      "label": "Add Codex config schema",
-    },
-    "i18nKeys": {
-      "fixDescription": "healthChecks.text.fixDescriptions.addCodexConfigSchema",
-      "fixLabel": "healthChecks.text.fixLabels.addCodexConfigSchema",
-      "message": "healthChecks.text.messages.codexConfigSchemaMissing",
-      "suggestion": "healthChecks.text.suggestions.codexConfigSchemaMissing",
-      "title": "healthChecks.text.titles.codexConfigSchemaMissing",
-    },
-    "id": "codex:configuration:user-config-schema-comment-missing",
-    "message": "config.toml does not include the official Codex TOML schema comment.",
-    "params": undefined,
-    "suggestion": "Add the Codex schema comment if you want editor validation for config.toml.",
-    "title": "Codex config schema comment is not declared",
-  },
-  {
+    "agentId": "codex",
+    "category": "configuration",
     "evidence": [
       "Codex hooks",
     ],
@@ -1213,13 +850,38 @@ exports[`health i18n golden (GH #6 Phase-2 contract) > win32: full prose + emitt
       "suggestion": "healthChecks.text.suggestions.codexAsyncHookSkipped",
       "title": "healthChecks.text.titles.codexAsyncHookSkipped",
     },
-    "id": "codex:configuration:user-hook-stop-async-skipped",
     "message": "Codex parses async hook handlers, but async command hooks are not supported yet.",
     "params": undefined,
+    "severity": "info",
     "suggestion": "Remove async when this hook should run today.",
     "title": "Codex async hook is skipped",
   },
   {
+    "agentId": "codex",
+    "category": "configuration",
+    "evidence": [
+      "Codex config reference",
+    ],
+    "fix": {
+      "description": "Add the official Codex TOML schema comment near the top of config.toml.",
+      "label": "Add Codex config schema",
+    },
+    "i18nKeys": {
+      "fixDescription": "healthChecks.text.fixDescriptions.addCodexConfigSchema",
+      "fixLabel": "healthChecks.text.fixLabels.addCodexConfigSchema",
+      "message": "healthChecks.text.messages.codexConfigSchemaMissing",
+      "suggestion": "healthChecks.text.suggestions.codexConfigSchemaMissing",
+      "title": "healthChecks.text.titles.codexConfigSchemaMissing",
+    },
+    "message": "config.toml does not include the official Codex TOML schema comment.",
+    "params": undefined,
+    "severity": "info",
+    "suggestion": "Add the Codex schema comment if you want editor validation for config.toml.",
+    "title": "Codex config schema comment is not declared",
+  },
+  {
+    "agentId": "codex",
+    "category": "configuration",
     "evidence": [
       "Codex hooks",
     ],
@@ -1234,15 +896,86 @@ exports[`health i18n golden (GH #6 Phase-2 contract) > win32: full prose + emitt
       "suggestion": "healthChecks.text.suggestions.codexHookSkippedType",
       "title": "healthChecks.text.titles.codexHookSkippedType",
     },
-    "id": "codex:configuration:user-hook-stop-skipped-type-prompt",
     "message": "Codex currently parses prompt hooks but only command hooks run.",
     "params": {
       "type": "prompt",
     },
+    "severity": "info",
     "suggestion": "Use type = "command" when this hook should run today.",
     "title": "Codex hook type is parsed but skipped",
   },
   {
+    "agentId": "claude-code",
+    "category": "configuration",
+    "evidence": [
+      "Claude Code settings",
+    ],
+    "fix": {
+      "description": "Prefer narrower command allow rules.",
+      "label": "Suggested fix",
+    },
+    "i18nKeys": {
+      "fixDescription": "healthChecks.text.suggestions.claudeBroadBashPermission",
+      "fixLabel": "healthChecks.text.fixLabels.suggestedFix",
+      "message": "healthChecks.text.messages.claudeBroadBashPermission",
+      "suggestion": "healthChecks.text.suggestions.claudeBroadBashPermission",
+      "title": "healthChecks.text.titles.claudeBroadBashPermission",
+    },
+    "message": "permissions.allow contains Bash(*).",
+    "params": undefined,
+    "severity": "warning",
+    "suggestion": "Prefer narrower command allow rules.",
+    "title": "Broad Bash permission rule",
+  },
+  {
+    "agentId": "claude-code",
+    "category": "configuration",
+    "evidence": [
+      "Claude Code settings",
+    ],
+    "fix": {
+      "description": "Use this only for trusted local workflows.",
+      "label": "Suggested fix",
+    },
+    "i18nKeys": {
+      "fixDescription": "healthChecks.text.suggestions.claudeBypassPermissions",
+      "fixLabel": "healthChecks.text.fixLabels.suggestedFix",
+      "message": "healthChecks.text.messages.claudeBypassPermissions",
+      "suggestion": "healthChecks.text.suggestions.claudeBypassPermissions",
+      "title": "healthChecks.text.titles.claudeBypassPermissions",
+    },
+    "message": "permissionMode is set to bypassPermissions.",
+    "params": undefined,
+    "severity": "warning",
+    "suggestion": "Use this only for trusted local workflows.",
+    "title": "Claude Code bypass permissions enabled",
+  },
+  {
+    "agentId": "claude-code",
+    "category": "configuration",
+    "evidence": [
+      "Claude Code hooks",
+    ],
+    "fix": {
+      "description": "Set "shell": "powershell" when the hook command is written for PowerShell.",
+      "label": "Suggested fix",
+    },
+    "i18nKeys": {
+      "fixDescription": "healthChecks.text.suggestions.claudeHookNoWindowsShell",
+      "fixLabel": "healthChecks.text.fixLabels.suggestedFix",
+      "message": "healthChecks.text.messages.claudeHookNoWindowsShell",
+      "suggestion": "healthChecks.text.suggestions.claudeHookNoWindowsShell",
+      "title": "healthChecks.text.titles.claudeHookNoWindowsShell",
+    },
+    "message": "A command hook is configured without shell: powershell on Windows.",
+    "params": undefined,
+    "severity": "warning",
+    "suggestion": "Set "shell": "powershell" when the hook command is written for PowerShell.",
+    "title": "Claude hook has no Windows shell hint",
+  },
+  {
+    "agentId": "codex",
+    "category": "configuration",
     "evidence": [
       "Codex hooks",
     ],
@@ -1257,13 +990,15 @@ exports[`health i18n golden (GH #6 Phase-2 contract) > win32: full prose + emitt
       "suggestion": "healthChecks.text.fixDescriptions.addCodexWindowsCommand",
       "title": "healthChecks.text.titles.codexHookNoWindowsCommand",
     },
-    "id": "codex:configuration:user-hook-windows-command",
     "message": "A command hook is configured without commandWindows on Windows.",
     "params": undefined,
+    "severity": "warning",
     "suggestion": "Add commandWindows or command_windows when the command differs on Windows.",
     "title": "Codex hook has no Windows command override",
   },
   {
+    "agentId": "codex",
+    "category": "configuration",
     "evidence": [
       "Codex hooks",
     ],
@@ -1278,13 +1013,64 @@ exports[`health i18n golden (GH #6 Phase-2 contract) > win32: full prose + emitt
       "suggestion": "healthChecks.text.suggestions.codexHooksDuplicated",
       "title": "healthChecks.text.titles.codexHooksDuplicated",
     },
-    "id": "codex:configuration:user-hooks-duplicated",
     "message": "Codex has hooks in config.toml and hooks.json at the same scope.",
     "params": undefined,
+    "severity": "warning",
     "suggestion": "Keep both only if you expect Codex to merge and warn about this layer.",
     "title": "Codex hooks defined twice",
   },
   {
+    "agentId": "claude-code",
+    "category": "reference",
+    "evidence": [
+      "Claude Code memory",
+    ],
+    "fix": {
+      "description": "Add a Claude memory import for the shared project instructions.",
+      "label": "Import AGENTS.md",
+    },
+    "i18nKeys": {
+      "fixDescription": "healthChecks.text.fixDescriptions.importAgentsMd",
+      "fixLabel": "healthChecks.text.fixLabels.importAgentsMd",
+      "message": "healthChecks.text.messages.claudeProjectAgentsNotImported",
+      "suggestion": "healthChecks.text.suggestions.claudeProjectAgentsNotImported",
+      "title": "healthChecks.text.titles.claudeProjectAgentsNotImported",
+    },
+    "message": "This project has AGENTS.md, but Claude Code reads CLAUDE.md and only imports files referenced from it.",
+    "params": undefined,
+    "severity": "info",
+    "suggestion": "Add @AGENTS.md to project CLAUDE.md if those shared instructions should apply to Claude Code.",
+    "title": "Project CLAUDE.md does not import AGENTS.md",
+  },
+  {
+    "agentId": "claude-code",
+    "category": "reference",
+    "evidence": [
+      "Claude Code memory",
+    ],
+    "fix": {
+      "description": "Create the imported file or remove the @path reference.",
+      "label": "Suggested fix",
+    },
+    "i18nKeys": {
+      "fixDescription": "healthChecks.text.suggestions.instructionImportMissing",
+      "fixLabel": "healthChecks.text.fixLabels.suggestedFix",
+      "message": "healthChecks.text.messages.instructionImportMissing",
+      "suggestion": "healthChecks.text.suggestions.instructionImportMissing",
+      "title": "healthChecks.text.titles.instructionImportMissing",
+    },
+    "message": "missing-agents.md referenced by AGENTS.md does not exist.",
+    "params": {
+      "file": "AGENTS.md",
+      "importPath": "missing-agents.md",
+    },
+    "severity": "warning",
+    "suggestion": "Create the imported file or remove the @path reference.",
+    "title": "Instruction import is missing",
+  },
+  {
+    "agentId": "codex",
+    "category": "reference",
     "evidence": [
       "Codex AGENTS.md",
     ],
@@ -1299,16 +1085,43 @@ exports[`health i18n golden (GH #6 Phase-2 contract) > win32: full prose + emitt
       "suggestion": "healthChecks.text.suggestions.instructionImportMissing",
       "title": "healthChecks.text.titles.instructionImportMissing",
     },
-    "id": "codex:reference:user-agents-md-missing-import-1iqhmi5",
     "message": "missing-codex.md referenced by AGENTS.md does not exist.",
     "params": {
       "file": "AGENTS.md",
       "importPath": "missing-codex.md",
     },
+    "severity": "warning",
     "suggestion": "Create the imported file or remove the @path reference.",
     "title": "Instruction import is missing",
   },
   {
+    "agentId": "claude-code",
+    "category": "session",
+    "evidence": [
+      "Claude Code sessions",
+    ],
+    "fix": {
+      "description": "This is usually harmless. Remove stale directories if they are no longer useful.",
+      "label": "Suggested fix",
+    },
+    "i18nKeys": {
+      "fixDescription": "healthChecks.text.suggestions.claudeEmptyProjectDirs",
+      "fixLabel": "healthChecks.text.fixLabels.suggestedFix",
+      "message": "healthChecks.text.messages.claudeEmptyProjectDirs",
+      "suggestion": "healthChecks.text.suggestions.claudeEmptyProjectDirs",
+      "title": "healthChecks.text.titles.claudeEmptyProjectDirs",
+    },
+    "message": "1 empty project directories found in ~/.claude/projects/.",
+    "params": {
+      "count": 1,
+    },
+    "severity": "info",
+    "suggestion": "This is usually harmless. Remove stale directories if they are no longer useful.",
+    "title": "Empty Claude project directories",
+  },
+  {
+    "agentId": "codex",
+    "category": "session",
     "evidence": [
       "Codex Windows and WSL homes",
     ],
@@ -1323,36 +1136,166 @@ exports[`health i18n golden (GH #6 Phase-2 contract) > win32: full prose + emitt
       "suggestion": "healthChecks.text.suggestions.codexNoSessionTranscripts",
       "title": "healthChecks.text.titles.codexNoSessionTranscripts",
     },
-    "id": "codex:session:user-sessions-empty",
     "message": "Codex sessions directory exists but contains no rollout transcripts.",
     "params": undefined,
+    "severity": "info",
     "suggestion": "Run Codex once, then refresh Berth.",
     "title": "No Codex session transcripts found",
   },
   {
+    "agentId": "claude-code",
+    "category": "source",
     "evidence": [
-      "Codex custom agents",
+      "Claude Code settings",
     ],
     "fix": {
-      "description": "Codex custom agents require name, description, and developer_instructions.",
+      "description": "Create ~/.claude/CLAUDE.md if you want shared Claude Code instructions.",
       "label": "Suggested fix",
     },
     "i18nKeys": {
-      "fixDescription": "healthChecks.text.suggestions.codexAgentIncomplete",
+      "fixDescription": "healthChecks.text.fixDescriptions.createUserClaudeMd",
       "fixLabel": "healthChecks.text.fixLabels.suggestedFix",
-      "message": "healthChecks.text.messages.codexAgentIncomplete",
-      "suggestion": "healthChecks.text.suggestions.codexAgentIncomplete",
-      "title": "healthChecks.text.titles.codexAgentIncomplete",
+      "message": "healthChecks.text.messages.noUserClaudeMd",
+      "suggestion": "healthChecks.text.fixDescriptions.createUserClaudeMd",
+      "title": "healthChecks.text.titles.userClaudeMdNotFound",
     },
-    "id": "codex:structure:user-agent-broken",
-    "message": "broken is missing name, description, or developer_instructions.",
-    "params": {
-      "name": "broken",
-    },
-    "suggestion": "Codex custom agents require name, description, and developer_instructions.",
-    "title": "Codex custom agent metadata is incomplete",
+    "message": "No user-level CLAUDE.md found.",
+    "params": undefined,
+    "severity": "info",
+    "suggestion": "Create ~/.claude/CLAUDE.md if you want shared Claude Code instructions.",
+    "title": "User CLAUDE.md not found",
   },
   {
+    "agentId": "claude-code",
+    "category": "structure",
+    "evidence": [
+      "Claude Code hooks",
+    ],
+    "fix": {
+      "description": "Add both server and tool values, or remove the hook entry.",
+      "label": "Suggested fix",
+    },
+    "i18nKeys": {
+      "fixDescription": "healthChecks.text.suggestions.addMcpToolFields",
+      "fixLabel": "healthChecks.text.fixLabels.suggestedFix",
+      "message": "healthChecks.text.messages.claudeHookMcpToolIncomplete",
+      "suggestion": "healthChecks.text.suggestions.addMcpToolFields",
+      "title": "healthChecks.text.titles.claudeHookMcpToolIncomplete",
+    },
+    "message": "PreToolUse contains an mcp_tool hook without tool.",
+    "params": {
+      "event": "PreToolUse",
+      "field": "tool",
+    },
+    "severity": "error",
+    "suggestion": "Add both server and tool values, or remove the hook entry.",
+    "title": "Claude MCP tool hook is incomplete",
+  },
+  {
+    "agentId": "claude-code",
+    "category": "structure",
+    "evidence": [
+      "Claude Code hooks",
+    ],
+    "fix": {
+      "description": "Add a command value or remove the hook entry.",
+      "label": "Suggested fix",
+    },
+    "i18nKeys": {
+      "fixDescription": "healthChecks.text.fixDescriptions.addHookCommand",
+      "fixLabel": "healthChecks.text.fixLabels.suggestedFix",
+      "message": "healthChecks.text.messages.claudeHookMissingCommand",
+      "suggestion": "healthChecks.text.fixDescriptions.addHookCommand",
+      "title": "healthChecks.text.titles.claudeHookMissingCommand",
+    },
+    "message": "PreToolUse contains a command hook without a command.",
+    "params": {
+      "event": "PreToolUse",
+    },
+    "severity": "error",
+    "suggestion": "Add a command value or remove the hook entry.",
+    "title": "Claude Code hook is missing command",
+  },
+  {
+    "agentId": "claude-code",
+    "category": "structure",
+    "evidence": [
+      "Claude Code hooks",
+    ],
+    "fix": {
+      "description": "Add a prompt value or remove the hook entry.",
+      "label": "Suggested fix",
+    },
+    "i18nKeys": {
+      "fixDescription": "healthChecks.text.suggestions.addHookPrompt",
+      "fixLabel": "healthChecks.text.fixLabels.suggestedFix",
+      "message": "healthChecks.text.messages.claudeHookMissingPrompt",
+      "suggestion": "healthChecks.text.suggestions.addHookPrompt",
+      "title": "healthChecks.text.titles.claudeHookMissingPrompt",
+    },
+    "message": "PreToolUse contains a agent hook without a prompt.",
+    "params": {
+      "event": "PreToolUse",
+      "type": "agent",
+    },
+    "severity": "error",
+    "suggestion": "Add a prompt value or remove the hook entry.",
+    "title": "Claude prompt hook is missing prompt",
+  },
+  {
+    "agentId": "claude-code",
+    "category": "structure",
+    "evidence": [
+      "Claude Code hooks",
+    ],
+    "fix": {
+      "description": "Add a prompt value or remove the hook entry.",
+      "label": "Suggested fix",
+    },
+    "i18nKeys": {
+      "fixDescription": "healthChecks.text.suggestions.addHookPrompt",
+      "fixLabel": "healthChecks.text.fixLabels.suggestedFix",
+      "message": "healthChecks.text.messages.claudeHookMissingPrompt",
+      "suggestion": "healthChecks.text.suggestions.addHookPrompt",
+      "title": "healthChecks.text.titles.claudeHookMissingPrompt",
+    },
+    "message": "PreToolUse contains a prompt hook without a prompt.",
+    "params": {
+      "event": "PreToolUse",
+      "type": "prompt",
+    },
+    "severity": "error",
+    "suggestion": "Add a prompt value or remove the hook entry.",
+    "title": "Claude prompt hook is missing prompt",
+  },
+  {
+    "agentId": "claude-code",
+    "category": "structure",
+    "evidence": [
+      "Claude Code hooks",
+    ],
+    "fix": {
+      "description": "Add a url value or remove the hook entry.",
+      "label": "Suggested fix",
+    },
+    "i18nKeys": {
+      "fixDescription": "healthChecks.text.suggestions.addHookUrl",
+      "fixLabel": "healthChecks.text.fixLabels.suggestedFix",
+      "message": "healthChecks.text.messages.claudeHookMissingUrl",
+      "suggestion": "healthChecks.text.suggestions.addHookUrl",
+      "title": "healthChecks.text.titles.claudeHookMissingUrl",
+    },
+    "message": "PreToolUse contains an http hook without a url.",
+    "params": {
+      "event": "PreToolUse",
+    },
+    "severity": "error",
+    "suggestion": "Add a url value or remove the hook entry.",
+    "title": "Claude HTTP hook is missing url",
+  },
+  {
+    "agentId": "codex",
+    "category": "structure",
     "evidence": [
       "Codex hooks",
     ],
@@ -1367,15 +1310,168 @@ exports[`health i18n golden (GH #6 Phase-2 contract) > win32: full prose + emitt
       "suggestion": "healthChecks.text.fixDescriptions.addHookCommand",
       "title": "healthChecks.text.titles.codexHookMissingCommand",
     },
-    "id": "codex:structure:user-hook-notification-missing-command",
     "message": "Notification contains a command hook without a command.",
     "params": {
       "event": "Notification",
     },
+    "severity": "error",
     "suggestion": "Add a command value or remove the hook entry.",
     "title": "Codex hook is missing command",
   },
   {
+    "agentId": "claude-code",
+    "category": "structure",
+    "evidence": [
+      "Claude Code hooks",
+    ],
+    "fix": {
+      "description": "Use a documented hook type, such as command, http, mcp_tool, prompt, or agent.",
+      "label": "Suggested fix",
+    },
+    "i18nKeys": {
+      "fixDescription": "healthChecks.text.suggestions.useDocumentedHookType",
+      "fixLabel": "healthChecks.text.fixLabels.suggestedFix",
+      "message": "healthChecks.text.messages.claudeHookUnknownType",
+      "suggestion": "healthChecks.text.suggestions.useDocumentedHookType",
+      "title": "healthChecks.text.titles.claudeHookUnknownType",
+    },
+    "message": "PreToolUse uses hook type "frobnicate".",
+    "params": {
+      "event": "PreToolUse",
+      "type": "frobnicate",
+    },
+    "severity": "warning",
+    "suggestion": "Use a documented hook type, such as command, http, mcp_tool, prompt, or agent.",
+    "title": "Claude hook type is not documented",
+  },
+  {
+    "agentId": "claude-code",
+    "category": "structure",
+    "evidence": [
+      "Claude Code subagents",
+    ],
+    "fix": {
+      "description": "Claude Code subagents require Markdown files with name and description frontmatter.",
+      "label": "Suggested fix",
+    },
+    "i18nKeys": {
+      "fixDescription": "healthChecks.text.suggestions.claudeSubagentIncomplete",
+      "fixLabel": "healthChecks.text.fixLabels.suggestedFix",
+      "message": "healthChecks.text.messages.claudeSubagentIncomplete",
+      "suggestion": "healthChecks.text.suggestions.claudeSubagentIncomplete",
+      "title": "healthChecks.text.titles.claudeSubagentIncomplete",
+    },
+    "message": "broken is missing name or description frontmatter.",
+    "params": {
+      "name": "broken",
+    },
+    "severity": "warning",
+    "suggestion": "Claude Code subagents require Markdown files with name and description frontmatter.",
+    "title": "Claude subagent metadata is incomplete",
+  },
+  {
+    "agentId": "claude-code",
+    "category": "structure",
+    "evidence": [
+      "Claude Code MCP",
+    ],
+    "fix": {
+      "description": "Add the transport field required by the agent configuration.",
+      "label": "Suggested fix",
+    },
+    "i18nKeys": {
+      "fixDescription": "healthChecks.text.suggestions.mcpServerNoTransport",
+      "fixLabel": "healthChecks.text.fixLabels.suggestedFix",
+      "message": "healthChecks.text.messages.mcpServerNoTransport",
+      "suggestion": "healthChecks.text.suggestions.mcpServerNoTransport",
+      "title": "healthChecks.text.titles.mcpServerNoTransport",
+    },
+    "message": "empty has no command, url, type, or transport field.",
+    "params": {
+      "name": "empty",
+    },
+    "severity": "warning",
+    "suggestion": "Add the transport field required by the agent configuration.",
+    "title": "MCP server has no transport",
+  },
+  {
+    "agentId": "claude-code",
+    "category": "structure",
+    "evidence": [
+      "Claude Code MCP",
+    ],
+    "fix": {
+      "description": "Add the transport field required by the agent configuration.",
+      "label": "Suggested fix",
+    },
+    "i18nKeys": {
+      "fixDescription": "healthChecks.text.suggestions.mcpServerNoTransport",
+      "fixLabel": "healthChecks.text.fixLabels.suggestedFix",
+      "message": "healthChecks.text.messages.mcpServerNoTransport",
+      "suggestion": "healthChecks.text.suggestions.mcpServerNoTransport",
+      "title": "healthChecks.text.titles.mcpServerNoTransport",
+    },
+    "message": "noTransport has no command, url, type, or transport field.",
+    "params": {
+      "name": "noTransport",
+    },
+    "severity": "warning",
+    "suggestion": "Add the transport field required by the agent configuration.",
+    "title": "MCP server has no transport",
+  },
+  {
+    "agentId": "claude-code",
+    "category": "structure",
+    "evidence": [
+      "Claude Code skills",
+    ],
+    "fix": {
+      "description": "Add SKILL.md or move non-skill files outside the skills directory.",
+      "label": "Suggested fix",
+    },
+    "i18nKeys": {
+      "fixDescription": "healthChecks.text.fixDescriptions.addSkillEntryPoint",
+      "fixLabel": "healthChecks.text.fixLabels.suggestedFix",
+      "message": "healthChecks.text.messages.skillMissingEntryPoint",
+      "suggestion": "healthChecks.text.fixDescriptions.addSkillEntryPoint",
+      "title": "healthChecks.text.titles.skillMissingEntryPoint",
+    },
+    "message": "broken-skill has no SKILL.md entrypoint.",
+    "params": {
+      "name": "broken-skill",
+    },
+    "severity": "warning",
+    "suggestion": "Add SKILL.md or move non-skill files outside the skills directory.",
+    "title": "Skill is missing SKILL.md",
+  },
+  {
+    "agentId": "codex",
+    "category": "structure",
+    "evidence": [
+      "Codex custom agents",
+    ],
+    "fix": {
+      "description": "Codex custom agents require name, description, and developer_instructions.",
+      "label": "Suggested fix",
+    },
+    "i18nKeys": {
+      "fixDescription": "healthChecks.text.suggestions.codexAgentIncomplete",
+      "fixLabel": "healthChecks.text.fixLabels.suggestedFix",
+      "message": "healthChecks.text.messages.codexAgentIncomplete",
+      "suggestion": "healthChecks.text.suggestions.codexAgentIncomplete",
+      "title": "healthChecks.text.titles.codexAgentIncomplete",
+    },
+    "message": "broken is missing name, description, or developer_instructions.",
+    "params": {
+      "name": "broken",
+    },
+    "severity": "warning",
+    "suggestion": "Codex custom agents require name, description, and developer_instructions.",
+    "title": "Codex custom agent metadata is incomplete",
+  },
+  {
+    "agentId": "codex",
+    "category": "structure",
     "evidence": [
       "Codex skills",
     ],
@@ -1390,15 +1486,40 @@ exports[`health i18n golden (GH #6 Phase-2 contract) > win32: full prose + emitt
       "suggestion": "healthChecks.text.fixDescriptions.addSkillEntryPoint",
       "title": "healthChecks.text.titles.skillMissingEntryPoint",
     },
-    "id": "codex:structure:user-skill-codex-broken-skill-missing-entrypoint",
     "message": "codex-broken-skill has no SKILL.md entrypoint.",
     "params": {
       "name": "codex-broken-skill",
     },
+    "severity": "warning",
     "suggestion": "Add SKILL.md or move non-skill files outside the skills directory.",
     "title": "Skill is missing SKILL.md",
   },
   {
+    "agentId": "claude-code",
+    "category": "syntax",
+    "evidence": [
+      "Claude Code hooks",
+    ],
+    "fix": {
+      "description": "Fix the JSON syntax in .claude/settings.json.",
+      "label": "Suggested fix",
+    },
+    "i18nKeys": {
+      "fixDescription": "healthChecks.text.suggestions.fixClaudeProjectSettings",
+      "fixLabel": "healthChecks.text.fixLabels.suggestedFix",
+      "message": undefined,
+      "suggestion": "healthChecks.text.suggestions.fixClaudeProjectSettings",
+      "title": "healthChecks.text.titles.invalidClaudeProjectSettings",
+    },
+    "message": "<unkeyed>",
+    "params": undefined,
+    "severity": "error",
+    "suggestion": "Fix the JSON syntax in .claude/settings.json.",
+    "title": "Invalid project settings.json",
+  },
+  {
+    "agentId": "codex",
+    "category": "syntax",
     "evidence": [
       "Codex config reference",
     ],
@@ -1413,14 +1534,9 @@ exports[`health i18n golden (GH #6 Phase-2 contract) > win32: full prose + emitt
       "suggestion": "healthChecks.text.fixDescriptions.fixCodexToml",
       "title": "healthChecks.text.titles.invalidCodexConfig",
     },
-    "id": "codex:syntax:project-config-invalid",
-    "message": "Invalid TOML document: incomplete key-value: cannot find end of key
-
-1:  [mcp_servers.bad
-     ^
-2:  command = "bad"
-",
+    "message": "<unkeyed>",
     "params": undefined,
+    "severity": "error",
     "suggestion": "Fix the TOML syntax in Codex config.toml.",
     "title": "Invalid Codex config.toml",
   },

@@ -131,21 +131,39 @@ afterAll(() => {
   if (tempDir) fs.rmSync(tempDir, { recursive: true, force: true })
 })
 
+// Portable golden: pin the i18n CONTRACT (keys + params) + KEYED resolved prose only.
+// We deliberately DROP the finding `id` (its hash suffix derives from the host-specific
+// os.tmpdir() absolute path → differs mac vs CI ubuntu) and placeholder UNKEYED prose
+// (raw JSON/TOML/fs parser errors are Node/V8-version-specific). Sort by a host-independent
+// composite, never by the path-derived id. This keeps the snapshot byte-stable across hosts.
 function localizedProse(checks: HealthCheck[], lang: 'en' | 'zh'): unknown {
   i18n.changeLanguage(lang)
   const t = i18n.getFixedT(lang)
+  const sortKey = (c: HealthCheck): string =>
+    JSON.stringify([c.category, c.severity, c.agentId, c.i18nKeys ?? {}, c.params ?? {}])
   return checks
     .slice()
-    .sort((a, b) => a.id.localeCompare(b.id))
+    .sort((a, b) => sortKey(a).localeCompare(sortKey(b)))
     .map((check) => {
       const localized = localizeHealthCheck(check, t)
+      const k = check.i18nKeys
       return {
-        id: localized.id,
-        title: localized.title,
-        message: localized.message,
-        suggestion: localized.suggestion,
-        fix: localized.fix ? { label: localized.fix.label, description: localized.fix.description } : undefined,
-        evidence: localized.evidence?.map((e) => e.label)
+        category: check.category,
+        severity: check.severity,
+        agentId: check.agentId,
+        i18nKeys: check.i18nKeys,
+        params: check.params,
+        title: k?.title ? localized.title : '<unkeyed>',
+        message: k?.message ? localized.message : '<unkeyed>',
+        suggestion:
+          localized.suggestion === undefined ? undefined : k?.suggestion ? localized.suggestion : '<unkeyed>',
+        fix: localized.fix
+          ? {
+              label: k?.fixLabel ? localized.fix.label : '<unkeyed>',
+              description: k?.fixDescription ? localized.fix.description : '<unkeyed>'
+            }
+          : undefined,
+        evidence: localized.evidence?.map((e, i) => (check.evidence?.[i]?.labelKey ? e.label : '<unkeyed>'))
       }
     })
 }

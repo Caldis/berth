@@ -119,20 +119,36 @@ afterAll(() => {
 // Stable, field-by-field projection of every check so the snapshot reads as a
 // readable contract (no Set/Buffer noise) and pins exactly what localization
 // depends on.
+// Portable: DROP the finding `id` (hash suffix derives from the host os.tmpdir() path) and
+// placeholder UNKEYED prose (raw JSON/TOML/fs parser errors are Node/V8-version-specific).
+// Sort host-independently. Pins the i18n contract (keys+params) + KEYED engine prose only,
+// so the snapshot is byte-stable across mac (local) and CI ubuntu.
 function project(checks: HealthCheck[]): unknown {
+  const sortKey = (c: HealthCheck): string =>
+    JSON.stringify([c.category, c.severity, c.agentId, c.i18nKeys ?? {}, c.params ?? {}])
   return checks
     .slice()
-    .sort((a, b) => a.id.localeCompare(b.id))
-    .map((c) => ({
-      id: c.id,
-      title: c.title,
-      message: c.message,
-      suggestion: c.suggestion,
-      fix: c.fix ? { label: c.fix.label, description: c.fix.description } : undefined,
-      evidence: c.evidence?.map((e) => e.label),
-      i18nKeys: c.i18nKeys,
-      params: c.params
-    }))
+    .sort((a, b) => sortKey(a).localeCompare(sortKey(b)))
+    .map((c) => {
+      const k = c.i18nKeys
+      return {
+        category: c.category,
+        severity: c.severity,
+        agentId: c.agentId,
+        i18nKeys: c.i18nKeys,
+        params: c.params,
+        title: k?.title ? c.title : '<unkeyed>',
+        message: k?.message ? c.message : '<unkeyed>',
+        suggestion: c.suggestion === undefined ? undefined : k?.suggestion ? c.suggestion : '<unkeyed>',
+        fix: c.fix
+          ? {
+              label: k?.fixLabel ? c.fix.label : '<unkeyed>',
+              description: k?.fixDescription ? c.fix.description : '<unkeyed>'
+            }
+          : undefined,
+        evidence: c.evidence?.map((e) => (e.labelKey ? e.label : '<unkeyed>'))
+      }
+    })
 }
 
 describe('health i18n golden (GH #6 Phase-2 contract)', () => {
