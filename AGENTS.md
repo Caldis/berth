@@ -17,7 +17,7 @@
 # RELEASE
 - "发版" 完成的唯一定义 = GitHub Release 页面出现目标版本 (含全平台 assets + `latest*.yml`)。改 `package.json` version + commit **不是发版**, 不触发任何发布。
 - 唯一发布触发: 推 `vX.Y.Z` annotated tag (匹配既有 tag 风格) → `release.yml` (`on: push tags 'v*'`) 跑多平台构建 + mac 公证 + 建 release。tag 必须指向 package.json version 与之相等的 commit; 未发布过的中间 patch 可跳过 (changelog 取 上一 tag..当前 tag, 不丢 commit)。
-- 宣称发版完成前必须 `gh release view vX.Y.Z` 回读到目标版本; 只看到 tag 已推 / run 已触发不算完成。细节见 `docs/friction/20260619-5.0-archive-release-needs-tag-push-not-just-version-bump.md`。
+- 宣称发版完成前必须 `gh release view vX.Y.Z` 回读到目标版本; 只看到 tag 已推 / run 已触发不算完成。细节见 `docs/friction/_archive/20260619-5.0-archive-release-needs-tag-push-not-just-version-bump.md`。
 
 # DOCS
 存放冷文档目录; harness 操作态例外为 `docs/works/`、`docs/friction/`、`docs/issues/`
@@ -44,73 +44,14 @@
 - **记录 ≠ 折成常驻规则** (2026-06 复盘): friction 永远记 (docs/friction/, 可搜索), 但**只把高复发/高影响**的折进常驻 playbook (`_shared.md` 不变量 / `4.0-verify.md` 等); 一次性、低复发的留在 `docs/friction/_archive/` 即可, **不进常驻规则** —— 规则越堆越长则无人逐条读, 反成噪音。folding 前自问: 这条会在未来多类任务反复踩到吗? 否则只归档。
 - 判定归属: 针对当前任务执行过程的反馈 → friction; 针对产品功能/缺陷的反馈 → `docs/issues/`。
 - 执行当前任务时发现已验证但不属于当前主线验收范围的产品 bug、功能缺口或改进项, 主动记录到 `docs/issues/`, 当前任务只做交叉引用; 不顺手修旁支问题, 除非用户明确扩大任务范围。
-- **最高优先级**: 已验证、边界清楚的增量必须小步频繁提交; 每次只暂存和提交自己相关文件, 提交前必须用 `git diff --cached` 核对 staged 集合。不得用最后 archive/收尾提交替代 implementation 过程中的小步提交。
-- 沉淀产物本身 (friction / works / issues / 文档) 必须先过 `pnpm harness:check` (命名/阶段/结构合规) 才能提交; 不可未验证就 commit。沉淀指令的完备性 = 主动记录 + 产物过闸门。
+- 沉淀产物本身 (friction / works / issues / 文档) 必须先过 `pnpm harness:check` (命名/阶段/结构合规) 才能提交; 不可未验证就 commit。沉淀指令的完备性 = 主动记录 + 产物过闸门。(提交纪律本身见 `# COMMIT_POLICY`, 不在此复述。)
 
 # Behavioral guidelines
-to reduce common LLM coding mistakes. Merge with project-specific instructions as needed.
-
-**Tradeoff:** These guidelines bias toward caution over speed. For trivial tasks, use judgment.
-
-## 1. Think Before Coding
-
-**Don't assume. Don't hide confusion. Surface tradeoffs.**
-
-Before implementing:
-- State your assumptions explicitly. If uncertain, ask.
-- If multiple interpretations exist, present them - don't pick silently.
-- If a simpler approach exists, say so. Push back when warranted.
-- If something is unclear, stop. Name what's confusing. Ask.
-
-## 2. Simplicity First
-
-**Minimum code that solves the problem. Nothing speculative.**
-
-- No features beyond what was asked.
-- No abstractions for single-use code.
-- No "flexibility" or "configurability" that wasn't requested.
-- No error handling for impossible scenarios.
-- If you write 200 lines and it could be 50, rewrite it.
-
-Ask yourself: "Would a senior engineer say this is overcomplicated?" If yes, simplify.
-
-## 3. Surgical Changes
-
-**Touch only what you must. Clean up only your own mess.**
-
-When editing existing code:
-- Don't "improve" adjacent code, comments, or formatting.
-- Don't refactor things that aren't broken.
-- Match existing style, even if you'd do it differently.
-- If you notice unrelated dead code, mention it - don't delete it.
-
-When your changes create orphans:
-- Remove imports/variables/functions that YOUR changes made unused.
-- Don't remove pre-existing dead code unless asked.
-
-The test: Every changed line should trace directly to the user's request.
-
-## 4. Goal-Driven Execution
-
-**Define success criteria. Loop until verified.**
-
-Transform tasks into verifiable goals:
-- "Add validation" → "Write tests for invalid inputs, then make them pass"
-- "Fix the bug" → "Write a test that reproduces it, then make it pass"
-- "Refactor X" → "Ensure tests pass before and after"
-
-For multi-step tasks, state a brief plan:
-```
-1. [Step] → verify: [check]
-2. [Step] → verify: [check]
-3. [Step] → verify: [check]
-```
-
-Strong success criteria let you loop independently. Weak criteria ("make it work") require constant clarification.
-
----
-
-**These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, and clarifying questions come before implementation rather than after mistakes.
+减少常见 LLM 编码失误 (trivial 任务用判断力):
+- **想清再写**: 显式陈述假设, 不清楚就停下问; 多解 present 不暗选; 有更简方案就说并据理 push back。
+- **最简优先**: 解决问题的最小代码, 不投机 — 无单用抽象 / 未要求的灵活性 / 不可能分支的错误处理; 200 行能 50 行解决就重写 (senior 会不会嫌它过度复杂?)。
+- **手术式改动**: 只碰必须碰的, 不顺手"改进"无关代码/格式/注释, 不重构没坏的, 匹配既有风格; 只删自己改动产生的孤儿 import/变量, 既有死代码只提不删。每行改动可溯源到需求。
+- **目标驱动**: 把任务转成可验证目标 (改 bug → 先写复现测试再修); 多步任务先列简短 step→verify 计划; 强验收标准支撑自主 loop。
 
 # AI NATIVE WORKFLOW HARNESS
 Agent 工作流体系, 单一真源在 `.agents/`, 同时服务 Claude Code 与 Codex。

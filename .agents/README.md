@@ -5,7 +5,7 @@ berth 的 Agent 工作流单一真源, 同时服务 Claude Code 与 Codex。
 ## 结构
 
 - `workflow/` — 流程 playbook (唯一真源, 手写)
-  - `_shared.md` 门禁与状态契约; 10 个有序 action 各一份。
+  - `_shared.md` 门禁与状态契约; 11 个有序 action 各一份。
 - `skills/harness-<action-id>/SKILL.md` — 薄指针 (由 `pnpm harness:sync` 生成, 勿手改)。
 - `tools.md` — 可用工具索引。
 - `references/` — 一手事实参考 (如 ai-tool-command-distribution.md: 双工具命令分发的官方核实结论)。
@@ -33,9 +33,10 @@ action: 0.0-new · 0.1-continue · 0.2-sync · 1.0-explore · 2.0-design · 3.0-
 
 ## 何时进入
 
-- feature / bug / maintenance 开发任务: 落代码前必须用 `harness-0.0-new` 建任务态, 禁止跳过直接实现或调试。
-- 小改动 (单行/拼写/纯文案注释, 或单一文件·单一关注点·门禁即可验收的小改动如数值调整、局部 UI 微调、弃用 API 替换) 可直接处理 + 跑门禁, 不建任务态。若用户已明确给出目的、范围或具体参数, 或明确要求 "不走 harness / 直接调整", Agent 直接声明按小改动处理并执行, 不再二次询问。若是 Agent 自行判断小改动豁免, 必须先声明豁免依据并征得用户确认。
-- 存疑默认走 harness; 进行中的任务用 `harness-0.1-continue` 续跑。多设备 / 多 Agent 协作: 在另一设备推进过同一任务后切回本机, 先用 `harness-0.2-sync` 拉取对齐 + 增量交接再续跑。
+> 进入策略单一真源在根 `AGENTS.md` § 何时进入 (默认轻量, 大件才建 task-state)。此处只给摘要:
+- 默认轻量: 多数 feature / bug 直接做 + 门禁 + issue 交叉引用, 不强制建 task-state; 完整 task-state (`harness-0.0-new`) 只为跨会话/跨进程/高风险大件保留。
+- 小改动 (trivial 或单文件·单关注点·门禁即验收) 直接做 + 跑门禁: 若**用户已明确给出目的**/范围或要求 "不走 harness", 直接声明执行**不再二次询问**; 若 Agent **自行判断小改动豁免**, 先声明依据并征得用户确认。
+- 进行中任务用 `harness-0.1-continue` 续跑; 多设备/多 Agent 切回本机先 `harness-0.2-sync` 对齐再续。
 
 ## Task Type 与 Debt
 
