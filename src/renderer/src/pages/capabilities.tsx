@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import {
@@ -23,13 +23,13 @@ import { LoadingState } from '@/components/shared/loading-state'
 import { DetailRow } from '@/components/shared/detail-row'
 import { WarningBanner } from '@/components/shared/warning-banner'
 import { ScopeBadge } from '@/components/shared/scope-badge'
-import { PluginOriginBadge } from '@/components/shared/plugin-origin-badge'
+import { ExpandableAssetCard } from '@/components/shared/expandable-asset-card'
 import { ViewRawButton } from '@/components/shared/view-raw-button'
 import { routeForAsset } from '@/lib/asset-route'
 import { useFocusTarget, FOCUS_HIGHLIGHT_CLASS } from '@/hooks/use-focus-target'
 import { pluginOriginOf } from '@/lib/plugin-origin'
 import { HooksLifecycleView } from '@/components/capabilities/hooks-lifecycle-view'
-import { Accordion, AccordionItem, Chip, Collapsible, CollapsibleChevron, ACCORDION_MOTION_PROPS } from '@/components/ui'
+import { Accordion, AccordionItem, Chip, ACCORDION_MOTION_PROPS } from '@/components/ui'
 import {
   buildFeatureGuideEvidence,
   capabilityGuideMap,
@@ -75,7 +75,6 @@ function normalizeCapabilityTab(value: string | undefined): string {
 /* ---------- MCP Server card ---------- */
 function McpServerCard({ asset, focused = false }: { asset: Asset; focused?: boolean }): React.ReactElement {
   const { t } = useTranslation()
-  const [expanded, setExpanded] = useState(false)
   const cardRef = useRef<HTMLDivElement>(null)
   const origin = pluginOriginOf(asset)
 
@@ -91,77 +90,51 @@ function McpServerCard({ asset, focused = false }: { asset: Asset; focused?: boo
       ? 'text-destructive'
       : 'text-muted-foreground'
 
-  // Jumped-to from the plugin page: scroll into view + expand.
-  useEffect(() => {
-    if (!focused) return
+  // Jumped-to from the plugin page: scroll into view (base handles expand).
+  const handleReveal = useCallback(() => {
     cardRef.current?.scrollIntoView({ block: 'center', behavior: 'smooth' })
-    setExpanded(true)
-  }, [focused])
+  }, [])
 
   return (
-    <div
-      ref={cardRef}
-      id={`mcp-card-${asset.id}`}
-      className={cn('rounded-lg border bg-card transition-colors hover:bg-accent/5', focused ? FOCUS_HIGHLIGHT_CLASS : 'border-border')}
+    <ExpandableAssetCard
+      asset={asset}
+      cardId={`mcp-card-${asset.id}`}
+      cardRef={cardRef}
+      detailId={`mcp-detail-${asset.id}`}
+      icon={<Circle className={cn('h-2.5 w-2.5 shrink-0 fill-current', statusColor)} />}
+      title={asset.name}
+      subtitle={
+        overriddenBy ? (
+          <p className="mt-0.5 text-xs text-amber-500">{t('capabilities.mcp.overriddenBy', { scope: overriddenBy })}</p>
+        ) : undefined
+      }
+      headerMeta={
+        <span className={cn('shrink-0 text-xs', statusColor)}>
+          {t(`capabilities.mcp.status.${status}`)}
+        </span>
+      }
+      origin={origin}
+      focused={focused}
+      onReveal={handleReveal}
     >
-      <div className="flex items-stretch">
-        <button
-          onClick={() => setExpanded(!expanded)}
-          aria-expanded={expanded}
-          aria-controls={`mcp-detail-${asset.id}`}
-          className="flex min-w-0 flex-1 items-center gap-3 px-4 py-3 text-left"
-        >
-          <Circle className={cn('h-2.5 w-2.5 shrink-0 fill-current', statusColor)} />
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2">
-              <span className="truncate text-sm font-medium text-foreground">{asset.name}</span>
-              <ScopeBadge scope={asset.scope} />
-            </div>
-            {overriddenBy && (
-              <p className="mt-0.5 text-xs text-amber-500">{t('capabilities.mcp.overriddenBy', { scope: overriddenBy })}</p>
-            )}
-          </div>
-          <span className={cn('shrink-0 text-xs', statusColor)}>
-            {t(`capabilities.mcp.status.${status}`)}
-          </span>
-          <CollapsibleChevron open={expanded} />
-        </button>
-        {origin && (
-          <div className="flex shrink-0 items-center pr-3">
-            <PluginOriginBadge pluginId={origin.pluginId} pluginName={origin.pluginName} />
-          </div>
-        )}
-      </div>
+      {command && <DetailRow label={t('capabilities.mcp.command')} value={`${command} ${args.join(' ')}`} mono />}
+      <DetailRow label={t('instructions.scope')} value={<ScopeBadge scope={asset.scope} />} />
 
-      <Collapsible
-        open={expanded}
-        id={`mcp-detail-${asset.id}`}
-        className="border-t border-border px-4 py-3 space-y-2"
-        unmountOnExit
-      >
-          {command && <DetailRow label={t('capabilities.mcp.command')} value={`${command} ${args.join(' ')}`} mono />}
-          <DetailRow label={t('instructions.scope')} value={<ScopeBadge scope={asset.scope} />} />
-
-          {Object.keys(envVars).length > 0 && (
-            <div>
-              <p className="text-xs font-medium text-muted-foreground mb-1">{t('capabilities.mcp.envVars')}</p>
-              <div className="space-y-0.5">
-                {Object.entries(envVars).map(([key]) => (
-                  <div key={key} className="flex items-center gap-2 text-xs font-mono">
-                    <span className="text-foreground">{key}</span>
-                    <span className="text-muted-foreground">=</span>
-                    <span className="text-muted-foreground">{'••••••'}</span>
-                  </div>
-                ))}
+      {Object.keys(envVars).length > 0 && (
+        <div>
+          <p className="text-xs font-medium text-muted-foreground mb-1">{t('capabilities.mcp.envVars')}</p>
+          <div className="space-y-0.5">
+            {Object.entries(envVars).map(([key]) => (
+              <div key={key} className="flex items-center gap-2 text-xs font-mono">
+                <span className="text-foreground">{key}</span>
+                <span className="text-muted-foreground">=</span>
+                <span className="text-muted-foreground">{'••••••'}</span>
               </div>
-            </div>
-          )}
-
-          <div className="flex gap-2 pt-1">
-            <ViewRawButton asset={asset} />
+            ))}
           </div>
-      </Collapsible>
-    </div>
+        </div>
+      )}
+    </ExpandableAssetCard>
   )
 }
 
