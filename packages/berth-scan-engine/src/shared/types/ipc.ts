@@ -54,6 +54,12 @@ export interface AssetScanProgress {
   current: number
   total: number
   label?: string
+  /** Absolute path of the file currently being scanned (GH-10). Additive/optional:
+   * adapters that emit per-file progress set it for the flowing "刷刷刷" feedback;
+   * adapter-level ticks leave it undefined. Coalesced (latest-wins) before it
+   * crosses the worker→main→renderer boundary so per-file emission can't saturate
+   * IPC — see ProgressCoalescer. */
+  currentPath?: string
   /** Real assets scanned so far (= partial.assets.length). Engine-computed so the
    * GUI renders a count, not deriving it — single source of truth (GH-135). */
   scannedAssets?: number
