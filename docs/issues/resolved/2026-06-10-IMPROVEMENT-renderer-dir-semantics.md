@@ -15,3 +15,8 @@
 # 落地更新 (2026-06-20, GH-146)
 - **#3 local-source-copy 字典并入 i18next: DONE** — EN_SOURCE_COPY/ZH_SOURCE_COPY + getScanSourceStatusLabel 内联双语并入新建**顶层 sources.*** (code/status/statusCount), 3 函数改吃 t(); 唯一消费点 project-scope-switcher 三处传 t。注: issue 建议的 sources.* 前缀实际用顶层 (projectScope.sources.* 已占用)。en 渲染逐字不变 + ZH missing=未发现 双锁。发现第二份平行字典 settings.agentPluginSources.* (41 叶, 文案不同), 本批不动记后续。work: `docs/works/_archive/2026-06-19-gh-146-i18n-source-dict-and-deadkeys`。
 - **#2 memory-view chrome 上提: 未做** (偏视觉/布局, A 组稳健批排除需视觉验收项)。
+
+## 收口 (2026-06-20, CLOSED — 3/4 已完成, 余 1 项 won't-fix-low-value)
+- #1 SettingsContent 迁移 · #3 i18n 字典并入 · #4 sessions 组件迁移: 均 DONE (GH-146)。
+- **#2 memory-view chrome 上提: won't-fix-low-value**。核实: `MemoryView` (components/memory/memory-view.tsx:709 `usePageChrome`) 由 `/instructions/memories` 路由经 `<Instructions activeSection="memories">` → `<MemoryView/>` 渲染 (instructions.tsx:435), 其 pageChrome (memory-view.tsx:694) **深度耦合组件内部 state** (search / refresh action / evidence)。"上提到页层"需把这些 state 从 880 行组件 hoist 到路由 wrapper —— 与收益不成比例的重构, **零用户可见收益** (当前 usePageChrome last-wins 语义下功能正确, memories 页 chrome 正常渲染, 实测确认)。属架构纯度 nit 非缺陷。
+- 处置: 关闭。若未来因其它原因重构 memory-view, 顺带 hoist chrome; 不为此单独重构。

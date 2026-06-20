@@ -15,3 +15,8 @@ v0.4.4 release run (`27872913540`) 成功, 但带 deprecation 注解: `actions/u
 
 ## 来源
 v0.4.4 发布监控 (2026-06-20) 回读 release run annotations 时发现; 与本批主线 (issue/friction 收敛) 无关, 交叉引用记录, 不在本批修。
+
+## 核实 (2026-06-20, 无干净本地修复 — 转监控)
+- 核 `.github/workflows/release.yml`: `upload-artifact@v4` + `download-artifact@v4` 均已是**当前最大 major** (artifact actions 无 v5); 其余 `checkout@v5` / `setup-node@v5` / `pnpm/action-setup@v6` 均最新。
+- 故该弃用是 **GitHub 平台级 Node runtime 弃用** (Node 20→24 迁移), 由 action 作者在 v4.x 内升级 Node 基座解决, `@v4` tag 会自动取到最新 v4.x —— **无 major 可升, 无干净本地改动**; 强行 pin 具体 commit/未发布 tag 反而有破坏发布风险且无法本机验证。
+- 处置: **转监控** (won't-fix-now)。GitHub 真正强制下线 Node 20 时弃用变红才需动作 (届时 artifact actions v4.x 大概率已 Node24-ready, 仅需确认 `@v4` 已滚到该版)。本 issue 保留作未来回看锚点, 非本批可关闭项。
