@@ -1,5 +1,6 @@
 import '@testing-library/jest-dom'
-import { beforeEach } from 'vitest'
+import { act } from '@testing-library/react'
+import { afterEach, beforeEach } from 'vitest'
 import type { BerthAPI } from '../src/preload/index'
 
 // jsdom does not implement scrollIntoView; stub it so focus/jump code under test runs.
@@ -296,6 +297,27 @@ beforeEach(async () => {
   resetAgentTeamsCacheForTests()
   const { resetMemoryCacheForTests } = await import('../src/renderer/src/hooks/use-memory')
   resetMemoryCacheForTests()
+})
+
+// GH-14 (B): standardized teardown. @testing-library/react already auto-registers
+// an afterEach(cleanup) that unmounts rendered trees; because it is registered on
+// import (after this setup file), RTL's cleanup runs BEFORE this hook — so by the
+// time we flush, components are unmounted and their mount-time IPC promise chains
+// have had their cancelled/mounted guards flipped. We then drain any still-pending
+// microtasks (in-flight window.api.* chains) before jsdom is torn down, so their
+// settle callbacks never read window after the env is destroyed ("window is not
+// defined" unhandled rejection — flaky on slow CI, see GH-149).
+//
+// HARD CONSTRAINT — fake timers: several renderer tests use vi.useFakeTimers().
+// A setTimeout-based flush would hang under fake timers (the macrotask never
+// fires without manual advance). `act(async () => {})` instead awaits a resolved
+// microtask and drains React's act queue WITHOUT scheduling or waiting on any
+// timer, so it is safe under both real and fake timers. We do NOT advance/run
+// pending timers here (that could change test-observable behavior); we only let
+// already-resolved promise microtasks settle.
+afterEach(async () => {
+  if (!hasDomEnvironment) return
+  await act(async () => {})
 })
 
 if (hasDomEnvironment) {
