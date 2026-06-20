@@ -2,10 +2,12 @@ import * as fs from 'fs'
 import { extractAtImports } from '@shared/object-guards'
 import * as os from 'os'
 import * as path from 'path'
-import * as yaml from 'js-yaml'
-import { glob } from 'glob'
 import { parseCodexToml } from '../adapters/codex/parsers'
 import { resolveClaudeDirs, resolveCodexHomeDirs } from '../agent-homes'
+import { asRecord, booleanValue, hashString, slug, stringValue } from './health/value-guards'
+import { dirExists, fileExists, safeGlob, safeReadDir, safeReadText } from './health/fs-utils'
+import { looksPowerShellCommand, looksWindowsSpecificCommand } from './health/command-heuristics'
+import { readMarkdownFrontmatter } from './health/markdown'
 import type { Asset, AssetScope } from '@shared/types/asset'
 import { samePath } from '@shared/path-utils'
 import type {
@@ -1198,31 +1200,6 @@ function collectHooks(hooks: Record<string, unknown> | undefined): Array<{
   return result
 }
 
-function readMarkdownFrontmatter(filePath: string): {
-  frontmatter: Record<string, unknown> | null
-  error?: string
-} {
-  let raw = ''
-  try {
-    raw = fs.readFileSync(filePath, 'utf-8')
-  } catch (err) {
-    return { frontmatter: null, error: err instanceof Error ? err.message : 'Unable to read file.' }
-  }
-  if (!raw.startsWith('---')) return { frontmatter: null }
-  const end = raw.indexOf('\n---', 3)
-  if (end === -1) return { frontmatter: null, error: 'Frontmatter is not closed.' }
-  try {
-    const parsed = yaml.load(raw.slice(3, end).trim())
-    return { frontmatter: asRecord(parsed) ?? null }
-  } catch (err) {
-    return {
-      frontmatter: null,
-      error: err instanceof Error ? err.message : 'Invalid YAML frontmatter.'
-    }
-  }
-}
-
-
 type NormalizedHealthCheckOptions =
   Required<Pick<HealthCheckOptions, 'homeDir' | 'platform' | 'env'>> &
   Omit<HealthCheckOptions, 'homeDir' | 'platform' | 'env'>
@@ -1359,88 +1336,8 @@ function dedupeChecks(checks: HealthCheck[]): HealthCheck[] {
   return result
 }
 
-function safeGlob(pattern: string, cwd: string): string[] {
-  if (!dirExists(cwd)) return []
-  try {
-    return glob.sync(pattern, { cwd, absolute: true, windowsPathsNoEscape: true })
-  } catch {
-    return []
-  }
-}
-
-function safeReadDir(dirPath: string): fs.Dirent[] {
-  try {
-    return fs.readdirSync(dirPath, { withFileTypes: true })
-  } catch {
-    return []
-  }
-}
-
-function safeReadText(filePath: string): string | undefined {
-  try {
-    return fs.readFileSync(filePath, 'utf-8')
-  } catch {
-    return undefined
-  }
-}
-
-function fileExists(filePath: string): boolean {
-  try {
-    return fs.statSync(filePath).isFile()
-  } catch {
-    return false
-  }
-}
-
-function dirExists(dirPath: string): boolean {
-  try {
-    return fs.statSync(dirPath).isDirectory()
-  } catch {
-    return false
-  }
-}
-
 function inferAgentId(filePath: string): HealthCheck['agentId'] {
   if (filePath.includes(`${path.sep}.codex${path.sep}`) || filePath.includes(`${path.sep}.agents${path.sep}`)) return 'codex'
   if (filePath.includes(`${path.sep}.claude${path.sep}`)) return 'claude-code'
   return 'all'
-}
-
-function asRecord(value: unknown): Record<string, unknown> | undefined {
-  return value != null && typeof value === 'object' && !Array.isArray(value)
-    ? (value as Record<string, unknown>)
-    : undefined
-}
-
-function stringValue(value: unknown): string | undefined {
-  return typeof value === 'string' && value.trim() ? value : undefined
-}
-
-function booleanValue(value: unknown): boolean | undefined {
-  return typeof value === 'boolean' ? value : undefined
-}
-
-function looksPowerShellCommand(command: string): boolean {
-  return /\b(powershell|pwsh)\b/i.test(command) || /\b[A-Z][A-Za-z]+-[A-Za-z]+\b/.test(command)
-}
-
-function looksWindowsSpecificCommand(command: string): boolean {
-  return (
-    looksPowerShellCommand(command) ||
-    /\bcmd(\.exe)?\s*\/c\b/i.test(command) ||
-    /\.(ps1|bat|cmd)(\s|$)/i.test(command)
-  )
-}
-
-
-function slug(value: string): string {
-  return value.toLowerCase().replace(/[^a-z0-9_-]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 80) || 'unknown'
-}
-
-function hashString(value: string): string {
-  let hash = 0
-  for (let i = 0; i < value.length; i += 1) {
-    hash = (hash * 31 + value.charCodeAt(i)) >>> 0
-  }
-  return hash.toString(36)
 }
