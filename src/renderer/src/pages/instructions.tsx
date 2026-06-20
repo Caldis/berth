@@ -1,4 +1,4 @@
-import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
+import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   FileText,
@@ -7,7 +7,6 @@ import {
   Terminal,
   Palette,
   Brain,
-  FolderOpen,
   Link,
   FileCode,
   Hash
@@ -19,10 +18,9 @@ import { DetailRow } from '@/components/shared/detail-row'
 import { EmptyState, PAGE_EMPTY_FILL } from '@/components/shared/empty-state'
 import { LoadingState } from '@/components/shared/loading-state'
 import { ScopeBadge } from '@/components/shared/scope-badge'
-import { PluginOriginBadge } from '@/components/shared/plugin-origin-badge'
-import { ViewRawButton } from '@/components/shared/view-raw-button'
+import { ExpandableAssetCard } from '@/components/shared/expandable-asset-card'
 import { pluginOriginOf } from '@/lib/plugin-origin'
-import { useFocusTarget, FOCUS_HIGHLIGHT_CLASS } from '@/hooks/use-focus-target'
+import { useFocusTarget } from '@/hooks/use-focus-target'
 import {
   buildFeatureGuideEvidence,
   instructionGuideMap,
@@ -38,7 +36,6 @@ import { usePageChrome, type PageChromeConfig } from '@/components/layout/page-c
 import { VirtualGroupedList, type VirtualGroupedListHandle } from '@/components/shared/virtual-grouped-list'
 import { type VirtualListGroup } from '@/lib/virtual-list-model'
 import { shouldShowScanningState } from '@/lib/runtime-state'
-import { Collapsible, CollapsibleChevron } from '@/components/ui'
 
 const tabTypeMap: Record<string, string[]> = {
   conventions: ['claude-md', 'gemini-md', 'agents-md'],
@@ -51,81 +48,53 @@ const tabTypeMap: Record<string, string[]> = {
 /* ---------- Memory card ---------- */
 function MemoryCard({ asset }: { asset: Asset }): React.ReactElement {
   const { t } = useTranslation()
-  const [expanded, setExpanded] = useState(false)
 
   const size = (asset.meta.size as number) ?? 0
   const imports = (asset.meta.imports as string[]) ?? []
 
-  const handleShowInExplorer = useCallback(() => {
-    window.api?.shell.openPath(asset.path)
-  }, [asset.path])
-
   return (
-    <div data-testid={`instruction-asset-card-${asset.id}`} className="rounded-lg border border-border bg-card transition-colors hover:bg-accent/5">
-      <button
-        onClick={() => setExpanded(!expanded)}
-        aria-expanded={expanded}
-        aria-controls={`instruction-detail-${asset.id}`}
-        className="flex w-full items-center gap-3 px-4 py-3 text-left"
-      >
-        <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <span className="truncate text-sm font-medium text-foreground">{asset.name}</span>
-            <ScopeBadge scope={asset.scope} />
-          </div>
-          <p className="whitespace-normal break-all text-xs leading-relaxed text-muted-foreground font-mono">{asset.path}</p>
-        </div>
-        {size > 0 && (
+    <ExpandableAssetCard
+      asset={asset}
+      testId={`instruction-asset-card-${asset.id}`}
+      detailId={`instruction-detail-${asset.id}`}
+      icon={<FileText className="h-4 w-4 shrink-0 text-muted-foreground" />}
+      title={asset.name}
+      subtitle={
+        <p className="whitespace-normal break-all text-xs leading-relaxed text-muted-foreground font-mono">{asset.path}</p>
+      }
+      headerMeta={
+        size > 0 ? (
           <span className="shrink-0 text-xs text-muted-foreground">
             {size > 1024 ? `${(size / 1024).toFixed(1)} KB` : `${size} B`}
           </span>
-        )}
-        <CollapsibleChevron open={expanded} />
-      </button>
+        ) : undefined
+      }
+      viewRawLabel={t('instructions.viewFile')}
+      showInExplorerLabel={t('instructions.showInExplorer')}
+    >
+      <DetailRow label={t('instructions.scope')} value={<ScopeBadge scope={asset.scope} />} />
+      <DetailRow label={t('instructions.path')} value={asset.path} mono />
 
-      <Collapsible
-        open={expanded}
-        id={`instruction-detail-${asset.id}`}
-        className="border-t border-border px-4 py-3 space-y-2"
-        unmountOnExit
-      >
-          <DetailRow label={t('instructions.scope')} value={<ScopeBadge scope={asset.scope} />} />
-          <DetailRow label={t('instructions.path')} value={asset.path} mono />
-
-          {imports.length > 0 && (
-            <div>
-              <p className="text-xs font-medium text-muted-foreground mb-1">{t('instructions.importChain')}</p>
-              <div className="space-y-1">
-                {imports.map((imp) => (
-                  <div key={imp} className="flex items-center gap-1.5 text-xs">
-                    <Link className="h-3 w-3 text-primary" />
-                    <span className="font-mono text-primary">{imp}</span>
-                  </div>
-                ))}
+      {imports.length > 0 && (
+        <div>
+          <p className="text-xs font-medium text-muted-foreground mb-1">{t('instructions.importChain')}</p>
+          <div className="space-y-1">
+            {imports.map((imp) => (
+              <div key={imp} className="flex items-center gap-1.5 text-xs">
+                <Link className="h-3 w-3 text-primary" />
+                <span className="font-mono text-primary">{imp}</span>
               </div>
-            </div>
-          )}
-
-          <div className="flex gap-2 pt-1">
-            <ViewRawButton asset={asset} label={t('instructions.viewFile')} />
-            <button
-              onClick={handleShowInExplorer}
-              className="flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-muted/70"
-            >
-              <FolderOpen className="h-3 w-3" />
-              {t('instructions.showInExplorer')}
-            </button>
+            ))}
           </div>
-      </Collapsible>
-    </div>
+        </div>
+      )}
+    </ExpandableAssetCard>
   )
 }
 
 /* ---------- Skill card ---------- */
 function SkillCard({ asset, focused = false }: { asset: Asset; focused?: boolean }): React.ReactElement {
   const { t } = useTranslation()
-  const [expanded, setExpanded] = useState(false)
   const origin = pluginOriginOf(asset)
 
   const description = (asset.meta.description as string) ?? ''
@@ -134,105 +103,65 @@ function SkillCard({ asset, focused = false }: { asset: Asset; focused?: boolean
   const fileCount = (asset.meta.fileCount as number) ?? 0
   const lineCount = (asset.meta.lineCount as number) ?? 0
 
-  const handleShowInExplorer = useCallback(() => {
-    window.api?.shell.openPath(asset.path)
-  }, [asset.path])
-
-  // Jumped-to from the plugin page: expand (page handles scroll via list ref).
-  useEffect(() => {
-    if (focused) setExpanded(true)
-  }, [focused])
-
   return (
-    <div
-      data-testid={`instruction-asset-card-${asset.id}`}
-      className={cn('rounded-lg border bg-card transition-colors hover:bg-accent/5', focused ? FOCUS_HIGHLIGHT_CLASS : 'border-border')}
+    <ExpandableAssetCard
+      asset={asset}
+      testId={`instruction-asset-card-${asset.id}`}
+      detailId={`instruction-detail-${asset.id}`}
+      icon={<Sparkles className="h-4 w-4 shrink-0 text-primary" />}
+      title={asset.name}
+      subtitle={
+        description ? (
+          <p className="mt-0.5 truncate text-xs text-muted-foreground">{description}</p>
+        ) : undefined
+      }
+      headerMeta={
+        <div className="flex shrink-0 items-center gap-3 text-xs text-muted-foreground">
+          {fileCount > 0 && (
+            <span className="flex items-center gap-1">
+              <FileCode className="h-3 w-3" />
+              {fileCount}
+            </span>
+          )}
+          {lineCount > 0 && (
+            <span className="flex items-center gap-1">
+              <Hash className="h-3 w-3" />
+              {lineCount}
+            </span>
+          )}
+        </div>
+      }
+      origin={origin}
+      focused={focused}
+      viewRawLabel={t('instructions.viewFile')}
+      showInExplorerLabel={t('instructions.showInExplorer')}
     >
-      <div className="flex items-stretch">
-        <button
-          onClick={() => setExpanded(!expanded)}
-          aria-expanded={expanded}
-          aria-controls={`instruction-detail-${asset.id}`}
-          className="flex min-w-0 flex-1 items-center gap-3 px-4 py-3 text-left"
-        >
-          <Sparkles className="h-4 w-4 shrink-0 text-primary" />
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2">
-              <span className="truncate text-sm font-medium text-foreground">{asset.name}</span>
-              <ScopeBadge scope={asset.scope} />
-            </div>
-            {description && (
-              <p className="mt-0.5 truncate text-xs text-muted-foreground">{description}</p>
-            )}
-          </div>
-          <div className="flex shrink-0 items-center gap-3 text-xs text-muted-foreground">
-            {fileCount > 0 && (
-              <span className="flex items-center gap-1">
-                <FileCode className="h-3 w-3" />
-                {fileCount}
+      {description && (
+        <DetailRow label={t('instructions.description')} value={description} />
+      )}
+      <DetailRow label={t('instructions.trigger')} value={triggerType} />
+      <DetailRow label={t('instructions.scope')} value={<ScopeBadge scope={asset.scope} />} />
+      <DetailRow label={t('instructions.path')} value={asset.path} mono />
+
+      {tools.length > 0 && (
+        <div>
+          <p className="text-xs font-medium text-muted-foreground mb-1">{t('instructions.tools')}</p>
+          <div className="flex flex-wrap gap-1">
+            {tools.map((tool) => (
+              <span key={tool} className="rounded-md bg-muted px-2 py-0.5 text-xs font-mono text-muted-foreground">
+                {tool}
               </span>
-            )}
-            {lineCount > 0 && (
-              <span className="flex items-center gap-1">
-                <Hash className="h-3 w-3" />
-                {lineCount}
-              </span>
-            )}
+            ))}
           </div>
-          <CollapsibleChevron open={expanded} />
-        </button>
-        {origin && (
-          <div className="flex shrink-0 items-center pr-3">
-            <PluginOriginBadge pluginId={origin.pluginId} pluginName={origin.pluginName} />
-          </div>
-        )}
-      </div>
-
-      <Collapsible
-        open={expanded}
-        id={`instruction-detail-${asset.id}`}
-        className="border-t border-border px-4 py-3 space-y-2"
-        unmountOnExit
-      >
-          {description && (
-            <DetailRow label={t('instructions.description')} value={description} />
-          )}
-          <DetailRow label={t('instructions.trigger')} value={triggerType} />
-          <DetailRow label={t('instructions.scope')} value={<ScopeBadge scope={asset.scope} />} />
-          <DetailRow label={t('instructions.path')} value={asset.path} mono />
-
-          {tools.length > 0 && (
-            <div>
-              <p className="text-xs font-medium text-muted-foreground mb-1">{t('instructions.tools')}</p>
-              <div className="flex flex-wrap gap-1">
-                {tools.map((tool) => (
-                  <span key={tool} className="rounded-md bg-muted px-2 py-0.5 text-xs font-mono text-muted-foreground">
-                    {tool}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
-
-          <div className="flex gap-2 pt-1">
-            <ViewRawButton asset={asset} label={t('instructions.viewFile')} />
-            <button
-              onClick={handleShowInExplorer}
-              className="flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-muted/70"
-            >
-              <FolderOpen className="h-3 w-3" />
-              {t('instructions.showInExplorer')}
-            </button>
-          </div>
-      </Collapsible>
-    </div>
+        </div>
+      )}
+    </ExpandableAssetCard>
   )
 }
 
 /* ---------- Generic asset card (subagents, commands, output modes) ---------- */
 function GenericAssetCard({ asset, icon: Icon, focused = false }: { asset: Asset; icon: React.ComponentType<{ className?: string }>; focused?: boolean }): React.ReactElement {
   const { t } = useTranslation()
-  const [expanded, setExpanded] = useState(false)
   const origin = pluginOriginOf(asset)
 
   const description = (asset.meta.description as string) ?? ''
@@ -240,81 +169,41 @@ function GenericAssetCard({ asset, icon: Icon, focused = false }: { asset: Asset
   const toolsCount = (asset.meta.toolsCount as number) ?? 0
   const agentCount = (asset.meta.agentCount as number) ?? 0
 
-  const handleShowInExplorer = useCallback(() => {
-    window.api?.shell.openPath(asset.path)
-  }, [asset.path])
-
-  useEffect(() => {
-    if (focused) setExpanded(true)
-  }, [focused])
-
   return (
-    <div
-      data-testid={`instruction-asset-card-${asset.id}`}
-      className={cn('rounded-lg border bg-card transition-colors hover:bg-accent/5', focused ? FOCUS_HIGHLIGHT_CLASS : 'border-border')}
-    >
-      <div className="flex items-stretch">
-        <button
-          onClick={() => setExpanded(!expanded)}
-          aria-expanded={expanded}
-          aria-controls={`instruction-detail-${asset.id}`}
-          className="flex min-w-0 flex-1 items-center gap-3 px-4 py-3 text-left"
-        >
-          <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2">
-              <span className="truncate text-sm font-medium text-foreground">
-                {asset.type === 'command' ? `/${asset.name}` : asset.name}
-              </span>
-              <ScopeBadge scope={asset.scope} />
-            </div>
-            {description && (
-              <p className="mt-0.5 truncate text-xs text-muted-foreground">{description}</p>
-            )}
-          </div>
-          <div className="flex shrink-0 items-center gap-3 text-xs text-muted-foreground">
-            {model && <span>{model}</span>}
-            {toolsCount > 0 && (
-              <span>{toolsCount} {t('instructions.tools')}</span>
-            )}
-            {agentCount > 0 && (
-              <span>{agentCount} {t('instructions.agents')}</span>
-            )}
-          </div>
-          <CollapsibleChevron open={expanded} />
-        </button>
-        {origin && (
-          <div className="flex shrink-0 items-center pr-3">
-            <PluginOriginBadge pluginId={origin.pluginId} pluginName={origin.pluginName} />
-          </div>
-        )}
-      </div>
-
-      <Collapsible
-        open={expanded}
-        id={`instruction-detail-${asset.id}`}
-        className="border-t border-border px-4 py-3 space-y-2"
-        unmountOnExit
-      >
-          {description && (
-            <DetailRow label={t('instructions.description')} value={description} />
+    <ExpandableAssetCard
+      asset={asset}
+      testId={`instruction-asset-card-${asset.id}`}
+      detailId={`instruction-detail-${asset.id}`}
+      icon={<Icon className="h-4 w-4 shrink-0 text-muted-foreground" />}
+      title={asset.type === 'command' ? `/${asset.name}` : asset.name}
+      subtitle={
+        description ? (
+          <p className="mt-0.5 truncate text-xs text-muted-foreground">{description}</p>
+        ) : undefined
+      }
+      headerMeta={
+        <div className="flex shrink-0 items-center gap-3 text-xs text-muted-foreground">
+          {model && <span>{model}</span>}
+          {toolsCount > 0 && (
+            <span>{toolsCount} {t('instructions.tools')}</span>
           )}
-          {model && <DetailRow label={t('instructions.model')} value={model} />}
-          <DetailRow label={t('instructions.scope')} value={<ScopeBadge scope={asset.scope} />} />
-          <DetailRow label={t('instructions.path')} value={asset.path} mono />
-
-          <div className="flex gap-2 pt-1">
-            <ViewRawButton asset={asset} label={t('instructions.viewFile')} />
-            <button
-              onClick={handleShowInExplorer}
-              className="flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-muted/70"
-            >
-              <FolderOpen className="h-3 w-3" />
-              {t('instructions.showInExplorer')}
-            </button>
-          </div>
-      </Collapsible>
-    </div>
+          {agentCount > 0 && (
+            <span>{agentCount} {t('instructions.agents')}</span>
+          )}
+        </div>
+      }
+      origin={origin}
+      focused={focused}
+      viewRawLabel={t('instructions.viewFile')}
+      showInExplorerLabel={t('instructions.showInExplorer')}
+    >
+      {description && (
+        <DetailRow label={t('instructions.description')} value={description} />
+      )}
+      {model && <DetailRow label={t('instructions.model')} value={model} />}
+      <DetailRow label={t('instructions.scope')} value={<ScopeBadge scope={asset.scope} />} />
+      <DetailRow label={t('instructions.path')} value={asset.path} mono />
+    </ExpandableAssetCard>
   )
 }
 
