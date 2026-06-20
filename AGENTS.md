@@ -41,6 +41,7 @@
 当用户对先前的任务或指令进行纠正或指示时, 你需要在验证其有效性后将其写入 `docs/issues/`
 - 在 harness 工作流 (harness-*) 任务过程中, 用户给出的纠正/意见/偏好, 一经验证有效, 必须主动沉淀为 friction (docs/friction/), 并在当轮改进规则, 无需用户提示 "记下来"。详见 `.agents/workflow/_shared.md` 不变量 6。
 - **friction 沉淀是 Agent 自主职责, 不是需审批的动作**: 识别到可复用工程摩擦后, 直接检查 `docs/friction/` 是否已有相关记录 — 有则合并、无则新建, 记录后过 `pnpm harness:check` 并在当轮事后向用户汇报即可。**严禁回头征求"是否要记录 friction"的同意** — 征求同意本身即一种元摩擦, 违背 "无需用户提示" 的既定规则。
+- **记录 ≠ 折成常驻规则** (2026-06 复盘): friction 永远记 (docs/friction/, 可搜索), 但**只把高复发/高影响**的折进常驻 playbook (`_shared.md` 不变量 / `4.0-verify.md` 等); 一次性、低复发的留在 `docs/friction/_archive/` 即可, **不进常驻规则** —— 规则越堆越长则无人逐条读, 反成噪音。folding 前自问: 这条会在未来多类任务反复踩到吗? 否则只归档。
 - 判定归属: 针对当前任务执行过程的反馈 → friction; 针对产品功能/缺陷的反馈 → `docs/issues/`。
 - 执行当前任务时发现已验证但不属于当前主线验收范围的产品 bug、功能缺口或改进项, 主动记录到 `docs/issues/`, 当前任务只做交叉引用; 不顺手修旁支问题, 除非用户明确扩大任务范围。
 - **最高优先级**: 已验证、边界清楚的增量必须小步频繁提交; 每次只暂存和提交自己相关文件, 提交前必须用 `git diff --cached` 核对 staged 集合。不得用最后 archive/收尾提交替代 implementation 过程中的小步提交。
@@ -122,7 +123,7 @@ Agent 工作流体系, 单一真源在 `.agents/`, 同时服务 Claude Code 与 
 - 自检/分发: `pnpm harness:check` / `pnpm harness:sync` (CI 强制)
 
 ## 何时进入 (强制)
-- feature / bug 开发任务: 落代码前必须先用 `harness-0.0-new` 建任务态, 再按 1.0-explore → 2.0-design → 3.0-implement → 4.0-verify 推进; 禁止跳过 new 直接 Read/Edit 进实现或调试。
+- **默认轻量** (2026-06 复盘校准): 多数 feature / bug 直接 explore-in-context → 小步提交 + 门禁 (typecheck/lint/test/可测试性) → issue 交叉引用即可, **不强制建 task-state**。完整 task-state (`harness-0.0-new` + works 目录 + INDEX + debt/Project 追踪) 只为**真正的大件**保留: 跨会话/跨设备协作、跨进程或全局 blast radius、高风险需 design checkpoint。大件落代码前先 `harness-0.0-new` 按 explore→design→implement→verify 推进; 体量/风险小的走轻量, 边界存疑偏大则按 task-state。
 - 小改动豁免: 单行/拼写/纯文案注释, 或满足"单一文件·单一关注点·标准门禁 (typecheck/lint/test) 即可验收·无需跨文件根因分析或人工意图澄清"的小改动 (如数值调整、局部 UI 微调、弃用 API 替换、局部重构), 可直接处理 + 跑门禁 (含可测试性), 不建任务态。若用户已明确给出目的、范围或具体参数, 或明确要求"不走 harness / 直接调整", Agent 直接声明按小改动处理并执行, 不再二次询问。若是 Agent 自行判断小改动豁免, 必须先声明豁免依据并征得用户确认。实施中发现影响面超出声明范围时, 停下重新申请或切入 harness。
 - 边界存疑按非平凡处理, 默认走 harness; 进行中的任务用 `harness-0.1-continue` 续跑, 不重新 new。在另一台设备或另一个 Agent 推进过同一任务后切回本机, 先用 `harness-0.2-sync` 拉取对齐 + 增量交接 (吸收他人新沉淀的 friction/issue), 再续跑。
 - 默认流程是 harness workflow。只有用户明确要求使用 Superpowers 流程时, 才允许 Superpowers 接管任务流程; 否则 feature / bug / harness 任务都按 harness 执行。
