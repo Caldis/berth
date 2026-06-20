@@ -17,7 +17,8 @@ export interface ScanHelperHostOptions {
   helperPath?: string
   createChild?: () => UtilityProcess
   /** Apply OS-level I/O+CPU throttle to the helper pid on spawn (GH-135 C2).
-   * Default true; no-op on win32 (no native binding yet). */
+   * Default true; on win32 lowers CPU PriorityClass only (no I/O background
+   * without a native binding — GH-8). */
   osThrottle?: boolean
   /** Injectable throttle hook (tests). Default runs taskpolicy/ionice via execFile. */
   applyThrottle?: (pid: number) => void
@@ -201,11 +202,20 @@ function createHelperError(message: string, stack?: string): Error {
 }
 
 /**
- * Lower the helper process's OS scheduling priority (GH-135 C2). Node has no
- * IO-priority binding, so shell out to the platform CLI: macOS `taskpolicy -b`
+ * Lower the helper process's OS scheduling priority (GH-135 C2 / GH-8). Node has
+ * no IO-priority binding, so shell out to the platform CLI: macOS `taskpolicy -b`
  * (DARWIN_BG = IOPOL_THROTTLE + background CPU), Linux `ionice -c3` (idle I/O) +
- * `renice 19` (lowest CPU). Best-effort: a missing or failing CLI must never
- * block scanning. win32 has no equivalent without a native binding (future).
+ * `renice 19` (lowest CPU), Windows PowerShell `PriorityClass='BelowNormal'`
+ * (lowest CPU scheduling). Best-effort: a missing or failing CLI must never
+ * block scanning.
+ *
+ * Windows limitation (GH-8): true `PROCESS_MODE_BACKGROUND_BEGIN` (which also
+ * lowers *I/O* priority, the win32 analog of DARWIN_BG / ionice idle) can only be
+ * set by a process *on itself* via `SetPriorityClass(GetCurrentProcess(), …)`,
+ * which needs a native binding we deliberately do not introduce here. The parent
+ * can only set the child's *CPU* PriorityClass from outside, so this path gives
+ * CPU throttle but not I/O background — weaker than mac/linux. Closing the I/O
+ * gap requires the helper to self-throttle (native addon), tracked in GH-8.
  */
 function defaultApplyThrottle(pid: number): void {
   const cmds: Array<[string, string[]]> =
@@ -216,7 +226,19 @@ function defaultApplyThrottle(pid: number): void {
             ['ionice', ['-c', '3', '-p', String(pid)]],
             ['renice', ['-n', '19', '-p', String(pid)]]
           ]
-        : []
+        : process.platform === 'win32'
+          ? [
+              [
+                'powershell',
+                [
+                  '-NoProfile',
+                  '-NonInteractive',
+                  '-Command',
+                  `(Get-Process -Id ${String(pid)}).PriorityClass = 'BelowNormal'`
+                ]
+              ]
+            ]
+          : []
   for (const [cmd, args] of cmds) {
     execFile(cmd, args, (err) => {
       if (err) getMainLog().log('scan-helper-throttle', err)
