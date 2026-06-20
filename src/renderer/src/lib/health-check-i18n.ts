@@ -51,11 +51,15 @@ const PATTERN_TEXT_KEYS: Array<{
 ]
 
 export function localizeHealthCheck(check: HealthCheck, t: TFunction): HealthCheck {
+  const keys = check.i18nKeys
+  const params = check.params
   return {
     ...check,
-    title: translateHealthCheckText(check.title, t),
-    message: translateHealthCheckText(check.message, t),
-    suggestion: check.suggestion ? translateHealthCheckText(check.suggestion, t) : undefined,
+    title: localizeField(check.title, keys?.title, params, t),
+    message: localizeField(check.message, keys?.message, params, t),
+    suggestion: check.suggestion
+      ? localizeField(check.suggestion, keys?.suggestion, params, t)
+      : undefined,
     evidence: check.evidence?.map((evidence) => ({
       ...evidence,
       label: translateHealthCheckText(evidence.label, t)
@@ -63,11 +67,25 @@ export function localizeHealthCheck(check: HealthCheck, t: TFunction): HealthChe
     fix: check.fix
       ? {
           ...check.fix,
-          label: translateHealthCheckText(check.fix.label, t),
-          description: translateHealthCheckText(check.fix.description, t)
+          label: localizeField(check.fix.label, keys?.fixLabel, params, t),
+          description: localizeField(check.fix.description, keys?.fixDescription, params, t)
         }
       : undefined
   }
+}
+
+// Prefer the engine-emitted i18n key (GH #6 Phase-2 messageKey contract);
+// fall back to legacy prose reverse-matching, then to the raw text. The legacy
+// fallback keeps un-keyed prose localized while the engine is migrated and is
+// removed once every prose field carries a key (Phase-2D).
+function localizeField(
+  text: string,
+  key: string | undefined,
+  params: TranslateValues | undefined,
+  t: TFunction
+): string {
+  if (key) return t(key, { ...params, defaultValue: text })
+  return translateHealthCheckText(text, t)
 }
 
 export function localizeHealthCheckScope(scope: string, t: TFunction): string {
