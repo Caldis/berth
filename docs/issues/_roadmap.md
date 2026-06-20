@@ -1,5 +1,13 @@
 # 重构路线图 / Issue 收敛地图
 
+## 进度 (2026-06-20, 全量 issue/friction 收敛批次)
+- **本批关闭 4 项** (实质已完成/余项低价值): settings-sources-flaky (BUG, GH-149 A1 确定性修复) · blue-on-grey-classname (硬编码 text-blue-500→token, 选中态 accent 合理保留) · shared-path-and-type-config (路径统一+signature 转义 bug 已修; 盘根分叉确为真但病态可忽略 won't-fix) · scan-exclude-remaining (嵌套 gitignore DONE; (a) 证伪 (c) 收益递减 won't-do)。active 14→10。
+- **当前 10 active, 按文件隔离分 3 车道并行收敛中**:
+  - RENDERER 车道 (页面/卡片串行): renderer-dir-semantics 收尾 (余 memory-view chrome) → dashboard-agent-aware-filtering (余资产页 matcher 泛化, severity=user-visible) → expandable-asset-card → heroui-migration-followup。
+  - ENGINE 车道 (与 renderer 不交集): health-restructure (拆分进行中) → background-progressive-asset-indexer (余 cap-5 delta + GH-117 activate) → sidebar-file-level-scan-progress (IPC coalesce 前置) → windows-os-level-index-throttling (Windows-only 无法本机运行时验证) → session-streaming-parse (余 worker 下沉, 末)。
+  - SETTINGS/TEST 车道: settingscontent-mount-ipc-mounted-guard-and-test-cleanup (#14, C 守卫 + B setup.ts)。
+- **编排纪律**: fresh general-purpose 子代理 (非 fork) · 单一职责窄指令 · 只 git add 自己文件 + diff --cached 核对 · 子代理自报验收一律 lead 独立复跑门禁 · 每收敛点后台子代理发版不阻塞主线。
+
 ## 进度 (2026-06-10 晚, GH-115 架构重构后更新)
 - **GH-115 (架构全面重构, T0-T13 已落地)**: IPC 契约单源派生+四方对账 ✅ · IPC/渲染层/引擎死面整链清除 (~1.5k 行) ✅ · adapters↔agent-plugins 解环+契约收紧 ✅ · 扫描源声明式单表+agent-capabilities 漏斗 ✅ (= engine-shared-core-package 的逻辑前置全铺) · session 域逻辑出 IPC 层 ✅ · 多 home 契约修复 (teams/memory) ✅ · 主进程可观测性地基+吞错簇修复 ✅ · store 单写不变量类型化+全路由错误兜底 ✅ · 打包白名单+deps 归位 (asar -67%) ✅ · i18n 死 key 19×2+复数收敛 ✅。分层规则+例外清单已入 docs/ARCHITECTURE.md。
 - **本批新立/增补 issue**: 新立 9 (expandable-asset-card / window-hardening / health-restructure-and-message-contract (R15+R20 合立) / god-pages / session-id / dir-semantics / gh115-residuals / activate-stale-push-listeners (BUG) / settings-advanced-mode-inert); 增补 4 (engine-shared-core-package / renderer-cached-resource-hook / shared-path-and-type-config / heroui-followup)。
