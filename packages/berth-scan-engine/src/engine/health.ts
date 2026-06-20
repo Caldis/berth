@@ -8,9 +8,8 @@ import { asRecord, booleanValue, hashString, slug, stringValue } from './health/
 import { dirExists, fileExists, safeGlob, safeReadDir, safeReadText } from './health/fs-utils'
 import { looksPowerShellCommand, looksWindowsSpecificCommand } from './health/command-heuristics'
 import { readMarkdownFrontmatter } from './health/markdown'
-import type { HealthCheckInput, HealthPaths } from './health/types'
+import type { HealthPaths } from './health/types'
 import {
-  AGENT_NAMES,
   CLAUDE_HOOK_TYPES,
   CLAUDE_SETTINGS_SCHEMA,
   CODEX_CONFIG_SCHEMA_COMMENT,
@@ -18,13 +17,11 @@ import {
   CODEX_RUNNABLE_HOOK_TYPE,
   EVIDENCE
 } from './health/constants'
+import { dedupeChecks, makeCheck } from './health/make-check'
 import type { Asset, AssetScope } from '@shared/types/asset'
 import { samePath } from '@shared/path-utils'
 import type {
   HealthCheck,
-  HealthCheckConfidence,
-  HealthCheckEvidence,
-  HealthCheckTarget,
   ScanError
 } from '@shared/types/ipc'
 
@@ -1194,87 +1191,6 @@ function hasCodexData(paths: HealthPaths): boolean {
   )
 }
 
-function makeCheck(input: HealthCheckInput): HealthCheck {
-  const suggestion = input.suggestion
-  return {
-    ...input,
-    agentName: AGENT_NAMES[input.agentId],
-    evidence: input.evidence ?? evidenceFor(input),
-    fix: input.fix ?? (suggestion ? { label: 'Suggested fix', description: suggestion } : undefined),
-    target: input.target ?? targetFor(input),
-    confidence: input.confidence ?? confidenceFor(input)
-  }
-}
-
-function evidenceFor(input: HealthCheckInput): HealthCheckEvidence[] {
-  if (input.agentId === 'codex') {
-    if (input.assetType === 'hook') return [EVIDENCE.codexHooks]
-    if (input.assetType === 'skill') return [EVIDENCE.codexSkills]
-    if (input.assetType === 'agent') return [EVIDENCE.codexSubagents]
-    if (input.assetType === 'agents-md') return [EVIDENCE.codexAgentsMd]
-    if (input.category === 'session') return [EVIDENCE.codexWindows]
-    return [EVIDENCE.codexConfig]
-  }
-
-  if (input.agentId === 'claude-code') {
-    if (input.assetType === 'hook') return [EVIDENCE.claudeHooks]
-    if (input.assetType === 'mcp-server') return [EVIDENCE.claudeMcp]
-    if (input.assetType === 'skill') return [EVIDENCE.claudeSkills]
-    if (input.assetType === 'agent') return [EVIDENCE.claudeSubagents]
-    if (input.assetType === 'claude-md' || input.assetType === 'agents-md') return [EVIDENCE.claudeMemory]
-    if (input.category === 'session') return [EVIDENCE.claudeSessions]
-    return [EVIDENCE.claudeSettings]
-  }
-
-  return []
-}
-
-function targetFor(input: HealthCheckInput): HealthCheckTarget | undefined {
-  if (input.assetId && input.assetType === 'session') return { route: `/sessions/${input.assetId}`, assetId: input.assetId, path: input.path }
-
-  const route = routeForAssetType(input.assetType)
-  if (route || input.assetId || input.path) {
-    return {
-      route,
-      assetId: input.assetId,
-      path: input.path
-    }
-  }
-
-  return undefined
-}
-
-function routeForAssetType(assetType: string | undefined): string | undefined {
-  if (!assetType) return undefined
-  if (assetType === 'hook') return '/configuration/capabilities?tab=hooks'
-  if (assetType === 'mcp-server') return '/configuration/capabilities?tab=mcp'
-  if (assetType === 'permission') return '/configuration/capabilities?tab=permissions'
-  if (assetType === 'env') return '/configuration/capabilities?tab=env'
-  if (assetType === 'plugin') return '/configuration/capabilities?tab=plugins'
-  if (assetType === 'statusline') return '/configuration/capabilities?tab=statusLine'
-  if (['skill', 'agent', 'claude-md', 'gemini-md', 'agents-md', 'command', 'output-mode'].includes(assetType)) {
-    return '/configuration/instructions'
-  }
-  return undefined
-}
-
-function confidenceFor(input: HealthCheckInput): HealthCheckConfidence {
-  if (input.category === 'syntax' || input.severity === 'error') return 'high'
-  if (input.category === 'configuration') return 'medium'
-  if (input.category === 'session' || input.severity === 'info') return 'low'
-  return 'high'
-}
-
-function dedupeChecks(checks: HealthCheck[]): HealthCheck[] {
-  const seen = new Set<string>()
-  const result: HealthCheck[] = []
-  for (const check of checks) {
-    if (seen.has(check.id)) continue
-    seen.add(check.id)
-    result.push(check)
-  }
-  return result
-}
 
 function inferAgentId(filePath: string): HealthCheck['agentId'] {
   if (filePath.includes(`${path.sep}.codex${path.sep}`) || filePath.includes(`${path.sep}.agents${path.sep}`)) return 'codex'
