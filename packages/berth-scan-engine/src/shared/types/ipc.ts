@@ -494,6 +494,22 @@ export interface HealthCheck {
   fix?: HealthCheckFix
   target?: HealthCheckTarget
   confidence?: HealthCheckConfidence
+  /**
+   * Stable i18n keys for each prose field, emitted by the engine so the
+   * renderer localizes by key instead of reverse-matching English prose
+   * (GH #6 Phase-2 messageKey contract). Optional during dual-carry migration.
+   */
+  i18nKeys?: HealthCheckI18nKeys
+  /** Interpolation params for the i18n keys above (e.g. { name, event, field }). */
+  params?: Record<string, string | number>
+}
+
+export interface HealthCheckI18nKeys {
+  title?: string
+  message?: string
+  suggestion?: string
+  fixLabel?: string
+  fixDescription?: string
 }
 
 export interface HealthCheckRequest {

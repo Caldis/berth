@@ -7,6 +7,7 @@ import type {
   HealthCheckConfidence,
   HealthCheckEvidence,
   HealthCheckFix,
+  HealthCheckI18nKeys,
   HealthCheckSeverity,
   HealthCheckTarget,
   ScanError
@@ -41,6 +42,8 @@ export interface HealthCheckInput {
   fix?: HealthCheckFix
   target?: HealthCheckTarget
   confidence?: HealthCheckConfidence
+  i18nKeys?: HealthCheckI18nKeys
+  params?: Record<string, string | number>
 }
 
 export interface HealthPaths {
