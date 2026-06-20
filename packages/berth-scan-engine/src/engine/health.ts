@@ -4,10 +4,11 @@ import * as os from 'os'
 import * as path from 'path'
 import { parseCodexToml } from '../adapters/codex/parsers'
 import { resolveClaudeDirs, resolveCodexHomeDirs } from '../agent-homes'
-import { asRecord, booleanValue, hashString, slug, stringValue } from './health/value-guards'
+import { asRecord, hashString, slug, stringValue } from './health/value-guards'
 import { dirExists, fileExists, safeGlob, safeReadDir, safeReadText } from './health/fs-utils'
 import { looksPowerShellCommand, looksWindowsSpecificCommand } from './health/command-heuristics'
 import { readMarkdownFrontmatter } from './health/markdown'
+import { collectHooks } from './health/hooks'
 import type { HealthPaths } from './health/types'
 import {
   CLAUDE_HOOK_TYPES,
@@ -1077,65 +1078,6 @@ function checksFromSessionAssets(assets: Asset[]): HealthCheck[] {
   return checks
 }
 
-function collectHooks(hooks: Record<string, unknown> | undefined): Array<{
-  event: string
-  command?: string
-  commandWindows?: string
-  shell?: string
-  type?: string
-  url?: string
-  server?: string
-  tool?: string
-  prompt?: string
-  async?: boolean
-  args: string[]
-}> {
-  if (!hooks) return []
-  const result: Array<{
-    event: string
-    command?: string
-    commandWindows?: string
-    shell?: string
-    type?: string
-    url?: string
-    server?: string
-    tool?: string
-    prompt?: string
-    async?: boolean
-    args: string[]
-  }> = []
-
-  for (const [event, handlers] of Object.entries(hooks)) {
-    const handlerList = Array.isArray(handlers) ? handlers : [handlers]
-    for (const handler of handlerList) {
-      const handlerRecord = asRecord(handler) ?? {}
-      const nestedHooks = Array.isArray(handlerRecord.hooks)
-        ? handlerRecord.hooks
-        : [handlerRecord]
-      for (const hook of nestedHooks) {
-        const hookRecord = asRecord(hook) ?? {}
-        result.push({
-          event,
-          command: stringValue(hookRecord.command),
-          commandWindows:
-            stringValue(hookRecord.commandWindows) ?? stringValue(hookRecord.command_windows),
-          shell: stringValue(hookRecord.shell),
-          type: stringValue(hookRecord.type),
-          url: stringValue(hookRecord.url),
-          server: stringValue(hookRecord.server),
-          tool: stringValue(hookRecord.tool),
-          prompt: stringValue(hookRecord.prompt),
-          async: booleanValue(hookRecord.async) ?? booleanValue(hookRecord.async_),
-          args: Array.isArray(hookRecord.args)
-            ? hookRecord.args.filter((arg): arg is string => typeof arg === 'string')
-            : []
-        })
-      }
-    }
-  }
-
-  return result
-}
 
 type NormalizedHealthCheckOptions =
   Required<Pick<HealthCheckOptions, 'homeDir' | 'platform' | 'env'>> &
