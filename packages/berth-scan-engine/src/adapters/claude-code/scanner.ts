@@ -37,6 +37,9 @@ export interface ScanContext {
   sessionCache?: AssetFileCache<Asset>
   excludePaths?: string[] // GH-142: lowered to nested-glob enumeration
   respectGitignore?: boolean // GH-142: honor project .gitignore/.berthignore
+  /** Per-file progress (GH-10): called with the file currently being parsed so the
+   * scanner can surface a flowing current-path. Coalesced upstream. */
+  onFileProgress?: (currentPath: string) => void
 }
 
 /** Vendored / build dirs always skipped during nested CLAUDE.md recursion
@@ -477,6 +480,10 @@ export function scanState(ctx: ScanContext): Asset[] {
         const projPath = path.join(projectsDir, projEntry.name)
         const jsonlFiles = safeGlob('*.jsonl', projPath, ctx)
         for (const fp of jsonlFiles) {
+          // Per-file flow (GH-10): sessions are the highest-cardinality files
+          // (thousands of JSONL transcripts); bubble each one so the UI streams a
+          // flowing current-path. Coalesced upstream — calling per file is safe.
+          ctx.onFileProgress?.(fp)
           const a = safeScan(ctx, fp, 'session', () =>
             ctx.sessionCache
               ? ctx.sessionCache.getOrParse(fp, () => parseSessionMeta(fp, projEntry.name))

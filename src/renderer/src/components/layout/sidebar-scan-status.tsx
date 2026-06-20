@@ -10,6 +10,14 @@ import { useScanEngineInfo } from '@/hooks/use-ipc'
 import { cn } from '@/lib/utils'
 import { useAppStore } from '@/stores/app'
 
+/** Basename of a scanned file path for the flowing per-file progress (GH-10).
+ * Cross-platform: splits on both POSIX and Windows separators so the renderer
+ * shows a short, readable file name regardless of where the scan ran. */
+function fileNameOf(filePath: string): string {
+  const parts = filePath.split(/[\\/]/)
+  return parts[parts.length - 1] || filePath
+}
+
 /** Wall-clock HH:MM for the "next scan" hint (GH-135). */
 function formatClock(value: string | undefined, language: string): string {
   if (!value) return ''
@@ -102,9 +110,16 @@ export function ScanProgressPanel(): React.ReactElement {
             className="w-full"
           />
           {phaseLabel && (
-            <span className="truncate text-xs text-muted-foreground">
+            <span className="truncate text-xs text-muted-foreground" title={progress?.currentPath ?? undefined}>
               {phaseLabel}
-              {progress?.label ? ` · ${progress.label}` : ''}
+              {/* GH-10: prefer the flowing per-file path (basename — full path is too
+                  long for the truncated row, available on hover); fall back to the
+                  adapter-level label when no per-file path is streaming. */}
+              {progress?.currentPath
+                ? ` · ${fileNameOf(progress.currentPath)}`
+                : progress?.label
+                  ? ` · ${progress.label}`
+                  : ''}
             </span>
           )}
           {(etaSeconds !== undefined || progress?.ratePerSec) && (

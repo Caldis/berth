@@ -133,7 +133,8 @@ export class ClaudeCodeAdapter implements AgentAdapter {
       errors,
       sessionCache: this.sessionCache,
       excludePaths: options.excludePaths,
-      respectGitignore: options.respectGitignore
+      respectGitignore: options.respectGitignore,
+      onFileProgress: options.onFileProgress
     }))
   }
 }

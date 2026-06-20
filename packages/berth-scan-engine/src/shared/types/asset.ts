@@ -134,6 +134,12 @@ export interface WatchEvent {
 export interface AdapterScanOptions {
   excludePaths?: string[]
   respectGitignore?: boolean
+  /** Per-file progress callback (GH-10): adapters call this with the absolute path
+   * of the file currently being scanned so the scanner can surface a flowing
+   * current-path in scan progress. Optional — adapters that don't emit per-file
+   * progress simply never call it; the scanner coalesces the calls (latest-wins)
+   * before they cross the IPC boundary. */
+  onFileProgress?: (currentPath: string) => void
 }
 
 export interface AgentAdapter {

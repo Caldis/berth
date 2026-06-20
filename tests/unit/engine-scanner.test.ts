@@ -63,6 +63,8 @@ vi.mock('@berth/scan-engine/agent-plugins/manifest', async (importActual) => ({
 
 import { AssetScanner } from '@berth/scan-engine/engine/scanner'
 import { PLANNED_AGENT_ADAPTER_DEFINITIONS } from '@berth/scan-engine/adapters/planned-agent-definitions'
+import type { AssetScanProgress } from '@berth/scan-engine/shared/types/ipc'
+import type { AdapterScanOptions } from '@berth/scan-engine/shared/types/asset'
 
 describe('AssetScanner', () => {
   beforeEach(() => {
@@ -440,6 +442,42 @@ describe('AssetScanner', () => {
     })
     expect(groups[1]?.agentId).toBe('codex')
     expect(groups[1]?.installed).toBe(true)
+  })
+
+  it('threads onFileProgress into adapters and surfaces currentPath in progress (GH-10)', async () => {
+    // The claude adapter bubbles two per-file paths during its scan.
+    mocks.claudeScanAll.mockImplementationOnce(async (options?: AdapterScanOptions) => {
+      options?.onFileProgress?.('C:\\Users\\test\\.claude\\projects\\p\\a.jsonl')
+      options?.onFileProgress?.('C:\\Users\\test\\.claude\\projects\\p\\b.jsonl')
+      return { assets: [], errors: [] }
+    })
+    const scanner = new AssetScanner()
+    const progress: AssetScanProgress[] = []
+
+    // progressCoalesceMs: 0 disables time-window collapse so every threaded tick is
+    // observable in this instant-mock test (coalescing itself is unit-tested
+    // separately in progress-coalescer.test.ts).
+    await scanner.scanAll({ onProgress: (p) => progress.push(p), progressCoalesceMs: 0 })
+
+    // At least one parsing tick carried a per-file currentPath...
+    const withPath = progress.filter((p) => p.currentPath)
+    expect(withPath.length).toBeGreaterThan(0)
+    // ...and it kept the adapter-level phase/index/total so the bar stays meaningful.
+    expect(withPath[0]).toMatchObject({ phase: 'parsing' })
+    expect(withPath[0]?.total).toBeGreaterThan(0)
+    expect(typeof withPath[0]?.current).toBe('number')
+    expect(withPath.map((p) => p.currentPath)).toContain('C:\\Users\\test\\.claude\\projects\\p\\b.jsonl')
+  })
+
+  it('still emits adapter-level progress when no per-file path streams (GH-10 additive)', async () => {
+    const scanner = new AssetScanner()
+    const progress: AssetScanProgress[] = []
+
+    await scanner.scanAll({ onProgress: (p) => progress.push(p), progressCoalesceMs: 0 })
+
+    // Adapter-level ticks carry label, never a currentPath (backward compatible).
+    expect(progress.some((p) => p.label === 'Claude Code')).toBe(true)
+    expect(progress.every((p) => p.currentPath === undefined)).toBe(true)
   })
 })
 

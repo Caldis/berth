@@ -10,6 +10,7 @@ import { createAgentAdapters, type AgentAdapterRegistryOptions } from '../agent-
 import { projectScopeCandidatesFromAssets } from '../project-scope'
 import { resolveProjectConfigRoots } from '../project-config-roots'
 import { AssetFileCache, type AssetFileCacheSnapshot } from './assets/file-cache'
+import { ProgressCoalescer } from './assets/progress-coalescer'
 import { scanProjectCapabilities, scanShallowConventions } from './shallow-conventions'
 
 interface HookEquivalentSource {
@@ -48,6 +49,11 @@ export interface AssetScanStreamOptions {
   /** Respect project .gitignore/.berthignore during project-tree enumeration
    * (GH-142): nested-convention recursion skips ignored subtrees. */
   respectGitignore?: boolean
+  /** Coalesce window (ms) for progress emission (GH-10). High-frequency per-file
+   * ticks are throttled to at most one emit per window (latest-wins) so they can't
+   * saturate the worker→main→renderer IPC chain. Default 50; 0 disables coalescing
+   * (every tick passes through — used by tests and non-IPC callers like the CLI). */
+  progressCoalesceMs?: number
 }
 
 export class AssetScanner {
@@ -86,17 +92,35 @@ export class AssetScanner {
     const assets: Asset[] = []
     const errors: ScanResult['errors'] = []
     const total = this.adapters.length
+    // Coalesce/throttle every parsing-phase tick (adapter-level + per-file) before
+    // it crosses the worker→main→renderer boundary so per-file emission can't
+    // saturate IPC (GH-10, the issue's HARD prerequisite). Latest-wins within the
+    // window; flushed on completion so the terminal tick is never dropped.
+    const coalesceMs = options.progressCoalesceMs ?? 50
+    const coalescer = options.onProgress
+      ? new ProgressCoalescer((progress) => options.onProgress?.(progress), coalesceMs)
+      : null
+    const emitProgress = (progress: AssetScanProgress): void => {
+      if (coalescer) coalescer.push(progress)
+      else options.onProgress?.(progress)
+    }
     // Emit per-adapter progress + a cumulative partial after each adapter so the
     // UI can render already-scanned assets mid-scan (per-category counts are
     // derived downstream from these cumulative assets — see P4.6).
-    options.onProgress?.({ phase: 'parsing', current: 0, total })
+    emitProgress({ phase: 'parsing', current: 0, total })
     let index = 0
     for (const adapter of this.adapters) {
-      options.onProgress?.({ phase: 'parsing', current: index, total, label: adapter.displayName })
+      const adapterIndex = index
+      emitProgress({ phase: 'parsing', current: adapterIndex, total, label: adapter.displayName })
       try {
         const result = await adapter.scanAll({
           excludePaths: options.excludePaths,
-          respectGitignore: options.respectGitignore
+          respectGitignore: options.respectGitignore,
+          // Per-file granularity (GH-10): adapters bubble the file currently being
+          // read; the scanner threads it into the SAME parsing tick (keeping the
+          // adapter index/total so the bar stays meaningful) for the flowing path.
+          onFileProgress: (currentPath) =>
+            emitProgress({ phase: 'parsing', current: adapterIndex, total, label: adapter.displayName, currentPath })
         })
         assets.push(...result.assets)
         errors.push(...result.errors)
@@ -108,7 +132,10 @@ export class AssetScanner {
         })
       }
       index += 1
-      options.onProgress?.({ phase: 'parsing', current: index, total, label: adapter.displayName })
+      // Per-adapter completion tick — authoritative determinate-bar step; routed
+      // through the coalescer (no currentPath) so latest-wins clears any stale path
+      // and flush() guarantees the final adapter-complete tick reaches the UI.
+      emitProgress({ phase: 'parsing', current: index, total, label: adapter.displayName })
       // Strip `raw` from partials — the live UI only needs names/counts, and the
       // large transcript/markdown bodies blow up structured-clone cost. (GH-111 P1)
       // Carry the running error count so mid-scan failures are visible. (O4)
@@ -125,6 +152,10 @@ export class AssetScanner {
         await sleep(options.batchPauseMs)
       }
     }
+    // Deliver the last buffered parsing tick (GH-10): the post-scan
+    // indexing/deriving ticks are emitted directly downstream (bypass the
+    // coalescer), so the terminal parsing tick must be flushed here or it is lost.
+    coalescer?.flush()
     // Shallow-index other session-derived projects' root conventions so the global
     // scope shows every project's AGENTS.md/CLAUDE.md (GH-113 T3b). Done after the
     // deep adapters (partials above stay deep-only for fast first paint), before
