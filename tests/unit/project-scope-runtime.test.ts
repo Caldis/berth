@@ -81,6 +81,13 @@ function deps(current: FakeScanner): {
 }
 
 describe('activateProjectScope', () => {
+  // GH-117 regression guard: a cache-miss activation MUST refresh in the
+  // background (wait: false), never block the IPC on the deep rescan. The blocking
+  // `wait: true` path measured a 10047ms spinner on a real ~/.claude (probe C,
+  // 2026-06-11); it was removed in 2786c84c. The new project's deep (nested)
+  // assets — which the global snapshot only shallow-indexes — land later via the
+  // background scan's snapshot push (SWR), so activation can't be a pure
+  // narrow-down filter without losing that depth. Do not flip this back to wait:true.
   it('switches to an uncached project and starts a background refresh without waiting', async () => {
     const current = new FakeScanner(undefined)
     const runtime = deps(current)
