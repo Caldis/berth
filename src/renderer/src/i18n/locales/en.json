@@ -506,8 +506,16 @@
         "codexSkills": "Codex skills",
         "codexConfigReference": "Codex config reference",
         "codexHooks": "Codex hooks",
+        "codexSubagents": "Codex custom agents",
+        "codexAgentsMd": "Codex AGENTS.md",
+        "codexWindows": "Codex Windows and WSL homes",
         "claudeHooks": "Claude Code hooks",
-        "claudeSettings": "Claude Code settings"
+        "claudeSettings": "Claude Code settings",
+        "claudeMcp": "Claude Code MCP",
+        "claudeSkills": "Claude Code skills",
+        "claudeSubagents": "Claude Code subagents",
+        "claudeMemory": "Claude Code memory",
+        "claudeSessions": "Claude Code sessions"
       },
       "confidence": {
         "high": "High confidence",

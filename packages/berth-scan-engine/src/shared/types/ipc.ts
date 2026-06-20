@@ -523,6 +523,8 @@ export type HealthCheckConfidence = 'high' | 'medium' | 'low'
 export interface HealthCheckEvidence {
   label: string
   url: string
+  /** Stable i18n key for `label` (GH #6 Phase-2). Optional during dual-carry. */
+  labelKey?: string
 }
 
 export interface HealthCheckFix {

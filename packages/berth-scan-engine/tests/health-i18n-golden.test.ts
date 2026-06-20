@@ -149,7 +149,7 @@ describe('health i18n golden (GH #6 Phase-2 contract)', () => {
         {
           id: 'sess-1',
           agentId: 'claude-code',
-          category: 'session',
+          category: 'observability',
           type: 'session',
           scope: 'session',
           name: 'orphan-session.jsonl',

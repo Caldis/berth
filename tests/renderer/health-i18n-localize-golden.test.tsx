@@ -14,6 +14,7 @@ import * as os from 'os'
 import * as path from 'path'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { runHealthChecks } from '@berth/scan-engine/engine/health'
+import type { Asset } from '@shared/types/asset'
 import type { HealthCheck } from '@shared/types/ipc'
 import i18n from '../../src/renderer/src/i18n'
 import { localizeHealthCheck } from '../../src/renderer/src/lib/health-check-i18n'
@@ -113,14 +114,14 @@ beforeAll(() => {
       {
         id: 'sess-1',
         agentId: 'claude-code',
-        category: 'session' as const,
-        type: 'session' as const,
-        scope: 'session' as const,
+        category: 'observability',
+        type: 'session',
+        scope: 'session',
         name: 'orphan-session.jsonl',
         path: path.join(tempDir, '.claude', 'projects', 'p', 'orphan-session.jsonl'),
         meta: {}
       }
-    ]
+    ] satisfies Asset[]
   }
   darwinChecks = runHealthChecks({ ...options, platform: 'darwin' })
   win32Checks = runHealthChecks({ ...options, platform: 'win32' })
@@ -159,13 +160,13 @@ describe('renderer health i18n localize (GH #6 Phase-2)', () => {
       }, en)
     }
     const missing: string[] = []
+    const checkKey = (value: unknown): void => {
+      if (typeof value !== 'string') return
+      if (typeof get(value) !== 'string') missing.push(value)
+    }
     for (const check of [...darwinChecks, ...win32Checks]) {
-      const keys = check.i18nKeys
-      if (!keys) continue
-      for (const value of Object.values(keys)) {
-        if (typeof value !== 'string') continue
-        if (typeof get(value) !== 'string') missing.push(value)
-      }
+      if (check.i18nKeys) for (const value of Object.values(check.i18nKeys)) checkKey(value)
+      for (const evidence of check.evidence ?? []) checkKey(evidence.labelKey)
     }
     expect([...new Set(missing)]).toEqual([])
   })

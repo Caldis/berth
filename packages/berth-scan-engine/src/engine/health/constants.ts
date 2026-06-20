@@ -9,20 +9,21 @@ export const AGENT_NAMES: Record<HealthCheck['agentId'], string> = {
   codex: 'Codex'
 }
 
+const E = 'healthChecks.text.evidence'
 export const EVIDENCE = {
-  codexConfig: { label: 'Codex config reference', url: 'https://developers.openai.com/codex/config-reference' },
-  codexHooks: { label: 'Codex hooks', url: 'https://developers.openai.com/codex/hooks' },
-  codexSkills: { label: 'Codex skills', url: 'https://developers.openai.com/codex/skills' },
-  codexSubagents: { label: 'Codex custom agents', url: 'https://developers.openai.com/codex/subagents' },
-  codexAgentsMd: { label: 'Codex AGENTS.md', url: 'https://developers.openai.com/codex/guides/agents-md' },
-  codexWindows: { label: 'Codex Windows and WSL homes', url: 'https://developers.openai.com/codex/app/windows#share-config-auth-and-sessions-with-wsl' },
-  claudeSettings: { label: 'Claude Code settings', url: 'https://code.claude.com/docs/en/settings' },
-  claudeHooks: { label: 'Claude Code hooks', url: 'https://code.claude.com/docs/en/hooks' },
-  claudeMcp: { label: 'Claude Code MCP', url: 'https://code.claude.com/docs/en/mcp' },
-  claudeSkills: { label: 'Claude Code skills', url: 'https://code.claude.com/docs/en/skills' },
-  claudeSubagents: { label: 'Claude Code subagents', url: 'https://code.claude.com/docs/en/sub-agents' },
-  claudeMemory: { label: 'Claude Code memory', url: 'https://code.claude.com/docs/en/memory' },
-  claudeSessions: { label: 'Claude Code sessions', url: 'https://code.claude.com/docs/en/sessions' }
+  codexConfig: { label: 'Codex config reference', url: 'https://developers.openai.com/codex/config-reference', labelKey: `${E}.codexConfigReference` },
+  codexHooks: { label: 'Codex hooks', url: 'https://developers.openai.com/codex/hooks', labelKey: `${E}.codexHooks` },
+  codexSkills: { label: 'Codex skills', url: 'https://developers.openai.com/codex/skills', labelKey: `${E}.codexSkills` },
+  codexSubagents: { label: 'Codex custom agents', url: 'https://developers.openai.com/codex/subagents', labelKey: `${E}.codexSubagents` },
+  codexAgentsMd: { label: 'Codex AGENTS.md', url: 'https://developers.openai.com/codex/guides/agents-md', labelKey: `${E}.codexAgentsMd` },
+  codexWindows: { label: 'Codex Windows and WSL homes', url: 'https://developers.openai.com/codex/app/windows#share-config-auth-and-sessions-with-wsl', labelKey: `${E}.codexWindows` },
+  claudeSettings: { label: 'Claude Code settings', url: 'https://code.claude.com/docs/en/settings', labelKey: `${E}.claudeSettings` },
+  claudeHooks: { label: 'Claude Code hooks', url: 'https://code.claude.com/docs/en/hooks', labelKey: `${E}.claudeHooks` },
+  claudeMcp: { label: 'Claude Code MCP', url: 'https://code.claude.com/docs/en/mcp', labelKey: `${E}.claudeMcp` },
+  claudeSkills: { label: 'Claude Code skills', url: 'https://code.claude.com/docs/en/skills', labelKey: `${E}.claudeSkills` },
+  claudeSubagents: { label: 'Claude Code subagents', url: 'https://code.claude.com/docs/en/sub-agents', labelKey: `${E}.claudeSubagents` },
+  claudeMemory: { label: 'Claude Code memory', url: 'https://code.claude.com/docs/en/memory', labelKey: `${E}.claudeMemory` },
+  claudeSessions: { label: 'Claude Code sessions', url: 'https://code.claude.com/docs/en/sessions', labelKey: `${E}.claudeSessions` }
 } satisfies Record<string, HealthCheckEvidence>
 
 export const CODEX_PROJECT_IGNORED_KEYS = new Set([

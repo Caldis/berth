@@ -501,8 +501,16 @@
         "codexSkills": "Codex Skills 文档",
         "codexConfigReference": "Codex 配置参考",
         "codexHooks": "Codex Hooks 文档",
+        "codexSubagents": "Codex 自定义代理文档",
+        "codexAgentsMd": "Codex AGENTS.md 文档",
+        "codexWindows": "Codex Windows 与 WSL 主目录文档",
         "claudeHooks": "Claude Code Hooks 文档",
-        "claudeSettings": "Claude Code 设置文档"
+        "claudeSettings": "Claude Code 设置文档",
+        "claudeMcp": "Claude Code MCP 文档",
+        "claudeSkills": "Claude Code Skills 文档",
+        "claudeSubagents": "Claude Code 子代理文档",
+        "claudeMemory": "Claude Code Memory 文档",
+        "claudeSessions": "Claude Code 会话文档"
       },
       "confidence": {
         "high": "高可信",

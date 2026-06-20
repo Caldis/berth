@@ -1169,7 +1169,14 @@ describe('HooksLifecycleView', () => {
         path: 'C:\\Users\\test\\.codex\\hooks.json',
         scope: 'user',
         assetType: 'hook',
-        target: { route: '/configuration/capabilities?tab=hooks' }
+        target: { route: '/configuration/capabilities?tab=hooks' },
+        i18nKeys: {
+          title: 'healthChecks.text.titles.codexHookNoWindowsCommand',
+          message: 'healthChecks.text.messages.codexHookNoWindowsCommand',
+          suggestion: 'healthChecks.text.fixDescriptions.addCodexWindowsCommand',
+          fixLabel: 'healthChecks.text.fixLabels.suggestedFix',
+          fixDescription: 'healthChecks.text.fixDescriptions.addCodexWindowsCommand'
+        }
       },
       {
         id: 'claude-code:configuration:user-settings-schema-missing',
@@ -1185,7 +1192,15 @@ describe('HooksLifecycleView', () => {
         },
         scope: 'user',
         assetType: 'hook',
-        target: { route: '/configuration/capabilities?tab=hooks' }
+        target: { route: '/configuration/capabilities?tab=hooks' },
+        params: { name: 'settings.json' },
+        i18nKeys: {
+          title: 'healthChecks.text.titles.claudeSettingsSchemaMissing',
+          message: 'healthChecks.text.messages.claudeSettingsSchemaMissing',
+          suggestion: 'healthChecks.text.suggestions.addClaudeSettingsSchema',
+          fixLabel: 'healthChecks.text.fixLabels.addClaudeSettingsSchema',
+          fixDescription: 'healthChecks.text.fixDescriptions.addClaudeSettingsSchema'
+        }
       }
     ]
     window.api.assets.healthCheck = vi.fn(async () => checks)
