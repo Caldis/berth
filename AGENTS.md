@@ -12,6 +12,7 @@
 - **最高优先级: 已验证、边界清楚的增量必须小步频繁提交。** 任何 feature / bug / harness 任务中, 完成一个可独立验证的子步骤并通过对应检查后, 立即只暂存自己相关文件、用 `git diff --cached` 核对 staged 集合、提交一次。
 - 不允许把多个已完成阶段长时间堆在工作区最后一次性提交。若因为风险或依赖关系不能提交, 必须在当轮说明阻塞原因。
 - archive / 收尾提交不能替代 implementation 过程中的小步提交。
+- 同提交内"改文件内容 + `git mv` 该文件"时, `git mv` 只暂存重命名 (旧 blob→新路径), 不携带未暂存的内容改动: 必须 `git mv` 后再 `git add <新路径>` (或 mv 前先 add 旧路径); 提交前 `git diff --cached --stat` 见 R100/0-insertions 对"应有改动的移动"即内容丢失信号, 补暂存。见 `docs/friction/_archive/20260620-5.2-issues-git-mv-with-unstaged-edits-drops-content.md`。
 
 # RELEASE
 - "发版" 完成的唯一定义 = GitHub Release 页面出现目标版本 (含全平台 assets + `latest*.yml`)。改 `package.json` version + commit **不是发版**, 不触发任何发布。
