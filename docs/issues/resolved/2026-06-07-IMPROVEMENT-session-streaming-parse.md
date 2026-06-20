@@ -24,3 +24,9 @@
 # 来源 / 关联
 - Codex×Claude 对抗审查 (GH-111) Round-1 #3; Tier-2。关联 `docs/works/2026-06-07-gh-111-scan-engine-review-hardening/` (P3)。
 - 状态: PARTIALLY RESOLVED (流式 + LRU 已落地 GH-148; worker 下沉 + 分块流式 IPC 仍 OPEN, 作独立更大 work)。
+
+## 收口 (2026-06-20, RESOLVED — 流式+缓存已落, worker 下沉 defer-low-ROI)
+- **流式 (GH-148)**: 6 读取点同步流式 (jsonl-stream.ts) + LRU (replay 64MB / detail 256) —— **99% 峰值内存削减** (120MB→~100KB), 主要价值已兑现。
+- **本批补 bounded slice (commit fa5ef409)**: `readSessionReplayEventPayload` 加 `EventPayloadCache` (recency-LRU, NUL-key path+lineIndex, 8MB 字节上界, fingerprint 失效), event-payload 点击重复/邻近读 O(1) 免重扫。7 单测。
+- **worker 下沉 + 分块流式 IPC: defer (low-ROI)**: scope 核实 (与 issue 自评一致) —— 同步流式落地后, worker 下沉仅买 ~50-200ms 主线程解阻 (罕见大 session 打开时), 却需新 worker + IPC 协议 + cache 搬迁 (structured-clone 抵消) + 崩溃恢复; 边际收益 << 复杂度。指标显示 detail 加载非热点前不做。
+- 结论: 核心 (流式+缓存) 已交付, 关闭。worker 下沉如未来指标证明 detail 加载成瓶颈再开。

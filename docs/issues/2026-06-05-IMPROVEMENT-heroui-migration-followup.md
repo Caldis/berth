@@ -33,3 +33,9 @@
 - ui barrel 63 导出仅 20 被消费 (68% 死面), motion.ts 整模块零引用; Card 全家零消费而页面手搓 33+ 处卡片壳; Switch 零消费而 settings 手搓 role=switch; Tooltip 零消费而 session-detail 3 处 group-hover 手搓 CSS tooltip (与 FloatingPopover/HeroUI Tooltip 三方并存)。
 - chevron 折叠实为 8 处 (修正本 issue 原 4 处口径); 节标签 33 处 9 种写法散落 13 文件; 指标瓷砖 6 实现并存; outline 小按钮串 10 处; "在访达中显示" 8 文件重复 → 微 primitive 建议: StatTile/SectionLabel/ActionChipButton/ShowInExplorerButton (01-ANALYSIS R24/R25)。
 - 关联新立: 2026-06-10-IMPROVEMENT-expandable-asset-card-convergence.md (资产卡 4 克隆, 与本 issue chevron 项合并执行)。
+
+# 进展 (2026-06-20, Phase-1 scope — 发现前置依赖, 暂缓)
+- 关联: expandable-asset-card (#5) 已 v0.4.4 收敛 4 卡片 (保留手动 Collapsible/Chevron, chevron→Accordion 仍归本 issue)。
+- **Phase-1 (section 卡片 div→Card, 本应最安全 DOM-preserving 子集) 实测为 no-op**: `ui/Card` 全家是**裸 HeroUI 原语零项目消费**, 与手搓 `rounded-* border border-border bg-card p-*` div 在 6+ 渲染轴发散 (暗色 bg-card vs bg-content1 / shadow-medium / 无 border / body p-3 vs p-4-5 / overflow-hidden+auto 会裁 Recharts / flex-col+transition + rounded-xl≠rounded-large)。裸 swap **非 DOM-preserving** (会引入暗色背景/阴影/边框/留白/裁剪视觉变化), 子代理据 surgical 约束正确地未改任何文件。
+- **前置依赖 (解锁 Phase-1 的正解)**: 先在 `components/ui/` 建薄封装 berth `Card` 复合件 —— bake `shadow="none"` + radius 匹配 + `bg-card border-border` + body `p-4/p-5` + 去 overflow 裁剪, 使 div→Card 变 DOM 等价; 之后 swap 才 trivial。复合卡 (usage 643/693/722, plugin-detail 156/171/201 含 CardHeader) 需 Card+CardHeader+CardBody 分解逐个处理。
+- **暂缓理由**: 本 issue 为低价值 cosmetic DRY (DOM-preserving = **零用户可见收益**, 仅可维护性); Phase-1 需先建 wrapper + 逐实例视觉验收; 本批优先更高价值在途项 (#6 i18n 契约 / #3 缓存)。本 issue 为显式"分页推进"长尾, 路径已厘清 (建 berth Card wrapper → 逐页 swap + 视觉验收 → 再 Accordion/Popover/typography/bundle 各 phase), 保持 OPEN 待专项推进。
