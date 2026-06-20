@@ -80,7 +80,20 @@ export function SettingsContent({
   } | null>(null)
 
   useEffect(() => {
-    window.api?.platform.info().then(setPlatformInfo).catch(() => {})
+    // GH-14: guard the mount-time IPC chain so a fast mount/unmount doesn't
+    // setState on an unmounted component (or settle its callback after the test
+    // env / window teardown). Behavior-identical while mounted.
+    let cancelled = false
+    window.api?.platform
+      .info()
+      .then((next) => {
+        if (cancelled) return
+        setPlatformInfo(next)
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
   }, [])
 
   const selectLanguage = (language: string): void => {

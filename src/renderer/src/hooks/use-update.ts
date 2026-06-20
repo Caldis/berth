@@ -25,8 +25,22 @@ export function useUpdate(): {
   const [preferences, setPreferences] = useState<UpdatePreferences>(DEFAULT_PREFERENCES)
 
   useEffect(() => {
-    window.api?.update.getPreferences().then(setPreferences).catch(() => {})
-    return window.api?.update.onState(setState)
+    // GH-14: guard the mount-time getPreferences chain so a fast mount/unmount
+    // doesn't setState after unmount (or settle its callback post-teardown).
+    // onState already cleans up via its unsubscribe; behavior-identical while mounted.
+    let cancelled = false
+    window.api?.update
+      .getPreferences()
+      .then((next) => {
+        if (cancelled) return
+        setPreferences(next)
+      })
+      .catch(() => {})
+    const unsubscribe = window.api?.update.onState(setState)
+    return () => {
+      cancelled = true
+      unsubscribe?.()
+    }
   }, [])
 
   const check = useCallback(() => { void window.api?.update.check() }, [])
