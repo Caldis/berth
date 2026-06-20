@@ -74,7 +74,13 @@ function checkCodexConfig(
       suggestion: 'Fix the TOML syntax in Codex config.toml.',
       scope,
       path: filePath,
-      assetType: 'mcp-server'
+      assetType: 'mcp-server',
+      i18nKeys: {
+        title: 'healthChecks.text.titles.invalidCodexConfig',
+        // Raw TOML parser errors have no stable key; only the fallback prose does.
+        message: err instanceof Error ? undefined : 'healthChecks.text.messages.invalidCodexConfig',
+        suggestion: 'healthChecks.text.fixDescriptions.fixCodexToml'
+      }
     }))
     return undefined
   }
@@ -103,7 +109,14 @@ function checkCodexConfigSchemaComment(
       description: 'Add the official Codex TOML schema comment near the top of config.toml.',
       snippet: CODEX_CONFIG_SCHEMA_COMMENT
     },
-    confidence: 'low'
+    confidence: 'low',
+    i18nKeys: {
+      title: 'healthChecks.text.titles.codexConfigSchemaMissing',
+      message: 'healthChecks.text.messages.codexConfigSchemaMissing',
+      suggestion: 'healthChecks.text.suggestions.codexConfigSchemaMissing',
+      fixLabel: 'healthChecks.text.fixLabels.addCodexConfigSchema',
+      fixDescription: 'healthChecks.text.fixDescriptions.addCodexConfigSchema'
+    }
   }))
 }
 
@@ -120,7 +133,11 @@ function checkCodexHooksJson(
     scope,
     'hooks',
     'Invalid Codex hooks.json',
-    'Fix the JSON syntax in Codex hooks.json.'
+    'Fix the JSON syntax in Codex hooks.json.',
+    {
+      title: 'healthChecks.text.titles.invalidCodexHooks',
+      suggestion: 'healthChecks.text.suggestions.fixCodexHooks'
+    }
   )
   if (!parsed) return
   checkCodexHooks(checks, asRecord(parsed.hooks) ?? parsed, scope, filePath, platform)
@@ -143,7 +160,12 @@ function checkCodexDuplicatedHooks(
     suggestion: 'Keep both only if you expect Codex to merge and warn about this layer.',
     scope,
     path: hooksJsonPath,
-    assetType: 'hook'
+    assetType: 'hook',
+    i18nKeys: {
+      title: 'healthChecks.text.titles.codexHooksDuplicated',
+      message: 'healthChecks.text.messages.codexHooksDuplicated',
+      suggestion: 'healthChecks.text.suggestions.codexHooksDuplicated'
+    }
   }))
 }
 
@@ -167,7 +189,12 @@ function checkCodexHooks(
         scope,
         path: filePath,
         assetType: 'hook',
-        confidence: 'high'
+        confidence: 'high',
+        i18nKeys: {
+          title: 'healthChecks.text.titles.codexAsyncHookSkipped',
+          message: 'healthChecks.text.messages.codexAsyncHookSkipped',
+          suggestion: 'healthChecks.text.suggestions.codexAsyncHookSkipped'
+        }
       }))
     }
     if (hook.type && hook.type !== CODEX_RUNNABLE_HOOK_TYPE) {
@@ -182,7 +209,13 @@ function checkCodexHooks(
         scope,
         path: filePath,
         assetType: 'hook',
-        confidence: 'high'
+        confidence: 'high',
+        i18nKeys: {
+          title: 'healthChecks.text.titles.codexHookSkippedType',
+          message: 'healthChecks.text.messages.codexHookSkippedType',
+          suggestion: 'healthChecks.text.suggestions.codexHookSkippedType'
+        },
+        params: { type: hook.type }
       }))
       continue
     }
@@ -197,7 +230,13 @@ function checkCodexHooks(
         suggestion: 'Add a command value or remove the hook entry.',
         scope,
         path: filePath,
-        assetType: 'hook'
+        assetType: 'hook',
+        i18nKeys: {
+          title: 'healthChecks.text.titles.codexHookMissingCommand',
+          message: 'healthChecks.text.messages.codexHookMissingCommand',
+          suggestion: 'healthChecks.text.fixDescriptions.addHookCommand'
+        },
+        params: { event: hook.event }
       }))
     }
     if (platform === 'win32' && hook.command && !hook.commandWindows && looksWindowsSpecificCommand(hook.command)) {
@@ -212,7 +251,12 @@ function checkCodexHooks(
         scope,
         path: filePath,
         assetType: 'hook',
-        confidence: 'medium'
+        confidence: 'medium',
+        i18nKeys: {
+          title: 'healthChecks.text.titles.codexHookNoWindowsCommand',
+          message: 'healthChecks.text.messages.codexHookNoWindowsCommand',
+          suggestion: 'healthChecks.text.fixDescriptions.addCodexWindowsCommand'
+        }
       }))
     }
     if (platform === 'win32' && hook.command && hook.commandWindows) {
@@ -227,7 +271,12 @@ function checkCodexHooks(
         scope,
         path: filePath,
         assetType: 'hook',
-        confidence: 'high'
+        confidence: 'high',
+        i18nKeys: {
+          title: 'healthChecks.text.titles.codexHookWindowsOverride',
+          message: 'healthChecks.text.messages.codexHookWindowsOverride',
+          suggestion: 'healthChecks.text.suggestions.codexHookWindowsOverride'
+        }
       }))
     }
   }
@@ -253,7 +302,13 @@ function checkCodexProjectIgnoredKeys(
     scope,
     path: filePath,
     assetType: 'mcp-server',
-    confidence: 'high'
+    confidence: 'high',
+    i18nKeys: {
+      title: 'healthChecks.text.titles.codexIgnoredLocalKeys',
+      message: 'healthChecks.text.messages.codexIgnoredLocalKeys',
+      suggestion: 'healthChecks.text.suggestions.codexIgnoredLocalKeys'
+    },
+    params: { keys: ignoredKeys.join(', ') }
   }))
 }
 
@@ -273,7 +328,13 @@ function checkCodexAgents(checks: HealthCheck[], agentsDir: string, scope: Asset
         suggestion: 'Fix the TOML syntax in the custom agent file.',
         scope,
         path: filePath,
-        assetType: 'agent'
+        assetType: 'agent',
+        i18nKeys: {
+          title: 'healthChecks.text.titles.codexAgentTomlInvalid',
+          // Raw TOML parser errors have no stable key; only the fallback prose does.
+          message: err instanceof Error ? undefined : 'healthChecks.text.messages.codexAgentTomlInvalid',
+          suggestion: 'healthChecks.text.suggestions.codexAgentTomlInvalid'
+        }
       }))
       continue
     }
@@ -290,7 +351,13 @@ function checkCodexAgents(checks: HealthCheck[], agentsDir: string, scope: Asset
         suggestion: 'Codex custom agents require name, description, and developer_instructions.',
         scope,
         path: filePath,
-        assetType: 'agent'
+        assetType: 'agent',
+        i18nKeys: {
+          title: 'healthChecks.text.titles.codexAgentIncomplete',
+          message: 'healthChecks.text.messages.codexAgentIncomplete',
+          suggestion: 'healthChecks.text.suggestions.codexAgentIncomplete'
+        },
+        params: { name }
       }))
     }
   }
@@ -309,7 +376,12 @@ function checkCodexSessions(checks: HealthCheck[], sessionsDir: string): void {
       message: 'Codex sessions directory exists but contains no rollout transcripts.',
       suggestion: 'Run Codex once, then refresh Berth.',
       scope: 'session',
-      path: sessionsDir
+      path: sessionsDir,
+      i18nKeys: {
+        title: 'healthChecks.text.titles.codexNoSessionTranscripts',
+        message: 'healthChecks.text.messages.codexNoSessionTranscripts',
+        suggestion: 'healthChecks.text.suggestions.codexNoSessionTranscripts'
+      }
     }))
     return
   }
@@ -327,7 +399,13 @@ function checkCodexSessions(checks: HealthCheck[], sessionsDir: string): void {
           suggestion: 'Refresh after Codex finishes writing the transcript.',
           scope: 'session',
           path: filePath,
-          assetType: 'session'
+          assetType: 'session',
+          i18nKeys: {
+            title: 'healthChecks.text.titles.codexTranscriptEmpty',
+            message: 'healthChecks.text.messages.codexTranscriptEmpty',
+            suggestion: 'healthChecks.text.suggestions.codexTranscriptEmpty'
+          },
+          params: { name: path.basename(filePath) }
         }))
       }
     } catch (err) {
@@ -341,7 +419,13 @@ function checkCodexSessions(checks: HealthCheck[], sessionsDir: string): void {
         suggestion: 'Check file permissions and try again.',
         scope: 'session',
         path: filePath,
-        assetType: 'session'
+        assetType: 'session',
+        i18nKeys: {
+          title: 'healthChecks.text.titles.codexTranscriptUnreadable',
+          // Raw fs errors have no stable key; only the fallback prose does.
+          message: err instanceof Error ? undefined : 'healthChecks.text.messages.codexTranscriptUnreadable',
+          suggestion: 'healthChecks.text.suggestions.codexTranscriptUnreadable'
+        }
       }))
     }
   }

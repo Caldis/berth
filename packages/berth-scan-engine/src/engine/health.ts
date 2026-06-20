@@ -30,7 +30,12 @@ export function runHealthChecks(options: HealthCheckOptions | string = {}): Heal
       agentId: 'all',
       title: 'No supported agent data found',
       message: 'Berth scans Claude Code and Codex local data when present.',
-      suggestion: 'Install or run Claude Code or Codex once, then refresh Berth.'
+      suggestion: 'Install or run Claude Code or Codex once, then refresh Berth.',
+      i18nKeys: {
+        title: 'healthChecks.text.titles.noAgentData',
+        message: 'healthChecks.text.messages.noAgentData',
+        suggestion: 'healthChecks.text.suggestions.noAgentData'
+      }
     }))
     return checks
   }

@@ -36,7 +36,14 @@ export function checkProjectInstructionCompatibility(checks: HealthCheck[], proj
         description: 'Create AGENTS.md and keep only instructions that should apply to Codex.',
         snippet: '# Shared project instructions'
       },
-      confidence: 'high'
+      confidence: 'high',
+      i18nKeys: {
+        title: 'healthChecks.text.titles.projectClaudeOnly',
+        message: 'healthChecks.text.messages.projectClaudeOnly',
+        suggestion: 'healthChecks.text.suggestions.projectClaudeOnly',
+        fixLabel: 'healthChecks.text.fixLabels.addCodexProjectInstructions',
+        fixDescription: 'healthChecks.text.fixDescriptions.addCodexProjectInstructions'
+      }
     }))
   }
 
@@ -58,7 +65,14 @@ export function checkProjectInstructionCompatibility(checks: HealthCheck[], proj
         description: 'Create CLAUDE.md and import the shared AGENTS.md file.',
         snippet: '@AGENTS.md'
       },
-      confidence: 'high'
+      confidence: 'high',
+      i18nKeys: {
+        title: 'healthChecks.text.titles.projectCodexOnly',
+        message: 'healthChecks.text.messages.projectCodexOnly',
+        suggestion: 'healthChecks.text.suggestions.projectCodexOnly',
+        fixLabel: 'healthChecks.text.fixLabels.importSharedForClaude',
+        fixDescription: 'healthChecks.text.fixDescriptions.importSharedForClaude'
+      }
     }))
   }
 }
@@ -75,7 +89,12 @@ export function checksFromScanErrors(errors: ScanError[]): HealthCheck[] {
       message: error.message,
       suggestion: 'Fix the file syntax, then refresh Berth.',
       path: error.path,
-      assetType: error.type
+      assetType: error.type,
+      i18nKeys: {
+        title: 'healthChecks.text.titles.scannerParserError',
+        // Raw scanner errors have no stable key; only title/suggestion do.
+        suggestion: 'healthChecks.text.suggestions.scannerParserError'
+      }
     })
   })
 }
@@ -99,7 +118,13 @@ export function checksFromSessionAssets(assets: Asset[]): HealthCheck[] {
         scope: 'session',
         path: asset.path,
         assetId: asset.id,
-        assetType: 'session'
+        assetType: 'session',
+        i18nKeys: {
+          title: 'healthChecks.text.titles.sessionMetadataIncomplete',
+          message: 'healthChecks.text.messages.sessionMetadataIncomplete',
+          suggestion: 'healthChecks.text.suggestions.sessionMetadataIncomplete'
+        },
+        params: { name: asset.name }
       }))
     }
   }

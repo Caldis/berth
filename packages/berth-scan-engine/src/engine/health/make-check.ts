@@ -18,7 +18,26 @@ export function makeCheck(input: HealthCheckInput): HealthCheck {
     evidence: input.evidence ?? evidenceFor(input),
     fix: input.fix ?? (suggestion ? { label: 'Suggested fix', description: suggestion } : undefined),
     target: input.target ?? targetFor(input),
-    confidence: input.confidence ?? confidenceFor(input)
+    confidence: input.confidence ?? confidenceFor(input),
+    i18nKeys: input.i18nKeys ? deriveI18nKeys(input.i18nKeys, input) : undefined
+  }
+}
+
+// When a check provides no explicit `fix`, makeCheck derives one from
+// `suggestion` ('Suggested fix' label + suggestion text as description).
+// Mirror that for i18n keys so the renderer can localize the derived fix
+// by key: the derived description reuses the suggestion key, and the label
+// uses the shared 'suggestedFix' key. Sites that pass an explicit fix supply
+// their own fixLabel/fixDescription keys.
+function deriveI18nKeys(
+  keys: NonNullable<HealthCheckInput['i18nKeys']>,
+  input: HealthCheckInput
+): NonNullable<HealthCheckInput['i18nKeys']> {
+  if (input.fix || !input.suggestion) return keys
+  return {
+    ...keys,
+    fixLabel: keys.fixLabel ?? 'healthChecks.text.fixLabels.suggestedFix',
+    fixDescription: keys.fixDescription ?? keys.suggestion
   }
 }
 

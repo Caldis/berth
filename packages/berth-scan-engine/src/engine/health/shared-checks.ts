@@ -19,7 +19,8 @@ export function checkJsonConfig(
   scope: AssetScope,
   label: string,
   title: string,
-  suggestion: string
+  suggestion: string,
+  i18nKeys?: { title: string; suggestion: string }
 ): Record<string, unknown> | undefined {
   if (!fileExists(filePath)) return undefined
   try {
@@ -36,7 +37,14 @@ export function checkJsonConfig(
       suggestion,
       scope,
       path: filePath,
-      assetType: label === 'mcp' ? 'mcp-server' : 'hook'
+      assetType: label === 'mcp' ? 'mcp-server' : 'hook',
+      i18nKeys: i18nKeys && {
+        title: i18nKeys.title,
+        // Raw JSON parser errors have no stable key; only the fallback prose does.
+        message: err instanceof Error ? undefined : 'healthChecks.text.messages.invalidJson',
+        suggestion: i18nKeys.suggestion
+      },
+      params: err instanceof Error ? undefined : { name: path.basename(filePath) }
     }))
     return undefined
   }
@@ -65,7 +73,13 @@ export function checkMcpServers(
         suggestion: 'Replace the MCP server entry with an object config.',
         scope,
         path: filePath,
-        assetType: 'mcp-server'
+        assetType: 'mcp-server',
+        i18nKeys: {
+          title: 'healthChecks.text.titles.mcpServerInvalid',
+          message: 'healthChecks.text.messages.mcpServerInvalid',
+          suggestion: 'healthChecks.text.suggestions.mcpServerInvalid'
+        },
+        params: { name }
       }))
       continue
     }
@@ -85,7 +99,13 @@ export function checkMcpServers(
         suggestion: 'Add the transport field required by the agent configuration.',
         scope,
         path: filePath,
-        assetType: 'mcp-server'
+        assetType: 'mcp-server',
+        i18nKeys: {
+          title: 'healthChecks.text.titles.mcpServerNoTransport',
+          message: 'healthChecks.text.messages.mcpServerNoTransport',
+          suggestion: 'healthChecks.text.suggestions.mcpServerNoTransport'
+        },
+        params: { name }
       }))
     }
   }
@@ -113,7 +133,13 @@ export function checkInstructionImports(
       suggestion: 'Check file permissions and try again.',
       scope,
       path: filePath,
-      assetType: fileType
+      assetType: fileType,
+      i18nKeys: {
+        title: 'healthChecks.text.titles.instructionFileUnreadable',
+        // Raw fs errors have no stable key; only the fallback prose does.
+        message: err instanceof Error ? undefined : 'healthChecks.text.messages.instructionFileUnreadable',
+        suggestion: 'healthChecks.text.suggestions.instructionFileUnreadable'
+      }
     }))
     return
   }
@@ -133,7 +159,13 @@ export function checkInstructionImports(
       suggestion: 'Create the imported file or remove the @path reference.',
       scope,
       path: filePath,
-      assetType: fileType
+      assetType: fileType,
+      i18nKeys: {
+        title: 'healthChecks.text.titles.instructionImportMissing',
+        message: 'healthChecks.text.messages.instructionImportMissing',
+        suggestion: 'healthChecks.text.suggestions.instructionImportMissing'
+      },
+      params: { importPath, file: path.basename(filePath) }
     }))
   }
 }
@@ -160,7 +192,13 @@ export function checkSkillDirectories(
         suggestion: 'Add SKILL.md or move non-skill files outside the skills directory.',
         scope,
         path: skillDir,
-        assetType: 'skill'
+        assetType: 'skill',
+        i18nKeys: {
+          title: 'healthChecks.text.titles.skillMissingEntryPoint',
+          message: 'healthChecks.text.messages.skillMissingEntryPoint',
+          suggestion: 'healthChecks.text.fixDescriptions.addSkillEntryPoint'
+        },
+        params: { name: entry.name }
       }))
       continue
     }
@@ -186,7 +224,12 @@ function checkSkillFrontmatter(
       suggestion: 'Fix the YAML frontmatter in SKILL.md.',
       scope,
       path: filePath,
-      assetType: 'skill'
+      assetType: 'skill',
+      i18nKeys: {
+        title: 'healthChecks.text.titles.skillFrontmatterInvalid',
+        // Raw YAML parser errors have no stable key; only title/suggestion do.
+        suggestion: 'healthChecks.text.suggestions.skillFrontmatterInvalid'
+      }
     }))
   }
   if (agentId === 'codex' && !parsed.error) {
@@ -206,7 +249,13 @@ function checkSkillFrontmatter(
         scope,
         path: filePath,
         assetType: 'skill',
-        confidence: 'high'
+        confidence: 'high',
+        i18nKeys: {
+          title: 'healthChecks.text.titles.codexSkillIncomplete',
+          message: 'healthChecks.text.messages.codexSkillIncomplete',
+          suggestion: 'healthChecks.text.suggestions.codexSkillIncomplete'
+        },
+        params: { fields: missing.join(', ') }
       }))
     }
   }

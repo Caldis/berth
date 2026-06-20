@@ -31,7 +31,12 @@ function mkdir(relative: string): void {
 }
 
 beforeAll(() => {
-  tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'berth-health-golden-'))
+  // Fixed (non-random) path so the path-derived check IDs (hashString of
+  // resolved import / transcript paths) stay deterministic — the golden must be
+  // byte-stable across runs, not just within one run.
+  tempDir = path.join(os.tmpdir(), 'berth-health-golden-fixture')
+  fs.rmSync(tempDir, { recursive: true, force: true })
+  fs.mkdirSync(tempDir, { recursive: true })
   homeDir = tempDir
   projectDir = path.join(tempDir, 'project')
 

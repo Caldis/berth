@@ -34,7 +34,12 @@ export function checkClaude(paths: HealthPaths, platform: NodeJS.Platform): Heal
       message: 'No user-level CLAUDE.md found.',
       suggestion: 'Create ~/.claude/CLAUDE.md if you want shared Claude Code instructions.',
       scope: 'user',
-      path: claudeMd
+      path: claudeMd,
+      i18nKeys: {
+        title: 'healthChecks.text.titles.userClaudeMdNotFound',
+        message: 'healthChecks.text.messages.noUserClaudeMd',
+        suggestion: 'healthChecks.text.fixDescriptions.createUserClaudeMd'
+      }
     }))
   }
 
@@ -45,7 +50,11 @@ export function checkClaude(paths: HealthPaths, platform: NodeJS.Platform): Heal
     'user',
     'settings',
     'Invalid settings.json',
-    'Fix the JSON syntax in ~/.claude/settings.json.'
+    'Fix the JSON syntax in ~/.claude/settings.json.',
+    {
+      title: 'healthChecks.text.titles.invalidClaudeSettings',
+      suggestion: 'healthChecks.text.suggestions.fixClaudeUserSettings'
+    }
   )
   if (userSettings) {
     const userSettingsPath = path.join(paths.claudeDir, 'settings.json')
@@ -60,7 +69,11 @@ export function checkClaude(paths: HealthPaths, platform: NodeJS.Platform): Heal
     'user',
     'claude-json',
     'Invalid .claude.json',
-    'Fix the JSON syntax in ~/.claude.json.'
+    'Fix the JSON syntax in ~/.claude.json.',
+    {
+      title: 'healthChecks.text.titles.invalidClaudeJson',
+      suggestion: 'healthChecks.text.suggestions.fixClaudeJson'
+    }
   )
   if (claudeJson) checkMcpServers(checks, 'claude-code', claudeJson, 'mcpServers', 'user', path.join(paths.homeDir, '.claude.json'))
 
@@ -75,7 +88,11 @@ export function checkClaude(paths: HealthPaths, platform: NodeJS.Platform): Heal
       'project',
       'settings',
       'Invalid project settings.json',
-      'Fix the JSON syntax in .claude/settings.json.'
+      'Fix the JSON syntax in .claude/settings.json.',
+      {
+        title: 'healthChecks.text.titles.invalidClaudeProjectSettings',
+        suggestion: 'healthChecks.text.suggestions.fixClaudeProjectSettings'
+      }
     )
     if (parsedProjectSettings) {
       checkClaudeSettingsSchema(checks, parsedProjectSettings, 'project', projectSettings)
@@ -89,7 +106,11 @@ export function checkClaude(paths: HealthPaths, platform: NodeJS.Platform): Heal
       'project',
       'settings-local',
       'Invalid settings.local.json',
-      'Fix the JSON syntax in .claude/settings.local.json.'
+      'Fix the JSON syntax in .claude/settings.local.json.',
+      {
+        title: 'healthChecks.text.titles.invalidClaudeLocalSettings',
+        suggestion: 'healthChecks.text.suggestions.fixClaudeLocalSettings'
+      }
     )
     if (parsedLocalSettings) checkClaudeSettings(checks, parsedLocalSettings, 'project', projectLocalSettings, platform)
 
@@ -100,7 +121,11 @@ export function checkClaude(paths: HealthPaths, platform: NodeJS.Platform): Heal
       'project',
       'mcp',
       'Invalid .mcp.json',
-      'Fix the JSON syntax in project .mcp.json.'
+      'Fix the JSON syntax in project .mcp.json.',
+      {
+        title: 'healthChecks.text.titles.invalidMcpJson',
+        suggestion: 'healthChecks.text.suggestions.fixMcpJson'
+      }
     )
     if (parsedMcp) checkMcpServers(checks, 'claude-code', parsedMcp, 'mcpServers', 'project', mcpJson)
   }
@@ -160,7 +185,15 @@ function checkClaudeSettingsSchema(
       description: 'Add the official Claude Code settings schema near the top of the JSON file.',
       snippet: `{\n  "$schema": "${CLAUDE_SETTINGS_SCHEMA}"\n}`
     },
-    confidence: 'low'
+    confidence: 'low',
+    i18nKeys: {
+      title: 'healthChecks.text.titles.claudeSettingsSchemaMissing',
+      message: 'healthChecks.text.messages.claudeSettingsSchemaMissing',
+      suggestion: 'healthChecks.text.suggestions.addClaudeSettingsSchema',
+      fixLabel: 'healthChecks.text.fixLabels.addClaudeSettingsSchema',
+      fixDescription: 'healthChecks.text.fixDescriptions.addClaudeSettingsSchema'
+    },
+    params: { name: path.basename(filePath) }
   }))
 }
 
@@ -183,7 +216,13 @@ function checkClaudeHooks(
         suggestion: 'Add a command value or remove the hook entry.',
         scope,
         path: filePath,
-        assetType: 'hook'
+        assetType: 'hook',
+        i18nKeys: {
+          title: 'healthChecks.text.titles.claudeHookMissingCommand',
+          message: 'healthChecks.text.messages.claudeHookMissingCommand',
+          suggestion: 'healthChecks.text.fixDescriptions.addHookCommand'
+        },
+        params: { event: hook.event }
       }))
     }
     if (hook.type === 'http' && !hook.url) {
@@ -197,7 +236,13 @@ function checkClaudeHooks(
         suggestion: 'Add a url value or remove the hook entry.',
         scope,
         path: filePath,
-        assetType: 'hook'
+        assetType: 'hook',
+        i18nKeys: {
+          title: 'healthChecks.text.titles.claudeHookMissingUrl',
+          message: 'healthChecks.text.messages.claudeHookMissingUrl',
+          suggestion: 'healthChecks.text.suggestions.addHookUrl'
+        },
+        params: { event: hook.event }
       }))
     }
     if (hook.type === 'mcp_tool') {
@@ -216,7 +261,13 @@ function checkClaudeHooks(
           suggestion: 'Add both server and tool values, or remove the hook entry.',
           scope,
           path: filePath,
-          assetType: 'hook'
+          assetType: 'hook',
+          i18nKeys: {
+            title: 'healthChecks.text.titles.claudeHookMcpToolIncomplete',
+            message: 'healthChecks.text.messages.claudeHookMcpToolIncomplete',
+            suggestion: 'healthChecks.text.suggestions.addMcpToolFields'
+          },
+          params: { event: hook.event, field }
         }))
       }
     }
@@ -231,7 +282,13 @@ function checkClaudeHooks(
         suggestion: 'Add a prompt value or remove the hook entry.',
         scope,
         path: filePath,
-        assetType: 'hook'
+        assetType: 'hook',
+        i18nKeys: {
+          title: 'healthChecks.text.titles.claudeHookMissingPrompt',
+          message: 'healthChecks.text.messages.claudeHookMissingPrompt',
+          suggestion: 'healthChecks.text.suggestions.addHookPrompt'
+        },
+        params: { event: hook.event, type: hook.type }
       }))
     }
     if (hook.type && !CLAUDE_HOOK_TYPES.has(hook.type)) {
@@ -246,7 +303,13 @@ function checkClaudeHooks(
         scope,
         path: filePath,
         assetType: 'hook',
-        confidence: 'high'
+        confidence: 'high',
+        i18nKeys: {
+          title: 'healthChecks.text.titles.claudeHookUnknownType',
+          message: 'healthChecks.text.messages.claudeHookUnknownType',
+          suggestion: 'healthChecks.text.suggestions.useDocumentedHookType'
+        },
+        params: { event: hook.event, type: hook.type }
       }))
     }
     if (hook.args.length > 0 && hook.shell) {
@@ -261,7 +324,12 @@ function checkClaudeHooks(
         scope,
         path: filePath,
         assetType: 'hook',
-        confidence: 'high'
+        confidence: 'high',
+        i18nKeys: {
+          title: 'healthChecks.text.titles.claudeHookShellIgnored',
+          message: 'healthChecks.text.messages.claudeHookShellIgnored',
+          suggestion: 'healthChecks.text.suggestions.claudeHookShellIgnored'
+        }
       }))
     }
     if (platform === 'win32' && hook.command && hook.shell !== 'powershell' && looksPowerShellCommand(hook.command)) {
@@ -276,7 +344,12 @@ function checkClaudeHooks(
         scope,
         path: filePath,
         assetType: 'hook',
-        confidence: 'medium'
+        confidence: 'medium',
+        i18nKeys: {
+          title: 'healthChecks.text.titles.claudeHookNoWindowsShell',
+          message: 'healthChecks.text.messages.claudeHookNoWindowsShell',
+          suggestion: 'healthChecks.text.suggestions.claudeHookNoWindowsShell'
+        }
       }))
     }
   }
@@ -299,7 +372,12 @@ function checkClaudePermissions(
       suggestion: 'Use this only for trusted local workflows.',
       scope,
       path: filePath,
-      assetType: 'permission'
+      assetType: 'permission',
+      i18nKeys: {
+        title: 'healthChecks.text.titles.claudeBypassPermissions',
+        message: 'healthChecks.text.messages.claudeBypassPermissions',
+        suggestion: 'healthChecks.text.suggestions.claudeBypassPermissions'
+      }
     }))
   }
 
@@ -316,7 +394,12 @@ function checkClaudePermissions(
       suggestion: 'Prefer narrower command allow rules.',
       scope,
       path: filePath,
-      assetType: 'permission'
+      assetType: 'permission',
+      i18nKeys: {
+        title: 'healthChecks.text.titles.claudeBroadBashPermission',
+        message: 'healthChecks.text.messages.claudeBroadBashPermission',
+        suggestion: 'healthChecks.text.suggestions.claudeBroadBashPermission'
+      }
     }))
   }
 }
@@ -360,7 +443,14 @@ function checkClaudeProjectAgentsImport(checks: HealthCheck[], projectDir: strin
       description: 'Add a Claude memory import for the shared project instructions.',
       snippet: '@AGENTS.md'
     },
-    confidence: 'medium'
+    confidence: 'medium',
+    i18nKeys: {
+      title: 'healthChecks.text.titles.claudeProjectAgentsNotImported',
+      message: 'healthChecks.text.messages.claudeProjectAgentsNotImported',
+      suggestion: 'healthChecks.text.suggestions.claudeProjectAgentsNotImported',
+      fixLabel: 'healthChecks.text.fixLabels.importAgentsMd',
+      fixDescription: 'healthChecks.text.fixDescriptions.importAgentsMd'
+    }
   }))
 }
 
@@ -380,7 +470,14 @@ function checkClaudeAgents(checks: HealthCheck[], agentsDir: string, scope: Asse
         suggestion: 'Claude Code subagents require Markdown files with name and description frontmatter.',
         scope,
         path: filePath,
-        assetType: 'agent'
+        assetType: 'agent',
+        i18nKeys: {
+          title: 'healthChecks.text.titles.claudeSubagentIncomplete',
+          // Raw parser errors have no stable key; only the derived prose does.
+          message: parsed.error ? undefined : 'healthChecks.text.messages.claudeSubagentIncomplete',
+          suggestion: 'healthChecks.text.suggestions.claudeSubagentIncomplete'
+        },
+        params: parsed.error ? undefined : { name }
       }))
     }
   }
@@ -404,7 +501,13 @@ function checkClaudeSessions(checks: HealthCheck[], projectsDir: string): void {
       message: `${emptyDirs.length} empty project directories found in ~/.claude/projects/.`,
       suggestion: 'This is usually harmless. Remove stale directories if they are no longer useful.',
       scope: 'session',
-      path: projectsDir
+      path: projectsDir,
+      i18nKeys: {
+        title: 'healthChecks.text.titles.claudeEmptyProjectDirs',
+        message: 'healthChecks.text.messages.claudeEmptyProjectDirs',
+        suggestion: 'healthChecks.text.suggestions.claudeEmptyProjectDirs'
+      },
+      params: { count: emptyDirs.length }
     }))
   }
 }
