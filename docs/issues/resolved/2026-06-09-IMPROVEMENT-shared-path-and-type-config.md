@@ -33,3 +33,9 @@
 # 落地更新 (2026-06-20, GH-145)
 - **signature 收敛: 部分 DONE + 转义方向更正** — explore 核实 issue 把转义方向写反: 需补转义的是 `search.ts` (引擎侧 createIndexSignature 字段不转义, 有伪相等风险), 非 result-signature (renderer 已转义)。GH-145 给 search.ts 加 signatureField 转义 (**修了潜在伪相等 bug**: path/metadata 含分隔符字节漏触发 ensureIndexed 重建)。result-signature 已转义+已复用 row, near-no-op 按 surgical 跳过。跨 package 物理隔离 → 未抽"单一真源"共享模块 (不可达, 两侧镜像)。
 - 余: 习语完全统一仍可低优收尾; asset-type 配置表过期不做; 盘根 canonical 暂留。work: `docs/works/_archive/2026-06-19-gh-145-scan-engine-nested-ignore-signature`。
+
+## 收口 (2026-06-20, CLOSED — 实质已完成, 余项低价值/阻塞)
+- **路径比较统一 (samePath/isPathInside)**: DONE。**signature 转义伪相等 bug**: DONE (GH-145)。这是本 issue 的实质价值。
+- **盘根 canonical 分叉**: 核实**确为真分叉** — `shared/scope.ts:33` normalizeProjectPath 将 `C:/`→`C:` (去斜杠), 而渲染层 `lib/session-location-groups.ts:239` 自有副本将 `C:/`→`C:/` (留斜杠, 供其 isRootPath/formatProjectPathLabel root 检测)。故 Windows 盘根项目分组键 (`C:/`) 与 scope 过滤键 (`c:`) 不等。**但影响病态可忽略**: 真实项目不会落在裸盘根 `C:\`; 且统一受跨 package 物理隔离 + 两侧 root 检测语义差异阻塞 (issue 已记"不可达/两侧镜像")。won't-fix-low-value, 若真出现盘根项目再开。
+- **signature 习语完全统一 / asset-type 配置表**: 前者低价值且跨 package 不可抽单一真源; 后者前提不成立已过期。均不做。
+- 结论: 关闭。

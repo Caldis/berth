@@ -34,3 +34,9 @@ subagent 列出的手写 `bg-primary/10 text-primary` (多为 filter/选中态�
 2. (可选) Tailwind class lint (eslint-plugin-tailwindcss 或自定义) 禁 `bg-primary/[低透明] + text-primary` 组合;
    代价: 可能误伤合法的 accent 选中态 + 图表 fill, 需 allowlist。
 3. 收编硬编码 `text-blue-500` → `text-primary` 或语义 token (5 分钟, 独立小项)。
+
+## 收口 (2026-06-20, RESOLVED)
+- **选项 3 DONE** (commit 7e048e56): 4 处装饰图标硬编码 `text-blue-500` (health-entry Info / session-row+instructions+session-detail Sparkles) → 语义 token `text-primary` (asset-count-chip 注释示例同步)。视觉一致 + 主题感知。
+- **选项 1 (选中态 pill accent vs 中性)**: 按 issue 自身分析, 选中态用 token 化 accent (`bg-primary/10 text-primary`) 属**合理常见模式**, 与「信息 tag 误用 primary」语义不同, 故有意保留, 非缺陷。
+- **选项 2 (className 字符串 Tailwind class lint)**: 不做 — 会误伤合法 accent 选中态 + 图表 fill, 需大 allowlist, 成本 > 收益; 组件层 ESLint 护栏 (dcc0044) 已覆盖 JSX 属性组合主路径。
+- 结论: 「蓝字灰底」核心缺陷 (组件层 dcc0044 + 硬编码层本次) 已根治, 关闭。

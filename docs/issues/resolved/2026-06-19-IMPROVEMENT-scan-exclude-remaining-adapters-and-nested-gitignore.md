@@ -21,3 +21,8 @@ GH-142 把 excludePaths 下沉到 adapter 枚举层 + respectGitignore 接入, �
 - **(a) 其他 adapter 下沉: 关闭** — explore 逐一核实 8 adapter, 除 claude-code 外无项目树递归 glob (全固定浅 config 子目录), 抽共享枚举零收益。
 - **(c) claude-code 其他 scanDir: 未做** (低优, 留 future)。
 - work: `docs/works/_archive/2026-06-19-gh-145-scan-engine-nested-ignore-signature`。
+
+## 收口 (2026-06-20, CLOSED)
+- (a) 关闭 (8 adapter 核实无项目树递归 glob, 零收益); (b) DONE (loadNestedProjectIgnore 嵌套累积 + relativize, 已测含已知限制)。这是本 issue 实质价值。
+- (c) claude-code 其他 scanDir (skills/agents/commands 等固定浅 `.claude/` 子目录) 注入 excludePaths/gitignore: **收益递减, won't-do** — 固定浅目录 IO 极小, filterExcludedPaths 兜底已保正确性。若未来实测这些子目录成 IO 热点再开。
+- 结论: 关闭。
