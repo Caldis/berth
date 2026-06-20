@@ -1,6 +1,6 @@
 // Internal health check shapes shared across providers.
 // Extracted from health.ts (GH #6 health-restructure, behavior-preserving).
-import type { AssetScope } from '@shared/types/asset'
+import type { Asset, AssetScope } from '@shared/types/asset'
 import type {
   HealthCheck,
   HealthCheckCategory,
@@ -8,8 +8,22 @@ import type {
   HealthCheckEvidence,
   HealthCheckFix,
   HealthCheckSeverity,
-  HealthCheckTarget
+  HealthCheckTarget,
+  ScanError
 } from '@shared/types/ipc'
+
+export interface HealthCheckOptions {
+  homeDir?: string
+  projectDir?: string
+  platform?: NodeJS.Platform
+  env?: NodeJS.ProcessEnv
+  assets?: Asset[]
+  scanErrors?: ScanError[]
+}
+
+export type NormalizedHealthCheckOptions =
+  Required<Pick<HealthCheckOptions, 'homeDir' | 'platform' | 'env'>> &
+  Omit<HealthCheckOptions, 'homeDir' | 'platform' | 'env'>
 
 export interface HealthCheckInput {
   id: string
