@@ -8,6 +8,8 @@ berth 项目自用工具 (不含企业内部设施)。Agent 据此主动获取�
 - `gh` — GitHub CLI (PR / issue / CI 状态), 远端 Caldis/berth。
 - `gh project` — 任务看板跟踪 (new 建 item / archive 置 Done / 同步 task type、priority、日期与 debt 字段)。**前置**: token 需 `project` + `read:project` scope;
   缺失时 `gh auth refresh -h github.com -s project,read:project` (浏览器授权, Agent 不可代办, 须请用户运行)。
+  - 能力/scope 探测报失败时先排除"探测器本身不存在或不可用", 再判定被测目标失败 (尤其 wrapper / 特定 flag 问题); 上次会话已跑通的能力这次探测失败优先怀疑探测方式 (friction 20260620-macos-no-timeout-command-false-scope-failure)。
+- **macOS 代码签名身份排查**: `security find-identity` 只反映**钥匙串里**的 cert+key 配对; CI 签名材料常以独立 **.p12 文件**存放 (本仓 macmini `~/Docs/ci-signing/`)。下结论"没有私钥 / 要新建证书"前先 `find ~ -iname '*.p12'` + 看约定签名材料目录; 签名脚本/检查不写死 Team ID, 从 `Developer ID Application: NAME (TEAMID)` 自动提取; Apple Development 证书不能代替 Developer ID 分发/公证 (friction 20260614-macos-signing-identity-in-p12-file-not-keychain)。
 
 ## 包与构建
 - `pnpm` (钉死 9.x, 见 package.json packageManager) — 依赖与脚本。
@@ -27,11 +29,13 @@ berth 项目自用工具 (不含企业内部设施)。Agent 据此主动获取�
 - **harness:check ≠ harness 单测**: `harness:check` 过不代表 `tests/harness/` 过 — 测试 fixture 与 `WORKFLOW_ACTIONS`/`ACTION_IDS` 会静默漂移。改 harness 体系 (workflow 清单、脚本、action id) 后, 提交前门禁必须含 `pnpm test` (至少 tests/harness), 不止 harness:check (friction 20260609-fixture-drift)。
 - **Windows spawn 故障辨析**: `harness:prepush` 报 `spawn EINVAL` 是 Node 24 + `pnpm.cmd` 的 spawn 启动失败, 不是应用代码检查失败 — 逐项单独运行 lint/typecheck/test 定位 (friction 20260603-prepush-spawn)。`pnpm install` postinstall 因 esbuild optionalDependencies 未物化而 ENOENT 时, 不阻塞 dev/test/typecheck/build 链路; 打包用 `--ignore-scripts` 跳过后针对性重建原生模块 (friction 20260606-esbuild-postinstall)。
 - **codex exec 大模块审查**: 禁 web_search、限定文件清单、要求简洁输出、多轮用摘要回灌; 官方文档核验留给主 Agent (friction 20260607-codex-context-exhaustion)。
+- **knip (alias 消费 workspace 源码型 monorepo)**: berth root 经 tsconfig/vite path-alias 消费 `@berth/scan-engine` 源码, 非 workspace 包解析; knip 检测到 pnpm-workspace.yaml 会按 workspace 隔离分析致引擎核心文件误报 unused。配法: `ignoreWorkspaces: ["packages/scan-engine"]` + root `paths` 复刻 alias + `ignoreDependencies: ["@berth/scan-engine"]` + entry 列全多入口。反向核验判据: 被 main/renderer 经 alias 实际消费的核心文件 (engine/scanner.ts, adapters/*/parsers) 不得出现在 unused, 出现即 paths 没生效; 任何 knip 配置改动后必跑此核验 (friction 20260620-knip-pnpm-workspace-alias-config)。
 - `node scripts/harness-projects.mjs fields ensure` — 创建或确认 GitHub Project 自定义字段: Task Type / Priority / Start date / Target date / Archived at / debt / scope / risk / confidence / areas / maintenance subtype / source kind。
 - `pnpm harness:projects:check` — 只读审计 GitHub Project 状态; `node scripts/harness-projects.mjs check --strict` 额外检查字段定义和可读字段值; archive 阶段用 `node scripts/harness-projects.mjs done <task-dir>` 强制置 Done 并回读确认。
 - `harness-projects` 的 `done` / `ensure` / `fields ensure` 是多字段顺序 GraphQL 写入且非幂等续传 (失败从头重写整组)。GitHub API 抖动时常见 `unexpected EOF` / `net/http: TLS handshake timeout`, 且失败字段会漂移; 这是可重试网络错误, 不是缺 scope / 字段非法, 也不等于 archive 阻塞。处置: 有界退避重试 (可后台执行, 主 Agent 消费成功结果后再推进), 不手敲反复重试; archive 必须回读确认远端 Done 后才移动目录。
 
 ## 网络与临时文件
+- **macOS bash 无 GNU `timeout`/`gtimeout`** (除非 `brew install coreutils`): 不要用它包裹命令, 否则 `command not found` 伪装成被测命令失败。需超时控制改用命令自带超时参数、`perl -e 'alarm N; exec @ARGV' <cmd>`、或后台 + sleep + kill (friction 20260620-macos-no-timeout-command-false-scope-failure)。
 - 常规网络检索用 WebSearch/WebFetch; 除非用户明确要求浏览器实测、截图或交互验证, 不打开 GUI 浏览器抓网页。
 - 临时文件写 `$env:TEMP` / `os.tmpdir()` 或已约定的忽略目录; Windows 不用 `/tmp`, 也不把临时截图写进项目目录。
 

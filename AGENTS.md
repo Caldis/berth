@@ -34,6 +34,7 @@
 - **dev 端口**: 5173 常被同机另一项目占用, electron-vite 自动跳 5174+。
 - **单实例**: 应用已加 `requestSingleInstanceLock` (src/main/index.ts), 重复 `pnpm dev` 不会多开窗口; 第二个实例自杀并聚焦已有窗口。
 - **UI 视觉验收截图**: 必须用 electron 主进程**实测窗口坐标**裁剪 (osascript 取 `{position, size}` of front window → 按显示器缩放比换算物理像素裁剪); 不可猜坐标。进程检测见 `.agents/workflow/4.0-verify.md` (完整 .pnpm 路径模式 + 排除 helper)。
+- **加依赖 postinstall 报 `.pnpm/node_modules/...` ENOENT**: 不要逐包打地鼠, 直接全量扫清 `node_modules/.pnpm/node_modules` 下 LinkType 存在但 Target 不存在的断链 junction (历史删依赖/跨版本 pnpm 残留, 仅 install-app-deps 遍历触发, 日常 test/build 不受影响)。见 `docs/friction/_archive/20260612-3.0-implement-pnpm-store-dangling-junctions.md`。
 
 # EVOLUATION
 当用户对先前的任务或指令进行纠正或指示时, 你需要在验证其有效性后将其写入 `docs/issues/`
