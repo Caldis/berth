@@ -286,7 +286,7 @@ function HealthCheckRow({
 function HealthCheckIcon({ severity }: { severity: HealthCheck['severity'] }): React.ReactElement {
   if (severity === 'error') return <XCircle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
   if (severity === 'warning') return <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-yellow-500" />
-  return <Info className="mt-0.5 h-4 w-4 shrink-0 text-blue-500" />
+  return <Info className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
 }
 
 function readIgnoredHealthChecks(): Set<string> {

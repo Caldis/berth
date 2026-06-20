@@ -155,7 +155,7 @@ function SkillCard({ asset, focused = false }: { asset: Asset; focused?: boolean
           aria-controls={`instruction-detail-${asset.id}`}
           className="flex min-w-0 flex-1 items-center gap-3 px-4 py-3 text-left"
         >
-          <Sparkles className="h-4 w-4 shrink-0 text-blue-500" />
+          <Sparkles className="h-4 w-4 shrink-0 text-primary" />
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
               <span className="truncate text-sm font-medium text-foreground">{asset.name}</span>

@@ -324,7 +324,7 @@ function LoadedAssetsPanel({
                 key={skill.id}
                 className="flex items-center gap-3 px-4 py-2 text-sm"
               >
-                <Sparkles className="h-3.5 w-3.5 shrink-0 text-blue-500" />
+                <Sparkles className="h-3.5 w-3.5 shrink-0 text-primary" />
                 <span className="truncate font-medium text-card-foreground">
                   {skill.name}
                 </span>

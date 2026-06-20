@@ -76,7 +76,7 @@ export function SessionRow({
           </span>
           <AssetCountChip
             icon={Sparkles}
-            iconClassName="text-blue-500"
+            iconClassName="text-primary"
             count={session.skillsUsed.length}
             names={session.skillsUsed}
             label={skillsLabel}

@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils'
 
 interface AssetCountChipProps {
   icon: LucideIcon
-  /** Tailwind color class for the icon (e.g. text-blue-500), matching session detail semantics. */
+  /** Tailwind color class for the icon (e.g. text-primary), matching session detail semantics. */
   iconClassName?: string
   count: number
   /** Full asset names; surfaced (truncated to `max`) via title/aria-label. */
