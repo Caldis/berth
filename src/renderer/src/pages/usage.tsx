@@ -9,7 +9,7 @@ import {
   ResponsiveContainer
 } from 'recharts'
 import { Calculator, DollarSign, Coins, Copy } from 'lucide-react'
-import { cn, formatNumber, formatCurrency } from '@/lib/utils'
+import { formatNumber, formatCurrency } from '@/lib/utils'
 import type {
   CostMode,
   PricingMiss,
@@ -28,7 +28,7 @@ import { CostSourceBadge } from '@/components/shared/cost-source-badge'
 import { NoticePanel } from '@/components/shared/notice-panel'
 import { projectPathForScope } from '@shared/scope'
 import { usePageChrome, type PageChromeConfig } from '@/components/layout/page-chrome'
-import { FilterSelect, SelectItem } from '@/components/ui'
+import { FilterSelect, SegmentedTabs, SelectItem } from '@/components/ui'
 import { CHART_CATEGORICAL, CHART_SERIES_FILL } from '@/lib/chart-colors'
 
 const TIME_RANGES = [
@@ -351,24 +351,12 @@ export function Usage(): React.ReactElement {
   const isInitialLoading = !hasLoadedUsage && !usage && !loadError
 
   const pageChromeActions = useMemo<React.ReactNode>(() => (
-    <div className="flex gap-1 rounded-lg border border-border bg-muted/50 p-1">
-      {TIME_RANGES.map((range) => (
-        <button
-          key={range.value}
-          type="button"
-          onClick={() => setDays(range.value)}
-          aria-pressed={days === range.value}
-          className={cn(
-            'rounded-md px-3 py-1 text-xs font-medium transition-colors',
-            days === range.value
-              ? 'bg-background text-foreground shadow-sm'
-              : 'text-muted-foreground hover:text-foreground'
-          )}
-        >
-          {t(range.labelKey)}
-        </button>
-      ))}
-    </div>
+    <SegmentedTabs
+      ariaLabel={t('overview.dashboard.rangeLabel')}
+      items={TIME_RANGES.map((range) => ({ key: String(range.value), label: t(range.labelKey) }))}
+      selectedKey={String(days)}
+      onSelectionChange={(k) => setDays(Number(k))}
+    />
   ), [days, t])
 
   const pageChrome = useMemo<PageChromeConfig>(() => ({
