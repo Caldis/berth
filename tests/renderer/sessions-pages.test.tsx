@@ -1096,7 +1096,7 @@ describe('session pages', () => {
       costMode: 'auto'
     })
 
-    fireEvent.click(screen.getByRole('button', { name: 'Last 30 days' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Last 30 days' }))
 
     await waitFor(() => {
       expect(window.api.usage.summary).toHaveBeenLastCalledWith({
@@ -1105,7 +1105,7 @@ describe('session pages', () => {
       })
     })
 
-    fireEvent.click(screen.getByRole('button', { name: 'All time' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'All time' }))
 
     await waitFor(() => {
       expect(window.api.usage.summary).toHaveBeenLastCalledWith({

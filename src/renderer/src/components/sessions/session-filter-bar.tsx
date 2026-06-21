@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import { FilterSelect, SelectItem, Tabs, Tab } from '@/components/ui'
+import { FilterSelect, SegmentedTabs, SelectItem, type SegmentedItem } from '@/components/ui'
 import { formatNumber } from '@/lib/utils'
 import type {
   SessionAgentFilter,
@@ -9,12 +9,6 @@ import type {
 
 // GH-116: 列表页结构化筛选条 — agent 分段 (带计数) + 模型多选 + 排序 + 分组 + 结果计数。
 // 与 page-chrome 的文本搜索可组合; 全部控件经 @/components/ui。
-
-const GROUP_TABS_CLASSNAMES = {
-  tabList: 'rounded-md border border-input bg-transparent p-0.5',
-  cursor: 'shadow-sm',
-  tabContent: 'text-xs text-muted-foreground group-data-[selected=true]:text-primary-foreground'
-}
 
 interface SessionFilterBarProps {
   agentFilter: SessionAgentFilter
@@ -47,17 +41,20 @@ export function SessionFilterBar({
 }: SessionFilterBarProps): React.ReactElement {
   const { t } = useTranslation()
 
-  const agentTab = (key: SessionAgentFilter, label: string): React.ReactElement => (
-    <Tab
-      key={key}
-      title={
-        <span className="flex items-center gap-1.5">
-          {label}
-          <span className="tabular-nums opacity-70">{formatNumber(agentCounts[key])}</span>
-        </span>
-      }
-    />
-  )
+  const agentItem = (key: SessionAgentFilter, label: string): SegmentedItem<SessionAgentFilter> => ({
+    key,
+    label: (
+      <span className="flex items-center gap-1.5">
+        {label}
+        <span className="tabular-nums opacity-70">{formatNumber(agentCounts[key])}</span>
+      </span>
+    )
+  })
+  const groupByItems: SegmentedItem<SessionGroupBy>[] = [
+    { key: 'project', label: t('sessions.project') },
+    { key: 'date', label: t('sessions.date') },
+    { key: 'none', label: t('sessions.filters.flat') }
+  ]
 
   return (
     <div
@@ -66,18 +63,16 @@ export function SessionFilterBar({
       aria-label={t('sessions.filters.label')}
       className="flex flex-wrap items-center gap-2"
     >
-      <Tabs
-        aria-label={t('sessions.filters.agent')}
-        size="sm"
-        color="primary"
+      <SegmentedTabs
+        ariaLabel={t('sessions.filters.agent')}
+        items={[
+          agentItem('all', t('sessions.filters.agentAll')),
+          agentItem('claude', 'Claude'),
+          agentItem('codex', 'Codex')
+        ]}
         selectedKey={agentFilter}
-        onSelectionChange={(key) => onAgentFilterChange(key as SessionAgentFilter)}
-        classNames={GROUP_TABS_CLASSNAMES}
-      >
-        {agentTab('all', t('sessions.filters.agentAll'))}
-        {agentTab('claude', 'Claude')}
-        {agentTab('codex', 'Codex')}
-      </Tabs>
+        onSelectionChange={onAgentFilterChange}
+      />
 
       <FilterSelect
         aria-label={t('sessions.filters.model')}
@@ -132,18 +127,12 @@ export function SessionFilterBar({
           })}
         </span>
         <span className="text-xs text-muted-foreground">{t('sessions.groupBy')}</span>
-        <Tabs
-          aria-label={t('sessions.groupBy')}
-          size="sm"
-          color="primary"
+        <SegmentedTabs
+          ariaLabel={t('sessions.groupBy')}
+          items={groupByItems}
           selectedKey={groupBy}
-          onSelectionChange={(key) => onGroupByChange(key as SessionGroupBy)}
-          classNames={GROUP_TABS_CLASSNAMES}
-        >
-          <Tab key="project" title={t('sessions.project')} />
-          <Tab key="date" title={t('sessions.date')} />
-          <Tab key="none" title={t('sessions.filters.flat')} />
-        </Tabs>
+          onSelectionChange={onGroupByChange}
+        />
       </div>
     </div>
   )
