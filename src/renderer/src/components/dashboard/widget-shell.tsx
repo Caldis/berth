@@ -4,7 +4,8 @@ import { cn } from '@/lib/utils'
 import type { WidgetSize } from './widget-types'
 
 // GH-138: 无边框语义容器 (克制编辑感)。默认仅一个安静的 uppercase 标签 + 内容, 靠留白分区;
-// affordance (拖拽柄/尺寸循环/隐藏) 悬停或编辑态才显。编辑态加虚线环标识可拖拽。
+// affordance (拖拽柄/尺寸循环/隐藏) 悬停或编辑态才显。编辑态加外扩虚线环 (绝对定位 overlay)
+// 标识可拖拽: 环画在 widget 间已有留白里, 出现与否不改内容布局 (不再用 p-3 把内容向内挤)。
 // 表现焊死在组件内, 不暴露改外观的 className 逃生舱 (ARCHITECTURE 规则 6)。
 
 interface WidgetShellProps {
@@ -35,11 +36,17 @@ export function WidgetShell({
     <section
       className={cn(
         'group/widget relative flex h-full min-w-0 flex-col gap-2.5 rounded-lg transition-shadow',
-        isEditing && !isDragging && 'p-3 ring-1 ring-dashed ring-border',
         // 拖拽中: 实心抬起面 + 阴影 (替代淡出, 更有"拿起"手感)
         isDragging && 'p-3 bg-card shadow-xl ring-1 ring-border'
       )}
     >
+      {/* 编辑态虚线环: 绝对定位外扩到 widget 间距留白, 脱离文档流 → 出现与否不挤压内容布局 */}
+      {isEditing && !isDragging && (
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -inset-2 rounded-xl ring-1 ring-dashed ring-border"
+        />
+      )}
       <header className="flex h-5 items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-1.5">
           {isEditing && (
