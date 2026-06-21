@@ -80,7 +80,7 @@ export function WidgetShell({
                   aria-label={`Size ${s}`}
                   aria-pressed={s === size}
                   className={cn(
-                    'rounded px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
+                    'rounded-sm px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
                     s === size ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
                   )}
                 >

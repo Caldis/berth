@@ -106,7 +106,7 @@ export function UsageTrendWidget({ size, chartType, onChartTypeChange }: WidgetR
               onClick={() => setRangeDays(option)}
               aria-pressed={rangeDays === option}
               className={cn(
-                'rounded px-2 py-0.5 font-medium tabular-nums transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
+                'rounded-sm px-2 py-0.5 font-medium tabular-nums transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
                 rangeDays === option
                   ? 'bg-background text-foreground shadow-sm'
                   : 'text-muted-foreground hover:text-foreground'

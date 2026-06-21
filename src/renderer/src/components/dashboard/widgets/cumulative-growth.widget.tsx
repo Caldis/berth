@@ -49,7 +49,7 @@ export function CumulativeGrowthWidget({ size }: WidgetRenderProps): React.React
               onClick={() => setMetric(m)}
               aria-pressed={metric === m}
               className={cn(
-                'rounded px-2 py-0.5 font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
+                'rounded-sm px-2 py-0.5 font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
                 metric === m ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
               )}
             >

@@ -58,7 +58,7 @@ export function TopUsageWidget({ size }: WidgetRenderProps): React.ReactElement 
             type="button"
             onClick={() => setKind(k)}
             className={cn(
-              'rounded px-2 py-0.5 font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
+              'rounded-sm px-2 py-0.5 font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
               kind === k ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
             )}
           >

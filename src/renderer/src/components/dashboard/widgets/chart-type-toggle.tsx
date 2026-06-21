@@ -60,7 +60,7 @@ export function ChartTypeToggle<T extends string>({
           title={label}
           aria-pressed={value === id}
           className={cn(
-            'rounded p-1 transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
+            'rounded-sm p-1 transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
             value === id ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
           )}
         >
