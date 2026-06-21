@@ -6,7 +6,6 @@
   - `background-progressive-asset-indexer` (FEATURE, 2026-06-07) — 后台渐进式资产索引器: 余 cap-5 行级 delta + GH-117 activate + 可暂停/档位/背压。
   - `health-restructure-and-message-contract` (IMPROVEMENT, 2026-06-10) — health 引擎已拆 13 模块 (Phase-1) + i18n key-first 契约 (Phase-2A); 余 Phase-2 消息契约收尾。
   - `ci-artifact-actions-node-deprecation` (IMPROVEMENT, 2026-06-20) — CI artifact actions Node 版本弃用治理。
-- **另有 1 个 harness 治理 meta 任务** (非产品线): `2026-06-21-IMPROVEMENT-harness-health-cleanup-remaining` (治理契约文件精细清理, 不进下方产品依赖图)。
 - **编排纪律**: fresh general-purpose 子代理 (非 fork) · 单一职责窄指令 · 只 git add 自己文件 + diff --cached 核对 · 子代理自报验收一律 lead 独立复跑门禁 · 每收敛点后台子代理发版不阻塞主线。
 - **注**: 下方「依赖图 / 分期」为 2026-06 大重构期的历史规划视图, 绝大多数条目已 resolved; 仅作架构演进留档, 不再反映当前 active 集。
 

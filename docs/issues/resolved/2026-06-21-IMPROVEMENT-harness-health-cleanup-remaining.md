@@ -54,3 +54,13 @@
 
 ## 来源
 2026-06-20/21 复盘 + 3 路并行审计 (top-level / _shared+phases / skills+scripts+ARCHITECTURE)。审计原始发现见各 commit + 本文已蒸馏关键项。
+
+## 解决 (2026-06-21, RESOLVED)
+E→D→C→B→A 五项全部落地, 每项一提交并推送, 每项前后 `pnpm harness:check` 绿:
+- **E** (`16105be2`): `_roadmap.md` 顶部快照由 stale 10/14 active 刷新为真实 4 个产品 active issue (harness:issues 核对) + 标注 harness meta 任务, 历史依赖图/分期块加留档说明。
+- **D** (`12735241`): `ARCHITECTURE.md` 纯补 3 处本会话产物 — `engine/health/` 13 模块 (health.ts 1446→50 facade) · `engine/assets/progress-coalescer.ts` (GH #10) · HealthCheck `i18nKeys`/`params` key-first 契约 (GH #6 Phase-2A)。
+- **C** (`4a6315e0`): Superpowers 禁止清单去重 — `_shared.md` 不变量 18 留 canonical, AGENTS.md / 2.0-design / 3.0-implement 删重复枚举转一行指针。**关键**: harness-check 的 `SUPERPOWERS_FLOW_POLICY` 校验 4 个文件全含 3 条短语, 故非 canonical 三处不能裁成纯指针, 只删超出短语的枚举细节。
+- **B** (`6123ac1b`): `4.0-verify.md` 6 条低复发 friction 派生规则降为终态一行 + 指向 `_archive/` 精确路径 (Windows DPI/坐标三 bullet 合一); 高复发规则 (golden/snapshot 可移植性 · CI 红归因 · static-green · HeroUI 浮层时序) 概要保留。注: 物理行 68→66, 实际收益是低复发条目 prose ~40% 压缩 (这些条目本就单行, 删内容才能进一步降行, 但与"降为一行"冲突, 故未追求 ~48 行目标值)。
+- **A** (`2c043801`): `_shared.md` §最高优先级规则 作 canonical 详细家 (吸收 #11 独有的 `git add -A` 禁止 + 误提交 `git reset --soft` 回收), 不变量 #11 主段裁为简指针, **保留 #11 编号**与三条子项。消费成功结果收口条独立保留在不变量 19。**关键**: frequent-scoped-commit / CI 命令 / subagent-gate 短语 file 级仍满足; 不变量编号 1..22 连续; `不变量 11`/`最高优先级` 跨引用全对得上。
+
+总验收: `pnpm harness:check` 绿 · `harness:sync` already in sync · 编辑过的 active 文件无 non-archive friction 断链 · 全部 entry-rules validator 过。
