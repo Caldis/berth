@@ -236,7 +236,8 @@
         "tokens": "累计 Token",
         "sessions": "累计会话",
         "tokensShort": "Token",
-        "sessionsShort": "会话"
+        "sessionsShort": "会话",
+        "metricLabel": "累计指标"
       },
       "efficiency": {
         "perSession": "tok/会话",
@@ -266,8 +267,10 @@
         "skill": "技能",
         "mcp": "MCP",
         "empty": "暂无使用记录",
-        "runs": "{{count}} 次"
+        "runs": "{{count}} 次",
+        "kindLabel": "资源类型"
       },
+      "rangeLabel": "时间范围",
       "agentFilter": {
         "all": "全部 agent",
         "label": "Agent"

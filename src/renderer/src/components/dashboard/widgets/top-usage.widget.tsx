@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useInsights } from '../insights-context'
-import { cn } from '@/lib/utils'
+import { SegmentedTabs } from '@/components/ui'
 import type { WidgetRenderProps } from '../widget-types'
 
 type UsageKind = 'skill' | 'mcp'
@@ -51,21 +51,13 @@ export function TopUsageWidget({ size }: WidgetRenderProps): React.ReactElement 
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="inline-flex w-fit items-center gap-0.5 rounded-md bg-muted/50 p-0.5 text-[11px]">
-        {(['skill', 'mcp'] as const).map((k) => (
-          <button
-            key={k}
-            type="button"
-            onClick={() => setKind(k)}
-            className={cn(
-              'rounded-sm px-2 py-0.5 font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
-              kind === k ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
-            )}
-          >
-            {t(`overview.dashboard.topUsage.${k}`)}
-          </button>
-        ))}
-      </div>
+      <SegmentedTabs
+        ariaLabel={t('overview.dashboard.topUsage.kindLabel')}
+        items={(['skill', 'mcp'] as const).map((k) => ({ key: k, label: t(`overview.dashboard.topUsage.${k}`) }))}
+        selectedKey={kind}
+        onSelectionChange={setKind}
+        className="w-fit"
+      />
 
       {loading && !insights ? (
         <div className="space-y-2.5">

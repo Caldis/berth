@@ -1,6 +1,7 @@
 import type { HTMLAttributes, ReactNode } from 'react'
 import { GripVertical, EyeOff } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { SegmentedTabs } from '@/components/ui'
 import type { WidgetSize } from './widget-types'
 
 // GH-138: 无边框语义容器 (克制编辑感)。默认仅一个安静的 uppercase 标签 + 内容, 靠留白分区;
@@ -69,25 +70,14 @@ export function WidgetShell({
             isEditing ? 'opacity-100' : 'pointer-events-none opacity-0 group-hover/widget:pointer-events-auto group-hover/widget:opacity-100'
           )}
         >
-          {onSetSize && sizes && sizes.length > 1 && (
+          {onSetSize && sizes && sizes.length > 1 && size && (
             // 枚举式尺寸选择 (一眼看全所有尺寸, 一次点击命中目标, 不轮换试错)
-            <div role="group" aria-label="Widget size" className="inline-flex items-center gap-0.5 rounded-md bg-muted/50 p-0.5">
-              {sizes.map((s) => (
-                <button
-                  key={s}
-                  type="button"
-                  onClick={() => onSetSize(s)}
-                  aria-label={`Size ${s}`}
-                  aria-pressed={s === size}
-                  className={cn(
-                    'rounded-sm px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
-                    s === size ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
-                  )}
-                >
-                  {s}
-                </button>
-              ))}
-            </div>
+            <SegmentedTabs
+              ariaLabel="Widget size"
+              items={sizes.map((s) => ({ key: s, label: s.toUpperCase() }))}
+              selectedKey={size}
+              onSelectionChange={onSetSize}
+            />
           )}
           {onHide && (
             <button

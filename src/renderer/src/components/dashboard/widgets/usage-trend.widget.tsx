@@ -17,11 +17,12 @@ import { ChartArea, ChartColumn, ChartLine, Coins } from 'lucide-react'
 import { useUsageSummary } from '@/hooks/use-ipc'
 import { useAppStore } from '@/stores/app'
 import { CHART_SERIES_FILL } from '@/lib/chart-colors'
-import { cn, formatCurrency } from '@/lib/utils'
+import { formatCurrency } from '@/lib/utils'
 import { projectPathForScope } from '@shared/scope'
 import { EmptyState } from '@/components/shared/empty-state'
 import { ErrorState } from '@/components/shared/error-state'
 import { CostSourceBadge } from '@/components/shared/cost-source-badge'
+import { SegmentedTabs } from '@/components/ui'
 import type { WidgetRenderProps } from '../widget-types'
 import { ChartTypeToggle, useChartForm, type ChartFormOption } from './chart-type-toggle'
 
@@ -98,24 +99,12 @@ export function UsageTrendWidget({ size, chartType, onChartTypeChange }: WidgetR
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
-        <div className="inline-flex items-center gap-0.5 rounded-md bg-muted/50 p-0.5 text-[11px]">
-          {RANGE_OPTIONS.map((option) => (
-            <button
-              key={option}
-              type="button"
-              onClick={() => setRangeDays(option)}
-              aria-pressed={rangeDays === option}
-              className={cn(
-                'rounded-sm px-2 py-0.5 font-medium tabular-nums transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
-                rangeDays === option
-                  ? 'bg-background text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground'
-              )}
-            >
-              {option}d
-            </button>
-          ))}
-        </div>
+        <SegmentedTabs
+          ariaLabel={t('overview.dashboard.rangeLabel')}
+          items={RANGE_OPTIONS.map((option) => ({ key: String(option), label: `${option}d` }))}
+          selectedKey={String(rangeDays)}
+          onSelectionChange={(k) => setRangeDays(Number(k))}
+        />
         <div className="flex items-center gap-2">
           <ChartTypeToggle options={formOptions} value={form} onChange={setForm} />
           <CostSourceBadge source={usage?.costSource ?? 'unknown'} />

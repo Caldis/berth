@@ -2,8 +2,9 @@ import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis } from 'recharts'
 import { useInsights } from '../insights-context'
+import { SegmentedTabs } from '@/components/ui'
 import { CHART_SERIES_FILL } from '@/lib/chart-colors'
-import { cn, formatCompactNumber } from '@/lib/utils'
+import { formatCompactNumber } from '@/lib/utils'
 import { cumulativeSeries } from '@/lib/activity-trend'
 import type { WidgetRenderProps } from '../widget-types'
 
@@ -41,22 +42,12 @@ export function CumulativeGrowthWidget({ size }: WidgetRenderProps): React.React
             {t(`overview.dashboard.cumulative.${metric}`)}
           </div>
         </div>
-        <div className="inline-flex items-center gap-0.5 rounded-md bg-muted/50 p-0.5 text-[11px]">
-          {METRICS.map((m) => (
-            <button
-              key={m}
-              type="button"
-              onClick={() => setMetric(m)}
-              aria-pressed={metric === m}
-              className={cn(
-                'rounded-sm px-2 py-0.5 font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
-                metric === m ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
-              )}
-            >
-              {t(`overview.dashboard.cumulative.${m}Short`)}
-            </button>
-          ))}
-        </div>
+        <SegmentedTabs
+          ariaLabel={t('overview.dashboard.cumulative.metricLabel')}
+          items={METRICS.map((m) => ({ key: m, label: t(`overview.dashboard.cumulative.${m}Short`) }))}
+          selectedKey={metric}
+          onSelectionChange={setMetric}
+        />
       </div>
       <ResponsiveContainer width="100%" height={chartHeight}>
         <AreaChart data={series} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>

@@ -238,7 +238,8 @@
         "tokens": "Cumulative tokens",
         "sessions": "Cumulative sessions",
         "tokensShort": "Tokens",
-        "sessionsShort": "Sessions"
+        "sessionsShort": "Sessions",
+        "metricLabel": "Cumulative metric"
       },
       "efficiency": {
         "perSession": "tok/session",
@@ -268,8 +269,10 @@
         "skill": "Skills",
         "mcp": "MCP",
         "empty": "No usage recorded yet",
-        "runs": "{{count}} runs"
+        "runs": "{{count}} runs",
+        "kindLabel": "Resource type"
       },
+      "rangeLabel": "Time range",
       "agentFilter": {
         "all": "All agents",
         "label": "Agent"
