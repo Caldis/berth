@@ -34,10 +34,12 @@
   - `assets/runtime.ts` — 中心资产运行时 (GH-122 拆协作者后为状态机 + 数据提交 + 查询门面 + 编排): 维护 `AssetSnapshot`/`AssetRuntimeStatus`; IPC 派生数据经此读取。协作者: `assets/selector-cache.ts` (snapshot.id 键派生缓存) · `assets/project-snapshot-cache.ts` (per-project 快照缓存, 归一键内聚) · `assets/scan-coordinator.ts` (scanner 生命周期 + in-flight 去重 + R4 代际 guard; 链 ③ 调度/背压落点)
   - `assets/worker-host.ts` / `assets/worker.ts` — main process 的 worker_threads 边界; 大文件枚举、JSONL parse 与 adapter `scanAll()` 在 worker 中执行
   - `assets/file-cache.ts` — 进程内 file fingerprint cache, 基于 `path + size + mtimeMs` 复用 Claude session / Codex rollout metadata; 不写磁盘
+  - `assets/progress-coalescer.ts` — 资产扫描进度 IPC 合并 (GH #10): 高频 `assets:progress` 事件按节流窗口合并后再发, 降 IPC/渲染抖动
   - `scanner.ts` — adapter 扫描编排, 供 worker job 使用
   - `watcher.ts` — chokidar 文件监听
   - `search.ts` — MiniSearch 全文索引
   - `relations.ts` — 资产关系解析
+  - `health/` — 健康审计核 (GH #6 Phase-1 拆分, `health.ts` 1446→50 行 facade re-export): 13 模块 — `make-check` (检查构造) · `shared-checks` / `cross-agent` / `claude` / `codex` (分源与跨源检查) · `command-heuristics` / `markdown` / `fs-utils` / `value-guards` / `paths` (解析与判定工具) · `hooks` (hook 健康) · `constants` / `types` (常量与契约)
   - `assets/snapshot-store.ts` / `assets/sqlite-snapshot-store.ts` — 资产快照持久层 (同 `SnapshotStore` 契约 drop-in): JSON store (单测注入目录) 与行级 SQLite store (`berth-index.db`, WAL, 一资产一行, 主进程注入 better-sqlite3); 冷启动从持久快照 SWR 恢复 (GH-113 I3)
 - `src/main/memory/` — 记忆聚合 (只读): `index.ts` `listMemory()` 跨源聚合; `sources/united-memory.ts` + `sources/claude-native.ts` 列出 United Memory 与 Claude 原生记忆 notes; 类型 `types.ts`
 - `src/main/agent-teams/` — Agent Teams 运行时协作记录 (只读, GH-114): `listAgentTeams()` 解析 `~/.claude/teams/{name}/` (config.json + inboxes) 与 `~/.claude/tasks/{name}/`; 与 memory/ 同型的按需 IPC 域 (`teams:list`), 刻意不进 asset model / scanner / watcher / search — teams 目录是 Claude Code 运行时生成、cleanup 即删的状态, UI 以"协作记录"口径呈现, 不声称实时
@@ -73,6 +75,7 @@
   - `assets:status` — 立即返回 `AssetRuntimeStatus`
   - `assets:refresh` — 触发 runtime refresh, 支持 `{ wait?: boolean }`
   - `assets:scan-all` — 兼容旧调用, 内部委托 runtime `legacy-scan-all`
+- **HealthCheck 消息 key-first 契约** (GH #6 Phase-2A): `HealthCheck` 携 `i18nKeys?{title/message/suggestion/fixLabel/fixDescription}` + `params?` (插值参数); engine 发稳定 i18n key, 渲染层 (health-check-i18n) 纯按 key 本地化, 不再反向匹配英文 prose。dual-carry 迁移期 prose 字段与 key 并存。
 
 ## 数据模型
 
