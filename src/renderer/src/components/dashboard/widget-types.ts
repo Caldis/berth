@@ -5,7 +5,7 @@ import type { LucideIcon } from 'lucide-react'
 // 布局逻辑 (lib/dashboard-layout) 只依赖纯元数据, 不碰 icon/component, 便于直测与复用。
 
 export type WidgetWidth = 'W1' | 'W2' | 'W4'
-export type WidgetHeight = 'short' | 'tall'
+export type WidgetHeight = 'mini' | 'short' | 'tall'
 
 /** widget 尺寸 = 宽度档 × 高度档 (二维固定档位; 高度档 1:2 整数倍, 配 dense 无空隙)。 */
 export interface WidgetSize {

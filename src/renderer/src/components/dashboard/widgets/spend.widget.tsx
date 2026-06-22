@@ -11,7 +11,7 @@ import { Sparkline } from './sparkline'
 // GH-138 R2-C: 花费 widget — 唯一的"钱"维度。usage.totalCost/dailyCosts/actualCost/byModel 现成数据。
 // 克制美学: 大字号货币 + 安静 uppercase 标签 + 单色 sparkline + 周环比 ▲▼% (中性色, 涨跌不褒贬)。
 // 尺寸即信息: S=总花费+趋势一瞥 · M=+实际/估算拆分 · L=+分模型成本榜 (钱花在哪个模型)。
-export function SpendWidget({ w, h }: WidgetRenderProps): React.ReactElement {
+export function SpendWidget({ h }: WidgetRenderProps): React.ReactElement {
   const { t } = useTranslation()
   const scopeSelection = useAppStore((s) => s.scopeSelection)
   const projectPath = projectPathForScope(scopeSelection)
@@ -64,7 +64,7 @@ export function SpendWidget({ w, h }: WidgetRenderProps): React.ReactElement {
         </div>
       )}
 
-      {(w !== 'W1' || h === 'tall') && (usage.actualCost > 0 || usage.estimatedCost > 0) && (
+      {h !== 'mini' && (usage.actualCost > 0 || usage.estimatedCost > 0) && (
         <dl className="flex gap-6 text-xs">
           <div className="min-w-0">
             <dt className="text-muted-foreground">{t('overview.dashboard.spend.actual')}</dt>

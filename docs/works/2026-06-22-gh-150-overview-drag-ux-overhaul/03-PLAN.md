@@ -44,3 +44,5 @@
 
 ## verify 回写
 verify 不通过项作为新任务追加于此, phase 退回 implement。
+
+- [ ] **V1 消除固定档留白** (用户 verify 反馈: "多出很多不必要留白"): 2 档 (short220/tall440) 覆盖不了 widget 内容高度光谱 (横条 ~90 / 图表 ~220 / 大列表 ~440), 矮内容顶对齐 → 下方大片留白。修: ①加 `mini` 矮档 (ROW_UNIT=110, mini/short/tall span 1/2/4) 给 stats-band/spend/单值类; ②图表 widget chart 撑满档高 (flex-1 + ResponsiveContainer height="100%", 删固定 chartHeight); ③重分配 catalog 各 widget 档。verify: 真跑截图各 widget 无明显底部留白。

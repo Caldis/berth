@@ -276,6 +276,7 @@
       "size": {
         "width": "Width",
         "height": "Height",
+        "mini": "Mini",
         "short": "Short",
         "tall": "Tall"
       },

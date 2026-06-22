@@ -4,9 +4,9 @@ import type { WidgetWidth, WidgetHeight } from '@/components/dashboard/widget-ty
 // 高度档 1:2 整数倍, 配 grid-auto-rows + grid-flow-row-dense 无空隙填充
 // (dnd-kit sortable grid 官方示例亦用固定 gridAutoRows + dense, 非连续 masonry)。
 
-/** grid-auto-rows 基础行单元 (px); short=1 单元, tall=2 单元。 */
-export const ROW_UNIT = 220
-/** 行间距 (px), 与容器 gap-y 一致; tall 跨 2 行含 1 个间距 → 2×short == 1×tall。 */
+/** grid-auto-rows 基础行单元 (px); mini=1 / short=2 / tall=4 单元 (1:2:4 整数倍)。 */
+export const ROW_UNIT = 110
+/** 行间距 (px), 与容器 gap-y 一致; 跨多行含 (span-1) 个间距 → 2×mini==short, 2×short==tall。 */
 export const ROW_GAP = 24
 
 /** 宽度档 → 响应式 col-span 类 (Tailwind JIT 需字面量, 不可插值)。 */
@@ -21,9 +21,16 @@ export function widthColSpanClass(w: WidgetWidth): string {
   }
 }
 
-/** 高度档 → grid-row 跨度 (行单元数)。 */
+/** 高度档 → grid-row 跨度 (行单元数); mini/short/tall = 1/2/4 (1:2:4 整数倍)。 */
 export function heightRowSpan(h: WidgetHeight): number {
-  return h === 'tall' ? 2 : 1
+  switch (h) {
+    case 'mini':
+      return 1
+    case 'short':
+      return 2
+    case 'tall':
+      return 4
+  }
 }
 
 /** 高度档内容像素高 (含跨行间距): short=ROW_UNIT, tall=2*ROW_UNIT+ROW_GAP。 */

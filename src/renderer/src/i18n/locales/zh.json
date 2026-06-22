@@ -274,6 +274,7 @@
       "size": {
         "width": "宽度",
         "height": "高度",
+        "mini": "迷你",
         "short": "矮",
         "tall": "高"
       },

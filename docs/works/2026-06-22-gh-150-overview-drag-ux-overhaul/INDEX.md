@@ -2,7 +2,7 @@
 task: 2026-06-22-gh-150-overview-drag-ux-overhaul
 task_id: GH-150
 type: feature
-phase: verify
+phase: implement
 created: 2026-06-22
 priority: P1
 target_date:

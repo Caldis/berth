@@ -15,15 +15,18 @@ describe('widget-grid geometry', () => {
     expect(widthColSpanClass('W4')).toContain('xl:col-span-4')
   })
 
-  it('maps height bands to integer row spans (1:2)', () => {
-    expect(heightRowSpan('short')).toBe(1)
-    expect(heightRowSpan('tall')).toBe(2)
+  it('maps height bands to integer row spans (mini/short/tall = 1/2/4)', () => {
+    expect(heightRowSpan('mini')).toBe(1)
+    expect(heightRowSpan('short')).toBe(2)
+    expect(heightRowSpan('tall')).toBe(4)
   })
 
-  it('computes pixel height with row gap baked into tall (2 shorts == 1 tall)', () => {
-    expect(heightPx('short')).toBe(ROW_UNIT)
-    expect(heightPx('tall')).toBe(2 * ROW_UNIT + ROW_GAP)
-    // 两个 short 叠起 (含中间一个 ROW_GAP) 恰好 = 一个 tall 的占位高 → dense 无空隙
+  it('computes pixel height; bands stack as integer multiples (dense 无空隙)', () => {
+    expect(heightPx('mini')).toBe(ROW_UNIT)
+    expect(heightPx('short')).toBe(2 * ROW_UNIT + ROW_GAP)
+    expect(heightPx('tall')).toBe(4 * ROW_UNIT + 3 * ROW_GAP)
+    // 2 mini (含中间 gap) == 1 short; 2 short == 1 tall → dense 整数倍填空
+    expect(2 * heightPx('mini') + ROW_GAP).toBe(heightPx('short'))
     expect(2 * heightPx('short') + ROW_GAP).toBe(heightPx('tall'))
   })
 

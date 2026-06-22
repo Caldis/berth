@@ -3,7 +3,7 @@ import { ALL_WIDGET_IDS, WIDGET_CATALOG } from '@/components/dashboard/widget-ca
 import type { WidgetWidth, WidgetHeight } from '@/components/dashboard/widget-types'
 
 const VALID_WIDTHS: WidgetWidth[] = ['W1', 'W2', 'W4']
-const VALID_HEIGHTS: WidgetHeight[] = ['short', 'tall']
+const VALID_HEIGHTS: WidgetHeight[] = ['mini', 'short', 'tall']
 
 describe('WIDGET_CATALOG', () => {
   it('keys its entries by their own id', () => {
