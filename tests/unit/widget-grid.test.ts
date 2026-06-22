@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { ROW_UNIT, CARD_CHROME, widthColSpanClass } from '@/lib/widget-grid'
+import { ROW_UNIT, ROW_GAP, widthColSpanClass } from '@/lib/widget-grid'
 
 describe('widget-grid geometry', () => {
   it('maps width bands to responsive col-span classes', () => {
@@ -8,10 +8,9 @@ describe('widget-grid geometry', () => {
     expect(widthColSpanClass('W4')).toContain('xl:col-span-4')
   })
 
-  it('exposes a positive row unit + card chrome for content-driven integer quantization', () => {
-    // 高度由内容驱动 + 量化到 ROW_UNIT 整数倍; 卡片撑满 grid 占位 (span×ROW_UNIT), span 由
-    // use-masonry-rows 按内层内容高 + CARD_CHROME 测算。
+  it('exposes a small positive row unit + gap for content-driven integer quantization', () => {
+    // 高度由内容驱动 + 量化到 ROW_UNIT 整数倍 (span 由 use-masonry-rows 按内容高测算)。
     expect(ROW_UNIT).toBeGreaterThan(0)
-    expect(CARD_CHROME).toBeGreaterThan(0)
+    expect(ROW_GAP).toBeGreaterThan(0)
   })
 })

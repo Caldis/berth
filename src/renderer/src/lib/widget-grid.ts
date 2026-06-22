@@ -5,10 +5,10 @@ import type { WidgetWidth } from '@/components/dashboard/widget-types'
 // gridAutoRows:ROW_UNIT + grid-flow-row-dense: 卡片贴合内容 (零内留白) 且高度恒为 ROW_UNIT
 // 整数倍 (规整网格 + dense 无空隙); 高度档只控内容多少, 不强制档高。
 
-/** grid-auto-rows 基础行单元 (px); 卡片撑满 grid 占位 → 可见高度恒为此整数倍。8px 平滑贴合。 */
+/** grid-auto-rows 基础行单元 (px); 高度量化粒度, 越小越贴合内容, 仍保证整数倍对齐。 */
 export const ROW_UNIT = 8
-/** 卡片 chrome (上下 p-3=24 + 上下 border=2); span 计算时加上, 让占位包住边框与内边距。 */
-export const CARD_CHROME = 26
+/** 烘焙进 span 的卡片间竖向间距 (px); span 把它算进高度, 留作行间距。 */
+export const ROW_GAP = 24
 
 /** 宽度档 → 响应式 col-span 类 (Tailwind JIT 需字面量, 不可插值)。 */
 export function widthColSpanClass(w: WidgetWidth): string {
