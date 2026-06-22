@@ -46,11 +46,12 @@ export function WidgetShell({
   return (
     <section
       className={cn(
-        // 常驻细边框 + 轻底, hover 增强边框/底/阴影 — 区分各 widget 边界 (用户 verify 要求可辨识)
-        'group/widget relative flex h-full min-w-0 flex-col gap-2.5 overflow-hidden rounded-lg border border-border/60 bg-card/30 p-3 transition-all hover:border-border hover:bg-card hover:shadow-sm',
+        // 常驻实边框 + 卡面 + 轻阴影浮起 — 明确区分各 widget 边界 (用户 verify 要求可辨识);
+        // hover 阴影加深 + 边框变深, 给交互反馈。克制的 subtle card, 非粗重灰板。
+        'group/widget relative flex h-full min-w-0 flex-col gap-2.5 overflow-hidden rounded-lg border border-border bg-card p-3 shadow-sm transition-all hover:border-foreground/15 hover:shadow-md',
         // 编辑态: 边框转虚线提示可拖拽 (替代原外扩虚线环)
         isEditing && !isDragging && 'border-dashed',
-        isDragging && 'border-solid border-border bg-card shadow-xl ring-1 ring-border'
+        isDragging && 'border-solid border-border shadow-xl ring-1 ring-border'
       )}
     >
       <header className="flex h-5 items-center justify-between gap-2">
