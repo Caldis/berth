@@ -1,12 +1,13 @@
-import type { WidgetWidth, WidgetHeight } from '@/components/dashboard/widget-types'
+import type { WidgetWidth } from '@/components/dashboard/widget-types'
 
-// GH-150: 固定档位网格几何 (纯函数, 直测)。宽 3 档 (1/2/4 列) × 高 2 档 (short/tall)。
-// 高度档 1:2 整数倍, 配 grid-auto-rows + grid-flow-row-dense 无空隙填充
-// (dnd-kit sortable grid 官方示例亦用固定 gridAutoRows + dense, 非连续 masonry)。
+// GH-150: 内容驱动高度 + 整数倍量化网格。宽度档 (W1/W2/W4) 是固定响应式列跨; 高度由内容驱动 —
+// use-masonry-rows 测内容真实高 → gridRow span = ceil((内容高 + 间距) / ROW_UNIT)。配
+// gridAutoRows:ROW_UNIT + grid-flow-row-dense: 卡片贴合内容 (零内留白) 且高度恒为 ROW_UNIT
+// 整数倍 (规整网格 + dense 无空隙); 高度档只控内容多少, 不强制档高。
 
-/** grid-auto-rows 基础行单元 (px); mini=1 / short=2 / tall=4 单元 (1:2:4 整数倍)。 */
-export const ROW_UNIT = 110
-/** 行间距 (px), 与容器 gap-y 一致; 跨多行含 (span-1) 个间距 → 2×mini==short, 2×short==tall。 */
+/** grid-auto-rows 基础行单元 (px); 高度量化粒度, 越小越贴合内容, 仍保证整数倍对齐。 */
+export const ROW_UNIT = 8
+/** 烘焙进 span 的卡片间竖向间距 (px); span 把它算进高度, 留作行间距。 */
 export const ROW_GAP = 24
 
 /** 宽度档 → 响应式 col-span 类 (Tailwind JIT 需字面量, 不可插值)。 */
@@ -19,31 +20,4 @@ export function widthColSpanClass(w: WidgetWidth): string {
     case 'W4':
       return 'col-span-1 md:col-span-2 xl:col-span-4'
   }
-}
-
-/** 高度档 → grid-row 跨度 (行单元数); mini/short/tall = 1/2/4 (1:2:4 整数倍)。 */
-export function heightRowSpan(h: WidgetHeight): number {
-  switch (h) {
-    case 'mini':
-      return 1
-    case 'short':
-      return 2
-    case 'tall':
-      return 4
-  }
-}
-
-/** 高度档内容像素高 (含跨行间距): short=ROW_UNIT, tall=2*ROW_UNIT+ROW_GAP。 */
-export function heightPx(h: WidgetHeight): number {
-  const span = heightRowSpan(h)
-  return span * ROW_UNIT + (span - 1) * ROW_GAP
-}
-
-/**
- * 列表类 widget 在给定高度档可显条数 (超出 → 截断 + 查看更多)。
- * rowHeight = 每条估高, reserved = 标题 / footer 预留高。
- */
-export function listCapacity(h: WidgetHeight, rowHeight = 52, reserved = 60): number {
-  const usable = heightPx(h) - reserved
-  return Math.max(1, Math.floor(usable / rowHeight))
 }

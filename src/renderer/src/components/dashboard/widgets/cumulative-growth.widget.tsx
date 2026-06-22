@@ -7,7 +7,6 @@ import { CHART_SERIES_FILL } from '@/lib/chart-colors'
 import { formatCompactNumber } from '@/lib/utils'
 import { cumulativeSeries } from '@/lib/activity-trend'
 import type { WidgetRenderProps } from '../widget-types'
-import { heightPx } from '@/lib/widget-grid'
 
 type Metric = 'tokens' | 'sessions'
 const METRICS: Metric[] = ['tokens', 'sessions']
@@ -23,7 +22,7 @@ export function CumulativeGrowthWidget({ h }: WidgetRenderProps): React.ReactEle
     [insights?.heatmap?.days, metric]
   )
   const total = series.length > 0 ? series[series.length - 1].value : 0
-  const chartHeight = heightPx(h) - 100
+  const chartHeight = h === 'tall' ? 184 : 120
 
   if (loading && !insights) {
     return <div className="h-[120px] w-full animate-pulse rounded-lg bg-muted/40" />

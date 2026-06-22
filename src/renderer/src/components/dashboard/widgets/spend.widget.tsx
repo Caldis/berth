@@ -64,7 +64,7 @@ export function SpendWidget({ h }: WidgetRenderProps): React.ReactElement {
         </div>
       )}
 
-      {h !== 'mini' && (usage.actualCost > 0 || usage.estimatedCost > 0) && (
+      {(usage.actualCost > 0 || usage.estimatedCost > 0) && (
         <dl className="flex gap-6 text-xs">
           <div className="min-w-0">
             <dt className="text-muted-foreground">{t('overview.dashboard.spend.actual')}</dt>

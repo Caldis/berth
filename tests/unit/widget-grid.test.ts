@@ -1,12 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import {
-  ROW_UNIT,
-  ROW_GAP,
-  widthColSpanClass,
-  heightRowSpan,
-  heightPx,
-  listCapacity
-} from '@/lib/widget-grid'
+import { ROW_UNIT, ROW_GAP, widthColSpanClass } from '@/lib/widget-grid'
 
 describe('widget-grid geometry', () => {
   it('maps width bands to responsive col-span classes', () => {
@@ -15,23 +8,9 @@ describe('widget-grid geometry', () => {
     expect(widthColSpanClass('W4')).toContain('xl:col-span-4')
   })
 
-  it('maps height bands to integer row spans (mini/short/tall = 1/2/4)', () => {
-    expect(heightRowSpan('mini')).toBe(1)
-    expect(heightRowSpan('short')).toBe(2)
-    expect(heightRowSpan('tall')).toBe(4)
-  })
-
-  it('computes pixel height; bands stack as integer multiples (dense 无空隙)', () => {
-    expect(heightPx('mini')).toBe(ROW_UNIT)
-    expect(heightPx('short')).toBe(2 * ROW_UNIT + ROW_GAP)
-    expect(heightPx('tall')).toBe(4 * ROW_UNIT + 3 * ROW_GAP)
-    // 2 mini (含中间 gap) == 1 short; 2 short == 1 tall → dense 整数倍填空
-    expect(2 * heightPx('mini') + ROW_GAP).toBe(heightPx('short'))
-    expect(2 * heightPx('short') + ROW_GAP).toBe(heightPx('tall'))
-  })
-
-  it('derives list capacity from band height, larger for tall, at least 1', () => {
-    expect(listCapacity('tall')).toBeGreaterThan(listCapacity('short'))
-    expect(listCapacity('short')).toBeGreaterThanOrEqual(1)
+  it('exposes a small positive row unit + gap for content-driven integer quantization', () => {
+    // 高度由内容驱动 + 量化到 ROW_UNIT 整数倍 (span 由 use-masonry-rows 按内容高测算)。
+    expect(ROW_UNIT).toBeGreaterThan(0)
+    expect(ROW_GAP).toBeGreaterThan(0)
   })
 })

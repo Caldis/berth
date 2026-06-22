@@ -24,7 +24,6 @@ import { ErrorState } from '@/components/shared/error-state'
 import { CostSourceBadge } from '@/components/shared/cost-source-badge'
 import { SegmentedTabs } from '@/components/ui'
 import type { WidgetRenderProps } from '../widget-types'
-import { heightPx } from '@/lib/widget-grid'
 import { ChartTypeToggle, useChartForm, type ChartFormOption } from './chart-type-toggle'
 
 const RANGE_OPTIONS = [30, 90, 180] as const
@@ -56,7 +55,7 @@ export function UsageTrendWidget({ w, h, chartType, onChartTypeChange }: WidgetR
 
   const dailyCosts = usage?.dailyCosts ?? []
   const hasKnownCost = usage != null && usage.costSource !== 'unknown'
-  const chartHeight = heightPx(h) - 96
+  const chartHeight = h === 'tall' ? 208 : 150
   // 高档 (tall) 或满宽 (W4) 才显示 Y 轴刻度 + 网格线; 矮档收紧只留柱/线本体, 拉开密度差。
   const showAxesDetail = h === 'tall' || w === 'W4'
 

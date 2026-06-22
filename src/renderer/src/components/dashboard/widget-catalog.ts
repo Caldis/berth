@@ -8,9 +8,9 @@ export const WIDGET_CATALOG: Record<WidgetId, WidgetMeta> = {
   'stats-band': {
     id: 'stats-band',
     titleKey: 'overview.widgets.statsBand',
-    defaultSize: { w: 'W4', h: 'mini' },
+    defaultSize: { w: 'W4', h: 'short' },
     widths: ['W4'],
-    heights: ['mini'],
+    heights: ['short'],
     defaultOrder: 0,
     defaultHidden: false
   },
@@ -62,9 +62,9 @@ export const WIDGET_CATALOG: Record<WidgetId, WidgetMeta> = {
   'quick-actions': {
     id: 'quick-actions',
     titleKey: 'overview.widgets.quickActions',
-    defaultSize: { w: 'W2', h: 'mini' },
+    defaultSize: { w: 'W2', h: 'short' },
     widths: ['W1', 'W2', 'W4'],
-    heights: ['mini', 'short'],
+    heights: ['short'],
     defaultOrder: 6,
     defaultHidden: false
   },
@@ -143,9 +143,9 @@ export const WIDGET_CATALOG: Record<WidgetId, WidgetMeta> = {
   spend: {
     id: 'spend',
     titleKey: 'overview.widgets.spend',
-    defaultSize: { w: 'W1', h: 'mini' },
+    defaultSize: { w: 'W1', h: 'short' },
     widths: ['W1', 'W2'],
-    heights: ['mini', 'short', 'tall'],
+    heights: ['short', 'tall'],
     defaultOrder: 15,
     defaultHidden: true
   }
