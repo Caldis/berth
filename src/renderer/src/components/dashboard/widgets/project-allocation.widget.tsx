@@ -23,14 +23,14 @@ function tintAlpha(index: number): number {
   return Math.max(0.18, 0.92 - index * 0.13)
 }
 
-export function ProjectAllocationWidget({ size }: WidgetRenderProps): React.ReactElement {
+export function ProjectAllocationWidget({ w, h }: WidgetRenderProps): React.ReactElement {
   const { t } = useTranslation()
   const scopeSelection = useAppStore((s) => s.scopeSelection)
   const projectPath = projectPathForScope(scopeSelection)
   const agentView = useAppStore((s) => s.agentView)
   const { usage, loading } = useUsageSummary(30, agentView, projectPath)
 
-  const limit = size === 'L' ? 8 : 5
+  const limit = h === 'tall' ? 8 : 5
   const all = useMemo(
     () => [...(usage?.byProject ?? [])].sort((a, b) => b.tokens - a.tokens),
     [usage?.byProject]
@@ -91,7 +91,7 @@ export function ProjectAllocationWidget({ size }: WidgetRenderProps): React.Reac
   )
 
   // S: 一瞥 — 份额条 + 头部项目 (最大占比) 名称 + 百分比。无行列表。
-  if (size === 'S') {
+  if (w === 'W1') {
     const lead = top[0]
     return (
       <div className="flex h-full flex-col justify-center gap-3">
@@ -111,7 +111,7 @@ export function ProjectAllocationWidget({ size }: WidgetRenderProps): React.Reac
 
   return (
     <div className="flex h-full flex-col gap-3">
-      {size === 'L' && (
+      {h === 'tall' && (
         <div className="flex items-baseline justify-between gap-3 text-xs text-muted-foreground">
           <span>{t('overview.dashboard.projectAllocation.acrossProjects', { count: all.length })}</span>
           <span className="tabular-nums">{formatCompactNumber(totalTokens)}</span>

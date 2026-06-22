@@ -13,7 +13,7 @@ const BUCKET_LABEL_KEYS: Record<string, string> = {
 
 // GH-138: 会话时长分布 widget — <5m / 5-15m / 15-60m / 1-4h / 4h+ 分桶横条 ("快修 vs 长跑")。
 // 单色相 primary (同质量级, 长度即占比); L 增显 占比% + 主区间洞察头, 拉开 M/L 区分。
-export function SessionDurationWidget({ size }: WidgetRenderProps): React.ReactElement {
+export function SessionDurationWidget({ h }: WidgetRenderProps): React.ReactElement {
   const { t } = useTranslation()
   const { insights, loading } = useInsights()
   const hist = insights?.durationHistogram
@@ -31,7 +31,7 @@ export function SessionDurationWidget({ size }: WidgetRenderProps): React.ReactE
     return <p className="py-8 text-center text-sm text-muted-foreground">{t('overview.dashboard.heatmap.empty')}</p>
   }
 
-  const isL = size === 'L'
+  const isL = h === 'tall'
   const dominant = hist.buckets.reduce((best, b) => (b.count > best.count ? b : best), hist.buckets[0])
 
   return (

@@ -8,7 +8,7 @@ const AGENT_BAR_CLASS = ['bg-primary/80', 'bg-primary/45', 'bg-primary/25']
 
 // GH-138: 活动洞察 widget (Codex 风格) — label/value 行 + 底部 agent 占比条 (增实质/填满高度)。
 // 尺寸即信息设计: S 收敛为单一 hero glance (Total sessions 放大 + 两条小注脚), 丢 dl 与 agent 占比条。
-export function ActivityInsightsWidget({ size }: WidgetRenderProps): React.ReactElement {
+export function ActivityInsightsWidget({ w }: WidgetRenderProps): React.ReactElement {
   const { t } = useTranslation()
   const { insights, loading } = useInsights()
   const data = insights?.insights
@@ -27,7 +27,7 @@ export function ActivityInsightsWidget({ size }: WidgetRenderProps): React.React
   }
 
   // S: 单一 glance — Total sessions 放大成 hero, 下挂两条小注脚, 不堆 dl / agent 占比条。
-  if (size === 'S') {
+  if (w === 'W1') {
     return (
       <div className="flex h-full flex-col justify-center gap-1.5">
         <div className="leading-none">

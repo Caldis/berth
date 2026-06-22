@@ -33,7 +33,7 @@ function weekdayLabel(row: number, locale: string, full = false): string {
   })
 }
 
-export function ActivityRhythmWidget({ size }: WidgetRenderProps): React.ReactElement {
+export function ActivityRhythmWidget({ w }: WidgetRenderProps): React.ReactElement {
   const { t, i18n } = useTranslation()
   const { insights, loading } = useInsights()
   const rhythm = insights?.rhythm
@@ -57,7 +57,7 @@ export function ActivityRhythmWidget({ size }: WidgetRenderProps): React.ReactEl
     )
   }
 
-  const hourTicks = size === 'XL' ? [0, 3, 6, 9, 12, 15, 18, 21] : [0, 6, 12, 18]
+  const hourTicks = w === 'W4' ? [0, 3, 6, 9, 12, 15, 18, 21] : [0, 6, 12, 18]
 
   return (
     <div className="flex flex-col gap-2.5">

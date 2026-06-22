@@ -271,11 +271,18 @@
         "kindLabel": "资源类型"
       },
       "rangeLabel": "时间范围",
+      "size": {
+        "width": "宽度",
+        "height": "高度",
+        "short": "矮",
+        "tall": "高"
+      },
       "agentFilter": {
         "all": "全部 agent",
         "label": "Agent"
       },
       "recentSessions": {
+        "viewMore": "查看全部会话 →",
         "today": "今天",
         "yesterday": "昨天"
       }

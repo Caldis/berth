@@ -5,11 +5,11 @@ import type { WidgetRenderProps } from '../widget-types'
 
 // GH-138: 模型强度 widget — 各模型"每会话平均 token" (与 model 总量 breakdown 互补; 高=每会话越重)。
 // 单色相横条 (长度 = avg / maxAvg)。M 取 Top-5, L 取 Top-8 并增显会话数, 拉开 M/L 区分。
-export function ModelEfficiencyWidget({ size }: WidgetRenderProps): React.ReactElement {
+export function ModelEfficiencyWidget({ h }: WidgetRenderProps): React.ReactElement {
   const { t } = useTranslation()
   const { insights, loading } = useInsights()
   const eff = insights?.modelEfficiency
-  const limit = size === 'L' ? 8 : 5
+  const limit = h === 'tall' ? 8 : 5
   const models = (eff?.models ?? []).slice(0, limit)
   const maxAvg = eff?.maxAvg ?? 0
 
@@ -42,7 +42,7 @@ export function ModelEfficiencyWidget({ size }: WidgetRenderProps): React.ReactE
             <div className="h-1 overflow-hidden rounded-full bg-muted/50">
               <div className="h-full rounded-full bg-primary/70" style={{ width: `${width}%` }} />
             </div>
-            {size === 'L' && (
+            {h === 'tall' && (
               <p className="text-[11px] text-muted-foreground">
                 {t('overview.dashboard.efficiency.sessions', { count: m.sessions })}
               </p>

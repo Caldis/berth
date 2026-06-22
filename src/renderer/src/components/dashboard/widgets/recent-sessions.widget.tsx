@@ -61,13 +61,13 @@ function formatTimeOfDay(value: string | null, language: string): string {
   return date.toLocaleTimeString(language, { hour: '2-digit', minute: '2-digit', hour12: false })
 }
 
-export function RecentSessionsWidget({ size }: WidgetRenderProps): React.ReactElement {
+export function RecentSessionsWidget({ w, h }: WidgetRenderProps): React.ReactElement {
   const { t, i18n } = useTranslation()
   const navigate = useNavigate()
   const scopeSelection = useAppStore((s) => s.scopeSelection)
   const projectPath = projectPathForScope(scopeSelection)
   const agentView = useAppStore((s) => s.agentView)
-  const limit = size === 'L' ? 8 : size === 'S' ? 3 : 5
+  const limit = h === 'tall' ? 8 : w === 'W1' ? 3 : 5
   const { sessions, loading } = useSessions({ limit, projectPath, agentView })
 
   const groups = useMemo(() => clusterByDay(sessions), [sessions])
@@ -97,7 +97,7 @@ export function RecentSessionsWidget({ size }: WidgetRenderProps): React.ReactEl
   }
 
   // S: 太窄, 收敛为最近 3 条 — 每行 = 当日时刻 + 标题 (单行截断), 丢日分组头/竖轴/meta, 保留点击进入。
-  if (size === 'S') {
+  if (w === 'W1') {
     return (
       <ul className="flex flex-col">
         {sessions.slice(0, 3).map((session) => (
@@ -163,7 +163,7 @@ export function RecentSessionsWidget({ size }: WidgetRenderProps): React.ReactEl
                     </span>
                     <span className="mt-0.5 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-muted-foreground">
                       <span className="min-w-0 truncate">{project}</span>
-                      {size === 'L' && session.model && (
+                      {h === 'tall' && session.model && (
                         <>
                           <span aria-hidden className="text-muted-foreground/40">·</span>
                           <span className="min-w-0 truncate">{agentDisplayName(session.agentId)}</span>
@@ -181,6 +181,13 @@ export function RecentSessionsWidget({ size }: WidgetRenderProps): React.ReactEl
           </div>
         </section>
       ))}
+      <button
+        type="button"
+        onClick={() => navigate('/sessions')}
+        className="mt-1 self-start rounded px-1 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+      >
+        {t('overview.dashboard.recentSessions.viewMore')}
+      </button>
     </div>
   )
 }

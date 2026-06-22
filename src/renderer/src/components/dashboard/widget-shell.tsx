@@ -1,21 +1,27 @@
 import type { HTMLAttributes, ReactNode } from 'react'
+import { useTranslation } from 'react-i18next'
 import { GripVertical, EyeOff } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { SegmentedTabs } from '@/components/ui'
-import type { WidgetSize } from './widget-types'
+import type { WidgetWidth, WidgetHeight } from './widget-types'
 
-// GH-138: 无边框语义容器 (克制编辑感)。默认仅一个安静的 uppercase 标签 + 内容, 靠留白分区;
-// affordance (拖拽柄/尺寸循环/隐藏) 悬停或编辑态才显。编辑态加外扩虚线环 (绝对定位 overlay)
-// 标识可拖拽: 环画在 widget 间已有留白里, 出现与否不改内容布局 (不再用 p-3 把内容向内挤)。
+// GH-138 / GH-150: 无边框语义容器 (克制编辑感)。默认仅一个安静的 uppercase 标签 + 内容, 靠留白分区;
+// affordance (拖拽柄/宽高档切换/隐藏) 悬停或编辑态才显。编辑态加外扩虚线环 (绝对定位 overlay)
+// 标识可拖拽; 拖拽态 (DragOverlay 浮层) 加实心抬起面 + 阴影。尺寸为二维: 宽档 + 高档各一分段控件。
 // 表现焊死在组件内, 不暴露改外观的 className 逃生舱 (ARCHITECTURE 规则 6)。
+
+const WIDTH_LABEL: Record<WidgetWidth, string> = { W1: '1', W2: '2', W4: '4' }
 
 interface WidgetShellProps {
   title: string
   isEditing?: boolean
   isDragging?: boolean
-  size?: WidgetSize
-  sizes?: WidgetSize[]
-  onSetSize?: (size: WidgetSize) => void
+  w: WidgetWidth
+  h: WidgetHeight
+  widths: WidgetWidth[]
+  heights: WidgetHeight[]
+  onSetWidth?: (w: WidgetWidth) => void
+  onSetHeight?: (h: WidgetHeight) => void
   onHide?: () => void
   /** dnd-kit useSortable 的 attributes+listeners, 绑到拖拽柄。 */
   dragHandleProps?: HTMLAttributes<HTMLButtonElement>
@@ -26,18 +32,21 @@ export function WidgetShell({
   title,
   isEditing = false,
   isDragging = false,
-  size,
-  sizes,
-  onSetSize,
+  w,
+  h,
+  widths,
+  heights,
+  onSetWidth,
+  onSetHeight,
   onHide,
   dragHandleProps,
   children
 }: WidgetShellProps): React.ReactElement {
+  const { t } = useTranslation()
   return (
     <section
       className={cn(
-        'group/widget relative flex h-full min-w-0 flex-col gap-2.5 rounded-lg transition-shadow',
-        // 拖拽中: 实心抬起面 + 阴影 (替代淡出, 更有"拿起"手感)
+        'group/widget relative flex h-full min-w-0 flex-col gap-2.5 overflow-hidden rounded-lg transition-shadow',
         isDragging && 'p-3 bg-card shadow-xl ring-1 ring-border'
       )}
     >
@@ -67,16 +76,27 @@ export function WidgetShell({
         <div
           className={cn(
             'flex items-center gap-1 transition-opacity',
-            isEditing ? 'opacity-100' : 'pointer-events-none opacity-0 group-hover/widget:pointer-events-auto group-hover/widget:opacity-100'
+            isEditing
+              ? 'opacity-100'
+              : 'pointer-events-none opacity-0 group-hover/widget:pointer-events-auto group-hover/widget:opacity-100'
           )}
         >
-          {onSetSize && sizes && sizes.length > 1 && size && (
-            // 枚举式尺寸选择 (一眼看全所有尺寸, 一次点击命中目标, 不轮换试错)
+          {onSetWidth && widths.length > 1 && (
+            // 宽度档: 1/2/4 列, 一眼看全, 一次点击命中
             <SegmentedTabs
-              ariaLabel="Widget size"
-              items={sizes.map((s) => ({ key: s, label: s.toUpperCase() }))}
-              selectedKey={size}
-              onSelectionChange={onSetSize}
+              ariaLabel={t('overview.dashboard.size.width')}
+              items={widths.map((x) => ({ key: x, label: WIDTH_LABEL[x] }))}
+              selectedKey={w}
+              onSelectionChange={onSetWidth}
+            />
+          )}
+          {onSetHeight && heights.length > 1 && (
+            // 高度档: 矮/高 (short/tall)
+            <SegmentedTabs
+              ariaLabel={t('overview.dashboard.size.height')}
+              items={heights.map((x) => ({ key: x, label: t(`overview.dashboard.size.${x}`) }))}
+              selectedKey={h}
+              onSelectionChange={onSetHeight}
             />
           )}
           {onHide && (
@@ -92,7 +112,7 @@ export function WidgetShell({
           )}
         </div>
       </header>
-      <div className="min-w-0 flex-1">{children}</div>
+      <div className="min-w-0 flex-1 overflow-hidden">{children}</div>
     </section>
   )
 }

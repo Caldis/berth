@@ -35,7 +35,7 @@ const FORM_ICONS: Record<ChartForm, ChartFormOption<ChartForm>['icon']> = {
 // GH-138 R2-B: Token 构成 widget — 支持 堆叠条 / 饼图 / 空心饼(donut) 形态切换 (用户可选展现形式)。
 // token 分段是语义分类, 用分类色 (TOKEN_SEGMENT_COLOR_VAR)。L 尺寸显示更大图形。
 // 形态经 layout 持久化 (chartType/onChartTypeChange); 库内预览缺回调时退化为本地态。
-export function TokenBreakdownWidget({ size, chartType, onChartTypeChange }: WidgetRenderProps): React.ReactElement {
+export function TokenBreakdownWidget({ w, h, chartType, onChartTypeChange }: WidgetRenderProps): React.ReactElement {
   const { t } = useTranslation()
   const scopeSelection = useAppStore((s) => s.scopeSelection)
   const projectPath = projectPathForScope(scopeSelection)
@@ -54,7 +54,7 @@ export function TokenBreakdownWidget({ size, chartType, onChartTypeChange }: Wid
     [tokenUsage]
   )
   const total = segments.reduce((sum, s) => sum + s.tokens, 0)
-  const chartHeight = size === 'L' ? 200 : 140
+  const chartHeight = h === 'tall' ? 200 : 140
 
   if (loading && !usage) {
     return <div className="h-[120px] w-full animate-pulse rounded-lg bg-muted/40" />
@@ -64,7 +64,7 @@ export function TokenBreakdownWidget({ size, chartType, onChartTypeChange }: Wid
   }
 
   // S: 极简一瞥 — 全宽细堆叠条 (复用 bar 形态分段) + 总量 headline; 无图例/饼图/形态切换 (只读)。
-  if (size === 'S') {
+  if (w === 'W1') {
     return (
       <div className="flex h-full flex-col gap-2">
         <div className="text-lg font-semibold tabular-nums text-foreground">{formatCompactNumber(total)}</div>

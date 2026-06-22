@@ -273,11 +273,18 @@
         "kindLabel": "Resource type"
       },
       "rangeLabel": "Time range",
+      "size": {
+        "width": "Width",
+        "height": "Height",
+        "short": "Short",
+        "tall": "Tall"
+      },
       "agentFilter": {
         "all": "All agents",
         "label": "Agent"
       },
       "recentSessions": {
+        "viewMore": "View all sessions →",
         "today": "Today",
         "yesterday": "Yesterday"
       }

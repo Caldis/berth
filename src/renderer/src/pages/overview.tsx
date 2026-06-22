@@ -30,7 +30,19 @@ export function Overview(): React.ReactElement {
   const projectPath = projectPathForScope(scopeSelection)
   const [isEditing, setIsEditing] = useState(false)
   const [onboarded, setOnboarded] = useState(readOnboarded)
-  const { visibleWidgets, hiddenWidgets, reorder, setSize, setChartType, hide, show, reset } = useDashboardLayout()
+  const {
+    visibleWidgets,
+    hiddenWidgets,
+    lastAddedId,
+    reorder,
+    setWidth,
+    setHeight,
+    setChartType,
+    hide,
+    show,
+    clearLastAdded,
+    reset
+  } = useDashboardLayout()
 
   const dismissOnboarding = (): void => {
     setOnboarded(true)
@@ -83,10 +95,13 @@ export function Overview(): React.ReactElement {
         <DashboardGrid
           widgets={visibleWidgets}
           isEditing={isEditing}
+          lastAddedId={lastAddedId}
           onReorder={reorder}
-          onSetSize={setSize}
+          onSetWidth={setWidth}
+          onSetHeight={setHeight}
           onSetChartType={setChartType}
           onHide={hide}
+          onFocused={clearLastAdded}
         />
         {isEditing && <WidgetLibrary hidden={hiddenWidgets} onAdd={show} />}
       </DashboardInsightsProvider>

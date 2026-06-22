@@ -1,11 +1,11 @@
 import { WIDGET_CATALOG } from '@/components/dashboard/widget-catalog'
 import type { WidgetId, WidgetMeta, WidgetSize } from '@/components/dashboard/widget-types'
 
-// GH-138: 仪表盘布局配置纯函数 (parse/migrate/serialize/reset)。localStorage 持久化
-// (复用 theme-provider 直读直写模式)。migrate 容旧: 丢未知 widget / 末尾追加新注册 widget /
-// 钳制非法尺寸 / 损坏 JSON 回落默认 — 保证版本演进与并发写入下不崩。
+// GH-138 / GH-150: 仪表盘布局配置纯函数 (parse/migrate/serialize/reset)。localStorage 持久化。
+// migrate 容旧: 丢未知 widget / 末尾追加新注册 / 旧单维 size 字符串 (v1: S/M/L/Wide/XL) 迁移到
+// 二维 {w,h} / 钳制非法档 / 损坏 JSON 回落默认 — 保证版本演进与并发写入下不崩。
 
-export const DASHBOARD_LAYOUT_VERSION = 1
+export const DASHBOARD_LAYOUT_VERSION = 2
 export const DASHBOARD_LAYOUT_STORAGE_KEY = 'berth-dashboard-layout'
 
 export interface WidgetLayoutItem {
@@ -23,6 +23,31 @@ export interface DashboardLayout {
 
 type Catalog = Record<WidgetId, WidgetMeta>
 
+/** 旧单维尺寸 (v1: S/M/L/Wide/XL) → 二维档位映射 (语义近似保留)。 */
+const LEGACY_SIZE_MAP: Record<string, WidgetSize> = {
+  S: { w: 'W1', h: 'short' },
+  M: { w: 'W2', h: 'short' },
+  L: { w: 'W2', h: 'tall' },
+  Wide: { w: 'W4', h: 'short' },
+  XL: { w: 'W4', h: 'tall' }
+}
+
+/** 钳制尺寸到 widget 允许档; 非法维度回落 defaultSize 对应维。 */
+function clampSize(size: WidgetSize, meta: WidgetMeta): WidgetSize {
+  const w = meta.widths.includes(size.w) ? size.w : meta.defaultSize.w
+  const h = meta.heights.includes(size.h) ? size.h : meta.defaultSize.h
+  return { w, h }
+}
+
+/** 归一化持久化的 size: 旧字符串迁移 + 新对象钳制 + 缺失/损坏回落 default。 */
+function normalizeSize(raw: unknown, meta: WidgetMeta): WidgetSize {
+  if (typeof raw === 'string' && raw in LEGACY_SIZE_MAP) return clampSize(LEGACY_SIZE_MAP[raw], meta)
+  if (raw && typeof raw === 'object' && 'w' in raw && 'h' in raw) {
+    return clampSize(raw as WidgetSize, meta)
+  }
+  return meta.defaultSize
+}
+
 /** 默认布局: 全部 widget 按 defaultOrder 排列, 取各自 defaultSize/defaultHidden。 */
 export function defaultLayout(catalog: Catalog = WIDGET_CATALOG): DashboardLayout {
   const widgets = Object.values(catalog)
@@ -32,7 +57,7 @@ export function defaultLayout(catalog: Catalog = WIDGET_CATALOG): DashboardLayou
   return { version: DASHBOARD_LAYOUT_VERSION, widgets }
 }
 
-/** 迁移已存布局到当前 catalog: 丢未知/重复, 钳制非法尺寸, 末尾追加缺失 widget。 */
+/** 迁移已存布局到当前 catalog: 丢未知/重复, 旧 size 迁移 + 钳制, 末尾追加缺失 widget。 */
 export function migrateLayout(layout: DashboardLayout, catalog: Catalog = WIDGET_CATALOG): DashboardLayout {
   const known = new Set<string>(Object.keys(catalog))
   const seen = new Set<WidgetId>()
@@ -44,11 +69,7 @@ export function migrateLayout(layout: DashboardLayout, catalog: Catalog = WIDGET
     if (typeof item.id !== 'string' || !known.has(item.id) || seen.has(item.id as WidgetId)) continue
     const id = item.id as WidgetId
     const meta = catalog[id]
-    const size =
-      typeof item.size === 'string' && meta.sizes.includes(item.size as WidgetSize)
-        ? (item.size as WidgetSize)
-        : meta.defaultSize
-    const next: WidgetLayoutItem = { id, size, hidden: Boolean(item.hidden) }
+    const next: WidgetLayoutItem = { id, size: normalizeSize(item.size, meta), hidden: Boolean(item.hidden) }
     if (typeof item.chartType === 'string' && item.chartType) next.chartType = item.chartType
     widgets.push(next)
     seen.add(id)

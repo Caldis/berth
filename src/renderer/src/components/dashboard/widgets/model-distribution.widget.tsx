@@ -25,7 +25,7 @@ function modelColor(index: number): string {
 // GH-138 R2-B/R2-A: 模型分布 widget — byModel token 占比, 支持 排行条 / 饼图 / 空心饼 形态切换。
 // 排行条恒单色 (长度编码量级, 编辑感克制); 饼/环按模型分类色 (多分类 breakdown 口径) + 图例。
 // 尺寸驱动密度: M 取 Top-5, L 取 Top-8。形态经 layout 持久化。
-export function ModelDistributionWidget({ size, chartType, onChartTypeChange }: WidgetRenderProps): React.ReactElement {
+export function ModelDistributionWidget({ w, h, chartType, onChartTypeChange }: WidgetRenderProps): React.ReactElement {
   const { t } = useTranslation()
   const scopeSelection = useAppStore((s) => s.scopeSelection)
   const projectPath = projectPathForScope(scopeSelection)
@@ -38,13 +38,13 @@ export function ModelDistributionWidget({ size, chartType, onChartTypeChange }: 
     label: t(`overview.dashboard.chartForm.${id}`)
   }))
 
-  const limit = size === 'L' ? 8 : 5
+  const limit = h === 'tall' ? 8 : 5
   const models = useMemo(
     () => [...(usage?.byModel ?? [])].sort((a, b) => b.tokens - a.tokens).slice(0, limit),
     [usage?.byModel, limit]
   )
   const max = models.length > 0 ? models[0].tokens : 0
-  const chartHeight = size === 'L' ? 200 : 150
+  const chartHeight = h === 'tall' ? 200 : 150
 
   if (loading && !usage) {
     return (
@@ -60,7 +60,7 @@ export function ModelDistributionWidget({ size, chartType, onChartTypeChange }: 
   }
 
   // S: 极简一瞥 — 仅 Top-3 排行条 (复用单色 mini bar); 无图表/图例/形态切换 (只读)。
-  if (size === 'S') {
+  if (w === 'W1') {
     return (
       <ul className="flex h-full flex-col justify-center gap-2">
         {models.slice(0, 3).map((entry) => (
