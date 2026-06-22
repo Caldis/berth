@@ -56,7 +56,7 @@ export function UsageTrendWidget({ w, h, chartType, onChartTypeChange }: WidgetR
 
   const dailyCosts = usage?.dailyCosts ?? []
   const hasKnownCost = usage != null && usage.costSource !== 'unknown'
-  const chartHeight = heightPx(h) - 76
+  const chartHeight = heightPx(h) - 96
   // 高档 (tall) 或满宽 (W4) 才显示 Y 轴刻度 + 网格线; 矮档收紧只留柱/线本体, 拉开密度差。
   const showAxesDetail = h === 'tall' || w === 'W4'
 

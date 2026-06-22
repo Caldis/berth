@@ -46,17 +46,13 @@ export function WidgetShell({
   return (
     <section
       className={cn(
-        'group/widget relative flex h-full min-w-0 flex-col gap-2.5 overflow-hidden rounded-lg transition-shadow',
-        isDragging && 'p-3 bg-card shadow-xl ring-1 ring-border'
+        // 常驻细边框 + 轻底, hover 增强边框/底/阴影 — 区分各 widget 边界 (用户 verify 要求可辨识)
+        'group/widget relative flex h-full min-w-0 flex-col gap-2.5 overflow-hidden rounded-lg border border-border/60 bg-card/30 p-3 transition-all hover:border-border hover:bg-card hover:shadow-sm',
+        // 编辑态: 边框转虚线提示可拖拽 (替代原外扩虚线环)
+        isEditing && !isDragging && 'border-dashed',
+        isDragging && 'border-solid border-border bg-card shadow-xl ring-1 ring-border'
       )}
     >
-      {/* 编辑态虚线环: 绝对定位外扩到 widget 间距留白, 脱离文档流 → 出现与否不挤压内容布局 */}
-      {isEditing && !isDragging && (
-        <div
-          aria-hidden
-          className="pointer-events-none absolute -inset-2 rounded-xl ring-1 ring-dashed ring-border"
-        />
-      )}
       <header className="flex h-5 items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-1.5">
           {isEditing && (
