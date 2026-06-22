@@ -2,7 +2,7 @@
 task: 2026-06-22-gh-150-overview-drag-ux-overhaul
 task_id: GH-150
 type: feature
-phase: implement
+phase: verify
 created: 2026-06-22
 priority: P1
 target_date:
@@ -69,8 +69,8 @@ artifacts:
 任务索引与交接锚。phase 字段为唯一状态源, `harness-0.1-continue` 据此续跑。
 
 ## 续跑指南
-- 当前 phase: **implement** (design 完成, 02-SPEC + 03-PLAN 落盘)。
-- 下一步: `harness-3.0-implement` 按 03-PLAN P1→P11 顺序推进 (契约链→布局→拖拽→widget→截断→UI→聚焦→收口); 每项 tests+verify, 小步提交。
+- 当前 phase: **verify** (implement P1-P10 完成, 9 提交, typecheck/lint/test 全绿 1316; 代码: 契约迁移 + 固定档位布局 + DragOverlay + 变形修复 + memo + 聚焦 + 截断)。
+- 下一步: `harness-4.0-verify` 真跑应用 — 拖拽变形/帧率 profile (AC-1/AC-2) + 逐 widget×档 CDP 截图 (AC-8) + 新增聚焦 + 键盘拖拽; 主观 taste 截图请用户确认。P11 在此完成。
 - 用户已确认决策 (写入约束, 不再问): ①整体一个大件一次性重构; ②超档=截断+查看更多; ③档位粒度=宽3(W1/W2/W4=1/2/4列)×高2(short=220/tall=440px, 1:2)。
 
 ## 范围 (四项)
