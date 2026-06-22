@@ -23,6 +23,8 @@ interface WidgetShellProps {
   onSetWidth?: (w: WidgetWidth) => void
   onSetHeight?: (h: WidgetHeight) => void
   onHide?: () => void
+  /** 内容层测量 ref (use-masonry-rows): 挂卡片内层 content, 测自然高算 grid span。 */
+  measureRef?: (node: HTMLDivElement | null) => void
   /** dnd-kit useSortable 的 attributes+listeners, 绑到拖拽柄。 */
   dragHandleProps?: HTMLAttributes<HTMLButtonElement>
   children: ReactNode
@@ -39,6 +41,7 @@ export function WidgetShell({
   onSetWidth,
   onSetHeight,
   onHide,
+  measureRef,
   dragHandleProps,
   children
 }: WidgetShellProps): React.ReactElement {
@@ -48,13 +51,15 @@ export function WidgetShell({
       className={cn(
         // 常驻实边框 + 卡面 + 轻阴影浮起 — 明确区分各 widget 边界 (用户 verify 要求可辨识);
         // hover 阴影加深 + 边框变深, 给交互反馈。克制的 subtle card, 非粗重灰板。
-        'group/widget relative flex h-full min-w-0 flex-col gap-2.5 overflow-hidden rounded-lg border border-border bg-card p-3 shadow-sm transition-all hover:border-foreground/15 hover:shadow-md',
+        'group/widget relative flex h-full min-w-0 flex-col overflow-hidden rounded-lg border border-border bg-card p-3 shadow-sm transition-all hover:border-foreground/15 hover:shadow-md',
         // 编辑态: 边框转虚线提示可拖拽 (替代原外扩虚线环)
         isEditing && !isDragging && 'border-dashed',
         isDragging && 'border-solid border-border shadow-xl ring-1 ring-border'
       )}
     >
-      <header className="flex h-5 items-center justify-between gap-2">
+      {/* 内层 content 层 (测量目标): 自然高, 卡片(section)撑满 grid 占位整数倍, 内容顶对齐 */}
+      <div ref={measureRef} className="flex min-w-0 flex-col gap-2.5">
+        <header className="flex h-5 items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-1.5">
           {isEditing && (
             <button
@@ -109,7 +114,8 @@ export function WidgetShell({
           )}
         </div>
       </header>
-      <div className="min-w-0 flex-1 overflow-hidden">{children}</div>
+        <div className="min-w-0 overflow-hidden">{children}</div>
+      </div>
     </section>
   )
 }

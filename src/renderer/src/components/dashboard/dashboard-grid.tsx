@@ -82,7 +82,7 @@ export function DashboardGrid({
     >
       <SortableContext items={ids} strategy={rectSortingStrategy}>
         <div
-          className="grid grid-cols-1 items-start gap-x-6 md:grid-cols-2 md:grid-flow-row-dense xl:grid-cols-4"
+          className="grid grid-cols-1 gap-6 md:grid-cols-2 md:grid-flow-row-dense xl:grid-cols-4"
           style={{ gridAutoRows: `${ROW_UNIT}px` }}
         >
           {rendered.map((item) => (
@@ -129,7 +129,6 @@ function SortableWidget({
   const setRefs = (node: HTMLDivElement | null): void => {
     setNodeRef(node)
     localRef.current = node
-    setMasonryRef(node)
   }
 
   // 新增 widget 聚焦: 滚动到位 + 短暂高亮环, 用后清 lastAddedId 防重复。
@@ -168,6 +167,7 @@ function SortableWidget({
         item={item}
         isEditing={isEditing}
         actions={actions}
+        measureRef={setMasonryRef}
         dragHandleProps={{ ...attributes, ...listeners }}
       />
     </div>
@@ -181,12 +181,14 @@ function WidgetCard({
   isEditing,
   isDragging = false,
   actions,
+  measureRef,
   dragHandleProps
 }: {
   item: WidgetLayoutItem
   isEditing: boolean
   isDragging?: boolean
   actions: WidgetActions
+  measureRef?: (node: HTMLDivElement | null) => void
   dragHandleProps?: HTMLAttributes<HTMLButtonElement>
 }): React.ReactElement | null {
   const { t } = useTranslation()
@@ -212,6 +214,7 @@ function WidgetCard({
       onSetWidth={handleSetWidth}
       onSetHeight={handleSetHeight}
       onHide={handleHide}
+      measureRef={measureRef}
       dragHandleProps={dragHandleProps}
     >
       <Component w={item.size.w} h={item.size.h} chartType={item.chartType} onChartTypeChange={handleChartType} />
