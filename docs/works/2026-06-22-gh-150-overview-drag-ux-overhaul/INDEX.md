@@ -2,7 +2,7 @@
 task: 2026-06-22-gh-150-overview-drag-ux-overhaul
 task_id: GH-150
 type: feature
-phase: explore
+phase: design
 created: 2026-06-22
 priority: P1
 target_date:
@@ -19,7 +19,7 @@ debt:
     areas:
       - ui-ux
       - performance
-    confidence: low
+    confidence: medium
     rationale: "explore 已坐实四项根因 (dnd-kit rectSortingStrategy 的 scale transform / 无 memo + recharts 全树重渲染 / show 无聚焦 / 连续 masonry 高度); 影响面跨 dashboard grid+shell+layout+16 widget, 布局模型由连续 masonry 替换为固定档位 uniform grid; net 待 design 校准。"
   final:
     incurred:
@@ -30,7 +30,13 @@ debt:
     areas: []
     confidence:
     rationale:
-  revisions: []
+  revisions:
+    - phase: explore
+      date: 2026-06-22
+      field: confidence
+      from: low
+      to: medium
+      reason: "四项根因已用源码/代码坐实; blast radius 符号边界确认闭环在 dashboard 模块 (无外部消费者)。net 维持 3, scope=module 不变。"
 issue:
   number: 150
   repo: Caldis/berth
@@ -57,8 +63,8 @@ artifacts:
 任务索引与交接锚。phase 字段为唯一状态源, `harness-0.1-continue` 据此续跑。
 
 ## 续跑指南
-- 当前 phase: **explore** (根因已在对话中坐实, 待落盘 01-ANALYSIS 后转 design)。
-- 下一步: `harness-1.0-explore` 把已坐实的四项根因 + 现有设计系统/页面密度/状态盘点写入 01-ANALYSIS.md, 再转 `harness-2.0-design`。
+- 当前 phase: **design** (explore 完成, 01-ANALYSIS 已落盘 + 验收标准 AC-1..AC-9 编号)。
+- 下一步: `harness-2.0-design` — 出固定档位方案 (基础行高单元 / 各 widget 高度档 / 宽度档 / md·xl 断点换算) + DragOverlay 重构 + 性能方案, 写 02-SPEC.md + 测试矩阵。档位核心参数需用户 checkpoint (见 01-ANALYSIS 未决问题 1); design 前按不变量 9 先查 dnd-kit DragOverlay 官方文档。
 - 用户已确认决策 (写入约束, 不再问): ①整体一个大件一次性重构 (不单独先发止血); ②超档内容策略 = 截断 + 查看更多。
 
 ## 范围 (四项)
@@ -69,7 +75,7 @@ artifacts:
 
 ## 产物
 - [x] 00-PRD.md — 原始输入快照
-- [ ] 01-ANALYSIS.md — Explore 产物
+- [x] 01-ANALYSIS.md — Explore 产物
 - [ ] 02-SPEC.md — Design 产物
 - [ ] 03-PLAN.md — 活任务清单
 - [ ] 04-POLISH.md — 可选抛光记录
