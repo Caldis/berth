@@ -2,7 +2,7 @@
 task: 2026-06-22-gh-150-overview-drag-ux-overhaul
 task_id: GH-150
 type: feature
-phase: design
+phase: implement
 created: 2026-06-22
 priority: P1
 target_date:
@@ -11,15 +11,15 @@ source:
   refs: []
 debt:
   estimate:
-    incurred: 5
-    repaid: 2
-    net: 3
+    incurred: 7
+    repaid: 3
+    net: 4
     scope: module
     risk: medium
     areas:
       - ui-ux
       - performance
-    confidence: medium
+    confidence: high
     rationale: "explore 已坐实四项根因 (dnd-kit rectSortingStrategy 的 scale transform / 无 memo + recharts 全树重渲染 / show 无聚焦 / 连续 masonry 高度); 影响面跨 dashboard grid+shell+layout+16 widget, 布局模型由连续 masonry 替换为固定档位 uniform grid; net 待 design 校准。"
   final:
     incurred:
@@ -37,6 +37,12 @@ debt:
       from: low
       to: medium
       reason: "四项根因已用源码/代码坐实; blast radius 符号边界确认闭环在 dashboard 模块 (无外部消费者)。net 维持 3, scope=module 不变。"
+    - phase: design
+      date: 2026-06-22
+      field: incurred/repaid/net/confidence
+      from: "5/2/3, confidence medium"
+      to: "7/3/4, confidence high"
+      reason: "WidgetSize 二维化波及 16 widget + 持久化迁移 → incurred 5→7; 删 16 个 ResizeObserver + 修变形 + memo 偿还旧 ui-ux 债 → repaid 2→3 (net 4); 方案具体 + dnd-kit 官方文档背书 + 测试矩阵 → confidence→high。"
 issue:
   number: 150
   repo: Caldis/berth
@@ -63,9 +69,9 @@ artifacts:
 任务索引与交接锚。phase 字段为唯一状态源, `harness-0.1-continue` 据此续跑。
 
 ## 续跑指南
-- 当前 phase: **design** (explore 完成, 01-ANALYSIS 已落盘 + 验收标准 AC-1..AC-9 编号)。
-- 下一步: `harness-2.0-design` — 出固定档位方案 (基础行高单元 / 各 widget 高度档 / 宽度档 / md·xl 断点换算) + DragOverlay 重构 + 性能方案, 写 02-SPEC.md + 测试矩阵。档位核心参数需用户 checkpoint (见 01-ANALYSIS 未决问题 1); design 前按不变量 9 先查 dnd-kit DragOverlay 官方文档。
-- 用户已确认决策 (写入约束, 不再问): ①整体一个大件一次性重构 (不单独先发止血); ②超档内容策略 = 截断 + 查看更多。
+- 当前 phase: **implement** (design 完成, 02-SPEC + 03-PLAN 落盘)。
+- 下一步: `harness-3.0-implement` 按 03-PLAN P1→P11 顺序推进 (契约链→布局→拖拽→widget→截断→UI→聚焦→收口); 每项 tests+verify, 小步提交。
+- 用户已确认决策 (写入约束, 不再问): ①整体一个大件一次性重构; ②超档=截断+查看更多; ③档位粒度=宽3(W1/W2/W4=1/2/4列)×高2(short=220/tall=440px, 1:2)。
 
 ## 范围 (四项)
 1. 修拖拽变形 (dnd-kit scale transform → CSS.Translate 丢 scale; 档位化后同档等尺寸根治)。
@@ -76,8 +82,8 @@ artifacts:
 ## 产物
 - [x] 00-PRD.md — 原始输入快照
 - [x] 01-ANALYSIS.md — Explore 产物
-- [ ] 02-SPEC.md — Design 产物
-- [ ] 03-PLAN.md — 活任务清单
+- [x] 02-SPEC.md — Design 产物
+- [x] 03-PLAN.md — 活任务清单
 - [ ] 04-POLISH.md — 可选抛光记录
 
 ## 待澄清 (blocked 时填)
