@@ -374,8 +374,8 @@ describe('session pages', () => {
     )
 
     expect(await screen.findByText('Fix session metadata')).toBeInTheDocument()
-    // GH-138 U6: recent-sessions widget 默认尺寸 L → 显示 8 条 (内容驱动 M/L 区分)
-    expect(window.api.sessions.list).toHaveBeenCalledWith({ projectFilter: undefined, limit: 8 })
+    // GH-150: 高矮档移除后 recent-sessions limit 纯由宽度档定 (W1→3, 否则→5); 默认宽度非 W1 → 5 条
+    expect(window.api.sessions.list).toHaveBeenCalledWith({ projectFilter: undefined, limit: 5 })
     expect(screen.getAllByText('D:\\Code\\berth').length).toBeGreaterThan(0)
     expect(screen.getByText('38 tok')).toBeInTheDocument()
     expect(screen.getByText(/I 10 \/ O 5/)).toBeInTheDocument()
@@ -404,7 +404,7 @@ describe('session pages', () => {
       expect(await screen.findByText('Fix session metadata')).toBeInTheDocument()
       expect(window.api.sessions.list).toHaveBeenCalledWith({
         projectFilter: undefined,
-        limit: 8,
+        limit: 5,
         projectPath: 'D:/Code/berth'
       })
       // GH-138 U4: usage-trend widget 默认范围 30d (7d 太短; 可配置 30/90/180)
