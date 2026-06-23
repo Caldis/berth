@@ -20,7 +20,7 @@ import { getWidgetDefinition } from './widget-registry'
 import { WIDGET_CATALOG } from './widget-catalog'
 import type { WidgetId, WidgetWidth } from './widget-types'
 import type { WidgetLayoutItem } from '@/lib/dashboard-layout'
-import { widthColSpanClass } from '@/lib/widget-grid'
+import { widthColSpanClass, gridRowSpanStyle } from '@/lib/widget-grid'
 
 // GH-138 / GH-150: 仪表盘网格 — CSS Grid (规整列跨 + 同行 align-stretch 等高) 定位置, framer-motion
 // layout 让非拖拽布局变化 (size 切换 / 重排 / 增删 / 内容高变) 都 transition 而非瞬移。同行等高: 同一
@@ -81,7 +81,10 @@ export function DashboardGrid({
     >
       <SortableContext items={ids} strategy={rectSortingStrategy}>
         <LayoutGroup>
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
+          <div
+            className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4"
+            style={{ gridAutoRows: 'var(--ov-row-unit, 88px)', gridAutoFlow: 'row dense' }}
+          >
             {rendered.map((item) => (
               <SortableWidget
                 key={item.id}
@@ -146,9 +149,11 @@ function SortableWidget({
 
   // 拖拽中: 挂 dnd transform 让位 (CSS.Translate 丢 scale), 关 framer layout 避免双 transform 源;
   // 非拖拽: framer layout 接管 (size 切换 / 重排 / 增删 FLIP), 不挂 dnd transform。
-  const style: CSSProperties = isAnyDragging
-    ? { transform: CSS.Translate.toString(transform), transition }
-    : {}
+  // gridRow span 定高 (dashboard 引擎); 拖拽态叠加 dnd transform 让位。
+  const style: CSSProperties = {
+    ...gridRowSpanStyle(item.size.h),
+    ...(isAnyDragging ? { transform: CSS.Translate.toString(transform), transition } : {})
+  }
 
   return (
     <motion.div
@@ -210,7 +215,7 @@ function WidgetCard({
       onHide={handleHide}
       dragHandleProps={dragHandleProps}
     >
-      <Component w={item.size.w} chartType={item.chartType} onChartTypeChange={handleChartType} />
+      <Component w={item.size.w} h={item.size.h} chartType={item.chartType} onChartTypeChange={handleChartType} />
     </WidgetShell>
   )
 }

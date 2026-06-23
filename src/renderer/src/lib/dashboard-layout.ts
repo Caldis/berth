@@ -1,11 +1,12 @@
 import { WIDGET_CATALOG } from '@/components/dashboard/widget-catalog'
-import type { WidgetId, WidgetMeta, WidgetSize } from '@/components/dashboard/widget-types'
+import type { WidgetId, WidgetMeta, WidgetSize, WidgetWidth } from '@/components/dashboard/widget-types'
 
 // GH-138 / GH-150: 仪表盘布局配置纯函数 (parse/migrate/serialize/reset)。localStorage 持久化。
-// migrate 容旧: 丢未知 widget / 末尾追加新注册 / 旧 size (v1 字符串 S/M/L/Wide/XL 或 v2 {w,h})
-// 归一到宽度档 {w} (GH-150 移除高度维度) / 钳制非法档 / 损坏 JSON 回落默认 — 版本演进与并发写入下不崩。
+// GH-150 R2 (dashboard 引擎): size = {w: 宽度档, h: 高度行 span}。migrate 容旧:
+// v1 字符串 S/M/L/Wide/XL → 宽度档 + h=default; v2 {w} (无 h) → 补 h=default; R2 {w,h} → clamp。
+// 钳非法档 / 损坏 JSON 回落默认 — 版本演进与并发写入下不崩。
 
-export const DASHBOARD_LAYOUT_VERSION = 2
+export const DASHBOARD_LAYOUT_VERSION = 3
 export const DASHBOARD_LAYOUT_STORAGE_KEY = 'berth-dashboard-layout'
 
 export interface WidgetLayoutItem {
@@ -23,26 +24,36 @@ export interface DashboardLayout {
 
 type Catalog = Record<WidgetId, WidgetMeta>
 
-/** 旧单维尺寸 (v1: S/M/L/Wide/XL) → 二维档位映射 (语义近似保留)。 */
-const LEGACY_SIZE_MAP: Record<string, WidgetSize> = {
-  S: { w: 'W1' },
-  M: { w: 'W2' },
-  L: { w: 'W2' },
-  Wide: { w: 'W4' },
-  XL: { w: 'W4' }
+/** 旧单维尺寸 (v1: S/M/L/Wide/XL) → 宽度档映射 (语义近似保留; 高度后补 default)。 */
+const LEGACY_WIDTH_MAP: Record<string, WidgetWidth> = {
+  S: 'W1',
+  M: 'W2',
+  L: 'W2',
+  Wide: 'W4',
+  XL: 'W4'
 }
 
-/** 钳制尺寸到 widget 允许的宽度档; 非法回落 defaultSize.w。 */
+/** 钳制尺寸: 宽度到允许档 (非法回落 default.w); 高度到 [minH, maxH] (非法回落 default.h)。 */
 function clampSize(size: WidgetSize, meta: WidgetMeta): WidgetSize {
   const w = meta.widths.includes(size.w) ? size.w : meta.defaultSize.w
-  return { w }
+  const rawH = typeof size.h === 'number' && Number.isFinite(size.h) ? size.h : meta.defaultSize.h
+  const upper = Math.max(meta.maxH ?? rawH, meta.minH)
+  const h = Math.min(Math.max(rawH, meta.minH), upper)
+  return { w, h }
 }
 
-/** 归一化持久化的 size: 旧字符串迁移 + 新对象钳制 + 缺失/损坏回落 default。 */
+/** 归一化持久化的 size: 旧字符串/缺 h 迁移 + clamp + 缺失/损坏回落 default。 */
 function normalizeSize(raw: unknown, meta: WidgetMeta): WidgetSize {
-  if (typeof raw === 'string' && raw in LEGACY_SIZE_MAP) return clampSize(LEGACY_SIZE_MAP[raw], meta)
+  // v1 字符串档 → 宽度档 + 补 default 高度。
+  if (typeof raw === 'string' && raw in LEGACY_WIDTH_MAP) {
+    return clampSize({ w: LEGACY_WIDTH_MAP[raw], h: meta.defaultSize.h }, meta)
+  }
+  // 对象: v2 {w} (无 h) 或 R2 {w,h}。
   if (raw && typeof raw === 'object' && 'w' in raw) {
-    return clampSize(raw as WidgetSize, meta)
+    const obj = raw as Partial<WidgetSize>
+    const w = (obj.w as WidgetWidth) ?? meta.defaultSize.w
+    const h = typeof obj.h === 'number' ? obj.h : meta.defaultSize.h
+    return clampSize({ w, h }, meta)
   }
   return meta.defaultSize
 }

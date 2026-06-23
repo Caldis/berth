@@ -1,17 +1,19 @@
-import type { HTMLAttributes, ReactNode } from 'react'
+import { type HTMLAttributes, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { GripVertical, EyeOff } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
 import { SegmentedTabs } from '@/components/ui'
 import type { WidgetWidth } from './widget-types'
+import { useResizeHandle } from './use-resize-handle'
 
-// GH-138 / GH-150: 无边框语义容器 (克制编辑感)。默认仅一个安静的 uppercase 标签 + 内容, 靠留白分区;
-// affordance (拖拽柄/宽度档切换/隐藏) 悬停或编辑态才显。编辑态加外扩虚线环 (绝对定位 overlay)
-// 标识可拖拽; 拖拽态 (DragOverlay 浮层) 加实心抬起面 + 阴影。尺寸仅宽度档一分段控件 (GH-150 去高度档)。
-// 表现焊死在组件内, 不暴露改外观的 className 逃生舱 (ARCHITECTURE 规则 6)。
+// GH-138 / GH-150 R2: 无边框语义容器 (克制编辑感)。编辑态: 拖拽柄 + 宽度档切换 + 底边高度 resize 手柄。
+// 宽度走档切换器 (离散响应式), 高度走 resize 手柄 (连续行 span)。表现焊死组件内 (ARCHITECTURE 规则6)。
 
 const WIDTH_LABEL: Record<WidgetWidth, string> = { W1: '1', W2: '2', W4: '4' }
+
+// 每个 h span 的像素高 (= dashboard-grid grid-auto-rows 88 + row gap 24); 拖拽量化用。
+const PX_PER_SPAN = 112
 
 interface WidgetShellProps {
   title: string
@@ -20,6 +22,10 @@ interface WidgetShellProps {
   w: WidgetWidth
   widths: WidgetWidth[]
   onSetWidth?: (w: WidgetWidth) => void
+  h?: number
+  minH?: number
+  maxH?: number
+  onSetHeight?: (h: number) => void
   onHide?: () => void
   /** dnd-kit useSortable 的 attributes+listeners, 绑到拖拽柄。 */
   dragHandleProps?: HTMLAttributes<HTMLButtonElement>
@@ -33,25 +39,39 @@ export function WidgetShell({
   w,
   widths,
   onSetWidth,
+  h,
+  minH,
+  maxH,
+  onSetHeight,
   onHide,
   dragHandleProps,
   children
 }: WidgetShellProps): React.ReactElement {
   const { t } = useTranslation()
+  const curH = h ?? minH ?? 1
+  const lo = minH ?? 1
+  const hi = maxH ?? curH
+  const canResize = isEditing && !!onSetHeight && hi > lo
+  const { resizing, handlers } = useResizeHandle({
+    h: curH,
+    minH: lo,
+    maxH: hi,
+    pxPerSpan: PX_PER_SPAN,
+    onChange: onSetHeight ?? (() => {})
+  })
+
   return (
     <section
       className={cn(
-        // 常驻实边框 + 卡面 + 轻阴影浮起 — 明确区分各 widget 边界 (用户 verify 要求可辨识);
-        // hover 阴影加深 + 边框变深, 给交互反馈。克制的 subtle card, 非粗重灰板。
+        // 卡面 + 轻阴影浮起; hover 加深。克制 subtle card, 非粗重灰板。
         'group/widget relative flex h-full min-w-0 flex-col gap-2.5 overflow-hidden rounded-lg border border-border bg-card p-3 shadow-sm transition-all hover:border-foreground/15 hover:shadow-md',
-        // 编辑态: 边框转虚线提示可拖拽 (替代原外扩虚线环)
         isEditing && !isDragging && 'border-dashed',
-        isDragging && 'border-solid border-border shadow-xl ring-1 ring-border'
+        (isDragging || resizing) && 'border-solid border-border shadow-xl ring-1 ring-border'
       )}
     >
       <header className="flex h-5 items-center justify-between gap-2">
         <div className="flex min-w-0 items-center">
-          {/* 拖拽柄: 编辑态宽度展开 + 淡入 (标题平滑让位, 非突现挤压); 非编辑态宽 0 不占位。 */}
+          {/* 拖拽柄: 编辑态宽度展开 + 淡入; 非编辑态宽 0 不占位。 */}
           <motion.div
             initial={false}
             animate={{ width: isEditing ? 18 : 0, marginRight: isEditing ? 6 : 0, opacity: isEditing ? 1 : 0 }}
@@ -103,6 +123,20 @@ export function WidgetShell({
         </div>
       </header>
       <div className="min-w-0 flex-1 overflow-hidden">{children}</div>
+      {canResize && (
+        // 高度 resize 手柄: 底边细条, 编辑态 hover 显; 拖拽量化改 h span。
+        <div
+          {...handlers}
+          role="slider"
+          aria-label={t('overview.dashboard.size.height')}
+          aria-valuenow={curH}
+          aria-valuemin={lo}
+          aria-valuemax={hi}
+          className="absolute inset-x-0 bottom-0 flex h-2.5 cursor-ns-resize touch-none items-end justify-center pb-0.5 opacity-0 transition-opacity group-hover/widget:opacity-100"
+        >
+          <span className={cn('h-1 w-8 rounded-full transition-colors', resizing ? 'bg-primary' : 'bg-border')} />
+        </div>
+      )}
     </section>
   )
 }

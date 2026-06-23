@@ -26,6 +26,7 @@ export interface DashboardLayoutController {
   lastAddedId: WidgetId | null
   reorder: (activeId: WidgetId, overId: WidgetId) => void
   setWidth: (id: WidgetId, w: WidgetWidth) => void
+  setHeight: (id: WidgetId, h: number) => void
   setChartType: (id: WidgetId, chartType: string) => void
   hide: (id: WidgetId) => void
   show: (id: WidgetId) => void
@@ -68,6 +69,16 @@ export function useDashboardLayout(): DashboardLayoutController {
       apply((current) => ({
         ...current,
         widgets: current.widgets.map((wd) => (wd.id === id ? { ...wd, size: { ...wd.size, w } } : wd))
+      }))
+    },
+    [apply]
+  )
+
+  const setHeight = useCallback(
+    (id: WidgetId, h: number) => {
+      apply((current) => ({
+        ...current,
+        widgets: current.widgets.map((wd) => (wd.id === id ? { ...wd, size: { ...wd.size, h } } : wd))
       }))
     },
     [apply]
@@ -116,6 +127,7 @@ export function useDashboardLayout(): DashboardLayoutController {
     lastAddedId,
     reorder,
     setWidth,
+    setHeight,
     setChartType,
     hide,
     show,
