@@ -2,7 +2,7 @@
 task: 2026-06-23-gh-150-widget-height-tiers
 task_id: GH-150
 type: feature
-phase: implement
+phase: verify
 created: 2026-06-23
 priority: P1
 target_date:
@@ -95,6 +95,12 @@ GH-150 第二轮, **复用 issue #150** (仍 OPEN, project item 仍 In Progress)
 - [x] 02-SPEC.md — Design 产物 v2 (dashboard 引擎 + 库决策 + 两层架构 §12)
 - [x] 03-PLAN.md — 活任务清单 v2 (引擎 + 内容层实现项)
 - [ ] 04-POLISH.md — 可选抛光记录
+
+## 实施进展 (代码完成, 提交 e03b16b1 + c294f717)
+- [x] 引擎全链 (catalog/layout v3/dashboard-grid/use-dashboard-layout/widget-shell/overview)
+- [x] resize (use-resize-handle, deltaToSpan 单测)
+- [x] P10 图表填满 (height:100%) + 列表 rows=f(h)
+- [ ] CDP 校准 row-unit/default h + 视觉验收 (verify, 需 dev 真跑 + 用户确认; 依赖 widget-types/widget-grid 就绪 typecheck 归零)
 
 ## 待澄清 (blocked 时填)
 (无)
