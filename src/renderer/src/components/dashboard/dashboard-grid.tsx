@@ -13,6 +13,7 @@ import {
 } from '@dnd-kit/core'
 import { SortableContext, rectSortingStrategy, sortableKeyboardCoordinates, useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
+import { LayoutGroup, motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
 import { WidgetShell } from './widget-shell'
 import { getWidgetDefinition } from './widget-registry'
@@ -22,10 +23,11 @@ import type { WidgetLayoutItem } from '@/lib/dashboard-layout'
 import { ROW_UNIT, widthColSpanClass } from '@/lib/widget-grid'
 import { useMasonryRowSpan } from './use-masonry-rows'
 
-// GH-138 / GH-150: 固定档位仪表盘网格 — CSS Grid (gridAutoRows + col/row span + grid-flow-row-dense)。
-// 拖拽 (仅编辑态): dnd-kit sortable + DragOverlay 浮层克隆 — 拖拽期底层 widget 静止, 各 widget
-// 组件自身 memo 不重渲染重型图表, 仅浮层动; transform 用 CSS.Translate 丢弃 strategy 的 scale,
-// 杜绝异尺寸交换的缩放变形 (rectSortingStrategy 返回 scaleX/scaleY=目标/自身尺寸比)。
+// GH-138 / GH-150: 仪表盘网格 — CSS Grid (gridAutoRows + col/row span + grid-flow-row-dense) 定位置,
+// framer-motion layout 让非拖拽布局变化 (size 切换 / 瀑布流重排 / 增删 / 内容高变) 都 transition 而非瞬移。
+// 拖拽 (仅编辑态): dnd-kit sortable + DragOverlay 浮层克隆 — 拖拽中关 framer layout, 用 dnd transform
+// 实时让位 (杜绝双 transform 源打架); 非拖拽开 layout 做 FLIP。CSS.Translate 丢 strategy 的 scale 防变形。
+// 各 widget 自身 memo, 重排/让位只动 transform 不重渲染重型图表 (recharts)。
 
 interface WidgetActions {
   onSetWidth: (id: WidgetId, w: WidgetWidth) => void
@@ -79,21 +81,24 @@ export function DashboardGrid({
       onDragCancel={() => setActiveId(null)}
     >
       <SortableContext items={ids} strategy={rectSortingStrategy}>
-        <div
-          className="grid grid-cols-1 items-start gap-x-6 md:grid-cols-2 md:grid-flow-row-dense xl:grid-cols-4"
-          style={{ gridAutoRows: `${ROW_UNIT}px` }}
-        >
-          {rendered.map((item) => (
-            <SortableWidget
-              key={item.id}
-              item={item}
-              isEditing={isEditing}
-              isFocusTarget={lastAddedId === item.id}
-              onFocused={onFocused}
-              actions={actions}
-            />
-          ))}
-        </div>
+        <LayoutGroup>
+          <div
+            className="grid grid-cols-1 items-start gap-x-6 md:grid-cols-2 md:grid-flow-row-dense xl:grid-cols-4"
+            style={{ gridAutoRows: `${ROW_UNIT}px` }}
+          >
+            {rendered.map((item) => (
+              <SortableWidget
+                key={item.id}
+                item={item}
+                isEditing={isEditing}
+                isAnyDragging={activeId !== null}
+                isFocusTarget={lastAddedId === item.id}
+                onFocused={onFocused}
+                actions={actions}
+              />
+            ))}
+          </div>
+        </LayoutGroup>
       </SortableContext>
       <DragOverlay dropAnimation={{ duration: 180, easing: 'ease-out' }}>
         {activeItem ? <WidgetCard item={activeItem} isEditing={isEditing} isDragging actions={actions} /> : null}
@@ -105,12 +110,14 @@ export function DashboardGrid({
 function SortableWidget({
   item,
   isEditing,
+  isAnyDragging,
   isFocusTarget,
   onFocused,
   actions
 }: {
   item: WidgetLayoutItem
   isEditing: boolean
+  isAnyDragging: boolean
   isFocusTarget: boolean
   onFocused: (id: WidgetId) => void
   actions: WidgetActions
@@ -121,7 +128,7 @@ function SortableWidget({
   })
   const localRef = useRef<HTMLDivElement | null>(null)
   const [highlight, setHighlight] = useState(false)
-  // 内容驱动高度: 测内容真实高 → grid-row span 整数倍量化 (合并到 dnd setNodeRef 同一节点)
+  // 内容驱动高度: 测内容真实高 → grid-row span 整数倍量化 (与 dnd setNodeRef 同一节点)
   const { setRef: setMasonryRef, span } = useMasonryRowSpan()
 
   const setRefs = (node: HTMLDivElement | null): void => {
@@ -144,20 +151,22 @@ function SortableWidget({
 
   if (!getWidgetDefinition(item.id)) return null
 
-  // CSS.Translate (非 CSS.Transform): 只取平移, 丢弃 strategy 的 scaleX/scaleY → 不缩放变形。
+  // 拖拽中: 挂 dnd transform 让位 (CSS.Translate 丢 scale), 关 framer layout 避免双 transform 源;
+  // 非拖拽: framer layout 接管 (size 切换 / 重排 / 增删 FLIP), 不挂 dnd transform。
   const style: CSSProperties = {
-    transform: CSS.Translate.toString(transform),
-    transition,
-    gridRow: span ? `span ${span}` : undefined
+    gridRow: span ? `span ${span}` : undefined,
+    ...(isAnyDragging ? { transform: CSS.Translate.toString(transform), transition } : {})
   }
 
   return (
-    <div
+    <motion.div
       ref={setRefs}
+      layout={!isAnyDragging}
+      transition={{ layout: { duration: 0.28, ease: [0.22, 0.61, 0.36, 1] } }}
       style={style}
       className={cn(
         widthColSpanClass(item.size.w),
-        'motion-safe:transition-[opacity,box-shadow]',
+        'motion-safe:transition-[opacity]',
         isDragging && 'z-20 opacity-40',
         highlight && 'rounded-xl ring-2 ring-primary ring-offset-2 ring-offset-background'
       )}
@@ -168,7 +177,7 @@ function SortableWidget({
         actions={actions}
         dragHandleProps={{ ...attributes, ...listeners }}
       />
-    </div>
+    </motion.div>
   )
 }
 
