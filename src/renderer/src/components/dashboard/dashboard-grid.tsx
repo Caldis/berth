@@ -20,14 +20,13 @@ import { getWidgetDefinition } from './widget-registry'
 import { WIDGET_CATALOG } from './widget-catalog'
 import type { WidgetId, WidgetWidth } from './widget-types'
 import type { WidgetLayoutItem } from '@/lib/dashboard-layout'
-import { ROW_UNIT, widthColSpanClass } from '@/lib/widget-grid'
-import { useMasonryRowSpan } from './use-masonry-rows'
+import { widthColSpanClass } from '@/lib/widget-grid'
 
-// GH-138 / GH-150: 仪表盘网格 — CSS Grid (gridAutoRows + col/row span + grid-flow-row-dense) 定位置,
-// framer-motion layout 让非拖拽布局变化 (size 切换 / 瀑布流重排 / 增删 / 内容高变) 都 transition 而非瞬移。
+// GH-138 / GH-150: 仪表盘网格 — CSS Grid (规整列跨 + 同行 align-stretch 等高) 定位置, framer-motion
+// layout 让非拖拽布局变化 (size 切换 / 重排 / 增删 / 内容高变) 都 transition 而非瞬移。同行等高: 同一
+// 行卡片拉到该行最高卡 (矮卡底部留白), 消除内容驱动的高度错落 (用户定: 等高 > 贴合零留白)。
 // 拖拽 (仅编辑态): dnd-kit sortable + DragOverlay 浮层克隆 — 拖拽中关 framer layout, 用 dnd transform
-// 实时让位 (杜绝双 transform 源打架); 非拖拽开 layout 做 FLIP。CSS.Translate 丢 strategy 的 scale 防变形。
-// 各 widget 自身 memo, 重排/让位只动 transform 不重渲染重型图表 (recharts)。
+// 实时让位 (杜绝双 transform 源打架); 非拖拽开 layout 做 FLIP。各 widget 自身 memo, 重排只动 transform。
 
 interface WidgetActions {
   onSetWidth: (id: WidgetId, w: WidgetWidth) => void
@@ -82,10 +81,7 @@ export function DashboardGrid({
     >
       <SortableContext items={ids} strategy={rectSortingStrategy}>
         <LayoutGroup>
-          <div
-            className="grid grid-cols-1 items-start gap-x-6 md:grid-cols-2 md:grid-flow-row-dense xl:grid-cols-4"
-            style={{ gridAutoRows: `${ROW_UNIT}px` }}
-          >
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
             {rendered.map((item) => (
               <SortableWidget
                 key={item.id}
@@ -128,13 +124,10 @@ function SortableWidget({
   })
   const localRef = useRef<HTMLDivElement | null>(null)
   const [highlight, setHighlight] = useState(false)
-  // 内容驱动高度: 测内容真实高 → grid-row span 整数倍量化 (与 dnd setNodeRef 同一节点)
-  const { setRef: setMasonryRef, span } = useMasonryRowSpan()
 
   const setRefs = (node: HTMLDivElement | null): void => {
     setNodeRef(node)
     localRef.current = node
-    setMasonryRef(node)
   }
 
   // 新增 widget 聚焦: 滚动到位 + 短暂高亮环, 用后清 lastAddedId 防重复。
@@ -153,10 +146,9 @@ function SortableWidget({
 
   // 拖拽中: 挂 dnd transform 让位 (CSS.Translate 丢 scale), 关 framer layout 避免双 transform 源;
   // 非拖拽: framer layout 接管 (size 切换 / 重排 / 增删 FLIP), 不挂 dnd transform。
-  const style: CSSProperties = {
-    gridRow: span ? `span ${span}` : undefined,
-    ...(isAnyDragging ? { transform: CSS.Translate.toString(transform), transition } : {})
-  }
+  const style: CSSProperties = isAnyDragging
+    ? { transform: CSS.Translate.toString(transform), transition }
+    : {}
 
   return (
     <motion.div
@@ -166,7 +158,8 @@ function SortableWidget({
       style={style}
       className={cn(
         widthColSpanClass(item.size.w),
-        'motion-safe:transition-[opacity]',
+        // h-full: 撑满 grid cell (同行 align-stretch 给的行高) → 同行卡片等高
+        'h-full motion-safe:transition-[opacity]',
         isDragging && 'z-20 opacity-40',
         highlight && 'rounded-xl ring-2 ring-primary ring-offset-2 ring-offset-background'
       )}

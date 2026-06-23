@@ -6,7 +6,7 @@ import type { LucideIcon } from 'lucide-react'
 
 export type WidgetWidth = 'W1' | 'W2' | 'W4'
 
-/** widget 尺寸 = 宽度档 (固定响应式列跨)。卡片高度纯内容驱动 + 整数倍量化 (use-masonry-rows);
+/** widget 尺寸 = 宽度档 (固定响应式列跨)。卡片高度由同行 align-stretch 等高决定;
  *  GH-150: 移除高矮档维度 (切换无实感), widget 内容量固定。 */
 export interface WidgetSize {
   w: WidgetWidth
