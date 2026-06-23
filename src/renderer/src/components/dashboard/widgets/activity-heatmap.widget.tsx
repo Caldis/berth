@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import type { HeatmapDay } from '@shared/types/insights'
 import { useInsights } from '../insights-context'
 import { cn } from '@/lib/utils'
+import { useCellTooltip } from './cell-tooltip'
 
 // GH-138: GitHub 风格年度活动热力图 (单色相 berth 强调色 ramp, 非 GitHub 绿)。
 // 周为列、星期为行; 空档为极淡中性 (非灰块)。月份标签随列对齐。
@@ -67,6 +68,7 @@ function weekdayLabel(row: number, locale: string): string {
 export function ActivityHeatmapWidget(): React.ReactElement {
   const { t, i18n } = useTranslation()
   const { insights, loading } = useInsights()
+  const { show, hide, tooltip } = useCellTooltip()
   const heatmap = insights?.heatmap
 
   const weeks = useMemo(() => buildWeeks(heatmap?.days ?? []), [heatmap?.days])
@@ -125,7 +127,8 @@ export function ActivityHeatmapWidget(): React.ReactElement {
                     return (
                       <div
                         key={di}
-                        title={title}
+                        onMouseEnter={(e) => show(e, [title])}
+                        onMouseLeave={hide}
                         className={cn('aspect-square w-full rounded-[2px]', LEVEL_CLASS[intensity(cell.sessions, heatmap.maxSessions)])}
                       />
                     )
@@ -146,6 +149,7 @@ export function ActivityHeatmapWidget(): React.ReactElement {
           {t('overview.dashboard.heatmap.more')}
         </span>
       </div>
+      {tooltip}
     </div>
   )
 }

@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useInsights } from '../insights-context'
 import { cn } from '@/lib/utils'
+import { useCellTooltip } from './cell-tooltip'
 import type { WidgetRenderProps } from '../widget-types'
 
 // GH-138 R2-E: 活动节律 punch-card — 星期×小时 会话分布 ("何时工作")。
@@ -36,6 +37,7 @@ function weekdayLabel(row: number, locale: string, full = false): string {
 export function ActivityRhythmWidget({ w }: WidgetRenderProps): React.ReactElement {
   const { t, i18n } = useTranslation()
   const { insights, loading } = useInsights()
+  const { show, hide, tooltip } = useCellTooltip()
   const rhythm = insights?.rhythm
 
   const peakLabel = useMemo(() => {
@@ -102,7 +104,8 @@ export function ActivityRhythmWidget({ w }: WidgetRenderProps): React.ReactEleme
                 return (
                   <div
                     key={hour}
-                    title={title}
+                    onMouseEnter={(e) => show(e, [title])}
+                    onMouseLeave={hide}
                     className={cn('h-[14px] w-full rounded-[2px]', LEVEL_CLASS[intensity(count, rhythm.maxSessions)])}
                   />
                 )
@@ -119,6 +122,7 @@ export function ActivityRhythmWidget({ w }: WidgetRenderProps): React.ReactEleme
         ))}
         {t('overview.dashboard.heatmap.more')}
       </div>
+      {tooltip}
     </div>
   )
 }

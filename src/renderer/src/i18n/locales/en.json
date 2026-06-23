@@ -164,7 +164,7 @@
   "overview": {
     "widgets": {
       "statsBand": "At a glance",
-      "activityHeatmap": "Activity",
+      "activityHeatmap": "Activity calendar",
       "activityInsights": "Insights",
       "topUsage": "Most used",
       "recentSessions": "Recent sessions",
@@ -172,7 +172,7 @@
       "quickActions": "Quick actions",
       "tokenBreakdown": "Token breakdown",
       "modelDistribution": "Models",
-      "activityRhythm": "Activity rhythm",
+      "activityRhythm": "Work rhythm",
       "sessionDuration": "Session length",
       "cumulativeGrowth": "Growth",
       "modelEfficiency": "Token intensity",
