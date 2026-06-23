@@ -5,7 +5,6 @@ import { MessageSquare } from 'lucide-react'
 import { useSessions } from '@/hooks/use-ipc'
 import { useAppStore } from '@/stores/app'
 import { formatOptionalCurrency, truncatePath } from '@/lib/utils'
-import { agentDisplayName } from '@/lib/agent-meta'
 import { EmptyState } from '@/components/shared/empty-state'
 import { TokenUsageDisplay } from '@/components/shared/token-usage-display'
 import { projectPathForScope } from '@shared/scope'
@@ -61,13 +60,13 @@ function formatTimeOfDay(value: string | null, language: string): string {
   return date.toLocaleTimeString(language, { hour: '2-digit', minute: '2-digit', hour12: false })
 }
 
-export function RecentSessionsWidget({ w, h }: WidgetRenderProps): React.ReactElement {
+export function RecentSessionsWidget({ w }: WidgetRenderProps): React.ReactElement {
   const { t, i18n } = useTranslation()
   const navigate = useNavigate()
   const scopeSelection = useAppStore((s) => s.scopeSelection)
   const projectPath = projectPathForScope(scopeSelection)
   const agentView = useAppStore((s) => s.agentView)
-  const limit = h === 'tall' ? 8 : w === 'W1' ? 3 : 5
+  const limit = w === 'W1' ? 3 : 5
   const { sessions, loading } = useSessions({ limit, projectPath, agentView })
 
   const groups = useMemo(() => clusterByDay(sessions), [sessions])
@@ -163,12 +162,6 @@ export function RecentSessionsWidget({ w, h }: WidgetRenderProps): React.ReactEl
                     </span>
                     <span className="mt-0.5 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-muted-foreground">
                       <span className="min-w-0 truncate">{project}</span>
-                      {h === 'tall' && session.model && (
-                        <>
-                          <span aria-hidden className="text-muted-foreground/40">·</span>
-                          <span className="min-w-0 truncate">{agentDisplayName(session.agentId)}</span>
-                        </>
-                      )}
                       <span aria-hidden className="text-muted-foreground/40">·</span>
                       <TokenUsageDisplay usage={session.tokenUsage} />
                       <span aria-hidden className="text-muted-foreground/40">·</span>

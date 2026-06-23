@@ -6,14 +6,13 @@ import { SegmentedTabs } from '@/components/ui'
 import { CHART_SERIES_FILL } from '@/lib/chart-colors'
 import { formatCompactNumber } from '@/lib/utils'
 import { cumulativeSeries } from '@/lib/activity-trend'
-import type { WidgetRenderProps } from '../widget-types'
 
 type Metric = 'tokens' | 'sessions'
 const METRICS: Metric[] = ['tokens', 'sessions']
 
 // GH-138: 累计增长曲线 widget — token/会话总量随时间单调累积 ("累计 journey", 现有 widget 缺的角度)。
 // 复用 insights.heatmap.days (零引擎改动), 同质量级单色面积; 随 agentView/scope 过滤联动。
-export function CumulativeGrowthWidget({ h }: WidgetRenderProps): React.ReactElement {
+export function CumulativeGrowthWidget(): React.ReactElement {
   const { t } = useTranslation()
   const { insights, loading } = useInsights()
   const [metric, setMetric] = useState<Metric>('tokens')
@@ -22,7 +21,7 @@ export function CumulativeGrowthWidget({ h }: WidgetRenderProps): React.ReactEle
     [insights?.heatmap?.days, metric]
   )
   const total = series.length > 0 ? series[series.length - 1].value : 0
-  const chartHeight = h === 'tall' ? 184 : 120
+  const chartHeight = 120
 
   if (loading && !insights) {
     return <div className="h-[120px] w-full animate-pulse rounded-lg bg-muted/40" />

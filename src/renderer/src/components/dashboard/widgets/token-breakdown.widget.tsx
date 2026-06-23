@@ -33,9 +33,9 @@ const FORM_ICONS: Record<ChartForm, ChartFormOption<ChartForm>['icon']> = {
 }
 
 // GH-138 R2-B: Token 构成 widget — 支持 堆叠条 / 饼图 / 空心饼(donut) 形态切换 (用户可选展现形式)。
-// token 分段是语义分类, 用分类色 (TOKEN_SEGMENT_COLOR_VAR)。L 尺寸显示更大图形。
+// token 分段是语义分类, 用分类色 (TOKEN_SEGMENT_COLOR_VAR)。
 // 形态经 layout 持久化 (chartType/onChartTypeChange); 库内预览缺回调时退化为本地态。
-export function TokenBreakdownWidget({ w, h, chartType, onChartTypeChange }: WidgetRenderProps): React.ReactElement {
+export function TokenBreakdownWidget({ w, chartType, onChartTypeChange }: WidgetRenderProps): React.ReactElement {
   const { t } = useTranslation()
   const scopeSelection = useAppStore((s) => s.scopeSelection)
   const projectPath = projectPathForScope(scopeSelection)
@@ -54,7 +54,7 @@ export function TokenBreakdownWidget({ w, h, chartType, onChartTypeChange }: Wid
     [tokenUsage]
   )
   const total = segments.reduce((sum, s) => sum + s.tokens, 0)
-  const chartHeight = h === 'tall' ? 200 : 140
+  const chartHeight = 140
 
   if (loading && !usage) {
     return <div className="h-[120px] w-full animate-pulse rounded-lg bg-muted/40" />

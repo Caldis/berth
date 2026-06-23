@@ -17,7 +17,7 @@ import { cn } from '@/lib/utils'
 import { WidgetShell } from './widget-shell'
 import { getWidgetDefinition } from './widget-registry'
 import { WIDGET_CATALOG } from './widget-catalog'
-import type { WidgetId, WidgetWidth, WidgetHeight } from './widget-types'
+import type { WidgetId, WidgetWidth } from './widget-types'
 import type { WidgetLayoutItem } from '@/lib/dashboard-layout'
 import { ROW_UNIT, widthColSpanClass } from '@/lib/widget-grid'
 import { useMasonryRowSpan } from './use-masonry-rows'
@@ -29,7 +29,6 @@ import { useMasonryRowSpan } from './use-masonry-rows'
 
 interface WidgetActions {
   onSetWidth: (id: WidgetId, w: WidgetWidth) => void
-  onSetHeight: (id: WidgetId, h: WidgetHeight) => void
   onSetChartType: (id: WidgetId, chartType: string) => void
   onHide: (id: WidgetId) => void
 }
@@ -49,7 +48,6 @@ export function DashboardGrid({
   onReorder,
   onFocused,
   onSetWidth,
-  onSetHeight,
   onSetChartType,
   onHide
 }: DashboardGridProps): React.ReactElement {
@@ -63,7 +61,7 @@ export function DashboardGrid({
   const ids = rendered.map((item) => item.id)
   const activeItem = activeId ? (rendered.find((i) => i.id === activeId) ?? null) : null
 
-  const actions: WidgetActions = { onSetWidth, onSetHeight, onSetChartType, onHide }
+  const actions: WidgetActions = { onSetWidth, onSetChartType, onHide }
 
   const handleDragStart = (event: DragStartEvent): void => setActiveId(event.active.id as WidgetId)
   const handleDragEnd = (event: DragEndEvent): void => {
@@ -192,9 +190,8 @@ function WidgetCard({
   const { t } = useTranslation()
   const def = getWidgetDefinition(item.id)
   const meta = WIDGET_CATALOG[item.id]
-  const { onSetWidth, onSetHeight, onSetChartType, onHide } = actions
+  const { onSetWidth, onSetChartType, onHide } = actions
   const handleSetWidth = useCallback((w: WidgetWidth) => onSetWidth(item.id, w), [onSetWidth, item.id])
-  const handleSetHeight = useCallback((h: WidgetHeight) => onSetHeight(item.id, h), [onSetHeight, item.id])
   const handleChartType = useCallback((c: string) => onSetChartType(item.id, c), [onSetChartType, item.id])
   const handleHide = useCallback(() => onHide(item.id), [onHide, item.id])
 
@@ -206,15 +203,12 @@ function WidgetCard({
       isEditing={isEditing}
       isDragging={isDragging}
       w={item.size.w}
-      h={item.size.h}
       widths={meta.widths}
-      heights={meta.heights}
       onSetWidth={handleSetWidth}
-      onSetHeight={handleSetHeight}
       onHide={handleHide}
       dragHandleProps={dragHandleProps}
     >
-      <Component w={item.size.w} h={item.size.h} chartType={item.chartType} onChartTypeChange={handleChartType} />
+      <Component w={item.size.w} chartType={item.chartType} onChartTypeChange={handleChartType} />
     </WidgetShell>
   )
 }

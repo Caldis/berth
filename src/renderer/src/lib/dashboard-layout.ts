@@ -2,8 +2,8 @@ import { WIDGET_CATALOG } from '@/components/dashboard/widget-catalog'
 import type { WidgetId, WidgetMeta, WidgetSize } from '@/components/dashboard/widget-types'
 
 // GH-138 / GH-150: 仪表盘布局配置纯函数 (parse/migrate/serialize/reset)。localStorage 持久化。
-// migrate 容旧: 丢未知 widget / 末尾追加新注册 / 旧单维 size 字符串 (v1: S/M/L/Wide/XL) 迁移到
-// 二维 {w,h} / 钳制非法档 / 损坏 JSON 回落默认 — 保证版本演进与并发写入下不崩。
+// migrate 容旧: 丢未知 widget / 末尾追加新注册 / 旧 size (v1 字符串 S/M/L/Wide/XL 或 v2 {w,h})
+// 归一到宽度档 {w} (GH-150 移除高度维度) / 钳制非法档 / 损坏 JSON 回落默认 — 版本演进与并发写入下不崩。
 
 export const DASHBOARD_LAYOUT_VERSION = 2
 export const DASHBOARD_LAYOUT_STORAGE_KEY = 'berth-dashboard-layout'
@@ -25,24 +25,23 @@ type Catalog = Record<WidgetId, WidgetMeta>
 
 /** 旧单维尺寸 (v1: S/M/L/Wide/XL) → 二维档位映射 (语义近似保留)。 */
 const LEGACY_SIZE_MAP: Record<string, WidgetSize> = {
-  S: { w: 'W1', h: 'short' },
-  M: { w: 'W2', h: 'short' },
-  L: { w: 'W2', h: 'tall' },
-  Wide: { w: 'W4', h: 'short' },
-  XL: { w: 'W4', h: 'tall' }
+  S: { w: 'W1' },
+  M: { w: 'W2' },
+  L: { w: 'W2' },
+  Wide: { w: 'W4' },
+  XL: { w: 'W4' }
 }
 
-/** 钳制尺寸到 widget 允许档; 非法维度回落 defaultSize 对应维。 */
+/** 钳制尺寸到 widget 允许的宽度档; 非法回落 defaultSize.w。 */
 function clampSize(size: WidgetSize, meta: WidgetMeta): WidgetSize {
   const w = meta.widths.includes(size.w) ? size.w : meta.defaultSize.w
-  const h = meta.heights.includes(size.h) ? size.h : meta.defaultSize.h
-  return { w, h }
+  return { w }
 }
 
 /** 归一化持久化的 size: 旧字符串迁移 + 新对象钳制 + 缺失/损坏回落 default。 */
 function normalizeSize(raw: unknown, meta: WidgetMeta): WidgetSize {
   if (typeof raw === 'string' && raw in LEGACY_SIZE_MAP) return clampSize(LEGACY_SIZE_MAP[raw], meta)
-  if (raw && typeof raw === 'object' && 'w' in raw && 'h' in raw) {
+  if (raw && typeof raw === 'object' && 'w' in raw) {
     return clampSize(raw as WidgetSize, meta)
   }
   return meta.defaultSize

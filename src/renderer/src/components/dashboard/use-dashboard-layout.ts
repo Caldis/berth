@@ -8,10 +8,10 @@ import {
   type DashboardLayout,
   type WidgetLayoutItem
 } from '@/lib/dashboard-layout'
-import type { WidgetId, WidgetWidth, WidgetHeight } from './widget-types'
+import type { WidgetId, WidgetWidth } from './widget-types'
 
-// GH-138 / GH-150: 仪表盘布局状态 + localStorage 持久化 + 动作 (reorder/setWidth/setHeight/
-// hide/show/reset)。函数式 setState 避免并发更新的陈旧闭包; 写入失败 (配额) 静默降级为内存态。
+// GH-138 / GH-150: 仪表盘布局状态 + localStorage 持久化 + 动作 (reorder/setWidth/hide/show/reset)。
+// 函数式 setState 避免并发更新的陈旧闭包; 写入失败 (配额) 静默降级为内存态。
 // lastAddedId: show 新增 widget 时记录, 供 grid 滚动聚焦 + 高亮, 聚焦后由 clearLastAdded 清。
 
 function readInitial(): DashboardLayout {
@@ -26,7 +26,6 @@ export interface DashboardLayoutController {
   lastAddedId: WidgetId | null
   reorder: (activeId: WidgetId, overId: WidgetId) => void
   setWidth: (id: WidgetId, w: WidgetWidth) => void
-  setHeight: (id: WidgetId, h: WidgetHeight) => void
   setChartType: (id: WidgetId, chartType: string) => void
   hide: (id: WidgetId) => void
   show: (id: WidgetId) => void
@@ -69,16 +68,6 @@ export function useDashboardLayout(): DashboardLayoutController {
       apply((current) => ({
         ...current,
         widgets: current.widgets.map((wd) => (wd.id === id ? { ...wd, size: { ...wd.size, w } } : wd))
-      }))
-    },
-    [apply]
-  )
-
-  const setHeight = useCallback(
-    (id: WidgetId, h: WidgetHeight) => {
-      apply((current) => ({
-        ...current,
-        widgets: current.widgets.map((wd) => (wd.id === id ? { ...wd, size: { ...wd.size, h } } : wd))
       }))
     },
     [apply]
@@ -127,7 +116,6 @@ export function useDashboardLayout(): DashboardLayoutController {
     lastAddedId,
     reorder,
     setWidth,
-    setHeight,
     setChartType,
     hide,
     show,

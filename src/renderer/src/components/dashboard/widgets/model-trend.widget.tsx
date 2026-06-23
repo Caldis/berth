@@ -16,7 +16,7 @@ function colorFor(model: string, index: number): string {
   return model === MODEL_TREND_OTHERS ? OTHERS_COLOR : CHART_CATEGORICAL[index % CHART_CATEGORICAL.length]
 }
 
-export function ModelTrendWidget({ w, h }: WidgetRenderProps): React.ReactElement {
+export function ModelTrendWidget({ w }: WidgetRenderProps): React.ReactElement {
   const { t } = useTranslation()
   const { insights, loading } = useInsights()
   const trend = insights?.modelTrend
@@ -31,8 +31,8 @@ export function ModelTrendWidget({ w, h }: WidgetRenderProps): React.ReactElemen
   const total = useMemo(() => (trend?.points ?? []).reduce((sum, p) => sum + p.total, 0), [trend?.points])
   const models = trend?.models ?? []
 
-  const chartHeight = h === 'tall' ? 188 : 124
-  const showHeader = h === 'tall' || w === 'W4'
+  const chartHeight = 124
+  const showHeader = w === 'W4'
 
   if (loading && !insights) {
     return <div className="h-[124px] w-full animate-pulse rounded-lg bg-muted/40" />

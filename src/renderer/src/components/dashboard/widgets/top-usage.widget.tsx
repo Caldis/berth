@@ -8,13 +8,13 @@ type UsageKind = 'skill' | 'mcp'
 
 // GH-138: 最常用排行 widget (skill/mcp 切换) — Top-N 名称 + 次数 + 单色相占比细条 (呼应热力图)。
 // 内容驱动 M/L 区分: L 显示更长榜单 (自然更高)。
-export function TopUsageWidget({ w, h }: WidgetRenderProps): React.ReactElement {
+export function TopUsageWidget({ w }: WidgetRenderProps): React.ReactElement {
   const { t } = useTranslation()
   const { insights, loading } = useInsights()
   const [kind, setKind] = useState<UsageKind>('skill')
 
   const all = (kind === 'skill' ? insights?.topSkills : insights?.topMcpServers) ?? []
-  const entries = all.slice(0, h === 'tall' ? 10 : 5)
+  const entries = all.slice(0, 5)
   const max = entries.length > 0 ? entries[0].count : 0
 
   // S: 太窄, 收敛为 skill Top-3 (无切换、无占比条) — 仅排名 + 名称 + 次数。

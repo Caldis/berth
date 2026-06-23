@@ -3,11 +3,11 @@ import { useTranslation } from 'react-i18next'
 import { GripVertical, EyeOff } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { SegmentedTabs } from '@/components/ui'
-import type { WidgetWidth, WidgetHeight } from './widget-types'
+import type { WidgetWidth } from './widget-types'
 
 // GH-138 / GH-150: 无边框语义容器 (克制编辑感)。默认仅一个安静的 uppercase 标签 + 内容, 靠留白分区;
-// affordance (拖拽柄/宽高档切换/隐藏) 悬停或编辑态才显。编辑态加外扩虚线环 (绝对定位 overlay)
-// 标识可拖拽; 拖拽态 (DragOverlay 浮层) 加实心抬起面 + 阴影。尺寸为二维: 宽档 + 高档各一分段控件。
+// affordance (拖拽柄/宽度档切换/隐藏) 悬停或编辑态才显。编辑态加外扩虚线环 (绝对定位 overlay)
+// 标识可拖拽; 拖拽态 (DragOverlay 浮层) 加实心抬起面 + 阴影。尺寸仅宽度档一分段控件 (GH-150 去高度档)。
 // 表现焊死在组件内, 不暴露改外观的 className 逃生舱 (ARCHITECTURE 规则 6)。
 
 const WIDTH_LABEL: Record<WidgetWidth, string> = { W1: '1', W2: '2', W4: '4' }
@@ -17,11 +17,8 @@ interface WidgetShellProps {
   isEditing?: boolean
   isDragging?: boolean
   w: WidgetWidth
-  h: WidgetHeight
   widths: WidgetWidth[]
-  heights: WidgetHeight[]
   onSetWidth?: (w: WidgetWidth) => void
-  onSetHeight?: (h: WidgetHeight) => void
   onHide?: () => void
   /** dnd-kit useSortable 的 attributes+listeners, 绑到拖拽柄。 */
   dragHandleProps?: HTMLAttributes<HTMLButtonElement>
@@ -33,11 +30,8 @@ export function WidgetShell({
   isEditing = false,
   isDragging = false,
   w,
-  h,
   widths,
-  heights,
   onSetWidth,
-  onSetHeight,
   onHide,
   dragHandleProps,
   children
@@ -85,15 +79,6 @@ export function WidgetShell({
               items={widths.map((x) => ({ key: x, label: WIDTH_LABEL[x] }))}
               selectedKey={w}
               onSelectionChange={onSetWidth}
-            />
-          )}
-          {onSetHeight && heights.length > 1 && (
-            // 高度档: 矮/高 (short/tall)
-            <SegmentedTabs
-              ariaLabel={t('overview.dashboard.size.height')}
-              items={heights.map((x) => ({ key: x, label: t(`overview.dashboard.size.${x}`) }))}
-              selectedKey={h}
-              onSelectionChange={onSetHeight}
             />
           )}
           {onHide && (

@@ -44,7 +44,7 @@ export function WidgetLibrary({
                 {/* 缩放实时预览: 渲染真实 widget, 0.5 缩放裁剪到固定预览框 (无标题, 内容即标识) */}
                 <div className="pointer-events-none h-[104px] w-[208px] select-none">
                   <div className="h-[208px] w-[416px] origin-top-left scale-50 p-3">
-                    <Preview w={previewSize.w} h={previewSize.h} />
+                    <Preview w={previewSize.w} />
                   </div>
                 </div>
                 {/* hover 加号覆盖, 提示可取用 */}

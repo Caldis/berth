@@ -24,8 +24,8 @@ function modelColor(index: number): string {
 
 // GH-138 R2-B/R2-A: 模型分布 widget — byModel token 占比, 支持 排行条 / 饼图 / 空心饼 形态切换。
 // 排行条恒单色 (长度编码量级, 编辑感克制); 饼/环按模型分类色 (多分类 breakdown 口径) + 图例。
-// 尺寸驱动密度: M 取 Top-5, L 取 Top-8。形态经 layout 持久化。
-export function ModelDistributionWidget({ w, h, chartType, onChartTypeChange }: WidgetRenderProps): React.ReactElement {
+// 取 Top-5。形态经 layout 持久化。
+export function ModelDistributionWidget({ w, chartType, onChartTypeChange }: WidgetRenderProps): React.ReactElement {
   const { t } = useTranslation()
   const scopeSelection = useAppStore((s) => s.scopeSelection)
   const projectPath = projectPathForScope(scopeSelection)
@@ -38,13 +38,13 @@ export function ModelDistributionWidget({ w, h, chartType, onChartTypeChange }: 
     label: t(`overview.dashboard.chartForm.${id}`)
   }))
 
-  const limit = h === 'tall' ? 8 : 5
+  const limit = 5
   const models = useMemo(
     () => [...(usage?.byModel ?? [])].sort((a, b) => b.tokens - a.tokens).slice(0, limit),
     [usage?.byModel, limit]
   )
   const max = models.length > 0 ? models[0].tokens : 0
-  const chartHeight = h === 'tall' ? 200 : 150
+  const chartHeight = 150
 
   if (loading && !usage) {
     return (

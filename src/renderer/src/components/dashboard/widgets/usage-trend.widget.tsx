@@ -39,7 +39,7 @@ const FORM_ICONS: Record<TrendForm, ChartFormOption<TrendForm>['icon']> = {
 // GH-138 R2-B/R2-A: 用量趋势 widget — 范围可配置 (30/90/180d) + 形态切换 (柱/折线/面积)。
 // 同质时间序列恒用单色 CHART_SERIES_FILL, 不按索引循环分类色 (theme-palette 不变量)。
 // 尺寸驱动密度: 高度随 S→Wide 递增, Y 轴标签仅 L/Wide 显示 (M 收紧), 拉开 M/L/Wide 区分。
-export function UsageTrendWidget({ w, h, chartType, onChartTypeChange }: WidgetRenderProps): React.ReactElement {
+export function UsageTrendWidget({ w, chartType, onChartTypeChange }: WidgetRenderProps): React.ReactElement {
   const { t } = useTranslation()
   const scopeSelection = useAppStore((s) => s.scopeSelection)
   const projectPath = projectPathForScope(scopeSelection)
@@ -55,9 +55,9 @@ export function UsageTrendWidget({ w, h, chartType, onChartTypeChange }: WidgetR
 
   const dailyCosts = usage?.dailyCosts ?? []
   const hasKnownCost = usage != null && usage.costSource !== 'unknown'
-  const chartHeight = h === 'tall' ? 208 : 150
-  // 高档 (tall) 或满宽 (W4) 才显示 Y 轴刻度 + 网格线; 矮档收紧只留柱/线本体, 拉开密度差。
-  const showAxesDetail = h === 'tall' || w === 'W4'
+  const chartHeight = 150
+  // 满宽 (W4) 才显示 Y 轴刻度 + 网格线; 否则收紧只留柱/线本体。
+  const showAxesDetail = w === 'W4'
 
   const axes = (
     <>

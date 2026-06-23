@@ -1,9 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { ALL_WIDGET_IDS, WIDGET_CATALOG } from '@/components/dashboard/widget-catalog'
-import type { WidgetWidth, WidgetHeight } from '@/components/dashboard/widget-types'
+import type { WidgetWidth } from '@/components/dashboard/widget-types'
 
 const VALID_WIDTHS: WidgetWidth[] = ['W1', 'W2', 'W4']
-const VALID_HEIGHTS: WidgetHeight[] = ['short', 'tall']
 
 describe('WIDGET_CATALOG', () => {
   it('keys its entries by their own id', () => {
@@ -16,15 +15,12 @@ describe('WIDGET_CATALOG', () => {
     expect(ALL_WIDGET_IDS.sort()).toEqual(Object.keys(WIDGET_CATALOG).sort())
   })
 
-  it('declares non-empty valid width/height bands with defaultSize included', () => {
+  it('declares non-empty valid width bands with defaultSize included', () => {
     for (const meta of Object.values(WIDGET_CATALOG)) {
       expect(meta.widths.length).toBeGreaterThan(0)
-      expect(meta.heights.length).toBeGreaterThan(0)
       for (const w of meta.widths) expect(VALID_WIDTHS).toContain(w)
-      for (const h of meta.heights) expect(VALID_HEIGHTS).toContain(h)
-      // defaultSize must be a legal band combination
+      // defaultSize.w must be a legal band
       expect(meta.widths).toContain(meta.defaultSize.w)
-      expect(meta.heights).toContain(meta.defaultSize.h)
     }
   })
 

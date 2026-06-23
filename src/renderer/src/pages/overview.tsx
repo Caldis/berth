@@ -36,7 +36,6 @@ export function Overview(): React.ReactElement {
     lastAddedId,
     reorder,
     setWidth,
-    setHeight,
     setChartType,
     hide,
     show,
@@ -98,7 +97,6 @@ export function Overview(): React.ReactElement {
           lastAddedId={lastAddedId}
           onReorder={reorder}
           onSetWidth={setWidth}
-          onSetHeight={setHeight}
           onSetChartType={setChartType}
           onHide={hide}
           onFocused={clearLastAdded}

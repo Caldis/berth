@@ -17,8 +17,8 @@ describe('defaultLayout', () => {
     expect(layout.widgets[0].id).toBe('stats-band')
     expect(layout.widgets.at(-1)?.id).toBe('spend')
     const byId = Object.fromEntries(layout.widgets.map((w) => [w.id, w]))
-    expect(byId['stats-band'].size).toEqual({ w: 'W4', h: 'short' })
-    expect(byId['recent-sessions'].size).toEqual({ w: 'W2', h: 'tall' })
+    expect(byId['stats-band'].size).toEqual({ w: 'W4' })
+    expect(byId['recent-sessions'].size).toEqual({ w: 'W2' })
     expect(byId['token-breakdown'].hidden).toBe(true)
     expect(byId['model-distribution'].hidden).toBe(true)
     expect(byId['recent-sessions'].hidden).toBe(false)
@@ -29,11 +29,11 @@ describe('migrateLayout', () => {
   it('preserves stored order/size/hidden then appends missing widgets in defaultOrder', () => {
     const stored: DashboardLayout = {
       version: DASHBOARD_LAYOUT_VERSION,
-      widgets: [{ id: 'recent-sessions', size: { w: 'W2', h: 'short' }, hidden: true }]
+      widgets: [{ id: 'recent-sessions', size: { w: 'W2' }, hidden: true }]
     }
     const out = migrateLayout(stored)
     expect(out.widgets).toHaveLength(16)
-    expect(out.widgets[0]).toEqual({ id: 'recent-sessions', size: { w: 'W2', h: 'short' }, hidden: true })
+    expect(out.widgets[0]).toEqual({ id: 'recent-sessions', size: { w: 'W2' }, hidden: true })
     expect(out.widgets.slice(1).map((w) => w.id)).toEqual([
       'stats-band',
       'activity-heatmap',
@@ -53,7 +53,7 @@ describe('migrateLayout', () => {
     ])
     const appended = Object.fromEntries(out.widgets.slice(1).map((w) => [w.id, w]))
     expect(appended['token-breakdown'].hidden).toBe(true)
-    expect(appended['stats-band'].size).toEqual({ w: 'W4', h: 'short' })
+    expect(appended['stats-band'].size).toEqual({ w: 'W4' })
   })
 
   it('migrates legacy single-dimension sizes (v1) to two-dimensional bands, clamped to allowed', () => {
@@ -67,9 +67,9 @@ describe('migrateLayout', () => {
     } as unknown as DashboardLayout
     const out = migrateLayout(stored)
     const byId = Object.fromEntries(out.widgets.map((w) => [w.id, w]))
-    expect(byId['recent-sessions'].size).toEqual({ w: 'W2', h: 'tall' })
-    expect(byId['usage-trend'].size).toEqual({ w: 'W4', h: 'short' })
-    expect(byId['spend'].size).toEqual({ w: 'W1', h: 'short' })
+    expect(byId['recent-sessions'].size).toEqual({ w: 'W2' })
+    expect(byId['usage-trend'].size).toEqual({ w: 'W4' })
+    expect(byId['spend'].size).toEqual({ w: 'W1' })
   })
 
   it('drops unknown widget ids', () => {
@@ -86,27 +86,27 @@ describe('migrateLayout', () => {
     const stored = {
       version: DASHBOARD_LAYOUT_VERSION,
       widgets: [
-        { id: 'stats-band', size: { w: 'W1', h: 'short' }, hidden: false }, // W1 not allowed for stats-band
-        { id: 'activity-heatmap', size: { w: 'W4', h: 'tall' }, hidden: false } // valid
+        { id: 'stats-band', size: { w: 'W1' }, hidden: false }, // W1 not allowed for stats-band
+        { id: 'activity-heatmap', size: { w: 'W4' }, hidden: false } // valid
       ]
     } as unknown as DashboardLayout
     const out = migrateLayout(stored)
     const byId = Object.fromEntries(out.widgets.map((w) => [w.id, w]))
-    expect(byId['stats-band'].size).toEqual({ w: 'W4', h: 'short' }) // w+h clamped to default (stats-band only allows W4×mini)
-    expect(byId['activity-heatmap'].size).toEqual({ w: 'W4', h: 'tall' })
+    expect(byId['stats-band'].size).toEqual({ w: 'W4' }) // w+h clamped to default (stats-band only allows W4×mini)
+    expect(byId['activity-heatmap'].size).toEqual({ w: 'W4' })
   })
 
   it('dedups repeated widget ids', () => {
     const stored = {
       version: DASHBOARD_LAYOUT_VERSION,
       widgets: [
-        { id: 'stats-band', size: { w: 'W4', h: 'short' }, hidden: false },
-        { id: 'stats-band', size: { w: 'W4', h: 'short' }, hidden: true }
+        { id: 'stats-band', size: { w: 'W4' }, hidden: false },
+        { id: 'stats-band', size: { w: 'W4' }, hidden: true }
       ]
     } as unknown as DashboardLayout
     const out = migrateLayout(stored)
     expect(out.widgets.filter((w) => w.id === 'stats-band')).toHaveLength(1)
-    expect(out.widgets[0]).toEqual({ id: 'stats-band', size: { w: 'W4', h: 'short' }, hidden: false })
+    expect(out.widgets[0]).toEqual({ id: 'stats-band', size: { w: 'W4' }, hidden: false })
   })
 })
 
@@ -114,12 +114,12 @@ describe('migrateLayout chartType', () => {
   it('preserves a stored chartType string', () => {
     const stored = {
       version: DASHBOARD_LAYOUT_VERSION,
-      widgets: [{ id: 'token-breakdown', size: { w: 'W2', h: 'short' }, hidden: false, chartType: 'donut' }]
+      widgets: [{ id: 'token-breakdown', size: { w: 'W2' }, hidden: false, chartType: 'donut' }]
     } as unknown as DashboardLayout
     const out = migrateLayout(stored)
     expect(out.widgets[0]).toEqual({
       id: 'token-breakdown',
-      size: { w: 'W2', h: 'short' },
+      size: { w: 'W2' },
       hidden: false,
       chartType: 'donut'
     })
@@ -129,8 +129,8 @@ describe('migrateLayout chartType', () => {
     const stored = {
       version: DASHBOARD_LAYOUT_VERSION,
       widgets: [
-        { id: 'token-breakdown', size: { w: 'W2', h: 'short' }, hidden: false, chartType: 123 },
-        { id: 'model-distribution', size: { w: 'W2', h: 'short' }, hidden: false, chartType: '' }
+        { id: 'token-breakdown', size: { w: 'W2' }, hidden: false, chartType: 123 },
+        { id: 'model-distribution', size: { w: 'W2' }, hidden: false, chartType: '' }
       ]
     } as unknown as DashboardLayout
     const out = migrateLayout(stored)
@@ -142,12 +142,12 @@ describe('migrateLayout chartType', () => {
   it('round-trips chartType through serialize → parse', () => {
     const stored: DashboardLayout = {
       version: DASHBOARD_LAYOUT_VERSION,
-      widgets: [{ id: 'usage-trend', size: { w: 'W4', h: 'short' }, hidden: false, chartType: 'area' }]
+      widgets: [{ id: 'usage-trend', size: { w: 'W4' }, hidden: false, chartType: 'area' }]
     }
     const out = parseLayout(serializeLayout(stored))
     expect(out.widgets[0]).toEqual({
       id: 'usage-trend',
-      size: { w: 'W4', h: 'short' },
+      size: { w: 'W4' },
       hidden: false,
       chartType: 'area'
     })
@@ -166,10 +166,10 @@ describe('parseLayout', () => {
   it('parses and migrates a stored layout', () => {
     const stored: DashboardLayout = {
       version: DASHBOARD_LAYOUT_VERSION,
-      widgets: [{ id: 'usage-trend', size: { w: 'W2', h: 'tall' }, hidden: false }]
+      widgets: [{ id: 'usage-trend', size: { w: 'W2' }, hidden: false }]
     }
     const out = parseLayout(serializeLayout(stored))
-    expect(out.widgets[0]).toEqual({ id: 'usage-trend', size: { w: 'W2', h: 'tall' }, hidden: false })
+    expect(out.widgets[0]).toEqual({ id: 'usage-trend', size: { w: 'W2' }, hidden: false })
     expect(out.widgets).toHaveLength(16)
   })
 })

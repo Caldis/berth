@@ -5,13 +5,12 @@ import { useAppStore } from '@/stores/app'
 import { formatCurrency } from '@/lib/utils'
 import { costTrend } from '@/lib/activity-trend'
 import { projectPathForScope } from '@shared/scope'
-import type { WidgetRenderProps } from '../widget-types'
 import { Sparkline } from './sparkline'
 
 // GH-138 R2-C: 花费 widget — 唯一的"钱"维度。usage.totalCost/dailyCosts/actualCost/byModel 现成数据。
 // 克制美学: 大字号货币 + 安静 uppercase 标签 + 单色 sparkline + 周环比 ▲▼% (中性色, 涨跌不褒贬)。
-// 尺寸即信息: S=总花费+趋势一瞥 · M=+实际/估算拆分 · L=+分模型成本榜 (钱花在哪个模型)。
-export function SpendWidget({ h }: WidgetRenderProps): React.ReactElement {
+// 总花费 + 趋势一瞥 + 实际/估算拆分。
+export function SpendWidget(): React.ReactElement {
   const { t } = useTranslation()
   const scopeSelection = useAppStore((s) => s.scopeSelection)
   const projectPath = projectPathForScope(scopeSelection)
@@ -19,11 +18,6 @@ export function SpendWidget({ h }: WidgetRenderProps): React.ReactElement {
   const { usage, loading } = useUsageSummary(30, agentView, projectPath)
 
   const trend = useMemo(() => costTrend(usage?.dailyCosts ?? []), [usage?.dailyCosts])
-  const models = useMemo(
-    () => [...(usage?.byModel ?? [])].filter((m) => m.cost > 0).sort((a, b) => b.cost - a.cost).slice(0, 5),
-    [usage?.byModel]
-  )
-  const maxModelCost = models.length > 0 ? models[0].cost : 0
 
   if (loading && !usage) {
     return (
@@ -75,25 +69,6 @@ export function SpendWidget({ h }: WidgetRenderProps): React.ReactElement {
             <dd className="mt-0.5 font-medium tabular-nums text-foreground">{formatCurrency(usage.estimatedCost)}</dd>
           </div>
         </dl>
-      )}
-
-      {h === 'tall' && models.length > 0 && (
-        <ul className="space-y-2 border-t border-border/50 pt-3">
-          {models.map((entry) => (
-            <li key={entry.model} className="space-y-1">
-              <div className="flex items-baseline justify-between gap-3">
-                <span className="min-w-0 truncate text-sm text-foreground">{entry.model}</span>
-                <span className="shrink-0 text-xs tabular-nums text-muted-foreground">{formatCurrency(entry.cost)}</span>
-              </div>
-              <div className="h-1 overflow-hidden rounded-full bg-muted/50">
-                <div
-                  className="h-full rounded-full bg-primary/70"
-                  style={{ width: `${maxModelCost > 0 ? Math.max(4, (entry.cost / maxModelCost) * 100) : 0}%` }}
-                />
-              </div>
-            </li>
-          ))}
-        </ul>
       )}
     </div>
   )

@@ -9,7 +9,7 @@ import type { WidgetRenderProps } from '../widget-types'
 // GH-138 R2-C/T3: 项目分布 widget — 新维度 (项目, 非模型/时间)。usage.byProject 现成数据,
 // 形态刻意区别于 model-distribution (排行条/饼): 单条**份额分配条** (token 占比横向堆叠) + 排名行。
 // 克制美学: 不用分类彩色, 改 primary 单色不透明度阶梯 (从重到轻), 超出 Top-N 收为 "其他" 极淡段。
-// 尺寸即信息: S=单条 + 头部项目一瞥 · M=Top-5 行 · L=汇总头 + Top-8 行。
+// 尺寸即信息: W1=单条 + 头部项目一瞥 · 否则 Top-5 行。
 
 interface Segment {
   key: string
@@ -23,14 +23,14 @@ function tintAlpha(index: number): number {
   return Math.max(0.18, 0.92 - index * 0.13)
 }
 
-export function ProjectAllocationWidget({ w, h }: WidgetRenderProps): React.ReactElement {
+export function ProjectAllocationWidget({ w }: WidgetRenderProps): React.ReactElement {
   const { t } = useTranslation()
   const scopeSelection = useAppStore((s) => s.scopeSelection)
   const projectPath = projectPathForScope(scopeSelection)
   const agentView = useAppStore((s) => s.agentView)
   const { usage, loading } = useUsageSummary(30, agentView, projectPath)
 
-  const limit = h === 'tall' ? 8 : 5
+  const limit = 5
   const all = useMemo(
     () => [...(usage?.byProject ?? [])].sort((a, b) => b.tokens - a.tokens),
     [usage?.byProject]
@@ -111,12 +111,6 @@ export function ProjectAllocationWidget({ w, h }: WidgetRenderProps): React.Reac
 
   return (
     <div className="flex h-full flex-col gap-3">
-      {h === 'tall' && (
-        <div className="flex items-baseline justify-between gap-3 text-xs text-muted-foreground">
-          <span>{t('overview.dashboard.projectAllocation.acrossProjects', { count: all.length })}</span>
-          <span className="tabular-nums">{formatCompactNumber(totalTokens)}</span>
-        </div>
-      )}
       {shareBar}
       <ul className="space-y-1.5">
         {top.map((entry, i) => (
