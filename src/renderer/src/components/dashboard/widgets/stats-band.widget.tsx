@@ -16,7 +16,7 @@ export function StatsBandWidget(): React.ReactElement {
 
   if (loading && !insights) {
     return (
-      <div className="grid grid-cols-2 gap-x-6 gap-y-5 sm:grid-cols-3 lg:grid-cols-5">
+      <div className="h-full grid grid-cols-2 gap-x-6 gap-y-5 sm:grid-cols-3 lg:grid-cols-5">
         {Array.from({ length: 5 }, (_, i) => (
           <div key={i} className="space-y-2">
             <div className="h-7 w-20 animate-pulse rounded bg-muted" />

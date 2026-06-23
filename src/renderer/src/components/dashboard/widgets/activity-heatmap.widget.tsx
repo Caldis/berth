@@ -80,7 +80,7 @@ export function ActivityHeatmapWidget(): React.ReactElement {
   }
   if (!heatmap || totalSessions === 0) {
     return (
-      <div className="flex h-[120px] items-center justify-center text-sm text-muted-foreground">
+      <div className="h-full flex h-[120px] items-center justify-center text-sm text-muted-foreground">
         {t('overview.dashboard.heatmap.empty')}
       </div>
     )

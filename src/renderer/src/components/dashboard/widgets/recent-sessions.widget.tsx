@@ -73,7 +73,7 @@ export function RecentSessionsWidget({ w, h }: WidgetRenderProps): React.ReactEl
 
   if (loading && sessions.length === 0) {
     return (
-      <div className="space-y-3">
+      <div className="h-full space-y-3">
         {Array.from({ length: 3 }, (_, i) => (
           <div key={i} className="space-y-2">
             <div className="h-3 w-2/3 animate-pulse rounded bg-muted" />

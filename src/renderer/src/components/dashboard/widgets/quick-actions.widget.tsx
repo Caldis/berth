@@ -17,7 +17,7 @@ export function QuickActionsWidget(): React.ReactElement {
   ]
 
   return (
-    <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-4">
+    <div className="h-full grid grid-cols-2 gap-1.5 sm:grid-cols-4">
       {items.map((item) => {
         const Icon = item.icon
         return (

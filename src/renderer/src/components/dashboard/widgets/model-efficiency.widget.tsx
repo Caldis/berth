@@ -1,10 +1,11 @@
+import type { WidgetRenderProps } from '../widget-types'
 import { useTranslation } from 'react-i18next'
 import { useInsights } from '../insights-context'
 import { formatCompactNumber } from '@/lib/utils'
 
 // GH-138: 模型强度 widget — 各模型"每会话平均 token" (与 model 总量 breakdown 互补; 高=每会话越重)。
 // 单色相横条 (长度 = avg / maxAvg)。取 Top-5。
-export function ModelEfficiencyWidget(): React.ReactElement {
+export function ModelEfficiencyWidget({ h }: WidgetRenderProps): React.ReactElement {
   const { t } = useTranslation()
   const { insights, loading } = useInsights()
   const eff = insights?.modelEfficiency

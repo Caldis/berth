@@ -73,3 +73,5 @@ export function SpendWidget(): React.ReactElement {
     </div>
   )
 }
+
+// MARKERTEST

@@ -53,7 +53,7 @@ export function ActivityRhythmWidget({ w }: WidgetRenderProps): React.ReactEleme
   }
   if (!rhythm || rhythm.totalSessions === 0) {
     return (
-      <div className="flex h-[140px] items-center justify-center text-sm text-muted-foreground">
+      <div className="h-full flex h-[140px] items-center justify-center text-sm text-muted-foreground">
         {t('overview.dashboard.rhythm.empty')}
       </div>
     )

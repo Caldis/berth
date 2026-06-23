@@ -25,7 +25,7 @@ function modelColor(index: number): string {
 // GH-138 R2-B/R2-A: 模型分布 widget — byModel token 占比, 支持 排行条 / 饼图 / 空心饼 形态切换。
 // 排行条恒单色 (长度编码量级, 编辑感克制); 饼/环按模型分类色 (多分类 breakdown 口径) + 图例。
 // 取 Top-5。形态经 layout 持久化。
-export function ModelDistributionWidget({ w, chartType, onChartTypeChange }: WidgetRenderProps): React.ReactElement {
+export function ModelDistributionWidget({ w, h, chartType, onChartTypeChange }: WidgetRenderProps): React.ReactElement {
   const { t } = useTranslation()
   const scopeSelection = useAppStore((s) => s.scopeSelection)
   const projectPath = projectPathForScope(scopeSelection)
@@ -63,7 +63,7 @@ export function ModelDistributionWidget({ w, chartType, onChartTypeChange }: Wid
   if (w === 'W1') {
     return (
       <ul className="flex h-full flex-col justify-center gap-2">
-        {models.slice(0, 3).map((entry) => (
+        {models.slice(0, Math.max(4, Math.round((h ?? 3) * 2))).map((entry) => (
           <li key={entry.model} className="space-y-1">
             <div className="flex items-baseline justify-between gap-3">
               <span className="min-w-0 truncate text-sm text-foreground">{entry.model}</span>
@@ -117,7 +117,7 @@ export function ModelDistributionWidget({ w, chartType, onChartTypeChange }: Wid
   return (
     <div className="flex h-full flex-col gap-3">
       {toggle}
-      <ResponsiveContainer width="100%" height={chartHeight}>
+      <ResponsiveContainer width="100%" height="100%">
         <PieChart>
           <Pie
             data={models}
@@ -162,3 +162,5 @@ export function ModelDistributionWidget({ w, chartType, onChartTypeChange }: Wid
     </div>
   )
 }
+
+// MARKERTEST
