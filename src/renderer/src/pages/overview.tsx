@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Check, Settings2 } from 'lucide-react'
+import { AnimatePresence, motion } from 'framer-motion'
 import { Button } from '@/components/ui'
 import { useAppStore } from '@/stores/app'
 import { projectPathForScope } from '@shared/scope'
@@ -101,7 +102,20 @@ export function Overview(): React.ReactElement {
           onHide={hide}
           onFocused={clearLastAdded}
         />
-        {isEditing && <WidgetLibrary hidden={hiddenWidgets} onAdd={show} />}
+        <AnimatePresence>
+          {isEditing && hiddenWidgets.length > 0 && (
+            <motion.div
+              key="widget-library"
+              initial={{ opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 24 }}
+              transition={{ duration: 0.25, ease: 'easeOut' }}
+              className="sticky bottom-3 z-30 mt-2"
+            >
+              <WidgetLibrary hidden={hiddenWidgets} onAdd={show} />
+            </motion.div>
+          )}
+        </AnimatePresence>
       </DashboardInsightsProvider>
     </div>
   )

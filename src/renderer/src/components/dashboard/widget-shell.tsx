@@ -1,6 +1,7 @@
 import type { HTMLAttributes, ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { GripVertical, EyeOff } from 'lucide-react'
+import { motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
 import { SegmentedTabs } from '@/components/ui'
 import type { WidgetWidth } from './widget-types'
@@ -49,17 +50,24 @@ export function WidgetShell({
       )}
     >
       <header className="flex h-5 items-center justify-between gap-2">
-        <div className="flex min-w-0 items-center gap-1.5">
-          {isEditing && (
+        <div className="flex min-w-0 items-center">
+          {/* 拖拽柄: 编辑态宽度展开 + 淡入 (标题平滑让位, 非突现挤压); 非编辑态宽 0 不占位。 */}
+          <motion.div
+            initial={false}
+            animate={{ width: isEditing ? 18 : 0, marginRight: isEditing ? 6 : 0, opacity: isEditing ? 1 : 0 }}
+            transition={{ duration: 0.2, ease: 'easeOut' }}
+            style={{ pointerEvents: isEditing ? 'auto' : 'none' }}
+            className="-ml-0.5 flex shrink-0 items-center overflow-hidden"
+          >
             <button
               type="button"
               aria-label={`${title} — drag to reorder`}
-              className="-ml-0.5 cursor-grab touch-none rounded p-0.5 text-muted-foreground/70 transition-colors hover:text-foreground active:cursor-grabbing focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              className="flex shrink-0 cursor-grab touch-none items-center justify-center rounded text-muted-foreground/70 transition-colors hover:text-foreground active:cursor-grabbing focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
               {...dragHandleProps}
             >
-              <GripVertical className="h-3.5 w-3.5" />
+              <GripVertical className="h-3.5 w-3.5 shrink-0" />
             </button>
-          )}
+          </motion.div>
           <h3 className="min-w-0 truncate text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
             {title}
           </h3>
