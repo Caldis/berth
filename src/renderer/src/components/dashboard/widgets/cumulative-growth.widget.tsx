@@ -31,7 +31,7 @@ export function CumulativeGrowthWidget(): React.ReactElement {
   }
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex h-full flex-col gap-3">
       <div className="flex items-end justify-between gap-2">
         <div className="min-w-0">
           <div className="text-2xl font-semibold leading-none tracking-tight tabular-nums text-foreground">
@@ -48,7 +48,7 @@ export function CumulativeGrowthWidget(): React.ReactElement {
           onSelectionChange={setMetric}
         />
       </div>
-      <ResponsiveContainer width="100%" height={chartHeight}>
+      <div className="min-h-0 flex-1"><ResponsiveContainer width="100%" height="100%">
         <AreaChart data={series} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
           <defs>
             <linearGradient id="cumulative-area" x1="0" y1="0" x2="0" y2="1">
@@ -80,7 +80,7 @@ export function CumulativeGrowthWidget(): React.ReactElement {
           />
           <Area type="monotone" dataKey="value" stroke={CHART_SERIES_FILL} strokeWidth={2} fill="url(#cumulative-area)" />
         </AreaChart>
-      </ResponsiveContainer>
+      </ResponsiveContainer></div>
     </div>
   )
 }

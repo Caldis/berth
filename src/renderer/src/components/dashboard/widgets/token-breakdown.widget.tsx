@@ -119,7 +119,7 @@ export function TokenBreakdownWidget({ w, chartType, onChartTypeChange }: Widget
         </>
       ) : (
         <>
-          <ResponsiveContainer width="100%" height={chartHeight}>
+          <div className="min-h-0 flex-1"><ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
                 data={segments}
@@ -149,7 +149,7 @@ export function TokenBreakdownWidget({ w, chartType, onChartTypeChange }: Widget
                 ]}
               />
             </PieChart>
-          </ResponsiveContainer>
+          </ResponsiveContainer></div>
           {legend}
         </>
       )}

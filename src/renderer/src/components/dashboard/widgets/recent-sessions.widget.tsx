@@ -60,13 +60,13 @@ function formatTimeOfDay(value: string | null, language: string): string {
   return date.toLocaleTimeString(language, { hour: '2-digit', minute: '2-digit', hour12: false })
 }
 
-export function RecentSessionsWidget({ w }: WidgetRenderProps): React.ReactElement {
+export function RecentSessionsWidget({ w, h }: WidgetRenderProps): React.ReactElement {
   const { t, i18n } = useTranslation()
   const navigate = useNavigate()
   const scopeSelection = useAppStore((s) => s.scopeSelection)
   const projectPath = projectPathForScope(scopeSelection)
   const agentView = useAppStore((s) => s.agentView)
-  const limit = w === 'W1' ? 3 : 5
+  const limit = w === 'W1' ? 3 : Math.max(4, Math.round((h ?? 3) * 1.8))
   const { sessions, loading } = useSessions({ limit, projectPath, agentView })
 
   const groups = useMemo(() => clusterByDay(sessions), [sessions])

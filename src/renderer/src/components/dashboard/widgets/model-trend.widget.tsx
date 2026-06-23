@@ -42,7 +42,7 @@ export function ModelTrendWidget({ w }: WidgetRenderProps): React.ReactElement {
   }
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex h-full flex-col gap-3">
       {showHeader && (
         <div className="min-w-0">
           <div className="text-2xl font-semibold leading-none tracking-tight tabular-nums text-foreground">
@@ -53,7 +53,7 @@ export function ModelTrendWidget({ w }: WidgetRenderProps): React.ReactElement {
           </div>
         </div>
       )}
-      <ResponsiveContainer width="100%" height={chartHeight}>
+      <div className="min-h-0 flex-1"><ResponsiveContainer width="100%" height="100%">
         <AreaChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
           <XAxis
             dataKey="date"
@@ -92,7 +92,7 @@ export function ModelTrendWidget({ w }: WidgetRenderProps): React.ReactElement {
             />
           ))}
         </AreaChart>
-      </ResponsiveContainer>
+      </ResponsiveContainer></div>
       <ul className="flex flex-wrap gap-x-4 gap-y-1.5">
         {models.map((model, i) => (
           <li key={model} className="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">

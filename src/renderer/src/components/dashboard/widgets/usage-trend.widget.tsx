@@ -97,7 +97,7 @@ export function UsageTrendWidget({ w, chartType, onChartTypeChange }: WidgetRend
   )
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex h-full flex-col gap-3">
       <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
         <SegmentedTabs
           ariaLabel={t('overview.dashboard.rangeLabel')}
@@ -129,7 +129,7 @@ export function UsageTrendWidget({ w, chartType, onChartTypeChange }: WidgetRend
           className="border-0 py-8"
         />
       ) : (
-        <ResponsiveContainer width="100%" height={chartHeight}>
+        <div className="min-h-0 flex-1"><ResponsiveContainer width="100%" height="100%">
           {form === 'line' ? (
             <LineChart data={dailyCosts} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
               {axes}
@@ -165,7 +165,7 @@ export function UsageTrendWidget({ w, chartType, onChartTypeChange }: WidgetRend
               <Bar dataKey="cost" fill={CHART_SERIES_FILL} radius={[4, 4, 0, 0]} />
             </BarChart>
           )}
-        </ResponsiveContainer>
+        </ResponsiveContainer></div>
       )}
     </div>
   )
