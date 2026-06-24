@@ -14,7 +14,7 @@ export function TopUsageWidget({ w, h }: WidgetRenderProps): React.ReactElement 
   const [kind, setKind] = useState<UsageKind>('skill')
 
   const all = (kind === 'skill' ? insights?.topSkills : insights?.topMcpServers) ?? []
-  const entries = all.slice(0, Math.max(3, Math.round((h ?? 7) * 0.55)))
+  const entries = all.slice(0, Math.max(3, Math.round((h ?? 10) * 0.7)))
   const max = entries.length > 0 ? entries[0].count : 0
 
   // S: 太窄, 收敛为 skill Top-3 (无切换、无占比条) — 仅排名 + 名称 + 次数。

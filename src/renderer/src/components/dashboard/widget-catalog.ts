@@ -40,10 +40,10 @@ export const WIDGET_CATALOG: Record<WidgetId, WidgetMeta> = {
   'top-usage': {
     id: 'top-usage',
     titleKey: 'overview.widgets.topUsage',
-    defaultSize: { w: 'W2', h: 7 },
+    defaultSize: { w: 'W2', h: 10 },
     widths: ['W1', 'W2'],
-    minH: 5,
-    maxH: 10,
+    minH: 7,
+    maxH: 12,
     defaultOrder: 3,
     defaultHidden: false
   },
