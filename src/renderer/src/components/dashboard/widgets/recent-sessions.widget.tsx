@@ -66,7 +66,7 @@ export function RecentSessionsWidget({ w, h }: WidgetRenderProps): React.ReactEl
   const scopeSelection = useAppStore((s) => s.scopeSelection)
   const projectPath = projectPathForScope(scopeSelection)
   const agentView = useAppStore((s) => s.agentView)
-  const limit = w === 'W1' ? 3 : Math.max(4, Math.round((h ?? 3) * 1.8))
+  const limit = w === 'W1' ? 3 : Math.max(3, Math.round((h ?? 10) * 0.4))
   const { sessions, loading } = useSessions({ limit, projectPath, agentView })
 
   const groups = useMemo(() => clusterByDay(sessions), [sessions])

@@ -62,7 +62,7 @@ export function ModelDistributionWidget({ w, h, chartType, onChartTypeChange }: 
   if (w === 'W1') {
     return (
       <ul className="flex h-full flex-col justify-center gap-2">
-        {models.slice(0, Math.max(4, Math.round((h ?? 3) * 2))).map((entry) => (
+        {models.slice(0, Math.max(4, Math.round((h ?? 6) * 0.9))).map((entry) => (
           <li key={entry.model} className="space-y-1">
             <div className="flex items-baseline justify-between gap-3">
               <span className="min-w-0 truncate text-sm text-foreground">{entry.model}</span>

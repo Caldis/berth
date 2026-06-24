@@ -84,8 +84,8 @@ export function DashboardGrid({
       <SortableContext items={ids} strategy={rectSortingStrategy}>
         <LayoutGroup>
           <div
-            className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4"
-            style={{ gridAutoRows: 'var(--ov-row-unit, 88px)', gridAutoFlow: 'row dense' }}
+            className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4"
+            style={{ gridAutoRows: 'var(--ov-row-unit, 28px)', gridAutoFlow: 'row dense' }}
           >
             {rendered.map((item) => (
               <SortableWidget

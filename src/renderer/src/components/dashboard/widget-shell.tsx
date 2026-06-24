@@ -12,8 +12,8 @@ import { useResizeHandle } from './use-resize-handle'
 
 const WIDTH_LABEL: Record<WidgetWidth, string> = { W1: '1', W2: '2', W4: '4' }
 
-// 每个 h span 的像素高 (= dashboard-grid grid-auto-rows 88 + row gap 24); 拖拽量化用。
-const PX_PER_SPAN = 112
+// 每个 h span 的像素高 (= dashboard-grid grid-auto-rows 28 + row gap 12); 拖拽量化用。
+const PX_PER_SPAN = 40
 
 interface WidgetShellProps {
   title: string

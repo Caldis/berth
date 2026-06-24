@@ -31,7 +31,7 @@ export function ProjectAllocationWidget({ w, h }: WidgetRenderProps): React.Reac
   const { usage, loading } = useUsageSummary(30, agentView, projectPath)
 
   // W1 一瞥态固定 5 段 (份额条稳定); 否则行数随高度 span 弹性 (与 recent-sessions/top-usage 同律)。
-  const limit = w === 'W1' ? 5 : Math.max(4, Math.round((h ?? 3) * 1.8))
+  const limit = w === 'W1' ? 5 : Math.max(4, Math.round((h ?? 6) * 0.8))
   const all = useMemo(
     () => [...(usage?.byProject ?? [])].sort((a, b) => b.tokens - a.tokens),
     [usage?.byProject]

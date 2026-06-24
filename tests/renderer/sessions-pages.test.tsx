@@ -374,8 +374,8 @@ describe('session pages', () => {
     )
 
     expect(await screen.findByText('Fix session metadata')).toBeInTheDocument()
-    // GH-150: 高矮档移除后 recent-sessions limit 纯由宽度档定 (W1→3, 否则→5); 默认宽度非 W1 → 5 条
-    expect(window.api.sessions.list).toHaveBeenCalledWith({ projectFilter: undefined, limit: 5 })
+    // GH-150 R2: recent-sessions limit 随高度 span (W1→3, 否则 round(h*0.4)); 默认 h=10 → 4 条
+    expect(window.api.sessions.list).toHaveBeenCalledWith({ projectFilter: undefined, limit: 4 })
     expect(screen.getAllByText('D:\\Code\\berth').length).toBeGreaterThan(0)
     expect(screen.getByText('38 tok')).toBeInTheDocument()
     expect(screen.getByText(/I 10 \/ O 5/)).toBeInTheDocument()
@@ -404,7 +404,7 @@ describe('session pages', () => {
       expect(await screen.findByText('Fix session metadata')).toBeInTheDocument()
       expect(window.api.sessions.list).toHaveBeenCalledWith({
         projectFilter: undefined,
-        limit: 5,
+        limit: 4,
         projectPath: 'D:/Code/berth'
       })
       // GH-138 U4: usage-trend widget 默认范围 30d (7d 太短; 可配置 30/90/180)

@@ -1,16 +1,15 @@
-import type { WidgetRenderProps } from '../widget-types'
 import { useTranslation } from 'react-i18next'
 import { useInsights } from '../insights-context'
 import { formatCompactNumber } from '@/lib/utils'
 
 // GH-138: 模型强度 widget — 各模型"每会话平均 token" (与 model 总量 breakdown 互补; 高=每会话越重)。
 // 单色相横条 (长度 = avg / maxAvg)。取 Top-5。
-export function ModelEfficiencyWidget({ h }: WidgetRenderProps): React.ReactElement {
+export function ModelEfficiencyWidget(): React.ReactElement {
   const { t } = useTranslation()
   const { insights, loading } = useInsights()
   const eff = insights?.modelEfficiency
-  // 行数随高度 span 弹性 (与 recent-sessions/top-usage 同律); 无宽度档分支 (仅 W2)。
-  const limit = Math.max(4, Math.round((h ?? 3) * 1.8))
+  // 固定取 Top-5 模型 (数据天然 ≤5); 卡高随 catalog 贴合内容, 5 条横条经 grid-stretch 填满。
+  const limit = 5
   const models = (eff?.models ?? []).slice(0, limit)
   const maxAvg = eff?.maxAvg ?? 0
 

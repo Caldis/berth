@@ -17,8 +17,8 @@ describe('defaultLayout', () => {
     expect(layout.widgets[0].id).toBe('stats-band')
     expect(layout.widgets.at(-1)?.id).toBe('spend')
     const byId = Object.fromEntries(layout.widgets.map((w) => [w.id, w]))
-    expect(byId['stats-band'].size).toEqual({ w: 'W4', h: 2 })
-    expect(byId['recent-sessions'].size).toEqual({ w: 'W2', h: 3 })
+    expect(byId['stats-band'].size).toEqual({ w: 'W4', h: 4 })
+    expect(byId['recent-sessions'].size).toEqual({ w: 'W2', h: 10 })
     expect(byId['token-breakdown'].hidden).toBe(true)
     expect(byId['model-distribution'].hidden).toBe(true)
     expect(byId['recent-sessions'].hidden).toBe(false)
@@ -34,7 +34,7 @@ describe('migrateLayout', () => {
     } as unknown as DashboardLayout
     const out = migrateLayout(stored)
     expect(out.widgets).toHaveLength(16)
-    expect(out.widgets[0]).toEqual({ id: 'recent-sessions', size: { w: 'W2', h: 3 }, hidden: true })
+    expect(out.widgets[0]).toEqual({ id: 'recent-sessions', size: { w: 'W2', h: 10 }, hidden: true })
     expect(out.widgets.slice(1).map((w) => w.id)).toEqual([
       'stats-band',
       'activity-heatmap',
@@ -54,7 +54,7 @@ describe('migrateLayout', () => {
     ])
     const appended = Object.fromEntries(out.widgets.slice(1).map((w) => [w.id, w]))
     expect(appended['token-breakdown'].hidden).toBe(true)
-    expect(appended['stats-band'].size).toEqual({ w: 'W4', h: 2 })
+    expect(appended['stats-band'].size).toEqual({ w: 'W4', h: 4 })
   })
 
   it('migrates legacy single-dimension sizes (v1) to two-dimensional bands, clamped to allowed', () => {
@@ -68,9 +68,9 @@ describe('migrateLayout', () => {
     } as unknown as DashboardLayout
     const out = migrateLayout(stored)
     const byId = Object.fromEntries(out.widgets.map((w) => [w.id, w]))
-    expect(byId['recent-sessions'].size).toEqual({ w: 'W2', h: 3 })
-    expect(byId['usage-trend'].size).toEqual({ w: 'W4', h: 3 })
-    expect(byId['spend'].size).toEqual({ w: 'W1', h: 3 })
+    expect(byId['recent-sessions'].size).toEqual({ w: 'W2', h: 10 })
+    expect(byId['usage-trend'].size).toEqual({ w: 'W4', h: 6 })
+    expect(byId['spend'].size).toEqual({ w: 'W1', h: 6 })
   })
 
   it('drops unknown widget ids', () => {
@@ -93,8 +93,8 @@ describe('migrateLayout', () => {
     } as unknown as DashboardLayout
     const out = migrateLayout(stored)
     const byId = Object.fromEntries(out.widgets.map((w) => [w.id, w]))
-    expect(byId['stats-band'].size).toEqual({ w: 'W4', h: 2 }) // w+h clamped to default (stats-band only allows W4×mini)
-    expect(byId['activity-heatmap'].size).toEqual({ w: 'W4', h: 3 })
+    expect(byId['stats-band'].size).toEqual({ w: 'W4', h: 4 }) // w+h clamped to default (stats-band only allows W4×mini)
+    expect(byId['activity-heatmap'].size).toEqual({ w: 'W4', h: 6 })
   })
 
   it('dedups repeated widget ids', () => {
@@ -107,7 +107,7 @@ describe('migrateLayout', () => {
     } as unknown as DashboardLayout
     const out = migrateLayout(stored)
     expect(out.widgets.filter((w) => w.id === 'stats-band')).toHaveLength(1)
-    expect(out.widgets[0]).toEqual({ id: 'stats-band', size: { w: 'W4', h: 2 }, hidden: false })
+    expect(out.widgets[0]).toEqual({ id: 'stats-band', size: { w: 'W4', h: 4 }, hidden: false })
   })
 })
 
@@ -120,7 +120,7 @@ describe('migrateLayout chartType', () => {
     const out = migrateLayout(stored)
     expect(out.widgets[0]).toEqual({
       id: 'token-breakdown',
-      size: { w: 'W2', h: 3 },
+      size: { w: 'W2', h: 6 },
       hidden: false,
       chartType: 'donut'
     })
@@ -148,7 +148,7 @@ describe('migrateLayout chartType', () => {
     const out = parseLayout(serializeLayout(stored))
     expect(out.widgets[0]).toEqual({
       id: 'usage-trend',
-      size: { w: 'W4', h: 3 },
+      size: { w: 'W4', h: 6 },
       hidden: false,
       chartType: 'area'
     })
@@ -170,7 +170,7 @@ describe('parseLayout', () => {
       widgets: [{ id: 'usage-trend', size: { w: 'W2' }, hidden: false }]
     } as unknown as DashboardLayout
     const out = parseLayout(serializeLayout(stored))
-    expect(out.widgets[0]).toEqual({ id: 'usage-trend', size: { w: 'W2', h: 3 }, hidden: false })
+    expect(out.widgets[0]).toEqual({ id: 'usage-trend', size: { w: 'W2', h: 6 }, hidden: false })
     expect(out.widgets).toHaveLength(16)
   })
 })

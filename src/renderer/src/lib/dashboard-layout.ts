@@ -6,7 +6,7 @@ import type { WidgetId, WidgetMeta, WidgetSize, WidgetWidth } from '@/components
 // v1 字符串 S/M/L/Wide/XL → 宽度档 + h=default; v2 {w} (无 h) → 补 h=default; R2 {w,h} → clamp。
 // 钳非法档 / 损坏 JSON 回落默认 — 版本演进与并发写入下不崩。
 
-export const DASHBOARD_LAYOUT_VERSION = 3
+export const DASHBOARD_LAYOUT_VERSION = 4
 export const DASHBOARD_LAYOUT_STORAGE_KEY = 'berth-dashboard-layout'
 
 export interface WidgetLayoutItem {
@@ -72,6 +72,8 @@ export function migrateLayout(layout: DashboardLayout, catalog: Catalog = WIDGET
   const known = new Set<string>(Object.keys(catalog))
   const seen = new Set<WidgetId>()
   const widgets: WidgetLayoutItem[] = []
+  // <4: 行单元语义变更 (88px→28px), 旧 h 失效 → 重置 h 为 catalog 默认 (保留 w/排序/隐藏/chartType)。
+  const resetH = (typeof layout?.version === 'number' ? layout.version : 0) < DASHBOARD_LAYOUT_VERSION
 
   for (const raw of Array.isArray(layout?.widgets) ? layout.widgets : []) {
     if (!raw || typeof raw !== 'object') continue
@@ -79,7 +81,12 @@ export function migrateLayout(layout: DashboardLayout, catalog: Catalog = WIDGET
     if (typeof item.id !== 'string' || !known.has(item.id) || seen.has(item.id as WidgetId)) continue
     const id = item.id as WidgetId
     const meta = catalog[id]
-    const next: WidgetLayoutItem = { id, size: normalizeSize(item.size, meta), hidden: Boolean(item.hidden) }
+    const size = normalizeSize(item.size, meta)
+    const next: WidgetLayoutItem = {
+      id,
+      size: resetH ? { w: size.w, h: meta.defaultSize.h } : size,
+      hidden: Boolean(item.hidden)
+    }
     if (typeof item.chartType === 'string' && item.chartType) next.chartType = item.chartType
     widgets.push(next)
     seen.add(id)
