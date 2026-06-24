@@ -27,10 +27,11 @@ describe('defaultLayout', () => {
 
 describe('migrateLayout', () => {
   it('preserves stored order/size/hidden then appends missing widgets in defaultOrder', () => {
-    const stored: DashboardLayout = {
+    // v2 形态 (size 仅 {w}, 无 h) — 模拟旧持久化, 迁移应补 default h。
+    const stored = {
       version: DASHBOARD_LAYOUT_VERSION,
       widgets: [{ id: 'recent-sessions', size: { w: 'W2' }, hidden: true }]
-    }
+    } as unknown as DashboardLayout
     const out = migrateLayout(stored)
     expect(out.widgets).toHaveLength(16)
     expect(out.widgets[0]).toEqual({ id: 'recent-sessions', size: { w: 'W2', h: 3 }, hidden: true })
@@ -140,10 +141,10 @@ describe('migrateLayout chartType', () => {
   })
 
   it('round-trips chartType through serialize → parse', () => {
-    const stored: DashboardLayout = {
+    const stored = {
       version: DASHBOARD_LAYOUT_VERSION,
       widgets: [{ id: 'usage-trend', size: { w: 'W4' }, hidden: false, chartType: 'area' }]
-    }
+    } as unknown as DashboardLayout
     const out = parseLayout(serializeLayout(stored))
     expect(out.widgets[0]).toEqual({
       id: 'usage-trend',
@@ -164,10 +165,10 @@ describe('parseLayout', () => {
   })
 
   it('parses and migrates a stored layout', () => {
-    const stored: DashboardLayout = {
+    const stored = {
       version: DASHBOARD_LAYOUT_VERSION,
       widgets: [{ id: 'usage-trend', size: { w: 'W2' }, hidden: false }]
-    }
+    } as unknown as DashboardLayout
     const out = parseLayout(serializeLayout(stored))
     expect(out.widgets[0]).toEqual({ id: 'usage-trend', size: { w: 'W2', h: 3 }, hidden: false })
     expect(out.widgets).toHaveLength(16)
