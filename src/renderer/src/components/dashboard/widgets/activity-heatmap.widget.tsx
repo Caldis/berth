@@ -87,10 +87,10 @@ export function ActivityHeatmapWidget(): React.ReactElement {
   }
 
   return (
-    <div className="flex flex-col gap-2.5">
-      <div className="pb-1">
-        {/* 周列 flex-1 + 格 aspect-square: 随宽放大并占满横向空间 (不留右侧死白); 保持方格。 */}
-        <div className="flex flex-col gap-1">
+    <div className="flex h-full flex-col gap-2.5">
+      <div className="flex min-h-0 flex-1 flex-col pb-1">
+        {/* 周列 flex-1 占满横向; 格 flex-1 纵向拉伸撑满卡片高度 (消底部死白, 用户定 贴合零留白)。 */}
+        <div className="flex min-h-0 flex-1 flex-col gap-1">
           <div className="flex gap-[3px]">
             <div className="w-7 shrink-0" />
             <div className="flex flex-1 gap-[3px]">
@@ -101,7 +101,7 @@ export function ActivityHeatmapWidget(): React.ReactElement {
               ))}
             </div>
           </div>
-          <div className="flex items-stretch gap-[3px]">
+          <div className="flex min-h-0 flex-1 items-stretch gap-[3px]">
             <div className="flex w-7 shrink-0 flex-col gap-[3px] pr-1 text-[9px] leading-none text-muted-foreground">
               {[0, 1, 2, 3, 4, 5, 6].map((row) => (
                 <div key={row} className="flex flex-1 items-center justify-end">
@@ -113,7 +113,7 @@ export function ActivityHeatmapWidget(): React.ReactElement {
               {weeks.map((week, wi) => (
                 <div key={wi} className="flex min-w-0 flex-1 flex-col gap-[3px]">
                   {week.map((cell, di) => {
-                    if (!cell) return <div key={di} className="aspect-square w-full" />
+                    if (!cell) return <div key={di} className="w-full flex-1" />
                     const localeDate = new Date(`${cell.date}T00:00:00Z`).toLocaleDateString(i18n.language, {
                       month: 'short',
                       day: 'numeric',
@@ -129,7 +129,7 @@ export function ActivityHeatmapWidget(): React.ReactElement {
                         key={di}
                         onMouseEnter={(e) => show(e, [title])}
                         onMouseLeave={hide}
-                        className={cn('aspect-square w-full rounded-[2px]', LEVEL_CLASS[intensity(cell.sessions, heatmap.maxSessions)])}
+                        className={cn('w-full flex-1 rounded-[2px]', LEVEL_CLASS[intensity(cell.sessions, heatmap.maxSessions)])}
                       />
                     )
                   })}

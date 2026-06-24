@@ -122,7 +122,8 @@ export function WidgetShell({
           )}
         </div>
       </header>
-      <div className="min-w-0 flex-1 overflow-hidden">{children}</div>
+      {/* grid + grid-rows-1: 单格 1fr 拉伸子节点撑满内容区高度 (h-full 在 flex-grow 父上不解析, grid stretch 可靠) */}
+      <div className="grid min-h-0 min-w-0 flex-1 grid-rows-1 overflow-hidden">{children}</div>
       {canResize && (
         // 高度 resize 手柄: 底边细条, 编辑态 hover 显; 拖拽量化改 h span。
         <div
