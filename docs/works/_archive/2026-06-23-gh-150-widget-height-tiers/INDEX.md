@@ -2,7 +2,7 @@
 task: 2026-06-23-gh-150-widget-height-tiers
 task_id: GH-150
 type: feature
-phase: verify
+phase: archive
 created: 2026-06-23
 priority: P1
 target_date:
@@ -24,14 +24,16 @@ debt:
     confidence: medium
     rationale: "范围质变为『概览重构为二维 CSS Grid dashboard 引擎』(用户真实目标=完全自定义可拼接 dashboard + 持续加丰富小组件)。incurred 8: 数值 span 契约替代 WidgetWidth 枚举 + 自研 CSS Grid 引擎 (12 列响应式 + auto-rows + dense) + 自研 resize 手柄 + 16 widget 接入层2 内容自适应 + 持久化 schema 迁移 (v2 W档→span) + dnd-kit 拖放复用。repaid 1 (删 widthColSpanClass/宽度 SegmentedTabs/同行等高 hack, 统一网格)。risk high (整个概览布局模型替换 + 数据迁移 + 自研 resize/响应式)。scope module (限 dashboard+overview, 无外部消费者)。confidence medium (自研引擎+响应式+resize 需 CDP 实测校准)。库决策: 查证 react-grid-layout 2.x 残留 react-draggable(findDOMNode)+react-resizable 等 4 遗留 dep, peer 无 React19 上限, 不押兼容赌注 → 自研 CSS Grid + 复用已有 dnd-kit 6.3。"
   final:
-    incurred:
-    repaid:
-    net:
-    scope:
-    risk:
-    areas: []
-    confidence:
-    rationale:
+    incurred: 8
+    repaid: 2
+    net: 6
+    scope: module
+    risk: medium
+    areas:
+      - ui-ux
+      - architecture
+    confidence: high
+    rationale: "二维 CSS Grid dashboard 引擎落地并 CDP 实测收敛: 行单元 28px + per-widget defaultSize.h 按实测内容自然高校准 (信息带 148px / 图表-热力图 228px / 内容高者按需给足), widget-shell 内容区 grid-rows-1 单格 1fr 统一撑满子节点 (根治 h-full 在 flex-grow 父不解析的死白), layout v4 migrate 重置旧 88px 语义 h。验收: CDP 1680 宽窗真实数据全 widget clip=0, typecheck 0 / 1314 测试 / lint 0 / electron-vite build 4633 模块。repaid 2: 消除旧高矮档 short/tall + 同行等高 hack + 宽度档与高度统一进 span 模型。risk high→medium (已实测工作, 残留仅列表行数 hand-tuned 乘数 + per-widget 高度按当前内容密度校准, 内容显著变化需重调; 非阻塞)。confidence high (CDP 实测闭环)。"
   revisions:
     - phase: explore
       date: 2026-06-23
@@ -45,6 +47,12 @@ debt:
       from: "高度三档内容密度档; incurred 4 / risk medium / [ui-ux] / confidence high"
       to: "二维 dashboard 引擎; incurred 8 / risk high / [ui-ux, architecture] / confidence medium"
       reason: "用户确认真实目标=完全自定义可拼接 dashboard。范围从加高度档质变为概览重构为 CSS Grid 二维网格引擎 (数值 span 契约 + 自研引擎+resize + dense 填空 + 16 widget 接入层2 内容自适应)。零回归降级: 默认态贴合内容最小高度 (消留白, 用户指示), 非像素级现状。自研非 RGL (React19 findDOMNode 风险)。两层架构: 引擎(层1) + 内容自适应(层2, 复用并推广 01-ANALYSIS)。"
+    - phase: verify
+      date: 2026-06-24
+      field: incurred/repaid/risk/confidence
+      from: "incurred 8 / repaid 1 / risk high / confidence medium (待 CDP 校准)"
+      to: "incurred 8 / repaid 2 / net 6 / risk medium / confidence high"
+      reason: "CDP 实测闭环: 行单元 88→28px 细化 + per-widget 默认高按实测内容自然高校准 (用户两轮反馈: 信息类留白过大 → 信息带 148px、图表/热力图 228px、内容高者按需给足) + widget-shell grid-rows-1 统一撑满 (根治 h-full 不解析死白) + layout v4 migrate 重置旧 h。全 widget clip=0 / 1314 测试 / build 4633 模块。"
 issue:
   number: 150
   repo: Caldis/berth
@@ -102,7 +110,14 @@ GH-150 第二轮, **复用 issue #150** (仍 OPEN, project item 仍 In Progress)
 - [x] P10 图表填满 (height:100%) + 列表 rows=f(h)
 - [x] (本轮 b61b7d21/80536fc9/eb083445) 修复构建报错 ({w,h,h} 参数重名) + 死变量 chartHeight/marker 清理 + project-allocation/model-efficiency 列表高度自适应 (与 recent-sessions/top-usage 同律) + 打通 resize 链路 (DashboardGrid/WidgetCard 透传 onSetHeight + h/minH/maxH, 此前 canResize 恒 false 手柄不渲染) + dashboard-layout 单测对齐 hybrid schema (13/13)
 - [x] (本轮 6c7faccd) 补齐 widget-types/widget-grid hybrid 契约 (WidgetSize.h 必填 / WidgetMeta.minH+maxH? / WidgetRenderProps.h? / widget-grid.gridRowSpanStyle), 消除运行时 SyntaxError。验收: pnpm typecheck 归零 · 1314 测试全绿 (含 renderer 挂载 DashboardGrid) · electron-vite build 成功 (4633 模块)
-- [ ] CDP 校准 row-unit/default h + 视觉/拖拽 resize 手感验收 (需 dev 真跑 + 用户确认; 属表现微调, 不阻塞运行)
+- [x] (本轮 a6756a27) widget-shell 内容区 grid-rows-1 单格 1fr 统一撑满子节点, 根治 h-full 在 flex-grow 父不解析的死白 (stats-band 居中 / heatmap 格子纵向拉伸填满); 顺带修复全部图表未填满
+- [x] (本轮 f081228a) CDP 实测校准: 行单元 88→28px + gap-3, per-widget 默认高按实测内容自然高贴合 (信息带 200→148px / 图表-热力图 312→228px / insights·recent-sessions 等内容高者按需给足避免裁切); 列表行数公式随新 h 重标定; widget-shell PX_PER_SPAN 112→40; layout v3→v4 migrate 重置旧 88px 语义 h (保留 w/排序/隐藏/chartType)。CDP 1680 宽窗真实数据全 widget clip=0
+- [x] (本轮 797c5887) 用户反馈: 统一 最常用/最近会话 默认高度 (均 h=10, 388px)
+- [x] 验收闭环: typecheck 0 / 1314 测试 / lint 0 / electron-vite build 4633 模块 / CDP 实测无裁切无死白
+
+## 已知残留 (非阻塞)
+- 列表行数用 hand-tuned 乘数 (round(h*k)) + per-widget 默认高按当前内容密度 CDP 校准; widget 内容显著变化时需重调 (理想解: ResizeObserver 测真实行高自动填行, 体量不值当前做, 记此备忘)。
+- 用户运行态需重启 `pnpm dev`/刷新窗口让 layout v4 migrate 生效 (HMR 保留旧 layout state)。
 
 ## 待澄清 (blocked 时填)
 (无)
