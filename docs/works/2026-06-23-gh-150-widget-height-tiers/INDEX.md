@@ -96,11 +96,13 @@ GH-150 第二轮, **复用 issue #150** (仍 OPEN, project item 仍 In Progress)
 - [x] 03-PLAN.md — 活任务清单 v2 (引擎 + 内容层实现项)
 - [ ] 04-POLISH.md — 可选抛光记录
 
-## 实施进展 (代码完成, 提交 e03b16b1 + c294f717)
+## 实施进展 (代码完成)
 - [x] 引擎全链 (catalog/layout v3/dashboard-grid/use-dashboard-layout/widget-shell/overview)
 - [x] resize (use-resize-handle, deltaToSpan 单测)
 - [x] P10 图表填满 (height:100%) + 列表 rows=f(h)
-- [ ] CDP 校准 row-unit/default h + 视觉验收 (verify, 需 dev 真跑 + 用户确认; 依赖 widget-types/widget-grid 就绪 typecheck 归零)
+- [x] (本轮 b61b7d21/80536fc9/eb083445) 修复构建报错 ({w,h,h} 参数重名) + 死变量 chartHeight/marker 清理 + project-allocation/model-efficiency 列表高度自适应 (与 recent-sessions/top-usage 同律) + 打通 resize 链路 (DashboardGrid/WidgetCard 透传 onSetHeight + h/minH/maxH, 此前 canResize 恒 false 手柄不渲染) + dashboard-layout 单测对齐 hybrid schema (13/13)
+- [ ] 【唯一剩余阻塞·用户域两文件】widget-types.ts: WidgetSize 补 `h: number` / WidgetRenderProps 补 `h?: number` / WidgetMeta 补 `minH: number` + `maxH?: number`; widget-grid.ts: 补 `export function gridRowSpanStyle(h)`. 42 个 typecheck 错全源于此 5 符号缺失; 补齐后 typecheck 归零 + 8 个 renderer 测试 (`gridRowSpanStyle is not a function`) 转绿。
+- [ ] CDP 校准 row-unit/default h + 视觉验收 (需 dev 真跑 + 用户确认)
 
 ## 待澄清 (blocked 时填)
 (无)
