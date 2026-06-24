@@ -31,7 +31,6 @@ export function ModelTrendWidget({ w }: WidgetRenderProps): React.ReactElement {
   const total = useMemo(() => (trend?.points ?? []).reduce((sum, p) => sum + p.total, 0), [trend?.points])
   const models = trend?.models ?? []
 
-  const chartHeight = 124
   const showHeader = w === 'W4'
 
   if (loading && !insights) {

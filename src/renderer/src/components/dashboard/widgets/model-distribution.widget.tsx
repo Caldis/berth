@@ -44,7 +44,6 @@ export function ModelDistributionWidget({ w, h, chartType, onChartTypeChange }: 
     [usage?.byModel, limit]
   )
   const max = models.length > 0 ? models[0].tokens : 0
-  const chartHeight = 150
 
   if (loading && !usage) {
     return (
@@ -162,5 +161,3 @@ export function ModelDistributionWidget({ w, h, chartType, onChartTypeChange }: 
     </div>
   )
 }
-
-// MARKERTEST

@@ -9,7 +9,8 @@ export function ModelEfficiencyWidget({ h }: WidgetRenderProps): React.ReactElem
   const { t } = useTranslation()
   const { insights, loading } = useInsights()
   const eff = insights?.modelEfficiency
-  const limit = 5
+  // 行数随高度 span 弹性 (与 recent-sessions/top-usage 同律); 无宽度档分支 (仅 W2)。
+  const limit = Math.max(4, Math.round((h ?? 3) * 1.8))
   const models = (eff?.models ?? []).slice(0, limit)
   const maxAvg = eff?.maxAvg ?? 0
 

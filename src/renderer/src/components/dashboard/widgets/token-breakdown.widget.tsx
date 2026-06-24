@@ -54,7 +54,6 @@ export function TokenBreakdownWidget({ w, chartType, onChartTypeChange }: Widget
     [tokenUsage]
   )
   const total = segments.reduce((sum, s) => sum + s.tokens, 0)
-  const chartHeight = 140
 
   if (loading && !usage) {
     return <div className="h-[120px] w-full animate-pulse rounded-lg bg-muted/40" />

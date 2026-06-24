@@ -23,14 +23,15 @@ function tintAlpha(index: number): number {
   return Math.max(0.18, 0.92 - index * 0.13)
 }
 
-export function ProjectAllocationWidget({ w, h, h }: WidgetRenderProps): React.ReactElement {
+export function ProjectAllocationWidget({ w, h }: WidgetRenderProps): React.ReactElement {
   const { t } = useTranslation()
   const scopeSelection = useAppStore((s) => s.scopeSelection)
   const projectPath = projectPathForScope(scopeSelection)
   const agentView = useAppStore((s) => s.agentView)
   const { usage, loading } = useUsageSummary(30, agentView, projectPath)
 
-  const limit = 5
+  // W1 一瞥态固定 5 段 (份额条稳定); 否则行数随高度 span 弹性 (与 recent-sessions/top-usage 同律)。
+  const limit = w === 'W1' ? 5 : Math.max(4, Math.round((h ?? 3) * 1.8))
   const all = useMemo(
     () => [...(usage?.byProject ?? [])].sort((a, b) => b.tokens - a.tokens),
     [usage?.byProject]

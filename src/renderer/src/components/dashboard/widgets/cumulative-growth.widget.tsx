@@ -21,7 +21,6 @@ export function CumulativeGrowthWidget(): React.ReactElement {
     [insights?.heatmap?.days, metric]
   )
   const total = series.length > 0 ? series[series.length - 1].value : 0
-  const chartHeight = 120
 
   if (loading && !insights) {
     return <div className="h-[120px] w-full animate-pulse rounded-lg bg-muted/40" />
