@@ -99,7 +99,7 @@ export function Overview(): React.ReactElement {
           lastAddedId={lastAddedId}
           onReorder={reorder}
           onSetWidth={setWidth}
-        onSetHeight={setHeight}
+          onSetHeight={setHeight}
           onSetChartType={setChartType}
           onHide={hide}
           onFocused={clearLastAdded}

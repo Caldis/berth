@@ -30,6 +30,7 @@ import { widthColSpanClass, gridRowSpanStyle } from '@/lib/widget-grid'
 
 interface WidgetActions {
   onSetWidth: (id: WidgetId, w: WidgetWidth) => void
+  onSetHeight: (id: WidgetId, h: number) => void
   onSetChartType: (id: WidgetId, chartType: string) => void
   onHide: (id: WidgetId) => void
 }
@@ -49,6 +50,7 @@ export function DashboardGrid({
   onReorder,
   onFocused,
   onSetWidth,
+  onSetHeight,
   onSetChartType,
   onHide
 }: DashboardGridProps): React.ReactElement {
@@ -62,7 +64,7 @@ export function DashboardGrid({
   const ids = rendered.map((item) => item.id)
   const activeItem = activeId ? (rendered.find((i) => i.id === activeId) ?? null) : null
 
-  const actions: WidgetActions = { onSetWidth, onSetChartType, onHide }
+  const actions: WidgetActions = { onSetWidth, onSetHeight, onSetChartType, onHide }
 
   const handleDragStart = (event: DragStartEvent): void => setActiveId(event.active.id as WidgetId)
   const handleDragEnd = (event: DragEndEvent): void => {
@@ -197,8 +199,9 @@ function WidgetCard({
   const { t } = useTranslation()
   const def = getWidgetDefinition(item.id)
   const meta = WIDGET_CATALOG[item.id]
-  const { onSetWidth, onSetChartType, onHide } = actions
+  const { onSetWidth, onSetHeight, onSetChartType, onHide } = actions
   const handleSetWidth = useCallback((w: WidgetWidth) => onSetWidth(item.id, w), [onSetWidth, item.id])
+  const handleSetHeight = useCallback((h: number) => onSetHeight(item.id, h), [onSetHeight, item.id])
   const handleChartType = useCallback((c: string) => onSetChartType(item.id, c), [onSetChartType, item.id])
   const handleHide = useCallback(() => onHide(item.id), [onHide, item.id])
 
@@ -212,6 +215,10 @@ function WidgetCard({
       w={item.size.w}
       widths={meta.widths}
       onSetWidth={handleSetWidth}
+      h={item.size.h}
+      minH={meta.minH}
+      maxH={meta.maxH}
+      onSetHeight={handleSetHeight}
       onHide={handleHide}
       dragHandleProps={dragHandleProps}
     >
