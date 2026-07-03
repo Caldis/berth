@@ -1102,7 +1102,7 @@ function fileAsset(id: string, sourceKey: string, type: Asset['type'] = 'skill')
   }
 }
 
-async function readyRuntime(assets: Asset[], store?: { load: ReturnType<typeof vi.fn>; save: ReturnType<typeof vi.fn>; clear: ReturnType<typeof vi.fn> }): Promise<AgentAssetRuntime> {
+async function readyRuntime(assets: Asset[], store?: { load: ReturnType<typeof vi.fn>; save: ReturnType<typeof vi.fn>; clear: ReturnType<typeof vi.fn>; replaceBySourceKey?: ReturnType<typeof vi.fn> }): Promise<AgentAssetRuntime> {
   const scanner = createScanner({ assets, stats: emptyStats, errors: [] })
   const runtime = new AgentAssetRuntime({
     projectDir: '/repo/berth',
@@ -1299,6 +1299,8 @@ describe('AgentAssetRuntime.applyFileChange (GH-113 I1)', () => {
   })
 
   it('persists the updated snapshot and emits a partial to the listener', async () => {
+    // Store WITHOUT replaceBySourceKey — the incremental persist falls back to a
+    // full save() so alternate backends need no change (GH-151 S5).
     const store = { load: vi.fn(() => null), save: vi.fn(), clear: vi.fn() }
     const runtime = await readyRuntime([fileAsset('a', 'key-a')], store)
     store.save.mockClear() // ignore the refresh-time save
@@ -1309,6 +1311,23 @@ describe('AgentAssetRuntime.applyFileChange (GH-113 I1)', () => {
 
     expect(store.save).toHaveBeenCalledTimes(1)
     expect(partials).toEqual([1])
+  })
+
+  it('persists incrementally via replaceBySourceKey when the store supports it (GH-151 S5)', async () => {
+    const store = { load: vi.fn(() => null), save: vi.fn(), clear: vi.fn(), replaceBySourceKey: vi.fn() }
+    const runtime = await readyRuntime([fileAsset('a', 'key-a'), fileAsset('b', 'key-b')], store)
+    store.save.mockClear() // ignore the refresh-time full save
+
+    runtime.applyFileChange('key-a', [fileAsset('a2', 'key-a')])
+
+    // Row-level replacement carries exactly the post-merge assets of that file,
+    // never the whole table.
+    expect(store.save).not.toHaveBeenCalled()
+    expect(store.replaceBySourceKey).toHaveBeenCalledTimes(1)
+    const [key, rows, envelope] = store.replaceBySourceKey.mock.calls[0]
+    expect(key).toBe('key-a')
+    expect((rows as Asset[]).map((x) => x.id)).toEqual(['a2'])
+    expect((envelope as AssetSnapshot).assets.map((x) => x.id)).toEqual(['b', 'a2'])
   })
 
   it('is a no-op when an untracked file yields no assets', async () => {

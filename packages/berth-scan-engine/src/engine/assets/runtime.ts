@@ -958,8 +958,24 @@ export class AgentAssetRuntime {
     this.assetMap = new Map(merged.map((asset) => [asset.id, asset]))
     this.selectorCache.clear()
     this.snapshotCache.set(this.projectDir, this.snapshot)
-    this.persistIfDefaultView(this.projectDir)
+    this.persistFileChange(sourceKey)
     this.progressListener?.({ status: this.status, partial: { assets: merged, stats } })
+  }
+
+  /** Persist one file's change (GH-151 S5): row-level replacement when the store
+   * supports it, full save otherwise. The rows passed are the POST-merge assets
+   * of that sourceKey — mergeSharedConventions only collapses same-file assets,
+   * so this exactly mirrors the in-memory replacement. Same default-view gate
+   * as persistIfDefaultView. */
+  private persistFileChange(sourceKey: string): void {
+    if (projectSnapshotKey(this.projectDir) !== projectSnapshotKey(this.initialProjectDir)) return
+    if (!this.snapshotStore) return
+    if (this.snapshotStore.replaceBySourceKey) {
+      const rows = this.snapshot.assets.filter((asset) => assetSourceKey(asset) === sourceKey)
+      this.snapshotStore.replaceBySourceKey(sourceKey, rows, this.snapshot)
+      return
+    }
+    this.snapshotStore.save(this.snapshot)
   }
 }
 

@@ -7,6 +7,13 @@ export interface SnapshotStore {
   /** Drop the persisted index so the next scan repopulates from scratch (rebuild,
    * GH-135). Best-effort like load/save — a failure must never break scanning. */
   clear(): void
+  /** Row-level incremental write for one file's assets (GH-151 S5): replace every
+   * persisted asset whose `source_key` matches, keep all other rows, refresh the
+   * envelope. An empty `assets` array means the file was deleted. Optional —
+   * callers fall back to a full `save()` when absent; the SQLite backend provides
+   * it so the watcher hot path (an active session transcript flushing every
+   * 250ms) stops rewriting the whole table synchronously. */
+  replaceBySourceKey?(sourceKey: string, assets: Asset[], envelope: AssetSnapshot): void
   /** Persisted scan history for the trend view (GH-135 G7), oldest→newest.
    * Optional so existing stores/tests need no change; absence → no history.
    * History survives `clear()` (rebuild) — it is an audit trail, not index data. */

@@ -111,6 +111,32 @@ export function createSqliteSnapshotStore(dir: string, openDatabase: OpenSqliteD
         getMainLog().log('sqlite-snapshot-store', err)
       }
     },
+    replaceBySourceKey(sourceKey: string, assets: Asset[], envelope: AssetSnapshot): void {
+      // The single-file write the `source_key` column was built for (GH-151 S5):
+      // swap one file's rows in place instead of the DELETE-all + reinsert of
+      // save(). New rows append after the current max ord — load() only needs a
+      // stable relative order, not dense ordinals.
+      try {
+        const handle = getDb()
+        if (!handle) return
+        const lean = assets.map(stripRaw)
+        const deleteByKey = handle.prepare('DELETE FROM asset WHERE source_key = ?')
+        const maxOrd = handle.prepare('SELECT MAX(ord) AS max_ord FROM asset')
+        const insertAsset = handle.prepare('INSERT OR REPLACE INTO asset (id, source_key, ord, payload_json) VALUES (?, ?, ?, ?)')
+        const upsertMeta = handle.prepare('INSERT OR REPLACE INTO snapshot_meta (key, value_json) VALUES (?, ?)')
+        const replace = handle.transaction((key: string, rows: Asset[], env: AssetSnapshot) => {
+          deleteByKey.run(key)
+          const row = maxOrd.get() as { max_ord?: number | null } | undefined
+          const base = (row?.max_ord ?? -1) + 1
+          rows.forEach((asset, offset) => insertAsset.run(asset.id, sourceKeyOf(asset), base + offset, JSON.stringify(asset)))
+          upsertMeta.run(ENVELOPE_KEY, JSON.stringify(env))
+        })
+        replace(sourceKey, lean, envelopeOf(envelope))
+      } catch (err) {
+        // persistence is best-effort
+        getMainLog().log('sqlite-snapshot-store', err)
+      }
+    },
     clear(): void {
       // Rebuild (GH-135): drop every indexed asset + the snapshot envelope so the
       // next scan starts from an empty index. Scan history is deliberately KEPT —

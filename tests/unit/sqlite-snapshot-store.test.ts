@@ -62,8 +62,12 @@ function openFakeDatabase(file: string): SqliteDatabase {
     return {
       run: (...p: unknown[]) => {
         if (s === 'DELETE FROM asset') return void (backing.assets = [])
-        if (s.startsWith('INSERT INTO asset'))
+        if (s === 'DELETE FROM asset WHERE source_key = ?')
+          return void (backing.assets = backing.assets.filter((r) => r.source_key !== (p[0] as string)))
+        if (s.startsWith('INSERT OR REPLACE INTO asset') || s.startsWith('INSERT INTO asset')) {
+          backing.assets = backing.assets.filter((r) => r.id !== (p[0] as string)) // PK upsert semantics
           return void backing.assets.push({ id: p[0] as string, source_key: p[1] as string | null, ord: p[2] as number, payload_json: p[3] as string })
+        }
         if (s.startsWith('INSERT OR REPLACE INTO snapshot_meta')) return void backing.meta.set(p[0] as string, p[1] as string)
         return unsupported()
       },
@@ -71,6 +75,10 @@ function openFakeDatabase(file: string): SqliteDatabase {
         if (s.startsWith('SELECT value_json FROM snapshot_meta')) {
           const value = backing.meta.get(p[0] as string)
           return value === undefined ? undefined : { value_json: value }
+        }
+        if (s.startsWith('SELECT MAX(ord)')) {
+          const max = backing.assets.reduce<number | null>((acc, r) => (acc === null || r.ord > acc ? r.ord : acc), null)
+          return { max_ord: max }
         }
         return unsupported()
       },
@@ -161,6 +169,35 @@ describe('createSqliteSnapshotStore', () => {
     store.save(snapshot([asset('fresh')]))
     expect(store.load()?.assets.map((x) => x.id)).toEqual(['fresh'])
     expect(disk.get(dbFile)?.userVersion).toBe(1)
+  })
+
+  it('replaceBySourceKey swaps one file’s rows, keeps the rest, and updates the envelope (GH-151 S5)', () => {
+    // The incremental hot path: an active session transcript flushes every 250ms
+    // and must NOT rewrite the whole table (save() = DELETE all + reinsert).
+    const store = createSqliteSnapshotStore(dir, openFakeDatabase)
+    store.save(snapshot([asset('a', { sourceKey: '/x/file-a' }), asset('b', { sourceKey: '/x/file-b' })]))
+
+    store.replaceBySourceKey!(
+      '/x/file-a',
+      [asset('a2', { sourceKey: '/x/file-a', raw: 'A HUGE RAW BODY' })],
+      { ...snapshot([]), id: 'snap-2' }
+    )
+
+    const loaded = store.load()
+    expect(loaded?.id).toBe('snap-2') // envelope refreshed
+    expect(loaded?.assets.map((x) => x.id)).toEqual(['b', 'a2']) // b untouched, a2 appended after max ord
+    expect(loaded?.assets.find((x) => x.id === 'a2')?.raw).toBeUndefined() // lean like save()
+    const rows = disk.get(dbFile)?.assets ?? []
+    expect(rows.find((r) => r.id === 'b')?.ord).toBe(1) // untouched row keeps its ord — no full rewrite
+  })
+
+  it('replaceBySourceKey with an empty set deletes the file’s rows (file removed)', () => {
+    const store = createSqliteSnapshotStore(dir, openFakeDatabase)
+    store.save(snapshot([asset('a', { sourceKey: '/x/file-a' }), asset('b', { sourceKey: '/x/file-b' })]))
+
+    store.replaceBySourceKey!('/x/file-a', [], { ...snapshot([]), id: 'snap-2' })
+
+    expect(store.load()?.assets.map((x) => x.id)).toEqual(['b'])
   })
 
   it('opens the database lazily and only once across many calls', () => {
