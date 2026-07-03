@@ -1,5 +1,5 @@
 import { parentPort, workerData } from 'worker_threads'
-import type { AssetWorkerData, AssetWorkerMessage } from './worker-host'
+import { scanOptionsFromWorkerData, type AssetWorkerData, type AssetWorkerMessage } from './worker-host'
 import { AssetScanner } from '../scanner'
 import { AssetFileCache } from './file-cache'
 
@@ -16,13 +16,12 @@ async function run(): Promise<void> {
 
   // Per-adapter progress + cumulative partials drive the live scan UI (P4.6);
   // sources/candidates derivation reports its own coarse phases afterwards.
-  const scanResult = await scanner.scanAll({
-    onProgress: (progress) => post({ type: 'progress', progress }),
-    onPartial: (partial) => post({ type: 'partial', partial }),
-    batchPauseMs: data.batchPauseMs,
-    excludePaths: data.excludePaths,
-    respectGitignore: data.respectGitignore
-  })
+  const scanResult = await scanner.scanAll(
+    scanOptionsFromWorkerData(data, {
+      onProgress: (progress) => post({ type: 'progress', progress }),
+      onPartial: (partial) => post({ type: 'partial', partial })
+    })
+  )
 
   post({
     type: 'progress',

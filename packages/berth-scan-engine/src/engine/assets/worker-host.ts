@@ -37,6 +37,38 @@ export type AssetWorkerMessage =
   | { type: 'done'; result: AssetWorkerScanPayload }
   | { type: 'error'; error: { message: string; stack?: string } }
 
+/** Scan-relevant option passthrough, single-sourced (GH-151 S1). Both scanner
+ * wrappers (worker + helper) assemble their boundary payload here and both child
+ * entries (worker.ts + scan-helper.ts) unpack with the inverse below, so a new
+ * scan option reaches every chain — a field can no longer be silently dropped on
+ * one leg (the respectGitignore production bug). */
+export function workerDataFromScanOptions(
+  base: Omit<AssetWorkerData, 'batchPauseMs' | 'excludePaths' | 'respectGitignore'>,
+  options: AssetRuntimeScanOptions
+): AssetWorkerData {
+  return {
+    ...base,
+    batchPauseMs: options.batchPauseMs,
+    excludePaths: options.excludePaths,
+    respectGitignore: options.respectGitignore
+  }
+}
+
+/** Inverse of {@link workerDataFromScanOptions}: unpack the boundary payload back
+ * into `AssetScanner.scanAll` options at the child entry. */
+export function scanOptionsFromWorkerData(
+  data: AssetWorkerData,
+  callbacks: Pick<AssetRuntimeScanOptions, 'onProgress' | 'onPartial'>
+): AssetRuntimeScanOptions {
+  return {
+    onProgress: callbacks.onProgress,
+    onPartial: callbacks.onPartial,
+    batchPauseMs: data.batchPauseMs,
+    excludePaths: data.excludePaths,
+    respectGitignore: data.respectGitignore
+  }
+}
+
 export interface WorkerLike {
   on(event: string, listener: (...args: unknown[]) => void): WorkerLike
   once(event: string, listener: (...args: unknown[]) => void): WorkerLike
@@ -124,17 +156,20 @@ export class WorkerAssetScanner implements AssetRuntimeScanner {
   }
 
   async scanAll(options: AssetRuntimeScanOptions = {}): Promise<ScanResult> {
-    const result = await this.host.runScan({
-      projectDir: this.projectDir,
-      sessionCache: this.sessionCache,
-      projectScanCache: this.projectScanCache,
-      batchPauseMs: options.batchPauseMs,
-      excludePaths: options.excludePaths,
-      respectGitignore: options.respectGitignore
-    }, {
-      onProgress: options.onProgress,
-      onPartial: options.onPartial
-    })
+    const result = await this.host.runScan(
+      workerDataFromScanOptions(
+        {
+          projectDir: this.projectDir,
+          sessionCache: this.sessionCache,
+          projectScanCache: this.projectScanCache
+        },
+        options
+      ),
+      {
+        onProgress: options.onProgress,
+        onPartial: options.onPartial
+      }
+    )
     this.sources = result.sources
     this.projectCandidates = result.projectCandidates
     this.sessionCache = result.sessionCache

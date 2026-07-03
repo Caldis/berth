@@ -6,9 +6,12 @@ import {
   AssetWorkerHost,
   type AssetWorkerMessage,
   WorkerAssetScanner,
+  scanOptionsFromWorkerData,
+  workerDataFromScanOptions,
   type AssetWorkerData,
   type WorkerLike
 } from '@berth/scan-engine/engine/assets/worker-host'
+import type { AssetRuntimeScanOptions } from '@berth/scan-engine/engine/assets/scan-coordinator'
 import { createProjectScopeCandidate } from '@shared/scope'
 
 const emptyStats: AssetStats = {
@@ -155,6 +158,37 @@ describe('AssetWorkerHost', () => {
     workers[0]?.emit('exit', 1)
 
     await expect(resultPromise).rejects.toThrow('Asset scan worker exited with code 1')
+  })
+})
+
+describe('scan option mapping (GH-151 S1)', () => {
+  // The passthrough field set lives in exactly two functions; this test pins it
+  // so a scan option silently dropped on one chain (the respectGitignore
+  // production bug) turns red here instead of shipping.
+  it('round-trips every scan option across the host boundary', () => {
+    const options: AssetRuntimeScanOptions = {
+      batchPauseMs: 25,
+      excludePaths: ['/skip/node_modules'],
+      respectGitignore: true
+    }
+    const data = workerDataFromScanOptions({ projectDir: '/repo/berth' }, options)
+    expect(data).toEqual({
+      projectDir: '/repo/berth',
+      batchPauseMs: 25,
+      excludePaths: ['/skip/node_modules'],
+      respectGitignore: true
+    })
+
+    const onProgress = vi.fn()
+    const onPartial = vi.fn()
+    const recovered = scanOptionsFromWorkerData(data, { onProgress, onPartial })
+    expect(recovered).toEqual({
+      onProgress,
+      onPartial,
+      batchPauseMs: 25,
+      excludePaths: ['/skip/node_modules'],
+      respectGitignore: true
+    })
   })
 })
 

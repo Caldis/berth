@@ -8,7 +8,11 @@
 // CLI). The host (helper-host.ts) forks this and drives it with `scan` commands.
 import { AssetScanner } from '@berth/scan-engine/engine/scanner'
 import { AssetFileCache } from '@berth/scan-engine/engine/assets/file-cache'
-import type { AssetWorkerData, AssetWorkerMessage } from '@berth/scan-engine/engine/assets/worker-host'
+import {
+  scanOptionsFromWorkerData,
+  type AssetWorkerData,
+  type AssetWorkerMessage
+} from '@berth/scan-engine/engine/assets/worker-host'
 
 // Electron injects `process.parentPort` into a utilityProcess child; @types/node
 // doesn't model it, so narrow to the minimal surface we use.
@@ -31,12 +35,12 @@ async function runScan(data: AssetWorkerData): Promise<void> {
     })
 
     // Per-adapter progress + cumulative partials drive the live scan UI (P4.6).
-    const scanResult = await scanner.scanAll({
-      onProgress: (progress) => post({ type: 'progress', progress }),
-      onPartial: (partial) => post({ type: 'partial', partial }),
-      batchPauseMs: data.batchPauseMs,
-      excludePaths: data.excludePaths
-    })
+    const scanResult = await scanner.scanAll(
+      scanOptionsFromWorkerData(data, {
+        onProgress: (progress) => post({ type: 'progress', progress }),
+        onPartial: (partial) => post({ type: 'partial', partial })
+      })
+    )
 
     post({ type: 'progress', progress: { phase: 'indexing', current: 0, total: 1, label: 'sources' } })
     const sources = await scanner.getScanSourceGroups()

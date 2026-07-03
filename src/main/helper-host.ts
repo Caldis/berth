@@ -7,10 +7,11 @@ import type { ProjectScopeCandidate } from '@berth/scan-engine/shared/scope'
 import type { AgentScanSourceGroup, ScanResult } from '@berth/scan-engine/shared/types/ipc'
 import type { AssetRuntimeScanner, AssetRuntimeScanOptions } from '@berth/scan-engine/engine/assets/runtime'
 import type { AssetFileCacheSnapshot } from '@berth/scan-engine/engine/assets/file-cache'
-import type {
-  AssetWorkerData,
-  AssetWorkerMessage,
-  AssetWorkerScanPayload
+import {
+  workerDataFromScanOptions,
+  type AssetWorkerData,
+  type AssetWorkerMessage,
+  type AssetWorkerScanPayload
 } from '@berth/scan-engine/engine/assets/worker-host'
 
 export interface ScanHelperHostOptions {
@@ -151,13 +152,14 @@ export class HelperAssetScanner implements AssetRuntimeScanner {
 
   async scanAll(options: AssetRuntimeScanOptions = {}): Promise<ScanResult> {
     const result = await this.host.runScan(
-      {
-        projectDir: this.projectDir,
-        sessionCache: this.sessionCache,
-        projectScanCache: this.projectScanCache,
-        batchPauseMs: options.batchPauseMs,
-        excludePaths: options.excludePaths
-      },
+      workerDataFromScanOptions(
+        {
+          projectDir: this.projectDir,
+          sessionCache: this.sessionCache,
+          projectScanCache: this.projectScanCache
+        },
+        options
+      ),
       { onProgress: options.onProgress, onPartial: options.onPartial }
     )
     this.sources = result.sources

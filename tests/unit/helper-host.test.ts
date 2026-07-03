@@ -10,7 +10,7 @@ import type { AssetWorkerMessage } from '@berth/scan-engine/engine/assets/worker
 // the real fork.
 vi.mock('electron', () => ({ utilityProcess: { fork: vi.fn() } }))
 
-import { ScanHelperHost } from '../../src/main/helper-host'
+import { HelperAssetScanner, ScanHelperHost } from '../../src/main/helper-host'
 
 const emptyStats: AssetStats = {
   skills: 0,
@@ -132,6 +132,26 @@ describe('ScanHelperHost (GH-135)', () => {
     // Settle the dangling scan promise to avoid an unhandled rejection.
     child.send({ type: 'done', result: donePayload })
     await r.catch(() => undefined)
+  })
+
+  it('forwards every scan option to the helper payload (GH-151 S1)', async () => {
+    // Guards the production chain against option drops: the packaged app scans
+    // through HelperAssetScanner, so a field missing here (respectGitignore was)
+    // silently disables the feature only in production.
+    const runScan = vi.fn(async () => donePayload)
+    const scanner = new HelperAssetScanner('/repo/berth', { runScan, kill: vi.fn() })
+
+    await scanner.scanAll({ batchPauseMs: 25, excludePaths: ['/skip'], respectGitignore: true })
+
+    expect(runScan).toHaveBeenCalledWith(
+      expect.objectContaining({
+        projectDir: '/repo/berth',
+        batchPauseMs: 25,
+        excludePaths: ['/skip'],
+        respectGitignore: true
+      }),
+      expect.anything()
+    )
   })
 
   it('applies OS throttle to the helper pid on spawn', async () => {
