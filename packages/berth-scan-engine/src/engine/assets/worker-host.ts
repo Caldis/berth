@@ -72,12 +72,24 @@ export function scanOptionsFromWorkerData(
 export interface WorkerLike {
   on(event: string, listener: (...args: unknown[]) => void): WorkerLike
   once(event: string, listener: (...args: unknown[]) => void): WorkerLike
+  /** Hard-stop a wedged worker (GH-151 S3). Optional so minimal fakes stay valid;
+   * worker_threads' Worker provides it. */
+  terminate?(): unknown
 }
 
 export interface AssetWorkerHostOptions {
   workerPath?: string
   createWorker?: (workerData: AssetWorkerData) => WorkerLike
+  /** Inactivity watchdog (GH-151 S3): a scan whose worker sends no message for
+   * this long is presumed wedged and terminated. 0 disables. Mirrors the
+   * utilityProcess helper host's watchdog (src/main/helper-host.ts). */
+  inactivityTimeoutMs?: number
 }
+
+/** Default no-message window before a scan is presumed wedged (GH-151 S3).
+ * Progress ticks flow continuously during a healthy scan, so two minutes of
+ * total silence means the worker is stuck, not slow. */
+const SCAN_INACTIVITY_TIMEOUT_MS = 120_000
 
 export interface AssetWorkerRunOptions {
   onProgress?: (progress: AssetScanProgress) => void
@@ -87,10 +99,12 @@ export interface AssetWorkerRunOptions {
 export class AssetWorkerHost {
   private readonly workerPath: string
   private readonly createWorker: (workerData: AssetWorkerData) => WorkerLike
+  private readonly inactivityTimeoutMs: number
 
   constructor(options: AssetWorkerHostOptions = {}) {
     this.workerPath = options.workerPath ?? resolveAssetWorkerPath()
     this.createWorker = options.createWorker ?? ((workerData) => new Worker(this.workerPath, { workerData }))
+    this.inactivityTimeoutMs = options.inactivityTimeoutMs ?? SCAN_INACTIVITY_TIMEOUT_MS
   }
 
   runScan(workerData: AssetWorkerData, options: AssetWorkerRunOptions = {}): Promise<AssetWorkerScanPayload> {
@@ -98,13 +112,32 @@ export class AssetWorkerHost {
 
     return new Promise<AssetWorkerScanPayload>((resolve, reject) => {
       let settled = false
+      let watchdog: ReturnType<typeof setTimeout> | null = null
+      const clearWatchdog = (): void => {
+        if (watchdog) clearTimeout(watchdog)
+        watchdog = null
+      }
+      // GH-151 S3: any message resets the window; total silence past it means the
+      // worker is wedged — the failure mode done/error/exit can't cover.
+      const armWatchdog = (): void => {
+        clearWatchdog()
+        if (this.inactivityTimeoutMs <= 0) return
+        watchdog = setTimeout(() => {
+          worker.terminate?.()
+          finish(() =>
+            reject(new Error(`Asset scan worker sent no message for ${String(this.inactivityTimeoutMs)}ms; terminated as wedged`))
+          )
+        }, this.inactivityTimeoutMs)
+      }
       const finish = (fn: () => void): void => {
         if (settled) return
         settled = true
+        clearWatchdog()
         fn()
       }
 
       worker.on('message', (message) => {
+        armWatchdog()
         const workerMessage = message as AssetWorkerMessage
         if (workerMessage.type === 'progress') {
           options.onProgress?.(workerMessage.progress)
@@ -128,9 +161,14 @@ export class AssetWorkerHost {
       })
 
       worker.once('exit', (code) => {
-        if (settled || code === 0) return
+        // GH-151 S3: an unsettled exit is a failure regardless of code — exit 0
+        // without a done message (parentPort null makes `post` a silent no-op,
+        // structured-clone failure) used to leave the promise pending forever.
+        // The normal path settles on 'done' first, so this never fires for it.
         finish(() => reject(new Error(`Asset scan worker exited with code ${String(code)}`)))
       })
+
+      armWatchdog()
     })
   }
 }

@@ -26,6 +26,7 @@ const emptyStats: AssetStats = {
 
 class FakeWorker extends EventEmitter implements WorkerLike {
   readonly workerData: AssetWorkerData
+  terminate = vi.fn()
 
   constructor(workerData: AssetWorkerData) {
     super()
@@ -158,6 +159,45 @@ describe('AssetWorkerHost', () => {
     workers[0]?.emit('exit', 1)
 
     await expect(resultPromise).rejects.toThrow('Asset scan worker exited with code 1')
+  })
+
+  it('rejects when the worker exits code 0 without a done message (GH-151 S3)', async () => {
+    // parentPort null / structured-clone failure makes `post` a silent no-op: the
+    // worker exits 0 with no done. Pre-fix the promise never settled and the
+    // pipeline stayed 'scanning' forever.
+    const { host, workers } = createHost()
+    const resultPromise = host.runScan({ projectDir: '/repo/berth' })
+
+    workers[0]?.emit('exit', 0)
+
+    await expect(resultPromise).rejects.toThrow('Asset scan worker exited with code 0')
+  })
+
+  it('terminates a silent worker after the inactivity window, messages reset it (GH-151 S3)', async () => {
+    vi.useFakeTimers()
+    try {
+      const workers: FakeWorker[] = []
+      const host = new AssetWorkerHost({
+        inactivityTimeoutMs: 1000,
+        createWorker: (workerData) => {
+          const worker = new FakeWorker(workerData)
+          workers.push(worker)
+          return worker
+        }
+      })
+      const resultPromise = host.runScan({ projectDir: '/repo/berth' })
+
+      await vi.advanceTimersByTimeAsync(999)
+      workers[0]?.send({ type: 'progress', progress: { phase: 'parsing', current: 1, total: 9 } })
+      await vi.advanceTimersByTimeAsync(999)
+      expect(workers[0]?.terminate).not.toHaveBeenCalled()
+
+      await vi.advanceTimersByTimeAsync(2)
+      expect(workers[0]?.terminate).toHaveBeenCalled()
+      await expect(resultPromise).rejects.toThrow(/no message/)
+    } finally {
+      vi.useRealTimers()
+    }
   })
 })
 
