@@ -2,7 +2,7 @@
 task: 2026-07-04-gh-151-scan-engine-audit-fixes
 task_id: GH-151
 type: bug
-phase: explore
+phase: design
 created: 2026-07-04
 priority: P1
 target_date:
@@ -57,7 +57,7 @@ artifacts:
 
 ## 产物
 - [x] 00-BUG.md — 原始输入快照 (审查报告 P0/P1 六项 + file:line 证据)
-- [ ] 01-ANALYSIS.md — Explore 产物
+- [x] 01-ANALYSIS.md — Explore 产物
 - [ ] 02-SPEC.md — Design 产物
 - [ ] 03-PLAN.md — 活任务清单
 
