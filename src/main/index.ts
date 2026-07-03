@@ -6,6 +6,8 @@ import Database from 'better-sqlite3'
 import { getAssetRuntime, initAssetRuntime } from '@berth/scan-engine/engine/assets/runtime'
 import { createSqliteSnapshotStore } from '@berth/scan-engine/engine/assets/sqlite-snapshot-store'
 import { applyWatchEvent } from '@berth/scan-engine/engine/assets/watch-wiring'
+import { TrailingCoalescer } from '@berth/scan-engine/engine/assets/trailing-coalescer'
+import type { WatchEvent } from '@berth/scan-engine/shared/types/asset'
 import { getWatcher } from '@berth/scan-engine/engine/watcher'
 import { resolveDefaultProjectDir } from './project-dir'
 import { configureAgentDevProfile, shouldRequestSingleInstanceLock } from './dev-instance'
@@ -242,11 +244,18 @@ if (!gotTheLock) {
     // Push channels broadcast to every live window: a closure over the first
     // window goes stale after macOS dock re-activate recreates it (the new
     // window would silently miss incremental updates).
-    watcher.setListener((event) => {
-      applyWatchEvent(event, getAssetRuntime())
+    // GH-151 S7: the BROADCAST is coalesced (every renderer subscriber re-queries
+    // per event, so a burst quadruples into snapshot+health+insights+engineInfo
+    // refetches); applyWatchEvent stays per-event — incremental derivation must
+    // see every file.
+    const changedCoalescer = new TrailingCoalescer<WatchEvent>((event) => {
       for (const win of BrowserWindow.getAllWindows()) {
         if (!win.isDestroyed()) win.webContents.send('assets:changed', event)
       }
+    })
+    watcher.setListener((event) => {
+      applyWatchEvent(event, getAssetRuntime())
+      changedCoalescer.push(event)
     })
     watcher.start(projectDir)
 
@@ -263,6 +272,7 @@ if (!gotTheLock) {
     // GH-135: terminate the scan helper before the app exits. Electron auto-kills
     // utilityProcess children, but kill explicitly so it never lingers.
     app.on('before-quit', () => {
+      changedCoalescer.dispose()
       getScanHelperHost().kill()
     })
 
