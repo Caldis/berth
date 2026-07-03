@@ -31,9 +31,22 @@
 - [x] S8 (A6): setProjectDir 缓存命中新鲜度 TTL (5min) — 陈旧标 stale, ensureReady SWR 接手
   - tests: `agent-asset-runtime.test.ts` 2 条 (陈旧→stale+派生读 kick; 新鲜→ready 不刷) — 先红后绿; project-scope-runtime/project-snapshot-cache 回归绿
   - verify: 不适用; 目标测试绿
-- [ ] 收口: 全局门禁 + 推送 + CI 旁路
-  - tests: 全量 typecheck/lint/test 已绿 (185 文件 1337 测试); 受影响 e2e x5 (project-scope/global-shallow-scope/scan-control/incremental-watch/snapshot-persistence) 全绿
-  - verify: dev 实例真跑数据流验收 (归 4.0-verify): 扫描中重建闭环 / changed 事件频率有界 / 项目切换 SWR 可见
+- [x] 收口: 全局门禁 + 推送 + CI 旁路
+  - tests: typecheck/lint/test 全绿 (185 文件 1337 测试, 无 Unhandled Errors); 受影响 e2e x5 (project-scope/global-shallow-scope/scan-control/incremental-watch/snapshot-persistence) 本地全绿; `pnpm harness:prepush` 通过后推送 70499e48, CI 三平台 (windows/macos/ubuntu) conclusion=success (run 28675417522, 子代理旁路消费成功结果)
+  - verify: 已完成, 见下节
+
+## verify 证据 (4.0-verify, 2026-07-04)
+
+真机时序验收 (隔离 codex home + `dev:agent start --id gh151-verify --debug-port 9333` + CDP window.api 只读驱动, 断言落 observable):
+
+1. **S4 扫描中 rebuild 死区闭合**: refresh 未等待即 rebuild → 终态 `ready`, 资产 3/3 恢复, 新快照 id — 修复前该序列 100% 停在空 initial。
+2. **S6 lean 快照**: `assets:snapshot` 返回的全部资产 `raw === undefined` (0/3 携带)。
+3. **S7 合并 + S4 最终一致**: 600ms 内写 20 个 session 文件 → `onChanged` 仅 4 次 (裸发≈20); 时间线采样 `60ms:12 → 561ms:20` 后连续 4 采样稳定 — 增量折叠无丢失。
+4. **S8 切换无卡死**: activate 项目 2ms 返回 (背景 scanning), 切回 7ms 即 `ready` (5min TTL 内新鲜, 零冗余重扫), 23 资产可见。陈旧路径 (TTL 外 → stale + SWR) 由单测钉住 (真机无法压缩时间)。
+
+旁支发现 (不入本批, 已交叉引用): 首轮采集观察到 burst 计数 20→15 瞬时回落且快照 id 不变 — mid-scan partial 整体替换压掉后到增量 (预先存在, S4 后有最终一致兜底), 记 `docs/issues/2026-07-04-BUG-mid-scan-partial-clobbers-incremental-folds.md`。
+
+机械项: `harness:check` 全绿; `harness:stats` debt=28 notice (<40 无需 override); Project 字段已 ensure 同步 (GH-150 与一个归档任务的字段漂移属他人任务, 不越界)。
 
 ## verify 回写
-verify 不通过项作为新任务追加于此, phase 退回 implement。
+verify 不通过项作为新任务追加于此, phase 退回 implement。(本轮无不通过项)

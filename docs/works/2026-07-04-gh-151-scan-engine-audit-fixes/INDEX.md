@@ -2,7 +2,7 @@
 task: 2026-07-04-gh-151-scan-engine-audit-fixes
 task_id: GH-151
 type: bug
-phase: implement
+phase: verify
 created: 2026-07-04
 priority: P1
 target_date:
@@ -22,14 +22,16 @@ debt:
     confidence: high
     rationale: "0.0-new 初始估算。六项修复 (P0 x3 + P1 x3) 已由 5 维度审查 + 主 Agent 逐条源码复核实锤 (file:line 证据在 00-BUG.md)。incurred: watchdog/latest-wins 队列/replaceBySourceKey 增量写均为新机制代码; repaid: 消除调度死区、全库重写热路径、IPC 全量 raw 负载, 偿还 architecture+performance 债。scope=cross-process (engine pkg + src/main helper 链路); risk=high (触碰 runtime 调度状态机与持久层)。design 锁定方案 (S1-S8, 无新 IPC 通道/无 schema 迁移) 后 confidence 升 high。"
   final:
-    incurred:
-    repaid:
-    net:
-    scope:
-    risk:
-    areas: []
-    confidence:
-    rationale:
+    incurred: 5
+    repaid: 4
+    net: 1
+    scope: cross-process
+    risk: high
+    areas:
+      - architecture
+      - performance
+    confidence: high
+    rationale: "与 estimate 持平。最终 diff: 8 个实现提交 (S1-S8), engine pkg (runtime/coordinator/worker-host/两 store/新 coalescer) + src/main (helper-host/scan-helper/handlers/index) + 零 renderer 改动; 新增单测 20 条全部先红后绿, 全量 1337 绿, 受影响 e2e x5 本地绿, CI 三平台 success (70499e4), 真机 CDP 时序验收 4 项通过。剩余风险: refresh 语义从 join 改排队已由单测+e2e 钉住; mid-scan partial 瞬态压增量为预先存在问题, 已记 docs/issues (2026-07-04-BUG-mid-scan-partial-clobbers-incremental-folds)。"
   revisions:
     - phase: design
       date: 2026-07-04
