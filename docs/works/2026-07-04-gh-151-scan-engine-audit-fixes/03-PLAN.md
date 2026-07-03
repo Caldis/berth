@@ -2,18 +2,20 @@
 
 从 02-SPEC 拆解。顺序执行 (S4-S6/S8 同文件 runtime.ts, 不并行); 每项过目标测试后单独提交。
 
-- [ ] S1 (A1): 扫描选项映射单源 + respectGitignore 透传 — `worker-host.ts` 增 `workerDataFromScanOptions`/`scanOptionsFromWorkerData`, `WorkerAssetScanner`/`HelperAssetScanner`/`worker.ts`/`scan-helper.ts` 四处改用
-  - tests: `asset-worker-host.test.ts` 映射字段集往返; `helper-host.test.ts` payload 含全部透传字段 (fixture 值断言)
-  - verify: 不适用 (非 UI); `pnpm vitest run tests/unit/asset-worker-host.test.ts tests/unit/helper-host.test.ts` 绿
-- [ ] S2 (A3): helper-host pre-spawn exit reject + 不活动看门狗 (默认 120s, message 重置, 构造注入)
-  - tests: `helper-host.test.ts` — pre-spawn exit → runScan reject; 超时 → kill+reject; 有消息流不误杀
+- [x] S1 (A1): 扫描选项映射单源 + respectGitignore 透传 — `worker-host.ts` 增 `workerDataFromScanOptions`/`scanOptionsFromWorkerData`, `WorkerAssetScanner`/`HelperAssetScanner`/`worker.ts`/`scan-helper.ts` 四处改用 (commit 1bca4305)
+  - tests: `asset-worker-host.test.ts` 映射字段集往返; `helper-host.test.ts` payload 含全部透传字段 — 先红 (钉住双漏传) 后绿, 14/14
+  - verify: 不适用 (非 UI); 目标测试绿 + typecheck 绿
+- [x] S2 (A3): helper-host pre-spawn exit reject + 不活动看门狗 (默认 120s, message 重置, 构造注入) (commit 5e7ebed3)
+  - tests: `helper-host.test.ts` — pre-spawn exit → reject (旧实现 5s 超时实证永挂); 超时 kill+reject; 消息重置不误杀 — 10/10
   - verify: 不适用; 目标测试绿
-- [ ] S3 (A3): worker-host exit 未 settle 一律 reject (去 `code===0` 早退) + 对称看门狗 (`WorkerLike.terminate?`)
-  - tests: `asset-worker-host.test.ts` — exit(0) 无 done → reject; 超时 → terminate+reject
+- [x] S3 (A3): worker-host exit 未 settle 一律 reject (去 `code===0` 早退) + 对称看门狗 (`WorkerLike.terminate?`) (commit 3af09ec1)
+  - tests: `asset-worker-host.test.ts` — exit(0) 无 done → reject (旧实现超时实证); 超时 terminate+reject — 11/11 (含 worker-artifact 回归)
   - verify: 不适用; 目标测试绿
-- [ ] S4 (A2): runtime refresh 排队泛化 — 所有 reason latest-wins 入队 + wait deferred (Q4) + cancel/pause 清队并 resolve
-  - tests: `agent-asset-runtime.test.ts` — ①扫描中 watcher refresh 排队并在扫描结束后执行 ②rebuild-during-scan 终态 ready 且快照非 initial ③cancel 后 refresh 启动新扫描 ④cancel/pause 清队 deferred 不悬挂 ⑤wait:true 等到新扫描完成
+- [x] S4 (A2): runtime refresh 排队泛化 — 所有 reason latest-wins 入队 + wait waiters (Q4) + cancel/pause 清队并 resolve
+  - tests: `agent-asset-runtime.test.ts` 新增 5 条时序测试全绿 (50/50); e2e project-scope / scan-control / incremental-watch / snapshot-persistence 全绿
   - verify: 不适用 (单测钉时序); dev 实例验收项归 verify 阶段
+  - **偏差 1 (方案内澄清)**: `ensureReady` 的 initial 阻塞路径 (首次建索引) 改为 join in-flight 扫描而非入队 — 否则 UI 派生读风暴在启动扫描后触发冗余第二次全量扫描 (被 incremental-watch.e2e 抓住, id 抖动)。SWR stale 路径本有 state 门控不受影响。已补钉单测。
+  - **偏差 2 (旧语义测试更新)**: 两条钉 "join in-flight" 旧语义的既有测试 (`reuses an in-flight scan` / GH-111 R4 discard) 更新为钉新排队语义 — join 捷径正是 rebuild 死区的机制本身; R4 无 clobber 不变量保持并加强断言 (scannerB 结果)。
 - [ ] S5 (A4): SnapshotStore `replaceBySourceKey` 契约 + sqlite 行级实现 + `applyFileChange` 持久化改增量 (降级 save)
   - tests: `sqlite-snapshot-store.test.ts` — 单键替换其余行原样 / 空数组删除 / envelope 更新 / raw 剥离; `agent-asset-runtime.test.ts` — applyFileChange 走增量、缺方法降级
   - verify: 不适用; 目标测试绿

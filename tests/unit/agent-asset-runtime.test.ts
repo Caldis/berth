@@ -286,7 +286,11 @@ describe('AgentAssetRuntime', () => {
     expect(saved).toEqual([expectedSettings])
   })
 
-  it('reuses an in-flight scan and publishes a ready snapshot', async () => {
+  it('queues a wait:true refresh arriving mid-scan and resolves after ITS scan commits (GH-151 S4)', async () => {
+    // Semantics change (GH-151): a refresh landing mid-scan no longer merely
+    // joins the in-flight scan — it queues (latest-wins) and its waiter resolves
+    // only once a scan that STARTED at-or-after the request has committed. The
+    // old join shortcut was the mechanism behind the rebuild dead zone.
     const deferred = createDeferred<ScanResult>()
     const scanner: AssetRuntimeScanner = {
       scanAll: vi.fn(() => deferred.promise),
@@ -303,20 +307,22 @@ describe('AgentAssetRuntime', () => {
     })
     const waitForScan = runtime.refresh({ reason: 'manual', wait: true })
 
+    // Still single-flight while the first scan runs.
     expect(scanner.scanAll).toHaveBeenCalledTimes(1)
     deferred.resolve({ assets: [sessionAsset('session-1')], stats: { ...emptyStats, sessions: 1 }, errors: [] })
 
     await expect(waitForScan).resolves.toMatchObject({
       state: 'ready',
-      reason: 'startup',
-      stale: false,
-      lastCompletedAt: '2026-06-03T00:00:01.000Z'
+      reason: 'manual',
+      stale: false
     })
+    // The queued manual refresh ran as a second scan and minted a second snapshot.
+    expect(scanner.scanAll).toHaveBeenCalledTimes(2)
     expect(runtime.getSnapshot()).toMatchObject({
-      id: 'snapshot-1',
+      id: 'snapshot-2',
       assets: [sessionAsset('session-1')],
       stats: { ...emptyStats, sessions: 1 },
-      status: { state: 'ready', reason: 'startup', stale: false }
+      status: { state: 'ready', reason: 'manual', stale: false }
     })
   })
 
@@ -784,13 +790,16 @@ describe('AgentAssetRuntime', () => {
     await runtime.refresh({ reason: 'startup' }) // starts scannerA scan (in-flight)
     runtime.setProjectDir('/other') // swaps to scannerB mid-scan
 
-    const waitForOldScan = runtime.refresh({ wait: true })
+    const waitForScan = runtime.refresh({ wait: true })
     deferred.resolve({ assets: [sessionAsset('stale-asset')], stats: { ...emptyStats, sessions: 1 }, errors: [] })
-    await waitForOldScan
+    await waitForScan
 
-    // The switched-away scan must not have committed its assets onto /other.
+    // The switched-away scan must not have committed its assets onto /other. The
+    // queued wait:true refresh (GH-151 S4) reran against scannerB, so the ready
+    // snapshot belongs to the CURRENT generation — clobber-free either way.
     expect(runtime.getSnapshot().assets.map((a) => a.id)).not.toContain('stale-asset')
-    expect(runtime.getStatus().state).not.toBe('ready')
+    expect(scannerB.scanAll).toHaveBeenCalledTimes(1)
+    expect(runtime.getSnapshot().assets).toEqual([])
   })
 
   it('queues a project-scope refresh when the current scan belongs to an older project', async () => {
@@ -1105,6 +1114,131 @@ async function readyRuntime(assets: Asset[], store?: { load: ReturnType<typeof v
   await runtime.refresh({ reason: 'startup', wait: true })
   return runtime
 }
+
+describe('AgentAssetRuntime refresh queueing (GH-151 S4)', () => {
+  function deferredScanner(second: ScanResult): {
+    scanner: AssetRuntimeScanner
+    first: ReturnType<typeof createDeferred<ScanResult>>
+    scanAll: ReturnType<typeof vi.fn>
+  } {
+    const first = createDeferred<ScanResult>()
+    const scanAll = vi.fn()
+      .mockImplementationOnce(() => first.promise)
+      .mockImplementation(async () => second)
+    return {
+      first,
+      scanAll,
+      scanner: {
+        scanAll,
+        getScanSourceGroups: vi.fn(async () => []),
+        getProjectScopeCandidates: vi.fn(() => []),
+        getProjectDir: () => '/repo/berth',
+        cancel: vi.fn()
+      }
+    }
+  }
+
+  it('queues a watcher refresh arriving mid-scan and flushes it after the scan settles', async () => {
+    // Pre-fix: any non-project-scope refresh during a scan was silently dropped,
+    // so a watcher change landing in the 30s-1min scan window stayed invisible
+    // until the 24h periodic rescan.
+    const { scanner, first, scanAll } = deferredScanner({ assets: [], stats: emptyStats, errors: [] })
+    const runtime = createRuntime(scanner)
+
+    void runtime.refresh({ reason: 'manual' })
+    expect(scanAll).toHaveBeenCalledTimes(1)
+    void runtime.refresh({ reason: 'watcher' })
+
+    first.resolve({ assets: [], stats: emptyStats, errors: [] })
+    await vi.waitFor(() => expect(scanAll).toHaveBeenCalledTimes(2))
+    await vi.waitFor(() => expect(runtime.getStatus().state).toBe('ready'))
+  })
+
+  it('rebuild during an in-flight scan clears the index AND still rescans (dead-zone fix)', async () => {
+    // Pre-fix: rebuild() cancelled the scan then called refresh() synchronously;
+    // inFlight had not settled yet, 'manual' was not queueable → the rescan was
+    // dropped 100% of the time and the app sat on an empty initial snapshot.
+    const clearSpy = vi.fn()
+    const { scanner, first, scanAll } = deferredScanner({
+      assets: [skillAsset('post-rebuild')],
+      stats: { ...emptyStats, skills: 1 },
+      errors: []
+    })
+    const runtime = new AgentAssetRuntime({
+      projectDir: '/repo/berth',
+      createScanner: () => scanner,
+      now: () => '2026-06-07T00:00:00.000Z',
+      snapshotStore: { load: () => null, save: vi.fn(), clear: clearSpy }
+    })
+
+    void runtime.refresh({ reason: 'manual' })
+    const rebuilt = runtime.rebuild({ wait: true })
+    expect(clearSpy).toHaveBeenCalled()
+
+    // The killed helper's promise rejects (kill → exit) — the coordinator drops
+    // it as cancelled, then the queued rebuild refresh must run.
+    first.reject(new Error('helper killed'))
+    await rebuilt
+
+    expect(scanAll).toHaveBeenCalledTimes(2)
+    expect(runtime.getStatus().state).toBe('ready')
+    expect(runtime.getSnapshot().assets.map((a) => a.id)).toEqual(['post-rebuild'])
+  })
+
+  it('cancel drops the queued refresh and resolves waiters instead of hanging', async () => {
+    const { scanner, first, scanAll } = deferredScanner({ assets: [], stats: emptyStats, errors: [] })
+    const runtime = createRuntime(scanner)
+
+    void runtime.refresh({ reason: 'manual' })
+    const waited = runtime.refresh({ reason: 'watcher', wait: true })
+    runtime.cancel()
+
+    // The waiter must settle (an IPC caller would otherwise hang forever).
+    await waited
+    first.reject(new Error('helper killed'))
+    await Promise.resolve()
+
+    // Cancel means "stop and stay stopped": the queued watcher refresh is gone.
+    expect(scanAll).toHaveBeenCalledTimes(1)
+    expect(runtime.getStatus().state).toBe('stale')
+  })
+
+  it('derived reads during the first index build JOIN the startup scan — no redundant second scan', async () => {
+    // ensureReady's initial-blocking path must not queue: UI derived reads fire
+    // in bursts while the startup scan runs, and each queued one would trigger a
+    // redundant full rescan after commit (caught by incremental-watch.e2e.ts —
+    // the snapshot id churned right after the first commit).
+    const { scanner, first, scanAll } = deferredScanner({ assets: [], stats: emptyStats, errors: [] })
+    const runtime = createRuntime(scanner)
+
+    void runtime.refresh({ reason: 'startup' })
+    const read1 = runtime.listSessions({})
+    const read2 = runtime.getHealthChecks()
+
+    first.resolve({ assets: [sessionAsset('session-1')], stats: { ...emptyStats, sessions: 1 }, errors: [] })
+    await Promise.all([read1, read2])
+
+    await vi.waitFor(() => expect(runtime.getStatus().state).toBe('ready'))
+    expect(scanAll).toHaveBeenCalledTimes(1)
+    expect(runtime.getSnapshot().id).toBe('snapshot-1')
+  })
+
+  it('pause drops the queued refresh — nothing auto-flushes while paused', async () => {
+    const { scanner, first, scanAll } = deferredScanner({ assets: [], stats: emptyStats, errors: [] })
+    const runtime = createRuntime(scanner)
+
+    void runtime.refresh({ reason: 'manual' })
+    void runtime.refresh({ reason: 'watcher' })
+    runtime.pause()
+
+    first.reject(new Error('helper killed'))
+    await Promise.resolve()
+    await Promise.resolve()
+
+    expect(scanAll).toHaveBeenCalledTimes(1)
+    expect(runtime.getEngineInfo().scheduler.paused).toBe(true)
+  })
+})
 
 describe('AgentAssetRuntime.applyFileChange (GH-113 I1)', () => {
   it('replaces only the changed file’s assets and recomputes stats', async () => {

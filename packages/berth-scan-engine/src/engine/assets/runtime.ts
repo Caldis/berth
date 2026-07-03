@@ -131,6 +131,7 @@ export class AgentAssetRuntime {
   private scheduledRefreshTimer: ReturnType<typeof setTimeout> | null = null
   private scheduledRefreshInfo: ScheduledRefreshState | null = null
   private pendingRefresh: AssetRefreshOptions | null = null
+  private pendingRefreshWaiters: Array<() => void> = []
   private flushingPendingRefresh = false
   private lastWatcherRefreshStartedAtMs = 0
   private lastScanDurationMs: number | undefined
@@ -376,10 +377,15 @@ export class AgentAssetRuntime {
   async refresh(options: AssetRefreshOptions = {}): Promise<AssetRuntimeStatus> {
     this.clearScheduledRefresh()
     if (this.coordinator.isScanning()) {
-      if (options.reason === 'project-scope' && !options.wait) {
-        this.queuePendingRefresh(options)
-      }
-      if (options.wait) await this.coordinator.wait()
+      // GH-151 S4: never drop a refresh mid-scan — every reason folds into the
+      // single-slot latest-wins queue and run.finally flushes it. (Previously
+      // only project-scope queued; watcher/manual refreshes landing in the
+      // 30s-1min scan window silently vanished, and rebuild()'s cancel→refresh
+      // always fell into that dead zone because the killed scan settles async.)
+      // wait:true resolves once the QUEUED refresh completes (not merely the
+      // current scan) — cancel/pause resolve waiters early so no caller hangs.
+      const flushed = this.queuePendingRefresh(options)
+      if (options.wait) await flushed
       return this.status
     }
 
@@ -419,6 +425,8 @@ export class AgentAssetRuntime {
     this.schedulerPaused = true
     this.clearScheduledRefresh()
     this.clearPeriodic()
+    // GH-151 S4: also drop anything already queued — paused means no auto-flush.
+    this.dropPendingRefresh()
     if (this.coordinator.isScanning()) this.cancel()
   }
 
@@ -432,6 +440,10 @@ export class AgentAssetRuntime {
   cancel(): void {
     if (!this.coordinator.isScanning()) return
     this.coordinator.cancel()
+    // GH-151 S4: cancel means "stop and stay stopped" — drop the queued refresh
+    // so run.finally's flush doesn't immediately restart what the user stopped.
+    // rebuild() re-queues AFTER this, so its rescan survives.
+    this.dropPendingRefresh()
     this.status = { ...this.status, state: 'stale', stale: true }
     this.snapshot = { ...this.snapshot, status: this.status }
     this.progressListener?.({ status: this.status })
@@ -547,6 +559,14 @@ export class AgentAssetRuntime {
       if (this.status.state === 'stale') {
         void this.refresh({ reason: options.reason ?? 'manual', wait: false })
       }
+      return this.snapshot
+    }
+    // First-ever index build: this read only needs SOME committed snapshot, so it
+    // JOINS an in-flight scan. Routing through refresh(wait:true) would queue a
+    // redundant second full scan behind the startup one (GH-151 S4) — derived
+    // reads fire in bursts while it runs, and each would re-queue.
+    if (this.coordinator.isScanning()) {
+      await this.coordinator.wait()
       return this.snapshot
     }
     await this.refresh({ reason: options.reason ?? 'manual', wait: true })
@@ -787,20 +807,44 @@ export class AgentAssetRuntime {
     this.scheduledRefreshInfo = null
   }
 
-  private queuePendingRefresh(options: AssetRefreshOptions): void {
+  private queuePendingRefresh(options: AssetRefreshOptions): Promise<void> {
     this.pendingRefresh = {
       reason: options.reason,
       wait: false
     }
+    return new Promise<void>((resolve) => {
+      this.pendingRefreshWaiters.push(resolve)
+    })
+  }
+
+  /** Drop the queued refresh and release its waiters (GH-151 S4). Used by
+   * cancel/pause — "stop" must not auto-restart via the queue, and a waiting
+   * IPC caller must settle rather than hang. */
+  private dropPendingRefresh(): void {
+    this.pendingRefresh = null
+    const waiters = this.pendingRefreshWaiters
+    this.pendingRefreshWaiters = []
+    for (const release of waiters) release()
   }
 
   private async flushPendingRefresh(): Promise<void> {
-    if (this.flushingPendingRefresh || !this.pendingRefresh) return
-    const pending = this.pendingRefresh
-    this.pendingRefresh = null
+    if (this.flushingPendingRefresh) return
     this.flushingPendingRefresh = true
     try {
-      await this.refresh(pending)
+      // Loop: a refresh queued DURING the flushed scan would otherwise strand —
+      // its own run.finally re-enters here and hits the flushing guard.
+      while (this.pendingRefresh) {
+        const pending = this.pendingRefresh
+        const waiters = this.pendingRefreshWaiters
+        this.pendingRefresh = null
+        this.pendingRefreshWaiters = []
+        try {
+          // wait:true so waiters observe the queued scan's COMPLETION (Q4).
+          await this.refresh({ reason: pending.reason, wait: true })
+        } finally {
+          for (const release of waiters) release()
+        }
+      }
     } finally {
       this.flushingPendingRefresh = false
     }
