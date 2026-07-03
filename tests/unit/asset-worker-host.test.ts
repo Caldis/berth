@@ -186,6 +186,7 @@ describe('AssetWorkerHost', () => {
         }
       })
       const resultPromise = host.runScan({ projectDir: '/repo/berth' })
+      const rejection = expect(resultPromise).rejects.toThrow(/no message/) // attach before it fires
 
       await vi.advanceTimersByTimeAsync(999)
       workers[0]?.send({ type: 'progress', progress: { phase: 'parsing', current: 1, total: 9 } })
@@ -194,7 +195,7 @@ describe('AssetWorkerHost', () => {
 
       await vi.advanceTimersByTimeAsync(2)
       expect(workers[0]?.terminate).toHaveBeenCalled()
-      await expect(resultPromise).rejects.toThrow(/no message/)
+      await rejection
     } finally {
       vi.useRealTimers()
     }

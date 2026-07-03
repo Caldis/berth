@@ -160,7 +160,8 @@ export function registerUpdateHandlers(): void {
 
 export function registerAssetHandlers(): void {
   ipcMain.handle('assets:snapshot', async (): Promise<AssetSnapshot> => {
-    return getAssetRuntime().getSnapshot()
+    // Lean projection (GH-151 S6): raw is served per-asset by assets:get.
+    return getAssetRuntime().getLeanSnapshot()
   })
 
   ipcMain.handle('assets:status', (): AssetRuntimeStatus => {

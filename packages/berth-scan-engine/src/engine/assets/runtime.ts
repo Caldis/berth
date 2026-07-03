@@ -28,7 +28,7 @@ import { WorkerAssetScanner } from './worker-host'
 import { mergeSharedConventions } from '../scanner'
 import { toSessionSummary } from '../session-detail'
 import { readString } from '@shared/object-guards'
-import type { SnapshotStore } from './snapshot-store'
+import { stripRaw, type SnapshotStore } from './snapshot-store'
 import { SnapshotSelectorCache, type AssetSelectorCache } from './selector-cache'
 import { ProjectSnapshotCache, projectSnapshotKey } from './project-snapshot-cache'
 import { ScanCoordinator, type AssetRuntimeScanner, type ScanOutcome, type ScanSink } from './scan-coordinator'
@@ -213,6 +213,16 @@ export class AgentAssetRuntime {
     return this.snapshot
   }
 
+  /** IPC projection of the snapshot (GH-151 S6): full-list surfaces must not drag
+   * multi-MB raw bodies through structured clone on every sync. Raw stays in
+   * memory for `getAsset` — the raw viewer reads single assets via assets:get and
+   * has NO disk re-read fallback. Uncached on purpose: applyPartial mutates
+   * assets under a stable snapshot id, so an id-keyed cache would serve stale
+   * lists mid-scan; the shallow map is cheap next to the clone it replaces. */
+  getLeanSnapshot(): AssetSnapshot {
+    return { ...this.snapshot, assets: this.snapshot.assets.map(stripRaw) }
+  }
+
   getSettings(): ScanEngineSettings {
     return this.settings
   }
@@ -305,8 +315,10 @@ export class AgentAssetRuntime {
   }
 
   getScanResult(): ScanResult {
+    // Lean like getLeanSnapshot — the sole consumer is the project-scope
+    // activation IPC payload (GH-151 S6).
     return {
-      assets: this.snapshot.assets,
+      assets: this.snapshot.assets.map(stripRaw),
       stats: this.snapshot.stats,
       errors: this.snapshot.errors
     }
@@ -932,7 +944,10 @@ export class AgentAssetRuntime {
       stats
     }
     this.assetMap = new Map(assets.map((asset) => [asset.id, asset]))
-    this.progressListener?.({ status: this.status, partial: { assets, stats, errorCount: partial.errorCount } })
+    // Emit lean (GH-151 S6): scanner partials are already stripped at the stream
+    // source, but foldKeepingShallow re-attaches shallow assets from the committed
+    // snapshot, which carry raw in memory.
+    this.progressListener?.({ status: this.status, partial: { assets: assets.map(stripRaw), stats, errorCount: partial.errorCount } })
   }
 
   /**
@@ -959,7 +974,8 @@ export class AgentAssetRuntime {
     this.selectorCache.clear()
     this.snapshotCache.set(this.projectDir, this.snapshot)
     this.persistFileChange(sourceKey)
-    this.progressListener?.({ status: this.status, partial: { assets: merged, stats } })
+    // Emit lean (GH-151 S6) — derived assets carry freshly-parsed raw bodies.
+    this.progressListener?.({ status: this.status, partial: { assets: merged.map(stripRaw), stats } })
   }
 
   /** Persist one file's change (GH-151 S5): row-level replacement when the store

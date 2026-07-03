@@ -117,6 +117,7 @@ describe('ScanHelperHost (GH-135)', () => {
       const host = new ScanHelperHost({ createChild: () => asChild(child), inactivityTimeoutMs: 1000 })
 
       const r = host.runScan({ projectDir: '/a' })
+      const rejection = expect(r).rejects.toThrow(/no message/) // attach before it fires
       child.emit('spawn')
       await vi.advanceTimersByTimeAsync(999)
 
@@ -128,7 +129,7 @@ describe('ScanHelperHost (GH-135)', () => {
 
       await vi.advanceTimersByTimeAsync(2)
       expect(child.kill).toHaveBeenCalled()
-      await expect(r).rejects.toThrow(/no message/)
+      await rejection
     } finally {
       vi.useRealTimers()
     }

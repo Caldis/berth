@@ -1240,6 +1240,76 @@ describe('AgentAssetRuntime refresh queueing (GH-151 S4)', () => {
   })
 })
 
+describe('lean IPC projections (GH-151 S6)', () => {
+  const rawful = (id: string, sourceKey: string): Asset => ({ ...fileAsset(id, sourceKey), raw: 'A HUGE RAW BODY' })
+
+  it('getLeanSnapshot strips raw for the wire while getAsset keeps serving it', async () => {
+    const runtime = await readyRuntime([rawful('a', 'key-a')])
+
+    expect(runtime.getSnapshot().assets[0]?.raw).toBe('A HUGE RAW BODY') // memory keeps raw
+    const lean = runtime.getLeanSnapshot()
+    expect(lean.assets[0]?.raw).toBeUndefined()
+    expect(lean.id).toBe('ready-snap')
+    expect(lean.assets.map((x) => x.id)).toEqual(['a'])
+    // The raw viewer reads single assets via assets:get — that path must keep raw
+    // (there is NO disk re-read fallback; see ViewRawButton).
+    expect(runtime.getAsset('a')?.raw).toBe('A HUGE RAW BODY')
+  })
+
+  it('getScanResult (project-scope activation payload) is lean', async () => {
+    const runtime = await readyRuntime([rawful('a', 'key-a')])
+    expect(runtime.getScanResult().assets[0]?.raw).toBeUndefined()
+  })
+
+  it('applyFileChange emits a raw-free partial while memory keeps raw', async () => {
+    const runtime = await readyRuntime([rawful('a', 'key-a')])
+    const emitted: (string | undefined)[][] = []
+    runtime.setProgressListener((p) => {
+      if (p.partial) emitted.push(p.partial.assets.map((x) => x.raw))
+    })
+
+    runtime.applyFileChange('key-a', [rawful('a2', 'key-a')])
+
+    expect(emitted).toEqual([[undefined]])
+    expect(runtime.getAsset('a2')?.raw).toBe('A HUGE RAW BODY')
+  })
+
+  it('applyPartial keeps shallow assets from the previous snapshot but emits them raw-free', async () => {
+    // Scanner partials are already lean (stripAssetRaw at the stream source), but
+    // foldKeepingShallow re-attaches shallow assets from the COMMITTED snapshot —
+    // which carries raw in memory. The emit boundary must strip those too.
+    const shallowRawful: Asset = {
+      ...fileAsset('sh', 'key-sh'),
+      raw: 'A HUGE RAW BODY',
+      meta: { sourceKey: 'key-sh', scanDepth: 'shallow' }
+    }
+    const scanner: AssetRuntimeScanner = {
+      scanAll: vi.fn(async (options) => {
+        options?.onPartial?.({ assets: [fileAsset('deep', 'key-deep')], stats: emptyStats })
+        return { assets: [fileAsset('deep', 'key-deep')], stats: emptyStats, errors: [] }
+      }),
+      getScanSourceGroups: vi.fn(async () => []),
+      getProjectScopeCandidates: vi.fn(() => []),
+      getProjectDir: () => '/repo/berth'
+    }
+    const runtime = createRuntime(scanner)
+    // Seed the live snapshot with the shallow rawful asset, then rescan: the
+    // deep-only partial folds it back in from memory.
+    runtime.applyFileChange('key-sh', [shallowRawful])
+    const emitted: (string | undefined)[][] = []
+    runtime.setProgressListener((p) => {
+      if (p.partial) emitted.push(p.partial.assets.map((x) => x.raw))
+    })
+
+    await runtime.refresh({ reason: 'manual', wait: true })
+
+    // The mid-scan fold emitted deep + kept-shallow — all raw-free on the wire.
+    const foldBatch = emitted.find((batch) => batch.length === 2)
+    expect(foldBatch).toBeDefined()
+    expect(foldBatch?.every((raw) => raw === undefined)).toBe(true)
+  })
+})
+
 describe('AgentAssetRuntime.applyFileChange (GH-113 I1)', () => {
   it('replaces only the changed file’s assets and recomputes stats', async () => {
     const runtime = await readyRuntime([
