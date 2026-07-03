@@ -16,20 +16,23 @@
   - verify: 不适用 (单测钉时序); dev 实例验收项归 verify 阶段
   - **偏差 1 (方案内澄清)**: `ensureReady` 的 initial 阻塞路径 (首次建索引) 改为 join in-flight 扫描而非入队 — 否则 UI 派生读风暴在启动扫描后触发冗余第二次全量扫描 (被 incremental-watch.e2e 抓住, id 抖动)。SWR stale 路径本有 state 门控不受影响。已补钉单测。
   - **偏差 2 (旧语义测试更新)**: 两条钉 "join in-flight" 旧语义的既有测试 (`reuses an in-flight scan` / GH-111 R4 discard) 更新为钉新排队语义 — join 捷径正是 rebuild 死区的机制本身; R4 无 clobber 不变量保持并加强断言 (scannerB 结果)。
-- [ ] S5 (A4): SnapshotStore `replaceBySourceKey` 契约 + sqlite 行级实现 + `applyFileChange` 持久化改增量 (降级 save)
-  - tests: `sqlite-snapshot-store.test.ts` — 单键替换其余行原样 / 空数组删除 / envelope 更新 / raw 剥离; `agent-asset-runtime.test.ts` — applyFileChange 走增量、缺方法降级
+- [x] S5 (A4): SnapshotStore `replaceBySourceKey` 契约 + sqlite 行级实现 + `applyFileChange` 持久化改增量 (降级 save) (commit 103d4175)
+  - tests: `sqlite-snapshot-store.test.ts` 单键替换/空删除/envelope/raw 剥离 + `agent-asset-runtime.test.ts` 增量与降级 — 先红后绿 69/69
   - verify: 不适用; 目标测试绿
-- [ ] S6 (A5): `getLeanSnapshot` (selectorCache 复用) + 两 partial emit 点剥 raw + handlers snapshot 类返回改 lean (`assets:get` 不动)
-  - tests: `agent-asset-runtime.test.ts` — lean 无 raw / 缓存复用 / partial 无 raw / getAsset 保留 raw
-  - verify: 不适用; 目标测试绿 + 全量 test 确认渲染层无回归
-- [ ] S7 (A5): `trailing-coalescer.ts` (engine 新文件) + `index.ts` assets:changed 广播接入 (250ms trailing, applyWatchEvent 逐事件不变)
-  - tests: `trailing-coalescer.test.ts` (新) — 窗口合并 latest-wins / 窗口外直发 / dispose 清理
-  - verify: 不适用 (index.ts 接入为装配层, 由 verify 阶段 dev 实例 CDP 观察事件频率)
-- [ ] S8 (A6): setProjectDir 缓存命中新鲜度 TTL (5min) — 陈旧标 stale 继承字段, ensureReady SWR 接手
-  - tests: `agent-asset-runtime.test.ts` — 陈旧缓存命中 → stale + 派生读 kick 背景刷新; 新鲜命中 → ready 不刷; `project-scope-runtime.test.ts` 回归
+  - 备注: 传入行取 post-merge 资产 (mergeSharedConventions 只折叠同文件), 与内存替换语义精确一致; INSERT OR REPLACE 兜 id 冲突边缘
+- [x] S6 (A5): `getLeanSnapshot` + `getScanResult` lean 化 + 两 partial emit 点剥 raw + `assets:snapshot` handler 改 lean (`assets:get` 不动) (commit 51fd8022)
+  - tests: `agent-asset-runtime.test.ts` 4 条 (lean/getAsset 保 raw/两 emit 点) — 先红后绿; 全量 1331 绿
+  - verify: 不适用; 全量 test 确认渲染层无回归
+  - **偏差 (方案内)**: 不用 selectorCache 缓存 lean 投影 — applyPartial 在稳定 snapshot.id 下变更资产, id 键缓存会 mid-scan 陈旧; 改为每调用 map (stripRaw 对无 raw 资产恒等, 代价远小于其替代的结构化克隆)
+- [x] S7 (A5): `trailing-coalescer.ts` (engine 新文件, leading+trailing 250ms) + `index.ts` assets:changed 广播接入 (applyWatchEvent 逐事件不变) (commit 1cb98eab)
+  - tests: `trailing-coalescer.test.ts` 4 条 (leading 即时/突发折叠 latest-wins/风暴限频/dispose); incremental-watch e2e 实证真实 chokidar 路径
+  - verify: dev 实例 CDP 事件频率观察归 4.0-verify
+  - 备注: 采用 leading+trailing 而非纯 trailing — 单文件编辑即时送达, 突发仍有界 (≤1+N/250ms)
+- [x] S8 (A6): setProjectDir 缓存命中新鲜度 TTL (5min) — 陈旧标 stale, ensureReady SWR 接手
+  - tests: `agent-asset-runtime.test.ts` 2 条 (陈旧→stale+派生读 kick; 新鲜→ready 不刷) — 先红后绿; project-scope-runtime/project-snapshot-cache 回归绿
   - verify: 不适用; 目标测试绿
-- [ ] 收口: 全局门禁 `pnpm typecheck && pnpm lint && pnpm test && pnpm harness:check` + 推送 + CI 旁路
-  - tests: 全量
+- [ ] 收口: 全局门禁 + 推送 + CI 旁路
+  - tests: 全量 typecheck/lint/test 已绿 (185 文件 1337 测试); 受影响 e2e x5 (project-scope/global-shallow-scope/scan-control/incremental-watch/snapshot-persistence) 全绿
   - verify: dev 实例真跑数据流验收 (归 4.0-verify): 扫描中重建闭环 / changed 事件频率有界 / 项目切换 SWR 可见
 
 ## verify 回写

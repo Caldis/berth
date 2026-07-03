@@ -99,6 +99,15 @@ interface ScheduledRefreshState {
  * bounded so the persisted blob stays small. Oldest entries roll off. */
 const SCAN_HISTORY_LIMIT = 50
 
+/** How long a cached project snapshot counts as fresh on switch-back (GH-151 S8).
+ * The watcher only covers the ACTIVE project, so an inactive project's cache
+ * entry just ages. Inside the window the entry serves as ready (rapid A↔B
+ * switching stays rescan-free); past it the entry still serves instantly but is
+ * marked stale so ensureReady's SWR kicks a background refresh — previously the
+ * hit was forced ready/stale:false unconditionally and never revalidated until
+ * the 24h periodic scan. */
+const PROJECT_CACHE_FRESH_MS = 5 * 60_000
+
 const EMPTY_ASSET_STATS: AssetStats = {
   skills: 0,
   mcpServers: 0,
@@ -352,6 +361,13 @@ export class AgentAssetRuntime {
     return this.snapshotCache.has(projectDir)
   }
 
+  private isCacheEntryFresh(lastCompletedAt: string | undefined): boolean {
+    if (!lastCompletedAt) return false
+    const completed = Date.parse(lastCompletedAt)
+    if (Number.isNaN(completed)) return false
+    return Date.parse(this.now()) - completed < PROJECT_CACHE_FRESH_MS
+  }
+
   setProjectDir(projectDir?: string): void {
     if (this.projectDir === projectDir) return
 
@@ -367,7 +383,12 @@ export class AgentAssetRuntime {
     if (cached) {
       this.snapshot = cached
       this.assetMap = new Map(cached.assets.map((asset) => [asset.id, asset]))
-      this.status = { ...cached.status, projectDir, state: 'ready', stale: false }
+      // GH-151 S8: only a recently-scanned entry counts as fresh; an aged one
+      // (cold-start restore, or aged while another project was active) is served
+      // but marked stale so the SWR machinery revalidates it in the background.
+      this.status = this.isCacheEntryFresh(cached.status.lastCompletedAt)
+        ? { ...cached.status, projectDir, state: 'ready', stale: false }
+        : { ...cached.status, projectDir, state: 'stale', stale: true }
       return
     }
 

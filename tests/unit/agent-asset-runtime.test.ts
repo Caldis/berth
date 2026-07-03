@@ -1240,6 +1240,58 @@ describe('AgentAssetRuntime refresh queueing (GH-151 S4)', () => {
   })
 })
 
+describe('project switch cache freshness (GH-151 S8)', () => {
+  function timedRuntime(scanner: AssetRuntimeScanner, now: () => string): AgentAssetRuntime {
+    let idIndex = 0
+    return new AgentAssetRuntime({
+      projectDir: '/repo/berth',
+      createScanner: () => scanner,
+      now,
+      createSnapshotId: () => `snapshot-${++idIndex}`
+    })
+  }
+
+  it('serves an aged cache entry instantly but stale — the next derived read kicks SWR', async () => {
+    // Pre-fix: switch-back forced ready/stale:false unconditionally, so a cache
+    // entry from a previous run (or aged while the watcher covered another
+    // project) was presented as fresh and NEVER revalidated until the 24h scan.
+    let nowIso = '2026-06-07T00:00:00.000Z'
+    const scanner = createScanner({ assets: [sessionAsset('s1')], stats: { ...emptyStats, sessions: 1 }, errors: [] })
+    const runtime = timedRuntime(scanner, () => nowIso)
+    await runtime.refresh({ reason: 'startup', wait: true }) // cache '/repo/berth' @ 00:00
+
+    runtime.setProjectDir('/other')
+    nowIso = '2026-06-07T00:10:00.000Z' // entry is now 10min old — past the 5min TTL
+    runtime.setProjectDir('/repo/berth')
+
+    // Instant serve (sub-second switching preserved) but truthful staleness.
+    expect(runtime.getSnapshot().assets.map((a) => a.id)).toEqual(['s1'])
+    expect(runtime.getStatus().state).toBe('stale')
+    expect(runtime.getStatus().stale).toBe(true)
+
+    // SWR: the very next derived read (project-scope activation reads candidates)
+    // kicks a background refresh.
+    await runtime.listSessions({})
+    expect(scanner.scanAll).toHaveBeenCalledTimes(2)
+  })
+
+  it('keeps a recently-scanned cache entry ready — no rescan churn on rapid A↔B switching', async () => {
+    let nowIso = '2026-06-07T00:00:00.000Z'
+    const scanner = createScanner({ assets: [sessionAsset('s1')], stats: { ...emptyStats, sessions: 1 }, errors: [] })
+    const runtime = timedRuntime(scanner, () => nowIso)
+    await runtime.refresh({ reason: 'startup', wait: true })
+
+    runtime.setProjectDir('/other')
+    nowIso = '2026-06-07T00:01:00.000Z' // 1min — inside the freshness TTL
+    runtime.setProjectDir('/repo/berth')
+
+    expect(runtime.getStatus().state).toBe('ready')
+    expect(runtime.getStatus().stale).toBe(false)
+    await runtime.listSessions({})
+    expect(scanner.scanAll).toHaveBeenCalledTimes(1) // no redundant rescan
+  })
+})
+
 describe('lean IPC projections (GH-151 S6)', () => {
   const rawful = (id: string, sourceKey: string): Asset => ({ ...fileAsset(id, sourceKey), raw: 'A HUGE RAW BODY' })
 
