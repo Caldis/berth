@@ -97,6 +97,43 @@ describe('ScanHelperHost (GH-135)', () => {
     await expect(result).rejects.toThrow('scan blew up')
   })
 
+  it('rejects when the child exits before ever spawning (GH-151 S2)', async () => {
+    // utilityProcess can die without a 'spawn' event (missing helper script,
+    // resource exhaustion). Pre-fix the spawn promise never settled and the scan
+    // hung forever with no cancel escape.
+    const child = new FakeChild()
+    const host = new ScanHelperHost({ createChild: () => asChild(child) })
+
+    const r = host.runScan({ projectDir: '/a' })
+    child.emit('exit', 127) // no 'spawn' ever
+
+    await expect(r).rejects.toThrow(/exited/)
+  })
+
+  it('kills a wedged helper after the inactivity window, messages reset it (GH-151 S2)', async () => {
+    vi.useFakeTimers()
+    try {
+      const child = new FakeChild()
+      const host = new ScanHelperHost({ createChild: () => asChild(child), inactivityTimeoutMs: 1000 })
+
+      const r = host.runScan({ projectDir: '/a' })
+      child.emit('spawn')
+      await vi.advanceTimersByTimeAsync(999)
+
+      // A message inside the window resets the watchdog — slow-but-alive scans
+      // must not be killed.
+      child.send({ type: 'progress', progress: { phase: 'parsing', current: 1, total: 9, label: 'x' } })
+      await vi.advanceTimersByTimeAsync(999)
+      expect(child.kill).not.toHaveBeenCalled()
+
+      await vi.advanceTimersByTimeAsync(2)
+      expect(child.kill).toHaveBeenCalled()
+      await expect(r).rejects.toThrow(/no message/)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
   it('rejects on premature exit and respawns on the next scan', async () => {
     const child1 = new FakeChild()
     const child2 = new FakeChild()

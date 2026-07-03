@@ -23,7 +23,17 @@ export interface ScanHelperHostOptions {
   osThrottle?: boolean
   /** Injectable throttle hook (tests). Default runs taskpolicy/ionice via execFile. */
   applyThrottle?: (pid: number) => void
+  /** Inactivity watchdog (GH-151 S2): a scan whose helper sends no message for
+   * this long is presumed wedged (hung fs on a dead mount, AV-locked file) and
+   * gets killed so the pipeline stays recoverable. 0 disables. */
+  inactivityTimeoutMs?: number
 }
+
+/** Default no-message window before a scan is presumed wedged (GH-151 S2).
+ * Progress ticks flow continuously during a healthy scan, so two minutes of
+ * total silence means the child is stuck, not slow. Internal constant on
+ * purpose — not a user-facing setting. */
+const SCAN_INACTIVITY_TIMEOUT_MS = 120_000
 
 /**
  * Manages a single long-lived utilityProcess scan helper (GH-135). Unlike the
@@ -40,11 +50,13 @@ export class ScanHelperHost {
   private readonly createChild: () => UtilityProcess
   private readonly osThrottle: boolean
   private readonly applyThrottle: (pid: number) => void
+  private readonly inactivityTimeoutMs: number
 
   constructor(options: ScanHelperHostOptions = {}) {
     this.helperPath = options.helperPath ?? path.join(__dirname, 'scan-helper.js')
     this.osThrottle = options.osThrottle ?? true
     this.applyThrottle = options.applyThrottle ?? defaultApplyThrottle
+    this.inactivityTimeoutMs = options.inactivityTimeoutMs ?? SCAN_INACTIVITY_TIMEOUT_MS
     // No execArgv: utilityProcess routes it through NODE_OPTIONS, which Electron
     // rejects ("Most NODE_OPTIONs are not supported"). Process isolation already
     // separates the helper's V8 heap from main without it.
@@ -68,13 +80,23 @@ export class ScanHelperHost {
     if (this.child && this.spawnPromise) return { child: this.child, ready: this.spawnPromise }
     const child = this.createChild()
     this.child = child
-    this.spawnPromise = new Promise<void>((resolve) => {
+    this.spawnPromise = new Promise<void>((resolve, reject) => {
       child.once('spawn', () => {
         // GH-135 C2: lower the helper's OS scheduling priority once it has a pid.
         if (this.osThrottle && typeof child.pid === 'number') this.applyThrottle(child.pid)
         resolve()
       })
+      // GH-151 S2: utilityProcess can exit without ever spawning (missing helper
+      // script, resource exhaustion). Reject so runScan fails instead of hanging
+      // forever on `await ready`. Post-spawn exits hit an already-resolved
+      // promise — a no-op.
+      child.once('exit', (code) => {
+        reject(new Error(`Asset scan helper exited before spawn (code ${String(code)})`))
+      })
     })
+    // A pre-spawn exit with no scan awaiting must not surface as an unhandled
+    // rejection; runScan awaiters attach their own handlers.
+    this.spawnPromise.catch(() => undefined)
     child.once('exit', () => {
       // Long-lived child died (crash/kill); drop it so the next scan respawns.
       if (this.child === child) {
@@ -85,15 +107,35 @@ export class ScanHelperHost {
     return { child, ready: this.spawnPromise }
   }
 
-  async runScan(data: AssetWorkerData, options: AssetRuntimeScanOptions = {}): Promise<AssetWorkerScanPayload> {
+  runScan(data: AssetWorkerData, options: AssetRuntimeScanOptions = {}): Promise<AssetWorkerScanPayload> {
     const { child, ready } = this.ensure()
-    await ready
 
     return new Promise<AssetWorkerScanPayload>((resolve, reject) => {
       let settled = false
+      let watchdog: ReturnType<typeof setTimeout> | null = null
+      const clearWatchdog = (): void => {
+        if (watchdog) clearTimeout(watchdog)
+        watchdog = null
+      }
+      // GH-151 S2: any message resets the window; total silence past it means the
+      // child is alive but wedged (hung fs on a dead mount, AV-locked file) — the
+      // only failure mode done/error/exit can't cover. Kill so inFlight settles
+      // and the pipeline stays recoverable.
+      const armWatchdog = (): void => {
+        clearWatchdog()
+        if (this.inactivityTimeoutMs <= 0) return
+        watchdog = setTimeout(() => {
+          if (this.child === child) this.kill()
+          else child.kill()
+          finish(() =>
+            reject(new Error(`Asset scan helper sent no message for ${String(this.inactivityTimeoutMs)}ms; killed as wedged`))
+          )
+        }, this.inactivityTimeoutMs)
+      }
       const cleanup = (): void => {
         child.removeListener('message', onMessage)
         child.removeListener('exit', onExit)
+        clearWatchdog()
       }
       const finish = (fn: () => void): void => {
         if (settled) return
@@ -102,6 +144,7 @@ export class ScanHelperHost {
         fn()
       }
       const onMessage = (message: AssetWorkerMessage): void => {
+        armWatchdog()
         if (message.type === 'progress') {
           options.onProgress?.(message.progress)
           return
@@ -122,10 +165,20 @@ export class ScanHelperHost {
         finish(() => reject(new Error(`Asset scan helper exited with code ${String(code)}`)))
       }
 
+      // Listeners + watchdog are registered BEFORE awaiting spawn so the wait for
+      // 'spawn' itself is covered — a child that neither spawns nor exits can no
+      // longer pin the scan forever (GH-151 S2).
       child.on('message', onMessage)
       child.on('exit', onExit)
-      // utilityProcess has no workerData — the scan input rides the first message.
-      child.postMessage({ type: 'scan', data })
+      armWatchdog()
+      ready.then(
+        () => {
+          if (settled) return
+          // utilityProcess has no workerData — the scan input rides the first message.
+          child.postMessage({ type: 'scan', data })
+        },
+        (error) => finish(() => reject(error instanceof Error ? error : new Error(String(error))))
+      )
     })
   }
 }
