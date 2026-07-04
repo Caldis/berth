@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { Asset, AssetStats } from '@shared/types/asset'
-import type { AgentScanSourceGroup, AssetScanProgress, AssetSnapshot, ScanHistoryEntry, ScanResult } from '@shared/types/ipc'
+import type { AgentScanSourceGroup, AssetScanPartial, AssetScanProgress, AssetSnapshot, ScanHistoryEntry, ScanResult } from '@shared/types/ipc'
 import { AgentAssetRuntime, type AssetRuntimeScanner } from '@berth/scan-engine/engine/assets/runtime'
 import { createProjectScopeCandidate, normalizeProjectPathKey } from '@shared/scope'
 import { runHealthChecks } from '@berth/scan-engine/engine/health'
@@ -1480,5 +1480,101 @@ describe('AgentAssetRuntime.applyFileChange (GH-113 I1)', () => {
     expect(store.save).not.toHaveBeenCalled()
     expect(partials).toHaveLength(0)
     expect(runtime.getSnapshot().assets.map((x) => x.id)).toEqual(['a'])
+  })
+})
+
+describe('mid-scan sourceKey retention (GH-155 W3)', () => {
+  function capturingScanner(deferred: { promise: Promise<ScanResult> }): {
+    scanner: AssetRuntimeScanner
+    emitPartial: (partial: AssetScanPartial) => void
+  } {
+    let onPartial: ((partial: AssetScanPartial) => void) | undefined
+    return {
+      scanner: {
+        scanAll: vi.fn((options?: { onPartial?: (p: AssetScanPartial) => void }) => {
+          onPartial = options?.onPartial
+          return deferred.promise
+        }),
+        getScanSourceGroups: vi.fn(async () => []),
+        getProjectScopeCandidates: vi.fn(() => []),
+        getProjectDir: () => '/repo/berth'
+      },
+      emitPartial: (partial) => onPartial?.(partial)
+    }
+  }
+
+  it('a partial landing after a mid-scan fold keeps the folded rows, and so does commit', async () => {
+    const deferred = createDeferred<ScanResult>()
+    const { scanner, emitPartial } = capturingScanner(deferred)
+    const runtime = createRuntime(scanner)
+    const refresh = runtime.refresh({ wait: true })
+
+    // Watcher folds a file that landed AFTER the scan enumerated the disk …
+    runtime.applyFileChange('key-live', [fileAsset('skill-live', 'key-live')])
+    // … then the scanner streams a cumulative partial without it (t0 read).
+    emitPartial({ assets: [sessionAsset('session-1')], stats: emptyStats, errorCount: 0 })
+
+    const midScan = runtime.getSnapshot().assets.map((a) => a.id)
+    expect(midScan).toContain('skill-live') // pre-fix: wholesale replace dropped it
+    expect(midScan).toContain('session-1')
+
+    deferred.resolve({ assets: [sessionAsset('session-1')], stats: emptyStats, errors: [] })
+    await refresh
+    const committed = runtime.getSnapshot().assets.map((a) => a.id)
+    expect(committed).toContain('skill-live') // commitScan retention (同族窗口)
+    expect(committed).toContain('session-1')
+  })
+
+  it('a mid-scan deletion wins over the scan’s stale t0 rows at commit', async () => {
+    const second = createDeferred<ScanResult>()
+    const scanAll = vi.fn()
+      .mockImplementationOnce(async () => ({ assets: [fileAsset('doomed', 'key-gone')], stats: emptyStats, errors: [] }))
+      .mockImplementationOnce(() => second.promise)
+    const scanner: AssetRuntimeScanner = {
+      scanAll,
+      getScanSourceGroups: vi.fn(async () => []),
+      getProjectScopeCandidates: vi.fn(() => []),
+      getProjectDir: () => '/repo/berth'
+    }
+    const runtime = createRuntime(scanner)
+    await runtime.refresh({ wait: true })
+    expect(runtime.getSnapshot().assets.map((a) => a.id)).toContain('doomed')
+
+    const refresh2 = runtime.refresh({ wait: true })
+    runtime.applyFileChange('key-gone', []) // file deleted mid-scan
+    second.resolve({ assets: [fileAsset('doomed', 'key-gone')], stats: emptyStats, errors: [] })
+    await refresh2
+    expect(runtime.getSnapshot().assets.map((a) => a.id)).not.toContain('doomed')
+  })
+
+  it('folds outside a scan do not accumulate — the next scan’s own rows win', async () => {
+    const runtime = await readyRuntime([fileAsset('a', 'key-a')])
+    runtime.applyFileChange('key-a', [fileAsset('a-live', 'key-a')]) // not scanning
+    await runtime.refresh({ reason: 'manual', wait: true })
+    const ids = runtime.getSnapshot().assets.map((a) => a.id)
+    expect(ids).toContain('a') // scan truth wins outside the mid-scan window
+    expect(ids).not.toContain('a-live')
+  })
+
+  it('cancel clears the retention set — the next commit is pure scan truth', async () => {
+    const first = createDeferred<ScanResult>()
+    const scanAll = vi.fn()
+      .mockImplementationOnce(() => first.promise)
+      .mockImplementation(async () => ({ assets: [], stats: emptyStats, errors: [] }))
+    const scanner: AssetRuntimeScanner = {
+      scanAll,
+      getScanSourceGroups: vi.fn(async () => []),
+      getProjectScopeCandidates: vi.fn(() => []),
+      getProjectDir: () => '/repo/berth'
+    }
+    const runtime = createRuntime(scanner)
+    const r1 = runtime.refresh({ wait: true })
+    runtime.applyFileChange('key-live', [fileAsset('skill-live', 'key-live')])
+    runtime.cancel()
+    first.resolve({ assets: [], stats: emptyStats, errors: [] }) // late tick, dropped
+    await r1
+
+    await runtime.refresh({ reason: 'manual', wait: true })
+    expect(runtime.getSnapshot().assets.map((a) => a.id)).not.toContain('skill-live')
   })
 })

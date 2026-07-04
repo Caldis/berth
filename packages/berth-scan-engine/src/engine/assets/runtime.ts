@@ -158,6 +158,10 @@ export class AgentAssetRuntime {
   private readonly powerMonitor?: PowerMonitorLike
   private periodicTimer: ReturnType<typeof setTimeout> | null = null
   private nextPeriodicScanAtMs: number | undefined
+  // GH-155 W3: sourceKeys the watcher folded while a scan was in flight. The scan
+  // stream read those files at t0, so its partial/commit rows for these keys are
+  // stale — retention swaps them for the live snapshot's rows until the scan ends.
+  private readonly midScanSourceKeys = new Set<string>()
 
   constructor(options: AssetRuntimeOptions = {}) {
     this.projectDir = options.projectDir
@@ -479,6 +483,8 @@ export class AgentAssetRuntime {
     // so run.finally's flush doesn't immediately restart what the user stopped.
     // rebuild() re-queues AFTER this, so its rescan survives.
     this.dropPendingRefresh()
+    // GH-155 W3: the retention window closes with the scan it protected against.
+    this.midScanSourceKeys.clear()
     this.status = { ...this.status, state: 'stale', stale: true }
     this.snapshot = { ...this.snapshot, status: this.status }
     this.progressListener?.({ status: this.status })
@@ -721,6 +727,12 @@ export class AgentAssetRuntime {
   }
 
   private commitScan(reason: AssetScanReason, outcome: ScanOutcome): void {
+    // GH-155 W3: the committed enumeration read files at scan time; keys the
+    // watcher folded during the scan are fresher and replace the scan's rows
+    // (deletion included). The window closes with the scan.
+    const assets = this.retainMidScanFolds(outcome.scanResult.assets)
+    const stats = assets === outcome.scanResult.assets ? outcome.scanResult.stats : computeAssetStats(assets)
+    this.midScanSourceKeys.clear()
     const projectDir = outcome.projectDir ?? this.projectDir
     const status: AssetRuntimeStatus = {
       state: 'ready',
@@ -740,25 +752,25 @@ export class AgentAssetRuntime {
     this.snapshot = {
       id: this.createSnapshotId(),
       projectDir,
-      assets: outcome.scanResult.assets,
-      stats: outcome.scanResult.stats,
+      assets,
+      stats,
       errors: outcome.scanResult.errors,
       sources: outcome.sources,
       projectCandidates: outcome.projectCandidates,
       status
     }
-    this.setStableCounts(outcome.scanResult.assets)
+    this.setStableCounts(assets)
     this.recordScanHistory({
       reason,
       durationMs: this.lastScanDurationMs ?? 0,
-      assetCount: outcome.scanResult.assets.length,
-      fileCount: countIndexedFiles(outcome.scanResult.assets),
+      assetCount: assets.length,
+      fileCount: countIndexedFiles(assets),
       errorCount: outcome.scanResult.errors.length,
       ok: true,
       projectDir,
       sourceCount: outcome.sources.length
     })
-    this.assetMap = new Map(outcome.scanResult.assets.map((asset) => [asset.id, asset]))
+    this.assetMap = new Map(assets.map((asset) => [asset.id, asset]))
     this.snapshotCache.set(projectDir, this.snapshot)
     this.selectorCache.clear()
     this.persistIfDefaultView(projectDir)
@@ -770,6 +782,9 @@ export class AgentAssetRuntime {
   }
 
   private failScan(reason: AssetScanReason, error: unknown): void {
+    // GH-155 W3: the failed scan's retention window closes with it; the folded
+    // rows themselves already live in the snapshot.
+    this.midScanSourceKeys.clear()
     // The stack was already logged at the coordinator (the single failure sink);
     // here only the state transition remains.
     this.status = {
@@ -959,7 +974,9 @@ export class AgentAssetRuntime {
     // render-ready — GUI stays a pure projection with no fold logic (GH-135 方案 X).
     // The scanner streams deep-only partials (shallow lands in the final snapshot),
     // so mid-scan we keep the previous shallow set until a partial carries its own.
-    const assets = foldKeepingShallow(partial.assets, this.snapshot.assets)
+    // GH-155 W3: then swap in any rows the watcher folded DURING this scan — the
+    // partial was enumerated at t0 and would otherwise clobber fresher increments.
+    const assets = this.retainMidScanFolds(foldKeepingShallow(partial.assets, this.snapshot.assets))
     const stats = assets === partial.assets ? partial.stats : computeAssetStats(assets)
     this.snapshot = {
       ...this.snapshot,
@@ -990,6 +1007,12 @@ export class AgentAssetRuntime {
     // The file had no assets before and produces none now → nothing changed.
     if (retained.length === this.snapshot.assets.length && derivedAssets.length === 0) return
 
+    // GH-155 W3: a fold landing while a scan is in flight is FRESHER than the
+    // scan's t0 disk read — remember the key so applyPartial/commitScan keep the
+    // folded rows (an empty fold = deletion, which must also win) instead of
+    // clobbering them with the stale stream.
+    if (this.coordinator.isScanning()) this.midScanSourceKeys.add(sourceKey)
+
     const merged = mergeSharedConventions([...retained, ...derivedAssets])
     const stats = computeAssetStats(merged)
     this.snapshot = { ...this.snapshot, assets: merged, stats }
@@ -999,6 +1022,25 @@ export class AgentAssetRuntime {
     this.persistFileChange(sourceKey)
     // Emit lean (GH-151 S6) — derived assets carry freshly-parsed raw bodies.
     this.progressListener?.({ status: this.status, partial: { assets: merged.map(stripRaw), stats } })
+  }
+
+  /** GH-155 W3: swap scan-stream rows for keys the watcher folded mid-scan — the
+   * live snapshot's rows for those keys are fresher than the scan's t0 read. A
+   * key whose current rows are gone (deletion fold) simply contributes nothing,
+   * so deletion wins too. Identity-preserving when the window is empty. */
+  private retainMidScanFolds(incoming: Asset[]): Asset[] {
+    if (this.midScanSourceKeys.size === 0) return incoming
+    const keys = this.midScanSourceKeys
+    const retained = this.snapshot.assets.filter((asset) => {
+      const key = assetSourceKey(asset)
+      return key !== undefined && keys.has(key)
+    })
+    const rest = incoming.filter((asset) => {
+      const key = assetSourceKey(asset)
+      return key === undefined || !keys.has(key)
+    })
+    if (retained.length === 0 && rest.length === incoming.length) return incoming
+    return [...rest, ...retained]
   }
 
   /** Persist one file's change (GH-151 S5): row-level replacement when the store
