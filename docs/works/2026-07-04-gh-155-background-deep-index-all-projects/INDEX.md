@@ -24,20 +24,28 @@ debt:
     confidence: medium
     rationale: "explore 校准: 影响面实测锚定 (runtime 三方写并发 / IPC 扩字段 / per-project deep 原语 / SQLite gate 旁路), 均在初估 blast radius 内; net=6 维持。"
   final:
-    incurred:
-    repaid:
-    net:
-    scope:
-    risk:
-    areas: []
-    confidence:
-    rationale:
+    incurred: 7
+    repaid: 1
+    net: 6
+    scope: cross-process
+    risk: medium
+    areas:
+      - architecture
+      - performance
+      - ui-ux
+    confidence: high
+    rationale: "verify 后校准: 新增队列/深扫原语/协议/写路径/banner (incurred 7, 含 T9/T10 并发修正); 顺带修复既有 mid-scan clobber BUG (repaid 1)。risk high→medium: 三方写并发由 W2/W3 + 双轴评审 (1 BLOCKER 2 MAJOR 已修) + 39 项新单测 + 7 项 e2e + 两轮 CDP 真机时序钉住。"
   revisions:
     - phase: explore
       date: 2026-07-04
       from: "net=6 confidence=low"
       to: "net=6 confidence=medium"
       reason: "三路 explore 实测锚定影响面; 估算值不变, 置信度提升。"
+    - phase: verify
+      date: 2026-07-05
+      from: "estimate net=6 risk=high"
+      to: "final net=6 (incurred 7 / repaid 1) risk=medium confidence=high"
+      reason: "T9/T10 并发修正略增 incurred; 顺带修复 mid-scan clobber BUG 计 repaid; 全链验证后 risk 降档。"
 issue:
   number: 155
   repo: Caldis/berth

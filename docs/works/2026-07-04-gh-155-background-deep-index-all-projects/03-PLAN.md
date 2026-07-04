@@ -54,3 +54,13 @@ verify 不通过项作为新任务追加于此, phase 退回 implement。
   - tests: not needed - 纯文档立据
   - verify: harness:check 绿
 
+## verify 最终证据 (2026-07-05)
+
+- **T10 追加发现 (B1-e2e 连锁)**: 新 e2e 重扫断言先红 — `applyPartial` 的 `foldKeepingShallow` 只保 shallow, deep 行在 commit 前被冲掉致 graft 无源 (单测 fake scanner 不发 partial 故未暴露); fold 扩展为同保 deep 行, 单测复刻真 partial 链路钉住。
+- 机械门禁 (最终树 @ 28582516): lint / typecheck / 根 1428 + engine 130 单测 / harness:check 全绿; e2e 7 项全绿 (deep-index 含 B1 重扫存活断言 / incremental-watch id 稳定 / project-scope / global-shallow / scan-control / snapshot-persistence)。
+- **CDP 时序验收 (A8/A11, 真机 27 候选, 冷启即连)**: 第一轮暴露 T9 livelock (N 冻结 5/27); 修复后两轮复测 — N 单调 5→6→8→14→21→27 与 5→6→8→18→26→27, banner 全程 "已索引 N/M 个项目 / 结果逐步补全中" (截图 banner-indexing.png), done 即消失, done→revalidating 静默且 **N 不回落** (graft 真机生效); 前台交互 (状态拉取/设置写) 全程无阻塞。
+- **双轴评审**: Spec 轴 A1-A12 无阻断偏差 (2 PARTIAL 均由 CDP/门禁补齐); Standards 轴 1 BLOCKER + 2 MAJOR + 3 MINOR 全修 (T10), 3 长尾接受立据 (T11)。
+- CI: 旧 SHA ab724b83 (T1-T8) 三平台 success; 最终 SHA 28582516 (T9-T11) 旁路等待中, archive 前消费。
+- Project 门禁: fields 同步后 strict check 无 gh-155 漂移 (GH-150 两条漂移属另一 session 任务, 不越界)。
+- 视觉验收: 用户已授权全程自主 — 按 SPEC 界面条目自验 (banner 文档流内不遮挡、NoticePanel 一致性、双语文案、低频订阅), 截图存档 scratchpad。
+
