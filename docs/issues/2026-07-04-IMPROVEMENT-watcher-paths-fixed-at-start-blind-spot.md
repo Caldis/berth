@@ -14,6 +14,11 @@
 - 周期性 (如每次周期扫描后) 重评估 watch 集合, 增量补挂新出现的根。
 - 注意与 `restart` (项目切换) 的生命周期交互, 以及 chokidar 对不存在路径的行为差异。
 
+## GH-155 追记 (2026-07-04, deep-index design 裁决 Q2: 不入批)
+
+- 裁决理由: 把全部 deep 项目挂进 chokidar watch 集 = 数百根句柄资源不可控, 且与 active-only watch 生命周期 (activate 触发 restart) 冲突; 时效由队列 revalidation + 24h 周期扫兜底, 符合产品决策①「渐进, 不承诺时限」。
+- **新观察面**: GH-155 落地后, 非活动项目被后台 deep-index 进 [全局], 但其文件树**仍不在 live watch 集** — deep 行的变更 (增/删/改) 要等下一次全量扫 commit 后的队列 revalidation 轮才反映。修复本 issue 时 (周期扫描后重评估 watch 集), deep-indexed 项目根是天然的增量补挂候选清单 (`snapshot.projectCandidates` 已含)。
+
 ## 来源
 
 2026-07-04 综合审查健壮性发现 #12 (低危); GH-152 explore 阶段按不变量 10 建档, 不入该批 (`docs/works/_archive/2026-07-04-gh-152-audit-p2-engine-robustness/01-ANALYSIS.md` 交叉引用)。

@@ -1,6 +1,10 @@
 # BUG: 全量扫描的 mid-scan partial 会瞬时压掉扫描期间落地的增量折叠
 
-状态: OPEN (中优, 非阻塞 — GH-151 S4 后有最终一致性兜底, 仅剩瞬态可见性问题)
+状态: RESOLVED (2026-07-04, GH-155 T3 @ commit 9a487e3c)
+
+## 解决 (2026-07-04, GH-155 design 裁决 Q1 入批)
+
+按下方「修复方向」首选方案落地: `AgentAssetRuntime` 记录扫描期间 `applyFileChange` 的 `midScanSourceKeys` 集合, `applyPartial`/`commitScan` 对集合内 key 用当前快照行替换扫描流的 t0 旧行 (空折叠 = 删除同样胜出); 窗口随 commit/fail/cancel 关闭, 扫描外折叠不入集合 (下一轮扫描以磁盘真值为准)。后台队列提交 (GH-155 W1) 发生在扫描中时同样并入该保留窗。单测 4 项钉住 (partial 回吐 / commit 回滚 / 删除赢 / cancel 清窗), 见 `tests/unit/agent-asset-runtime.test.ts` "mid-scan sourceKey retention"。入批理由: backgroundIndexQueue 把单扫瞬态覆盖窗口乘以 M 个项目, 不修则 GH-155 自己放大此 bug。
 
 ## 现象 (真机时序实测, GH-151 verify 阶段观察)
 

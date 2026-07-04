@@ -74,6 +74,17 @@ GH-135 (`docs/works/_archive/2026-06-15-gh-135-index-progress-visibility/`) 完�
 - 关联新旁支: [[2026-07-04-IMPROVEMENT-watcher-paths-fixed-at-start-blind-spot]] (watch 路径集启动定死, 新出现的条件路径监听盲区 — deep-index 设计时一并考虑)。
 - **主线剩余唯一大块 = 后台 deep-index 全部项目** (使 [全局] 真完整), 设计已 scope (Option C), **唯一阻塞 = 三个产品决策**: ① 全局完整性 SLA (eventual consistency 可接受窗口), ④ 队列顺序策略, ⑤ 进度可见性形态。决策定了即可落地。
 
+# 进展 (2026-07-05, GH-155 — deep-index 全部项目落地)
+
+主线最大剩余块已交付 (`docs/works/2026-07-04-gh-155-background-deep-index-all-projects/`, T1-T7 全绿):
+- **backgroundIndexQueue** (`engine/assets/background-index-queue.ts`): 启动/每次全量扫 commit 后从 `snapshot.projectCandidates` 入队, **最近活跃优先** (决策④); 前台让位 (coordinator 忙不出队 + refresh 入口 preempt kill 在途后台扫) + 复用 idleOnly/acOnly 门控与 pause/resume (决策①⑤); 一轮完成即静默, 全量扫 commit 后 revalidation 轮兜 graft 过期。
+- **per-project deep 原语** `engine/project-deep-scan.ts`: shallow 源全集 + config-root 链 (session cwd 叶子→repo 根) + 嵌套 `**/CLAUDE.md` (ignore-aware); CPU 落长驻 helper 新 `scan-project-deep` 命令 (host 请求互斥串行)。
+- **写路径**: `applyBackgroundProjectResult` 行级折叠 (snapshot.id 稳定, 无 selector 风暴) + `replaceBySourceKey` 增量持久化 (default-view envelope); `commitScan` graft 保 deep 行不被全量扫打回 shallow ("看不到=没有" 心智保护)。
+- **mid-scan clobber BUG 顺带修复** (design 裁决入批): midScanSourceKeys 保留合并, 见 resolved/ 该 issue。
+- **可见性** (决策⑤): `AssetRuntimeStatus.backgroundIndex` {state, N, M} 走既有 assets:progress; [全局] banner "已索引 N/M, 结果逐步补全" 完成即消失; hairline 维持现状。
+- e2e: 新 `deep-index-progress.e2e.ts` (不激活项目, 嵌套能力渐进入全局 + N/M 终态 done); `global-shallow-scope.e2e` 断言面同步 (owner 归属而非深度)。
+- **剩余**: [[2026-07-04-IMPROVEMENT-watcher-paths-fixed-at-start-blind-spot]] (Q2 裁决不入批, deep 项目仍非 live watch, 已追记新观察面); 设置档位/暂停/调度沿用 GH-135 无新增。
+
 # 产品决策落定 (2026-07-04, 用户裁决 — deep-index 阻塞解除)
 - **① 完整性 SLA**: 渐进 + 明示进度。不承诺时限, spotlight 模式后台慢扫, UI 明示"已索引 N/M 项目"; 不牺牲前台性能/电量换完整速度。
 - **④ 队列顺序**: 最近活跃优先 (按项目最近会话/活动时间降序), 用户最可能切换的项目最先完整。

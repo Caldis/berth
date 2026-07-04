@@ -2,7 +2,7 @@
 task: 2026-07-04-gh-155-background-deep-index-all-projects
 task_id: GH-155
 type: feature
-phase: implement
+phase: verify
 created: 2026-07-04
 priority: P1
 target_date: 
