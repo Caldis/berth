@@ -19,17 +19,20 @@ export function scanShallowConventions(projectDir: string, cache?: AssetFileCach
     const filePath = path.join(projectDir, source.file)
     if (!fs.existsSync(filePath)) continue
     try {
+      // Cache entries stay depth-neutral (GH-155 C2): the shallow/deep context
+      // tags are applied post-cache so both scan depths can share one cache.
+      // readByAgentIds stays inside produce — it derives from the source table,
+      // not from the scanning context.
       const produce = (): Asset[] => {
         const asset = source.parse(filePath, 'project')
-        asset.meta = {
-          ...asset.meta,
-          scanDepth: 'shallow',
-          projectPath: projectDir,
-          ...(source.sharedReaderAgentIds ? { readByAgentIds: source.sharedReaderAgentIds } : {})
-        }
-        return [asset]
+        return [
+          source.sharedReaderAgentIds
+            ? { ...asset, meta: { ...asset.meta, readByAgentIds: source.sharedReaderAgentIds } }
+            : asset
+        ]
       }
-      assets.push(...(cache ? cache.getOrParse(filePath, produce) : produce()))
+      const parsed = cache ? cache.getOrParse(filePath, produce) : produce()
+      assets.push(...tagProjectScanDepth(parsed, 'shallow', projectDir))
     } catch (err) {
       // A convention file we cannot read is simply absent from the shallow index.
       getMainLog().log('shallow-conventions', err)
@@ -69,8 +72,10 @@ export function scanProjectCapabilities(projectRoot: string, cache?: AssetFileCa
   const derive = (file: string, parse: CapabilityParser): void => {
     if (!fs.existsSync(file)) return
     try {
-      const produce = (): Asset[] => ownerTag(parse(file), projectRoot)
-      out.push(...(cache ? cache.getOrParse(file, produce) : produce()))
+      // Depth-neutral cache entries; owner/depth tags post-cache (GH-155 C2).
+      const produce = (): Asset[] => parse(file)
+      const parsed = cache ? cache.getOrParse(file, produce) : produce()
+      out.push(...tagProjectScanDepth(parsed, 'shallow', projectRoot))
     } catch (err) {
       // An unreadable/parse-failing config is simply absent from the index.
       getMainLog().log('shallow-capabilities', err)
@@ -93,9 +98,16 @@ export function scanProjectCapabilities(projectRoot: string, cache?: AssetFileCa
   return out
 }
 
-function ownerTag(assets: Asset[], projectRoot: string): Asset[] {
+/** Owner/depth tag applied AFTER cache retrieval (GH-155 C2): cache entries are
+ * depth-neutral, so shallow and deep project scans share one AssetFileCache
+ * without polluting each other's `scanDepth`. Returns tagged copies. */
+export function tagProjectScanDepth(
+  assets: Asset[],
+  scanDepth: 'shallow' | 'deep',
+  projectPath: string
+): Asset[] {
   return assets.map((asset) => ({
     ...asset,
-    meta: { ...asset.meta, scanDepth: 'shallow', projectPath: projectRoot }
+    meta: { ...asset.meta, scanDepth, projectPath }
   }))
 }
