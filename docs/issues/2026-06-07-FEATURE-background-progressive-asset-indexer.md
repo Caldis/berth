@@ -73,3 +73,10 @@ GH-135 (`docs/works/_archive/2026-06-15-gh-135-index-progress-visibility/`) 完�
 - **cap-5 行级 SQLite delta: DONE** (GH-151, docs/works/_archive/2026-07-04-gh-151-scan-engine-audit-fixes): `SqliteSnapshotStore.replaceBySourceKey` (DELETE WHERE source_key + 单事务行级替换) + `runtime.persistFileChange` 接线 (缺失时降级全量 save), watcher 增量不再全库重写; 附带 GH-152 退出路径 WAL checkpoint+close 与 getDb 瞬态锁退避重试。
 - 关联新旁支: [[2026-07-04-IMPROVEMENT-watcher-paths-fixed-at-start-blind-spot]] (watch 路径集启动定死, 新出现的条件路径监听盲区 — deep-index 设计时一并考虑)。
 - **主线剩余唯一大块 = 后台 deep-index 全部项目** (使 [全局] 真完整), 设计已 scope (Option C), **唯一阻塞 = 三个产品决策**: ① 全局完整性 SLA (eventual consistency 可接受窗口), ④ 队列顺序策略, ⑤ 进度可见性形态。决策定了即可落地。
+
+# 产品决策落定 (2026-07-04, 用户裁决 — deep-index 阻塞解除)
+- **① 完整性 SLA**: 渐进 + 明示进度。不承诺时限, spotlight 模式后台慢扫, UI 明示"已索引 N/M 项目"; 不牺牲前台性能/电量换完整速度。
+- **④ 队列顺序**: 最近活跃优先 (按项目最近会话/活动时间降序), 用户最可能切换的项目最先完整。
+- **⑤ 进度可见性**: 侧栏 hairline 常驻 (克制) + [全局] 视图在索引未完成时显示轻量提示 "已索引 N/M, 结果逐步补全" (完成后消失) — 保护"看不到=没有"心智, 未扫完时不让用户把"暂时看不到"误判为"不存在"。
+- 技术风险 ①(id churn)②(overfetch)③(scheduler 语义)⑥(cap-5 耦合) 设计内消化; cap-5 已由 GH-151 提前交付 (replaceBySourceKey), ⑥ 耦合项已消。
+- **状态: 可开工** — 按 Option C (backgroundIndexQueue + 复用 GH-135 scheduler/长驻 helper/backpressure) 走 harness 大件流程 (cross-process, 需完整 task-state + design checkpoint)。
