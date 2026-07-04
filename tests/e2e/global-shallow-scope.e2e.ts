@@ -57,8 +57,10 @@ test('global scope shallow-indexes every project; project scope filters to one',
   // The app loaded and scanned once the project-scope control is present.
   await expect(page.locator('aside').getByRole('button', { name: /^(Project scope|项目范围)$/ })).toBeVisible()
 
-  // Both projects' root AGENTS.md are shallow-indexed into the global snapshot.
-  await expect.poll(() => shallowOwners()).toEqual(
+  // Both projects' root AGENTS.md are owner-indexed into the global snapshot.
+  // GH-155: the background queue may already have upgraded them shallow→deep by
+  // the time this polls — the contract is owner attribution, not scan depth.
+  await expect.poll(() => conventionOwners()).toEqual(
     expect.arrayContaining([normalize(alphaDir), normalize(bravoDir)])
   )
 
@@ -81,11 +83,13 @@ function normalize(p: string): string {
   return p.replace(/\\/g, '/').toLowerCase()
 }
 
-async function shallowOwners(): Promise<string[]> {
+async function conventionOwners(): Promise<string[]> {
   return page.evaluate(async () => {
     const snap = (await window.api.assets.snapshot()) as { assets?: Array<{ type: string; meta?: Record<string, unknown> }> }
     return (snap.assets ?? [])
-      .filter((a) => a.type === 'agents-md' && a.meta?.scanDepth === 'shallow')
+      .filter(
+        (a) => a.type === 'agents-md' && (a.meta?.scanDepth === 'shallow' || a.meta?.scanDepth === 'deep')
+      )
       .map((a) => String(a.meta?.projectPath ?? '').replace(/\\/g, '/').toLowerCase())
   })
 }

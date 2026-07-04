@@ -198,13 +198,19 @@ describe('BackgroundIndexQueue (GH-155 C4)', () => {
     expect(scanProjectDeep).toHaveBeenCalledTimes(2)
   })
 
-  it('dedupes candidates sharing one repo root and keeps the newest lastSeenAt', async () => {
+  it('dedupes candidates sharing one repo root; scans the newest LEAF, commits the ROOT', async () => {
     const repo = path.resolve(process.cwd()) // a real repo root with .git
-    const { queue, commits } = harness()
-    queue.sync([cand(repo, '2026-01-01'), cand(path.join(repo, 'src'), '2026-06-01')], undefined)
+    const leaf = path.join(repo, 'src')
+    const { queue, commits, scanProjectDeep } = harness()
+    queue.sync([cand(repo, '2026-01-01'), cand(leaf, '2026-06-01')], undefined)
     queue.kick()
     await vi.waitFor(() => expect(queue.status()?.state).toBe('done'))
     expect(commits).toHaveLength(1) // one root, one scan
+    // Leaf → scanner (config-root chain coverage); root → commit (owner key).
+    // Candidate paths are slash-normalized upstream — compare normalized.
+    const scannedPath = (scanProjectDeep.mock.calls[0][0] as string).replace(/\\/g, '/')
+    expect(scannedPath).toBe(leaf.replace(/\\/g, '/'))
+    expect(commits[0].replace(/\\/g, '/')).toBe(repo.replace(/\\/g, '/'))
     expect(queue.status()).toMatchObject({ indexedProjects: 1, totalProjects: 1 })
   })
 })

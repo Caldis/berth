@@ -36,7 +36,13 @@ export interface BackgroundIndexQueueDeps {
 const DEFAULT_RETRY_DELAY_MS = 60_000
 
 interface QueueItem {
+  /** Resolved repository config root — the owner key committed against. */
   root: string
+  /** Deepest known leaf (session cwd) — scanned so the config-root CHAIN from
+   * root to leaf is covered (a monorepo subdir's own .claude). Multiple leaves
+   * under one root keep the most recent one (v1 bound, nested `**\/CLAUDE.md`
+   * still covers the whole tree's conventions). */
+  scanPath: string
   lastSeenAt?: string
 }
 
@@ -84,16 +90,24 @@ export class BackgroundIndexQueue {
       if (activeKeys.has(key)) {
         // Active root: deep by definition — never queue-scanned, counts indexed.
         this.pending.delete(key)
-        this.processed.set(key, { verdict: 'done', item: { root, lastSeenAt: candidate.lastSeenAt } })
+        this.processed.set(key, {
+          verdict: 'done',
+          item: { root, scanPath: candidate.path, lastSeenAt: candidate.lastSeenAt }
+        })
         continue
       }
       const pending = this.pending.get(key)
       if (pending) {
-        if (isNewer(candidate.lastSeenAt, pending.lastSeenAt)) pending.lastSeenAt = candidate.lastSeenAt
+        if (isNewer(candidate.lastSeenAt, pending.lastSeenAt)) {
+          pending.lastSeenAt = candidate.lastSeenAt
+          pending.scanPath = candidate.path
+        }
         continue
       }
       if (this.inFlight?.key === key) continue
-      if (!this.processed.has(key)) this.pending.set(key, { root, lastSeenAt: candidate.lastSeenAt })
+      if (!this.processed.has(key)) {
+        this.pending.set(key, { root, scanPath: candidate.path, lastSeenAt: candidate.lastSeenAt })
+      }
     }
 
     if (wasSettled && this.processed.size > 0) {
@@ -177,7 +191,9 @@ export class BackgroundIndexQueue {
 
     const options = this.deps.scanOptions()
     scanner
-      .scanProjectDeep(item.root, {
+      // The LEAF goes to the scanner (config-root chain coverage); the resolved
+      // ROOT goes to commit (owner-tag replacement key) — they must not swap.
+      .scanProjectDeep(item.scanPath, {
         excludePaths: options.excludePaths,
         respectGitignore: options.respectGitignore
       })
