@@ -26,7 +26,7 @@ class FakeChild extends EventEmitter {
   postMessage = vi.fn()
   kill = vi.fn(() => true)
   pid = 4242
-  send(message: AssetWorkerMessage): void {
+  send(message: AssetWorkerMessage | { type: string; result?: unknown }): void {
     this.emit('message', message)
   }
 }
@@ -177,7 +177,11 @@ describe('ScanHelperHost (GH-135)', () => {
     // through HelperAssetScanner, so a field missing here (respectGitignore was)
     // silently disables the feature only in production.
     const runScan = vi.fn(async () => donePayload)
-    const scanner = new HelperAssetScanner('/repo/berth', { runScan, kill: vi.fn() })
+    const scanner = new HelperAssetScanner('/repo/berth', {
+      runScan,
+      runProjectDeepScan: vi.fn(),
+      kill: vi.fn()
+    } as never)
 
     await scanner.scanAll({ batchPauseMs: 25, excludePaths: ['/skip'], respectGitignore: true })
 
@@ -213,5 +217,89 @@ describe('ScanHelperHost (GH-135)', () => {
     expect(applyThrottle).not.toHaveBeenCalled()
     child.send({ type: 'done', result: donePayload })
     await r
+  })
+})
+
+describe('ScanHelperHost project deep scan (GH-155 C3)', () => {
+  const deepPayload = { assets: [], errors: [], projectScanCache: { entries: [] } }
+
+  it('sends scan-project-deep and resolves on project-deep-done', async () => {
+    const child = new FakeChild()
+    const host = new ScanHelperHost({ createChild: () => asChild(child) })
+    const r = host.runProjectDeepScan({ projectRoot: '/repo/p', respectGitignore: true })
+    child.emit('spawn')
+    await vi.waitFor(() => expect(child.postMessage).toHaveBeenCalledTimes(1))
+    expect(child.postMessage).toHaveBeenCalledWith({
+      type: 'scan-project-deep',
+      data: { projectRoot: '/repo/p', respectGitignore: true }
+    })
+    child.send({ type: 'project-deep-done', result: deepPayload })
+    await expect(r).resolves.toEqual(deepPayload)
+  })
+
+  it('serializes concurrent requests on the single child — no message interleave (C3 互斥)', async () => {
+    const child = new FakeChild()
+    const host = new ScanHelperHost({ createChild: () => asChild(child) })
+    const r1 = host.runScan({ projectDir: '/a' })
+    const r2 = host.runProjectDeepScan({ projectRoot: '/b' })
+    child.emit('spawn')
+    await vi.waitFor(() => expect(child.postMessage).toHaveBeenCalledTimes(1))
+    expect(child.postMessage).toHaveBeenNthCalledWith(1, { type: 'scan', data: { projectDir: '/a' } })
+
+    // The queued deep scan must not be posted while the full scan is in flight.
+    await new Promise((resolve) => setTimeout(resolve, 10))
+    expect(child.postMessage).toHaveBeenCalledTimes(1)
+
+    child.send({ type: 'done', result: donePayload })
+    await r1
+    await vi.waitFor(() => expect(child.postMessage).toHaveBeenCalledTimes(2))
+    expect(child.postMessage).toHaveBeenNthCalledWith(2, { type: 'scan-project-deep', data: { projectRoot: '/b' } })
+    child.send({ type: 'project-deep-done', result: deepPayload })
+    await expect(r2).resolves.toEqual(deepPayload)
+  })
+
+  it('deep-scan child error rejects; a later request respawns after exit', async () => {
+    const child1 = new FakeChild()
+    const child2 = new FakeChild()
+    const children = [child1, child2]
+    const host = new ScanHelperHost({ createChild: () => asChild(children.shift()!) })
+
+    const r1 = host.runProjectDeepScan({ projectRoot: '/p' })
+    child1.emit('spawn')
+    await vi.waitFor(() => expect(child1.postMessage).toHaveBeenCalled())
+    child1.send({ type: 'error', error: { message: 'deep blew up' } })
+    await expect(r1).rejects.toThrow('deep blew up')
+
+    child1.emit('exit', 1)
+    const r2 = host.runProjectDeepScan({ projectRoot: '/p' })
+    child2.emit('spawn')
+    await vi.waitFor(() => expect(child2.postMessage).toHaveBeenCalled())
+    child2.send({ type: 'project-deep-done', result: deepPayload })
+    await expect(r2).resolves.toEqual(deepPayload)
+  })
+
+  it('HelperAssetScanner.scanProjectDeep forwards options and round-trips the cache snapshot', async () => {
+    const returnedCache = { entries: [{ fingerprint: { path: '/p/SKILL.md', size: 1, mtimeMs: 2 }, value: [] }] }
+    const runProjectDeepScan = vi.fn(async () => ({ assets: [], errors: [], projectScanCache: returnedCache }))
+    const scanner = new HelperAssetScanner('/repo', {
+      runScan: vi.fn(),
+      kill: vi.fn(),
+      runProjectDeepScan
+    } as never)
+
+    const result = await scanner.scanProjectDeep!('/repo/p', { excludePaths: ['/skip'], respectGitignore: true })
+    expect(result).toEqual({ assets: [], errors: [] })
+    expect(runProjectDeepScan).toHaveBeenCalledWith({
+      projectRoot: '/repo/p',
+      excludePaths: ['/skip'],
+      respectGitignore: true,
+      projectScanCache: { entries: [] }
+    })
+
+    // The returned snapshot must ride into the next request (warm fingerprints).
+    await scanner.scanProjectDeep!('/repo/q')
+    expect(runProjectDeepScan).toHaveBeenLastCalledWith(
+      expect.objectContaining({ projectRoot: '/repo/q', projectScanCache: returnedCache })
+    )
   })
 })

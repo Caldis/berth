@@ -4,7 +4,7 @@ import * as path from 'path'
 import { getMainLog } from '@berth/scan-engine/log'
 import type { Asset } from '@berth/scan-engine/shared/types/asset'
 import type { ProjectScopeCandidate } from '@berth/scan-engine/shared/scope'
-import type { AgentScanSourceGroup, ScanResult } from '@berth/scan-engine/shared/types/ipc'
+import type { AgentScanSourceGroup, ScanError, ScanResult } from '@berth/scan-engine/shared/types/ipc'
 import type { AssetRuntimeScanner, AssetRuntimeScanOptions } from '@berth/scan-engine/engine/assets/runtime'
 import type { AssetFileCacheSnapshot } from '@berth/scan-engine/engine/assets/file-cache'
 import {
@@ -13,6 +13,28 @@ import {
   type AssetWorkerMessage,
   type AssetWorkerScanPayload
 } from '@berth/scan-engine/engine/assets/worker-host'
+
+/** GH-155 C3: per-project deep-scan request the host posts to the helper child.
+ * The projectScanCache snapshot rides along (same model as AssetWorkerData) so
+ * deep scans and full scans share warm file fingerprints. */
+export interface ProjectDeepScanRequest {
+  projectRoot: string
+  excludePaths?: string[]
+  respectGitignore?: boolean
+  projectScanCache?: AssetFileCacheSnapshot<Asset[]>
+}
+
+/** GH-155 C3: helper child reply for one project's deep scan. */
+export interface ProjectDeepScanPayload {
+  assets: Asset[]
+  errors: ScanError[]
+  projectScanCache: AssetFileCacheSnapshot<Asset[]>
+}
+
+/** Every message the helper child can post (scan stream + deep-scan reply). */
+export type ScanHelperChildMessage =
+  | AssetWorkerMessage
+  | { type: 'project-deep-done'; result: ProjectDeepScanPayload }
 
 export interface ScanHelperHostOptions {
   helperPath?: string
@@ -46,6 +68,8 @@ const SCAN_INACTIVITY_TIMEOUT_MS = 120_000
 export class ScanHelperHost {
   private child: UtilityProcess | null = null
   private spawnPromise: Promise<void> | null = null
+  /** Request serialization tail (GH-155 C3) — never rejects. */
+  private tail: Promise<unknown> = Promise.resolve()
   private readonly helperPath: string
   private readonly createChild: () => UtilityProcess
   private readonly osThrottle: boolean
@@ -108,9 +132,63 @@ export class ScanHelperHost {
   }
 
   runScan(data: AssetWorkerData, options: AssetRuntimeScanOptions = {}): Promise<AssetWorkerScanPayload> {
-    const { child, ready } = this.ensure()
+    // Capture the session synchronously — same fork-at-request timing as the
+    // pre-GH-155 single-request model; only the postMessage waits for its slot.
+    const session = this.ensure()
+    return this.serialize(() =>
+      this.dispatch<AssetWorkerScanPayload>(session, { type: 'scan', data }, (message, settle) => {
+        if (message.type === 'progress') {
+          options.onProgress?.(message.progress)
+          return
+        }
+        if (message.type === 'partial') {
+          options.onPartial?.(message.partial)
+          return
+        }
+        if (message.type === 'done') settle.resolve(message.result)
+      })
+    )
+  }
 
-    return new Promise<AssetWorkerScanPayload>((resolve, reject) => {
+  /** One project's deep scan in the helper (GH-155 C3). Serialized with runScan —
+   * concurrent requests on the single long-lived child would interleave replies. */
+  runProjectDeepScan(request: ProjectDeepScanRequest): Promise<ProjectDeepScanPayload> {
+    const session = this.ensure()
+    return this.serialize(() =>
+      this.dispatch<ProjectDeepScanPayload>(
+        session,
+        { type: 'scan-project-deep', data: request },
+        (message, settle) => {
+          if (message.type === 'project-deep-done') settle.resolve(message.result)
+        }
+      )
+    )
+  }
+
+  /** All child requests share one reply stream, so they must run one at a time
+   * (GH-155 C3). The tail never rejects — each link settles to undefined. */
+  private serialize<T>(run: () => Promise<T>): Promise<T> {
+    const result = this.tail.then(run)
+    this.tail = result.then(
+      () => undefined,
+      () => undefined
+    )
+    return result
+  }
+
+  /** One request/reply exchange with the child: registers listeners + the GH-151
+   * S2 inactivity watchdog before awaiting spawn, posts `payload`, and lets
+   * `handle` route stream messages until it resolves. `error` replies and child
+   * exit reject for every request type. A session whose child died while queued
+   * is bounded by the watchdog (postMessage to a killed child is a no-op). */
+  private dispatch<T>(
+    session: { child: UtilityProcess; ready: Promise<void> },
+    payload: { type: string; data: unknown },
+    handle: (message: ScanHelperChildMessage, settle: { resolve: (value: T) => void }) => void
+  ): Promise<T> {
+    const { child, ready } = session
+
+    return new Promise<T>((resolve, reject) => {
       let settled = false
       let watchdog: ReturnType<typeof setTimeout> | null = null
       const clearWatchdog = (): void => {
@@ -143,23 +221,13 @@ export class ScanHelperHost {
         cleanup()
         fn()
       }
-      const onMessage = (message: AssetWorkerMessage): void => {
+      const onMessage = (message: ScanHelperChildMessage): void => {
         armWatchdog()
-        if (message.type === 'progress') {
-          options.onProgress?.(message.progress)
-          return
-        }
-        if (message.type === 'partial') {
-          options.onPartial?.(message.partial)
-          return
-        }
-        if (message.type === 'done') {
-          finish(() => resolve(message.result))
-          return
-        }
         if (message.type === 'error') {
           finish(() => reject(createHelperError(message.error.message, message.error.stack)))
+          return
         }
+        handle(message, { resolve: (value) => finish(() => resolve(value)) })
       }
       const onExit = (code: number): void => {
         finish(() => reject(new Error(`Asset scan helper exited with code ${String(code)}`)))
@@ -175,7 +243,7 @@ export class ScanHelperHost {
         () => {
           if (settled) return
           // utilityProcess has no workerData — the scan input rides the first message.
-          child.postMessage({ type: 'scan', data })
+          child.postMessage(payload)
         },
         (error) => finish(() => reject(error instanceof Error ? error : new Error(String(error))))
       )
@@ -198,9 +266,12 @@ export class HelperAssetScanner implements AssetRuntimeScanner {
   private sessionCache: AssetFileCacheSnapshot<Asset> = { entries: [] }
   private projectScanCache: AssetFileCacheSnapshot<Asset[]> = { entries: [] }
   private resolvedProjectDir?: string
-  private readonly host: Pick<ScanHelperHost, 'runScan' | 'kill'>
+  private readonly host: Pick<ScanHelperHost, 'runScan' | 'runProjectDeepScan' | 'kill'>
 
-  constructor(private readonly projectDir?: string, host?: Pick<ScanHelperHost, 'runScan' | 'kill'>) {
+  constructor(
+    private readonly projectDir?: string,
+    host?: Pick<ScanHelperHost, 'runScan' | 'runProjectDeepScan' | 'kill'>
+  ) {
     this.host = host ?? getScanHelperHost()
     this.resolvedProjectDir = projectDir
   }
@@ -235,6 +306,23 @@ export class HelperAssetScanner implements AssetRuntimeScanner {
 
   getProjectDir(): string | undefined {
     return this.resolvedProjectDir
+  }
+
+  /** Deep-scan one non-active project in the helper (GH-155 C4). The
+   * projectScanCache snapshot round-trips so consecutive deep scans (and the
+   * next full scan on this instance) reuse warm fingerprints. */
+  async scanProjectDeep(
+    projectRoot: string,
+    options: { excludePaths?: string[]; respectGitignore?: boolean } = {}
+  ): Promise<{ assets: Asset[]; errors: ScanError[] }> {
+    const result = await this.host.runProjectDeepScan({
+      projectRoot,
+      excludePaths: options.excludePaths,
+      respectGitignore: options.respectGitignore,
+      projectScanCache: this.projectScanCache
+    })
+    this.projectScanCache = result.projectScanCache
+    return { assets: result.assets, errors: result.errors }
   }
 
   /** Abort the in-flight scan by killing the helper (GH-135). The host respawns it

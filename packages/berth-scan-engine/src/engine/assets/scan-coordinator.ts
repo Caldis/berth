@@ -2,8 +2,10 @@ import type {
   AgentScanSourceGroup,
   AssetScanPartial,
   AssetScanProgress,
+  ScanError,
   ScanResult
 } from '@shared/types/ipc'
+import type { Asset } from '@shared/types/asset'
 import type { ProjectScopeCandidate } from '@shared/scope'
 import { getMainLog } from '../../log'
 
@@ -29,6 +31,14 @@ export interface AssetRuntimeScanner {
   /** Execution mode for capability metadata (GH-154 条目8): helper = long-lived
    * utilityProcess, worker = one-shot worker_threads. Absent → 'one-shot'. */
   workerMode?: 'one-shot' | 'long-lived'
+  /** Deep-scan one NON-active project for the background index queue (GH-155 C4).
+   * Optional: the helper implements it; worker/CLI scanners don't, which disables
+   * the background queue (`state:'unsupported'`) instead of running heavy scans
+   * in-process. */
+  scanProjectDeep?(
+    projectRoot: string,
+    options?: { excludePaths?: string[]; respectGitignore?: boolean }
+  ): Promise<{ assets: Asset[]; errors: ScanError[] }>
 }
 
 /** Everything a completed scan hands back for the runtime to commit. */

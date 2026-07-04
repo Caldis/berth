@@ -8,11 +8,15 @@
 // CLI). The host (helper-host.ts) forks this and drives it with `scan` commands.
 import { AssetScanner } from '@berth/scan-engine/engine/scanner'
 import { AssetFileCache } from '@berth/scan-engine/engine/assets/file-cache'
+import { scanProjectDeep } from '@berth/scan-engine/engine/project-deep-scan'
+import type { Asset } from '@berth/scan-engine/shared/types/asset'
 import {
   scanOptionsFromWorkerData,
-  type AssetWorkerData,
-  type AssetWorkerMessage
+  type AssetWorkerData
 } from '@berth/scan-engine/engine/assets/worker-host'
+// Type-only: the host owns the deep-scan protocol shapes; erased at compile so
+// this electron-importing module never lands in the child bundle.
+import type { ProjectDeepScanRequest, ScanHelperChildMessage } from './helper-host'
 
 // Electron injects `process.parentPort` into a utilityProcess child; @types/node
 // doesn't model it, so narrow to the minimal surface we use.
@@ -23,7 +27,7 @@ const parentPort = (process as unknown as {
   }
 }).parentPort
 
-function post(message: AssetWorkerMessage): void {
+function post(message: ScanHelperChildMessage): void {
   parentPort.postMessage(message)
 }
 
@@ -79,12 +83,40 @@ async function runScan(data: AssetWorkerData): Promise<void> {
 // done-handler → onExit reject → scan-history ok=0.
 setInterval(() => {}, 2_147_483_647)
 
+/** GH-155 C3: deep-scan one non-active project. Synchronous engine call; the
+ * host serializes requests so this never interleaves with a full scan. */
+function runProjectDeepScan(data: ProjectDeepScanRequest): void {
+  try {
+    const cache = AssetFileCache.fromSnapshot<Asset[]>(data.projectScanCache)
+    const { assets, errors } = scanProjectDeep(data.projectRoot, cache, {
+      excludePaths: data.excludePaths,
+      respectGitignore: data.respectGitignore
+    })
+    post({
+      type: 'project-deep-done',
+      result: { assets, errors, projectScanCache: cache.toSnapshot() }
+    })
+  } catch (error) {
+    post({
+      type: 'error',
+      error: {
+        message: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    })
+  }
+}
+
 // Long-lived: the host posts one `{ type: 'scan', data }` per scan; this process
 // stays alive between scans (unlike the one-shot worker_threads model), so the
 // next scan reuses the warm process instead of paying a fresh fork each time.
 parentPort.on('message', (event) => {
-  const message = event.data as { type?: string; data?: AssetWorkerData }
+  const message = event.data as { type?: string; data?: unknown }
   if (message?.type === 'scan' && message.data) {
-    void runScan(message.data)
+    void runScan(message.data as AssetWorkerData)
+    return
+  }
+  if (message?.type === 'scan-project-deep' && message.data) {
+    runProjectDeepScan(message.data as ProjectDeepScanRequest)
   }
 })
