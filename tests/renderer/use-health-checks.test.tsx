@@ -119,6 +119,44 @@ describe('useHealthChecks', () => {
     second.unmount()
   })
 
+  // GH-153 T3: onChanged 软刷常驻在途时, 用户点"重新检查" (force) 曾被 in-flight 去重吞掉
+  // (refresh:true 从未出程, 拿到的是软刷结果)。force 必须在软刷 settle 后真实发出。
+  it('issues the forced re-check even while a soft refresh is in flight (GH-153 T3)', async () => {
+    let resolveSoft: (checks: HealthCheck[]) => void = () => {}
+    const pendingSoft = new Promise<HealthCheck[]>((resolve) => {
+      resolveSoft = resolve
+    })
+    window.api.assets.healthCheck = vi
+      .fn()
+      .mockReturnValueOnce(pendingSoft)
+      .mockResolvedValueOnce([secondCheck])
+
+    const { result, unmount } = renderHook(() => useHealthChecks())
+    expect(window.api.assets.healthCheck).toHaveBeenCalledTimes(1)
+    expect(window.api.assets.healthCheck).toHaveBeenLastCalledWith({ refresh: false })
+
+    await act(async () => {
+      result.current.refresh({ force: true })
+    })
+
+    await act(async () => {
+      resolveSoft([firstCheck])
+      await pendingSoft
+    })
+
+    await waitFor(() => {
+      // force 在软刷 settle 后真实出程, 且最终结果是强制重查产物。
+      expect(window.api.assets.healthCheck).toHaveBeenCalledTimes(2)
+      expect(window.api.assets.healthCheck).toHaveBeenLastCalledWith({ refresh: true })
+    })
+    await waitFor(() => {
+      expect(result.current.checks).toEqual([secondCheck])
+      expect(result.current.loading).toBe(false)
+    })
+
+    unmount()
+  })
+
   it('keeps cached checks visible as stale while refreshing after assets change', async () => {
     let onChanged: (() => void) | null = null
     let resolveNext: (checks: HealthCheck[]) => void = () => {}

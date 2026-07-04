@@ -9,8 +9,8 @@
 - [x] T2 (B6 → A6): use-ipc.ts 引擎控制 pause/resume/cancel/rebuild catch 转 setError
   - tests: settings-page rebuild 失败呈现 error 块用例, 先红后绿 17/17
   - verify: 不适用 (设置面板既有 error 呈现路径)
-- [ ] T3 (B5 → A5): cached-resource.ts +forceRequest (递归链后语义) + requestHealthChecks(force) 走 forceRequest
-  - tests: cached-resource forceRequest 三态 (无在途/有在途链后/写序) + use-health-checks 软刷在途时 force 必出程 — 先红后绿
+- [x] T3 (B5 → A5): cached-resource.ts +forceRequest (递归链后语义) + requestHealthChecks(force) 走 forceRequest
+  - tests: cached-resource.test.ts (新) 4 用例 (无在途/链后写序/在途 reject/二次在途递归) + use-health-checks 软刷在途 force 必出程 — 先红 (5 failed) 后绿 9/9
   - verify: CDP ④ 健康面板高频变更期强制重查 (归 4.0-verify)
 - [ ] T4 (B8 → A8): useSessionDetail 加 keyed CachedResource (镜像 replay 形状, 60s)
   - tests: use-sessions-swr 新用例 — TTL 内二次 mount 零 IPC / reload 失效重取, 先红后绿

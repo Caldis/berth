@@ -54,12 +54,13 @@ const sessionReplayResource = new CachedResource<SessionReplayResult | null>(
 )
 
 function requestHealthChecks(refresh: boolean): Promise<HealthCheckValue> {
-  return healthResource.request('', () =>
+  const fetcher = (): Promise<HealthCheckValue> =>
     window.api.assets.healthCheck({ refresh }).then((result) => ({
       checks: result ?? [],
       lastCheckedAt: new Date().toISOString()
     }))
-  )
+  // GH-153 T3: force 不与在途软刷合流 — forceRequest 链在其后, 保证 refresh:true 真实出程。
+  return refresh ? healthResource.forceRequest('', fetcher) : healthResource.request('', fetcher)
 }
 
 export function resetHealthCheckCacheForTests(): void {

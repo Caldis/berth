@@ -64,6 +64,22 @@ export class CachedResource<T> {
     return next
   }
 
+  /**
+   * Force a fetch for `key`: unlike request(), never joins an in-flight promise.
+   * Chains behind whatever is in flight (recursively, in case another request
+   * slips in between) so the forced fetcher is guaranteed to run and its result
+   * lands in the cache last — no write-order inversion against a soft refresh.
+   * (GH-153: health "re-check" used to be swallowed by in-flight de-dup.)
+   */
+  forceRequest(key: string, fetcher: () => Promise<T>): Promise<T> {
+    const pending = this.inflight.get(key)
+    if (!pending) return this.request(key, fetcher)
+    return pending.then(
+      () => this.forceRequest(key, fetcher),
+      () => this.forceRequest(key, fetcher)
+    )
+  }
+
   /** Drop a single key's cached value + in-flight promise (used by reload). */
   invalidate(key = ''): void {
     this.entries.delete(key)
