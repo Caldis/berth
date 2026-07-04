@@ -2,8 +2,8 @@
 
 从 02-SPEC 拆解。**顺序执行**: T1/T2 独立小项先行; T3 (最大机械面) → T4 (与 T3 共享对账测试文件) → T5 (typecheck 驱动)。主 session 顺序推进 (T3-T5 触碰共享契约/门禁文件, 不并行)。每项过目标测试后单独提交。
 
-- [ ] T1 (D4 → A5): parseMemoryIndex +onMalformed; indexEntries malformed>0 → 记账 + 返回 null (整体回退目录扫描); splitFrontmatter ×2 补豁免注释
-  - tests: memory 域测试新用例 (部分匹配 → 回退不丢条目 + domain-log 记账), 先红后绿; 既有 characterization 回归
+- [x] T1 (D4 → A5): parseMemoryIndex +onMalformed; indexEntries malformed>0 → 记账 + 返回 null (整体回退目录扫描); splitFrontmatter ×2 补豁免注释
+  - tests: 纯层 2 用例 (onMalformed 上报畸形链接行 / 真实 fixture 散文 bullet 零误报) + 服务层 1 用例 (回退目录扫描 + 记账一次 + detect 计数), 先红 (2 failed) 后绿; memory 三文件 35/35 回归
   - verify: 不适用 (main 域逻辑)
 - [ ] T2 (D5 → A6): url-guard +isAllowedRevealPathReal (realpath 注入); handlers.ts openPath 接入 fs.realpathSync
   - tests: url-guard.test.ts 扩展 — fake realpath 下 symlink 出根 deny / 正常路径过 / ENOENT deny, 先红后绿

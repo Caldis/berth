@@ -117,6 +117,8 @@ function splitFrontmatter(content: string): {
     const fm = (yaml.load(match[1]) as Record<string, unknown>) ?? {}
     return { frontmatter: fm, body: match[2] }
   } catch {
+    // 豁免 (GH-152 T4 裁决, GH-154 补注): 损坏 YAML 优雅降级为空元数据, 正文原样可见 —
+    // 无数据消失; 纯函数不注入副作用, 行为由 characterization 钉住 (同 _shared/markdown)。
     return { frontmatter: {}, body: content }
   }
 }

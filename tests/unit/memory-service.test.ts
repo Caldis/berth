@@ -229,6 +229,42 @@ describe('ClaudeNativeSource (temp dir)', () => {
     expect(status.available).toBe(true)
     expect(status.noteCount).toBe(1)
   })
+
+  // GH-154 T1: 索引部分匹配曾静默丢条目 (indexEntries 非空即用, 未匹配行对应的 note 消失)。
+  // 新语义: 出现畸形链接 bullet → 索引不可靠 → 记账一次 + 整体回退目录扫描。
+  it('falls back to the directory scan and logs once when the index has malformed link bullets (GH-154 T1)', async () => {
+    const { setMainLogWriter } = await import('@berth/scan-engine/log')
+    const { resetDomainFailureLogForTests } = await import('../../src/main/domain-log')
+    const lines: string[] = []
+    resetDomainFailureLogForTests()
+    setMainLogWriter({ log: (scope, err) => lines.push(`${scope} ${String(err)}`), info: () => {} })
+    try {
+      const slug = 'C--Users-brokenidx'
+      const memDir = path.join(projectsRoot, slug, 'memory')
+      await fs.promises.mkdir(memDir, { recursive: true })
+      await fs.promises.writeFile(
+        path.join(memDir, 'MEMORY.md'),
+        '# Memory Index\n\n- [Good](good.md) — fine\n- [Broken](broken.md — missing close paren\n',
+        'utf-8'
+      )
+      await fs.promises.writeFile(path.join(memDir, 'good.md'), '# good\n', 'utf-8')
+      await fs.promises.writeFile(path.join(memDir, 'orphan.md'), '# orphan\n', 'utf-8')
+
+      const source = new ClaudeNativeSource(slug, projectsRoot)
+      const notes = await source.list()
+      // 回退目录扫描: orphan.md 不再被部分索引静默吞掉。
+      expect(notes.map((note) => path.basename(note.path)).sort()).toEqual(['good.md', 'orphan.md'])
+
+      const malformedLines = lines.filter((line) => line.includes('memory-native'))
+      expect(malformedLines.length).toBe(1)
+
+      const status = await new ClaudeNativeSource(slug, projectsRoot).detect()
+      expect(status.noteCount).toBe(2)
+    } finally {
+      setMainLogWriter({ log: () => {}, info: () => {} })
+      resetDomainFailureLogForTests()
+    }
+  })
 })
 
 // ── Aggregation / routing with injected fakes ──

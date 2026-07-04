@@ -66,6 +66,8 @@ function splitFrontmatter(content: string): {
     const fm = (yaml.load(match[1]) as Record<string, unknown>) ?? {}
     return { frontmatter: fm, body: match[2] }
   } catch {
+    // 豁免 (GH-152 T4 裁决, GH-154 补注): 损坏 YAML 优雅降级为空元数据, 正文原样可见 —
+    // 无数据消失; 纯函数不注入副作用, 行为由 characterization 钉住 (同 _shared/markdown)。
     return { frontmatter: {}, body: content }
   }
 }
@@ -74,16 +76,30 @@ function splitFrontmatter(content: string): {
  * Pure: parse a native `MEMORY.md` index. Each entry is a list line of the form
  * `- [Title](file.md) - hook` (separator may be a hyphen or em/en dash).
  * Returns [] when no entries are present.
+ *
+ * GH-154 T1: bullets that LOOK like link entries (`- [` opener) but fail the
+ * full entry shape are reported via `onMalformed` — the caller treats the index
+ * as unreliable. Plain prose bullets (no link syntax) are legal index content
+ * and are never reported.
  */
-export function parseMemoryIndex(mdString: string): NativeIndexEntry[] {
+const ENTRY_LINE_RE = /^\s*[-*]\s*\[([^\]]+)\]\(([^)]+)\)\s*(?:[—–-]\s*(.*\S))?\s*$/
+const LINK_BULLET_RE = /^\s*[-*]\s*\[/
+
+export function parseMemoryIndex(
+  mdString: string,
+  onMalformed?: (line: string) => void
+): NativeIndexEntry[] {
   const entries: NativeIndexEntry[] = []
-  const lineRe = /^\s*[-*]\s*\[([^\]]+)\]\(([^)]+)\)\s*(?:[—–-]\s*(.*\S))?\s*$/gm
-  let m: RegExpExecArray | null
-  while ((m = lineRe.exec(mdString)) !== null) {
-    const title = m[1].trim()
-    const file = m[2].trim()
-    const hook = m[3]?.trim()
-    entries.push(hook ? { title, file, hook } : { title, file })
+  for (const line of mdString.split(/\r?\n/)) {
+    const m = line.match(ENTRY_LINE_RE)
+    if (m) {
+      const title = m[1].trim()
+      const file = m[2].trim()
+      const hook = m[3]?.trim()
+      entries.push(hook ? { title, file, hook } : { title, file })
+      continue
+    }
+    if (onMalformed && LINK_BULLET_RE.test(line)) onMalformed(line)
   }
   return entries
 }
@@ -213,7 +229,20 @@ export class ClaudeNativeSource implements MemorySource {
     const indexPath = path.join(this.memoryDir(root, slug), INDEX_FILE)
     try {
       const md = await fs.promises.readFile(indexPath, 'utf-8')
-      const entries = parseMemoryIndex(md)
+      let malformed = 0
+      const entries = parseMemoryIndex(md, () => {
+        malformed += 1
+      })
+      // GH-154 T1: 出现畸形链接 bullet → 索引不可靠 → 记账一次并整体弃用 (回退目录
+      // 扫描), 部分匹配不再静默丢条目。
+      if (malformed > 0) {
+        logDomainFailureOnce(
+          'memory-native',
+          `${indexPath}#malformed`,
+          new Error(`${malformed} malformed index entr${malformed === 1 ? 'y' : 'ies'} — falling back to directory scan`)
+        )
+        return null
+      }
       return entries.length > 0 ? entries : null
     } catch (err) {
       // No MEMORY.md is the normal un-indexed case; other read failures leave a

@@ -51,6 +51,23 @@ describe('parseMemoryIndex', () => {
   it('returns [] for an index with no entries', () => {
     expect(parseMemoryIndex('# Memory Index\n\nNothing here yet.')).toEqual([])
   })
+
+  // GH-154 T1: 部分匹配曾静默丢条目 — 带链接语法但不合完整条目形状的 bullet 行必须
+  // 经 onMalformed 上报; 纯散文 bullet (无链接语法) 是真实 MEMORY.md 的合法内容, 不许误报。
+  it('reports link-like bullets that fail the entry shape via onMalformed (GH-154 T1)', () => {
+    const malformed: string[] = []
+    const md = `${MEMORY_MD}\n- [Broken](broken.md — missing close paren\n`
+    const entries = parseMemoryIndex(md, (line) => malformed.push(line))
+    expect(entries).toHaveLength(3)
+    expect(malformed).toHaveLength(1)
+    expect(malformed[0]).toContain('Broken')
+  })
+
+  it('never flags the real-world fixture — prose bullets are legal (GH-154 T1)', () => {
+    const malformed: string[] = []
+    parseMemoryIndex(MEMORY_MD, (line) => malformed.push(line))
+    expect(malformed).toEqual([])
+  })
 })
 
 describe('parseNativeNote', () => {
