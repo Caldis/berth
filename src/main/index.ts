@@ -14,6 +14,7 @@ import { configureAgentDevProfile, shouldRequestSingleInstanceLock } from './dev
 import { shouldAutoOpenDevTools } from './devtools'
 import { createLogWriter, getMainLog, setMainLogWriter } from '@berth/scan-engine/log'
 import { isAllowedPermission, isSafeExternalUrl } from './url-guard'
+import { createErrorDialogGate } from './error-dialog-gate'
 import { autoUpdater } from 'electron-updater'
 import { createUpdaterController, setUpdaterRuntime } from './updater'
 import { readUpdatePreferences } from './update-preferences'
@@ -26,9 +27,14 @@ import appIcon from '../../assets/icon/app_icon.png?asset'
 // (只读查看器, 残余状态无写副作用风险)。
 function installProcessGuards(): void {
   setMainLogWriter(createLogWriter(join(app.getPath('userData'), 'logs')))
+  // GH-152 T7: gate the MODAL only — a looping throw source would otherwise
+  // stack error boxes until the app is unusable. Every occurrence still logs.
+  const dialogGate = createErrorDialogGate(5_000)
   process.on('uncaughtException', (err) => {
     getMainLog().log('uncaught-exception', err)
-    dialog.showErrorBox('Berth encountered an error', err?.stack ?? String(err))
+    if (dialogGate.shouldShow(err?.message ?? String(err))) {
+      dialog.showErrorBox('Berth encountered an error', err?.stack ?? String(err))
+    }
   })
   process.on('unhandledRejection', (reason) => {
     getMainLog().log('unhandled-rejection', reason)
@@ -204,7 +210,9 @@ if (!gotTheLock) {
     // loads only here in the main process — never in the unit-test host.
     const userDataDir = app.getPath('userData')
     // GH-135 B3: track battery state for the periodic-scan power gate.
-    let onBatteryPower = false
+    // GH-152 T7: seed from the real state — starting unplugged used to read as
+    // "on AC" until the first power transition, defeating acOnlyFullScan.
+    let onBatteryPower = powerMonitor.isOnBatteryPower()
     powerMonitor.on('on-battery', () => {
       onBatteryPower = true
     })
