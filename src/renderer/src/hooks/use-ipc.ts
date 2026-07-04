@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from 'react'
-import type { AgentView, Asset, AssetStats, SessionSummary, UsageSummary } from '@shared/types/asset'
+import type { AgentView, Asset, AssetStats, CostMode, SessionSummary, UsageSummary } from '@shared/types/asset'
 import type {
   SessionDetailResult,
   SessionReplayResult,
@@ -585,7 +585,12 @@ export function useSessionReplay(id: string): {
   return { replay, loading, error, reload }
 }
 
-export function useUsageSummary(days: number, agentView?: AgentView, projectPath?: string): {
+export function useUsageSummary(
+  days: number,
+  agentView?: AgentView,
+  projectPath?: string,
+  costMode?: CostMode
+): {
   usage: UsageSummary | null
   loading: boolean
   error: string | null
@@ -596,18 +601,21 @@ export function useUsageSummary(days: number, agentView?: AgentView, projectPath
       days,
       // 'all'/未设 = 不过滤: 省略 agentView 键 (与 useDashboardInsights 一致, 保持默认请求形状不变)。
       ...(agentView && agentView !== 'all' ? { agentView } : {}),
-      ...(projectPath ? { projectPath } : {})
+      ...(projectPath ? { projectPath } : {}),
+      // GH-153 T6: usage 页显式传 costMode (含 'auto'); widget 不传 → 请求形状与既往一致。
+      ...(costMode ? { costMode } : {})
     }),
-    [days, agentView, projectPath]
+    [days, agentView, projectPath, costMode]
   )
   const cacheKey = useMemo(
     () =>
       JSON.stringify({
         days,
         agentView: agentView && agentView !== 'all' ? agentView : null,
-        projectPath: projectPath ?? null
+        projectPath: projectPath ?? null,
+        costMode: costMode ?? null
       }),
-    [days, agentView, projectPath]
+    [days, agentView, projectPath, costMode]
   )
   const initialCache = usageSummaryResource.peek(cacheKey)
   const [usage, setUsage] = useState<UsageSummary | null>(initialCache ?? null)

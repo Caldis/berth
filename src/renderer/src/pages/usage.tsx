@@ -18,10 +18,10 @@ import type {
   UsageCostFormula,
   UsageDimensionCost,
   UsageModelBreakdown,
-  UsageProjectBreakdown,
-  UsageSummary
+  UsageProjectBreakdown
 } from '@shared/types/asset'
 import { normalizeUsageSummary } from '@shared/usage-summary'
+import { useUsageSummary } from '@/hooks/use-ipc'
 import { TokenUsageDisplay } from '@/components/shared/token-usage-display'
 import { useAppStore } from '@/stores/app'
 import { CostSourceBadge } from '@/components/shared/cost-source-badge'
@@ -289,45 +289,27 @@ export function Usage(): React.ReactElement {
   const { t } = useTranslation()
   const [days, setDays] = useState(0)
   const [costMode, setCostMode] = useState<CostMode>('auto')
-  const [usage, setUsage] = useState<UsageSummary | null>(null)
-  const [hasLoadedUsage, setHasLoadedUsage] = useState(false)
-  const [loadError, setLoadError] = useState(false)
-  const [reloadKey, setReloadKey] = useState(0)
   const [showPricingOverride, setShowPricingOverride] = useState(false)
   const [pricingOverrideCopied, setPricingOverrideCopied] = useState(false)
   const scopeSelection = useAppStore((s) => s.scopeSelection)
   const projectPath = projectPathForScope(scopeSelection)
   const agentView = useAppStore((s) => s.agentView)
 
+  // GH-153 T6: 取数复用 useUsageSummary (keyed SWR + costMode 透传), 页面只保留
+  // normalize 整形与首载标志; 错误详情经 hook error 通道透出 (不再折成布尔)。
+  const {
+    usage: rawUsage,
+    loading: usageLoading,
+    error: usageError,
+    reload: reloadUsage
+  } = useUsageSummary(days, agentView, projectPath, costMode)
+  const usage = useMemo(() => (rawUsage ? normalizeUsageSummary(rawUsage) : null), [rawUsage])
+  const loadError = usageError !== null
+  const [hasLoadedUsage, setHasLoadedUsage] = useState(false)
   useEffect(() => {
-    let cancelled = false
-    setLoadError(false)
-    const request = {
-      days,
-      costMode,
-      // 'all'/未设 = 不过滤 (与 useDashboardInsights/useUsageSummary 一致)。
-      ...(agentView && agentView !== 'all' ? { agentView } : {}),
-      ...(projectPath ? { projectPath } : {})
-    }
-    window.api?.usage
-      .summary(request)
-      .then((data) => {
-        if (!cancelled) {
-          setUsage(normalizeUsageSummary(data))
-          setLoadError(false)
-          setHasLoadedUsage(true)
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setLoadError(true)
-          setHasLoadedUsage(true)
-        }
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [costMode, days, projectPath, agentView, reloadKey])
+    // 首次 settle (成功或失败) 后不再回到骨架屏 (参数切换期保留旧数据, 现状语义)。
+    if (!usageLoading) setHasLoadedUsage(true)
+  }, [usageLoading])
 
   const hasCostData = usage && usage.dailyCosts.length > 0
   const hasModelData = usage && usage.byModel.length > 0
@@ -388,13 +370,17 @@ export function Usage(): React.ReactElement {
               action={
                 <button
                   type="button"
-                  onClick={() => setReloadKey((value) => value + 1)}
+                  onClick={reloadUsage}
                   className="rounded-md border border-border bg-background px-3 py-1.5 text-sm font-medium hover:bg-muted"
                 >
                   {t('common.retry')}
                 </button>
               }
-            />
+            >
+              {usageError && (
+                <p className="mt-0.5 break-words text-xs text-destructive/70">{usageError}</p>
+              )}
+            </NoticePanel>
           )}
 
           {loadError && !usage ? null : (

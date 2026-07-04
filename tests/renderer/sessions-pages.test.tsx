@@ -14,6 +14,7 @@ import type { Asset, SessionSummary, UsageSummary } from '@shared/types/asset'
 import type { SessionActivityMetrics, SessionReplayResult } from '@shared/types/ipc'
 import { normalizeTokenUsage } from '@shared/token-usage'
 import { useAppStore } from '../../src/renderer/src/stores/app'
+import { resetUsageSummaryCacheForTests } from '../../src/renderer/src/hooks/use-ipc'
 
 type MockGroupedVirtuosoHandle = {
   scrollToIndex: (location: unknown) => void
@@ -362,6 +363,8 @@ describe('session pages', () => {
   beforeEach(() => {
     // GH-138: agent tab 现写全局 store.agentView (与侧栏切换器同一真源); 重置避免点击 tab 的用例污染后续用例。
     useAppStore.setState({ agentView: 'all' })
+    // GH-153 T6: usage 页/widget 走模块级 keyed 缓存 — 清缓存与在途, 避免跨用例命中旧 mock 的结果。
+    resetUsageSummaryCacheForTests()
   })
 
   it('renders overview recent sessions with readable path, tokens, and unknown cost', async () => {
@@ -1085,6 +1088,19 @@ describe('session pages', () => {
     })
   })
 
+  // GH-153 T6: usage 页复用 useUsageSummary 后, 错误路径不再吞详情 — err message 可见。
+  it('surfaces the usage load error detail (GH-153 T6)', async () => {
+    window.api.usage.summary = vi.fn(async (): Promise<UsageSummary> => {
+      throw new Error('usage exploded')
+    })
+
+    const { unmount } = renderUsagePage()
+
+    expect(await screen.findByText('Usage data could not be loaded')).toBeInTheDocument()
+    expect(screen.getByText('usage exploded')).toBeInTheDocument()
+    unmount()
+  })
+
   it('uses all-time usage by default and preserves explicit rolling ranges', async () => {
     mockSessionApis()
 
@@ -1107,12 +1123,10 @@ describe('session pages', () => {
 
     fireEvent.click(screen.getByRole('tab', { name: 'All time' }))
 
-    await waitFor(() => {
-      expect(window.api.usage.summary).toHaveBeenLastCalledWith({
-        days: 0,
-        costMode: 'auto'
-      })
-    })
+    // GH-153 T6: 切回 all-time 在 TTL 内命中 keyed 缓存 — 数据立即可见且不再发第三路 IPC
+    // (旧契约是每次切换重取; 缓存语义下往返完整性由数据呈现断言保证)。
+    expect(await screen.findByText('Input: 10')).toBeInTheDocument()
+    expect(window.api.usage.summary).toHaveBeenCalledTimes(2)
   })
 
   it('shows a retryable error when usage summary fails to load', async () => {

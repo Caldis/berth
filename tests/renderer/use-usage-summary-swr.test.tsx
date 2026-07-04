@@ -69,6 +69,33 @@ describe('useUsageSummary SWR dedup (GH-153 T5)', () => {
     long.unmount()
   })
 
+  // GH-153 T6: usage 页复用本 hook 需要 costMode — 透传进请求体, 且参与缓存 key 分流。
+  it('forwards costMode into the request body (GH-153 T6)', async () => {
+    window.api.usage.summary = vi.fn(async () => summaryOf(3))
+
+    const { unmount } = renderHook(() => useUsageSummary(0, 'all', undefined, 'estimated'))
+    await waitFor(() =>
+      expect(window.api.usage.summary).toHaveBeenCalledWith({ days: 0, costMode: 'estimated' })
+    )
+    unmount()
+  })
+
+  it('keys the cache by costMode so modes do not collide (GH-153 T6)', async () => {
+    window.api.usage.summary = vi.fn(async (request: { costMode?: string }) =>
+      summaryOf(request.costMode === 'actual' ? 1 : 2)
+    )
+
+    const actual = renderHook(() => useUsageSummary(0, 'all', undefined, 'actual'))
+    const estimated = renderHook(() => useUsageSummary(0, 'all', undefined, 'estimated'))
+    await waitFor(() => {
+      expect(actual.result.current.usage?.totalCost).toBe(1)
+      expect(estimated.result.current.usage?.totalCost).toBe(2)
+    })
+    expect(window.api.usage.summary).toHaveBeenCalledTimes(2)
+    actual.unmount()
+    estimated.unmount()
+  })
+
   it('reload invalidates the cache and refetches', async () => {
     window.api.usage.summary = vi.fn(async () => summaryOf(1))
 

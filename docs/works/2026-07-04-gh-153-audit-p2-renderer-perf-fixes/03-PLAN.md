@@ -19,8 +19,9 @@
   - tests: use-usage-summary-swr.test.tsx (新) 4 用例 — 同参三实例 1 路 IPC / TTL 内 remount 零 IPC / 异 days 分流 / reload 重取, 先红后绿; GH-118 错误语义 + overview 仪表盘回归 11/11
   - **偏差 (测试基建)**: usage-summary-error.test.tsx 补 beforeEach 缓存重置 (模块级缓存引入后的用例隔离, 断言语义不动)
   - verify: CDP ① Overview 5 usage widget 单路 usage.summary (归 4.0-verify)
-- [ ] T6 (B2 → A2): useUsageSummary +costMode 位参; usage.tsx 内联取数删除、复用 hook + normalize useMemo + 错误详情呈现 + hasLoadedUsage 派生
-  - tests: costMode 透传进请求体 (先红) + usage 错误详情可见 + 既有 usage 测试回归
+- [x] T6 (B2 → A2): useUsageSummary +costMode 位参; usage.tsx 内联取数删除、复用 hook + normalize useMemo + 错误详情呈现 + hasLoadedUsage 派生
+  - tests: costMode 透传/分 key 两用例 + usage 页错误详情可见用例, 先红 (3 failed) 后绿; usage/overview/GH-118 全量回归 68/68; typecheck+lint 绿
+  - **偏差 (契约更新)**: "切回 all-time 重发 IPC" 旧钉改为 "TTL 内命中缓存零重发 + 数据呈现断言" — 缓存语义下的新契约, 往返完整性保留
   - verify: CDP usage 页 days/costMode 切换 + 错误路径实测 (归 4.0-verify)
 - [ ] T7 (B9 → A9): motion.ts +EASE_CSS (由 ease 数组生成)/+LAYOUT_GLIDE (0.28 数值锁定); overview/dashboard-grid/widget-shell 四处引 token
   - tests: overview-dashboard/dnd-kit-smoke 回归 + grep dashboard 域无字面 duration/ease 魔数; token 常量 not needed (SPEC 例外已记)
