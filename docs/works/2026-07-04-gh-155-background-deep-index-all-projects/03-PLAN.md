@@ -37,3 +37,9 @@
 
 ## verify 回写
 verify 不通过项作为新任务追加于此, phase 退回 implement。
+
+- [ ] T9 (verify 回写, A4/A1 冲突): refresh 入口 preempt 按 reason 门控 — 仅 manual/project-scope/legacy-scan-all (用户可感) 击杀在途后台深扫; watcher/startup 类后台刷新走 helper 串行排队。
+  - 证据: CDP 时序采集 (gh155-verify 实例, 真实 27 候选) N 冻结 5/27 达 193s; 调度快照显示 watcher scheduledRefresh 周期性活跃 + lastScanDurationMs=667 — 每 ~30s 的 watcher 刷新无差别 preempt, 扫描时长 >30s 的项目被永久击杀重排 (livelock)。
+  - tests: agent-asset-runtime 扩展 (watcher-reason refresh 不 preempt / manual-reason preempt); 队列单测不变
+  - verify: 单测绿 + 重建后 CDP 复测 N 递增至 done
+

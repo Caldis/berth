@@ -1671,6 +1671,32 @@ describe('background index queue wiring (GH-155 W4/C1)', () => {
     await vi.waitFor(() => expect(runtime.getStatus().backgroundIndex?.state).toBe('unsupported'))
   })
 
+  it('watcher-reason refreshes do NOT preempt the in-flight background scan; manual does (T9)', async () => {
+    // CDP 实测 (verify 回写): 活跃机器 watcher 每 ~30s 刷新一次, 无差别 preempt 会让
+    // 扫描时长超过该间隔的项目被永久击杀重排 — N 冻结 livelock。
+    const cancel = vi.fn()
+    const scanProjectDeep = vi.fn(() => new Promise<{ assets: Asset[]; errors: never[] }>(() => {}))
+    const scanner: AssetRuntimeScanner = {
+      scanAll: vi.fn(async () => ({ assets: [], stats: emptyStats, errors: [] })),
+      getScanSourceGroups: vi.fn(async () => []),
+      getProjectScopeCandidates: vi.fn(() => [
+        createProjectScopeCandidate({ path: '/bg/slow', source: 'session' })!
+      ]),
+      getProjectDir: () => '/repo/berth',
+      scanProjectDeep,
+      cancel
+    }
+    const runtime = createRuntime(scanner)
+    await runtime.refresh({ reason: 'startup', wait: true })
+    await vi.waitFor(() => expect(scanProjectDeep).toHaveBeenCalledTimes(1))
+
+    await runtime.refresh({ reason: 'watcher', wait: true })
+    expect(cancel).not.toHaveBeenCalled() // hygiene refresh queues behind the helper
+
+    await runtime.refresh({ reason: 'manual', wait: true })
+    expect(cancel).toHaveBeenCalledTimes(1) // user-facing refresh preempts
+  })
+
   it('pause freezes the queue mid-round; resume completes it (A5)', async () => {
     const bgRoot = path.resolve('/bg/one')
     const scanProjectDeep = vi.fn(async () => ({

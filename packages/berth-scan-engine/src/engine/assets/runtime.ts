@@ -467,9 +467,16 @@ export class AgentAssetRuntime {
 
   async refresh(options: AssetRefreshOptions = {}): Promise<AssetRuntimeStatus> {
     this.clearScheduledRefresh()
-    // GH-155 A4: a foreground scan must not wait behind a background project on
-    // the serialized helper — drop the in-flight background scan (requeued).
-    this.backgroundQueue.preemptForForeground()
+    const reason = options.reason ?? 'manual'
+    // GH-155 A4 (T9 verify 回写): only USER-FACING refreshes preempt the in-flight
+    // background project scan — the user is waiting on the serialized helper.
+    // Hygiene refreshes (watcher/startup) just queue behind it (bounded by one
+    // project's deep scan): an active dev box fires watcher refreshes every ~30s,
+    // and unconditional preemption livelocked any project whose deep scan
+    // outlasted that interval (CDP 实测 N 冻结 5/27).
+    if (reason === 'manual' || reason === 'project-scope' || reason === 'legacy-scan-all') {
+      this.backgroundQueue.preemptForForeground()
+    }
     if (this.coordinator.isScanning()) {
       // GH-151 S4: never drop a refresh mid-scan — every reason folds into the
       // single-slot latest-wins queue and run.finally flushes it. (Previously
@@ -483,7 +490,6 @@ export class AgentAssetRuntime {
       return this.status
     }
 
-    const reason = options.reason ?? 'manual'
     if (reason === 'watcher') {
       this.lastWatcherRefreshStartedAtMs = Date.now()
     }
