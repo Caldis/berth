@@ -304,13 +304,15 @@ export class AgentAssetRuntime {
         { id: 'source-groups', value: this.snapshot.sources.length, editable: false, supported: true }
       ],
       capabilities: {
-        workerMode: 'one-shot',
+        // GH-154 条目8: 照实从注入的 scanner 推导 — 生产 helper 是长驻 utilityProcess
+        // 且可 kill; CLI worker 是 one-shot 且无硬中止 (结果由代际 guard 丢弃)。
+        workerMode: this.coordinator.current().workerMode ?? 'one-shot',
         schedulerMode: 'single-flight-queued-project-scope',
         scopeMode: 'scan-on-miss',
         cacheMode: 'sqlite-swr',
         incrementalFileChanges: true,
         pauseSupported: true,
-        cancelSupported: true,
+        cancelSupported: typeof this.coordinator.current().cancel === 'function',
         writableSettingsSupported: true,
         osThrottleSupported: this.settings.osThrottleEnabled && process.platform !== 'win32'
       },

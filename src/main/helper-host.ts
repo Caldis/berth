@@ -191,6 +191,8 @@ export class ScanHelperHost {
  * (its WorkerAssetScanner stays for the CLI).
  */
 export class HelperAssetScanner implements AssetRuntimeScanner {
+  /** 长驻 utilityProcess (GH-154 条目8 能力元数据照实)。 */
+  readonly workerMode = 'long-lived' as const
   private sources: AgentScanSourceGroup[] = []
   private projectCandidates: ProjectScopeCandidate[] = []
   private sessionCache: AssetFileCacheSnapshot<Asset> = { entries: [] }

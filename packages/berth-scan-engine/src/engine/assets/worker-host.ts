@@ -178,6 +178,8 @@ export interface WorkerAssetScannerOptions {
 }
 
 export class WorkerAssetScanner implements AssetRuntimeScanner {
+  /** one-shot worker_threads, 无硬中止 (GH-154 条目8 能力元数据照实)。 */
+  readonly workerMode = 'one-shot' as const
   private sources: AgentScanSourceGroup[] = []
   private projectCandidates: ProjectScopeCandidate[] = []
   private sessionCache: AssetFileCacheSnapshot<Asset> = { entries: [] }

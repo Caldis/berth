@@ -17,8 +17,8 @@
 
 6. **openPath realpath**: shell openPath 白名单校验基于字面路径前缀, 未 realpath 归一 — symlink/.. 构造可能绕过扫描根白名单 (GH-119 url-guard 的补强)。
 7. **openExternal 白名单**: openExternal 对 URL scheme/host 无白名单, 资产内容中的任意链接可拉起外部程序。方向: 限 https/mailto 等安全 scheme。
-8. **getEngineInfo 能力元数据失真**: capabilities 字段 (如 cancelSupported/pauseSupported) 与实际实现有出入 (worker 链路 cancel 未实现但元数据可能未如实反映); 与 #9 关联。
-9. **worker 链路 cancel 未实现**: `WorkerAssetScanner` 无 cancel — coordinator.cancel 后结果靠代际 guard 丢弃, 但扫描继续烧资源且 `isScanning` 持续 true 到扫完 (GH-151 explore 已核实此现状)。方向: worker terminate 或消息协作取消。
+8. ~~**getEngineInfo 能力元数据失真**~~ **已修 (2026-07-04, GH-154 旁支轻量修复)**: capabilities 从注入 scanner 推导 (workerMode helper=long-lived/worker=one-shot; cancelSupported=scanner.cancel 存在性), 不再硬编码; 见 commit "capabilities 照实" + agent-asset-runtime 测试钉。
+9. **worker 链路 cancel 未实现** (维持 open, 低价值评估 2026-07-04): `WorkerAssetScanner` 无 cancel — 仅影响 CLI/引擎默认链路 (生产 Electron 走 helper, 有 kill); CLI 为 one-shot 扫描, 代际 guard 已保证结果正确性, 实现协作取消属协议级改动、收益低。元数据已照实标注 (条目 8), 缺口对消费方可见。方向 (若做): worker.terminate() 硬中止。
 
 ## P3 收敛族 (低优先, 独立小批或按需顺带)
 

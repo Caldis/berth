@@ -26,6 +26,9 @@ export interface AssetRuntimeScanner {
   /** Abort an in-flight scan (cancel/pause, GH-135). The helper kills its process;
    * the worker has no hard abort, so the coordinator drops its result instead. */
   cancel?(): void
+  /** Execution mode for capability metadata (GH-154 条目8): helper = long-lived
+   * utilityProcess, worker = one-shot worker_threads. Absent → 'one-shot'. */
+  workerMode?: 'one-shot' | 'long-lived'
 }
 
 /** Everything a completed scan hands back for the runtime to commit. */

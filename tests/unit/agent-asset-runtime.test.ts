@@ -160,6 +160,8 @@ describe('AgentAssetRuntime', () => {
       sourceGroups: 1,
       sourceRows: 0
     })
+    // GH-154 旁支 (issues 条目 8): 能力元数据照实 — 从注入的 scanner 推导, 不再硬编码。
+    // 本 fake scanner 无 cancel/workerMode → cancelSupported false + one-shot 回落。
     expect(info.capabilities).toMatchObject({
       workerMode: 'one-shot',
       schedulerMode: 'single-flight-queued-project-scope',
@@ -167,7 +169,7 @@ describe('AgentAssetRuntime', () => {
       cacheMode: 'sqlite-swr',
       incrementalFileChanges: true,
       pauseSupported: true,
-      cancelSupported: true,
+      cancelSupported: false,
       writableSettingsSupported: true
     })
     expect(info.scheduler).toEqual({
@@ -207,6 +209,20 @@ describe('AgentAssetRuntime', () => {
         expect.objectContaining({ id: 'pause', supported: true, editable: false })
       ])
     )
+  })
+
+  it('derives workerMode and cancelSupported from the injected scanner (GH-154 条目8)', async () => {
+    const base = createScanner({ assets: [], stats: emptyStats, errors: [] })
+    const longLived: AssetRuntimeScanner = {
+      ...base,
+      workerMode: 'long-lived',
+      cancel: vi.fn()
+    }
+    const runtime = createRuntime(longLived)
+
+    const capabilities = runtime.getEngineInfo().capabilities
+    expect(capabilities.workerMode).toBe('long-lived')
+    expect(capabilities.cancelSupported).toBe(true)
   })
 
   it('reports scheduled and queued refresh state through scan engine info', async () => {
