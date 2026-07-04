@@ -91,12 +91,16 @@ export function buildScanEngineSettingControls(
     numControl('periodic-scan-interval-ms', 'periodicScanIntervalMs', 'schedule', settings.periodicScanIntervalMs, 'ms'),
     boolControl('idle-only', 'idleOnly', 'schedule', settings.idleOnly),
     numControl('idle-threshold-ms', 'idleThresholdMs', 'schedule', settings.idleThresholdMs, 'ms'),
-    numControl('scan-concurrency', 'scanConcurrency', 'performance', settings.scanConcurrency),
+    // GH-152 T3: scanConcurrency / contentHash / minFreeDiskMb have zero engine
+    // consumers today — surface them as unsupported (panel disabled state, same
+    // as osThrottle on win32) instead of promising behavior that never happens.
+    // The setting keys stay persisted; flip supported back when implemented.
+    numControl('scan-concurrency', 'scanConcurrency', 'performance', settings.scanConcurrency, undefined, false),
     numControl('batch-pause-ms', 'batchPauseMs', 'performance', settings.batchPauseMs, 'ms'),
-    boolControl('content-hash', 'contentHash', 'performance', settings.contentHash),
+    boolControl('content-hash', 'contentHash', 'performance', settings.contentHash, false),
     boolControl('os-throttle-enabled', 'osThrottleEnabled', 'performance', settings.osThrottleEnabled, platform !== 'win32'),
     boolControl('ac-only-full-scan', 'acOnlyFullScan', 'power', settings.acOnlyFullScan),
-    numControl('min-free-disk-mb', 'minFreeDiskMb', 'power', settings.minFreeDiskMb),
+    numControl('min-free-disk-mb', 'minFreeDiskMb', 'power', settings.minFreeDiskMb, undefined, false),
     {
       id: 'exclude-paths',
       value: settings.excludePaths,
@@ -115,7 +119,8 @@ function numControl(
   settingKey: NumberSettingKey,
   group: ScanEngineControlGroup,
   value: number,
-  unit?: ScanEngineControlUnit
+  unit?: ScanEngineControlUnit,
+  supported = true
 ): ScanEngineControlDescriptor {
   return {
     id,
@@ -123,7 +128,7 @@ function numControl(
     kind: 'number',
     group,
     editable: true,
-    supported: true,
+    supported,
     settingKey,
     ...(unit ? { unit } : {}),
     ...SCAN_ENGINE_SETTING_LIMITS[settingKey]
