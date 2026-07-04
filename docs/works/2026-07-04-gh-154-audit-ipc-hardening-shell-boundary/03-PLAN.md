@@ -5,8 +5,8 @@
 - [x] T1 (D4 → A5): parseMemoryIndex +onMalformed; indexEntries malformed>0 → 记账 + 返回 null (整体回退目录扫描); splitFrontmatter ×2 补豁免注释
   - tests: 纯层 2 用例 (onMalformed 上报畸形链接行 / 真实 fixture 散文 bullet 零误报) + 服务层 1 用例 (回退目录扫描 + 记账一次 + detect 计数), 先红 (2 failed) 后绿; memory 三文件 35/35 回归
   - verify: 不适用 (main 域逻辑)
-- [ ] T2 (D5 → A6): url-guard +isAllowedRevealPathReal (realpath 注入); handlers.ts openPath 接入 fs.realpathSync
-  - tests: url-guard.test.ts 扩展 — fake realpath 下 symlink 出根 deny / 正常路径过 / ENOENT deny, 先红后绿
+- [x] T2 (D5 → A6): url-guard +isAllowedRevealPathReal (realpath 注入); handlers.ts openPath 接入 fs.realpathSync
+  - tests: url-guard.test.ts +5 用例 (symlink 出根 deny / 正常过 / ENOENT deny / 根解析失败保字面 / 根别名归一放行), 先红 (5 failed) 后绿 34/34
   - verify: 冷启动 smoke reveal 正常 (归 4.0-verify)
 - [ ] T3 (D1 → A1/A2): typed-ipc.ts (handleIpc + isTrustedIpcSender) + handlers.ts 45 点迁移 + ipc-contract regex 扩面
   - tests: typed-ipc.test.ts (新) 先红后绿 (门禁 reject+log / 主帧透传); ipc-contract + ipc-registration 回归; typecheck 错误探针 (临时错参 → 红 → 移除, 结果记 PLAN)

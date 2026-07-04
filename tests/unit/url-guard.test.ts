@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import * as path from 'path'
-import { isSafeExternalUrl, isAllowedRevealPath, isAllowedPermission } from '../../src/main/url-guard'
+import { isSafeExternalUrl, isAllowedRevealPath, isAllowedRevealPathReal, isAllowedPermission } from '../../src/main/url-guard'
 
 // GH-119: pins the three pure window-hardening predicates. The guard module is
 // electron-free by architecture constraint (electron value imports are confined
@@ -101,4 +101,52 @@ describe('isAllowedPermission', () => {
       expect(isAllowedPermission(permission)).toBe(false)
     }
   )
+})
+
+// GH-154 T2: openPath 白名单此前纯词法 (path.resolve 处理 .. 但不解 symlink) —
+// 根内恶意 symlink 可指向根外。realpath 注入式谓词: candidate 解析失败即 deny。
+describe('isAllowedRevealPathReal', () => {
+  const rootA = path.resolve('/berth-test/scan-root-a')
+  const outside = path.resolve('/berth-test/outside')
+  const roots = [rootA]
+
+  it('denies a symlink inside a root that resolves outside every root', () => {
+    const link = path.join(rootA, 'evil-link.md')
+    const realpath = (p: string): string => (p === link ? path.join(outside, 'secret.md') : p)
+    expect(isAllowedRevealPathReal(link, roots, { realpath })).toBe(false)
+  })
+
+  it('allows a normal file whose realpath stays inside the root', () => {
+    const file = path.join(rootA, 'skills', 'a.md')
+    expect(isAllowedRevealPathReal(file, roots, { realpath: (p) => p })).toBe(true)
+  })
+
+  it('denies when the candidate cannot be resolved (ENOENT)', () => {
+    const file = path.join(rootA, 'missing.md')
+    const realpath = (): string => {
+      throw new Error('ENOENT')
+    }
+    expect(isAllowedRevealPathReal(file, roots, { realpath })).toBe(false)
+  })
+
+  it('keeps a root usable when the root itself fails to resolve (falls back to the literal root)', () => {
+    const file = path.join(rootA, 'a.md')
+    const realpath = (p: string): string => {
+      if (p === rootA) throw new Error('EPERM')
+      return p
+    }
+    expect(isAllowedRevealPathReal(file, roots, { realpath })).toBe(true)
+  })
+
+  it('allows a candidate that reaches a root through a symlinked alias of the root', () => {
+    // alias → rootA 本体: candidate 与 root 都归一后仍在白名单内。
+    const alias = path.resolve('/berth-test/alias-root')
+    const file = path.join(alias, 'a.md')
+    const realpath = (p: string): string => {
+      if (p === file) return path.join(rootA, 'a.md')
+      if (p === alias) return rootA
+      return p
+    }
+    expect(isAllowedRevealPathReal(file, [alias], { realpath })).toBe(true)
+  })
 })

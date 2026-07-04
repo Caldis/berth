@@ -1,4 +1,5 @@
 import * as os from 'os'
+import { realpathSync as fsRealpathSync } from 'fs'
 import { BrowserWindow, dialog, ipcMain, nativeTheme, shell, app } from 'electron'
 import type { IpcMainInvokeEvent } from 'electron'
 import type { AgentView, Asset, CostMode, UsageSummary } from '@shared/types/asset'
@@ -28,7 +29,7 @@ import { setHookEnabled } from '@berth/scan-engine/engine/hooks-manager'
 import { buildSessionDetail } from '@berth/scan-engine/engine/session-detail'
 import { buildSessionReplay, readSessionReplayEventPayload } from '@berth/scan-engine/engine/session-replay'
 import { getMemoryRoots, listMemory, readMemory } from '../memory'
-import { isAllowedRevealPath, isSafeExternalUrl } from '../url-guard'
+import { isAllowedRevealPathReal, isSafeExternalUrl } from '../url-guard'
 import { getUpdaterRuntime } from '../updater'
 import { DEFAULT_UPDATE_PREFERENCES, readUpdatePreferences, writeUpdatePreferences } from '../update-preferences'
 import { getMainLog } from '@berth/scan-engine/log'
@@ -102,7 +103,8 @@ export function registerSystemHandlers(): void {
   }
 
   ipcMain.handle('shell:openPath', async (_event, p: string) => {
-    if (!isAllowedRevealPath(p, await collectAllowedRevealRoots())) {
+    // GH-154 T2: realpath 归一后再比白名单 — 词法谓词不解 symlink, 根内链接可指根外。
+    if (!isAllowedRevealPathReal(p, await collectAllowedRevealRoots(), { realpath: (target) => fsRealpathSync(target) })) {
       getMainLog().log('url-guard', `denied reveal-path: ${p}`)
       return
     }
