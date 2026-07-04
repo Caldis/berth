@@ -7,6 +7,9 @@ export const PREPUSH_TASKS = [
   { name: 'lint', args: ['lint'] },
   { name: 'typecheck', args: ['typecheck'] },
   { name: 'test', args: ['test'] },
+  // GH-152 friction: CI 单独跑包内套件 (packages/berth-scan-engine/tests), 根级
+  // `pnpm test` 不含它 — 引擎改动本地全绿仍可能 CI 红 (search-signature 撞过)。
+  { name: 'test:scan-engine', args: ['--filter', '@berth/scan-engine', 'test'] },
   { name: 'harness:check', args: ['harness:check'] },
   { name: 'harness:ci:baseline', args: ['harness:ci:baseline'] }
 ]
