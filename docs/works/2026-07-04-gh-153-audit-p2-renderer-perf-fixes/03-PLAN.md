@@ -6,8 +6,8 @@
   - tests: buildSessionGroups 导出 + date 分组 characterization 新增 (先钉绿再改实现, 改后仍绿); sessions 族 36/36 绿
   - **偏差 (类型面)**: `VirtualListGroup.items` 为 readonly, 本地 Map 用交叉类型收窄可变 + 末尾 filter 改 TS5.5 推断谓词 (行为不变)
   - verify: A7 属主观时序, 代码评审 + 回归绿 (SPEC 例外已记)
-- [ ] T2 (B6 → A6): use-ipc.ts 引擎控制 pause/resume/cancel/rebuild catch 转 setError
-  - tests: 控制动作失败落 error, 先红后绿
+- [x] T2 (B6 → A6): use-ipc.ts 引擎控制 pause/resume/cancel/rebuild catch 转 setError
+  - tests: settings-page rebuild 失败呈现 error 块用例, 先红后绿 17/17
   - verify: 不适用 (设置面板既有 error 呈现路径)
 - [ ] T3 (B5 → A5): cached-resource.ts +forceRequest (递归链后语义) + requestHealthChecks(force) 走 forceRequest
   - tests: cached-resource forceRequest 三态 (无在途/有在途链后/写序) + use-health-checks 软刷在途时 force 必出程 — 先红后绿

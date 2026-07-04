@@ -322,21 +322,27 @@ export function useScanEngineInfo(): {
     setError(null)
   }, [])
 
+  // GH-153 T2: 控制动作失败落 error 通道 (规则 8 禁裸吞), 面板 error 块呈现。
+  const surfaceActionError = useCallback((err: unknown) => {
+    if (!mountedRef.current) return
+    setError(err instanceof Error ? err.message : String(err))
+  }, [])
+
   const pause = useCallback(() => {
-    void window.api?.assets?.pause?.().then(applyEngineInfo).catch(() => undefined)
-  }, [applyEngineInfo])
+    void window.api?.assets?.pause?.().then(applyEngineInfo).catch(surfaceActionError)
+  }, [applyEngineInfo, surfaceActionError])
 
   const resume = useCallback(() => {
-    void window.api?.assets?.resume?.().then(applyEngineInfo).catch(() => undefined)
-  }, [applyEngineInfo])
+    void window.api?.assets?.resume?.().then(applyEngineInfo).catch(surfaceActionError)
+  }, [applyEngineInfo, surfaceActionError])
 
   const cancel = useCallback(() => {
-    void window.api?.assets?.cancel?.().then(() => loadInfo()).catch(() => undefined)
-  }, [loadInfo])
+    void window.api?.assets?.cancel?.().then(() => loadInfo()).catch(surfaceActionError)
+  }, [loadInfo, surfaceActionError])
 
   const rebuild = useCallback(() => {
-    void window.api?.assets?.rebuild?.().then(() => loadInfo()).catch(() => undefined)
-  }, [loadInfo])
+    void window.api?.assets?.rebuild?.().then(() => loadInfo()).catch(surfaceActionError)
+  }, [loadInfo, surfaceActionError])
 
   useEffect(() => {
     mountedRef.current = true

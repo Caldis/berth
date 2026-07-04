@@ -278,6 +278,20 @@ describe('SettingsContent page chrome', () => {
     await waitFor(() => expect(window.api.assets.rebuild).toHaveBeenCalled())
   })
 
+  // GH-153 T2: 控制动作失败必须落 error 通道 (规则 8 禁裸吞), 面板既有 error 块可见。
+  it('surfaces a failed rebuild in the section error block (GH-153 T2)', async () => {
+    window.api.assets.rebuild = vi.fn(async (): Promise<AssetRuntimeStatus> => {
+      throw new Error('rebuild exploded')
+    })
+    renderSettingsContent()
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Rebuild index' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Clear and rebuild' }))
+
+    await waitFor(() => expect(window.api.assets.rebuild).toHaveBeenCalled())
+    expect(await screen.findByText('rebuild exploded')).toBeInTheDocument()
+  })
+
   it('manages excluded paths via the native directory picker (GH-135 G4)', async () => {
     window.api.dialog.openDirectory = vi.fn(async () => ['/Users/me/new-dir'])
     renderSettingsContent()
