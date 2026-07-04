@@ -200,10 +200,16 @@ export const mockApi = {
   },
   usage: {
     summary: async () => ({
+      costMode: 'auto' as const,
       totalCost: 0,
+      actualCost: 0,
+      estimatedCost: 0,
+      costDelta: 0,
+      costExplanation: { formula: 'unknown' as const, pricingSources: [], catalog: { sources: [] } },
       totalTokens: 0,
       tokenUsage: emptyTokenUsage,
       costSource: 'unknown' as const,
+      pricingMisses: [],
       dailyCosts: [],
       dailyTokenUsage: [],
       byModel: [],
@@ -273,13 +279,11 @@ export const mockApi = {
     check: async () => {},
     download: async () => {},
     install: async () => {},
-    getPreferences: async () => ({ autoDownload: false }),
+    getPreferences: async () => ({ autoCheck: true, autoDownload: false, allowPrerelease: false }),
     setPreferences: async () => {},
     onState: () => () => {}
   }
-} satisfies {
-  [G in keyof BerthAPI]: { [M in keyof BerthAPI[G]]: unknown }
-}
+} satisfies BerthAPI
 
 const hasDomEnvironment = typeof window !== 'undefined' && typeof HTMLElement !== 'undefined'
 

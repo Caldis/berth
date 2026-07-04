@@ -15,8 +15,8 @@
 - [x] T4 (D2 → A3): sendToWindow + index.ts 5 send 点迁移 + eventsSent regex 扩面
   - tests: ipc-contract 事件三方回归 4/4; 裸 webContents.send 归零 (双向 grep); typecheck 探针: 错 payload → 1 TS 错误, 还原绿
   - verify: 冷启动 smoke 最大化状态推送正常 (归 4.0-verify)
-- [ ] T5 (D3 → A4): tests/setup.ts mockApi 收紧 satisfies BerthAPI (typecheck 红名单驱动补形状)
-  - tests: typecheck 绿 + 全量 renderer 回归 (>5 文件连锁则停下回 design)
+- [x] T5 (D3 → A4): tests/setup.ts mockApi 收紧 satisfies BerthAPI (GH-115 T2 遗留 TODO 兑现)
+  - tests: 红名单仅 2 处 (usage.summary 缺 7 字段 / getPreferences 缺 2 字段), 补齐后 typecheck 绿 + 全量 1382 测试回归绿 (零连锁断言改动)
   - verify: 不适用
 - [ ] 收口: A7 复核 (url-guard scheme 既有用例点名) + 全局门禁 + 推送 + CI 旁路 + 冷启动 smoke
   - tests: A0 (prepush 全绿)
