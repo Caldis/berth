@@ -1,9 +1,16 @@
 import { renderHook, waitFor } from '@testing-library/react'
 import { act } from 'react'
-import { describe, expect, it, vi } from 'vitest'
-import { useUsageSummary } from '../../src/renderer/src/hooks/use-ipc'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import {
+  resetUsageSummaryCacheForTests,
+  useUsageSummary
+} from '../../src/renderer/src/hooks/use-ipc'
 
 describe('useUsageSummary — error channel (GH-118 T1)', () => {
+  // GH-153 T5: hook 改为模块级 keyed 缓存, 用例间必须重置避免跨用例命中。
+  beforeEach(() => {
+    resetUsageSummaryCacheForTests()
+  })
   it('surfaces an error when the summary IPC rejects, and reload recovers', async () => {
     window.api.usage.summary = vi
       .fn()

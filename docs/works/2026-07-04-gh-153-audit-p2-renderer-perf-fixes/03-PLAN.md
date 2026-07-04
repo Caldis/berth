@@ -15,8 +15,9 @@
 - [x] T4 (B8 → A8): useSessionDetail 加 keyed CachedResource (镜像 replay 形状, 60s)
   - tests: use-sessions-swr 3 新用例 (TTL 内二次 mount 零 IPC / 按 id 分流 / reload 失效重取) 先红后绿; session-error + sessions-pages 回归 39/39
   - verify: 不适用 (纯取数路径)
-- [ ] T5 (B1 → A1): usageSummaryResource + useUsageSummary SWR 化 (peek/isFresh/request/invalidate)
-  - tests: use-usage-summary-swr.test.tsx (新) — 同参双实例 1 路 IPC / 异 days 分流 / reload 重取, 先红后绿
+- [x] T5 (B1 → A1): usageSummaryResource + useUsageSummary SWR 化 (peek/isFresh/request/invalidate)
+  - tests: use-usage-summary-swr.test.tsx (新) 4 用例 — 同参三实例 1 路 IPC / TTL 内 remount 零 IPC / 异 days 分流 / reload 重取, 先红后绿; GH-118 错误语义 + overview 仪表盘回归 11/11
+  - **偏差 (测试基建)**: usage-summary-error.test.tsx 补 beforeEach 缓存重置 (模块级缓存引入后的用例隔离, 断言语义不动)
   - verify: CDP ① Overview 5 usage widget 单路 usage.summary (归 4.0-verify)
 - [ ] T6 (B2 → A2): useUsageSummary +costMode 位参; usage.tsx 内联取数删除、复用 hook + normalize useMemo + 错误详情呈现 + hasLoadedUsage 派生
   - tests: costMode 透传进请求体 (先红) + usage 错误详情可见 + 既有 usage 测试回归

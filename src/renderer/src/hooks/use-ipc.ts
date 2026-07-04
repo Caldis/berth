@@ -59,6 +59,15 @@ const sessionDetailResource = new CachedResource<SessionDetailResult | null>(
   SESSION_DETAIL_CACHE_TTL_MS
 )
 
+// GH-153 T5: usage.summary 是主进程全量 session 成本聚合的重 IPC; 多 widget 同参并发
+// 必须共享一路 (insights-context 性能不变量), keyed 缓存按参数集分流。
+export const USAGE_SUMMARY_CACHE_TTL_MS = 30_000
+const usageSummaryResource = new CachedResource<UsageSummary | null>(USAGE_SUMMARY_CACHE_TTL_MS)
+
+export function resetUsageSummaryCacheForTests(): void {
+  usageSummaryResource.clear()
+}
+
 function requestHealthChecks(refresh: boolean): Promise<HealthCheckValue> {
   const fetcher = (): Promise<HealthCheckValue> =>
     window.api.assets.healthCheck({ refresh }).then((result) => ({
@@ -582,12 +591,34 @@ export function useUsageSummary(days: number, agentView?: AgentView, projectPath
   error: string | null
   reload: () => void
 } {
-  const [usage, setUsage] = useState<UsageSummary | null>(null)
-  const [loading, setLoading] = useState(true)
+  const request = useMemo(
+    () => ({
+      days,
+      // 'all'/未设 = 不过滤: 省略 agentView 键 (与 useDashboardInsights 一致, 保持默认请求形状不变)。
+      ...(agentView && agentView !== 'all' ? { agentView } : {}),
+      ...(projectPath ? { projectPath } : {})
+    }),
+    [days, agentView, projectPath]
+  )
+  const cacheKey = useMemo(
+    () =>
+      JSON.stringify({
+        days,
+        agentView: agentView && agentView !== 'all' ? agentView : null,
+        projectPath: projectPath ?? null
+      }),
+    [days, agentView, projectPath]
+  )
+  const initialCache = usageSummaryResource.peek(cacheKey)
+  const [usage, setUsage] = useState<UsageSummary | null>(initialCache ?? null)
+  const [loading, setLoading] = useState(initialCache === undefined)
   const [error, setError] = useState<string | null>(null)
   const [reloadNonce, setReloadNonce] = useState(0)
 
-  const reload = useCallback(() => setReloadNonce((n) => n + 1), [])
+  const reload = useCallback(() => {
+    usageSummaryResource.invalidate(cacheKey)
+    setReloadNonce((n) => n + 1)
+  }, [cacheKey])
 
   useEffect(() => {
     if (!window.api?.usage?.summary) {
@@ -595,19 +626,24 @@ export function useUsageSummary(days: number, agentView?: AgentView, projectPath
       return
     }
     let cancelled = false
+    const cached = usageSummaryResource.peek(cacheKey)
+    if (cached !== undefined) {
+      setUsage(cached)
+      if (usageSummaryResource.isFresh(cacheKey)) {
+        setLoading(false)
+        setError(null)
+        return
+      }
+    }
+    // 参数切换/缓存未命中: 保留上一份数据可见 (GH-118 SWR, 不清屏)。
     setLoading(true)
     setError(null)
-    const request = {
-      days,
-      // 'all'/未设 = 不过滤: 省略 agentView 键 (与 useDashboardInsights 一致, 保持默认请求形状不变)。
-      ...(agentView && agentView !== 'all' ? { agentView } : {}),
-      ...(projectPath ? { projectPath } : {})
-    }
-    window.api.usage
-      .summary(request)
+
+    usageSummaryResource
+      .request(cacheKey, () => window.api.usage.summary(request).then((result) => result ?? null))
       .then((result) => {
         if (cancelled) return
-        setUsage(result ?? null)
+        setUsage(result)
         setError(null)
       })
       .catch((err) => {
@@ -621,7 +657,7 @@ export function useUsageSummary(days: number, agentView?: AgentView, projectPath
     return () => {
       cancelled = true
     }
-  }, [days, agentView, projectPath, reloadNonce])
+  }, [cacheKey, request, reloadNonce])
 
   return { usage, loading, error, reload }
 }
