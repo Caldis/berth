@@ -2,7 +2,7 @@
 task: 2026-07-04-gh-153-audit-p2-renderer-perf-fixes
 task_id: GH-153
 type: bug
-phase: explore
+phase: design
 created: 2026-07-04
 priority: P2
 target_date:
