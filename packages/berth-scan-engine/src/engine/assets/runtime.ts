@@ -14,12 +14,20 @@ import type {
   ScanEngineInfo,
   ScanEngineSchedulerSnapshot,
   ScanEngineSettings,
+  ScanError,
   ScanHistoryEntry,
   ScanResult
 } from '@shared/types/ipc'
 import type { AppScopeSelection, ProjectScopeCandidate } from '@shared/scope'
-import { assetMatchesAppScope, DEFAULT_SCOPE_SELECTION, matchesAgentView, normalizeScopeSelection } from '@shared/scope'
+import {
+  assetMatchesAppScope,
+  DEFAULT_SCOPE_SELECTION,
+  matchesAgentView,
+  normalizeProjectPathKey,
+  normalizeScopeSelection
+} from '@shared/scope'
 import { assetMatchesProjectPath } from '../../project-scope'
+import { resolveProjectConfigRoots } from '../../project-config-roots'
 import { runHealthChecks } from '../health'
 import { getSearch } from '../search'
 import { buildUsageSummary } from '../usage'
@@ -730,7 +738,12 @@ export class AgentAssetRuntime {
     // GH-155 W3: the committed enumeration read files at scan time; keys the
     // watcher folded during the scan are fresher and replace the scan's rows
     // (deletion included). The window closes with the scan.
-    const assets = this.retainMidScanFolds(outcome.scanResult.assets)
+    // GH-155 W2: then graft previously deep-indexed projects' rows over the
+    // scan's shallow regression (the queue revalidates them afterwards).
+    const assets = this.graftDeepRows(
+      this.retainMidScanFolds(outcome.scanResult.assets),
+      outcome.projectDir ?? this.projectDir
+    )
     const stats = assets === outcome.scanResult.assets ? outcome.scanResult.stats : computeAssetStats(assets)
     this.midScanSourceKeys.clear()
     const projectDir = outcome.projectDir ?? this.projectDir
@@ -1024,6 +1037,119 @@ export class AgentAssetRuntime {
     this.progressListener?.({ status: this.status, partial: { assets: merged.map(stripRaw), stats } })
   }
 
+  /**
+   * GH-155 W1: commit one background deep-indexed project into the live snapshot
+   * (and the persisted default view), mirroring applyFileChange semantics — the
+   * snapshot id stays stable so id-keyed consumers don't re-fetch; only the
+   * project's owner-tagged (`scanDepth`) rows are replaced, so sessions and other
+   * projects are untouched. Deep-scan errors are the queue's to account (T5) —
+   * the snapshot's scan errors describe the last full scan.
+   */
+  applyBackgroundProjectResult(projectRoot: string, result: { assets: Asset[]; errors: ScanError[] }): void {
+    const rootKey = normalizeProjectPathKey(projectRoot)
+    if (!rootKey) return
+
+    const foldInto = (snapshot: AssetSnapshot): { snapshot: AssetSnapshot; changedKeys: Set<string> } => {
+      const owned = snapshot.assets.filter((asset) => isOwnedProjectRow(asset, rootKey))
+      const rest = snapshot.assets.filter((asset) => !isOwnedProjectRow(asset, rootKey))
+      const merged = mergeSharedConventions([...rest, ...result.assets])
+      const changedKeys = new Set<string>()
+      for (const asset of [...owned, ...result.assets]) {
+        const key = assetSourceKey(asset)
+        if (key) changedKeys.add(key)
+      }
+      return { snapshot: { ...snapshot, assets: merged, stats: computeAssetStats(merged) }, changedKeys }
+    }
+
+    // Every view snapshot carries the whole device's rows, so the live view folds
+    // regardless of which project is active.
+    const live = foldInto(this.snapshot)
+    this.snapshot = live.snapshot
+    this.assetMap = new Map(live.snapshot.assets.map((asset) => [asset.id, asset]))
+    this.selectorCache.clear()
+    this.snapshotCache.set(this.projectDir, live.snapshot)
+
+    // W3: a fold landing during an in-flight scan must survive that scan's
+    // stale stream — same retention window as watcher increments.
+    if (this.coordinator.isScanning()) {
+      for (const key of live.changedKeys) this.midScanSourceKeys.add(key)
+    }
+
+    // Persist against the DEFAULT view — the only view the store holds. When
+    // another view is active, fold the default cache entry too (switch-back and
+    // cold start must see the deepened rows) and use ITS envelope; the live
+    // view's projectDir/status must never leak into the persisted snapshot.
+    let persist: { snapshot: AssetSnapshot; changedKeys: Set<string> } | null = live
+    if (projectSnapshotKey(this.projectDir) !== projectSnapshotKey(this.initialProjectDir)) {
+      const defaultSnapshot = this.snapshotCache.get(this.initialProjectDir)
+      if (defaultSnapshot) {
+        persist = foldInto(defaultSnapshot)
+        this.snapshotCache.set(this.initialProjectDir, persist.snapshot)
+      } else {
+        persist = null
+      }
+    }
+    if (persist && this.snapshotStore) {
+      if (this.snapshotStore.replaceBySourceKey) {
+        for (const key of persist.changedKeys) {
+          const rows = persist.snapshot.assets.filter((asset) => assetSourceKey(asset) === key)
+          this.snapshotStore.replaceBySourceKey(key, rows, persist.snapshot)
+        }
+      } else {
+        this.snapshotStore.save(persist.snapshot)
+      }
+    }
+
+    this.progressListener?.({
+      status: this.status,
+      partial: { assets: live.snapshot.assets.map(stripRaw), stats: live.snapshot.stats }
+    })
+  }
+
+  /**
+   * GH-155 W2: a full scan re-shallow-scans non-active projects, which would
+   * regress queue-deepened rows to shallow — assets visibly vanishing from the
+   * global scope breaks the "看不到=没有" model. Keep the previous snapshot's
+   * deep rows for those roots and drop the incoming shallow regression. The
+   * scan's ACTIVE config-root chain is excluded (the adapters just deep-scanned
+   * it — fresh truth; a stale graft could resurrect deleted files), as is any
+   * row whose id the incoming set already carries (W3 retention overlap).
+   */
+  private graftDeepRows(incoming: Asset[], scannedProjectDir: string | undefined): Asset[] {
+    const deepByRoot = new Map<string, Asset[]>()
+    for (const asset of this.snapshot.assets) {
+      if (asset.meta?.scanDepth !== 'deep') continue
+      const root = normalizeProjectPathKey(readString(asset.meta, 'projectPath') ?? '')
+      if (!root) continue
+      const rows = deepByRoot.get(root)
+      if (rows) rows.push(asset)
+      else deepByRoot.set(root, [asset])
+    }
+    // Exclude both the resolved chain and the raw dir: resolveProjectConfigRoots
+    // path.resolve()s (drive letter on win32), while tags may carry the unresolved
+    // form — the raw key covers roots that don't exist on this filesystem.
+    for (const activeRoot of [scannedProjectDir ?? '', ...resolveProjectConfigRoots(scannedProjectDir)]) {
+      const key = normalizeProjectPathKey(activeRoot)
+      if (key) deepByRoot.delete(key)
+    }
+    if (deepByRoot.size === 0) return incoming
+
+    const incomingIds = new Set(incoming.map((asset) => asset.id))
+    const kept = incoming.filter((asset) => {
+      if (asset.meta?.scanDepth !== 'shallow') return true
+      const root = normalizeProjectPathKey(readString(asset.meta, 'projectPath') ?? '')
+      return !deepByRoot.has(root)
+    })
+    const grafts: Asset[] = []
+    for (const rows of deepByRoot.values()) {
+      for (const row of rows) {
+        if (!incomingIds.has(row.id)) grafts.push(row)
+      }
+    }
+    if (grafts.length === 0 && kept.length === incoming.length) return incoming
+    return [...kept, ...grafts]
+  }
+
   /** GH-155 W3: swap scan-stream rows for keys the watcher folded mid-scan — the
    * live snapshot's rows for those keys are fresher than the scan's t0 read. A
    * key whose current rows are gone (deletion fold) simply contributes nothing,
@@ -1094,6 +1220,15 @@ function foldKeepingShallow(incoming: Asset[], existing: Asset[]): Asset[] {
 function assetSourceKey(asset: Asset): string | undefined {
   const key = asset.meta?.sourceKey
   return typeof key === 'string' ? key : undefined
+}
+
+/** GH-155 W1: a row the background index queue owns for `rootKey` — owner-tagged
+ * (scanDepth present: shallow or a previous deep pass) AND attributed to that
+ * root. Sessions carry projectPath but no scanDepth, so they are never owned. */
+function isOwnedProjectRow(asset: Asset, rootKey: string): boolean {
+  const depth = asset.meta?.scanDepth
+  if (depth !== 'shallow' && depth !== 'deep') return false
+  return normalizeProjectPathKey(readString(asset.meta, 'projectPath') ?? '') === rootKey
 }
 
 function countIndexedFiles(assets: Asset[]): number {

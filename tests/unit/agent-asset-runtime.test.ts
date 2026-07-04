@@ -1483,6 +1483,153 @@ describe('AgentAssetRuntime.applyFileChange (GH-113 I1)', () => {
   })
 })
 
+function ownedRow(
+  id: string,
+  root: string,
+  sourceKey: string,
+  depth: 'shallow' | 'deep',
+  type: Asset['type'] = 'skill'
+): Asset {
+  return {
+    id,
+    agentId: 'claude-code',
+    category: 'capability',
+    type,
+    scope: 'project',
+    name: id,
+    path: `${root}/.claude/skills/${id}/SKILL.md`,
+    meta: { sourceKey, scanDepth: depth, projectPath: root }
+  }
+}
+
+describe('background project deep-index commits (GH-155 W1/W2)', () => {
+  it('replaces the project’s owner-tagged rows only — sessions and other projects untouched, id stable', async () => {
+    const runtime = await readyRuntime([
+      sessionAsset('session-1'), // projectPath set but NO scanDepth → never owned
+      ownedRow('p-old', '/proj/p', 'key-p0', 'shallow'),
+      ownedRow('q-shallow', '/proj/q', 'key-q0', 'shallow')
+    ])
+    const idBefore = runtime.getSnapshot().id
+
+    runtime.applyBackgroundProjectResult('/proj/p', {
+      assets: [ownedRow('p-new', '/proj/p', 'key-p1', 'deep'), ownedRow('p-nested', '/proj/p', 'key-p2', 'deep')],
+      errors: []
+    })
+
+    expect(runtime.getSnapshot().assets.map((a) => a.id).sort()).toEqual(['p-nested', 'p-new', 'q-shallow', 'session-1'])
+    expect(runtime.getSnapshot().id).toBe(idBefore)
+    expect(runtime.getSnapshot().stats.skills).toBe(3)
+  })
+
+  it('persists row-level per changed sourceKey — replaced, added, and vanished keys (deletion)', async () => {
+    const store = { load: vi.fn(() => null), save: vi.fn(), clear: vi.fn(), replaceBySourceKey: vi.fn() }
+    const runtime = await readyRuntime([ownedRow('p-old', '/proj/p', 'key-p0', 'shallow')], store)
+    store.save.mockClear()
+
+    runtime.applyBackgroundProjectResult('/proj/p', {
+      assets: [ownedRow('p-new', '/proj/p', 'key-p1', 'deep')],
+      errors: []
+    })
+
+    expect(store.save).not.toHaveBeenCalled()
+    const calls = new Map(store.replaceBySourceKey.mock.calls.map((c) => [c[0], (c[1] as Asset[]).map((a) => a.id)]))
+    expect(calls.get('key-p0')).toEqual([]) // vanished key → row deletion
+    expect(calls.get('key-p1')).toEqual(['p-new'])
+    const envelope = store.replaceBySourceKey.mock.calls[0][2] as AssetSnapshot
+    expect(envelope.projectDir).toBe('/repo/berth')
+    expect(envelope.assets.map((a) => a.id)).toContain('p-new')
+  })
+
+  it('falls back to a full save when the store lacks replaceBySourceKey', async () => {
+    const store = { load: vi.fn(() => null), save: vi.fn(), clear: vi.fn() }
+    const runtime = await readyRuntime([ownedRow('p-old', '/proj/p', 'key-p0', 'shallow')], store)
+    store.save.mockClear()
+
+    runtime.applyBackgroundProjectResult('/proj/p', { assets: [ownedRow('p-new', '/proj/p', 'key-p1', 'deep')], errors: [] })
+
+    expect(store.save).toHaveBeenCalledTimes(1)
+  })
+
+  it('while a non-default view is active: live + default cache entry both fold, DEFAULT envelope persists', async () => {
+    const store = { load: vi.fn(() => null), save: vi.fn(), clear: vi.fn(), replaceBySourceKey: vi.fn() }
+    const runtime = await readyRuntime([ownedRow('p-old', '/proj/p', 'key-p0', 'shallow')], store)
+    store.save.mockClear()
+    runtime.setProjectDir('/proj/elsewhere')
+
+    runtime.applyBackgroundProjectResult('/proj/p', { assets: [ownedRow('p-new', '/proj/p', 'key-p1', 'deep')], errors: [] })
+
+    // Live (non-default) view folded …
+    expect(runtime.getSnapshot().assets.map((a) => a.id)).toContain('p-new')
+    // … persisted with the DEFAULT view's envelope (cold-start restore semantics) …
+    for (const call of store.replaceBySourceKey.mock.calls) {
+      expect((call[2] as AssetSnapshot).projectDir).toBe('/repo/berth')
+    }
+    // … and switching back serves the folded default entry.
+    runtime.setProjectDir('/repo/berth')
+    expect(runtime.getSnapshot().assets.map((a) => a.id)).toContain('p-new')
+    expect(runtime.getSnapshot().assets.map((a) => a.id)).not.toContain('p-old')
+  })
+
+  it('a full rescan grafts queue-deepened rows instead of regressing them to shallow (W2)', async () => {
+    const scanner = createScanner({
+      assets: [ownedRow('p-shallow', '/proj/p', 'key-p0', 'shallow')],
+      stats: { ...emptyStats, skills: 1 },
+      errors: []
+    })
+    const runtime = createRuntime(scanner)
+    await runtime.refresh({ wait: true })
+    runtime.applyBackgroundProjectResult('/proj/p', {
+      assets: [ownedRow('p-deep', '/proj/p', 'key-p0', 'deep'), ownedRow('p-nested', '/proj/p', 'key-p2', 'deep')],
+      errors: []
+    })
+
+    await runtime.refresh({ reason: 'manual', wait: true }) // rescan streams shallow again
+    const ids = runtime.getSnapshot().assets.map((a) => a.id)
+    expect(ids).toContain('p-deep')
+    expect(ids).toContain('p-nested')
+    expect(ids).not.toContain('p-shallow') // shallow regression dropped
+  })
+
+  it('graft never resurrects rows for the scan’s ACTIVE config roots — fresh adapter truth wins', async () => {
+    const scanner = createScanner({ assets: [], stats: emptyStats, errors: [] })
+    const runtime = createRuntime(scanner)
+    await runtime.refresh({ wait: true })
+    // Deep rows tagged with the ACTIVE root: the next full scan deep-scans that
+    // root itself, so stale grafts would resurrect deleted files.
+    runtime.applyBackgroundProjectResult('/repo/berth', {
+      assets: [ownedRow('active-deep', '/repo/berth', 'key-a1', 'deep')],
+      errors: []
+    })
+    await runtime.refresh({ reason: 'manual', wait: true })
+    expect(runtime.getSnapshot().assets.map((a) => a.id)).not.toContain('active-deep')
+  })
+
+  it('a queue commit during an in-flight scan survives that scan’s commit (W1×W3)', async () => {
+    const deferred = createDeferred<ScanResult>()
+    const scanAll = vi.fn()
+      .mockImplementationOnce(async () => ({ assets: [], stats: emptyStats, errors: [] }))
+      .mockImplementationOnce(() => deferred.promise)
+    const scanner: AssetRuntimeScanner = {
+      scanAll,
+      getScanSourceGroups: vi.fn(async () => []),
+      getProjectScopeCandidates: vi.fn(() => []),
+      getProjectDir: () => '/repo/berth'
+    }
+    const runtime = createRuntime(scanner)
+    await runtime.refresh({ wait: true })
+
+    const refresh2 = runtime.refresh({ wait: true })
+    runtime.applyBackgroundProjectResult('/proj/p', {
+      assets: [ownedRow('p-deep', '/proj/p', 'key-p1', 'deep')],
+      errors: []
+    })
+    deferred.resolve({ assets: [], stats: emptyStats, errors: [] }) // t0 read: knows nothing of p
+    await refresh2
+
+    expect(runtime.getSnapshot().assets.map((a) => a.id)).toContain('p-deep')
+  })
+})
+
 describe('mid-scan sourceKey retention (GH-155 W3)', () => {
   function capturingScanner(deferred: { promise: Promise<ScanResult> }): {
     scanner: AssetRuntimeScanner
