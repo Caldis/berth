@@ -55,7 +55,7 @@ GH-135 (`docs/works/_archive/2026-06-15-gh-135-index-progress-visibility/`) 完�
 # 来源 / 关联
 - 用户在 GH-113 收尾澄清 (2026-06-07): "全局意味着完全完整的扫描结果, 切换只是 narrow down; 启动即扫全部; conventions-only 是 BUG; 扫描应像 spotlight/windows 索引: 后台渐进增量可控可暂停 + 可配置"。
 - 关联 `docs/works/_archive/2026-06-07-gh-113-scope-refactor-convergence/`。
-- 状态: OPEN (主线大部已落; GH-135 完成 T4 可暂停+设置档位+调度背压+长驻 helper+可观测性深化, 余 cap-5 行级 delta + activate 全量重扫消灭 + 3 项下沉 issue, 见上「进展 (2026-06-16)」)。
+- 状态: OPEN — **主线全部交付** (2026-07-05, GH-155 deep-index 落地后本 FEATURE 无剩余大块; 归档 `docs/works/_archive/2026-07-04-gh-155-background-deep-index-all-projects/`)。余量均在独立 issue: watcher 盲区 / background-index 长尾边缘 / 3 项 GH-135 下沉。建议下次 `harness-5.2-issues` 裁决是否移 resolved (产品史诗关闭由用户拍板)。
 
 # 进展 (2026-06-20, 残项核实)
 - **GH-117 activate 全量重扫 (10s 卡顿症状): 已消除 + 加回归守卫**。核实路径: `project-scope:activate` (handlers.ts:221) → `activateProjectScope` (project-scope-runtime.ts:24) cache miss 走 `void runtime.refresh({ wait: false })` (line 42, 非阻塞后台刷新), cache hit 由 setProjectDir 即时取缓存; global/user 切换走 set-scope 纯客户端 narrow-down 不扫描。10047ms 阻塞路径由 commit `2786c84c` (2026-06-13, 先于 GH-135) 将 `wait:true`→`wait:false` 消除。本批加 7 行回归守卫注释 (commit `bcd9a82b`) 钉死 wait:false 防回退。49 项 project-scope/runtime 单测绿。
