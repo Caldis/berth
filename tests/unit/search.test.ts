@@ -1,4 +1,5 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
+import MiniSearch from 'minisearch'
 import { AssetSearch } from '@berth/scan-engine/engine/search'
 import type { Asset, AssetCategory, AssetScope, AssetType } from '@shared/types/asset'
 
@@ -84,6 +85,37 @@ describe('AssetSearch', () => {
     search.ensureIndexed(second)
     expect(search.search('beta', second).map((result) => result.id)).toEqual(['session-1'])
     expect(search.search('alpha', second)).toEqual([])
+  })
+
+  it('skips reindexing across queries on the same asset array reference (GH-152 T2)', () => {
+    // Dirty check is array-reference equality: the runtime rebuilds the assets
+    // array immutably on every content change, so same ref ⟺ same content. The
+    // old content-signature walked every asset's meta per NEW QUERY (O(all-text)
+    // per keystroke) just to conclude "unchanged".
+    const addAll = vi.spyOn(MiniSearch.prototype, 'addAll')
+    try {
+      const search = new AssetSearch()
+      const assets = [asset('session-1', 'session', { project: 'alpha' })]
+
+      expect(search.search('alpha', assets).map((r) => r.id)).toEqual(['session-1'])
+      expect(search.search('session', assets).map((r) => r.id)).toEqual(['session-1'])
+
+      expect(addAll).toHaveBeenCalledTimes(1) // second query reused the index
+    } finally {
+      addAll.mockRestore()
+    }
+  })
+
+  it('reindexes on a new array reference — incremental fold under a stable snapshot id (GH-152 T2)', () => {
+    // applyFileChange/applyPartial mutate assets under a STABLE snapshot id, so
+    // the dirty key must not be snapshot.id — the freshly-folded asset has to be
+    // searchable immediately.
+    const search = new AssetSearch()
+    const first = [asset('session-1', 'session', { project: 'alpha' })]
+    search.ensureIndexed(first)
+
+    const second = [...first, asset('session-2', 'session', { project: 'gamma' })]
+    expect(search.search('gamma', second).map((r) => r.id)).toEqual(['session-2'])
   })
 
   it('dedupes duplicate asset ids without throwing — transient mid-scan snapshot (GH-140)', () => {

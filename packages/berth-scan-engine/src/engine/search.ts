@@ -16,7 +16,13 @@ interface SearchDoc {
 
 export class AssetSearch {
   private index: MiniSearch<SearchDoc>
-  private indexedSignature: string | null = null
+  // Dirty key = the asset ARRAY REFERENCE (GH-152 T2). The runtime rebuilds
+  // `snapshot.assets` immutably on every content change (commit, partial fold,
+  // applyFileChange — the latter two under a STABLE snapshot id, so snapshot.id
+  // would miss them), which makes same-ref ⟺ same-content an O(1) check. The
+  // previous content signature walked every asset's meta per new query —
+  // O(all-text) per keystroke — just to conclude "unchanged".
+  private indexedAssets: Asset[] | null = null
 
   constructor() {
     this.index = new MiniSearch<SearchDoc>({
@@ -32,19 +38,18 @@ export class AssetSearch {
 
   buildIndex(assets: Asset[]): void {
     this.buildIndexFromDocs(buildSearchDocs(assets))
+    this.indexedAssets = assets
   }
 
   ensureIndexed(assets: Asset[]): void {
-    const docs = buildSearchDocs(assets)
-    const signature = createIndexSignature(docs)
-    if (signature === this.indexedSignature) return
-    this.buildIndexFromDocs(docs, signature)
+    if (this.indexedAssets === assets) return
+    this.buildIndexFromDocs(buildSearchDocs(assets))
+    this.indexedAssets = assets
   }
 
-  private buildIndexFromDocs(docs: SearchDoc[], signature = createIndexSignature(docs)): void {
+  private buildIndexFromDocs(docs: SearchDoc[]): void {
     this.index.removeAll()
     this.index.addAll(docs)
-    this.indexedSignature = signature
   }
 
   search(query: string, assets: Asset[]): SearchResult[] {
@@ -85,7 +90,7 @@ export class AssetSearch {
       summary: extractSearchSummary(asset),
       metadata: extractSearchMetadata(asset)
     })
-    this.indexedSignature = null
+    this.indexedAssets = null
   }
 
   removeAsset(id: string): void {
@@ -94,7 +99,7 @@ export class AssetSearch {
     } catch {
       // not in index
     }
-    this.indexedSignature = null
+    this.indexedAssets = null
   }
 }
 
@@ -122,38 +127,6 @@ function buildSearchDocs(assets: Asset[]): SearchDoc[] {
     })
   }
   return docs
-}
-
-const FIELD_SEPARATOR = '\u001f'
-const ROW_SEPARATOR = '\u001e'
-
-// Escape both separators out of each field so distinct doc rows cannot collapse
-// to the same signature (e.g. path='a\u001fb' vs path='a' + name='b'). A separator
-// byte appearing inside a path/metadata value would otherwise forge row equality
-// and make `ensureIndexed` skip a needed rebuild.
-function signatureField(value: string): string {
-  return value.replaceAll(FIELD_SEPARATOR, ' ').replaceAll(ROW_SEPARATOR, ' ')
-}
-
-function createIndexSignature(docs: SearchDoc[]): string {
-  return docs
-    .map((doc) =>
-      [
-        doc.id,
-        doc.name,
-        doc.type,
-        doc.scope,
-        doc.category,
-        doc.path,
-        doc.agentId,
-        doc.summary,
-        doc.metadata
-      ]
-        .map(signatureField)
-        .join(FIELD_SEPARATOR)
-    )
-    .sort()
-    .join(ROW_SEPARATOR)
 }
 
 function extractSearchSummary(asset: Asset): string {
