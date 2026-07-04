@@ -26,6 +26,8 @@
       "title": "扫描进度",
       "scannedTotal": "已扫描 {{count}} 项资产",
       "indexing": "索引中",
+      "backgroundIndexing": "已索引 {{indexed}}/{{total}} 个项目",
+      "backgroundIndexingHint": "结果逐步补全中",
       "found": "已发现 {{count}} 项",
       "eta": "约剩 {{seconds}}s",
       "rate": "{{rate}}/s",

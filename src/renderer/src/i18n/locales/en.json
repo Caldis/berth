@@ -26,6 +26,8 @@
       "title": "Scan progress",
       "scannedTotal": "{{count}} assets scanned",
       "indexing": "Indexing",
+      "backgroundIndexing": "Indexed {{indexed}}/{{total}} projects",
+      "backgroundIndexingHint": "Results are filling in as background indexing completes",
       "found": "{{count}} found",
       "eta": "~{{seconds}}s left",
       "rate": "{{rate}}/s",

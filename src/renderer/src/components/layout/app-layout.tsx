@@ -11,6 +11,7 @@ import { useAssetRuntimeBootstrap } from '@/hooks/use-ipc'
 import { TopNavigation } from './top-navigation'
 import { PageChromeProvider } from './page-chrome'
 import { IndexHairline } from '@/components/shared/index-activity'
+import { GlobalIndexingBanner } from '@/components/shared/global-indexing-banner'
 import { ErrorState } from '@/components/shared/error-state'
 
 type ContentScrollStyle = CSSProperties & {
@@ -106,6 +107,8 @@ export function AppLayout({ children }: { children: ReactNode }): React.ReactEle
                       onRetry={retry}
                     />
                   )}
+                  {/* GH-155 决策⑤: 自订阅, AppLayout 本体零新增订阅 (GH-153 T8)。 */}
+                  <GlobalIndexingBanner />
                   {children}
                 </>
               )}
