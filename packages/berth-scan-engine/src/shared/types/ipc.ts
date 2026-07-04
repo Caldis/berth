@@ -82,6 +82,14 @@ export interface AssetScanPartial {
   errorCount?: number
 }
 
+/** GH-155: background deep-index progress across all projects (queue-level N/M,
+ * not per-file). Absent on AssetRuntimeStatus = queue idle / nothing known. */
+export interface BackgroundIndexStatus {
+  state: 'indexing' | 'revalidating' | 'done' | 'unsupported'
+  indexedProjects: number
+  totalProjects: number
+}
+
 export interface AssetRuntimeStatus {
   state: AssetRuntimeState
   reason?: AssetScanReason
@@ -91,6 +99,7 @@ export interface AssetRuntimeStatus {
   stale: boolean
   progress?: AssetScanProgress
   error?: string
+  backgroundIndex?: BackgroundIndexStatus
 }
 
 export type ScanEngineControlId =

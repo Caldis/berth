@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import * as path from 'path'
 import type { Asset, AssetStats } from '@shared/types/asset'
 import type { AgentScanSourceGroup, AssetScanPartial, AssetScanProgress, AssetSnapshot, ScanHistoryEntry, ScanResult } from '@shared/types/ipc'
 import { AgentAssetRuntime, type AssetRuntimeScanner } from '@berth/scan-engine/engine/assets/runtime'
@@ -1627,6 +1628,72 @@ describe('background project deep-index commits (GH-155 W1/W2)', () => {
     await refresh2
 
     expect(runtime.getSnapshot().assets.map((a) => a.id)).toContain('p-deep')
+  })
+})
+
+describe('background index queue wiring (GH-155 W4/C1)', () => {
+  it('a commit feeds the queue: candidate deep-scans in the background and lands in the snapshot with N/M status', async () => {
+    const bgRoot = path.resolve('/bg/proj')
+    const scanner: AssetRuntimeScanner = {
+      scanAll: vi.fn(async () => ({ assets: [], stats: emptyStats, errors: [] })),
+      getScanSourceGroups: vi.fn(async () => []),
+      getProjectScopeCandidates: vi.fn(() => [
+        createProjectScopeCandidate({ path: '/repo/berth', source: 'current' })!,
+        createProjectScopeCandidate({ path: '/bg/proj', source: 'session', lastSeenAt: '2026-06-01T00:00:00.000Z' })!
+      ]),
+      getProjectDir: () => '/repo/berth',
+      scanProjectDeep: vi.fn(async () => ({
+        assets: [ownedRow('bg-deep', bgRoot, 'key-bg', 'deep')],
+        errors: []
+      }))
+    }
+    const runtime = createRuntime(scanner)
+    await runtime.refresh({ wait: true })
+
+    await vi.waitFor(() => expect(runtime.getSnapshot().assets.map((a) => a.id)).toContain('bg-deep'))
+    expect(runtime.getStatus().backgroundIndex).toMatchObject({
+      state: 'done',
+      indexedProjects: 2, // active root + deep-indexed candidate
+      totalProjects: 2
+    })
+    expect(runtime.getSnapshot().id).toBeDefined()
+  })
+
+  it('a scanner without scanProjectDeep reports unsupported instead of crashing (CLI/worker)', async () => {
+    const scanner = createScanner({ assets: [], stats: emptyStats, errors: [] })
+    ;(scanner.getProjectScopeCandidates as ReturnType<typeof vi.fn>).mockReturnValue([
+      createProjectScopeCandidate({ path: '/repo/berth', source: 'current' })!,
+      createProjectScopeCandidate({ path: '/bg/proj', source: 'session' })!
+    ])
+    const runtime = createRuntime(scanner)
+    await runtime.refresh({ wait: true })
+
+    await vi.waitFor(() => expect(runtime.getStatus().backgroundIndex?.state).toBe('unsupported'))
+  })
+
+  it('pause freezes the queue mid-round; resume completes it (A5)', async () => {
+    const bgRoot = path.resolve('/bg/one')
+    const scanProjectDeep = vi.fn(async () => ({
+      assets: [ownedRow('one-deep', bgRoot, 'key-one', 'deep')],
+      errors: []
+    }))
+    const scanner: AssetRuntimeScanner = {
+      scanAll: vi.fn(async () => ({ assets: [], stats: emptyStats, errors: [] })),
+      getScanSourceGroups: vi.fn(async () => []),
+      getProjectScopeCandidates: vi.fn(() => [
+        createProjectScopeCandidate({ path: '/bg/one', source: 'session' })!
+      ]),
+      getProjectDir: () => '/repo/berth',
+      scanProjectDeep
+    }
+    const runtime = createRuntime(scanner)
+    runtime.pause() // paused BEFORE the commit syncs the queue
+    await runtime.refresh({ wait: true })
+    await new Promise((resolve) => setTimeout(resolve, 20))
+    expect(scanProjectDeep).not.toHaveBeenCalled()
+
+    runtime.resume()
+    await vi.waitFor(() => expect(runtime.getSnapshot().assets.map((a) => a.id)).toContain('one-deep'))
   })
 })
 

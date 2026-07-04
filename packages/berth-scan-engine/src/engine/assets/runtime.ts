@@ -39,6 +39,8 @@ import { readString } from '@shared/object-guards'
 import { stripRaw, type SnapshotStore } from './snapshot-store'
 import { SnapshotSelectorCache, type AssetSelectorCache } from './selector-cache'
 import { ProjectSnapshotCache, projectSnapshotKey } from './project-snapshot-cache'
+import { BackgroundIndexQueue } from './background-index-queue'
+import { getMainLog } from '../../log'
 import { ScanCoordinator, type AssetRuntimeScanner, type ScanOutcome, type ScanSink } from './scan-coordinator'
 import { SCAN_ENGINE_NAME, SCAN_ENGINE_VERSION } from '../../index'
 import {
@@ -170,6 +172,8 @@ export class AgentAssetRuntime {
   // stream read those files at t0, so its partial/commit rows for these keys are
   // stale — retention swaps them for the live snapshot's rows until the scan ends.
   private readonly midScanSourceKeys = new Set<string>()
+  // GH-155 C4: background deep-index queue — [全局] progressive completion.
+  private readonly backgroundQueue: BackgroundIndexQueue
 
   constructor(options: AssetRuntimeOptions = {}) {
     this.projectDir = options.projectDir
@@ -185,9 +189,30 @@ export class AgentAssetRuntime {
       this.projectDir
     )
     this.selectorCache = new SnapshotSelectorCache()
+    this.backgroundQueue = new BackgroundIndexQueue({
+      getScanner: () => this.coordinator.current(),
+      isForegroundBusy: () => this.coordinator.isScanning(),
+      isPaused: () => this.schedulerPaused,
+      gatesOpen: () => this.periodicGatesOpen(),
+      scanOptions: () => ({
+        excludePaths: this.settings.excludePaths,
+        respectGitignore: this.settings.respectGitignore,
+        interProjectPauseMs: this.settings.batchPauseMs
+      }),
+      commit: (projectRoot, result) => this.applyBackgroundProjectResult(projectRoot, result),
+      onChange: () => this.emit({ status: this.status }),
+      log: (error) => getMainLog().log('background-index', error)
+    })
     this.status = this.createIdleStatus()
     this.snapshot = this.createInitialSnapshot()
     this.restorePersistedSnapshot()
+    // GH-155 W4: a restored snapshot already knows the project candidates — seed
+    // the queue so M shows before the first full scan; the SWR refresh that
+    // follows preempts/yields as usual.
+    if (this.snapshot.projectCandidates.length > 0) {
+      this.backgroundQueue.sync(this.snapshot.projectCandidates, this.projectDir)
+      this.backgroundQueue.kick()
+    }
     this.scanHistory = this.snapshotStore?.loadScanHistory?.() ?? []
   }
 
@@ -226,8 +251,23 @@ export class AgentAssetRuntime {
     this.progressListener = listener
   }
 
+  /** Single emission point for the progress channel: every outgoing status is
+   * stamped with the live background-index N/M (GH-155 C1) — stored/cached
+   * status objects stay unstamped so no stale N/M survives in caches. */
+  private emit(payload: AssetProgressPayload): void {
+    this.progressListener?.({ ...payload, status: this.stampBackgroundIndex(payload.status) })
+  }
+
+  private stampBackgroundIndex(status: AssetRuntimeStatus): AssetRuntimeStatus {
+    const backgroundIndex = this.backgroundQueue.status()
+    if (!backgroundIndex) {
+      return status.backgroundIndex ? { ...status, backgroundIndex: undefined } : status
+    }
+    return { ...status, backgroundIndex }
+  }
+
   getStatus(): AssetRuntimeStatus {
-    return this.status
+    return this.stampBackgroundIndex(this.status)
   }
 
   getSnapshot(): AssetSnapshot {
@@ -241,7 +281,11 @@ export class AgentAssetRuntime {
    * assets under a stable snapshot id, so an id-keyed cache would serve stale
    * lists mid-scan; the shallow map is cheap next to the clone it replaces. */
   getLeanSnapshot(): AssetSnapshot {
-    return { ...this.snapshot, assets: this.snapshot.assets.map(stripRaw) }
+    return {
+      ...this.snapshot,
+      assets: this.snapshot.assets.map(stripRaw),
+      status: this.stampBackgroundIndex(this.snapshot.status)
+    }
   }
 
   getSettings(): ScanEngineSettings {
@@ -279,7 +323,7 @@ export class AgentAssetRuntime {
         packageName: SCAN_ENGINE_NAME,
         version: SCAN_ENGINE_VERSION
       },
-      status: this.status,
+      status: this.stampBackgroundIndex(this.status),
       snapshot: {
         id: this.snapshot.id,
         indexedAssets,
@@ -423,6 +467,9 @@ export class AgentAssetRuntime {
 
   async refresh(options: AssetRefreshOptions = {}): Promise<AssetRuntimeStatus> {
     this.clearScheduledRefresh()
+    // GH-155 A4: a foreground scan must not wait behind a background project on
+    // the serialized helper — drop the in-flight background scan (requeued).
+    this.backgroundQueue.preemptForForeground()
     if (this.coordinator.isScanning()) {
       // GH-151 S4: never drop a refresh mid-scan — every reason folds into the
       // single-slot latest-wins queue and run.finally flushes it. (Previously
@@ -474,12 +521,16 @@ export class AgentAssetRuntime {
     this.clearPeriodic()
     // GH-151 S4: also drop anything already queued — paused means no auto-flush.
     this.dropPendingRefresh()
+    // GH-155 A5: pause governs the background index queue too — freeze pumping
+    // and drop the in-flight project's result (its spot is kept for resume).
+    this.backgroundQueue.notifyPaused()
     if (this.coordinator.isScanning()) this.cancel()
   }
 
   resume(): void {
     this.schedulerPaused = false
     this.schedulePeriodic()
+    this.backgroundQueue.kick()
   }
 
   /** Cancel the in-flight scan (GH-135): kill the helper, keep already-scanned
@@ -495,7 +546,7 @@ export class AgentAssetRuntime {
     this.midScanSourceKeys.clear()
     this.status = { ...this.status, state: 'stale', stale: true }
     this.snapshot = { ...this.snapshot, status: this.status }
-    this.progressListener?.({ status: this.status })
+    this.emit({ status: this.status })
   }
 
   /** Rebuild the index from scratch (GH-135): drop the persisted + in-memory index
@@ -532,20 +583,26 @@ export class AgentAssetRuntime {
   /** Run a periodic full rescan, gated by idle + power policy (GH-135 B3). Defers
    * (re-arms) when the user is active (idleOnly) or on battery (acOnlyFullScan). */
   private async runPeriodicScan(): Promise<void> {
-    if (
-      this.settings.idleOnly &&
-      this.powerMonitor &&
-      this.powerMonitor.getSystemIdleTimeMs() < this.settings.idleThresholdMs
-    ) {
-      this.schedulePeriodic()
-      return
-    }
-    if (this.settings.acOnlyFullScan && this.powerMonitor?.onBatteryPower()) {
+    if (!this.periodicGatesOpen()) {
       this.schedulePeriodic()
       return
     }
     await this.refresh({ reason: 'manual' })
     this.schedulePeriodic()
+  }
+
+  /** idle/AC gate shared by the periodic rescan and the background index queue
+   * (GH-155 A5 — one gate semantics, one powerMonitor injection). */
+  private periodicGatesOpen(): boolean {
+    if (
+      this.settings.idleOnly &&
+      this.powerMonitor &&
+      this.powerMonitor.getSystemIdleTimeMs() < this.settings.idleThresholdMs
+    ) {
+      return false
+    }
+    if (this.settings.acOnlyFullScan && this.powerMonitor?.onBatteryPower()) return false
+    return true
   }
 
   private clearPeriodic(): void {
@@ -791,7 +848,12 @@ export class AgentAssetRuntime {
     // so the renderer's last event is authoritative. Without this, a trailing
     // "scanning" progress macrotask can clobber the `ready` set by the
     // refresh() reply microtask, leaving the UI stuck at scanning (P4.6 fix).
-    this.progressListener?.({ status })
+    this.emit({ status })
+    // GH-155 W4: every commit re-syncs the background queue — admits newly
+    // discovered projects and revalidates grafted ones. kick() is a macrotask so
+    // the coordinator's in-flight promise settles first (isScanning → false).
+    this.backgroundQueue.sync(outcome.projectCandidates, projectDir)
+    this.backgroundQueue.kick()
   }
 
   private failScan(reason: AssetScanReason, error: unknown): void {
@@ -823,7 +885,7 @@ export class AgentAssetRuntime {
       projectDir: this.projectDir,
       sourceCount: this.snapshot.sources.length
     })
-    this.progressListener?.({ status: this.status })
+    this.emit({ status: this.status })
   }
 
   /** Append a completed/failed scan to the bounded history and persist it (GH-135
@@ -956,7 +1018,7 @@ export class AgentAssetRuntime {
       ...this.snapshot,
       status: this.status
     }
-    this.progressListener?.({ status: this.status })
+    this.emit({ status: this.status })
   }
 
   /**
@@ -1000,7 +1062,7 @@ export class AgentAssetRuntime {
     // Emit lean (GH-151 S6): scanner partials are already stripped at the stream
     // source, but foldKeepingShallow re-attaches shallow assets from the committed
     // snapshot, which carry raw in memory.
-    this.progressListener?.({ status: this.status, partial: { assets: assets.map(stripRaw), stats, errorCount: partial.errorCount } })
+    this.emit({ status: this.status, partial: { assets: assets.map(stripRaw), stats, errorCount: partial.errorCount } })
   }
 
   /**
@@ -1034,7 +1096,7 @@ export class AgentAssetRuntime {
     this.snapshotCache.set(this.projectDir, this.snapshot)
     this.persistFileChange(sourceKey)
     // Emit lean (GH-151 S6) — derived assets carry freshly-parsed raw bodies.
-    this.progressListener?.({ status: this.status, partial: { assets: merged.map(stripRaw), stats } })
+    this.emit({ status: this.status, partial: { assets: merged.map(stripRaw), stats } })
   }
 
   /**
@@ -1100,7 +1162,7 @@ export class AgentAssetRuntime {
       }
     }
 
-    this.progressListener?.({
+    this.emit({
       status: this.status,
       partial: { assets: live.snapshot.assets.map(stripRaw), stats: live.snapshot.stats }
     })
