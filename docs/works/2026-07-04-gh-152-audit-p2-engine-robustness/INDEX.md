@@ -2,7 +2,7 @@
 task: 2026-07-04-gh-152-audit-p2-engine-robustness
 task_id: GH-152
 type: bug
-phase: explore
+phase: design
 created: 2026-07-04
 priority: P2
 target_date:
@@ -58,7 +58,7 @@ artifacts:
 
 ## 产物
 - [x] 00-BUG.md — 原始输入快照 (P2 八项 + file:line 证据)
-- [ ] 01-ANALYSIS.md — Explore 产物
+- [x] 01-ANALYSIS.md — Explore 产物
 - [ ] 02-SPEC.md — Design 产物
 - [ ] 03-PLAN.md — 活任务清单
 
