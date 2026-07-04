@@ -2,7 +2,7 @@
 task: 2026-07-04-gh-153-audit-p2-renderer-perf-fixes
 task_id: GH-153
 type: bug
-phase: design
+phase: implement
 created: 2026-07-04
 priority: P2
 target_date:
@@ -21,7 +21,7 @@ debt:
     areas:
       - performance
       - architecture
-    confidence: medium
+    confidence: high
     rationale: "九项渲染层修复 (证据 = 2026-07-04 审查渲染层子报告, 快照见 00-BUG): 多为局部小修 (原子 selector/push/deferredFilter/吞错 setError/MOTION token), 中等三项 (usage.summary 去重+costMode 复用、health force 绕在途、session-detail keyed CachedResource)。incurred: CachedResource 扩展 (force 语义/keyed detail) 新代码; repaid: 消除 5 路同参重 IPC、usage 页复制粘贴 DRY 违规、O(n²) 分组、布局根全量订阅。scope=module (全部在 src/renderer, 不动 main/IPC 契约); risk=medium (use-ipc.ts 是全页面共享热路径)。confidence=medium, explore 核实 CachedResource 语义后校准。"
   final:
     incurred:
@@ -32,7 +32,13 @@ debt:
     areas: []
     confidence:
     rationale:
-  revisions: []
+  revisions:
+    - phase: design
+      date: 2026-07-04
+      field: confidence
+      from: medium
+      to: high
+      reason: "explore 九项证据全核实 + B3 唯一调用点关键发现; design 锁定 D1-D5 (keyed CachedResource/bootstrap 收形/forceRequest 链后/token 吸收/normalize 留页面), 全部有仓内先例。数值与 scope/risk 不变。"
 issue:
   number: 153
   repo: Caldis/berth
@@ -59,8 +65,8 @@ gh_project:
 
 ## 产物
 - [x] 00-BUG.md — 原始输入快照 (渲染层审查子报告全文 + 本批范围标注)
-- [ ] 01-ANALYSIS.md — Explore 产物
-- [ ] 02-SPEC.md — Design 产物
-- [ ] 03-PLAN.md — 活任务清单
+- [x] 01-ANALYSIS.md — Explore 产物
+- [x] 02-SPEC.md — Design 产物 (D1-D5 裁决)
+- [x] 03-PLAN.md — 活任务清单 (T1-T8 + 收口)
 
 ## 待澄清 (blocked 时填)

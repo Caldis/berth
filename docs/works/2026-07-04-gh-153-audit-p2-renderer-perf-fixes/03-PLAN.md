@@ -1,15 +1,34 @@
-# 任务清单 (Design 产物 / 活清单)
+# 任务清单 (Design 产物 / 活清单) — GH-153
 
-从 02-SPEC 拆解。每任务可独立执行与验证, 顺序确定。implement 阶段维护此清单。
-每个实现项必须有测试证据或明确例外理由。
-实现中若发现 debt 初估不准, 更新 INDEX.md `debt.estimate`, 并追加 `debt.revisions[]`。
+从 02-SPEC 拆解。**顺序执行** (T3-T8 六项共享 `use-ipc.ts`, 文件重叠禁并行); T1/T2/T7 与其余文件不重叠但体量小, 不值得开 subagent, 主 session 顺序推进。每项过目标测试后单独提交。
 
-- [ ] 任务 1:
-  - tests:
-  - verify: 包含界面质量与交互验收项; 非 UI 任务写“不适用”
-- [ ] 任务 2:
-  - tests:
-  - verify: 包含界面质量与交互验收项; 非 UI 任务写“不适用”
+- [ ] T1 (B4+B7 → A4/A7): sessions.tsx 分组 O(n²) 改 push + hasAnyFilter 改 deferredFilter (同文件两处单行)
+  - tests: 既有 sessions 分组/空态测试回归; 分组多条同桶 characterization (缺则补)
+  - verify: A7 属主观时序, 代码评审 + 回归绿即可 (SPEC 例外已记)
+- [ ] T2 (B6 → A6): use-ipc.ts 引擎控制 pause/resume/cancel/rebuild catch 转 setError
+  - tests: 控制动作失败落 error, 先红后绿
+  - verify: 不适用 (设置面板既有 error 呈现路径)
+- [ ] T3 (B5 → A5): cached-resource.ts +forceRequest (递归链后语义) + requestHealthChecks(force) 走 forceRequest
+  - tests: cached-resource forceRequest 三态 (无在途/有在途链后/写序) + use-health-checks 软刷在途时 force 必出程 — 先红后绿
+  - verify: CDP ④ 健康面板高频变更期强制重查 (归 4.0-verify)
+- [ ] T4 (B8 → A8): useSessionDetail 加 keyed CachedResource (镜像 replay 形状, 60s)
+  - tests: use-sessions-swr 新用例 — TTL 内二次 mount 零 IPC / reload 失效重取, 先红后绿
+  - verify: 不适用 (纯取数路径)
+- [ ] T5 (B1 → A1): usageSummaryResource + useUsageSummary SWR 化 (peek/isFresh/request/invalidate)
+  - tests: use-usage-summary-swr.test.tsx (新) — 同参双实例 1 路 IPC / 异 days 分流 / reload 重取, 先红后绿
+  - verify: CDP ① Overview 5 usage widget 单路 usage.summary (归 4.0-verify)
+- [ ] T6 (B2 → A2): useUsageSummary +costMode 位参; usage.tsx 内联取数删除、复用 hook + normalize useMemo + 错误详情呈现 + hasLoadedUsage 派生
+  - tests: costMode 透传进请求体 (先红) + usage 错误详情可见 + 既有 usage 测试回归
+  - verify: CDP usage 页 days/costMode 切换 + 错误路径实测 (归 4.0-verify)
+- [ ] T7 (B9 → A9): motion.ts +EASE_CSS (由 ease 数组生成)/+LAYOUT_GLIDE (0.28 数值锁定); overview/dashboard-grid/widget-shell 四处引 token
+  - tests: overview-dashboard/dnd-kit-smoke 回归 + grep dashboard 域无字面 duration/ease 魔数; token 常量 not needed (SPEC 例外已记)
+  - verify: CDP ⑤ 编辑态入场/拖拽/hover 动效目测无回归 (归 4.0-verify)
+- [ ] T8 (B3 → A3): useAssetRuntime 收形 useAssetRuntimeBootstrap {error, retry}; 删 useAssets (+use-assets.test.tsx); AppLayout 原子 selector; use-asset-runtime.test.tsx 改钉 bootstrap
+  - tests: app-layout 渲染探针 (progress tick 不重渲染 / 0→N 与 error 变化正常重渲染, 先红) + bootstrap 语义回归 + GH-118 blocking/banner 回归
+  - verify: CDP ② 扫描期布局壳无逐 tick 重渲染 (归 4.0-verify)
+- [ ] 收口: 全局门禁 (typecheck/lint/test/harness:check + prepush 含 test:scan-engine) + 推送 + CI 旁路 + CDP 验收集 (①②④⑤ + usage 错误路径)
+  - tests: A0
+  - verify: 4.0-verify 汇总证据
 
 ## verify 回写
 verify 不通过项作为新任务追加于此, phase 退回 implement。
