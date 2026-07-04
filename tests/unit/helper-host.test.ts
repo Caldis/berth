@@ -179,9 +179,9 @@ describe('ScanHelperHost (GH-135)', () => {
     const runScan = vi.fn(async () => donePayload)
     const scanner = new HelperAssetScanner('/repo/berth', {
       runScan,
-      runProjectDeepScan: vi.fn(),
+      runProjectDeepScan: vi.fn(async () => ({ assets: [], errors: [], projectScanCache: { entries: [] } })),
       kill: vi.fn()
-    } as never)
+    })
 
     await scanner.scanAll({ batchPauseMs: 25, excludePaths: ['/skip'], respectGitignore: true })
 
@@ -278,14 +278,37 @@ describe('ScanHelperHost project deep scan (GH-155 C3)', () => {
     await expect(r2).resolves.toEqual(deepPayload)
   })
 
+  it('deep scans get the wider inactivity window; full-scan silence is still killed at 120s (M1)', async () => {
+    vi.useFakeTimers()
+    try {
+      const child = new FakeChild()
+      const host = new ScanHelperHost({ createChild: () => asChild(child) }) // default 120s window
+      const r = host.runProjectDeepScan({ projectRoot: '/big/monorepo' })
+      const rejection = expect(r).rejects.toThrow(/no message/)
+      child.emit('spawn')
+      await vi.advanceTimersByTimeAsync(0)
+
+      // One synchronous deep walk may honestly exceed the full-scan window …
+      await vi.advanceTimersByTimeAsync(120_001)
+      expect(child.kill).not.toHaveBeenCalled()
+
+      // … but a genuine wedge is still bounded by the wider deep window.
+      await vi.advanceTimersByTimeAsync(480_000)
+      expect(child.kill).toHaveBeenCalled()
+      await rejection
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
   it('HelperAssetScanner.scanProjectDeep forwards options and round-trips the cache snapshot', async () => {
     const returnedCache = { entries: [{ fingerprint: { path: '/p/SKILL.md', size: 1, mtimeMs: 2 }, value: [] }] }
     const runProjectDeepScan = vi.fn(async () => ({ assets: [], errors: [], projectScanCache: returnedCache }))
     const scanner = new HelperAssetScanner('/repo', {
-      runScan: vi.fn(),
+      runScan: vi.fn(async () => donePayload),
       kill: vi.fn(),
       runProjectDeepScan
-    } as never)
+    })
 
     const result = await scanner.scanProjectDeep!('/repo/p', { excludePaths: ['/skip'], respectGitignore: true })
     expect(result).toEqual({ assets: [], errors: [] })

@@ -1572,23 +1572,70 @@ describe('background project deep-index commits (GH-155 W1/W2)', () => {
   })
 
   it('a full rescan grafts queue-deepened rows instead of regressing them to shallow (W2)', async () => {
+    // 生产 id 语义 (A7): 同一根级文件的 shallow 行与 deep 行共享同一个确定式 id —
+    // fixture 必须一致, 否则 graft 的同 id 撞车路径测不到 (评审 B1 的教训)。
     const scanner = createScanner({
-      assets: [ownedRow('p-shallow', '/proj/p', 'key-p0', 'shallow')],
+      assets: [ownedRow('p-root', '/proj/p', 'key-p0', 'shallow')],
       stats: { ...emptyStats, skills: 1 },
       errors: []
     })
     const runtime = createRuntime(scanner)
     await runtime.refresh({ wait: true })
     runtime.applyBackgroundProjectResult('/proj/p', {
-      assets: [ownedRow('p-deep', '/proj/p', 'key-p0', 'deep'), ownedRow('p-nested', '/proj/p', 'key-p2', 'deep')],
+      assets: [ownedRow('p-root', '/proj/p', 'key-p0', 'deep'), ownedRow('p-nested', '/proj/p', 'key-p2', 'deep')],
       errors: []
     })
 
     await runtime.refresh({ reason: 'manual', wait: true }) // rescan streams shallow again
-    const ids = runtime.getSnapshot().assets.map((a) => a.id)
-    expect(ids).toContain('p-deep')
-    expect(ids).toContain('p-nested')
-    expect(ids).not.toContain('p-shallow') // shallow regression dropped
+    const assets = runtime.getSnapshot().assets
+    // B1 回归: 根级行既不消失 (kept 丢 shallow 后 graft 必须补 deep 版) 也不重复。
+    const rootRows = assets.filter((a) => a.id === 'p-root')
+    expect(rootRows).toHaveLength(1)
+    expect(rootRows[0].meta.scanDepth).toBe('deep')
+    expect(assets.map((a) => a.id)).toContain('p-nested')
+  })
+
+  it('a mid-scan partial keeps queue-deepened rows — the graft source must survive to commit (B1-e2e)', async () => {
+    // e2e 抓到的残余: partial 整体替换若冲掉 deep 行, commitScan 的 graft 就无源,
+    // 嵌套 deep-only 资产在每次全量重扫后消失。单测复刻 "真 scanner 发 partial" 链路。
+    let onPartial: ((partial: AssetScanPartial) => void) | undefined
+    const second = createDeferred<ScanResult>()
+    const shallowResult: ScanResult = {
+      assets: [ownedRow('p-root', '/proj/p', 'key-p0', 'shallow')],
+      stats: { ...emptyStats, skills: 1 },
+      errors: []
+    }
+    const scanAll = vi.fn()
+      .mockImplementationOnce(async () => shallowResult)
+      .mockImplementationOnce((options?: { onPartial?: (p: AssetScanPartial) => void }) => {
+        onPartial = options?.onPartial
+        return second.promise
+      })
+    const scanner: AssetRuntimeScanner = {
+      scanAll,
+      getScanSourceGroups: vi.fn(async () => []),
+      getProjectScopeCandidates: vi.fn(() => []),
+      getProjectDir: () => '/repo/berth'
+    }
+    const runtime = createRuntime(scanner)
+    await runtime.refresh({ wait: true })
+    runtime.applyBackgroundProjectResult('/proj/p', {
+      assets: [ownedRow('p-root', '/proj/p', 'key-p0', 'deep'), ownedRow('p-nested', '/proj/p', 'key-p2', 'deep')],
+      errors: []
+    })
+
+    const refresh2 = runtime.refresh({ reason: 'manual', wait: true })
+    onPartial!({ assets: [sessionAsset('session-1')], stats: emptyStats, errorCount: 0 })
+    // deep 行必须在 partial 阶段存活 (graft 的源)。
+    expect(runtime.getSnapshot().assets.map((a) => a.id)).toEqual(
+      expect.arrayContaining(['p-root', 'p-nested', 'session-1'])
+    )
+    second.resolve(shallowResult)
+    await refresh2
+    const assets = runtime.getSnapshot().assets
+    expect(assets.filter((a) => a.id === 'p-root')).toHaveLength(1)
+    expect(assets.filter((a) => a.id === 'p-root')[0].meta.scanDepth).toBe('deep')
+    expect(assets.map((a) => a.id)).toContain('p-nested')
   })
 
   it('graft never resurrects rows for the scan’s ACTIVE config roots — fresh adapter truth wins', async () => {

@@ -38,8 +38,19 @@
 ## verify 回写
 verify 不通过项作为新任务追加于此, phase 退回 implement。
 
-- [ ] T9 (verify 回写, A4/A1 冲突): refresh 入口 preempt 按 reason 门控 — 仅 manual/project-scope/legacy-scan-all (用户可感) 击杀在途后台深扫; watcher/startup 类后台刷新走 helper 串行排队。
+- [x] T9 (verify 回写, A4/A1 冲突): refresh 入口 preempt 按 reason 门控 — 仅 manual/project-scope/legacy-scan-all (用户可感) 击杀在途后台深扫; watcher/startup 类后台刷新走 helper 串行排队。
   - 证据: CDP 时序采集 (gh155-verify 实例, 真实 27 候选) N 冻结 5/27 达 193s; 调度快照显示 watcher scheduledRefresh 周期性活跃 + lastScanDurationMs=667 — 每 ~30s 的 watcher 刷新无差别 preempt, 扫描时长 >30s 的项目被永久击杀重排 (livelock)。
-  - tests: agent-asset-runtime 扩展 (watcher-reason refresh 不 preempt / manual-reason preempt); 队列单测不变
-  - verify: 单测绿 + 重建后 CDP 复测 N 递增至 done
+  - tests: agent-asset-runtime 扩展 (watcher-reason refresh 不 preempt / manual-reason preempt) — 绿 @ 3785e369
+  - verify: CDP 复测通过 — N 单调 5→6→8→14→21→27, watcher 全量扫 (t=73.5s) 不再击杀队列, done 即 banner 消失, done→revalidating 静默
+- [x] T10 (verify 回写, 双轴评审 Standards 轴): B1 + M1 + M2 + m1/m2/m4 + NIT×3
+  - B1 (BLOCKER): graftDeepRows 去重集合改从 kept (过滤后) 构建 — 生产同文件 shallow/deep 行同 id, 原实现两头丢行 (根级资产全量扫后消失至 revalidation); 单测 fixture 改同 id 语义 + 新增同 id 专项; e2e 补第二次 refresh 后根级行存活断言
+  - M1 (MAJOR): deep 请求专用 inactivity 窗口 (10min, 用户配 0 仍禁用) + child 收到即回 ack tick — 同步深扫零消息与 120s 看门狗互杀 (大项目被杀记 failed 却计入 indexed)
+  - M2 (MAJOR): project-deep-scan capability glob 裸 catch 补 ScanError 记账 (ARCHITECTURE 规则 8)
+  - m1: notifyPaused 同步 kill 在飞深扫 (pause 语义对称); m2: rebuild 调 queue.reset() (清 processed, 重建后 banner 重现不失真); m4: sync 命中 inFlight 时更新其 lastSeenAt/scanPath
+  - NIT: processed verdict 字段删 (只写不读) / getSnapshot 补 stamp / helper 测试 as never 强转改真实 stub
+  - tests: background-index-queue + agent-asset-runtime + helper-host 对应扩展; M2 tests: not needed - glob.sync 抛错需平台权限注入, 记账通道与 nested-glob 同构已有覆盖
+  - verify: 全量门禁 + CDP 复测 (watcher 全量扫后根级资产不消失)
+- [x] T11 (verify 回写, 窄边缘打包立据): 新 IMPROVEMENT issue — ① 非 default 视图且 default 缓存缺失时后台成果跳过持久化 (窄窗口, 内存正确+下次全量 save 兜底); ② failed 项目计入 indexed 无用户信号/无退避; ③ 死 child 上的排队请求等满看门狗
+  - tests: not needed - 纯文档立据
+  - verify: harness:check 绿
 

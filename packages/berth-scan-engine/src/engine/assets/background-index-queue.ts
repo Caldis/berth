@@ -57,7 +57,9 @@ interface QueueItem {
 export class BackgroundIndexQueue {
   private readonly pending = new Map<string, QueueItem>()
   /** Every root ever finished: verdict + its item for revalidation rounds. */
-  private readonly processed = new Map<string, { verdict: 'done' | 'failed'; item: QueueItem }>()
+  /** Every root ever finished (done or failed — failed still converges the round
+   * and retries on the next revalidation), keyed to its item for re-enqueueing. */
+  private readonly processed = new Map<string, QueueItem>()
   private inFlight: { key: string; item: QueueItem; dropped: boolean } | null = null
   private timer: ReturnType<typeof setTimeout> | null = null
   private unsupported = false
@@ -90,10 +92,7 @@ export class BackgroundIndexQueue {
       if (activeKeys.has(key)) {
         // Active root: deep by definition — never queue-scanned, counts indexed.
         this.pending.delete(key)
-        this.processed.set(key, {
-          verdict: 'done',
-          item: { root, scanPath: candidate.path, lastSeenAt: candidate.lastSeenAt }
-        })
+        this.processed.set(key, { root, scanPath: candidate.path, lastSeenAt: candidate.lastSeenAt })
         continue
       }
       const pending = this.pending.get(key)
@@ -104,16 +103,24 @@ export class BackgroundIndexQueue {
         }
         continue
       }
-      if (this.inFlight?.key === key) continue
+      if (this.inFlight?.key === key) {
+        // Review m4: an update arriving mid-flight rides the requeue item, so a
+        // drop/preempt re-enters with the freshest leaf and priority.
+        if (isNewer(candidate.lastSeenAt, this.inFlight.item.lastSeenAt)) {
+          this.inFlight.item.lastSeenAt = candidate.lastSeenAt
+          this.inFlight.item.scanPath = candidate.path
+        }
+        continue
+      }
       if (!this.processed.has(key)) {
         this.pending.set(key, { root, scanPath: candidate.path, lastSeenAt: candidate.lastSeenAt })
       }
     }
 
     if (wasSettled && this.processed.size > 0) {
-      for (const [key, entry] of this.processed) {
+      for (const [key, item] of this.processed) {
         if (activeKeys.has(key)) continue
-        if (!this.pending.has(key)) this.pending.set(key, entry.item)
+        if (!this.pending.has(key)) this.pending.set(key, item)
       }
     }
 
@@ -130,11 +137,32 @@ export class BackgroundIndexQueue {
     }, delayMs)
   }
 
-  /** pause(): freeze the queue and drop the in-flight result, keeping its spot. */
+  /** pause(): freeze the queue and drop the in-flight result, keeping its spot.
+   * Also kills the in-flight helper scan (review m1) — pause usually means "give
+   * me the CPU back", and a result we will drop is not worth finishing. */
   notifyPaused(): void {
     if (this.timer) clearTimeout(this.timer)
     this.timer = null
+    if (!this.inFlight) return
+    this.inFlight.dropped = true
+    try {
+      this.deps.getScanner().cancel?.()
+    } catch (error) {
+      this.deps.log?.(error)
+    }
+  }
+
+  /** rebuild(): the persisted + in-memory index was wiped — every prior verdict
+   * is void (review m2). Reset so the next commit's sync re-runs a FIRST round
+   * (banner visible again) instead of a silent revalidation over stale counts. */
+  reset(): void {
+    if (this.timer) clearTimeout(this.timer)
+    this.timer = null
+    this.pending.clear()
+    this.processed.clear()
     if (this.inFlight) this.inFlight.dropped = true
+    this.unsupported = false
+    this.deps.onChange()
   }
 
   /** refresh() 入口 (A4): a foreground scan must not wait behind a background
@@ -204,7 +232,7 @@ export class BackgroundIndexQueue {
         }
         this.deps.commit(item.root, result)
         for (const error of result.errors) this.deps.log?.(error)
-        this.processed.set(key, { verdict: 'done', item })
+        this.processed.set(key, item)
       })
       .catch((error) => {
         if (flight.dropped) {
@@ -213,7 +241,7 @@ export class BackgroundIndexQueue {
         }
         // A failed project (deleted dir, unreadable tree) counts as processed so
         // the round still converges; the next revalidation round retries it.
-        this.processed.set(key, { verdict: 'failed', item })
+        this.processed.set(key, item)
         this.deps.log?.(error)
       })
       .finally(() => {

@@ -91,6 +91,15 @@ test('background queue deep-indexes non-active projects into the global scope (�
 
   // The deep skill is searchable from the global scope (看不到=没有 保护).
   await expect.poll(() => searchPaths('deepskill'), { timeout: 10_000 }).toContain(nestedSkill)
+
+  // B1 回归: 一次全量重扫后, 已深化项目的根级资产不消失 (同 id 的 shallow 行被
+  // 丢时 graft 必须补回 deep 版), 嵌套 deep 行同样存活。
+  await page.evaluate(() => window.api.assets.refresh({ wait: true }))
+  const afterRescan = await snapshotPaths()
+  expect(afterRescan).toContain(normalize(join(bravoDir, 'AGENTS.md')))
+  expect(afterRescan).toContain(normalize(join(alphaDir, 'AGENTS.md')))
+  expect(afterRescan).toContain(nestedSkill)
+  expect(afterRescan).toContain(nestedConvention)
 })
 
 function normalize(p: string): string {

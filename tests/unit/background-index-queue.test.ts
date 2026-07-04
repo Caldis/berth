@@ -121,6 +121,35 @@ describe('BackgroundIndexQueue (GH-155 C4)', () => {
     expect(queue.status()?.state).toBe('done')
   })
 
+  it('pause kills the in-flight helper scan — a result we will drop is not worth finishing (m1)', async () => {
+    let reject!: (error: Error) => void
+    const scanProjectDeep = vi.fn(() => new Promise<DeepResult>((_resolve, fail) => { reject = fail }))
+    const cancel = vi.fn()
+    const { queue, commits } = harness({}, { scanProjectDeep, cancel })
+    queue.sync([cand('/bg/p')], undefined)
+    queue.kick()
+    await vi.waitFor(() => expect(scanProjectDeep).toHaveBeenCalledTimes(1))
+
+    queue.notifyPaused()
+    expect(cancel).toHaveBeenCalledTimes(1)
+    reject(new Error('killed by pause'))
+    await vi.waitFor(() => expect(queue.status()?.state).toBe('indexing')) // spot kept
+    expect(commits).toHaveLength(0)
+  })
+
+  it('reset voids all verdicts — the next sync runs a FIRST round again (m2 rebuild)', async () => {
+    const { queue } = harness()
+    queue.sync([cand('/bg/a')], undefined)
+    queue.kick()
+    await vi.waitFor(() => expect(queue.status()?.state).toBe('done'))
+
+    queue.reset()
+    expect(queue.status()).toBeUndefined() // nothing known anymore
+
+    queue.sync([cand('/bg/a')], undefined)
+    expect(queue.status()).toMatchObject({ state: 'indexing', indexedProjects: 0, totalProjects: 1 })
+  })
+
   it('preemptForForeground cancels the in-flight scan and requeues the project (A4)', async () => {
     let reject!: (error: Error) => void
     const scanProjectDeep = vi.fn(() => new Promise<DeepResult>((_resolve, fail) => { reject = fail }))

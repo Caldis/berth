@@ -87,6 +87,10 @@ setInterval(() => {}, 2_147_483_647)
  * host serializes requests so this never interleaves with a full scan. */
 function runProjectDeepScan(data: ProjectDeepScanRequest): void {
   try {
+    // Ack before the synchronous walk (review M1): proves the request was picked
+    // up, so the host watchdog only fires on a genuinely wedged walk — not on a
+    // request that never reached a crashed-and-respawning child.
+    post({ type: 'progress', progress: { phase: 'discovering', current: 0, total: 1, label: 'project-deep' } })
     const cache = AssetFileCache.fromSnapshot<Asset[]>(data.projectScanCache)
     const { assets, errors } = scanProjectDeep(data.projectRoot, cache, {
       excludePaths: data.excludePaths,

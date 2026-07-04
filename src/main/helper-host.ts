@@ -57,6 +57,11 @@ export interface ScanHelperHostOptions {
  * purpose — not a user-facing setting. */
 const SCAN_INACTIVITY_TIMEOUT_MS = 120_000
 
+/** Wider window for per-project deep scans (GH-155 review M1): one synchronous
+ * engine call, ack tick then silence until done — a huge tree walk may honestly
+ * exceed the full-scan window. Still bounded so a dead-mount wedge recovers. */
+const DEEP_SCAN_INACTIVITY_TIMEOUT_MS = 600_000
+
 /**
  * Manages a single long-lived utilityProcess scan helper (GH-135). Unlike the
  * one-shot worker_threads model, the child stays alive between scans; fork is
@@ -151,16 +156,26 @@ export class ScanHelperHost {
   }
 
   /** One project's deep scan in the helper (GH-155 C3). Serialized with runScan —
-   * concurrent requests on the single long-lived child would interleave replies. */
+   * concurrent requests on the single long-lived child would interleave replies.
+   * Uses a WIDER inactivity window (review M1): the deep scan is one synchronous
+   * engine call that posts an ack tick then no messages until done — the default
+   * 120s window assumes continuous progress ticks and would kill any project
+   * whose tree walk outlasts it (then falsely count it indexed-failed). 0 (user
+   * disabled) stays disabled. */
   runProjectDeepScan(request: ProjectDeepScanRequest): Promise<ProjectDeepScanPayload> {
     const session = this.ensure()
+    const deepTimeoutMs =
+      this.inactivityTimeoutMs <= 0
+        ? 0
+        : Math.max(this.inactivityTimeoutMs, DEEP_SCAN_INACTIVITY_TIMEOUT_MS)
     return this.serialize(() =>
       this.dispatch<ProjectDeepScanPayload>(
         session,
         { type: 'scan-project-deep', data: request },
         (message, settle) => {
           if (message.type === 'project-deep-done') settle.resolve(message.result)
-        }
+        },
+        deepTimeoutMs
       )
     )
   }
@@ -184,7 +199,8 @@ export class ScanHelperHost {
   private dispatch<T>(
     session: { child: UtilityProcess; ready: Promise<void> },
     payload: { type: string; data: unknown },
-    handle: (message: ScanHelperChildMessage, settle: { resolve: (value: T) => void }) => void
+    handle: (message: ScanHelperChildMessage, settle: { resolve: (value: T) => void }) => void,
+    inactivityTimeoutMs: number = this.inactivityTimeoutMs
   ): Promise<T> {
     const { child, ready } = session
 
@@ -201,14 +217,14 @@ export class ScanHelperHost {
       // and the pipeline stays recoverable.
       const armWatchdog = (): void => {
         clearWatchdog()
-        if (this.inactivityTimeoutMs <= 0) return
+        if (inactivityTimeoutMs <= 0) return
         watchdog = setTimeout(() => {
           if (this.child === child) this.kill()
           else child.kill()
           finish(() =>
-            reject(new Error(`Asset scan helper sent no message for ${String(this.inactivityTimeoutMs)}ms; killed as wedged`))
+            reject(new Error(`Asset scan helper sent no message for ${String(inactivityTimeoutMs)}ms; killed as wedged`))
           )
-        }, this.inactivityTimeoutMs)
+        }, inactivityTimeoutMs)
       }
       const cleanup = (): void => {
         child.removeListener('message', onMessage)

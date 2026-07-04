@@ -95,8 +95,14 @@ export function scanProjectDeep(
         let files: string[] = []
         try {
           files = glob.sync(rule.pattern!, { cwd: dir, absolute: true, windowsPathsNoEscape: true })
-        } catch {
-          files = []
+        } catch (err) {
+          // A glob failure silently drops assets — account it so missing data is
+          // visible instead of looking like "no data" (ARCHITECTURE rule 8).
+          errors.push({
+            path: dir,
+            type: 'glob',
+            message: err instanceof Error ? err.message : String(err)
+          })
         }
         for (const file of files) {
           collect(file, rule.fileName ?? rule.pattern ?? 'capability', () => rule.parse(file, 'project'))

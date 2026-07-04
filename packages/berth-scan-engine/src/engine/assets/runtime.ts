@@ -271,7 +271,7 @@ export class AgentAssetRuntime {
   }
 
   getSnapshot(): AssetSnapshot {
-    return this.snapshot
+    return { ...this.snapshot, status: this.stampBackgroundIndex(this.snapshot.status) }
   }
 
   /** IPC projection of the snapshot (GH-151 S6): full-list surfaces must not drag
@@ -561,6 +561,9 @@ export class AgentAssetRuntime {
     if (this.coordinator.isScanning()) this.cancel()
     this.snapshotStore?.clear()
     this.snapshotCache.clear()
+    // GH-155 review m2: the wiped index voids every deep-index verdict — reset so
+    // the rebuild's first commit re-runs a FIRST round (banner shows real N/M).
+    this.backgroundQueue.reset()
     this.lastScanDurationMs = undefined
     // Index cleared → drop the stable baseline so the rebuild shows growth from 0.
     this.setStableCounts([])
@@ -1202,16 +1205,20 @@ export class AgentAssetRuntime {
     }
     if (deepByRoot.size === 0) return incoming
 
-    const incomingIds = new Set(incoming.map((asset) => asset.id))
     const kept = incoming.filter((asset) => {
       if (asset.meta?.scanDepth !== 'shallow') return true
       const root = normalizeProjectPathKey(readString(asset.meta, 'projectPath') ?? '')
       return !deepByRoot.has(root)
     })
+    // Dedupe against the KEPT set, not the raw incoming: a root file's shallow
+    // and deep rows share one deterministic id (A7), so checking pre-filter ids
+    // would skip the graft for exactly the rows the filter just dropped — the
+    // root-level assets would vanish until revalidation (review B1).
+    const keptIds = new Set(kept.map((asset) => asset.id))
     const grafts: Asset[] = []
     for (const rows of deepByRoot.values()) {
       for (const row of rows) {
-        if (!incomingIds.has(row.id)) grafts.push(row)
+        if (!keptIds.has(row.id)) grafts.push(row)
       }
     }
     if (grafts.length === 0 && kept.length === incoming.length) return incoming
@@ -1270,16 +1277,23 @@ function computeAssetStats(assets: Asset[]): AssetStats {
 }
 
 /**
- * Keep shallow (other-project) assets when an incoming deep-only set would drop them
+ * Keep other-project assets when an incoming active-deep-only set would drop them
  * (GH-113, moved engine-side GH-135). A read landing mid-scan — a deep-only partial —
- * would otherwise flicker the global scope. Keep existing shallow until an incoming
- * set actually carries shallow and replaces it wholesale. Identity-preserving when no
- * shallow needs keeping, so the caller can skip a stats recompute.
+ * would otherwise flicker the global scope. Keep existing owner-tagged rows until an
+ * incoming set actually carries them and replaces them wholesale. Identity-preserving
+ * when nothing needs keeping, so the caller can skip a stats recompute.
+ *
+ * GH-155 (B1-e2e): queue-deepened rows (`scanDepth='deep'`) share the shallow rows'
+ * fate — the active-project partial stream never carries non-active projects' rows,
+ * and dropping them mid-scan would empty the graft's source before commitScan runs
+ * (nested deep-only assets vanished after every full rescan).
  */
 function foldKeepingShallow(incoming: Asset[], existing: Asset[]): Asset[] {
   if (incoming.some((a) => a.meta?.scanDepth === 'shallow')) return incoming
-  const shallowKept = existing.filter((a) => a.meta?.scanDepth === 'shallow')
-  return shallowKept.length > 0 ? [...incoming, ...shallowKept] : incoming
+  const kept = existing.filter(
+    (a) => a.meta?.scanDepth === 'shallow' || a.meta?.scanDepth === 'deep'
+  )
+  return kept.length > 0 ? [...incoming, ...kept] : incoming
 }
 
 /** Normalized per-file replacement key (GH-113). Set by parsers via
