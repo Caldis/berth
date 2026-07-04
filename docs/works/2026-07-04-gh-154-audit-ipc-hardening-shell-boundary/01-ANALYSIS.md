@@ -1,0 +1,24 @@
+# 需求分析 (Explore 产物)
+
+## 现状理解
+涉及的进程 / 模块 / IPC 契约 (参 docs/ARCHITECTURE.md)。
+
+## 关联与依赖
+调用关系、region/scope 差异、历史设计取舍。
+
+## 任务分类与 debt 校准
+- type / maintenance.subtype:
+- source.kind / refs:
+- debt estimate 修正:
+- scope / risk / areas / confidence:
+- revision:
+
+## 验收标准
+逐条编号, SPEC 与 verify 据此核对。
+1.
+
+## 界面质量与交互验收
+前端或 UI 相关任务填写。记录现有页面结构、设计系统用法、信息密度、主要用户路径、可见状态、交互反馈、响应式和可访问性风险; 非 UI 任务写“不适用”。
+
+## 未决问题
+留给 design 向人澄清。
