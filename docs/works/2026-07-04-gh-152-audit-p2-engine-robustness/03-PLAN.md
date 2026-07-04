@@ -26,9 +26,15 @@
 - [x] T7 (A-B7/B8): error-dialog-gate + 弹框接入; 电池 isOnBatteryPower() seed (commit ac1de5e9)
   - tests: error-dialog-gate.test.ts 3/3; 电池 seed tests: not needed — 装配单行无逻辑分支, 替代验证 typecheck+评审
   - verify: 不适用
-- [ ] 收口: 全局门禁 + 推送 + CI 旁路 + (verify 阶段) 设置面板禁用态截图
-  - tests: 全量
-  - verify: 设置面板三控件禁用呈现无布局破坏
+- [x] 收口: 全局门禁 + 推送 + CI 旁路 + 设置面板禁用态截图
+  - tests: 根级 187 文件 / 包内 17 文件 (123 用例) / renderer 94 文件 (533 用例) 全绿; lint/typecheck 绿
+  - verify: 见下节; CI — 5b01c678 三平台红 (T2 撞包内 search-signature 旧语义钉, 根门禁不含包内套件的盲区), 修复 + prepush 补闸后推 42eb201e → CI **success** (gh run list 回读确认)
+
+## verify 证据 (4.0-verify, 2026-07-04)
+
+1. **设置面板点开态 (T3/T8, 界面验收)**: 隔离实例 + CDP — 首轮实测抓出 T8 缺口 (number 控件仍可编辑), 修复后重跑: 4 个"暂不支持"可见 (扫描并发数/内容哈希/系统级 I/O 降速[win32 osThrottle]/磁盘余量), 三目标控件 IPC 侧 supported:false 核对一致; 截图确认可用项 (批次间停顿/遵循 .gitignore) 保持可编辑、布局无破坏。
+2. **CI 红处置 (归因→修复→机制化)**: 失败域 = 我的 T2 改动 (非 flaky), 按红灯例外流程 (`--allow-failed-baseline` 显式修红) 推送; prepush 增 `test:scan-engine` 使本地门禁测试面与 CI 对齐; friction `20260704-3.0-implement-root-gates-miss-package-test-suite` 已记并过 harness:check。
+3. **机械项**: harness:check 全绿; debt.final 已填 (repaid 4→5 +tooling-ci, revision 已记)。
 
 ## verify 回写
 verify 不通过项作为新任务追加于此, phase 退回 implement。
