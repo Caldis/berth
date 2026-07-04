@@ -1,11 +1,13 @@
-# IMPROVEMENT: 综合审查剩余项清单 (批次四候选: IPC 机制加固 + P3 收敛族)
+# IMPROVEMENT: 综合审查剩余项清单 (条目 1-8 已交付; 余 9 + P3 收敛族)
 
 - 日期: 2026-07-04
 - 状态: open
 - 来源: 2026-07-04 综合审查 (83k 行, 5 维度)。前置批次已归档: GH-151 (P0/P1 引擎调度/IPC 负载)、GH-152 (P2 引擎/主进程健壮性)、GH-153 (P2 渲染层九项)。
 - **写法说明**: 按耐久原则记行为与概念锚点, 不记行号 (原报告行号已过期, 且中间已有多批改动落地); 开批时 explore 必须实读源码逐项核实 (先例: GH-153 explore 九项全核实)。
 
-## 批次四候选: IPC 机制加固族 (中优先)
+## ~~批次四候选: IPC 机制加固族~~ 已全部交付 (2026-07-04, GH-154 归档: docs/works/_archive/2026-07-04-gh-154-audit-ipc-hardening-shell-boundary)
+
+条目 1-4 (typed handleIpc + sender 门禁 / typed sendToWindow / mock satisfies BerthAPI) 与 5 (正则扫查: memory 索引修复 + 2 豁免补注)、6 (openPath realpath) 均已落地; 7 (openExternal scheme 白名单) 核实为 GH-119 已实现。原文留档:
 
 1. **typed registerHandler**: `src/main/ipc/` 的 handler 注册缺编译期类型约束 — channel 名与 payload/返回类型未从单一契约表派生, 新增 handler 时类型漂移只能靠运行时/对账测试兜底。方向: registerHandler 泛型化, 从 IpcChannels 契约表推导入参/出参类型。
 2. **sender 校验**: ipcMain handler 未校验 `event.senderFrame`/sender 来源 — 任何能执行 JS 的帧 (含潜在第三方内容) 都可调用特权 IPC。方向: 统一入口校验 sender 是主窗口 webContents。

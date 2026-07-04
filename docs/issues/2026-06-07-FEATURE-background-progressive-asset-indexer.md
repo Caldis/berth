@@ -68,3 +68,8 @@ GH-135 (`docs/works/_archive/2026-06-15-gh-135-index-progress-visibility/`) 完�
 **推荐方案 (Option C, bounded first slice, ~250 行, 不动 activate/snapshot 语义)**: AgentAssetRuntime 加 `backgroundIndexQueue`, 启动后枚举所有 projectCandidates 入队, 复用 GH-135 现成 scheduler (idle/AC 门控) + 长驻 helper + backpressure, 低优逐项目 deep-scan + 增量持久化; activate 路径不变 (cache-hit 即时 / miss 后台刷新)。
 **未决风险/问题 (为何 issue spec 要求调研 + Codex 两轮对抗 review)**: ① snapshot.id churn → 每项目重扫 mint 新 id 致下游 (search/health/insights) 缓存反复失效 (需 global id 与 per-project id 解耦, 或 global 按需投影不持久化); ② overfetch (用户激活队列中项目时撞扫); ③ scheduler 语义混淆 (周期重扫 active vs 队列扫 non-active 两套, 设置 UI 须澄清); ④ [全局] 完整性 SLA (eventual consistency 可能数小时, "global=complete" 心智模型); ⑤ 队列顺序 (频率/大小/随机) + 可见性 (进度 UI); ⑥ cap-5 增量 delta 耦合 (否则 N 项目 N 次全量 SQLite 重写)。①④⑤含产品决策。
 **处置**: 设计已就绪 (详见本次 scope, 文件锚点: scanner.ts:312 / runtime.ts:456 scheduler / sqlite-snapshot-store / project-scope-runtime.ts:24 activate)。**唯一阻塞 = ①④⑤产品决策** (全局完整性 SLA / 队列顺序 / 进度可见性) —— 触及核心 scan/scope runtime, 决策定了即可按 Option C 落地 (落地用自审 + 对抗子代理验证, Codex 交叉评审已不再要求 2026-06-21)。保持 OPEN 待决策。
+
+# 进展 (2026-07-04, 综合审查批次一/二顺带交付)
+- **cap-5 行级 SQLite delta: DONE** (GH-151, docs/works/_archive/2026-07-04-gh-151-scan-engine-audit-fixes): `SqliteSnapshotStore.replaceBySourceKey` (DELETE WHERE source_key + 单事务行级替换) + `runtime.persistFileChange` 接线 (缺失时降级全量 save), watcher 增量不再全库重写; 附带 GH-152 退出路径 WAL checkpoint+close 与 getDb 瞬态锁退避重试。
+- 关联新旁支: [[2026-07-04-IMPROVEMENT-watcher-paths-fixed-at-start-blind-spot]] (watch 路径集启动定死, 新出现的条件路径监听盲区 — deep-index 设计时一并考虑)。
+- **主线剩余唯一大块 = 后台 deep-index 全部项目** (使 [全局] 真完整), 设计已 scope (Option C), **唯一阻塞 = 三个产品决策**: ① 全局完整性 SLA (eventual consistency 可接受窗口), ④ 队列顺序策略, ⑤ 进度可见性形态。决策定了即可落地。
