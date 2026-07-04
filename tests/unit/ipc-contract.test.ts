@@ -24,7 +24,8 @@ const extract = (source: string, pattern: RegExp): string[] => {
 const ipcTypesSource = read('packages/berth-scan-engine/src/shared/types/ipc.ts')
 const preloadSource = read('src/preload/index.ts')
 
-const registered = extract(read('src/main/ipc/handlers.ts'), /ipcMain\.handle\(\s*'([^']+)'/g)
+// GH-154 T3: 注册经 typed handleIpc (内部仍 ipcMain.handle); 双模式提取 — 残留裸注册同样计入。
+const registered = extract(read('src/main/ipc/handlers.ts'), /(?:ipcMain\.handle|handleIpc)\(\s*'([^']+)'/g)
 const invoked = extract(preloadSource, /(?:ipcRenderer\.invoke|invoke)\(\s*'([^']+)'/g)
 const declared = extract(ipcTypesSource, /^\s{2}'([a-zA-Z-]+:[a-zA-Z-]+)':\s*\{\s*args:/gm)
 const eventsSent = extract(read('src/main/ipc/handlers.ts') + read('src/main/index.ts'), /webContents\.send\(\s*'([^']+)'/g)

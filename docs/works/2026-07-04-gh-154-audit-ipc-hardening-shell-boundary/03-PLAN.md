@@ -8,8 +8,9 @@
 - [x] T2 (D5 → A6): url-guard +isAllowedRevealPathReal (realpath 注入); handlers.ts openPath 接入 fs.realpathSync
   - tests: url-guard.test.ts +5 用例 (symlink 出根 deny / 正常过 / ENOENT deny / 根解析失败保字面 / 根别名归一放行), 先红 (5 failed) 后绿 34/34
   - verify: 冷启动 smoke reveal 正常 (归 4.0-verify)
-- [ ] T3 (D1 → A1/A2): typed-ipc.ts (handleIpc + isTrustedIpcSender) + handlers.ts 45 点迁移 + ipc-contract regex 扩面
-  - tests: typed-ipc.test.ts (新) 先红后绿 (门禁 reject+log / 主帧透传); ipc-contract + ipc-registration 回归; typecheck 错误探针 (临时错参 → 红 → 移除, 结果记 PLAN)
+- [x] T3 (D1 → A1/A2): typed-ipc.ts (handleIpc + isTrustedIpcSender) + handlers.ts 迁移 + ipc-contract regex 扩面
+  - tests: typed-ipc.test.ts (新) 4 用例先红后绿 (主帧透传/子帧 reject+log/非窗口 reject/args 透传); ipc-contract + ipc-registration 回归 9/9; typecheck 探针: 错返回类型+错通道名 → 3 个 TS 错误, 还原绿 (绑定实证)
+  - **偏差 (计数)**: 实际注册点 43 (非估算 45); 迁移后 handlers.ts ipcMain 引用归零 (双向 grep)
   - verify: 冷启动 smoke 窗口控制正常 (归 4.0-verify)
 - [ ] T4 (D2 → A3): sendToWindow + index.ts 5 send 点迁移 + eventsSent regex 扩面
   - tests: ipc-contract 事件三方回归; typecheck 错 payload 探针
