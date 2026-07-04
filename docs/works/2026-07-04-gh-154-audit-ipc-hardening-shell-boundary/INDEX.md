@@ -2,7 +2,7 @@
 task: 2026-07-04-gh-154-audit-ipc-hardening-shell-boundary
 task_id: GH-154
 type: bug
-phase: design
+phase: implement
 created: 2026-07-04
 priority: P2
 target_date:
@@ -22,7 +22,7 @@ debt:
     risk: medium
     areas:
       - architecture
-    confidence: medium
+    confidence: high
     rationale: "七项 (输入为耐久清单, 无行号证据, explore 需全量核实): 机制四项 (typed registerHandler/typed emit/sender 校验/双向对账) 是类型层与测试层加固, incurred 为新契约推导机制; 偿还编译期类型漂移与 mock 单向对账盲区。shell 两项 (realpath/scheme 白名单) 为安全正确性小修。正则加固面未知 (grep 后定量)。scope=cross-process (main/preload/renderer 类型链 + 契约表); risk=medium (registerHandler 泛型化触所有 handler 签名, 但行为不变纯类型层)。confidence=low — 待 explore 核实各项现状后校准。"
   final:
     incurred:
@@ -40,6 +40,12 @@ debt:
       from: "3/3/0, cross-process, low"
       to: "2/4/-2, module, medium"
       reason: "七项逐一核实, 两项状态修正: ⑦ openExternal scheme 白名单 GH-119 已实现 (出批); ④ mock 结构层已被 satisfies mapped-type 双向闭环, 收窄为签名层 (satisfies BerthAPI)。⑤ 子代理定量: 仅 1 硬命中 + 2 豁免补注。renderer/preload/engine 零改动 → scope 收窄 module。"
+    - phase: design
+      date: 2026-07-04
+      field: confidence
+      from: medium
+      to: high
+      reason: "design 锁定 D1-D5 (typed-ipc 模块/门禁集成/emit helper/mock satisfies BerthAPI/malformed 整体回退/realpath 注入谓词), 全部有仓内先例 (preload typed invoke / parseUnitedIndex onMalformed / GH-152 domain-log)。数值与 scope/risk 不变。"
 issue:
   number: 154
   repo: Caldis/berth
@@ -67,7 +73,7 @@ gh_project:
 ## 产物
 - [x] 00-BUG.md — 原始输入快照 (issues 清单条目 1-7 + 范围裁定)
 - [x] 01-ANALYSIS.md — Explore 产物 (七项核实, ⑦ 出批 / ④ 收窄)
-- [ ] 02-SPEC.md — Design 产物
-- [ ] 03-PLAN.md — 活任务清单
+- [x] 02-SPEC.md — Design 产物 (D1-D5 裁决)
+- [x] 03-PLAN.md — 活任务清单 (T1-T5 + 收口)
 
 ## 待澄清 (blocked 时填)
