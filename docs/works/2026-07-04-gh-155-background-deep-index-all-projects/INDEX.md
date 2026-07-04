@@ -2,7 +2,7 @@
 task: 2026-07-04-gh-155-background-deep-index-all-projects
 task_id: GH-155
 type: feature
-phase: explore
+phase: design
 created: 2026-07-04
 priority: P1
 target_date: 
@@ -21,8 +21,8 @@ debt:
       - architecture
       - performance
       - ui-ux
-    confidence: low
-    rationale: "0.0-new 初始估算: 触及 scan runtime 共享读路径 + 主进程队列/调度 + renderer 进度 UI, 跨进程 blast radius; explore/design 后校准。"
+    confidence: medium
+    rationale: "explore 校准: 影响面实测锚定 (runtime 三方写并发 / IPC 扩字段 / per-project deep 原语 / SQLite gate 旁路), 均在初估 blast radius 内; net=6 维持。"
   final:
     incurred:
     repaid:
@@ -32,7 +32,12 @@ debt:
     areas: []
     confidence:
     rationale:
-  revisions: []
+  revisions:
+    - phase: explore
+      date: 2026-07-04
+      from: "net=6 confidence=low"
+      to: "net=6 confidence=medium"
+      reason: "三路 explore 实测锚定影响面; 估算值不变, 置信度提升。"
 issue:
   number: 155
   repo: Caldis/berth
