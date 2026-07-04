@@ -2,7 +2,7 @@
 task: 2026-07-04-gh-153-audit-p2-renderer-perf-fixes
 task_id: GH-153
 type: bug
-phase: implement
+phase: verify
 created: 2026-07-04
 priority: P2
 target_date:
@@ -24,14 +24,16 @@ debt:
     confidence: high
     rationale: "九项渲染层修复 (证据 = 2026-07-04 审查渲染层子报告, 快照见 00-BUG): 多为局部小修 (原子 selector/push/deferredFilter/吞错 setError/MOTION token), 中等三项 (usage.summary 去重+costMode 复用、health force 绕在途、session-detail keyed CachedResource)。incurred: CachedResource 扩展 (force 语义/keyed detail) 新代码; repaid: 消除 5 路同参重 IPC、usage 页复制粘贴 DRY 违规、O(n²) 分组、布局根全量订阅。scope=module (全部在 src/renderer, 不动 main/IPC 契约); risk=medium (use-ipc.ts 是全页面共享热路径)。confidence=medium, explore 核实 CachedResource 语义后校准。"
   final:
-    incurred:
-    repaid:
-    net:
-    scope:
-    risk:
-    areas: []
-    confidence:
-    rationale:
+    incurred: 2
+    repaid: 3
+    net: -1
+    scope: module
+    risk: medium
+    areas:
+      - performance
+      - architecture
+    confidence: high
+    rationale: "T1-T8 共 8 个实现提交, 与 estimate 一致。incurred: forceRequest 新原语 + usage keyed 缓存新机制; repaid: 消 5 路同参重 IPC、usage 页复制粘贴、O(n²) 分组、布局根全量订阅 (useAssets 孤儿 API 同批删除净减代码)、4 处吞错、动效魔数。测试先红后绿为主 (T1 characterization/T7 grep+回归, 例外已记); 全仓 189 文件 1370 测试绿, CI 661355e2 三平台 success。真机 CDP 时序验收: 缓存命中三帧零骨架、扫描中页面切换流畅、usage 往返 126ms 即时、编辑态动效无回归。剩余风险: health force 无 UI 入口 (旁支 issue 已记, 机制层已修)。"
   revisions:
     - phase: design
       date: 2026-07-04

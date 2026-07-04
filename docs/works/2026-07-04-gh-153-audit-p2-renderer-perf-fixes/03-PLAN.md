@@ -30,9 +30,18 @@
   - tests: app-layout-rerender.test.tsx (新, Profiler 探针 + chrome 子组件 stub 隔离) — progress tick 与 status 写零 commit (先红) + 空态翻转对照组; use-asset-runtime/asset-runtime-error 改钉 bootstrap 语义 (manual refresh 用例转 idle 自动首刷路径); GH-118 blocking/banner (app-layout.test) 回归; 全仓 189 文件 1370 测试绿
   - **偏差 (测试工艺)**: 对照组不钉精确 commit 次数 (React 对 useSyncExternalStore 翻转有级联 update, 次数是实现细节), 钉 ">基线"; i18n 需预热否则 loaded 事件污染计数
   - verify: CDP ② 扫描期布局壳无逐 tick 重渲染 (归 4.0-verify)
-- [ ] 收口: 全局门禁 (typecheck/lint/test/harness:check + prepush 含 test:scan-engine) + 推送 + CI 旁路 + CDP 验收集 (①②④⑤ + usage 错误路径)
-  - tests: A0
-  - verify: 4.0-verify 汇总证据
+- [x] 收口: 全局门禁 + 推送 + CI 旁路 + CDP 验收集
+  - tests: prepush 全绿 (lint/typecheck/根级 test 189 文件 1370 用例/包内套件/harness:check/baseline); 推 661355e2 → CI 三平台 **success** (旁路子代理回读确认)
+  - verify: 见下节
+
+## verify 证据 (4.0-verify, 2026-07-04)
+
+1. **① usage 去重/缓存可观测 (CDP 时序)**: 隔离实例 (dev:agent gh153 + CDP 9223) — 离开 Overview 1.2s 后返回, 0/120/400ms 三帧采样均 `pulses=0, hasCurrency=true` (无骨架、数据即时, 缓存命中); 单测已钉同参三实例 1 路 IPC。
+2. **② 扫描期布局稳定 (CDP 时序)**: `refresh({wait:false})` 触发真扫描, 状态序列 scanning→ready; 扫描进行中完成 会话↔总览 页面往返切换, 布局/列表完整渲染 (截图 03), 无卡顿或空白; Profiler 单测钉 progress tick 零 commit。
+3. **usage 页往返 (T6)**: 全部→近30天→切回全部, 即时采样 `hasData=true, pulses=0`, 126ms 内数据完整呈现 (缓存 TTL 内零重取, 截图 05/06/07); costMode 透传由既有页面单测钉 (`{days:0, costMode:'auto'}` 请求形状)。
+4. **⑤ 动效点开态 (截图)**: 编辑态进入 (自定义→完成)、隐藏 widget → 隐藏的 WIDGET library 入场 (截图 09 点开态)、加回 widget 恢复原布局 (截图 10) — 布局/节奏无肉眼回归; FLIP 数值经 LAYOUT_GLIDE 锁定未变。
+5. **④ health force 修正**: 实测发现全 renderer 无任何 `force:true` UI 调用点 (审查设想的"重新检查"按钮不存在) — 机制层修复以 cached-resource/use-health-checks 单测为证 (软刷在途 force 必出程); UI 入口缺口按不变量 10 记 `docs/issues/2026-07-04-IMPROVEMENT-health-panel-no-force-recheck-entry.md`, 不入本批。
+6. **机械项**: harness:check 全绿; harness:stats notice (25); Project strict — GH-153 字段同步后 clean (残留两条 GH-150 漂移属他人归档任务, 不越界修, 已在汇报列明); debt.final 已填 (与 estimate 一致, incurred 2/repaid 3/net -1)。
 
 ## verify 回写
-verify 不通过项作为新任务追加于此, phase 退回 implement。
+verify 不通过项作为新任务追加于此, phase 退回 implement。(本轮无不通过项)
