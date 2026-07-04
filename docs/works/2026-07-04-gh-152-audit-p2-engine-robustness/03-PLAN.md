@@ -32,3 +32,7 @@
 
 ## verify 回写
 verify 不通过项作为新任务追加于此, phase 退回 implement。
+
+- [x] T8 (A-B3 verify 缺口): renderer `ControlInput` 对 `!supported` 统一早退到只读 "暂不支持" (number 分支此前忽略该标志, dev 实例 CDP 实测输入+保存仍可见)
+  - tests: `settings-page.test.tsx` 新用例先红后绿 16/16; 全量 renderer 94 文件 533 绿
+  - verify: CDP 重跑 — 4 个"暂不支持"可见 (三目标控件 + win32 osThrottle), 三控件 IPC supported:false 核对, 截图确认可用项 (批次间停顿/遵循 .gitignore) 保持可编辑、布局无破坏

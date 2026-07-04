@@ -350,6 +350,13 @@ function ControlInput({
   const label = t(`settings.scanEngine.controlLabels.${control.id}`)
   const key = control.settingKey
 
+  // GH-152 T8: an unsupported control never renders an editable surface — the
+  // number branch used to ignore the flag and show input + Save (placebo). All
+  // kinds fall through to the read-only "not supported yet" text uniformly.
+  if (!control.supported) {
+    return <span className="text-xs text-muted-foreground">{readonlyValue(control, language, t)}</span>
+  }
+
   if (control.kind === 'boolean' && key) {
     return (
       <Switch

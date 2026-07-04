@@ -209,6 +209,39 @@ describe('SettingsContent page chrome', () => {
     expect(screen.getByText('Indexed sources')).toBeInTheDocument()
   })
 
+  it('renders unsupported editable-kind controls as read-only text — no placebo inputs (GH-152 T8)', async () => {
+    // GH-152 T3 marks zero-consumer settings supported:false; the number branch
+    // used to ignore the flag and still render input + Save (found live in
+    // verify — the placebo survived visually for number controls).
+    const base = await window.api.assets.engineInfo()
+    window.api.assets.engineInfo = vi.fn(async () => ({
+      ...base,
+      controls: [
+        ...base.controls,
+        {
+          id: 'scan-concurrency' as const,
+          value: 2,
+          kind: 'number' as const,
+          group: 'performance' as const,
+          editable: true,
+          supported: false,
+          settingKey: 'scanConcurrency' as const,
+          min: 1,
+          max: 8,
+          step: 1
+        }
+      ]
+    }))
+    renderSettingsContent()
+
+    await screen.findByText('Scan Engine')
+    expect(await screen.findByText('Scan concurrency')).toBeInTheDocument()
+    // One 'Not supported yet' already comes from the pause status row; the
+    // unsupported number control must add another instead of an editable input.
+    expect(screen.getAllByText('Not supported yet').length).toBeGreaterThanOrEqual(2)
+    expect(screen.queryByLabelText('Scan concurrency')).not.toBeInTheDocument()
+  })
+
   it('saves editable scan engine controls in display units (GH-135)', async () => {
     renderSettingsContent()
 
