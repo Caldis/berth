@@ -26,8 +26,9 @@
 - [x] T7 (B9 → A9): motion.ts +EASE_CSS (由 ease 数组生成)/+LAYOUT_GLIDE (0.28 数值锁定); overview/dashboard-grid/widget-shell 四处引 token
   - tests: overview-dashboard/dnd-kit-smoke 回归 6/6 + grep 核验 dashboard 域无字面 duration/ease 魔数; typecheck+lint 绿; token 常量 not needed (SPEC 例外已记)
   - verify: CDP ⑤ 编辑态入场/拖拽/hover 动效目测无回归 (归 4.0-verify)
-- [ ] T8 (B3 → A3): useAssetRuntime 收形 useAssetRuntimeBootstrap {error, retry}; 删 useAssets (+use-assets.test.tsx); AppLayout 原子 selector; use-asset-runtime.test.tsx 改钉 bootstrap
-  - tests: app-layout 渲染探针 (progress tick 不重渲染 / 0→N 与 error 变化正常重渲染, 先红) + bootstrap 语义回归 + GH-118 blocking/banner 回归
+- [x] T8 (B3 → A3): useAssetRuntime 收形 useAssetRuntimeBootstrap {error, retry}; 删 useAssets (+use-assets.test.tsx, 规则 9 孤儿连删); AppLayout 原子 selector `s.assets.length === 0`
+  - tests: app-layout-rerender.test.tsx (新, Profiler 探针 + chrome 子组件 stub 隔离) — progress tick 与 status 写零 commit (先红) + 空态翻转对照组; use-asset-runtime/asset-runtime-error 改钉 bootstrap 语义 (manual refresh 用例转 idle 自动首刷路径); GH-118 blocking/banner (app-layout.test) 回归; 全仓 189 文件 1370 测试绿
+  - **偏差 (测试工艺)**: 对照组不钉精确 commit 次数 (React 对 useSyncExternalStore 翻转有级联 update, 次数是实现细节), 钉 ">基线"; i18n 需预热否则 loaded 事件污染计数
   - verify: CDP ② 扫描期布局壳无逐 tick 重渲染 (归 4.0-verify)
 - [ ] 收口: 全局门禁 (typecheck/lint/test/harness:check + prepush 含 test:scan-engine) + 推送 + CI 旁路 + CDP 验收集 (①②④⑤ + usage 错误路径)
   - tests: A0

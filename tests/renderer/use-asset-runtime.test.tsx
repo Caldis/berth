@@ -1,6 +1,6 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { useAssetRuntime } from '../../src/renderer/src/hooks/use-ipc'
+import { useAssetRuntimeBootstrap } from '../../src/renderer/src/hooks/use-ipc'
 import { IDLE_ASSET_RUNTIME_STATUS, useAppStore } from '../../src/renderer/src/stores/app'
 import type { Asset, AssetStats } from '@shared/types/asset'
 import type { AssetRuntimeStatus, AssetSnapshot } from '@shared/types/ipc'
@@ -70,7 +70,10 @@ function createDeferred<T>(): {
   return { promise, resolve }
 }
 
-describe('useAssetRuntime', () => {
+// GH-153 T8: hook 收形为 useAssetRuntimeBootstrap — 不再返回 loading (布局根不消费,
+// 订阅 status 只会放大扫描期重渲染); bootstrap 语义 (刷新链 + 快照/进度写 store) 不变,
+// 断言改落 store 状态。
+describe('useAssetRuntimeBootstrap', () => {
   beforeEach(() => {
     useAppStore.setState({
       assets: [],
@@ -92,12 +95,14 @@ describe('useAssetRuntime', () => {
       .mockResolvedValueOnce(scanningStatus)
       .mockReturnValueOnce(completedRefresh.promise)
 
-    const { result } = renderHook(() => useAssetRuntime())
+    renderHook(() => useAssetRuntimeBootstrap())
 
     await waitFor(() => {
       expect(window.api.assets.refresh).toHaveBeenCalledWith({ wait: false })
     })
-    expect(result.current.loading).toBe(true)
+    await waitFor(() => {
+      expect(useAppStore.getState().assetRuntimeStatus.state).toBe('scanning')
+    })
 
     completedRefresh.resolve(readyStatus)
 
@@ -120,7 +125,7 @@ describe('useAssetRuntime', () => {
       return () => {}
     })
 
-    renderHook(() => useAssetRuntime())
+    renderHook(() => useAssetRuntimeBootstrap())
 
     await waitFor(() => {
       expect(progressHandler).not.toBeNull()

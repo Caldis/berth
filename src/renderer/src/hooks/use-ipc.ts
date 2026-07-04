@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from 'react'
-import type { AgentView, Asset, AssetStats, CostMode, SessionSummary, UsageSummary } from '@shared/types/asset'
+import type { AgentView, CostMode, SessionSummary, UsageSummary } from '@shared/types/asset'
 import type {
   SessionDetailResult,
   SessionReplayResult,
@@ -128,13 +128,14 @@ function requestAgentCapabilityPlugins(): Promise<AgentCapabilityPluginListResul
   )
 }
 
-export function useAssetRuntime(): {
-  loading: boolean
-  refresh: () => void
+// GH-153 T8 (原 useAssetRuntime 收形): 引擎 bootstrap 单点 — 初始 status+snapshot 拉取、
+// 条件首刷、onChanged→快照同步、onProgress→store fold。唯一挂载点是 AppLayout (布局根):
+// 因此本 hook 不订阅任何反应式 store 状态 (status/assets), 否则扫描期每 progress tick
+// 整个布局壳跟着重渲染; 消费方需要状态时用原子 selector 自取。
+export function useAssetRuntimeBootstrap(): {
   error: string | null
   retry: () => void
 } {
-  const status = useAppStore((s) => s.assetRuntimeStatus)
   const setAssetRuntimeStatus = useAppStore((s) => s.setAssetRuntimeStatus)
   const setAssetSnapshot = useAppStore((s) => s.setAssetSnapshot)
   const applyAssetProgress = useAppStore((s) => s.applyAssetProgress)
@@ -217,34 +218,7 @@ export function useAssetRuntime(): {
     }
   }, [applyAssetProgress, refresh, setAssetRuntimeStatus, syncSnapshot, bootstrapNonce])
 
-  return {
-    loading: status.state === 'scanning',
-    refresh,
-    error,
-    retry
-  }
-}
-
-export function useAssets(): {
-  assets: Asset[]
-  stats: AssetStats
-  loading: boolean
-  refresh: () => void
-  error: string | null
-  retry: () => void
-} {
-  const assets = useAppStore((s) => s.assets)
-  const stats = useAppStore((s) => s.stats)
-  const runtime = useAssetRuntime()
-
-  return {
-    assets,
-    stats,
-    loading: runtime.loading,
-    refresh: runtime.refresh,
-    error: runtime.error,
-    retry: runtime.retry
-  }
+  return { error, retry }
 }
 
 export function useScanEngineInfo(): {

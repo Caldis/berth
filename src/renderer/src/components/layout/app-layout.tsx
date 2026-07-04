@@ -7,7 +7,7 @@ import { InspectorDrawer } from './inspector-drawer'
 import { SIDEBAR_COLLAPSED_WIDTH, useAppStore } from '@/stores/app'
 import { isWindowsPlatform } from '@/lib/platform'
 import { WindowControls } from './window-controls'
-import { useAssets } from '@/hooks/use-ipc'
+import { useAssetRuntimeBootstrap } from '@/hooks/use-ipc'
 import { TopNavigation } from './top-navigation'
 import { PageChromeProvider } from './page-chrome'
 import { IndexHairline } from '@/components/shared/index-activity'
@@ -65,8 +65,11 @@ export function AppLayout({ children }: { children: ReactNode }): React.ReactEle
   // pages are meaningless, so the content area becomes a full error state
   // (sidebar stays navigable); with data present a compact banner is shown
   // instead and the pages keep rendering (SWR, no clear-screen).
-  const { assets, error: runtimeError, retry } = useAssets()
-  const runtimeErrorBlocking = runtimeError !== null && assets.length === 0
+  // GH-153 T8: 布局根只订阅 "有没有资产" 这一个布尔 (原子 selector) — 订阅整个 assets
+  // 数组/status 对象会让扫描期每个 progress tick 重渲染整个布局壳。
+  const noAssets = useAppStore((s) => s.assets.length === 0)
+  const { error: runtimeError, retry } = useAssetRuntimeBootstrap()
+  const runtimeErrorBlocking = runtimeError !== null && noAssets
 
   return (
     <div className="flex h-[100dvh] overflow-hidden bg-background text-foreground">
