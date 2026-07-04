@@ -3,9 +3,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   SESSION_LIST_CACHE_TTL_MS,
   resetSessionsCacheForTests,
+  useSessionDetail,
   useSessions
 } from '../../src/renderer/src/hooks/use-ipc'
 import type { SessionSummary } from '@shared/types/asset'
+import type { SessionDetailResult } from '@shared/types/ipc'
 import { normalizeTokenUsage } from '@shared/token-usage'
 
 function sessionSummary(id: string, title: string): SessionSummary {
@@ -155,5 +157,81 @@ describe('useSessions stale refresh', () => {
     await waitFor(() => {
       expect(scoped.result.current.loading).toBe(false)
     })
+  })
+})
+
+// GH-153 T4: detail 与 replay 的 SWR 对称 — 同一 session 返回列表再进入不重复走 IPC。
+describe('useSessionDetail SWR cache (GH-153 T4)', () => {
+  beforeEach(() => {
+    resetSessionsCacheForTests()
+    vi.restoreAllMocks()
+  })
+
+  function detailResult(id: string): SessionDetailResult {
+    return {
+      summary: sessionSummary(id, `Detail ${id}`),
+      activityMetrics: {
+        tokenRatePerMinute: null,
+        tokenRateDurationSeconds: null,
+        tokenRateSource: 'unavailable',
+        tokenRateStartedAt: null,
+        tokenRateEndedAt: null,
+        tokenRateTokenCount: null,
+        tokenRateSampleCount: 0,
+        tokenRateIdleGapSeconds: 0
+      },
+      skillsUsed: [],
+      mcpServers: [],
+      hooksFired: [],
+      toolTimeline: [],
+      artifacts: { plans: [], todos: [], files: [], checkpoints: [] },
+      plans: [],
+      todos: [],
+      fileHistoryCount: 0
+    }
+  }
+
+  it('serves a cached detail on remount within TTL without a second IPC', async () => {
+    window.api.sessions.get = vi.fn(async () => detailResult('s1'))
+
+    const first = renderHook(() => useSessionDetail('s1'))
+    await waitFor(() => {
+      expect(first.result.current.detail?.summary.id).toBe('s1')
+      expect(first.result.current.loading).toBe(false)
+    })
+    first.unmount()
+
+    const second = renderHook(() => useSessionDetail('s1'))
+    expect(second.result.current.detail?.summary.id).toBe('s1')
+    expect(second.result.current.loading).toBe(false)
+    expect(window.api.sessions.get).toHaveBeenCalledTimes(1)
+    second.unmount()
+  })
+
+  it('fetches independently per session id', async () => {
+    window.api.sessions.get = vi.fn(async (id: string) => detailResult(id))
+
+    const first = renderHook(() => useSessionDetail('s1'))
+    await waitFor(() => expect(first.result.current.detail?.summary.id).toBe('s1'))
+    first.unmount()
+
+    const second = renderHook(() => useSessionDetail('s2'))
+    await waitFor(() => expect(second.result.current.detail?.summary.id).toBe('s2'))
+    expect(window.api.sessions.get).toHaveBeenCalledTimes(2)
+    second.unmount()
+  })
+
+  it('reload invalidates the cache and refetches', async () => {
+    window.api.sessions.get = vi.fn(async () => detailResult('s1'))
+
+    const { result, unmount } = renderHook(() => useSessionDetail('s1'))
+    await waitFor(() => expect(result.current.detail?.summary.id).toBe('s1'))
+
+    await act(async () => {
+      result.current.reload()
+    })
+    await waitFor(() => expect(window.api.sessions.get).toHaveBeenCalledTimes(2))
+    expect(result.current.detail?.summary.id).toBe('s1')
+    unmount()
   })
 })

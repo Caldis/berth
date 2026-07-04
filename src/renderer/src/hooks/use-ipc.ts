@@ -53,6 +53,12 @@ const sessionReplayResource = new CachedResource<SessionReplayResult | null>(
   SESSION_REPLAY_CACHE_TTL_MS
 )
 
+// GH-153 T4: detail 与 replay 对称 — 返回列表再进入同一 session 不重复走 IPC/序列化。
+export const SESSION_DETAIL_CACHE_TTL_MS = 60_000
+const sessionDetailResource = new CachedResource<SessionDetailResult | null>(
+  SESSION_DETAIL_CACHE_TTL_MS
+)
+
 function requestHealthChecks(refresh: boolean): Promise<HealthCheckValue> {
   const fetcher = (): Promise<HealthCheckValue> =>
     window.api.assets.healthCheck({ refresh }).then((result) => ({
@@ -70,6 +76,7 @@ export function resetHealthCheckCacheForTests(): void {
 export function resetSessionsCacheForTests(): void {
   sessionsResource.clear()
   sessionReplayResource.clear()
+  sessionDetailResource.clear()
 }
 
 export function resetAgentCapabilityPluginCacheForTests(): void {
@@ -455,12 +462,16 @@ export function useSessionDetail(id: string): {
   error: string | null
   reload: () => void
 } {
-  const [detail, setDetail] = useState<SessionDetailResult | null>(null)
-  const [loading, setLoading] = useState(true)
+  const initialCache = id ? sessionDetailResource.peek(id) : undefined
+  const [detail, setDetail] = useState<SessionDetailResult | null>(initialCache ?? null)
+  const [loading, setLoading] = useState(initialCache === undefined)
   const [error, setError] = useState<string | null>(null)
   const [reloadNonce, setReloadNonce] = useState(0)
 
-  const reload = useCallback(() => setReloadNonce((n) => n + 1), [])
+  const reload = useCallback(() => {
+    sessionDetailResource.invalidate(id)
+    setReloadNonce((n) => n + 1)
+  }, [id])
 
   useEffect(() => {
     if (!id || !window.api?.sessions?.get) {
@@ -468,13 +479,25 @@ export function useSessionDetail(id: string): {
       return
     }
     let cancelled = false
+    const cached = sessionDetailResource.peek(id)
+    if (cached !== undefined) {
+      setDetail(cached)
+      if (sessionDetailResource.isFresh(id)) {
+        setLoading(false)
+        setError(null)
+        return
+      }
+    } else {
+      setDetail(null)
+    }
     setLoading(true)
     setError(null)
-    window.api.sessions
-      .get(id)
+
+    sessionDetailResource
+      .request(id, () => window.api.sessions.get(id).then((result) => result ?? null))
       .then((result) => {
         if (cancelled) return
-        setDetail(result ?? null)
+        setDetail(result)
         setError(null)
       })
       .catch((err) => {
@@ -484,6 +507,7 @@ export function useSessionDetail(id: string): {
       .finally(() => {
         if (!cancelled) setLoading(false)
       })
+
     return () => {
       cancelled = true
     }

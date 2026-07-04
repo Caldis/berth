@@ -12,8 +12,8 @@
 - [x] T3 (B5 → A5): cached-resource.ts +forceRequest (递归链后语义) + requestHealthChecks(force) 走 forceRequest
   - tests: cached-resource.test.ts (新) 4 用例 (无在途/链后写序/在途 reject/二次在途递归) + use-health-checks 软刷在途 force 必出程 — 先红 (5 failed) 后绿 9/9
   - verify: CDP ④ 健康面板高频变更期强制重查 (归 4.0-verify)
-- [ ] T4 (B8 → A8): useSessionDetail 加 keyed CachedResource (镜像 replay 形状, 60s)
-  - tests: use-sessions-swr 新用例 — TTL 内二次 mount 零 IPC / reload 失效重取, 先红后绿
+- [x] T4 (B8 → A8): useSessionDetail 加 keyed CachedResource (镜像 replay 形状, 60s)
+  - tests: use-sessions-swr 3 新用例 (TTL 内二次 mount 零 IPC / 按 id 分流 / reload 失效重取) 先红后绿; session-error + sessions-pages 回归 39/39
   - verify: 不适用 (纯取数路径)
 - [ ] T5 (B1 → A1): usageSummaryResource + useUsageSummary SWR 化 (peek/isFresh/request/invalidate)
   - tests: use-usage-summary-swr.test.tsx (新) — 同参双实例 1 路 IPC / 异 days 分流 / reload 重取, 先红后绿
