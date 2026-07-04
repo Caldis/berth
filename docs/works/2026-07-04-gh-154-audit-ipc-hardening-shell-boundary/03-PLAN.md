@@ -18,9 +18,16 @@
 - [x] T5 (D3 → A4): tests/setup.ts mockApi 收紧 satisfies BerthAPI (GH-115 T2 遗留 TODO 兑现)
   - tests: 红名单仅 2 处 (usage.summary 缺 7 字段 / getPreferences 缺 2 字段), 补齐后 typecheck 绿 + 全量 1382 测试回归绿 (零连锁断言改动)
   - verify: 不适用
-- [ ] 收口: A7 复核 (url-guard scheme 既有用例点名) + 全局门禁 + 推送 + CI 旁路 + 冷启动 smoke
-  - tests: A0 (prepush 全绿)
-  - verify: 4.0-verify 汇总证据
+- [x] 收口: A7 复核 + 全局门禁 + 推送 + CI 旁路 + 冷启动 smoke
+  - tests: prepush 全绿 (lint/typecheck/根级 1382 测试/包内/harness:check/baseline); 推 09dad1b0 → CI **success** (三平台绿, 旁路回读确认; flaky 前科用例未复发)
+  - verify: 见下节
+
+## verify 证据 (4.0-verify, 2026-07-04)
+
+1. **A7 复核**: url-guard.test.ts 既有 isSafeExternalUrl 覆盖 scheme 白名单 (https/mailto 放行 + 大小写/trim 容错) 与 deny 面 (protocol-relative/scheme-less/空串/garbage) — ⑦ 无新代码, 复核通过。
+2. **冷启动 smoke (agent 实例 gh154, CDP 9224)**: ① window 域经 sender 门禁正常 (isMaximized boolean, maximize 往返 true→false, maximized-change 推送经 sendToWindow); ② assets.status ready; ③ shell deny 双路真机验证 — main.log 两条 url-guard denied (reveal-path / external-url), **ipc-guard 零条** (合法主帧调用零误伤)。
+3. **类型绑定实证 (探针记录)**: T3 错返回类型+错通道名 → 3 TS 错误; T4 错 payload → 1 TS 错误; 均还原后绿。
+4. **机械项**: harness:check 全绿; 全量 1382 测试绿; debt.final 已落账 (incurred 2/repaid 4/net -2, 与 explore 修正后 estimate 一致)。
 
 ## verify 回写
 verify 不通过项作为新任务追加于此, phase 退回 implement。

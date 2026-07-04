@@ -2,7 +2,7 @@
 task: 2026-07-04-gh-154-audit-ipc-hardening-shell-boundary
 task_id: GH-154
 type: bug
-phase: implement
+phase: verify
 created: 2026-07-04
 priority: P2
 target_date:
@@ -25,14 +25,15 @@ debt:
     confidence: high
     rationale: "七项 (输入为耐久清单, 无行号证据, explore 需全量核实): 机制四项 (typed registerHandler/typed emit/sender 校验/双向对账) 是类型层与测试层加固, incurred 为新契约推导机制; 偿还编译期类型漂移与 mock 单向对账盲区。shell 两项 (realpath/scheme 白名单) 为安全正确性小修。正则加固面未知 (grep 后定量)。scope=cross-process (main/preload/renderer 类型链 + 契约表); risk=medium (registerHandler 泛型化触所有 handler 签名, 但行为不变纯类型层)。confidence=low — 待 explore 核实各项现状后校准。"
   final:
-    incurred:
-    repaid:
-    net:
-    scope:
-    risk:
-    areas: []
-    confidence:
-    rationale:
+    incurred: 2
+    repaid: 4
+    net: -2
+    scope: module
+    risk: medium
+    areas:
+      - architecture
+    confidence: high
+    rationale: "T1-T5 共 6 个实现提交 (T4 含一次提取面补正), 与 explore 修正后 estimate 一致。incurred: typed-ipc 新机制 (handleIpc/sendToWindow/门禁) + realpath 谓词; repaid: 43 通道类型漂移面、sender 纵深缺口、mock 签名层 (GH-115 T2 TODO 兑现)、memory 索引静默丢条目、openPath symlink 绕过。先红后绿为主 (T5 为 typecheck 红名单驱动); 全量 1382 测试绿; 冷启动 smoke 门禁/deny/推送三面真机验证。过程新 friction: 提取型对账空集空洞通过 (已钉非空)。"
   revisions:
     - phase: explore
       date: 2026-07-04
