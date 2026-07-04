@@ -49,12 +49,34 @@ const LEGACY_JSON_FILE = 'berth-snapshot.json'
 const ENVELOPE_KEY = 'envelope'
 const SCAN_HISTORY_KEY = 'scan-history'
 
-export function createSqliteSnapshotStore(dir: string, openDatabase: OpenSqliteDatabase): SnapshotStore {
+export interface SqliteSnapshotStoreOptions {
+  /** Backoff before re-attempting open after a TRANSIENT failure (GH-152 T6) —
+   * Windows AV/backup tools hold the db file briefly at login; without a retry
+   * one blip disabled persistence for the whole session (no SWR next launch). */
+  transientRetryDelayMs?: number
+  now?: () => number
+}
+
+/** Lock/permission-style codes are transient (retry later); anything else —
+ * corruption, schema trouble — is permanent for this process. */
+const TRANSIENT_OPEN_ERROR = /^(SQLITE_BUSY|SQLITE_LOCKED|SQLITE_CANTOPEN|EBUSY|EPERM|EACCES)/
+
+export function createSqliteSnapshotStore(
+  dir: string,
+  openDatabase: OpenSqliteDatabase,
+  options: SqliteSnapshotStoreOptions = {}
+): SnapshotStore {
   const file = path.join(dir, FILE_NAME)
-  let db: SqliteDatabase | null | undefined // undefined = untried, null = open failed
+  const retryDelayMs = options.transientRetryDelayMs ?? 5_000
+  const now = options.now ?? (() => Date.now())
+  let db: SqliteDatabase | null | undefined // undefined = untried/retryable, null = given up
+  let closed = false
+  let nextRetryAtMs = 0
 
   function getDb(): SqliteDatabase | null {
+    if (closed) return null
     if (db !== undefined) return db
+    if (now() < nextRetryAtMs) return null // transient failure: inside the backoff window
     try {
       fs.mkdirSync(dir, { recursive: true })
       const opened = openDatabase(file)
@@ -69,7 +91,12 @@ export function createSqliteSnapshotStore(dir: string, openDatabase: OpenSqliteD
       }
     } catch (err) {
       getMainLog().log('sqlite-snapshot-store', err)
-      db = null // give up permanently for this store; persistence is best-effort
+      const code = String((err as NodeJS.ErrnoException | null)?.code ?? '')
+      if (TRANSIENT_OPEN_ERROR.test(code)) {
+        nextRetryAtMs = now() + retryDelayMs // stay retryable (db remains undefined)
+        return null
+      }
+      db = null // permanent for this process; persistence is best-effort
     }
     return db
   }
@@ -151,6 +178,22 @@ export function createSqliteSnapshotStore(dir: string, openDatabase: OpenSqliteD
         run()
       } catch (err) {
         getMainLog().log('sqlite-snapshot-store', err)
+      }
+    },
+    close(): void {
+      // Shutdown (GH-152 T5): checkpoint so berth-index.db-wal doesn't ride out
+      // the process (a hard crash + unplayable WAL rolls the cache back), then
+      // release the handle. Everything after close is a silent no-op.
+      try {
+        if (db) {
+          db.pragma('wal_checkpoint(TRUNCATE)')
+          db.close()
+        }
+      } catch (err) {
+        getMainLog().log('sqlite-snapshot-store', err)
+      } finally {
+        db = undefined
+        closed = true
       }
     },
     loadScanHistory(): ScanHistoryEntry[] {

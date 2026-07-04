@@ -14,6 +14,11 @@ export interface SnapshotStore {
    * it so the watcher hot path (an active session transcript flushing every
    * 250ms) stops rewriting the whole table synchronously. */
   replaceBySourceKey?(sourceKey: string, assets: Asset[], envelope: AssetSnapshot): void
+  /** Shutdown hook (GH-152 T5): checkpoint + close the backing handle so the WAL
+   * doesn't ride out the process (an unplayable -wal after a hard crash rolls the
+   * cache back to the last checkpoint). After close every method is a silent
+   * no-op. Optional like the other backend-specific members. */
+  close?(): void
   /** Persisted scan history for the trend view (GH-135 G7), oldest→newest.
    * Optional so existing stores/tests need no change; absence → no history.
    * History survives `clear()` (rebuild) — it is an audit trail, not index data. */

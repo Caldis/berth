@@ -211,6 +211,8 @@ if (!gotTheLock) {
     powerMonitor.on('on-ac', () => {
       onBatteryPower = false
     })
+    // Hoisted so before-quit can checkpoint + close it (GH-152 T5).
+    const snapshotStore = createSqliteSnapshotStore(userDataDir, (file) => new Database(file))
     initAssetRuntime({
       projectDir,
       // GH-135: scanning runs in a long-lived utilityProcess helper for OS-level
@@ -219,7 +221,7 @@ if (!gotTheLock) {
       // separate process. (方案 X) The engine package keeps WorkerAssetScanner
       // (worker_threads) as its electron-free default for the CLI.
       createScanner: (dir) => new HelperAssetScanner(dir),
-      snapshotStore: createSqliteSnapshotStore(userDataDir, (file) => new Database(file)),
+      snapshotStore,
       settingsStore: createScanEngineSettingsStore(userDataDir),
       // GH-135 B3: power/idle signals for periodic-scan gating (engine stays electron-free).
       powerMonitor: {
@@ -271,9 +273,15 @@ if (!gotTheLock) {
 
     // GH-135: terminate the scan helper before the app exits. Electron auto-kills
     // utilityProcess children, but kill explicitly so it never lingers.
+    // GH-152 T5 ordering: cancel FIRST so the killed helper's rejection lands in
+    // the coordinator's cancelled branch (quitting used to record a bogus failed
+    // entry in scan history), then kill, then checkpoint+close the store so the
+    // WAL doesn't ride out the process.
     app.on('before-quit', () => {
       changedCoalescer.dispose()
+      getAssetRuntime().cancel()
       getScanHelperHost().kill()
+      snapshotStore.close?.()
     })
 
     // GH-135 C2: surface helper crashes/OOM (parentPort has no 'close' event). The

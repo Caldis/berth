@@ -47,6 +47,8 @@ interface Backing {
   userVersion: number
   assets: AssetRow[]
   meta: Map<string, string>
+  pragmaCalls?: string[]
+  closeCalls?: number
 }
 
 const disk = new Map<string, Backing>() // keyed by db file path — models on-disk persistence across re-opens
@@ -92,6 +94,7 @@ function openFakeDatabase(file: string): SqliteDatabase {
   return {
     pragma: (source: string) => {
       const src = source.trim()
+      backing.pragmaCalls = [...(backing.pragmaCalls ?? []), src]
       if (src === 'user_version') return [{ user_version: backing.userVersion }]
       const assign = src.match(/^user_version\s*=\s*(\d+)$/)
       if (assign) {
@@ -107,7 +110,9 @@ function openFakeDatabase(file: string): SqliteDatabase {
     },
     prepare,
     transaction: <A extends unknown[]>(fn: (...args: A) => void) => (...args: A) => fn(...args),
-    close: () => {}
+    close: () => {
+      backing.closeCalls = (backing.closeCalls ?? 0) + 1
+    }
   }
 }
 
@@ -198,6 +203,67 @@ describe('createSqliteSnapshotStore', () => {
     store.replaceBySourceKey!('/x/file-a', [], { ...snapshot([]), id: 'snap-2' })
 
     expect(store.load()?.assets.map((x) => x.id)).toEqual(['b'])
+  })
+
+  it('close() checkpoints the WAL, closes the handle, and later calls no-op (GH-152 T5)', () => {
+    const store = createSqliteSnapshotStore(dir, openFakeDatabase)
+    store.save(snapshot([asset('a')]))
+
+    store.close!()
+
+    const backing = disk.get(dbFile)
+    expect(backing?.pragmaCalls).toContain('wal_checkpoint(TRUNCATE)')
+    expect(backing?.closeCalls).toBe(1)
+    // Closed store: everything degrades to a silent no-op — never a throw, never a reopen.
+    expect(store.load()).toBeNull()
+    expect(() => store.save(snapshot([asset('b')]))).not.toThrow()
+    expect(backing?.assets.map((r) => r.id)).toEqual(['a']) // save after close did not write
+  })
+
+  it('close() before any use is a no-op (nothing was opened)', () => {
+    const open = vi.fn(openFakeDatabase)
+    const store = createSqliteSnapshotStore(dir, open)
+    expect(() => store.close!()).not.toThrow()
+    expect(open).not.toHaveBeenCalled()
+    expect(store.load()).toBeNull() // closed: no lazy reopen either
+  })
+
+  it('retries after a transient lock error once the backoff window passes (GH-152 T6)', () => {
+    // Windows AV/backup tools hold berth-index.db briefly at login — a one-shot
+    // "give up permanently" turned that blip into a whole session without SWR.
+    let nowMs = 0
+    let failuresLeft = 1
+    const open = vi.fn((file: string) => {
+      if (failuresLeft > 0) {
+        failuresLeft--
+        throw Object.assign(new Error('database is locked'), { code: 'SQLITE_BUSY' })
+      }
+      return openFakeDatabase(file)
+    })
+    const store = createSqliteSnapshotStore(dir, open, { transientRetryDelayMs: 5000, now: () => nowMs })
+
+    expect(store.load()).toBeNull() // first call hits the lock
+    nowMs = 1000
+    expect(store.load()).toBeNull() // inside the backoff window: no second open attempt
+    expect(open).toHaveBeenCalledTimes(1)
+
+    nowMs = 6000
+    store.save(snapshot([asset('a')])) // window passed: reopen succeeds
+    expect(open).toHaveBeenCalledTimes(2)
+    expect(store.load()?.assets.map((x) => x.id)).toEqual(['a'])
+  })
+
+  it('gives up permanently on a non-transient open error (GH-152 T6)', () => {
+    let nowMs = 0
+    const open = vi.fn(() => {
+      throw Object.assign(new Error('file is not a database'), { code: 'SQLITE_NOTADB' })
+    })
+    const store = createSqliteSnapshotStore(dir, open, { transientRetryDelayMs: 5000, now: () => nowMs })
+
+    expect(store.load()).toBeNull()
+    nowMs = 60_000
+    expect(store.load()).toBeNull()
+    expect(open).toHaveBeenCalledTimes(1) // corruption class: never retried
   })
 
   it('opens the database lazily and only once across many calls', () => {
