@@ -116,7 +116,8 @@ export function Sessions(): React.ReactElement {
     ]
   }, [sessions])
 
-  const hasAnyFilter = filter.trim().length > 0 || agentView !== 'all' || modelFilter.size > 0
+  // 空态文案判定与列表管线同源 (deferredFilter) — 即时 filter 会让 "无匹配结果" 先于数据切换闪现 (GH-153)。
+  const hasAnyFilter = deferredFilter.trim().length > 0 || agentView !== 'all' || modelFilter.size > 0
   const showInitialLoading = loading && sessions.length === 0
   const toolbarStatus = useMemo(() => {
     if (loading && stale && sessions.length > 0) {
@@ -283,7 +284,8 @@ export function Sessions(): React.ReactElement {
   )
 }
 
-function buildSessionGroups(
+// exported for direct characterization tests (GH-153 T1)
+export function buildSessionGroups(
   sessions: readonly SessionSummary[],
   groupBy: SessionGroupBy,
   labels: { root: string; unknown: string; bucket: (bucket: string) => string },
@@ -309,13 +311,15 @@ function buildSessionGroups(
   }
 
   const now = new Date()
-  const groups = new Map<string, VirtualListGroup<SessionSummary>>()
+  // items 收窄为可变数组: 桶是本函数新建的局部值, 原地 push (契约 readonly 仅约束消费方)。
+  const groups = new Map<string, VirtualListGroup<SessionSummary> & { items: SessionSummary[] }>()
   for (const session of sessions) {
     const bucket = sessionDateBucket(session.startedAt, now)
     const groupId = `date:${bucket}`
     const existing = groups.get(groupId)
     if (existing) {
-      existing.items = [...existing.items, session]
+      // 桶数组是本函数新建的局部值, 原地 push — 逐条复制在数千条同桶时是 O(n²) (GH-153)。
+      existing.items.push(session)
       existing.count = existing.items.length
     } else {
       groups.set(groupId, {
@@ -328,5 +332,5 @@ function buildSessionGroups(
   }
   return SESSION_DATE_BUCKET_ORDER
     .map((bucket) => groups.get(`date:${bucket}`))
-    .filter((group): group is VirtualListGroup<SessionSummary> => group != null)
+    .filter((group) => group != null)
 }

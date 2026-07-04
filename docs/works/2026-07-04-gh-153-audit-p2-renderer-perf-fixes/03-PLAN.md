@@ -2,9 +2,10 @@
 
 从 02-SPEC 拆解。**顺序执行** (T3-T8 六项共享 `use-ipc.ts`, 文件重叠禁并行); T1/T2/T7 与其余文件不重叠但体量小, 不值得开 subagent, 主 session 顺序推进。每项过目标测试后单独提交。
 
-- [ ] T1 (B4+B7 → A4/A7): sessions.tsx 分组 O(n²) 改 push + hasAnyFilter 改 deferredFilter (同文件两处单行)
-  - tests: 既有 sessions 分组/空态测试回归; 分组多条同桶 characterization (缺则补)
-  - verify: A7 属主观时序, 代码评审 + 回归绿即可 (SPEC 例外已记)
+- [x] T1 (B4+B7 → A4/A7): sessions.tsx 分组 O(n²) 改 push + hasAnyFilter 改 deferredFilter
+  - tests: buildSessionGroups 导出 + date 分组 characterization 新增 (先钉绿再改实现, 改后仍绿); sessions 族 36/36 绿
+  - **偏差 (类型面)**: `VirtualListGroup.items` 为 readonly, 本地 Map 用交叉类型收窄可变 + 末尾 filter 改 TS5.5 推断谓词 (行为不变)
+  - verify: A7 属主观时序, 代码评审 + 回归绿 (SPEC 例外已记)
 - [ ] T2 (B6 → A6): use-ipc.ts 引擎控制 pause/resume/cancel/rebuild catch 转 setError
   - tests: 控制动作失败落 error, 先红后绿
   - verify: 不适用 (设置面板既有 error 呈现路径)

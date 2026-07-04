@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import i18n from '../../src/renderer/src/i18n'
 import { Overview } from '../../src/renderer/src/pages/overview'
-import { Sessions } from '../../src/renderer/src/pages/sessions'
+import { Sessions, buildSessionGroups } from '../../src/renderer/src/pages/sessions'
 import { SessionDetail } from '../../src/renderer/src/pages/session-detail'
 import { Usage } from '../../src/renderer/src/pages/usage'
 import { TopNavigation } from '../../src/renderer/src/components/layout/top-navigation'
@@ -1322,5 +1322,35 @@ describe('session pages', () => {
       expect(writeText).toHaveBeenCalledWith(expect.stringContaining('inputCostPerToken'))
     })
     expect(await screen.findByRole('button', { name: 'Copied' })).toBeInTheDocument()
+  })
+})
+
+// GH-153 T1: date 分组的输出契约钉 (characterization) — 同桶多条按插入序折叠,
+// count 与 items 同步; 桶顺序按 SESSION_DATE_BUCKET_ORDER。内部由 O(n²) 复制改为
+// 原地 push 前后, 本契约不得变化。
+describe('buildSessionGroups date grouping (GH-153 T1)', () => {
+  const labels = { root: 'root', unknown: 'unknown', bucket: (bucket: string) => `bucket:${bucket}` }
+
+  it('folds multiple same-bucket sessions in insertion order with synced counts', () => {
+    const now = Date.now()
+    const today = (id: string, minsAgo: number): SessionSummary => ({
+      ...summary,
+      id,
+      startedAt: new Date(now - minsAgo * 60_000).toISOString()
+    })
+    const unknown = (id: string): SessionSummary => ({ ...summary, id, startedAt: null })
+
+    const groups = buildSessionGroups(
+      [today('a', 1), unknown('x'), today('b', 2), today('c', 3), unknown('y')],
+      'date',
+      labels
+    )
+
+    expect(groups.map((group) => group.id)).toEqual(['date:today', 'date:unknown'])
+    expect(groups[0].items.map((session) => session.id)).toEqual(['a', 'b', 'c'])
+    expect(groups[0].count).toBe(3)
+    expect(groups[0].label).toBe('bucket:today')
+    expect(groups[1].items.map((session) => session.id)).toEqual(['x', 'y'])
+    expect(groups[1].count).toBe(2)
   })
 })
