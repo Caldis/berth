@@ -2,7 +2,7 @@
 task: 2026-07-04-gh-153-audit-p2-renderer-perf-fixes
 task_id: GH-153
 type: bug
-phase: verify
+phase: archive
 created: 2026-07-04
 priority: P2
 target_date:
@@ -58,7 +58,7 @@ gh_project:
   project_number: 6
   project_url: https://github.com/users/Caldis/projects/6
   item_id: PVTI_lAHOADXbEs4BZHvQzgxusGU
-  item_status: In Progress
+  item_status: Done
 ---
 
 # 综合审查修复批次三 (P2 渲染层): usage 取数去重复用 / 订阅粒度 / 分组复杂度 / 吞错与动效 token 九项

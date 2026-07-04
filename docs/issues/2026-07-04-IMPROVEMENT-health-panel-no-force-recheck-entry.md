@@ -22,5 +22,5 @@
 
 ## 交叉引用
 
-- GH-153 任务态: docs/works/2026-07-04-gh-153-audit-p2-renderer-perf-fixes/ (T3 已交付机制层; 本条为 UI 缺口, 不入该批验收范围)
+- GH-153 任务态: docs/works/_archive/2026-07-04-gh-153-audit-p2-renderer-perf-fixes/ (T3 已交付机制层; 本条为 UI 缺口, 不入该批验收范围)
 - 机制测试: tests/renderer/cached-resource.test.ts / use-health-checks.test.tsx
