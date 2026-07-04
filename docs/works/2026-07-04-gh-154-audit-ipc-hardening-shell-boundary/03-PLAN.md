@@ -12,8 +12,8 @@
   - tests: typed-ipc.test.ts (新) 4 用例先红后绿 (主帧透传/子帧 reject+log/非窗口 reject/args 透传); ipc-contract + ipc-registration 回归 9/9; typecheck 探针: 错返回类型+错通道名 → 3 个 TS 错误, 还原绿 (绑定实证)
   - **偏差 (计数)**: 实际注册点 43 (非估算 45); 迁移后 handlers.ts ipcMain 引用归零 (双向 grep)
   - verify: 冷启动 smoke 窗口控制正常 (归 4.0-verify)
-- [ ] T4 (D2 → A3): sendToWindow + index.ts 5 send 点迁移 + eventsSent regex 扩面
-  - tests: ipc-contract 事件三方回归; typecheck 错 payload 探针
+- [x] T4 (D2 → A3): sendToWindow + index.ts 5 send 点迁移 + eventsSent regex 扩面
+  - tests: ipc-contract 事件三方回归 4/4; 裸 webContents.send 归零 (双向 grep); typecheck 探针: 错 payload → 1 TS 错误, 还原绿
   - verify: 冷启动 smoke 最大化状态推送正常 (归 4.0-verify)
 - [ ] T5 (D3 → A4): tests/setup.ts mockApi 收紧 satisfies BerthAPI (typecheck 红名单驱动补形状)
   - tests: typecheck 绿 + 全量 renderer 回归 (>5 文件连锁则停下回 design)

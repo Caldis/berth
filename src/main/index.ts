@@ -2,6 +2,7 @@ import { app, BrowserWindow, dialog, powerMonitor, session, shell } from 'electr
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { registerAllHandlers } from './ipc'
+import { sendToWindow } from './ipc/typed-ipc'
 import Database from 'better-sqlite3'
 import { getAssetRuntime, initAssetRuntime } from '@berth/scan-engine/engine/assets/runtime'
 import { createSqliteSnapshotStore } from '@berth/scan-engine/engine/assets/sqlite-snapshot-store'
@@ -93,11 +94,11 @@ function createWindow(options: CreateWindowOptions = {}): BrowserWindow {
   })
 
   mainWindow.on('maximize', () => {
-    mainWindow.webContents.send('window:maximized-change', true)
+    sendToWindow(mainWindow, 'window:maximized-change', true)
   })
 
   mainWindow.on('unmaximize', () => {
-    mainWindow.webContents.send('window:maximized-change', false)
+    sendToWindow(mainWindow, 'window:maximized-change', false)
   })
 
   mainWindow.webContents.setWindowOpenHandler((details) => {
@@ -260,7 +261,7 @@ if (!gotTheLock) {
     // see every file.
     const changedCoalescer = new TrailingCoalescer<WatchEvent>((event) => {
       for (const win of BrowserWindow.getAllWindows()) {
-        if (!win.isDestroyed()) win.webContents.send('assets:changed', event)
+        sendToWindow(win, 'assets:changed', event)
       }
     })
     watcher.setListener((event) => {
@@ -272,7 +273,7 @@ if (!gotTheLock) {
     // Stream live scan status + already-scanned assets to the renderer (P4.6).
     getAssetRuntime().setProgressListener((payload) => {
       for (const win of BrowserWindow.getAllWindows()) {
-        if (!win.isDestroyed()) win.webContents.send('assets:progress', payload)
+        sendToWindow(win, 'assets:progress', payload)
       }
     })
 
@@ -313,7 +314,7 @@ if (!gotTheLock) {
       preferences: updatePreferences,
       emit: (state) => {
         for (const win of BrowserWindow.getAllWindows()) {
-          if (!win.isDestroyed()) win.webContents.send('update:state', state)
+          sendToWindow(win, 'update:state', state)
         }
       },
       log: (scope, payload) => getMainLog().log(scope, payload)
