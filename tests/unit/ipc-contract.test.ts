@@ -28,7 +28,11 @@ const preloadSource = read('src/preload/index.ts')
 const registered = extract(read('src/main/ipc/handlers.ts'), /(?:ipcMain\.handle|handleIpc)\(\s*'([^']+)'/g)
 const invoked = extract(preloadSource, /(?:ipcRenderer\.invoke|invoke)\(\s*'([^']+)'/g)
 const declared = extract(ipcTypesSource, /^\s{2}'([a-zA-Z-]+:[a-zA-Z-]+)':\s*\{\s*args:/gm)
-const eventsSent = extract(read('src/main/ipc/handlers.ts') + read('src/main/index.ts'), /webContents\.send\(\s*'([^']+)'/g)
+// GH-154 T4: 实发经 typed sendToWindow(win, 'channel', payload); 双模式提取兜残留裸 send。
+const eventsSent = extract(
+  read('src/main/ipc/handlers.ts') + read('src/main/index.ts'),
+  /(?:webContents\.send\(\s*|sendToWindow\(\s*[^,\n]+,\s*)'([^']+)'/g
+)
 const eventsSubscribed = extract(preloadSource, /(?:ipcRenderer\.on|subscribe)\(\s*'([^']+)'/g)
 const eventsDeclared = extract(ipcTypesSource.split('export interface IpcEvents')[1] ?? '', /'([a-zA-Z-]+:[a-zA-Z-]+)':/g)
 
@@ -50,6 +54,8 @@ describe('IPC four-way contract accounting', () => {
 
   it('推送事件三方一致: 实发 ⊆ 订阅 == 声明', () => {
     expect(eventsSubscribed).toEqual(eventsDeclared)
+    // GH-154 T4: 提取面迁移后防空转 — 实发集合为空说明 regex 又漂了 (曾静默空洞通过)。
+    expect(eventsSent.length).toBeGreaterThan(0)
     for (const sent of eventsSent) expect(eventsSubscribed).toContain(sent)
   })
 
