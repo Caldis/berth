@@ -92,8 +92,8 @@ gh_project:
 - 估算发生有意义变化时, 追加 `debt.revisions[]`, 记录阶段、日期、from/to 和 reason; 不只静默改数字。
 - `debt.final` 在 verify/archive 前填写, archive 不接受只有 estimate 的新任务。统计口径优先 `final.net`, 没有 final 时临时用 `estimate.net`。
 - `net = incurred - repaid`。feature / bug 通常增加 debt; maintenance 通常设置 `repaid > 0`, 目标是降低项目总 debt。
-- `pnpm harness:stats` 汇总项目 debt pool。阈值: `<20 ok`, `>=20 notice`, `>=40 recommend-maintenance`, `>=60 requires-override`; 超过 60 继续做非维护任务时, INDEX 必须写 `debt.override_reason`。
-- `pnpm harness:stats` 在达到维护阈值且存在可选 area 时输出 `maintenance=<subtype>:<score>`, Agent 用它自动选择维护 subtype。规则: 只在 `recommend-maintenance` / `requires-override` 时推荐; 取正分最高的 debt area; 同分按 `tooling-ci > ui-ux > testability > performance > dependency > docs > architecture`; `architecture` 只有自身 area debt `>=40` 时才能自动选择, 否则跳过到下一个 area。
+- `pnpm harness:stats` 汇总项目 debt pool。阈值 (2026-07-04 按实际净增速校准, 原 40/60 从未触达): `<20 ok`, `>=20 notice`, `>=30 recommend-maintenance`, `>=45 requires-override`; 超过 45 继续做非维护任务时, INDEX 必须写 `debt.override_reason`。
+- `pnpm harness:stats` 输出 `maintenance=<subtype>:<score>` 的触发条件 (2026-07-04 起**域级触发**): total 达维护阈值, **或任一域自身 `>=30`** — total 是跨域净和, 冷域盈余不得掩蔽热域。选择规则: 取正分最高的 debt area; 同分按 `tooling-ci > ui-ux > testability > performance > dependency > docs > architecture`; `architecture` 只有自身 area debt `>=30` 时才能自动选择, 否则跳过到下一个 area。byArea 输出带水位标记 (`!` 过推荐线 / `~` 过 notice)。
 - Agent 可按 `debt.estimate.net`、scope 与 risk 调整任务顺序和并行度: 高 risk/global 优先顺序执行并扩大验证; file/module 且文件不重叠时可并行。该判断不能跳过测试、设计或 Project 同步。
 - 当前 Caldis/berth 用户仓库不写 GitHub Issue Type; 类型同步到 GitHub Project 自定义字段 `Task Type`。
 

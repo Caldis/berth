@@ -15,10 +15,12 @@ export const DEBT_RISKS = ['low', 'medium', 'high']
 export const DEBT_CONFIDENCES = ['low', 'medium', 'high']
 export const DEBT_AREAS = ['ui-ux', 'performance', 'architecture', 'testability', 'tooling-ci', 'dependency', 'docs']
 
+// 2026-07-04 门禁诊断校准: 原 40/60 相对实际净增速 (30 天 +23, 日常 bug 批次持续偿还)
+// 从未触达 — 历史峰值仅 31。按增速下调, 并配合域级触发 (见 harness-stats)。
 export const DEBT_THRESHOLDS = {
   notice: 20,
-  recommendMaintenance: 40,
-  requireOverrideReason: 60
+  recommendMaintenance: 30,
+  requireOverrideReason: 45
 }
 
 export const MAINTENANCE_AUTO_PRIORITY = ['tooling-ci', 'ui-ux', 'testability', 'performance', 'dependency', 'docs', 'architecture']

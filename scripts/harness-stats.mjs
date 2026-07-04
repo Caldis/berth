@@ -60,7 +60,14 @@ function maintenancePriority(area) {
 }
 
 function selectMaintenanceRecommendation(debt) {
-  if (!['recommend-maintenance', 'requires-override'].includes(debt.status)) return null
+  // 2026-07-04 域级触发: total 是跨域净和, 冷域盈余会掩蔽热域 (ui-ux +41 曾被
+  // performance/testability 负分轧差成 total 23 而永不触发)。任一域自身过推荐线
+  // 即触发, 不再仅由 total 门控。
+  const totalTriggered = ['recommend-maintenance', 'requires-override'].includes(debt.status)
+  const areaTriggered = Object.values(debt.byArea).some(
+    (value) => typeof value === 'number' && value >= DEBT_THRESHOLDS.recommendMaintenance
+  )
+  if (!totalTriggered && !areaTriggered) return null
   const candidates = Object.entries(debt.byArea)
     .filter(([, value]) => typeof value === 'number' && value > 0)
     .map(([area, score]) => ({ area, score, subtype: area }))
@@ -144,6 +151,15 @@ function groupLine(group) {
   return entries.length ? ` (${entries.map(([key, value]) => `${key}:${value}`).join(' ')})` : ''
 }
 
+// 2026-07-04 观测补全: 域后缀标记水位 — `!` 已过推荐线 (域级触发中), `~` 已过 notice。
+function debtAreaLine(byArea) {
+  const entries = Object.entries(byArea).sort((a, b) => b[1] - a[1])
+  if (!entries.length) return ''
+  const mark = (value) =>
+    value >= DEBT_THRESHOLDS.recommendMaintenance ? '!' : value >= DEBT_THRESHOLDS.notice ? '~' : ''
+  return ` (${entries.map(([key, value]) => `${key}:${value}${mark(value)}`).join(' ')})`
+}
+
 function maintenanceLine(recommendation) {
   return recommendation ? ` maintenance=${recommendation.subtype}:${recommendation.score}` : ''
 }
@@ -157,8 +173,9 @@ function main() {
     `  friction active=${s.friction.active} archived=${s.friction.archived}`,
     `  issues   active=${s.issues.active} resolved=${s.issues.resolved}`,
     `  debt     total=${s.debt.total} status=${s.debt.status} unscored=${s.debt.unscored}` +
-      groupLine(s.debt.byArea) +
+      debtAreaLine(s.debt.byArea) +
       maintenanceLine(s.debt.maintenanceRecommendation),
+    `  debt/type${groupLine(s.debt.byType)}`,
     `  dist     ${s.distribution.ok ? 'in-sync' : `DRIFT(${s.distribution.drift})`} (expected ${s.distribution.expected} artifacts)`
   ]
   console.log(lines.join('\n'))

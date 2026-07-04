@@ -128,10 +128,33 @@ describe('collectStats', () => {
     expect(s.debt.status).toBe('ok')
   })
 
-  it('debt total 达到阈值时给出状态', () => {
+  it('debt total 达到阈值时给出状态 (GH-154 后校准: 30 推荐 / 45 强制)', () => {
     indexedTask(
       'docs/works',
       '2026-05-30-high-debt',
+      [
+        'type: feature',
+        'phase: verify',
+        'created: 2026-05-30',
+        'debt:',
+        '  estimate:',
+        '    incurred: 35',
+        '    repaid: 0',
+        '    net: 35',
+        '    scope: global',
+        '    risk: high',
+        '    areas:',
+        '      - architecture',
+        '    confidence: medium'
+      ].join('\n')
+    )
+    expect(collectStats(root).debt.status).toBe('recommend-maintenance')
+  })
+
+  it('debt total ≥45 时进入 requires-override', () => {
+    indexedTask(
+      'docs/works',
+      '2026-05-30-override-debt',
       [
         'type: feature',
         'phase: verify',
@@ -148,7 +171,80 @@ describe('collectStats', () => {
         '    confidence: medium'
       ].join('\n')
     )
-    expect(collectStats(root).debt.status).toBe('recommend-maintenance')
+    expect(collectStats(root).debt.status).toBe('requires-override')
+  })
+
+  // 债务门禁 2026-07-04 诊断修复: total 是跨域净和, 冷域盈余会掩蔽热域 —
+  // 任一域自身 ≥ 推荐阈值时, 即使 total 未达标也必须触发推荐 (域级触发)。
+  it('单域过线即触发推荐, 不被冷域负分轧差掩蔽 (域级触发)', () => {
+    indexedTask(
+      'docs/works',
+      '2026-05-30-hot-uiux',
+      [
+        'type: feature',
+        'phase: verify',
+        'created: 2026-05-30',
+        'debt:',
+        '  estimate:',
+        '    incurred: 35',
+        '    repaid: 0',
+        '    net: 35',
+        '    scope: module',
+        '    risk: medium',
+        '    areas:',
+        '      - ui-ux',
+        '    confidence: medium'
+      ].join('\n')
+    )
+    indexedTask(
+      'docs/works/_archive',
+      '2026-05-29-cold-perf',
+      [
+        'type: maintenance',
+        'phase: archive',
+        'created: 2026-05-29',
+        'debt:',
+        '  estimate:',
+        '    incurred: 0',
+        '    repaid: 20',
+        '    net: -20',
+        '    scope: module',
+        '    risk: low',
+        '    areas:',
+        '      - performance',
+        '    confidence: high'
+      ].join('\n')
+    )
+    const s = collectStats(root)
+    expect(s.debt.total).toBe(15)
+    expect(s.debt.status).toBe('ok')
+    expect(s.debt.maintenanceRecommendation).toMatchObject({ subtype: 'ui-ux', score: 35 })
+  })
+
+  it('architecture 域级触发同样受自身阈值保护 (低于推荐线不选)', () => {
+    indexedTask(
+      'docs/works',
+      '2026-05-30-arch-only',
+      [
+        'type: feature',
+        'phase: verify',
+        'created: 2026-05-30',
+        'debt:',
+        '  estimate:',
+        '    incurred: 32',
+        '    repaid: 0',
+        '    net: 32',
+        '    scope: module',
+        '    risk: medium',
+        '    areas:',
+        '      - architecture',
+        '    confidence: medium'
+      ].join('\n')
+    )
+    expect(collectStats(root).debt.maintenanceRecommendation).toMatchObject({
+      subtype: 'architecture',
+      score: 32
+    })
   })
 
   it('debt 未达到维护阈值时不推荐 maintenance subtype', () => {
@@ -212,9 +308,9 @@ describe('collectStats', () => {
         'created: 2026-05-30',
         'debt:',
         '  estimate:',
-        '    incurred: 38',
+        '    incurred: 25',
         '    repaid: 0',
-        '    net: 38',
+        '    net: 25',
         '    scope: module',
         '    risk: medium',
         '    areas:',
