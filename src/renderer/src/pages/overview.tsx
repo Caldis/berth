@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Check, Settings2 } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Button } from '@/components/ui'
+import { Button, MOTION } from '@/components/ui'
 import { useAppStore } from '@/stores/app'
 import { projectPathForScope } from '@shared/scope'
 import { DashboardInsightsProvider } from '@/components/dashboard/insights-context'
@@ -111,7 +111,7 @@ export function Overview(): React.ReactElement {
               initial={{ opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 24 }}
-              transition={{ duration: 0.25, ease: 'easeOut' }}
+              transition={{ duration: MOTION.duration.base, ease: MOTION.ease.standard }}
               className="sticky bottom-3 z-30 mt-2"
             >
               <WidgetLibrary hidden={hiddenWidgets} onAdd={show} />

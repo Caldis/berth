@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { GripVertical, EyeOff } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
-import { SegmentedTabs } from '@/components/ui'
+import { MOTION, SegmentedTabs } from '@/components/ui'
 import type { WidgetWidth } from './widget-types'
 import { useResizeHandle } from './use-resize-handle'
 
@@ -75,7 +75,7 @@ export function WidgetShell({
           <motion.div
             initial={false}
             animate={{ width: isEditing ? 18 : 0, marginRight: isEditing ? 6 : 0, opacity: isEditing ? 1 : 0 }}
-            transition={{ duration: 0.2, ease: 'easeOut' }}
+            transition={{ duration: MOTION.duration.base, ease: MOTION.ease.standard }}
             style={{ pointerEvents: isEditing ? 'auto' : 'none' }}
             className="-ml-0.5 flex shrink-0 items-center overflow-hidden"
           >

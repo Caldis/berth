@@ -23,8 +23,8 @@
   - tests: costMode 透传/分 key 两用例 + usage 页错误详情可见用例, 先红 (3 failed) 后绿; usage/overview/GH-118 全量回归 68/68; typecheck+lint 绿
   - **偏差 (契约更新)**: "切回 all-time 重发 IPC" 旧钉改为 "TTL 内命中缓存零重发 + 数据呈现断言" — 缓存语义下的新契约, 往返完整性保留
   - verify: CDP usage 页 days/costMode 切换 + 错误路径实测 (归 4.0-verify)
-- [ ] T7 (B9 → A9): motion.ts +EASE_CSS (由 ease 数组生成)/+LAYOUT_GLIDE (0.28 数值锁定); overview/dashboard-grid/widget-shell 四处引 token
-  - tests: overview-dashboard/dnd-kit-smoke 回归 + grep dashboard 域无字面 duration/ease 魔数; token 常量 not needed (SPEC 例外已记)
+- [x] T7 (B9 → A9): motion.ts +EASE_CSS (由 ease 数组生成)/+LAYOUT_GLIDE (0.28 数值锁定); overview/dashboard-grid/widget-shell 四处引 token
+  - tests: overview-dashboard/dnd-kit-smoke 回归 6/6 + grep 核验 dashboard 域无字面 duration/ease 魔数; typecheck+lint 绿; token 常量 not needed (SPEC 例外已记)
   - verify: CDP ⑤ 编辑态入场/拖拽/hover 动效目测无回归 (归 4.0-verify)
 - [ ] T8 (B3 → A3): useAssetRuntime 收形 useAssetRuntimeBootstrap {error, retry}; 删 useAssets (+use-assets.test.tsx); AppLayout 原子 selector; use-asset-runtime.test.tsx 改钉 bootstrap
   - tests: app-layout 渲染探针 (progress tick 不重渲染 / 0→N 与 error 变化正常重渲染, 先红) + bootstrap 语义回归 + GH-118 blocking/banner 回归

@@ -15,6 +15,7 @@ import { SortableContext, rectSortingStrategy, sortableKeyboardCoordinates, useS
 import { CSS } from '@dnd-kit/utilities'
 import { LayoutGroup, motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
+import { EASE_CSS, LAYOUT_GLIDE, MOTION } from '@/components/ui'
 import { WidgetShell } from './widget-shell'
 import { getWidgetDefinition } from './widget-registry'
 import { WIDGET_CATALOG } from './widget-catalog'
@@ -101,7 +102,7 @@ export function DashboardGrid({
           </div>
         </LayoutGroup>
       </SortableContext>
-      <DragOverlay dropAnimation={{ duration: 180, easing: 'ease-out' }}>
+      <DragOverlay dropAnimation={{ duration: MOTION.durationMs.base, easing: EASE_CSS.standard }}>
         {activeItem ? <WidgetCard item={activeItem} isEditing={isEditing} isDragging actions={actions} /> : null}
       </DragOverlay>
     </DndContext>
@@ -161,7 +162,7 @@ function SortableWidget({
     <motion.div
       ref={setRefs}
       layout={!isAnyDragging}
-      transition={{ layout: { duration: 0.28, ease: [0.22, 0.61, 0.36, 1] } }}
+      transition={{ layout: LAYOUT_GLIDE }}
       style={style}
       className={cn(
         widthColSpanClass(item.size.w),
