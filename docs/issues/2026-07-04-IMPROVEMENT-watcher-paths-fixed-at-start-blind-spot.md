@@ -16,4 +16,4 @@
 
 ## 来源
 
-2026-07-04 综合审查健壮性发现 #12 (低危); GH-152 explore 阶段按不变量 10 建档, 不入该批 (`docs/works/2026-07-04-gh-152-audit-p2-engine-robustness/01-ANALYSIS.md` 交叉引用)。
+2026-07-04 综合审查健壮性发现 #12 (低危); GH-152 explore 阶段按不变量 10 建档, 不入该批 (`docs/works/_archive/2026-07-04-gh-152-audit-p2-engine-robustness/01-ANALYSIS.md` 交叉引用)。
