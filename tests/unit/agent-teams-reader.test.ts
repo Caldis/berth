@@ -7,6 +7,8 @@ import {
   markLeadSessionAvailability
 } from '../../src/main/agent-teams'
 import type { AgentTeamSummary } from '@shared/types/ipc'
+import { setMainLogWriter } from '@berth/scan-engine/log'
+import { resetDomainFailureLogForTests } from '../../src/main/domain-log'
 
 let tempHome: string | null = null
 
@@ -143,6 +145,34 @@ describe('listAgentTeams', () => {
   it('returns [] when the teams root does not exist', () => {
     const home = makeHome()
     expect(listAgentTeams([path.join(home, '.claude')])).toEqual([])
+  })
+
+  it('accounts corrupt team files in the log once, absence stays silent (GH-152 T4)', () => {
+    // A corrupt config made the whole team vanish with zero trace — rule 8: the
+    // tolerance (skip) stays, but userData/logs must show WHY.
+    const lines: string[] = []
+    resetDomainFailureLogForTests()
+    setMainLogWriter({ log: (scope, err) => lines.push(`${scope} ${String(err)}`), info: () => {} })
+    try {
+      const home = makeHome()
+      writeTeam(home, 'broken', '{ not json')
+
+      listAgentTeams([path.join(home, '.claude')])
+      listAgentTeams([path.join(home, '.claude')]) // re-list: deduped, no spam
+
+      const configLines = lines.filter((l) => l.includes('config.json'))
+      expect(configLines).toHaveLength(1)
+      expect(configLines[0]).toContain('agent-teams')
+
+      // Absent teams root (source simply not present) logs nothing.
+      lines.length = 0
+      const emptyHome = makeHome()
+      listAgentTeams([path.join(emptyHome, '.claude')])
+      expect(lines).toEqual([])
+    } finally {
+      setMainLogWriter({ log: () => {}, info: () => {} })
+      resetDomainFailureLogForTests()
+    }
   })
 
   it('parses tasks, tolerates unknown statuses, ignores non-task files, missing dir → []', () => {

@@ -11,6 +11,7 @@ import * as fs from 'fs'
 import * as path from 'path'
 import { isRecord, readNumber, readString } from '@shared/object-guards'
 import { resolveClaudeDirs } from '@berth/scan-engine/agent-homes'
+import { isFileMissingError, logDomainFailureOnce } from '../domain-log'
 import type { AgentTeamMember, AgentTeamSummary, AgentTeamTask } from '@shared/types/ipc'
 import { sessionAssetId } from '@shared/asset-dedupe'
 
@@ -62,7 +63,10 @@ function readTeam(claudeDir: string, teamDir: string, dirName: string): AgentTea
     const parsed: unknown = JSON.parse(fs.readFileSync(configPath, 'utf-8'))
     if (!isRecord(parsed)) return null
     config = parsed
-  } catch {
+  } catch (err) {
+    // A corrupt config made the whole team vanish with zero trace (GH-152 T4);
+    // a missing config just means the dir isn't a team.
+    if (!isFileMissingError(err)) logDomainFailureOnce('agent-teams', configPath, err)
     return null
   }
 
@@ -134,7 +138,8 @@ function readTasks(taskDir: string, mtimes: number[]): AgentTeamTask[] {
     let raw: unknown
     try {
       raw = JSON.parse(fs.readFileSync(filePath, 'utf-8'))
-    } catch {
+    } catch (err) {
+      if (!isFileMissingError(err)) logDomainFailureOnce('agent-teams', filePath, err)
       continue
     }
     if (!isRecord(raw)) continue
@@ -181,7 +186,8 @@ function readInboxes(
     let raw: unknown
     try {
       raw = JSON.parse(fs.readFileSync(filePath, 'utf-8'))
-    } catch {
+    } catch (err) {
+      if (!isFileMissingError(err)) logDomainFailureOnce('agent-teams', filePath, err)
       continue
     }
     if (!Array.isArray(raw)) continue

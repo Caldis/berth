@@ -3,6 +3,7 @@ import * as path from 'path'
 import { resolveClaudeDirs } from '@berth/scan-engine/agent-homes'
 import { isPathInside } from '@shared/path-utils'
 import * as yaml from 'js-yaml'
+import { isFileMissingError, logDomainFailureOnce } from '../../domain-log'
 import type { MemoryNote, MemorySourceStatus } from '@shared/types/memory'
 import type { MemorySource } from '../types'
 
@@ -209,11 +210,15 @@ export class ClaudeNativeSource implements MemorySource {
   }
 
   private async indexEntries(root: string, slug: string): Promise<NativeIndexEntry[] | null> {
+    const indexPath = path.join(this.memoryDir(root, slug), INDEX_FILE)
     try {
-      const md = await fs.promises.readFile(path.join(this.memoryDir(root, slug), INDEX_FILE), 'utf-8')
+      const md = await fs.promises.readFile(indexPath, 'utf-8')
       const entries = parseMemoryIndex(md)
       return entries.length > 0 ? entries : null
-    } catch {
+    } catch (err) {
+      // No MEMORY.md is the normal un-indexed case; other read failures leave a
+      // trace (GH-152 T4).
+      if (!isFileMissingError(err)) logDomainFailureOnce('memory-native', indexPath, err)
       return null
     }
   }
@@ -243,7 +248,9 @@ export class ClaudeNativeSource implements MemorySource {
         }
       }))
       return notes.filter((note): note is MemoryNote => note !== null)
-    } catch {
+    } catch (err) {
+      // Unexpected — the per-entry work only stats/joins paths (GH-152 T4).
+      logDomainFailureOnce('memory-native', this.memoryDir(root, slug), err)
       return null
     }
   }
@@ -288,8 +295,10 @@ export class ClaudeNativeSource implements MemorySource {
           delete note.body
           note.path = filePath
           notes.push(note)
-        } catch {
-          // unreadable note; skip
+        } catch (err) {
+          // unreadable note; skip — deleted-after-listing is normal, other
+          // failures leave a trace (GH-152 T4)
+          if (!isFileMissingError(err)) logDomainFailureOnce('memory-native', filePath, err)
         }
       }
     }
@@ -305,7 +314,8 @@ export class ClaudeNativeSource implements MemorySource {
     try {
       const md = await fs.promises.readFile(filePath, 'utf-8')
       return { ...parseNativeNote(md, slug, filename), path: filePath }
-    } catch {
+    } catch (err) {
+      if (!isFileMissingError(err)) logDomainFailureOnce('memory-native', filePath, err)
       return null
     }
   }

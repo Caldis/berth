@@ -142,6 +142,38 @@ describe('UnitedMemorySource (temp dir)', () => {
     }
   })
 
+  it('accounts a corrupt index.json in the log; absent root stays silent (GH-152 T4)', async () => {
+    const { setMainLogWriter } = await import('@berth/scan-engine/log')
+    const { resetDomainFailureLogForTests } = await import('../../src/main/domain-log')
+    const lines: string[] = []
+    resetDomainFailureLogForTests()
+    setMainLogWriter({ log: (scope, err) => lines.push(`${scope} ${String(err)}`), info: () => {} })
+    try {
+      const root = path.join(tmp, '.united-memory-corrupt')
+      await fs.promises.mkdir(root, { recursive: true })
+      await fs.promises.writeFile(path.join(root, 'index.json'), '{ definitely not json', 'utf-8')
+
+      // Tolerance semantics unchanged: no throw, degrades to zero notes…
+      const source = new UnitedMemorySource(root)
+      const status = await source.detect()
+      expect(status.noteCount).toBe(0)
+      await source.detect() // cached — no second log
+
+      // …but the corruption now leaves exactly one trace (was: "not installed", zero logs).
+      const indexLines = lines.filter((l) => l.includes('index.json'))
+      expect(indexLines).toHaveLength(1)
+      expect(indexLines[0]).toContain('memory-united')
+
+      // Absent root (source not installed) logs nothing.
+      lines.length = 0
+      await new UnitedMemorySource(path.join(tmp, 'not-installed')).detect()
+      expect(lines).toEqual([])
+    } finally {
+      setMainLogWriter({ log: () => {}, info: () => {} })
+      resetDomainFailureLogForTests()
+    }
+  })
+
   it('detect() reports unavailable when the root is missing', async () => {
     const status = await new UnitedMemorySource(path.join(tmp, 'nope')).detect()
     expect(status.available).toBe(false)

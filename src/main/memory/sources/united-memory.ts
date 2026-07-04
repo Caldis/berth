@@ -3,6 +3,7 @@ import * as os from 'os'
 import * as path from 'path'
 import { isPathInside } from '@shared/path-utils'
 import * as yaml from 'js-yaml'
+import { isFileMissingError, logDomainFailureOnce } from '../../domain-log'
 import type {
   MemoryImportance,
   MemoryNote,
@@ -137,13 +138,16 @@ function extractTldr(content: string): string | undefined {
 /**
  * Pure: parse united-memory `index.json` text into MemoryNote[] (metadata only,
  * no body). Iterates `entries[]` so malformed/non-indexed mem files are never
- * surfaced. Returns [] on malformed JSON or missing entries.
+ * surfaced. Returns [] on malformed JSON or missing entries; `onMalformed` lets
+ * the reading caller account for the corruption (GH-152 T4) without giving this
+ * pure parser a logging side effect.
  */
-export function parseUnitedIndex(jsonString: string): MemoryNote[] {
+export function parseUnitedIndex(jsonString: string, onMalformed?: (err: unknown) => void): MemoryNote[] {
   let parsed: unknown
   try {
     parsed = JSON.parse(jsonString)
-  } catch {
+  } catch (err) {
+    onMalformed?.(err)
     return []
   }
   const entries = (parsed as { entries?: unknown })?.entries
@@ -230,9 +234,17 @@ export class UnitedMemorySource implements MemorySource {
     if (this.cachedIndexNotes !== undefined) return this.cachedIndexNotes
     try {
       const json = await fs.promises.readFile(this.indexPath, 'utf-8')
-      this.cachedIndexNotes = parseUnitedIndex(json)
+      // GH-152 T4: a malformed index silently presented as "0 notes" (and the
+      // null/[] result is cached) — account for it once so userData/logs shows
+      // "index corrupt", not nothing.
+      this.cachedIndexNotes = parseUnitedIndex(json, (err) =>
+        logDomainFailureOnce('memory-united', this.indexPath, err)
+      )
       return this.cachedIndexNotes
-    } catch {
+    } catch (err) {
+      // Absent root/index = united-memory not installed (normal); anything else
+      // (EACCES, I/O) is a real failure worth a trace.
+      if (!isFileMissingError(err)) logDomainFailureOnce('memory-united', this.indexPath, err)
       this.cachedIndexNotes = null
       return null
     }
@@ -284,7 +296,10 @@ export class UnitedMemorySource implements MemorySource {
       const md = await fs.promises.readFile(filePath, 'utf-8')
       // filePath is already absolute; override the parser's relative path.
       return { ...parseUnitedNote(md, localId), path: filePath }
-    } catch {
+    } catch (err) {
+      // Deleted-after-listing is normal (missing flag covers it); other read
+      // failures leave a trace (GH-152 T4).
+      if (!isFileMissingError(err)) logDomainFailureOnce('memory-united', filePath, err)
       return null
     }
   }
