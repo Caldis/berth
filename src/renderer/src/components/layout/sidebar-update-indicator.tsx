@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Maximize2 } from 'lucide-react'
 import type { UpdateState } from '@shared/types/ipc'
-import { Modal, ModalContent, ModalHeader, ModalBody } from '@/components/ui'
+import { Button, Modal, ModalContent, ModalHeader, ModalBody } from '@/components/ui'
 import { FloatingPopover } from '@/components/shared/floating-popover'
 import { useUpdate } from '@/hooks/use-update'
 import { formatVersionRange, releaseNoteHtmlToText, versionTag } from '@/lib/release-notes'
@@ -59,9 +59,13 @@ interface NotesText {
  * modal own scrolling. */
 export function UpdateNotesPanel({
   onExpand,
+  onInstall,
   variant = 'card'
 }: {
   onExpand?: () => void
+  /** GH-156 user acceptance: downloaded state carries an explicit
+   * "relaunch & update" button so nobody has to discover the indicator click. */
+  onInstall?: () => void
   variant?: 'card' | 'dialog'
 }): React.ReactElement {
   const { t } = useTranslation()
@@ -152,6 +156,21 @@ export function UpdateNotesPanel({
         ) : (
           <span className={cn('italic text-muted-foreground', bodyText)}>{t('update.notes.empty')}</span>
         ))}
+
+      {state.phase === 'downloaded' && onInstall && (
+        // stopPropagation: the surrounding card click means "expand", not "install".
+        <div onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
+          <Button
+            size="sm"
+            color="primary"
+            fullWidth
+            data-testid="update-install-now"
+            onPress={onInstall}
+          >
+            {t('update.notes.install')}
+          </Button>
+        </div>
+      )}
     </div>
   )
 }
@@ -256,7 +275,7 @@ export function SidebarUpdateIndicator({ collapsed }: { collapsed: boolean }): R
         contentTestId="sidebar-update-popover"
         hoverBridge
       >
-        <UpdateNotesPanel onExpand={() => setModalOpen(true)} />
+        <UpdateNotesPanel onExpand={() => setModalOpen(true)} onInstall={install} />
       </FloatingPopover>
       <Modal isOpen={modalOpen} onOpenChange={setModalOpen} size="xl" scrollBehavior="inside">
         <ModalContent>
@@ -267,7 +286,7 @@ export function SidebarUpdateIndicator({ collapsed }: { collapsed: boolean }): R
             )}
           </ModalHeader>
           <ModalBody className="py-4">
-            <UpdateNotesPanel variant="dialog" />
+            <UpdateNotesPanel variant="dialog" onInstall={install} />
           </ModalBody>
         </ModalContent>
       </Modal>

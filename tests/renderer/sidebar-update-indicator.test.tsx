@@ -24,7 +24,9 @@ function renderIndicator(collapsed = false): ReturnType<typeof render> {
   )
 }
 
-function renderPanel(props: { onExpand?: () => void; variant?: 'card' | 'dialog' } = {}): ReturnType<typeof render> {
+function renderPanel(
+  props: { onExpand?: () => void; onInstall?: () => void; variant?: 'card' | 'dialog' } = {}
+): ReturnType<typeof render> {
   return render(
     <HeroUIProvider>
       <UpdateNotesPanel {...props} />
@@ -192,5 +194,21 @@ describe('UpdateNotesPanel', () => {
     setPhase({ phase: 'checking' })
     renderPanel()
     expect(screen.getByTestId('update-notes-panel').textContent).toContain('Checking for updates')
+  })
+
+  it('downloaded: explicit install button fires onInstall without expanding (T7 user acceptance)', () => {
+    setPhase({ phase: 'downloaded', version: '9.9.9', releaseNotes: [{ version: '9.9.9', note: 'x' }] })
+    const onExpand = vi.fn()
+    const onInstall = vi.fn()
+    renderPanel({ onExpand, onInstall })
+    screen.getByTestId('update-install-now').click()
+    expect(onInstall).toHaveBeenCalledTimes(1)
+    expect(onExpand).not.toHaveBeenCalled()
+  })
+
+  it('install button absent outside downloaded phase (T7)', () => {
+    setPhase({ phase: 'available', version: '9.9.9', releaseNotes: [{ version: '9.9.9', note: 'x' }] })
+    renderPanel({ onInstall: vi.fn() })
+    expect(screen.queryByTestId('update-install-now')).toBeNull()
   })
 })

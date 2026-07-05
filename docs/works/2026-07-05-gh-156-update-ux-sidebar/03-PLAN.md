@@ -35,11 +35,16 @@
 ## verify 回写
 verify 不通过项作为新任务追加于此, phase 退回 implement。
 
+- [x] T7 (用户视觉验收反馈 2026-07-05): downloaded 态浮层/Modal 增加显式 [重启并更新] 主按钮 (调 install), 避免用户只能靠点指示器或手动关应用; 按钮点击不得冒泡触发整卡 onExpand
+  - tests: sidebar-update-indicator.test.tsx 新增 panel 直测 (按钮渲染+onInstall+不冒泡 / 非 downloaded 不渲染), 17 用例绿
+  - verify: 实机截图 15/16 (浮层+Modal 均见全宽主按钮); 附带把 dev 模拟触发从 globalShortcut 改为窗口级 before-input-event (评审 #4 收口 + 修复与用户 dev 实例抢注, 教训沉淀 friction 20260706-4.0-verify-dev-sim-hotkey-globalshortcut-and-cdp-input)
+
 ### verify 记录 (2026-07-05)
 
 - 覆盖审计: T1-T6 全部有测试证据或已记录例外 (T5 dev 胶水 → 实机驱动证据见下)。
 - 机械门禁: 评审修复后全量重跑 — typecheck 绿 / lint 0 问题 / `pnpm test` 194 文件 1471 用例绿 / `harness:check` 绿。
 - 双轴评审 (cross-process 启用): Standards 轴 7 项 (3 中 4 低) + Spec 轴 9 项 (无阻塞) — 全部处置: 竞态改升级-衰减语义+去重、面板键盘可达、直读 store、checking 空卡补文案、死键删除、dev 快捷键去重、冗余计算提取, 修复提交 `15b382d2`; 2 个 SPEC 外边界记 docs/issues 交叉引用; SPEC 已回写裁决。
 - 实机视觉验收 (agent-owned 实例 gh156-update + CDP + Ctrl/Cmd+Shift+U 模拟驱动, 13 张截图存 `%TEMP%\gh156-shots`): checking/available(蓝点+版本)/downloading(条形进度+百分比)/downloaded(绿点+重启文案)/error(红点+真实错误链路 "Please check update first") 展开态全过; available/downloaded hover 浮层 (版本区间 v98→v99 + New/Ready 徽标 + 跨版本提纯条目) 过; 点击浮层放大 Modal (标题+版本区间+dialog 密度) 过; 折叠态圆点 + 浮层右翻过; light/dark 双主题均截图核验; e2e 断言面 `app.e2e.ts` 14/14 本地绿 (build 后实跑)。
-- AC1-AC11 逐条: AC1-AC10 全过 (组件测试 + 实机截图 + 契约对账); AC11 主观视觉项 (间距/密度/对齐 taste) 截图已产出, **待用户最终确认**。
-- 待办: 推送后 CI 结果消费; 用户视觉确认后进入 archive。
+- AC1-AC11 逐条: AC1-AC10 全过 (组件测试 + 实机截图 + 契约对账); AC11 用户确认 "视觉效果很棒" (2026-07-05) + 反馈补 T7 按钮 (已落地并重截确认)。
+- CI: commit `6aa31243` 三平台 (ubuntu/windows/macos) 全绿含 e2e (run 28745988483 success), 主 Agent 已消费。
+- 用户宣布 "其他没有需要改善了, 可以收尾发版" → 进入 archive + 发版。

@@ -1,4 +1,4 @@
-import { app, BrowserWindow, dialog, globalShortcut, powerMonitor, session, shell } from 'electron'
+import { app, BrowserWindow, dialog, powerMonitor, session, shell } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { registerAllHandlers } from './ipc'
@@ -328,13 +328,17 @@ if (!gotTheLock) {
     if (updatePreferences.autoCheck) {
       setTimeout(() => { void updaterController.check({ userInitiated: false }) }, 5000)
     }
-    // GH-156: dev-only UI harness — Ctrl/Cmd+Shift+U replays the full update
-    // lifecycle through the real broadcast path so every indicator state can be
-    // eyeballed without cutting a release. Never registered in packaged builds.
+    // GH-156: dev-only UI harness — Ctrl/Cmd+Shift+U (while a Berth window is
+    // focused) replays the full update lifecycle through the real broadcast
+    // path so every indicator state can be eyeballed without cutting a release.
+    // Window-scoped before-input-event, NOT globalShortcut: a global hotkey is
+    // first-come-first-served across processes, so parallel dev instances
+    // (user dev + agent verify instance) would silently fight over it and the
+    // keystroke would land in someone else's window.
     if (!app.isPackaged) {
       let simTimers: NodeJS.Timeout[] = []
-      globalShortcut.register('CommandOrControl+Shift+U', () => {
-        // Re-pressing restarts the replay instead of interleaving two timelines.
+      const runUpdateSim = (): void => {
+        // Re-triggering restarts the replay instead of interleaving two timelines.
         for (const timer of simTimers) clearTimeout(timer)
         simTimers = []
         const fakeNotes = [
@@ -359,7 +363,19 @@ if (!gotTheLock) {
             }, step.delay)
           )
         }
-      })
+      }
+      const attachUpdateSimHotkey = (win: BrowserWindow): void => {
+        win.webContents.on('before-input-event', (_event, input) => {
+          // Chromium delivers modifier combos as rawKeyDown (no char), so match
+          // both down variants; never keyUp.
+          const isDown = input.type === 'keyDown' || input.type === 'rawKeyDown'
+          if (isDown && (input.control || input.meta) && input.shift && input.key.toLowerCase() === 'u') {
+            runUpdateSim()
+          }
+        })
+      }
+      for (const win of BrowserWindow.getAllWindows()) attachUpdateSimHotkey(win)
+      app.on('browser-window-created', (_event, win) => attachUpdateSimHotkey(win))
     }
   }).catch((err: unknown) => {
     // 启动期 throw 此前表现为 dock 图标出现但永远无窗口、零诊断 (GH-115 T5)

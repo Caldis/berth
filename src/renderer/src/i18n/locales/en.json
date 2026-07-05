@@ -2438,7 +2438,8 @@
       "clickToExpand": "Click to view the full release notes",
       "newBadge": "New",
       "readyBadge": "Ready",
-      "errorHint": "Click the indicator to retry the check"
+      "errorHint": "Click the indicator to retry the check",
+      "install": "Relaunch & update"
     }
   },
   "common": {

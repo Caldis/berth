@@ -2423,7 +2423,8 @@
       "clickToExpand": "点击查看完整更新内容",
       "newBadge": "新版本",
       "readyBadge": "就绪",
-      "errorHint": "点击指示器重试检查"
+      "errorHint": "点击指示器重试检查",
+      "install": "重启并更新"
     }
   },
   "common": {
