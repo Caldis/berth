@@ -2,7 +2,7 @@ import React from 'react'
 import { fireEvent, render, screen, within } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import i18n from '../../src/renderer/src/i18n'
-import { AgentScopeSwitcher } from '../../src/renderer/src/components/dashboard/agent-scope-switcher'
+import { AgentScopeSwitcher } from '../../src/renderer/src/components/layout/agent-scope-switcher'
 import { useAppStore } from '../../src/renderer/src/stores/app'
 
 // 可变插件列表 (beforeEach 改写); mock 仅覆盖 useAgentCapabilityPlugins, 其余 use-ipc 导出保留。

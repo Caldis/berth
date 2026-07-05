@@ -115,6 +115,11 @@
       "scan-source": "Source"
     }
   },
+  "agentScope": {
+    "label": "Agent",
+    "listLabel": "Agent options",
+    "all": "All agents"
+  },
   "search": {
     "placeholder": "Search assets...",
     "filterPlaceholder": "Filter {{target}}...",
@@ -283,10 +288,6 @@
         "mini": "Mini",
         "short": "Short",
         "tall": "Tall"
-      },
-      "agentFilter": {
-        "all": "All agents",
-        "label": "Agent"
       },
       "recentSessions": {
         "viewMore": "View all sessions →",

@@ -113,6 +113,11 @@
       "scan-source": "扫描来源"
     }
   },
+  "agentScope": {
+    "label": "Agent",
+    "listLabel": "Agent 选项",
+    "all": "全部 agent"
+  },
   "search": {
     "placeholder": "搜索资产…",
     "filterPlaceholder": "筛选{{target}}…",
@@ -281,10 +286,6 @@
         "mini": "迷你",
         "short": "矮",
         "tall": "高"
-      },
-      "agentFilter": {
-        "all": "全部 agent",
-        "label": "Agent"
       },
       "recentSessions": {
         "viewMore": "查看全部会话 →",
