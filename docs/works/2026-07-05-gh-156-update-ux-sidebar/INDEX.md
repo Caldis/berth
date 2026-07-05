@@ -23,14 +23,14 @@ debt:
     confidence: medium
     rationale: "explore 校准 (2026-07-05): 影响面确认 — renderer 为主 (sidebar footer 新指示器 + 浮层, 复用 FloatingPopover/use-update) + main updater 小改 (自动检查错误静默), IPC 契约零通道变化; 数值维持 incurred 2 / repaid 6 / net -4。"
   final:
-    incurred:
-    repaid:
-    net:
-    scope:
-    risk:
-    areas: []
-    confidence:
-    rationale:
+    incurred: 2
+    repaid: 6
+    net: -4
+    scope: cross-process
+    risk: low
+    areas: [ui-ux]
+    confidence: high
+    rationale: "verify 校准 (2026-07-05): 与 estimate 一致。G1-G6 差距全部闭合 (常驻指示器/进度/浮层/错误分级/点击流转/折叠态); IPC 通道零变化, 全量 1467 用例 + app e2e 14/14 绿, 风险由 medium 收敛 low。incurred 来自新组件 + dev 模拟胶水。"
   revisions:
     - phase: explore
       date: 2026-07-05
