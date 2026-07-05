@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import type { UpdatePreferences, UpdateState } from '@shared/types/ipc'
+import { useAppStore } from '@/stores/app'
 
 const DEFAULT_PREFERENCES: UpdatePreferences = {
   autoCheck: true,
@@ -12,6 +13,10 @@ const DEFAULT_PREFERENCES: UpdatePreferences = {
  * the update actions + the autoCheck / autoDownload / allowPrerelease (beta)
  * preferences. `setPreference` merges a partial patch so toggling one switch
  * never clobbers the others.
+ *
+ * GH-156: `state` lives in the app store (single source across the sidebar
+ * indicator and the settings section); each consumer still subscribes, which is
+ * idempotent — the same broadcast payload just overwrites itself.
  */
 export function useUpdate(): {
   state: UpdateState
@@ -21,7 +26,7 @@ export function useUpdate(): {
   install: () => void
   setPreference: (patch: Partial<UpdatePreferences>) => void
 } {
-  const [state, setState] = useState<UpdateState>({ phase: 'idle' })
+  const state = useAppStore((s) => s.updateState)
   const [preferences, setPreferences] = useState<UpdatePreferences>(DEFAULT_PREFERENCES)
 
   useEffect(() => {
@@ -36,7 +41,7 @@ export function useUpdate(): {
         setPreferences(next)
       })
       .catch(() => {})
-    const unsubscribe = window.api?.update.onState(setState)
+    const unsubscribe = window.api?.update.onState(useAppStore.getState().setUpdateState)
     return () => {
       cancelled = true
       unsubscribe?.()

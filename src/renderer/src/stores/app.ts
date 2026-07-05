@@ -7,7 +7,7 @@ import {
   type ProjectScopeCandidate
 } from '@shared/scope'
 import type { AgentView, Asset, AssetStats } from '@shared/types/asset'
-import type { AssetRuntimeStatus, AssetScanPartial, AssetSnapshot, ScanError } from '@shared/types/ipc'
+import type { AssetRuntimeStatus, AssetScanPartial, AssetSnapshot, ScanError, UpdateState } from '@shared/types/ipc'
 
 // Wide enough to clear the macOS traffic-light cluster (x:16 + ~3×18px ≈ 70px),
 // so a collapsed sidebar fully contains the buttons instead of letting them spill
@@ -69,6 +69,12 @@ interface AppState {
   setAssetRuntimeStatus: (status: AssetRuntimeStatus) => void
   setAssetSnapshot: (snapshot: AssetSnapshot) => void
   applyAssetProgress: (payload: { status: AssetRuntimeStatus; partial?: AssetScanPartial }) => void
+
+  // GH-156: last update:state broadcast. Store-held (not hook-local) so late
+  // mounters (Settings dialog, remounted sidebar) see the current phase instead
+  // of a stale idle default.
+  updateState: UpdateState
+  setUpdateState: (updateState: UpdateState) => void
 
   inspectorOpen: boolean
   inspectorPath: string | null
@@ -140,6 +146,9 @@ export const useAppStore = create<AppState>((set) => ({
       // GUI is a pure projection — no business logic, just assign.
       return { ...base, assets: payload.partial.assets, stats: payload.partial.stats }
     }),
+
+  updateState: { phase: 'idle' },
+  setUpdateState: (updateState) => set({ updateState }),
 
   inspectorOpen: false,
   inspectorPath: null,

@@ -3,6 +3,7 @@ import React from 'react'
 import { describe, expect, it, vi, beforeEach } from 'vitest'
 import '../../src/renderer/src/i18n'
 import { UpdateSection } from '../../src/renderer/src/components/settings/update-section'
+import { useAppStore } from '../../src/renderer/src/stores/app'
 import type { UpdateState } from '@shared/types/ipc'
 
 // GH-124/GH-134: the update card must cover every update:state phase, disable
@@ -11,6 +12,9 @@ import type { UpdateState } from '@shared/types/ipc'
 let pushState: (state: UpdateState) => void
 
 beforeEach(() => {
+  // GH-156: update state is store-held; reset so phases pushed by one test
+  // don't leak into the next render.
+  useAppStore.setState({ updateState: { phase: 'idle' } })
   pushState = () => {}
   window.api.update.onState = vi.fn((cb: (s: UpdateState) => void) => {
     pushState = cb
