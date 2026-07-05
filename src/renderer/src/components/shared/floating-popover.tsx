@@ -66,6 +66,14 @@ function floatingPlacement(side: FloatingSide, align: FloatingAlign): Placement 
   return align === 'center' ? side : `${side}-${align}`
 }
 
+function referenceHasLayout(
+  reference: { getBoundingClientRect: () => { width: number; height: number } } | null
+): boolean {
+  if (!reference || typeof reference.getBoundingClientRect !== 'function') return false
+  const rect = reference.getBoundingClientRect()
+  return rect.width > 0 || rect.height > 0
+}
+
 const DEFAULT_CLOSE_DELAY_MS = 80
 const DEFAULT_SAFE_POLYGON_BUFFER_PX = 8
 
@@ -151,7 +159,12 @@ export function FloatingPopover({
     'aria-expanded': open,
     className: cn(triggerProps.className, triggerClassName)
   } as HTMLProps<Element>) as Partial<unknown>)
-  const referenceHidden = middlewareData.hide?.referenceHidden === true
+  // hide() 判定只有在 reference 真实可测量 (非零尺寸) 时才可信: 零尺寸意味着
+  // 环境没有布局 (如 jsdom), 遮挡无从判断, 不应把浮层置为 visibility:hidden
+  // (role 查询会将 hidden 子树整体排除)。真实浏览器中在视区外的 trigger 仍有
+  // 非零尺寸, hide 行为不受影响。
+  const referenceHidden =
+    middlewareData.hide?.referenceHidden === true && referenceHasLayout(refs.reference.current)
   const updateHoverBridge = useCallback(() => {
     const reference = refs.reference.current
     const floating = refs.floating.current

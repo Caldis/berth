@@ -96,6 +96,8 @@
     "user": "User",
     "userDesc": "User-level configuration and assets",
     "projects": "Projects",
+    "filterProjects": "Filter projects...",
+    "filterNoMatches": "No projects match your filter.",
     "emptyProjects": "No project candidates yet.",
     "loadError": "Could not refresh projects.",
     "sourceCount_one": "{{count}} source",

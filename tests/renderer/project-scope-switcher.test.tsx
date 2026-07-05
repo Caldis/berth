@@ -158,7 +158,8 @@ describe('ProjectScopeSwitcher', () => {
 
     const option = await screen.findByRole('option', { name: 'berth' })
     expect(option).toHaveTextContent('3 sources')
-    expect(option).toHaveTextContent('2 Scanned')
+    // 项目行 meta 只点名有问题的状态; scanned 是默认态, 不再复述。
+    expect(option).not.toHaveTextContent('2 Scanned')
     expect(option).toHaveTextContent('1 Missing')
 
     fireEvent.click(option)

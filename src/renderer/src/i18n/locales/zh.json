@@ -96,6 +96,8 @@
     "user": "用户域",
     "userDesc": "用户级配置和资产",
     "projects": "项目",
+    "filterProjects": "筛选项目…",
+    "filterNoMatches": "没有匹配的项目。",
     "emptyProjects": "还没有发现项目候选。",
     "loadError": "无法刷新项目。",
     "sourceCount_other": "{{count}} 个来源",
