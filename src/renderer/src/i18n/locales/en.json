@@ -2429,8 +2429,7 @@
       "error": "Update failed",
       "tooltip": {
         "download": "Click to download the update",
-        "install": "Click to relaunch and install",
-        "retry": "Click to retry"
+        "install": "Click to relaunch and install"
       }
     },
     "notes": {

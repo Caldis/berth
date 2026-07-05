@@ -2414,8 +2414,7 @@
       "error": "更新失败",
       "tooltip": {
         "download": "点击下载更新",
-        "install": "点击重启并安装",
-        "retry": "点击重试"
+        "install": "点击重启并安装"
       }
     },
     "notes": {

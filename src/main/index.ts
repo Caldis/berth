@@ -332,7 +332,11 @@ if (!gotTheLock) {
     // lifecycle through the real broadcast path so every indicator state can be
     // eyeballed without cutting a release. Never registered in packaged builds.
     if (!app.isPackaged) {
+      let simTimers: NodeJS.Timeout[] = []
       globalShortcut.register('CommandOrControl+Shift+U', () => {
+        // Re-pressing restarts the replay instead of interleaving two timelines.
+        for (const timer of simTimers) clearTimeout(timer)
+        simTimers = []
         const fakeNotes = [
           { version: '99.0.0', note: '<p>Simulated release</p><ul><li>Fake feature A</li><li>Fake fix B</li></ul>' },
           { version: '98.0.0', note: '<p>Older simulated release</p>' }
@@ -347,11 +351,13 @@ if (!gotTheLock) {
           { delay: 9000, state: { phase: 'downloaded', version: '99.0.0', releaseNotes: fakeNotes } }
         ]
         for (const step of steps) {
-          setTimeout(() => {
-            for (const win of BrowserWindow.getAllWindows()) {
-              sendToWindow(win, 'update:state', step.state)
-            }
-          }, step.delay)
+          simTimers.push(
+            setTimeout(() => {
+              for (const win of BrowserWindow.getAllWindows()) {
+                sendToWindow(win, 'update:state', step.state)
+              }
+            }, step.delay)
+          )
         }
       })
     }

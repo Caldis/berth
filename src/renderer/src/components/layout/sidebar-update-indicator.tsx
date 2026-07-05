@@ -7,6 +7,7 @@ import { FloatingPopover } from '@/components/shared/floating-popover'
 import { useUpdate } from '@/hooks/use-update'
 import { formatVersionRange, releaseNoteHtmlToText, versionTag } from '@/lib/release-notes'
 import { cn } from '@/lib/utils'
+import { useAppStore } from '@/stores/app'
 
 /**
  * GH-156: persistent update presence in the sidebar footer, modeled on the
@@ -64,7 +65,9 @@ export function UpdateNotesPanel({
   variant?: 'card' | 'dialog'
 }): React.ReactElement {
   const { t } = useTranslation()
-  const { state } = useUpdate()
+  // Read-only view of the broadcast state — deliberately not useUpdate(), which
+  // would fire a getPreferences IPC round-trip on every popover mount.
+  const state = useAppStore((s) => s.updateState)
   const releaseNotes = state.releaseNotes
   const entries = useMemo(() => releaseNotes ?? [], [releaseNotes])
   const versionRange = formatVersionRange(entries, state.version)
@@ -85,6 +88,18 @@ export function UpdateNotesPanel({
       data-testid="update-notes-panel"
       className={cn('flex flex-col gap-2', variant === 'card' ? 'w-64 p-3' : 'w-full', expandable && 'cursor-pointer')}
       onClick={expandable ? onExpand : undefined}
+      role={expandable ? 'button' : undefined}
+      tabIndex={expandable ? 0 : undefined}
+      onKeyDown={
+        expandable
+          ? (event) => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault()
+                onExpand?.()
+              }
+            }
+          : undefined
+      }
       title={expandable ? t('update.notes.clickToExpand') : undefined}
     >
       {variant === 'card' && (
@@ -99,6 +114,10 @@ export function UpdateNotesPanel({
           )}
           {expandable && <Maximize2 aria-hidden="true" className="h-3 w-3 shrink-0 text-muted-foreground/60" />}
         </div>
+      )}
+
+      {state.phase === 'checking' && (
+        <span className={cn('text-muted-foreground', bodyText)}>{t('update.indicator.checking')}</span>
       )}
 
       {state.phase === 'downloading' && (
@@ -147,6 +166,7 @@ export function SidebarUpdateIndicator({ collapsed }: { collapsed: boolean }): R
   const version = state.version ? versionTag(state.version) : ''
   const percent = state.percent ?? 0
   const clickable = state.phase === 'available' || state.phase === 'downloaded' || state.phase === 'error'
+  const modalVersionRange = formatVersionRange(state.releaseNotes ?? [], state.version)
 
   const label =
     state.phase === 'checking'
@@ -242,10 +262,8 @@ export function SidebarUpdateIndicator({ collapsed }: { collapsed: boolean }): R
         <ModalContent>
           <ModalHeader className="flex items-baseline gap-2 border-b border-border">
             <span className="text-base font-semibold">{t('update.notes.title')}</span>
-            {formatVersionRange(state.releaseNotes ?? [], state.version) && (
-              <span className="text-sm font-normal text-muted-foreground">
-                {formatVersionRange(state.releaseNotes ?? [], state.version)}
-              </span>
+            {modalVersionRange && (
+              <span className="text-sm font-normal text-muted-foreground">{modalVersionRange}</span>
             )}
           </ModalHeader>
           <ModalBody className="py-4">

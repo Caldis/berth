@@ -127,6 +127,24 @@ describe('createUpdaterController', () => {
     expect(states.at(-1)).toMatchObject({ phase: 'error', error: 'net down' })
   })
 
+  it('startup auto-check racing an in-flight user check never silences the user error (GH-156 review)', async () => {
+    const { updater, states, controller } = setup()
+    await controller.check() // user clicks "check" just before the +5s timer
+    await controller.check({ userInitiated: false }) // startup timer fires
+    updater.fire('error', new Error('offline'))
+    expect(states.at(-1)).toMatchObject({ phase: 'error', error: 'offline' })
+  })
+
+  it('userInitiated decays on terminal events so later background errors stay silent (GH-156 review)', async () => {
+    const { updater, states, controller } = setup()
+    await controller.check()
+    updater.fire('update-not-available')
+    // next background failure (no new user action) is silenced again
+    updater.fire('error', new Error('later background failure'))
+    expect(states.at(-1)).toMatchObject({ phase: 'not-available' })
+    expect(states.filter((s) => s.phase === 'error')).toHaveLength(0)
+  })
+
   it('applies preferences: autoDownload + allowPrerelease follow the user setting', () => {
     const { updater, controller } = setup({ autoDownload: true, allowPrerelease: true })
     expect(updater.autoDownload).toBe(true)

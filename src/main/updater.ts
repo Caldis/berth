@@ -80,17 +80,28 @@ export function createUpdaterController(options: UpdaterControllerOptions): Upda
   // degrade to not-available so the sidebar indicator never nags about network
   // hiccups the user didn't ask about. User-initiated check/download errors
   // surface as phase:error. Always logged either way.
-  // The flag is only (re)assigned when an action starts, never inside emitError:
-  // a rejected user check fires both the 'error' event and the catch below, and
-  // both emissions must stay identical (error + error, or silence + silence).
+  // userInitiated only upgrades at action start (an auto check never downgrades
+  // an in-flight user action — GH-156 review: a user check racing the +5s
+  // startup check must not get silenced) and decays on terminal events. A
+  // rejected user check fires both the 'error' event and the catch below;
+  // errorHandled dedupes so only the first emission (with the right
+  // attribution) reaches the renderer.
   let userInitiated = false
+  let errorHandled = false
+  const beginAction = (initiated: boolean): void => {
+    if (initiated) userInitiated = true
+    errorHandled = false
+  }
   const emitError = (error: unknown): void => {
     log('updater', error)
+    if (errorHandled) return
+    errorHandled = true
     if (userInitiated) {
       emit({ phase: 'error', error: error instanceof Error ? error.message : String(error) })
     } else {
       emit({ phase: 'not-available' })
     }
+    userInitiated = false
   }
 
   autoUpdater.on('checking-for-update', () => emit({ phase: 'checking' }))
@@ -102,13 +113,17 @@ export function createUpdaterController(options: UpdaterControllerOptions): Upda
       releaseNotes: normalizeReleaseNotes(info?.version, info?.releaseNotes)
     })
   })
-  autoUpdater.on('update-not-available', () => emit({ phase: 'not-available' }))
+  autoUpdater.on('update-not-available', () => {
+    userInitiated = false
+    emit({ phase: 'not-available' })
+  })
   autoUpdater.on('download-progress', (...args: never[]) => {
     const progress = args[0] as { percent?: number } | undefined
     emit({ phase: 'downloading', percent: Math.round(progress?.percent ?? 0) })
   })
   autoUpdater.on('update-downloaded', (...args: never[]) => {
     const info = args[0] as { version?: string; releaseNotes?: unknown } | undefined
+    userInitiated = false
     emit({
       phase: 'downloaded',
       version: info?.version,
@@ -121,7 +136,7 @@ export function createUpdaterController(options: UpdaterControllerOptions): Upda
 
   return {
     async check(checkOptions?: { userInitiated?: boolean }): Promise<void> {
-      userInitiated = checkOptions?.userInitiated !== false
+      beginAction(checkOptions?.userInitiated !== false)
       try {
         await autoUpdater.checkForUpdates()
       } catch (error) {
@@ -131,7 +146,7 @@ export function createUpdaterController(options: UpdaterControllerOptions): Upda
       }
     },
     async download(): Promise<void> {
-      userInitiated = true
+      beginAction(true)
       try {
         await autoUpdater.downloadUpdate()
       } catch (error) {

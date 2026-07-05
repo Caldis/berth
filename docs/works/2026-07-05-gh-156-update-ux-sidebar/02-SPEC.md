@@ -43,8 +43,9 @@ export interface UpdateState {
 `src/main/updater.ts`:
 - `UpdaterLike` 增加 `fullChangelog: boolean`; controller init 设 `autoUpdater.fullChangelog = true`。
 - `check(options?: { userInitiated?: boolean })`, 默认 `true` (IPC handler 零改动); `src/main/index.ts` 启动自动检查改为 `check({ userInitiated: false })`。
-- 内部 `userInitiated` 标志: 用户 `check()`/`download()` 置 true; `error` 事件读取 — true → emit `{phase:'error'}`, false → emit `{phase:'not-available'}` (静默); 读取后复位 false。所有 error 恒 log。
+- 内部 `userInitiated` 标志 (**verify 阶段裁决修订**, 2026-07-05 双轴评审): 标志只在动作起点**升级** (用户 `check()`/`download()` 置 true; auto check 不降级 — 修复"用户手动检查撞上 +5s 启动定时器被静默"的竞态), 在终态事件 (not-available/downloaded) 与 error 发射后**衰减**回 false; 同一动作的 error 事件 + catch 双发经 `errorHandled` 去重, 只发射第一次 (归属正确)。true → emit `{phase:'error'}`, false → emit `{phase:'not-available'}` (静默)。所有 error 恒 log。原文"读取后复位 false"方案有双发归属 bug, 已按上述修订。
 - `check()`/`download()` 的 try-catch 分支同样遵守静默语义。
+- 已知未决边界 (记 issues, 不在本任务范围): autoDownload=true 后台下载失败被静默致进度条无痕消失 (`docs/issues/2026-07-05-IMPROVEMENT-update-autodownload-error-silently-hides-progress.md`); 窗口重建后 main 不重发最后状态 (`docs/issues/2026-07-05-IMPROVEMENT-update-state-lost-on-window-recreate.md`)。
 
 `src/main/index.ts`:
 - 启动 check 传 `{userInitiated:false}`。
@@ -80,7 +81,9 @@ export interface UpdateState {
 
 ### 2.4 i18n (AC7)
 
-新顶层命名空间 `update` (zh/en 同批; 顶层无既有 `update` key, 已核): `update.indicator.{checking,available,downloading,downloaded,error}`, `update.indicator.tooltip.{download,install,retry}`, `update.notes.{title,empty,clickToExpand,readyBadge,newBadge}`。`settings.update.*` 不动。
+新顶层命名空间 `update` (zh/en 同批; 顶层无既有 `update` key, 已核): `update.indicator.{checking,available,downloading,downloaded,error}`, `update.indicator.tooltip.{download,install}`, `update.notes.{title,empty,clickToExpand,readyBadge,newBadge,errorHint}`。`settings.update.*` 不动。(verify 修订: `tooltip.retry` 死键已删 — error 态 title 直挂具体 error 文本, 重试提示由浮层 `notes.errorHint` 承担; `notes.errorHint` 为清单补录。)
+
+实现相对 SPEC 字面的已裁决微偏差 (verify 双轴评审, 均判合理保留): 折叠态浮层 align='end' (沿 scan-status 先例); checking 态浮层补状态文案 (原字面未定义会出空卡); 进度条底色 `bg-sidebar-accent/20` (sidebar 语境下比 `bg-muted` 贴合); downloading 文案带"正在下载"前缀 (裸百分比在 footer 语境含义不明); Modal 滚动用 HeroUI `scrollBehavior="inside"`; dev 模拟内联广播循环 (与 controller emit 同 channel 同路径) 且重按去重重放。
 **并发撞车防护** (不变量 11, GH-150 同时在改 locale 文件): 写前 grep `"update"` 顶层 key 占用; 每次编辑前重读; Edit "file modified since read" 即竞态信号重读再改。
 
 ## 3. 任务分类与 debt

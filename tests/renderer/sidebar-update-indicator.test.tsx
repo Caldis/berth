@@ -1,6 +1,6 @@
 import React from 'react'
 import { describe, expect, it, vi, beforeEach } from 'vitest'
-import { fireEvent, render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen } from '@testing-library/react'
 import { HeroUIProvider } from '@heroui/react'
 import '../../src/renderer/src/i18n'
 import { SidebarUpdateIndicator, UpdateNotesPanel } from '../../src/renderer/src/components/layout/sidebar-update-indicator'
@@ -50,7 +50,7 @@ describe('SidebarUpdateIndicator', () => {
     const { container } = renderIndicator()
     expect(container.querySelector('[data-testid="sidebar-update-trigger"]')).toBeNull()
 
-    setPhase({ phase: 'not-available' })
+    act(() => setPhase({ phase: 'not-available' }))
     expect(container.querySelector('[data-testid="sidebar-update-trigger"]')).toBeNull()
   })
 
@@ -175,5 +175,22 @@ describe('UpdateNotesPanel', () => {
     renderPanel({ onExpand })
     fireEvent.click(screen.getByTestId('update-notes-panel'))
     expect(onExpand).toHaveBeenCalledTimes(1)
+  })
+
+  it('is keyboard reachable: focusable with role=button, Enter expands (AC9)', () => {
+    setPhase({ phase: 'available', version: '9.9.9', releaseNotes: [{ version: '9.9.9', note: 'x' }] })
+    const onExpand = vi.fn()
+    renderPanel({ onExpand })
+    const panel = screen.getByTestId('update-notes-panel')
+    expect(panel).toHaveAttribute('role', 'button')
+    expect(panel).toHaveAttribute('tabindex', '0')
+    fireEvent.keyDown(panel, { key: 'Enter' })
+    expect(onExpand).toHaveBeenCalledTimes(1)
+  })
+
+  it('shows the checking body inside the panel while checking (review #7)', () => {
+    setPhase({ phase: 'checking' })
+    renderPanel()
+    expect(screen.getByTestId('update-notes-panel').textContent).toContain('Checking for updates')
   })
 })
