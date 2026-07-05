@@ -2,7 +2,7 @@
 task: 2026-07-05-gh-156-update-ux-sidebar
 task_id: GH-156
 type: maintenance
-phase: verify
+phase: archive
 created: 2026-07-05
 priority: P2
 target_date: 
@@ -48,7 +48,7 @@ gh_project:
   project_number: 6
   project_url: https://github.com/users/Caldis/projects/6
   item_id: PVTI_lAHOADXbEs4BZHvQzgxyoX8
-  item_status: In Progress
+  item_status: Done
   project_id: PVT_kwHOADXbEs4BZHvQ
 artifacts:
   source: 00-PRD.md
