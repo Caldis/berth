@@ -1,6 +1,7 @@
 import {
   autoUpdate,
   flip,
+  FloatingFocusManager,
   FloatingPortal,
   offset,
   hide,
@@ -34,6 +35,7 @@ import { cn } from '@/lib/utils'
 type FloatingSide = 'top' | 'right' | 'bottom' | 'left'
 type FloatingAlign = 'start' | 'center' | 'end'
 type FloatingRole = 'tooltip' | 'dialog' | 'alertdialog' | 'menu' | 'listbox' | 'grid' | 'tree'
+type FloatingInteraction = 'hover' | 'click'
 
 interface FloatingPopoverProps {
   trigger: ReactElement
@@ -52,6 +54,12 @@ interface FloatingPopoverProps {
   safePolygonBuffer?: number
   hoverBridge?: boolean
   role?: FloatingRole
+  /** 'hover' (default) opens on hover/focus/click; 'click' opens on click only
+   * and manages focus (return-to-trigger on close) for menu-like content. */
+  interaction?: FloatingInteraction
+  /** Controlled open state; when provided, onOpenChange must apply the change. */
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
 }
 
 function floatingPlacement(side: FloatingSide, align: FloatingAlign): Placement {
@@ -77,11 +85,22 @@ export function FloatingPopover({
   closeDelay = DEFAULT_CLOSE_DELAY_MS,
   safePolygonBuffer: safePolygonBufferProp,
   hoverBridge: hoverBridgeEnabled = false,
-  role
+  role,
+  interaction = 'hover',
+  open: controlledOpen,
+  onOpenChange
 }: FloatingPopoverProps): React.ReactElement {
   const generatedId = useId()
   const contentId = id ?? `floating-popover-${generatedId}`
-  const [open, setOpen] = useState(false)
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(false)
+  const open = controlledOpen ?? uncontrolledOpen
+  const setOpen = useCallback(
+    (next: boolean) => {
+      onOpenChange?.(next)
+      if (controlledOpen === undefined) setUncontrolledOpen(next)
+    },
+    [controlledOpen, onOpenChange]
+  )
   const [hoverBridgeStyle, setHoverBridgeStyle] = useState<CSSProperties | null>(null)
   const { refs, floatingStyles, context, middlewareData, isPositioned, placement } = useFloating({
     open,
@@ -102,11 +121,12 @@ export function FloatingPopover({
     [safePolygonBuffer]
   )
   const hover = useHover(context, {
+    enabled: interaction === 'hover',
     mouseOnly: true,
     delay: { open: 0, close: closeDelay },
     handleClose: hoverBridge
   })
-  const focus = useFocus(context)
+  const focus = useFocus(context, { enabled: interaction === 'hover' })
   const click = useClick(context)
   const dismiss = useDismiss(context)
   const floatingRole = useRole(context, { enabled: Boolean(role), role })
@@ -179,48 +199,60 @@ export function FloatingPopover({
     }
   }, [isPositioned, open, updateHoverBridge])
 
+  const floatingContent = (
+    <div
+      ref={refs.setFloating}
+      {...getFloatingProps({
+        id: contentId,
+        role,
+        'data-testid': contentTestId,
+        'data-placement': placement,
+        style: {
+          ...floatingStyles,
+          visibility: referenceHidden ? 'hidden' : undefined,
+          opacity: isPositioned ? undefined : 0,
+          pointerEvents: isPositioned ? undefined : 'none'
+        }
+      } as HTMLProps<HTMLElement>)}
+      id={contentId}
+      role={role}
+      data-testid={contentTestId}
+      data-placement={placement}
+      className="relative z-50 w-max max-w-[calc(100vw-2rem)] outline-none"
+    >
+      {hoverBridgeEnabled && hoverBridgeStyle && (
+        <div
+          aria-hidden="true"
+          data-testid={contentTestId ? `${contentTestId}-hover-bridge` : undefined}
+          className="titlebar-no-drag absolute z-0 bg-transparent"
+          style={hoverBridgeStyle}
+        />
+      )}
+      <div
+        className={cn(
+          'relative z-10 max-w-[calc(100vw-2rem)] outline-none motion-safe:animate-in motion-safe:fade-in motion-safe:zoom-in-95 motion-safe:duration-150',
+          contentClassName ?? 'rounded-md border border-border bg-popover text-popover-foreground shadow-lg'
+        )}
+      >
+        {children}
+      </div>
+    </div>
+  )
+
   return (
     <>
       {triggerWithAria}
       {open && (
         <FloatingPortal>
-          <div
-            ref={refs.setFloating}
-            {...getFloatingProps({
-              id: contentId,
-              role,
-              'data-testid': contentTestId,
-              'data-placement': placement,
-              style: {
-                ...floatingStyles,
-                visibility: referenceHidden ? 'hidden' : undefined,
-                opacity: isPositioned ? undefined : 0,
-                pointerEvents: isPositioned ? undefined : 'none'
-              }
-            } as HTMLProps<HTMLElement>)}
-            id={contentId}
-            role={role}
-            data-testid={contentTestId}
-            data-placement={placement}
-            className="relative z-50 w-max max-w-[calc(100vw-2rem)] outline-none"
-          >
-            {hoverBridgeEnabled && hoverBridgeStyle && (
-              <div
-                aria-hidden="true"
-                data-testid={contentTestId ? `${contentTestId}-hover-bridge` : undefined}
-                className="titlebar-no-drag absolute z-0 bg-transparent"
-                style={hoverBridgeStyle}
-              />
-            )}
-            <div
-              className={cn(
-                'relative z-10 max-w-[calc(100vw-2rem)] outline-none motion-safe:animate-in motion-safe:fade-in motion-safe:zoom-in-95 motion-safe:duration-150',
-                contentClassName ?? 'rounded-md border border-border bg-popover text-popover-foreground shadow-lg'
-              )}
-            >
-              {children}
-            </div>
-          </div>
+          {interaction === 'click' ? (
+            // Menu-like content: trap-free focus scope that returns focus to the
+            // trigger on dismiss (Escape / outside press).
+            <FloatingFocusManager context={context} modal={false}>
+              {floatingContent}
+            </FloatingFocusManager>
+          ) : (
+            floatingContent
+          )}
         </FloatingPortal>
       )}
     </>
