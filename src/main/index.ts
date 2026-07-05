@@ -1,8 +1,9 @@
-import { app, BrowserWindow, dialog, powerMonitor, session, shell } from 'electron'
+import { app, BrowserWindow, dialog, globalShortcut, powerMonitor, session, shell } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { registerAllHandlers } from './ipc'
 import { sendToWindow } from './ipc/typed-ipc'
+import type { UpdateState } from '@shared/types/ipc'
 import Database from 'better-sqlite3'
 import { getAssetRuntime, initAssetRuntime } from '@berth/scan-engine/engine/assets/runtime'
 import { createSqliteSnapshotStore } from '@berth/scan-engine/engine/assets/sqlite-snapshot-store'
@@ -326,6 +327,33 @@ if (!gotTheLock) {
     // the real error.
     if (updatePreferences.autoCheck) {
       setTimeout(() => { void updaterController.check({ userInitiated: false }) }, 5000)
+    }
+    // GH-156: dev-only UI harness — Ctrl/Cmd+Shift+U replays the full update
+    // lifecycle through the real broadcast path so every indicator state can be
+    // eyeballed without cutting a release. Never registered in packaged builds.
+    if (!app.isPackaged) {
+      globalShortcut.register('CommandOrControl+Shift+U', () => {
+        const fakeNotes = [
+          { version: '99.0.0', note: '<p>Simulated release</p><ul><li>Fake feature A</li><li>Fake fix B</li></ul>' },
+          { version: '98.0.0', note: '<p>Older simulated release</p>' }
+        ]
+        const steps: { delay: number; state: UpdateState }[] = [
+          { delay: 0, state: { phase: 'checking' } },
+          { delay: 1200, state: { phase: 'available', version: '99.0.0', releaseNotes: fakeNotes } },
+          ...[0, 25, 50, 75, 100].map((percent, index) => ({
+            delay: 4000 + index * 900,
+            state: { phase: 'downloading', percent } as UpdateState
+          })),
+          { delay: 9000, state: { phase: 'downloaded', version: '99.0.0', releaseNotes: fakeNotes } }
+        ]
+        for (const step of steps) {
+          setTimeout(() => {
+            for (const win of BrowserWindow.getAllWindows()) {
+              sendToWindow(win, 'update:state', step.state)
+            }
+          }, step.delay)
+        }
+      })
     }
   }).catch((err: unknown) => {
     // 启动期 throw 此前表现为 dock 图标出现但永远无窗口、零诊断 (GH-115 T5)
