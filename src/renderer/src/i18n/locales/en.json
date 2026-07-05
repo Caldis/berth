@@ -2420,6 +2420,28 @@
       }
     }
   },
+  "update": {
+    "indicator": {
+      "checking": "Checking for updates…",
+      "available": "{{version}} available",
+      "downloading": "Downloading {{percent}}%",
+      "downloaded": "Relaunch to {{version}}",
+      "error": "Update failed",
+      "tooltip": {
+        "download": "Click to download the update",
+        "install": "Click to relaunch and install",
+        "retry": "Click to retry"
+      }
+    },
+    "notes": {
+      "title": "What's new",
+      "empty": "No release notes available",
+      "clickToExpand": "Click to view the full release notes",
+      "newBadge": "New",
+      "readyBadge": "Ready",
+      "errorHint": "Click the indicator to retry the check"
+    }
+  },
   "common": {
     "scope": {
       "user": "User",

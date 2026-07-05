@@ -10,6 +10,7 @@ import { SettingsDialog } from './settings-dialog'
 import { ProjectScopeSwitcher } from './project-scope-switcher'
 import { AgentScopeSwitcher } from './agent-scope-switcher'
 import { SidebarScanStatus } from './sidebar-scan-status'
+import { SidebarUpdateIndicator } from './sidebar-update-indicator'
 import { SearchTriggerButton, globalSearchShortcutLabel } from './search-control'
 import appIconUrl from '../../../../../assets/icon/app_icon.png'
 
@@ -169,6 +170,12 @@ export function Sidebar(): React.ReactElement {
         </nav>
 
         <div className="shrink-0 border-t border-sidebar-border p-3">
+          {/* GH-156: update indicator lives on its own footer row — it renders
+              nothing while idle/up-to-date, and the existing three-control row
+              below is already full. */}
+          <div className={cn('mb-1 flex empty:mb-0 empty:hidden', collapsed ? 'flex-col items-center' : 'items-center')}>
+            <SidebarUpdateIndicator collapsed={collapsed} />
+          </div>
           <div className={cn('flex gap-1', collapsed ? 'flex-col items-center' : 'items-center')}>
             <button
               ref={settingsButtonRef}

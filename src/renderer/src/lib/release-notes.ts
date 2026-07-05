@@ -35,14 +35,14 @@ export function releaseNoteHtmlToText(html: string): string {
     .trim()
 }
 
-function vTag(version: string): string {
+export function versionTag(version: string): string {
   return version.startsWith('v') ? version : `v${version}`
 }
 
 /** Provider order is newest-first; a multi-version jump reads oldest → newest. */
 export function formatVersionRange(entries: readonly UpdateReleaseNote[], fallbackVersion?: string): string {
   const versions = entries.map((entry) => entry.version).filter((version) => version.length > 0)
-  if (versions.length === 0) return fallbackVersion ? vTag(fallbackVersion) : ''
-  if (versions.length === 1) return vTag(versions[0])
-  return `${vTag(versions[versions.length - 1])} → ${vTag(versions[0])}`
+  if (versions.length === 0) return fallbackVersion ? versionTag(fallbackVersion) : ''
+  if (versions.length === 1) return versionTag(versions[0])
+  return `${versionTag(versions[versions.length - 1])} → ${versionTag(versions[0])}`
 }

@@ -2405,6 +2405,28 @@
       }
     }
   },
+  "update": {
+    "indicator": {
+      "checking": "检查更新…",
+      "available": "{{version}} 可用",
+      "downloading": "正在下载 {{percent}}%",
+      "downloaded": "重启更新至 {{version}}",
+      "error": "更新失败",
+      "tooltip": {
+        "download": "点击下载更新",
+        "install": "点击重启并安装",
+        "retry": "点击重试"
+      }
+    },
+    "notes": {
+      "title": "更新内容",
+      "empty": "暂无更新说明",
+      "clickToExpand": "点击查看完整更新内容",
+      "newBadge": "新版本",
+      "readyBadge": "就绪",
+      "errorHint": "点击指示器重试检查"
+    }
+  },
   "common": {
     "scope": {
       "user": "用户级",
