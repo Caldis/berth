@@ -321,9 +321,11 @@ if (!gotTheLock) {
     })
     setUpdaterRuntime({ controller: updaterController, userDataDir })
     // Deferred startup check, gated by the autoCheck preference (GH-134); never
-    // blocks launch; failures surface as update:state error (and the main log).
+    // blocks launch. Not user-initiated: failures degrade to not-available so
+    // the sidebar indicator stays quiet about them (GH-156); the main log keeps
+    // the real error.
     if (updatePreferences.autoCheck) {
-      setTimeout(() => { void updaterController.check() }, 5000)
+      setTimeout(() => { void updaterController.check({ userInitiated: false }) }, 5000)
     }
   }).catch((err: unknown) => {
     // 启动期 throw 此前表现为 dock 图标出现但永远无窗口、零诊断 (GH-115 T5)

@@ -1,4 +1,4 @@
-import type { UpdatePreferences, UpdateState } from '@shared/types/ipc'
+import type { UpdatePreferences, UpdateReleaseNote, UpdateState } from '@shared/types/ipc'
 
 /**
  * GH-124/GH-134: auto-update controller. Every dependency is injected (the real
@@ -15,6 +15,7 @@ export interface UpdaterLike {
   autoInstallOnAppQuit: boolean
   allowPrerelease: boolean
   forceDevUpdateConfig: boolean
+  fullChangelog: boolean
   on(event: string, listener: (...args: never[]) => void): unknown
   checkForUpdates(): Promise<unknown>
   downloadUpdate(): Promise<unknown>
@@ -30,10 +31,36 @@ export interface UpdaterControllerOptions {
 }
 
 export interface UpdaterController {
-  check(): Promise<void>
+  check(options?: { userInitiated?: boolean }): Promise<void>
   download(): Promise<void>
   install(): void
   applyPreferences(prefs: UpdatePreferences): void
+}
+
+/** IPC payload bounds for release notes (GH-156). */
+const MAX_RELEASE_NOTE_ENTRIES = 20
+const MAX_RELEASE_NOTE_CHARS = 4000
+
+/** electron-updater hands over `string` (single release) or `ReleaseNoteInfo[]`
+ * (fullChangelog). Normalize both into bounded entries; empty notes drop out. */
+function normalizeReleaseNotes(fallbackVersion: string | undefined, raw: unknown): UpdateReleaseNote[] | undefined {
+  if (typeof raw === 'string') {
+    const note = raw.slice(0, MAX_RELEASE_NOTE_CHARS)
+    return note.length > 0 ? [{ version: fallbackVersion ?? '', note }] : undefined
+  }
+  if (!Array.isArray(raw)) return undefined
+  const entries: UpdateReleaseNote[] = []
+  for (const item of raw) {
+    if (entries.length >= MAX_RELEASE_NOTE_ENTRIES) break
+    if (typeof item !== 'object' || item === null) continue
+    const { version, note } = item as { version?: unknown; note?: unknown }
+    if (typeof note !== 'string' || note.length === 0) continue
+    entries.push({
+      version: typeof version === 'string' ? version : '',
+      note: note.slice(0, MAX_RELEASE_NOTE_CHARS)
+    })
+  }
+  return entries.length > 0 ? entries : undefined
 }
 
 export function createUpdaterController(options: UpdaterControllerOptions): UpdaterController {
@@ -44,7 +71,27 @@ export function createUpdaterController(options: UpdaterControllerOptions): Upda
   // allowPrerelease (beta channel) only changes which GitHub releases `check`
   // considers.
   autoUpdater.allowPrerelease = options.preferences.allowPrerelease
+  // Cross-version release notes: GitHub provider returns every release between
+  // the running and the target version as ReleaseNoteInfo[] (GH-156).
+  autoUpdater.fullChangelog = true
   if (!isPackaged) autoUpdater.forceDevUpdateConfig = true
+
+  // GH-156: errors from background activity (startup auto-check, autoDownload)
+  // degrade to not-available so the sidebar indicator never nags about network
+  // hiccups the user didn't ask about. User-initiated check/download errors
+  // surface as phase:error. Always logged either way.
+  // The flag is only (re)assigned when an action starts, never inside emitError:
+  // a rejected user check fires both the 'error' event and the catch below, and
+  // both emissions must stay identical (error + error, or silence + silence).
+  let userInitiated = false
+  const emitError = (error: unknown): void => {
+    log('updater', error)
+    if (userInitiated) {
+      emit({ phase: 'error', error: error instanceof Error ? error.message : String(error) })
+    } else {
+      emit({ phase: 'not-available' })
+    }
+  }
 
   autoUpdater.on('checking-for-update', () => emit({ phase: 'checking' }))
   autoUpdater.on('update-available', (...args: never[]) => {
@@ -52,7 +99,7 @@ export function createUpdaterController(options: UpdaterControllerOptions): Upda
     emit({
       phase: 'available',
       version: info?.version,
-      notes: typeof info?.releaseNotes === 'string' ? info.releaseNotes.slice(0, 2000) : undefined
+      releaseNotes: normalizeReleaseNotes(info?.version, info?.releaseNotes)
     })
   })
   autoUpdater.on('update-not-available', () => emit({ phase: 'not-available' }))
@@ -61,32 +108,34 @@ export function createUpdaterController(options: UpdaterControllerOptions): Upda
     emit({ phase: 'downloading', percent: Math.round(progress?.percent ?? 0) })
   })
   autoUpdater.on('update-downloaded', (...args: never[]) => {
-    const info = args[0] as { version?: string } | undefined
-    emit({ phase: 'downloaded', version: info?.version })
+    const info = args[0] as { version?: string; releaseNotes?: unknown } | undefined
+    emit({
+      phase: 'downloaded',
+      version: info?.version,
+      releaseNotes: normalizeReleaseNotes(info?.version, info?.releaseNotes)
+    })
   })
   autoUpdater.on('error', (...args: never[]) => {
-    const err = args[0] as Error | undefined
-    log('updater', err)
-    emit({ phase: 'error', error: err?.message ?? String(err) })
+    emitError(args[0] as Error | undefined)
   })
 
   return {
-    async check(): Promise<void> {
+    async check(checkOptions?: { userInitiated?: boolean }): Promise<void> {
+      userInitiated = checkOptions?.userInitiated !== false
       try {
         await autoUpdater.checkForUpdates()
       } catch (error) {
         // The 'error' listener above usually fires too; this catch covers
         // rejections raised before the event wiring.
-        log('updater', error)
-        emit({ phase: 'error', error: error instanceof Error ? error.message : String(error) })
+        emitError(error)
       }
     },
     async download(): Promise<void> {
+      userInitiated = true
       try {
         await autoUpdater.downloadUpdate()
       } catch (error) {
-        log('updater', error)
-        emit({ phase: 'error', error: error instanceof Error ? error.message : String(error) })
+        emitError(error)
       }
     },
     install(): void {

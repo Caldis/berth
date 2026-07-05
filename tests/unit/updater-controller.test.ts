@@ -20,6 +20,7 @@ function fakeUpdater(): UpdaterLike & {
     autoInstallOnAppQuit: false,
     allowPrerelease: false,
     forceDevUpdateConfig: false,
+    fullChangelog: false,
     listeners,
     on(event: string, listener: Listener) {
       listeners.set(event, listener)
@@ -57,8 +58,73 @@ describe('createUpdaterController', () => {
     updater.fire('update-downloaded', { version: '0.3.0' })
 
     expect(states.map((s) => s.phase)).toEqual(['checking', 'available', 'downloading', 'downloaded'])
-    expect(states[1]).toMatchObject({ version: '0.3.0', notes: 'notes' })
+    expect(states[1]).toMatchObject({ version: '0.3.0', releaseNotes: [{ version: '0.3.0', note: 'notes' }] })
     expect(states[2].percent).toBe(42)
+  })
+
+  it('enables fullChangelog so GitHub provider returns cross-version notes (GH-156)', () => {
+    const { updater } = setup()
+    expect(updater.fullChangelog).toBe(true)
+  })
+
+  it('normalizes ReleaseNoteInfo[] into capped, filtered entries (GH-156)', () => {
+    const { updater, states } = setup()
+    const longNote = 'x'.repeat(5000)
+    const entries = [
+      { version: '0.5.0', note: '<p>new stuff</p>' },
+      { version: '0.4.10', note: null },
+      { version: '0.4.9', note: longNote },
+      ...Array.from({ length: 25 }, (_, i) => ({ version: `0.3.${25 - i}`, note: `fix ${i}` }))
+    ]
+    updater.fire('update-available', { version: '0.5.0', releaseNotes: entries })
+
+    const notes = states.at(-1)?.releaseNotes
+    expect(notes).toBeDefined()
+    // null-note entry dropped, list capped at 20
+    expect(notes).toHaveLength(20)
+    expect(notes?.[0]).toEqual({ version: '0.5.0', note: '<p>new stuff</p>' })
+    // per-note truncation to 4000 chars
+    expect(notes?.[1].version).toBe('0.4.9')
+    expect(notes?.[1].note).toHaveLength(4000)
+  })
+
+  it('update-downloaded carries releaseNotes when provided (GH-156)', () => {
+    const { updater, states } = setup()
+    updater.fire('update-downloaded', { version: '0.5.0', releaseNotes: 'ready' })
+    expect(states.at(-1)).toMatchObject({
+      phase: 'downloaded',
+      version: '0.5.0',
+      releaseNotes: [{ version: '0.5.0', note: 'ready' }]
+    })
+  })
+
+  it('silences non-user-initiated errors to not-available but always logs (GH-156)', async () => {
+    const { updater, states, log, controller } = setup()
+    // startup auto-check: error event degrades to not-available
+    await controller.check({ userInitiated: false })
+    updater.fire('error', new Error('offline'))
+    expect(states.at(-1)).toMatchObject({ phase: 'not-available' })
+    expect(log).toHaveBeenCalledWith('updater', expect.any(Error))
+
+    // auto-check rejection path: same silencing
+    updater.checkForUpdates.mockRejectedValueOnce(new Error('net down'))
+    await controller.check({ userInitiated: false })
+    expect(states.at(-1)).toMatchObject({ phase: 'not-available' })
+  })
+
+  it('surfaces errors from user-initiated check/download (GH-156)', async () => {
+    const { updater, states, controller } = setup()
+    await controller.check()
+    updater.fire('error', new Error('boom'))
+    expect(states.at(-1)).toMatchObject({ phase: 'error', error: 'boom' })
+
+    updater.downloadUpdate.mockRejectedValueOnce(new Error('disk full'))
+    await controller.download()
+    expect(states.at(-1)).toMatchObject({ phase: 'error', error: 'disk full' })
+
+    updater.checkForUpdates.mockRejectedValueOnce(new Error('net down'))
+    await controller.check()
+    expect(states.at(-1)).toMatchObject({ phase: 'error', error: 'net down' })
   })
 
   it('applies preferences: autoDownload + allowPrerelease follow the user setting', () => {
@@ -69,17 +135,6 @@ describe('createUpdaterController', () => {
     controller.applyPreferences({ autoCheck: true, autoDownload: false, allowPrerelease: false })
     expect(updater.autoDownload).toBe(false)
     expect(updater.allowPrerelease).toBe(false)
-  })
-
-  it('logs and emits error state on updater errors and check rejections', async () => {
-    const { updater, states, log, controller } = setup()
-    updater.fire('error', new Error('boom'))
-    expect(log).toHaveBeenCalledWith('updater', expect.any(Error))
-    expect(states.at(-1)).toMatchObject({ phase: 'error', error: 'boom' })
-
-    updater.checkForUpdates.mockRejectedValueOnce(new Error('net down'))
-    await controller.check()
-    expect(states.at(-1)).toMatchObject({ phase: 'error', error: 'net down' })
   })
 
   it('runs real download/install on every platform (no platformLimited after signing, GH-134)', async () => {

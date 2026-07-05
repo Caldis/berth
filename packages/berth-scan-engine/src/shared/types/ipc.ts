@@ -695,12 +695,20 @@ export interface UpdatePreferences {
   allowPrerelease: boolean
 }
 
+/** One release-notes entry. With `fullChangelog` enabled the GitHub provider
+ * returns every release between the running and the target version (GH-156).
+ * `note` is the raw Atom-feed HTML — renderers must extract text, never inject. */
+export interface UpdateReleaseNote {
+  version: string
+  note: string
+}
+
 /** Aggregated auto-update state pushed over the single `update:state` event
  * (GH-124). All platforms (incl. signed macOS, GH-134) run real download/install. */
 export interface UpdateState {
   phase: 'idle' | 'checking' | 'available' | 'not-available' | 'downloading' | 'downloaded' | 'error'
   version?: string
-  notes?: string
+  releaseNotes?: UpdateReleaseNote[]
   percent?: number
   error?: string
 }
