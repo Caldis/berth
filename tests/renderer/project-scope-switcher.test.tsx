@@ -316,6 +316,21 @@ describe('ProjectScopeSwitcher', () => {
     })
   })
 
+  it('suspends titlebar drag regions while the menu is open so titlebar clicks can dismiss', async () => {
+    render(<ProjectScopeSwitcher collapsed={false} />)
+    expect(document.documentElement.classList.contains('suspend-titlebar-drag')).toBe(false)
+
+    const trigger = screen.getByRole('button', { name: 'Asset scope' })
+    fireEvent.click(trigger)
+    await screen.findByRole('listbox', { name: 'Asset scope options' })
+    expect(document.documentElement.classList.contains('suspend-titlebar-drag')).toBe(true)
+
+    fireEvent.keyDown(trigger, { key: 'Escape' })
+    await waitFor(() => {
+      expect(document.documentElement.classList.contains('suspend-titlebar-drag')).toBe(false)
+    })
+  })
+
   it('moves option focus with arrow keys', async () => {
     render(<ProjectScopeSwitcher collapsed={false} />)
 

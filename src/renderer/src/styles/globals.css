@@ -224,6 +224,13 @@ html.dark[data-accent='neutral'] {
   -webkit-app-region: no-drag;
 }
 
+/* Electron 拖拽区会吞掉鼠标事件, click 弹层的 outside-press dismiss 收不到
+ * 标题栏上的点击。弹层打开期间由 FloatingPopover 挂此标记, 临时把拖拽区降级
+ * 为 no-drag: 点标题栏先关弹层而非拖窗口 (原生菜单同款行为)。 */
+html.suspend-titlebar-drag .titlebar-drag {
+  -webkit-app-region: no-drag;
+}
+
 /* Ambient indexing presence (GH-113): a calm scanner sweep + breathing pulse.
  * Motion-safe only — reduced-motion falls back to a static tint in the markup. */
 @keyframes index-sweep {

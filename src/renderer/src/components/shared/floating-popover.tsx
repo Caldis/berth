@@ -77,6 +77,22 @@ function referenceHasLayout(
 const DEFAULT_CLOSE_DELAY_MS = 80
 const DEFAULT_SAFE_POLYGON_BUFFER_PX = 8
 
+// Electron 拖拽区 (-webkit-app-region: drag) 在 OS 层吞掉鼠标事件, useDismiss
+// 的 outside-press 收不到标题栏上的点击, click 弹层会停留在原地。打开期间给根
+// 元素挂标记 (CSS 见 globals.css), 把拖拽区临时降级为 no-drag; 计数器兼容多个
+// 弹层重叠打开的情况。
+let titlebarDragSuspensions = 0
+function suspendTitlebarDrag(): () => void {
+  titlebarDragSuspensions += 1
+  document.documentElement.classList.add('suspend-titlebar-drag')
+  return () => {
+    titlebarDragSuspensions = Math.max(0, titlebarDragSuspensions - 1)
+    if (titlebarDragSuspensions === 0) {
+      document.documentElement.classList.remove('suspend-titlebar-drag')
+    }
+  }
+}
+
 export function FloatingPopover({
   trigger,
   children,
@@ -165,6 +181,11 @@ export function FloatingPopover({
   // 非零尺寸, hide 行为不受影响。
   const referenceHidden =
     middlewareData.hide?.referenceHidden === true && referenceHasLayout(refs.reference.current)
+
+  useLayoutEffect(() => {
+    if (!open || interaction !== 'click') return undefined
+    return suspendTitlebarDrag()
+  }, [interaction, open])
   const updateHoverBridge = useCallback(() => {
     const reference = refs.reference.current
     const floating = refs.floating.current
