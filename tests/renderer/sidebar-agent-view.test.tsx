@@ -113,7 +113,7 @@ describe('Sidebar', () => {
       </MemoryRouter>
     )
 
-    const projectScopeButton = screen.getByRole('button', { name: 'Project scope' })
+    const projectScopeButton = screen.getByRole('button', { name: 'Asset scope' })
     const searchButton = screen.getByRole('button', { name: 'Search assets...' })
 
     expect(projectScopeButton.compareDocumentPosition(searchButton) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()

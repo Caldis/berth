@@ -55,7 +55,7 @@ test.afterEach(async () => {
 
 test('global scope shallow-indexes every project; project scope filters to one', async () => {
   // The app loaded and scanned once the project-scope control is present.
-  await expect(page.locator('aside').getByRole('button', { name: /^(Project scope|项目范围)$/ })).toBeVisible()
+  await expect(page.locator('aside').getByRole('button', { name: /^(Asset scope|资产范围)$/ })).toBeVisible()
 
   // Both projects' root AGENTS.md are owner-indexed into the global snapshot.
   // GH-155: the background queue may already have upgraded them shallow→deep by

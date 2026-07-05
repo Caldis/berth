@@ -11,7 +11,7 @@ let tempDir: string
 // ~/.claude 数据, activate 链路超出断言窗口; 三隔离根 (launch.ts) 后全平台确定性运行。
 
 const projectScopeButton = (): Locator =>
-  page.locator('aside').getByRole('button', { name: /^(Project scope|项目范围)$/ })
+  page.locator('aside').getByRole('button', { name: /^(Asset scope|资产范围)$/ })
 
 test.beforeEach(async ({ browserName: _browserName }, testInfo) => {
   tempDir = testInfo.outputPath('project-scope-fixture')
@@ -56,12 +56,12 @@ test('switches project scope and rebuilds the searchable project assets', async 
 
   await trigger.focus()
   await page.keyboard.press('Enter')
-  await expect(page.getByRole('listbox', { name: /^(Project scope options|项目范围选项)$/ })).toBeVisible()
+  await expect(page.getByRole('listbox', { name: /^(Asset scope options|资产范围选项)$/ })).toBeVisible()
   await page.keyboard.press('Escape')
-  await expect(page.getByRole('listbox', { name: /^(Project scope options|项目范围选项)$/ })).toHaveCount(0)
+  await expect(page.getByRole('listbox', { name: /^(Asset scope options|资产范围选项)$/ })).toHaveCount(0)
 
   await trigger.click()
-  const listbox = page.getByRole('listbox', { name: /^(Project scope options|项目范围选项)$/ })
+  const listbox = page.getByRole('listbox', { name: /^(Asset scope options|资产范围选项)$/ })
   const option = listbox.getByRole('option', { name: 'app' })
   await expect(option).toBeVisible()
   // GH-117 AC-3: 隔离生效断言 — 仅 Global/User/app 三项; 宿主 ~/.claude 数据
@@ -75,7 +75,7 @@ test('switches project scope and rebuilds the searchable project assets', async 
 
   await trigger.click()
   await page
-    .getByRole('listbox', { name: /^(Project scope options|项目范围选项)$/ })
+    .getByRole('listbox', { name: /^(Asset scope options|资产范围选项)$/ })
     .getByRole('option', { name: /^(User|用户域)$/ })
     .click()
 

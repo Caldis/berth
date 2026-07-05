@@ -48,13 +48,15 @@ export function AgentScopeSwitcher({ collapsed }: AgentScopeSwitcherProps): Reac
   if (agents.length < 2) return null
 
   const allLabel = t('agentScope.all')
-  const triggerLabel = agentView === 'all' ? allLabel : agentDisplayName(agentView)
+  // trigger 带 "智能体: " 前缀, all 用短值避免 "智能体: 全部智能体" 复述; 列表项保留全称。
+  const triggerLabel = agentView === 'all' ? t('agentScope.allShort') : agentDisplayName(agentView)
 
   return (
     <ScopePopover
       collapsed={collapsed}
       icon={<Bot className="h-3.5 w-3.5" />}
       label={t('agentScope.label')}
+      valuePrefix={t('agentScope.label')}
       value={triggerLabel}
       active={agentView !== 'all'}
       listLabel={t('agentScope.listLabel')}

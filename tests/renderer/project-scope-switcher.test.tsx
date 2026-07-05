@@ -133,7 +133,7 @@ describe('ProjectScopeSwitcher', () => {
   it('loads project candidates and selects a project scope', async () => {
     render(<ProjectScopeSwitcher collapsed={false} />)
 
-    fireEvent.click(screen.getByRole('button', { name: 'Project scope' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Asset scope' }))
 
     expect(await screen.findByRole('option', { name: 'berth' })).toBeInTheDocument()
     fireEvent.click(screen.getByRole('option', { name: 'berth' }))
@@ -153,7 +153,7 @@ describe('ProjectScopeSwitcher', () => {
   it('shows project source summaries and selected project source details', async () => {
     render(<ProjectScopeSwitcher collapsed={false} />)
 
-    const trigger = screen.getByRole('button', { name: 'Project scope' })
+    const trigger = screen.getByRole('button', { name: 'Asset scope' })
     fireEvent.click(trigger)
 
     const option = await screen.findByRole('option', { name: 'berth' })
@@ -171,9 +171,9 @@ describe('ProjectScopeSwitcher', () => {
       })
     })
 
-    fireEvent.click(screen.getByRole('button', { name: 'Project scope' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Asset scope' }))
 
-    expect(await screen.findByText('Project sources')).toBeInTheDocument()
+    expect(await screen.findByText('Asset sources')).toBeInTheDocument()
     expect(screen.getByText('Claude Code')).toBeInTheDocument()
     expect(screen.getByText('Codex')).toBeInTheDocument()
     expect(screen.getByText('Project Claude Code directory')).toBeInTheDocument()
@@ -214,7 +214,7 @@ describe('ProjectScopeSwitcher', () => {
 
     render(<ProjectScopeSwitcher collapsed={false} />)
 
-    fireEvent.click(screen.getByRole('button', { name: 'Project scope' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Asset scope' }))
     fireEvent.click(await screen.findByRole('option', { name: 'berth' }))
 
     await waitFor(() => {
@@ -225,7 +225,7 @@ describe('ProjectScopeSwitcher', () => {
       })
     })
 
-    fireEvent.click(screen.getByRole('button', { name: 'Project scope' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Asset scope' }))
 
     expect(await screen.findByText('gemini.project.settings')).toBeInTheDocument()
     expect(screen.getAllByText('D:\\Code\\berth\\.gemini\\settings.json').length).toBeGreaterThan(0)
@@ -238,9 +238,9 @@ describe('ProjectScopeSwitcher', () => {
 
     render(<ProjectScopeSwitcher collapsed={false} />)
 
-    fireEvent.click(screen.getByRole('button', { name: 'Project scope' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Asset scope' }))
 
-    expect(await screen.findByText('Could not load project sources.')).toBeInTheDocument()
+    expect(await screen.findByText('Could not load asset sources.')).toBeInTheDocument()
     expect(await screen.findByRole('option', { name: 'berth' })).toBeInTheDocument()
   })
 
@@ -251,11 +251,11 @@ describe('ProjectScopeSwitcher', () => {
 
     render(<ProjectScopeSwitcher collapsed={false} />)
 
-    fireEvent.click(screen.getByRole('button', { name: 'Project scope' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Asset scope' }))
     fireEvent.click(await screen.findByRole('option', { name: 'berth' }))
 
     expect(await screen.findByText('Could not refresh projects.')).toBeInTheDocument()
-    expect(screen.getByRole('listbox', { name: 'Project scope options' })).toBeInTheDocument()
+    expect(screen.getByRole('listbox', { name: 'Asset scope options' })).toBeInTheDocument()
     expect(useAppStore.getState().scopeSelection).toEqual(DEFAULT_SCOPE_SELECTION)
   })
 
@@ -263,7 +263,7 @@ describe('ProjectScopeSwitcher', () => {
     window.api.projectScope.candidates = vi.fn(async () => [])
     render(<ProjectScopeSwitcher collapsed={false} />)
 
-    fireEvent.click(screen.getByRole('button', { name: 'Project scope' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Asset scope' }))
     fireEvent.click(await screen.findByRole('option', { name: 'User' }))
 
     await waitFor(() => {
@@ -278,26 +278,26 @@ describe('ProjectScopeSwitcher', () => {
   it('keeps the icon-only trigger reachable when collapsed', () => {
     render(<ProjectScopeSwitcher collapsed />)
 
-    expect(screen.getByRole('button', { name: 'Project scope' })).toHaveAttribute('aria-haspopup', 'listbox')
+    expect(screen.getByRole('button', { name: 'Asset scope' })).toHaveAttribute('aria-haspopup', 'listbox')
   })
 
   it('closes the project scope menu with Escape while focus remains on the trigger', async () => {
     render(<ProjectScopeSwitcher collapsed={false} />)
 
-    const trigger = screen.getByRole('button', { name: 'Project scope' })
+    const trigger = screen.getByRole('button', { name: 'Asset scope' })
     fireEvent.click(trigger)
-    expect(await screen.findByRole('listbox', { name: 'Project scope options' })).toBeInTheDocument()
+    expect(await screen.findByRole('listbox', { name: 'Asset scope options' })).toBeInTheDocument()
 
     fireEvent.keyDown(trigger, { key: 'Escape' })
 
-    expect(screen.queryByRole('listbox', { name: 'Project scope options' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('listbox', { name: 'Asset scope options' })).not.toBeInTheDocument()
   })
 
   it('shows an empty state when no project is available', async () => {
     window.api.projectScope.candidates = vi.fn(async () => [])
     render(<ProjectScopeSwitcher collapsed={false} />)
 
-    fireEvent.click(screen.getByRole('button', { name: 'Project scope' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Asset scope' }))
 
     await waitFor(() => expect(screen.getByText('No project candidates yet.')).toBeInTheDocument())
   })
@@ -305,21 +305,21 @@ describe('ProjectScopeSwitcher', () => {
   it('closes the menu when clicking outside the popover', async () => {
     render(<ProjectScopeSwitcher collapsed={false} />)
 
-    fireEvent.click(screen.getByRole('button', { name: 'Project scope' }))
-    expect(await screen.findByRole('listbox', { name: 'Project scope options' })).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Asset scope' }))
+    expect(await screen.findByRole('listbox', { name: 'Asset scope options' })).toBeInTheDocument()
 
     fireEvent.pointerDown(document.body)
     fireEvent.mouseDown(document.body)
 
     await waitFor(() => {
-      expect(screen.queryByRole('listbox', { name: 'Project scope options' })).not.toBeInTheDocument()
+      expect(screen.queryByRole('listbox', { name: 'Asset scope options' })).not.toBeInTheDocument()
     })
   })
 
   it('moves option focus with arrow keys', async () => {
     render(<ProjectScopeSwitcher collapsed={false} />)
 
-    fireEvent.click(screen.getByRole('button', { name: 'Project scope' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Asset scope' }))
     const globalOption = await screen.findByRole('option', { name: 'Global' })
 
     globalOption.focus()
@@ -332,15 +332,17 @@ describe('ProjectScopeSwitcher', () => {
 
   it('shows an active indicator on the trigger only for non-global scope', () => {
     const { unmount } = render(<ProjectScopeSwitcher collapsed={false} />)
-    expect(
-      screen.getByRole('button', { name: 'Project scope' }).querySelector('[data-scope-active-dot]')
-    ).toBeNull()
+    const trigger = screen.getByRole('button', { name: 'Asset scope' })
+    // trigger 是 "维度: 值" 读出格式, 与 agent 侧统一。
+    expect(within(trigger).getByText('Assets:')).toBeInTheDocument()
+    expect(within(trigger).getByText('Global')).toBeInTheDocument()
+    expect(trigger.querySelector('[data-scope-active-dot]')).toBeNull()
     unmount()
 
     useAppStore.setState({ scopeSelection: { mode: 'user' } })
     render(<ProjectScopeSwitcher collapsed={false} />)
     expect(
-      screen.getByRole('button', { name: 'Project scope' }).querySelector('[data-scope-active-dot]')
+      screen.getByRole('button', { name: 'Asset scope' }).querySelector('[data-scope-active-dot]')
     ).not.toBeNull()
   })
 
@@ -351,7 +353,7 @@ describe('ProjectScopeSwitcher', () => {
     )
     render(<ProjectScopeSwitcher collapsed={false} />)
 
-    fireEvent.click(screen.getByRole('button', { name: 'Project scope' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Asset scope' }))
     expect(await screen.findByRole('option', { name: 'alpha' })).toBeInTheDocument()
 
     const input = await screen.findByTestId('project-scope-filter')
@@ -369,7 +371,7 @@ describe('ProjectScopeSwitcher', () => {
   it('hides the filter input for small candidate lists', async () => {
     render(<ProjectScopeSwitcher collapsed={false} />)
 
-    fireEvent.click(screen.getByRole('button', { name: 'Project scope' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Asset scope' }))
     expect(await screen.findByRole('option', { name: 'berth' })).toBeInTheDocument()
 
     expect(screen.queryByTestId('project-scope-filter')).not.toBeInTheDocument()

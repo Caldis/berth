@@ -2,7 +2,7 @@ import { Check, ChevronDown } from 'lucide-react'
 import { FloatingPopover } from '@/components/shared/floating-popover'
 import { cn } from '@/lib/utils'
 
-// 侧栏全局筛选器 (项目范围 / agent 范围) 的共享外壳: 统一 trigger
+// 侧栏全局筛选器 (资产范围 / 智能体) 的共享外壳: 统一 trigger
 // (图标 + 当前值 + 过滤生效指示点 + chevron) 与 click 式 FloatingPopover
 // 面板 (外点/Escape 关闭、焦点归还、option 间方向键漫游)。
 // 两个切换器此前各自手写 trigger+absolute popover, 交互契约在此收敛单源。
@@ -13,6 +13,9 @@ interface ScopePopoverProps {
   icon: React.ReactNode
   /** Dimension name (aria-label; tooltip when collapsed). */
   label: string
+  /** Short dimension prefix rendered muted before the value ("范围: 全局" /
+   * "Agent: 全部") so both triggers read as self-describing filter chips. */
+  valuePrefix?: string
   /** Current selection text shown on the trigger. */
   value: string
   /** Tooltip for the expanded trigger; falls back to value. */
@@ -36,6 +39,7 @@ export function ScopePopover({
   collapsed,
   icon,
   label,
+  valuePrefix,
   value,
   description,
   active,
@@ -79,7 +83,10 @@ export function ScopePopover({
           </span>
           {!collapsed && (
             <>
-              <span className="min-w-0 flex-1 truncate text-left text-sm font-medium">{value}</span>
+              <span className="min-w-0 flex-1 truncate text-left text-sm">
+                {valuePrefix && <span className="text-muted-foreground">{valuePrefix}: </span>}
+                <span className="font-medium">{value}</span>
+              </span>
               {active && (
                 <span
                   data-scope-active-dot

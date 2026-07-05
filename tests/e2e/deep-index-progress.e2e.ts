@@ -63,7 +63,7 @@ test.afterEach(async () => {
 })
 
 test('background queue deep-indexes non-active projects into the global scope (渐进补全)', async () => {
-  await expect(page.locator('aside').getByRole('button', { name: /^(Project scope|项目范围)$/ })).toBeVisible()
+  await expect(page.locator('aside').getByRole('button', { name: /^(Asset scope|资产范围)$/ })).toBeVisible()
 
   // Determinism: open the idle/AC gates (a battery-powered runner would defer the
   // queue by the retry window) and re-sync the queue via a fresh commit.

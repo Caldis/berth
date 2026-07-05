@@ -89,10 +89,11 @@
     "jumpToComponent": "打开 {{name}}"
   },
   "projectScope": {
-    "label": "项目范围",
-    "listLabel": "项目范围选项",
+    "label": "资产范围",
+    "prefix": "资产",
+    "listLabel": "资产范围选项",
     "global": "全局",
-    "globalDesc": "全部用户域和项目域数据",
+    "globalDesc": "全部用户域和项目域资产",
     "user": "用户域",
     "userDesc": "用户级配置和资产",
     "projects": "项目",
@@ -101,11 +102,11 @@
     "emptyProjects": "还没有发现项目候选。",
     "loadError": "无法刷新项目。",
     "sourceCount_other": "{{count}} 个来源",
-    "projectSources": "项目来源",
-    "projectSourcesHint": "选择项目后查看项目来源文件。",
-    "projectSourcesLoading": "正在加载项目来源…",
-    "projectSourcesError": "无法加载项目来源。",
-    "projectSourcesEmpty": "这个项目没有发现项目级来源。",
+    "projectSources": "资产来源",
+    "projectSourcesHint": "选择项目后查看资产来源文件。",
+    "projectSourcesLoading": "正在加载资产来源…",
+    "projectSourcesError": "无法加载资产来源。",
+    "projectSourcesEmpty": "这个项目没有发现资产来源。",
     "sessionCount_other": "{{count}} 个会话",
     "sources": {
       "current": "当前目录",
@@ -114,9 +115,10 @@
     }
   },
   "agentScope": {
-    "label": "Agent",
-    "listLabel": "Agent 选项",
-    "all": "全部 agent"
+    "label": "智能体",
+    "listLabel": "智能体选项",
+    "all": "全部智能体",
+    "allShort": "全部"
   },
   "search": {
     "placeholder": "搜索资产…",

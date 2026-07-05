@@ -34,9 +34,12 @@ describe('AgentScopeSwitcher', () => {
     useAppStore.setState({ agentView: 'all' })
   })
 
-  it('shows the current selection on the trigger (All agents by default)', () => {
+  it('shows the current selection on the trigger (Agent: All by default)', () => {
     render(<AgentScopeSwitcher collapsed={false} />)
-    expect(within(screen.getByRole('button', { name: 'Agent' })).getByText('All agents')).toBeInTheDocument()
+    const trigger = screen.getByRole('button', { name: 'Agent' })
+    // trigger 是 "维度: 值" 读出格式; all 用短值, 全称留在列表项。
+    expect(within(trigger).getByText('Agent:')).toBeInTheDocument()
+    expect(within(trigger).getByText('All')).toBeInTheDocument()
   })
 
   it('lists All agents + every detected capability-plugin agent', () => {

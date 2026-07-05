@@ -105,6 +105,7 @@ export function ProjectScopeSwitcher({ collapsed }: ProjectScopeSwitcherProps): 
       collapsed={collapsed}
       icon={<Folder className="h-3.5 w-3.5" />}
       label={t('projectScope.label')}
+      valuePrefix={t('projectScope.prefix')}
       value={label}
       description={description}
       active={scopeSelection.mode !== 'global'}
