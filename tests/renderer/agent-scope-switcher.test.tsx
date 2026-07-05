@@ -68,4 +68,18 @@ describe('AgentScopeSwitcher', () => {
     const { container } = render(<AgentScopeSwitcher collapsed={false} />)
     expect(container).toBeEmptyDOMElement()
   })
+
+  it('shows an active indicator on the trigger only when a specific agent is selected', () => {
+    const { unmount } = render(<AgentScopeSwitcher collapsed={false} />)
+    expect(
+      screen.getByRole('button', { name: 'Agent' }).querySelector('[data-scope-active-dot]')
+    ).toBeNull()
+    unmount()
+
+    useAppStore.setState({ agentView: 'codex' })
+    render(<AgentScopeSwitcher collapsed={false} />)
+    expect(
+      screen.getByRole('button', { name: 'Agent' }).querySelector('[data-scope-active-dot]')
+    ).not.toBeNull()
+  })
 })

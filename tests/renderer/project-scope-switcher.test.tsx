@@ -301,4 +301,77 @@ describe('ProjectScopeSwitcher', () => {
 
     await waitFor(() => expect(screen.getByText('No project candidates yet.')).toBeInTheDocument())
   })
+
+  it('closes the menu when clicking outside the popover', async () => {
+    render(<ProjectScopeSwitcher collapsed={false} />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Project scope' }))
+    expect(await screen.findByRole('listbox', { name: 'Project scope options' })).toBeInTheDocument()
+
+    fireEvent.pointerDown(document.body)
+    fireEvent.mouseDown(document.body)
+
+    await waitFor(() => {
+      expect(screen.queryByRole('listbox', { name: 'Project scope options' })).not.toBeInTheDocument()
+    })
+  })
+
+  it('moves option focus with arrow keys', async () => {
+    render(<ProjectScopeSwitcher collapsed={false} />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Project scope' }))
+    const globalOption = await screen.findByRole('option', { name: 'Global' })
+
+    globalOption.focus()
+    fireEvent.keyDown(globalOption, { key: 'ArrowDown' })
+    expect(screen.getByRole('option', { name: 'User' })).toHaveFocus()
+
+    fireEvent.keyDown(screen.getByRole('option', { name: 'User' }), { key: 'ArrowUp' })
+    expect(globalOption).toHaveFocus()
+  })
+
+  it('shows an active indicator on the trigger only for non-global scope', () => {
+    const { unmount } = render(<ProjectScopeSwitcher collapsed={false} />)
+    expect(
+      screen.getByRole('button', { name: 'Project scope' }).querySelector('[data-scope-active-dot]')
+    ).toBeNull()
+    unmount()
+
+    useAppStore.setState({ scopeSelection: { mode: 'user' } })
+    render(<ProjectScopeSwitcher collapsed={false} />)
+    expect(
+      screen.getByRole('button', { name: 'Project scope' }).querySelector('[data-scope-active-dot]')
+    ).not.toBeNull()
+  })
+
+  it('filters the project list once candidates exceed the threshold', async () => {
+    const names = ['alpha', 'beta', 'gamma', 'delta', 'epsilon', 'zeta']
+    window.api.projectScope.candidates = vi.fn(async () =>
+      names.map((name) => createProjectScopeCandidate({ path: `D:\\Code\\${name}`, source: 'current' })!)
+    )
+    render(<ProjectScopeSwitcher collapsed={false} />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Project scope' }))
+    expect(await screen.findByRole('option', { name: 'alpha' })).toBeInTheDocument()
+
+    const input = await screen.findByTestId('project-scope-filter')
+    fireEvent.change(input, { target: { value: 'zeta' } })
+
+    await waitFor(() => {
+      expect(screen.queryByRole('option', { name: 'alpha' })).not.toBeInTheDocument()
+    })
+    expect(screen.getByRole('option', { name: 'zeta' })).toBeInTheDocument()
+
+    fireEvent.change(input, { target: { value: 'no-such-project' } })
+    expect(await screen.findByText('No projects match your filter.')).toBeInTheDocument()
+  })
+
+  it('hides the filter input for small candidate lists', async () => {
+    render(<ProjectScopeSwitcher collapsed={false} />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Project scope' }))
+    expect(await screen.findByRole('option', { name: 'berth' })).toBeInTheDocument()
+
+    expect(screen.queryByTestId('project-scope-filter')).not.toBeInTheDocument()
+  })
 })
