@@ -2,7 +2,7 @@
 task: 2026-07-05-gh-156-update-ux-sidebar
 task_id: GH-156
 type: maintenance
-phase: implement
+phase: verify
 created: 2026-07-05
 priority: P2
 target_date: 
