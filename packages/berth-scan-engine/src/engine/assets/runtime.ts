@@ -1203,6 +1203,12 @@ export class AgentAssetRuntime {
       const key = normalizeProjectPathKey(activeRoot)
       if (key) deepByRoot.delete(key)
     }
+    // Roots that are no longer valid config roots (e.g. $HOME rows persisted
+    // before the home-as-project fix) must not re-graft on every rescan — this
+    // is the retirement path for their stale snapshot rows.
+    for (const root of [...deepByRoot.keys()]) {
+      if (resolveProjectConfigRoots(root).length === 0) deepByRoot.delete(root)
+    }
     if (deepByRoot.size === 0) return incoming
 
     const kept = incoming.filter((asset) => {

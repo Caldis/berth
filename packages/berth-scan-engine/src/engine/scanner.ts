@@ -314,7 +314,10 @@ export class AssetScanner {
     const seen = new Set<string>()
     const shallow: Asset[] = []
     for (const candidate of projectScopeCandidatesFromAssets(assets, this.projectDir)) {
-      const root = resolveProjectConfigRoots(candidate.path)[0] ?? candidate.path
+      // No config root (cwd=$HOME session): skip instead of falling back, or
+      // ~/.claude and friends re-archive at project scope on top of user scope.
+      const root = resolveProjectConfigRoots(candidate.path)[0]
+      if (!root) continue
       const rootKey = normalizeProjectPathKey(root)
       if (!rootKey || rootKey === activeRootKey || seen.has(rootKey)) continue
       seen.add(rootKey)

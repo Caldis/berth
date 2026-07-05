@@ -86,7 +86,11 @@ export class BackgroundIndexQueue {
     const wasSettled = this.pending.size === 0 && !this.inFlight
 
     for (const candidate of candidates) {
-      const root = resolveProjectConfigRoots(candidate.path)[0] ?? candidate.path
+      // No config root (cwd=$HOME session): never enqueue — a home deep scan
+      // would re-archive user-level config at project scope and glob the whole
+      // home tree for nested conventions.
+      const root = resolveProjectConfigRoots(candidate.path)[0]
+      if (!root) continue
       const key = normalizeProjectPathKey(root)
       if (!key) continue
       if (activeKeys.has(key)) {

@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import * as os from 'os'
 import * as path from 'path'
 import type { Asset, AssetStats } from '@shared/types/asset'
 import type { AgentScanSourceGroup, AssetScanPartial, AssetScanProgress, AssetSnapshot, ScanHistoryEntry, ScanResult } from '@shared/types/ipc'
@@ -1650,6 +1651,20 @@ describe('background project deep-index commits (GH-155 W1/W2)', () => {
     })
     await runtime.refresh({ reason: 'manual', wait: true })
     expect(runtime.getSnapshot().assets.map((a) => a.id)).not.toContain('active-deep')
+  })
+
+  it('graft drops stale rows rooted at the user home dir — home is never a config root', async () => {
+    const scanner = createScanner({ assets: [], stats: emptyStats, errors: [] })
+    const runtime = createRuntime(scanner)
+    await runtime.refresh({ wait: true })
+    // Persisted snapshots from before the home-as-project fix carry deep rows
+    // owned by $HOME; the graft must not resurrect them on every full rescan.
+    runtime.applyBackgroundProjectResult(os.homedir(), {
+      assets: [ownedRow('home-stale', os.homedir(), 'key-h1', 'deep')],
+      errors: []
+    })
+    await runtime.refresh({ reason: 'manual', wait: true })
+    expect(runtime.getSnapshot().assets.map((a) => a.id)).not.toContain('home-stale')
   })
 
   it('a queue commit during an in-flight scan survives that scan’s commit (W1×W3)', async () => {

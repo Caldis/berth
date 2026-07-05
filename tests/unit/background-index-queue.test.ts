@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import * as os from 'os'
 import * as path from 'path'
 import type { Asset } from '@shared/types/asset'
 import type { ScanError } from '@shared/types/ipc'
@@ -57,6 +58,16 @@ describe('BackgroundIndexQueue (GH-155 C4)', () => {
     await vi.waitFor(() => expect(commits).toHaveLength(3))
     expect(commits.map(tail)).toEqual(['bg/new', 'bg/mid', 'bg/old'])
     expect(queue.status()).toMatchObject({ state: 'done', indexedProjects: 3, totalProjects: 3 })
+  })
+
+  it('skips the home-directory "project" — home is never a config root', async () => {
+    const { queue, commits, scanProjectDeep } = harness()
+    queue.sync([cand(os.homedir(), '2026-06-01'), cand('/bg/real', '2026-01-01')], undefined)
+    queue.kick()
+    await vi.waitFor(() => expect(queue.status()?.state).toBe('done'))
+    expect(commits.map(tail)).toEqual(['bg/real'])
+    expect(scanProjectDeep).toHaveBeenCalledTimes(1)
+    expect(queue.status()).toMatchObject({ indexedProjects: 1, totalProjects: 1 })
   })
 
   it('counts the active project as indexed without scanning it', async () => {

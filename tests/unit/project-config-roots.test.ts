@@ -49,4 +49,21 @@ describe('resolveProjectConfigRoots', () => {
 
     expect(resolveProjectConfigRoots(project)).toEqual([path.resolve(project)])
   })
+
+  it('never yields the user home directory as a project config root', () => {
+    const home = path.join(tempDir!, 'home')
+    fs.mkdirSync(home, { recursive: true })
+
+    // cwd=$HOME session recorded home as a "project": no config roots at all.
+    expect(resolveProjectConfigRoots(home, { homeDir: home })).toEqual([])
+
+    // A dotfiles repo (.git at home) must not re-admit it.
+    fs.mkdirSync(path.join(home, '.git'), { recursive: true })
+    expect(resolveProjectConfigRoots(home, { homeDir: home })).toEqual([])
+
+    // A chain walking THROUGH home keeps the non-home roots.
+    const sub = path.join(home, 'scripts')
+    fs.mkdirSync(sub, { recursive: true })
+    expect(resolveProjectConfigRoots(sub, { homeDir: home })).toEqual([path.resolve(sub)])
+  })
 })

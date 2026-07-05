@@ -21,6 +21,10 @@
 - claude-code scanner 对每个项目根扫 `<root>/.claude/settings.json` 为 scope=project (`adapters/claude-code/scanner.ts` settingsSources 循环), 与 user 源 `ctx.claudeDir/settings.json` 是同一路径; 资产 id 含 scope, 去重不掉。
 - 受影响面不止 statusline: 同循环里的 hooks / permissions / env 同样会被双份建档。
 
-# 解决方案
-- 扫描侧修法 (建议): 枚举项目设置源时, 若 `<projectRoot>/.claude` 与用户级 `ctx.claudeDir` 解析为同一目录 (win32 大小写不敏感比较), 跳过该项目源; 或候选生成阶段直接排除 root == home 的候选 (Claude Code 语义上 cwd=home 的"项目设置"本就与用户设置同文件, 属退化情形)。
-- 展示侧兜底: 同 path + 同 settingKey 的 statusline 分组去重, 避免"自己覆盖自己"的警告。
+# 解决方案 (已完成 2026-07-05)
+采用中心修法「home 目录永远不是项目配置根」, 一处规则覆盖 7 个 adapter 前台扫描 + 后台深扫/浅扫 + watcher/增量派生, 而非逐 adapter 打补丁:
+- `project-config-roots.ts`: `resolveProjectConfigRoots` 过滤 home (含 dotfiles `.git` 在 home 的情形); 测试注入 `opts.homeDir`。
+- `engine/scanner.ts` appendShallowConventions + `engine/assets/background-index-queue.ts` sync: 候选解析不出配置根时跳过, 移除 `?? candidate.path` 兜底 (否则 home 从兜底路径回流)。
+- `engine/assets/runtime.ts` graftDeepRows: 不再嫁接已失效根的 deep 行 — 这是修复前已持久化的 home 脏行的退休路径 (下次全量扫描落盘即清)。
+- 验证: 单测 3 处新增 (roots/queue/graft) + 全量门禁绿 + CLI 对本机真实数据全量扫描, statusline 由 2 条降为 1 条 (user), home 点目录下项目级资产 42 → 0。
+- 有意保留的边界: home 根级文件 (`~/CLAUDE.md`, `~/.mcp.json`, `~/.claude/settings.local.json`) 随 home 不再作为项目而失去项目级建档 — 属退化"项目"的一部分, 如有真实诉求再按 user 级来源单独收编。
