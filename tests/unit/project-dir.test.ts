@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import * as path from 'path'
 import { resolveDefaultProjectDir } from '../../src/main/project-dir'
 
 describe('resolveDefaultProjectDir', () => {
@@ -15,7 +16,7 @@ describe('resolveDefaultProjectDir', () => {
   })
 
   it('uses a real project cwd outside dev mode', () => {
-    expect(resolveDefaultProjectDir({ isDev: false, cwd: '/Users/me/Code/berth' })).toBe('/Users/me/Code/berth')
+    expect(resolveDefaultProjectDir({ isDev: false, cwd: '/Users/me/Code/berth' })).toBe(path.resolve('/Users/me/Code/berth'))
     expect(resolveDefaultProjectDir({ isDev: false, cwd: 'D:\\Code\\berth' })).toBe('D:\\Code\\berth')
   })
 })
