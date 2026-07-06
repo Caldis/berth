@@ -28,7 +28,9 @@ import appIcon from '../../assets/icon/app_icon.png?asset'
 // userData/logs 本地滚动文件 (无遥测硬边界); uncaughtException 弹框告知后不强退
 // (只读查看器, 残余状态无写副作用风险)。
 function installProcessGuards(): void {
-  setMainLogWriter(createLogWriter(join(app.getPath('userData'), 'logs')))
+  setMainLogWriter(createLogWriter(join(app.getPath('userData'), 'logs'), {
+    minLevel: process.env['BERTH_LOG_LEVEL']
+  }))
   // GH-152 T7: gate the MODAL only — a looping throw source would otherwise
   // stack error boxes until the app is unusable. Every occurrence still logs.
   const dialogGate = createErrorDialogGate(5_000)
@@ -388,4 +390,3 @@ if (!gotTheLock) {
     if (process.platform !== 'darwin') app.quit()
   })
 }
-

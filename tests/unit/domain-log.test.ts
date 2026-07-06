@@ -17,12 +17,15 @@ describe('domain-log', () => {
     resetDomainFailureLogForTests()
     setMainLogWriter({
       log: (scope, err) => lines.push(`${scope} ${String(err)}`),
-      info: () => {}
+      error: (scope, err) => lines.push(`${scope} ${String(err)}`),
+      warning: () => {},
+      info: () => {},
+      verbose: () => {}
     })
   })
 
   afterEach(() => {
-    setMainLogWriter({ log: () => {}, info: () => {} })
+    setMainLogWriter({ log: () => {}, error: () => {}, warning: () => {}, info: () => {}, verbose: () => {} })
     resetDomainFailureLogForTests()
   })
 

@@ -6,10 +6,16 @@ describe('resolveDefaultProjectDir', () => {
     expect(resolveDefaultProjectDir({ isDev: true, cwd: 'D:\\Code\\berth' })).toBeUndefined()
   })
 
-  it('uses cwd outside dev mode', () => {
-    expect(resolveDefaultProjectDir({ isDev: false, cwd: '/Applications/Berth.app' })).toBe(
-      '/Applications/Berth.app'
-    )
+  it('omits unsafe packaged app cwd values outside dev mode', () => {
+    expect(resolveDefaultProjectDir({ isDev: false, cwd: '/' })).toBeUndefined()
+    expect(resolveDefaultProjectDir({ isDev: false, cwd: '/Applications/Berth.app' })).toBeUndefined()
+    expect(resolveDefaultProjectDir({ isDev: false, cwd: '/Applications/Berth.app/Contents/Resources' })).toBeUndefined()
+    expect(resolveDefaultProjectDir({ isDev: false, cwd: 'C:\\' })).toBeUndefined()
+    expect(resolveDefaultProjectDir({ isDev: false, cwd: 'C:\\Users\\me\\Apps\\Berth.app' })).toBeUndefined()
+  })
+
+  it('uses a real project cwd outside dev mode', () => {
+    expect(resolveDefaultProjectDir({ isDev: false, cwd: '/Users/me/Code/berth' })).toBe('/Users/me/Code/berth')
+    expect(resolveDefaultProjectDir({ isDev: false, cwd: 'D:\\Code\\berth' })).toBe('D:\\Code\\berth')
   })
 })
-

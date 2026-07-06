@@ -147,7 +147,13 @@ describe('UnitedMemorySource (temp dir)', () => {
     const { resetDomainFailureLogForTests } = await import('../../src/main/domain-log')
     const lines: string[] = []
     resetDomainFailureLogForTests()
-    setMainLogWriter({ log: (scope, err) => lines.push(`${scope} ${String(err)}`), info: () => {} })
+    setMainLogWriter({
+      log: (scope, err) => lines.push(`${scope} ${String(err)}`),
+      error: (scope, err) => lines.push(`${scope} ${String(err)}`),
+      warning: () => {},
+      info: () => {},
+      verbose: () => {}
+    })
     try {
       const root = path.join(tmp, '.united-memory-corrupt')
       await fs.promises.mkdir(root, { recursive: true })
@@ -169,7 +175,7 @@ describe('UnitedMemorySource (temp dir)', () => {
       await new UnitedMemorySource(path.join(tmp, 'not-installed')).detect()
       expect(lines).toEqual([])
     } finally {
-      setMainLogWriter({ log: () => {}, info: () => {} })
+      setMainLogWriter({ log: () => {}, error: () => {}, warning: () => {}, info: () => {}, verbose: () => {} })
       resetDomainFailureLogForTests()
     }
   })
@@ -237,7 +243,13 @@ describe('ClaudeNativeSource (temp dir)', () => {
     const { resetDomainFailureLogForTests } = await import('../../src/main/domain-log')
     const lines: string[] = []
     resetDomainFailureLogForTests()
-    setMainLogWriter({ log: (scope, err) => lines.push(`${scope} ${String(err)}`), info: () => {} })
+    setMainLogWriter({
+      log: (scope, err) => lines.push(`${scope} ${String(err)}`),
+      error: (scope, err) => lines.push(`${scope} ${String(err)}`),
+      warning: () => {},
+      info: () => {},
+      verbose: () => {}
+    })
     try {
       const slug = 'C--Users-brokenidx'
       const memDir = path.join(projectsRoot, slug, 'memory')
@@ -261,7 +273,7 @@ describe('ClaudeNativeSource (temp dir)', () => {
       const status = await new ClaudeNativeSource(slug, projectsRoot).detect()
       expect(status.noteCount).toBe(2)
     } finally {
-      setMainLogWriter({ log: () => {}, info: () => {} })
+      setMainLogWriter({ log: () => {}, error: () => {}, warning: () => {}, info: () => {}, verbose: () => {} })
       resetDomainFailureLogForTests()
     }
   })

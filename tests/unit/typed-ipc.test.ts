@@ -34,7 +34,13 @@ describe('handleIpc (GH-154 T3)', () => {
     registered.clear()
     fromWebContents.mockReset()
     logLines.length = 0
-    setMainLogWriter({ log: (scope, err) => logLines.push(`${scope} ${String(err)}`), info: () => {} })
+    setMainLogWriter({
+      log: (scope, err) => logLines.push(`${scope} ${String(err)}`),
+      error: (scope, err) => logLines.push(`${scope} ${String(err)}`),
+      warning: () => {},
+      info: () => {},
+      verbose: () => {}
+    })
   })
 
   it('passes a trusted top-frame sender through with args and result', async () => {

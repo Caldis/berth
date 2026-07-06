@@ -9,17 +9,30 @@ import * as path from 'path'
 
 export interface LogWriter {
   log: (scope: string, err: unknown) => void
+  error: (scope: string, err: unknown) => void
+  warning: (scope: string, message: string) => void
   info: (scope: string, message: string) => void
+  verbose: (scope: string, message: string) => void
 }
+
+export type LogLevel = 'verbose' | 'info' | 'warning' | 'error'
 
 interface LogWriterOptions {
   maxBytes?: number
+  minLevel?: LogLevel | string
 }
 
 const DEFAULT_MAX_BYTES = 1_000_000 // ~1MB, 滚动保留一代
+const LOG_LEVEL_WEIGHT: Record<LogLevel, number> = {
+  verbose: 10,
+  info: 20,
+  warning: 30,
+  error: 40
+}
 
 export function createLogWriter(dir: string, options: LogWriterOptions = {}): LogWriter {
   const maxBytes = options.maxBytes ?? DEFAULT_MAX_BYTES
+  const minLevel = normalizeLogLevel(options.minLevel) ?? 'info'
   const file = path.join(dir, 'main.log')
   const rolled = path.join(dir, 'main.1.log')
 
@@ -39,19 +52,30 @@ export function createLogWriter(dir: string, options: LogWriterOptions = {}): Lo
   }
 
   const stamp = (): string => new Date().toISOString()
+  const shouldWrite = (level: LogLevel): boolean => LOG_LEVEL_WEIGHT[level] >= LOG_LEVEL_WEIGHT[minLevel]
+  const write = (level: LogLevel, scope: string, detail: string): void => {
+    if (!shouldWrite(level)) return
+    append(`${stamp()} [${level}] [${scope}] ${detail}`)
+  }
+  const errorDetail = (err: unknown): string =>
+    err instanceof Error ? (err.stack ?? `${err.name}: ${err.message}`) : String(err)
 
   return {
-    log: (scope, err) => {
-      const detail = err instanceof Error ? (err.stack ?? `${err.name}: ${err.message}`) : String(err)
-      append(`${stamp()} [${scope}] ${detail}`)
-    },
-    info: (scope, message) => {
-      append(`${stamp()} [${scope}] ${message}`)
-    }
+    log: (scope, err) => write('error', scope, errorDetail(err)),
+    error: (scope, err) => write('error', scope, errorDetail(err)),
+    warning: (scope, message) => write('warning', scope, message),
+    info: (scope, message) => write('info', scope, message),
+    verbose: (scope, message) => write('verbose', scope, message)
   }
 }
 
-const noopWriter: LogWriter = { log: () => {}, info: () => {} }
+export function normalizeLogLevel(value: LogLevel | string | undefined): LogLevel | undefined {
+  const normalized = value?.toLowerCase()
+  if (normalized === 'verbose' || normalized === 'info' || normalized === 'warning' || normalized === 'error') return normalized
+  return undefined
+}
+
+const noopWriter: LogWriter = { log: () => {}, error: () => {}, warning: () => {}, info: () => {}, verbose: () => {} }
 
 let mainWriter: LogWriter = noopWriter
 

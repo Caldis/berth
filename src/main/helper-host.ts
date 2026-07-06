@@ -4,7 +4,7 @@ import * as path from 'path'
 import { getMainLog } from '@berth/scan-engine/log'
 import type { Asset } from '@berth/scan-engine/shared/types/asset'
 import type { ProjectScopeCandidate } from '@berth/scan-engine/shared/scope'
-import type { AgentScanSourceGroup, ScanError, ScanResult } from '@berth/scan-engine/shared/types/ipc'
+import type { AgentScanSourceGroup, AssetScanProgress, ScanError, ScanResult } from '@berth/scan-engine/shared/types/ipc'
 import type { AssetRuntimeScanner, AssetRuntimeScanOptions } from '@berth/scan-engine/engine/assets/runtime'
 import type { AssetFileCacheSnapshot } from '@berth/scan-engine/engine/assets/file-cache'
 import {
@@ -108,11 +108,17 @@ export class ScanHelperHost {
   private ensure(): { child: UtilityProcess; ready: Promise<void> } {
     if (this.child && this.spawnPromise) return { child: this.child, ready: this.spawnPromise }
     const child = this.createChild()
+    let spawned = false
     this.child = child
     this.spawnPromise = new Promise<void>((resolve, reject) => {
       child.once('spawn', () => {
+        spawned = true
         // GH-135 C2: lower the helper's OS scheduling priority once it has a pid.
         if (this.osThrottle && typeof child.pid === 'number') this.applyThrottle(child.pid)
+        getMainLog().info(
+          'scan-helper',
+          `spawned pid=${String(child.pid ?? 'unknown')} helper=${this.helperPath} osThrottle=${String(this.osThrottle)}`
+        )
         resolve()
       })
       // GH-151 S2: utilityProcess can exit without ever spawning (missing helper
@@ -120,6 +126,9 @@ export class ScanHelperHost {
       // forever on `await ready`. Post-spawn exits hit an already-resolved
       // promise — a no-op.
       child.once('exit', (code) => {
+        if (!spawned) {
+          getMainLog().warning('scan-helper', `exited before spawn code=${String(code)} helper=${this.helperPath}`)
+        }
         reject(new Error(`Asset scan helper exited before spawn (code ${String(code)})`))
       })
     })
@@ -140,17 +149,26 @@ export class ScanHelperHost {
     // Capture the session synchronously — same fork-at-request timing as the
     // pre-GH-155 single-request model; only the postMessage waits for its slot.
     const session = this.ensure()
+    getMainLog().info('scan-helper', `queue scan ${scanDataSummary(data)} timeoutMs=${String(this.inactivityTimeoutMs)}`)
     return this.serialize(() =>
       this.dispatch<AssetWorkerScanPayload>(session, { type: 'scan', data }, (message, settle) => {
         if (message.type === 'progress') {
+          getMainLog().verbose('scan-helper', `progress scan ${progressSummary(message.progress)}`)
           options.onProgress?.(message.progress)
           return
         }
         if (message.type === 'partial') {
+          getMainLog().verbose(
+            'scan-helper',
+            `partial scan assets=${String(message.partial.assets.length)} errors=${String(message.partial.errorCount ?? 0)}`
+          )
           options.onPartial?.(message.partial)
           return
         }
-        if (message.type === 'done') settle.resolve(message.result)
+        if (message.type === 'done') {
+          getMainLog().info('scan-helper', `done scan ${scanPayloadSummary(message.result)}`)
+          settle.resolve(message.result)
+        }
       })
     )
   }
@@ -168,12 +186,25 @@ export class ScanHelperHost {
       this.inactivityTimeoutMs <= 0
         ? 0
         : Math.max(this.inactivityTimeoutMs, DEEP_SCAN_INACTIVITY_TIMEOUT_MS)
+    getMainLog().info(
+      'scan-helper',
+      `queue project-deep projectRoot=${formatOptionalPath(request.projectRoot)} timeoutMs=${String(deepTimeoutMs)}`
+    )
     return this.serialize(() =>
       this.dispatch<ProjectDeepScanPayload>(
         session,
         { type: 'scan-project-deep', data: request },
         (message, settle) => {
-          if (message.type === 'project-deep-done') settle.resolve(message.result)
+          if (message.type === 'progress') {
+            getMainLog().verbose('scan-helper', `progress project-deep ${progressSummary(message.progress)}`)
+          }
+          if (message.type === 'project-deep-done') {
+            getMainLog().info(
+              'scan-helper',
+              `done project-deep assets=${String(message.result.assets.length)} errors=${String(message.result.errors.length)}`
+            )
+            settle.resolve(message.result)
+          }
         },
         deepTimeoutMs
       )
@@ -219,6 +250,10 @@ export class ScanHelperHost {
         clearWatchdog()
         if (inactivityTimeoutMs <= 0) return
         watchdog = setTimeout(() => {
+          getMainLog().warning(
+            'scan-helper',
+            `watchdog ${requestSummary(payload)} noMessageMs=${String(inactivityTimeoutMs)}; killing helper`
+          )
           if (this.child === child) this.kill()
           else child.kill()
           finish(() =>
@@ -240,12 +275,15 @@ export class ScanHelperHost {
       const onMessage = (message: ScanHelperChildMessage): void => {
         armWatchdog()
         if (message.type === 'error') {
-          finish(() => reject(createHelperError(message.error.message, message.error.stack)))
+          const error = createHelperError(message.error.message, message.error.stack)
+          getMainLog().error('scan-helper', error)
+          finish(() => reject(error))
           return
         }
         handle(message, { resolve: (value) => finish(() => resolve(value)) })
       }
       const onExit = (code: number): void => {
+        getMainLog().warning('scan-helper', `exit while handling ${requestSummary(payload)} code=${String(code)}`)
         finish(() => reject(new Error(`Asset scan helper exited with code ${String(code)}`)))
       }
 
@@ -259,6 +297,7 @@ export class ScanHelperHost {
         () => {
           if (settled) return
           // utilityProcess has no workerData — the scan input rides the first message.
+          getMainLog().verbose('scan-helper', `post ${requestSummary(payload)}`)
           child.postMessage(payload)
         },
         (error) => finish(() => reject(error instanceof Error ? error : new Error(String(error))))
@@ -360,6 +399,49 @@ function createHelperError(message: string, stack?: string): Error {
   const error = new Error(message)
   if (stack) error.stack = stack
   return error
+}
+
+function requestSummary(payload: { type: string; data: unknown }): string {
+  if (payload.type === 'scan') return `type=scan ${scanDataSummary(payload.data as AssetWorkerData)}`
+  if (payload.type === 'scan-project-deep') {
+    const data = payload.data as ProjectDeepScanRequest
+    return `type=project-deep projectRoot=${formatOptionalPath(data.projectRoot)}`
+  }
+  return `type=${payload.type}`
+}
+
+function scanDataSummary(data: AssetWorkerData): string {
+  return [
+    `projectDir=${formatOptionalPath(data.projectDir)}`,
+    `batchPauseMs=${String(data.batchPauseMs ?? 'default')}`,
+    `respectGitignore=${String(data.respectGitignore ?? 'default')}`,
+    `excludePaths=${String(data.excludePaths?.length ?? 0)}`,
+    `sessionCache=${String(data.sessionCache?.entries.length ?? 0)}`,
+    `projectScanCache=${String(data.projectScanCache?.entries.length ?? 0)}`
+  ].join(' ')
+}
+
+function scanPayloadSummary(result: AssetWorkerScanPayload): string {
+  return [
+    `projectDir=${formatOptionalPath(result.projectDir)}`,
+    `assets=${String(result.scanResult.assets.length)}`,
+    `errors=${String(result.scanResult.errors.length)}`,
+    `sources=${String(result.sources.length)}`,
+    `candidates=${String(result.projectCandidates.length)}`
+  ].join(' ')
+}
+
+function progressSummary(progress: AssetScanProgress): string {
+  return [
+    `phase=${progress.phase}`,
+    `current=${String(progress.current)}/${String(progress.total)}`,
+    progress.label ? `label=${progress.label}` : undefined,
+    progress.currentPath ? `path=${progress.currentPath}` : undefined
+  ].filter(Boolean).join(' ')
+}
+
+function formatOptionalPath(filePath: string | undefined): string {
+  return filePath && filePath.length > 0 ? filePath : '<global>'
 }
 
 /**

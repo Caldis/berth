@@ -152,7 +152,13 @@ describe('listAgentTeams', () => {
     // tolerance (skip) stays, but userData/logs must show WHY.
     const lines: string[] = []
     resetDomainFailureLogForTests()
-    setMainLogWriter({ log: (scope, err) => lines.push(`${scope} ${String(err)}`), info: () => {} })
+    setMainLogWriter({
+      log: (scope, err) => lines.push(`${scope} ${String(err)}`),
+      error: (scope, err) => lines.push(`${scope} ${String(err)}`),
+      warning: () => {},
+      info: () => {},
+      verbose: () => {}
+    })
     try {
       const home = makeHome()
       writeTeam(home, 'broken', '{ not json')
@@ -170,7 +176,7 @@ describe('listAgentTeams', () => {
       listAgentTeams([path.join(emptyHome, '.claude')])
       expect(lines).toEqual([])
     } finally {
-      setMainLogWriter({ log: () => {}, info: () => {} })
+      setMainLogWriter({ log: () => {}, error: () => {}, warning: () => {}, info: () => {}, verbose: () => {} })
       resetDomainFailureLogForTests()
     }
   })

@@ -22,12 +22,28 @@ describe('createLogWriter', () => {
     const writer = createLogWriter(dir)
     writer.log('scanner', new Error('boom'))
     writer.info('startup', 'ready')
+    writer.warning('scan-helper', 'slow')
 
     const text = fs.readFileSync(path.join(dir, 'main.log'), 'utf8')
     const lines = text.trim().split('\n')
-    expect(lines[0]).toMatch(/^\d{4}-\d{2}-\d{2}T.+ \[scanner\] Error: boom/)
+    expect(lines[0]).toMatch(/^\d{4}-\d{2}-\d{2}T.+ \[error\] \[scanner\] Error: boom/)
     expect(text).toContain('at ') // stack 不在 runtime 一跳即丢
-    expect(lines.at(-1)).toMatch(/\[startup\] ready$/)
+    expect(lines.at(-2)).toMatch(/\[info\] \[startup\] ready$/)
+    expect(lines.at(-1)).toMatch(/\[warning\] \[scan-helper\] slow$/)
+  })
+
+  it('filters by configured minimum log level', () => {
+    const writer = createLogWriter(dir, { minLevel: 'warning' })
+    writer.verbose('scan-helper', 'tick')
+    writer.info('scan-helper', 'start')
+    writer.warning('scan-helper', 'slow')
+    writer.error('scan-helper', new Error('boom'))
+
+    const text = fs.readFileSync(path.join(dir, 'main.log'), 'utf8')
+    expect(text).not.toContain('[verbose] [scan-helper] tick')
+    expect(text).not.toContain('[info] [scan-helper] start')
+    expect(text).toContain('[warning] [scan-helper] slow')
+    expect(text).toContain('[error] [scan-helper] Error: boom')
   })
 
   it('rolls main.log to main.1.log past the size threshold and keeps writing', () => {
