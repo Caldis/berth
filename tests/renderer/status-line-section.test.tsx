@@ -49,6 +49,10 @@ describe('StatusLineSection', () => {
     // 与命令原文重复的引用脚本不再单列
     expect(screen.queryByText('Referenced scripts')).not.toBeInTheDocument()
     expect(screen.queryByText('C:\\Users\\test\\.claude\\statusline.ps1')).not.toBeInTheDocument()
+    // 为 0 的统计项隐藏
+    expect(screen.getByText('Configured status line assets')).toBeInTheDocument()
+    expect(screen.queryByText('Warnings')).not.toBeInTheDocument()
+    expect(screen.queryByText('Codex footer items')).not.toBeInTheDocument()
   })
 
   it('lists referenced scripts only when they add info beyond the command text', () => {

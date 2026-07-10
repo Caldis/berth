@@ -334,7 +334,7 @@ function StatusLineSummary({ viewModels }: { viewModels: StatusLineViewModel[] }
     { key: 'codexItems', value: codexItemCount },
     { key: 'warnings', value: warningCount, alertClass: 'text-amber-500' },
     { key: 'blocked', value: blockedCount, alertClass: 'text-destructive' }
-  ]
+  ].filter(({ value }) => value > 0)
 
   return (
     <div className="rounded-lg border border-border bg-card px-4 py-3">
