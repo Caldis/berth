@@ -298,7 +298,6 @@
       }
     },
     "title": "Overview",
-    "kicker": "Local workspace",
     "subtitle": "Current agent assets, recent activity, usage and health checks for the selected scope.",
     "currentAgent": "Current agent",
     "projectScope": "Project scope",

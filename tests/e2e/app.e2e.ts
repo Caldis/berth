@@ -110,9 +110,9 @@ test.describe('App Shell', () => {
   })
 
   test('overview page loads by default', async () => {
-    // GH-138: Overview 重构为模块化仪表盘 — hero 收敛为 toolbar (标题 + 健康入口 + 自定义),
-    // 健康检查收拢进弹窗 (toolbar 状态按钮), 区块改为 widget。
-    const heading = page.getByTestId('overview-hero').getByRole('heading', { name: /^(Overview|总览)$/ })
+    // GH-138: Overview 重构为模块化仪表盘 — 健康检查收拢进弹窗, 区块改为 widget;
+    // 标题与工具按钮统一进顶栏 PageChrome (页内 hero 与顶栏标题重复, 已移除)。
+    const heading = topNavigation().getByRole('heading', { name: /^(Overview|总览)$/ })
     await expect(heading).toBeVisible()
     await expect(heading).toContainText(/Overview|总览/)
     // health checks collapsed into a toolbar entry button (no longer a flat panel heading)

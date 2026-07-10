@@ -1,9 +1,10 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Check, Settings2 } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Button, MOTION } from '@/components/ui'
 import { useAppStore } from '@/stores/app'
+import { usePageChrome, type PageChromeConfig } from '@/components/layout/page-chrome'
 import { projectPathForScope } from '@shared/scope'
 import { DashboardInsightsProvider } from '@/components/dashboard/insights-context'
 import { DashboardGrid } from '@/components/dashboard/dashboard-grid'
@@ -54,34 +55,34 @@ export function Overview(): React.ReactElement {
     }
   }
 
+  // 标题与工具按钮统一进顶栏 PageChrome — 页内 hero 与顶栏标题重复 (双「总览」)。
+  const pageChromeActions = useMemo<React.ReactNode>(() => (
+    <div className="flex items-center gap-2">
+      <HealthEntry />
+      {isEditing && (
+        <Button size="sm" variant="light" onPress={reset}>
+          {t('overview.dashboard.reset')}
+        </Button>
+      )}
+      <Button
+        size="sm"
+        variant={isEditing ? 'solid' : 'flat'}
+        color={isEditing ? 'primary' : 'default'}
+        onPress={() => setIsEditing((v) => !v)}
+        startContent={isEditing ? <Check className="h-3.5 w-3.5" /> : <Settings2 className="h-3.5 w-3.5" />}
+      >
+        {isEditing ? t('overview.dashboard.done') : t('overview.dashboard.customize')}
+      </Button>
+    </div>
+  ), [isEditing, reset, t])
+  const pageChrome = useMemo<PageChromeConfig>(() => ({
+    title: t('overview.title'),
+    actions: pageChromeActions
+  }), [pageChromeActions, t])
+  usePageChrome(pageChrome, [pageChrome])
+
   return (
     <div className="space-y-6 pb-8">
-      <header data-testid="overview-hero" className="flex flex-wrap items-end justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
-            {t('overview.kicker')}
-          </p>
-          <h1 className="mt-1.5 text-2xl font-semibold tracking-tight text-foreground">{t('overview.title')}</h1>
-        </div>
-        <div className="flex items-center gap-2">
-          <HealthEntry />
-          {isEditing && (
-            <Button size="sm" variant="light" onPress={reset}>
-              {t('overview.dashboard.reset')}
-            </Button>
-          )}
-          <Button
-            size="sm"
-            variant={isEditing ? 'solid' : 'flat'}
-            color={isEditing ? 'primary' : 'default'}
-            onPress={() => setIsEditing((v) => !v)}
-            startContent={isEditing ? <Check className="h-3.5 w-3.5" /> : <Settings2 className="h-3.5 w-3.5" />}
-          >
-            {isEditing ? t('overview.dashboard.done') : t('overview.dashboard.customize')}
-          </Button>
-        </div>
-      </header>
-
       {!onboarded && (
         <OnboardingBanner
           onCustomize={() => {

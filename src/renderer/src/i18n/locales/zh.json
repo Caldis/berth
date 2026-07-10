@@ -296,7 +296,6 @@
       }
     },
     "title": "总览",
-    "kicker": "本地工作区",
     "subtitle": "当前范围内的 Agent 资产、最近活动、用量和健康检查。",
     "currentAgent": "当前 Agent",
     "projectScope": "项目范围",

@@ -4,6 +4,8 @@ import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import i18n from '../../src/renderer/src/i18n'
 import { Overview } from '../../src/renderer/src/pages/overview'
+import { PageChromeProvider } from '../../src/renderer/src/components/layout/page-chrome'
+import { TopNavigation } from '../../src/renderer/src/components/layout/top-navigation'
 import { useAppStore } from '../../src/renderer/src/stores/app'
 import { resetHealthCheckCacheForTests, resetSessionsCacheForTests } from '../../src/renderer/src/hooks/use-ipc'
 import type { HealthCheck } from '@shared/types/ipc'
@@ -60,12 +62,16 @@ beforeEach(async () => {
 })
 
 function renderOverview(): void {
+  // 标题/健康入口/自定义按钮经 usePageChrome 渲染在顶栏 (与真实 AppLayout 一致), 测试需挂 TopNavigation。
   render(
     <MemoryRouter>
-      <Routes>
-        <Route path="/" element={<Overview />} />
-        <Route path="*" element={<LocationProbe />} />
-      </Routes>
+      <PageChromeProvider>
+        <TopNavigation isWindows={false} />
+        <Routes>
+          <Route path="/" element={<Overview />} />
+          <Route path="*" element={<LocationProbe />} />
+        </Routes>
+      </PageChromeProvider>
     </MemoryRouter>
   )
 }
