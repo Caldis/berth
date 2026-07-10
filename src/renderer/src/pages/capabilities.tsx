@@ -314,7 +314,6 @@ function asStringArray(value: unknown): string[] {
   return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : []
 }
 
-const CODEX_DEFAULT_STATUS_LINE_ITEMS = ['model-with-reasoning', 'current-dir']
 function formatCodexStatusLineItemLabel(t: ReturnType<typeof useTranslation>['t'], item: string): string {
   return t(`capabilities.statusLine.itemLabels.${item}`, { defaultValue: item })
 }
@@ -384,24 +383,6 @@ function StatusLineDiagnosticList({ diagnostics }: { diagnostics: StatusLineDiag
           </p>
         )
       })}
-    </div>
-  )
-}
-
-function CodexDefaultStatusLine(): React.ReactElement {
-  const { t } = useTranslation()
-
-  return (
-    <div className="rounded-lg border border-dashed border-border bg-muted/20 px-4 py-3">
-      <p className="text-sm font-medium text-foreground">{t('capabilities.statusLine.defaultCodex.title')}</p>
-      <p className="mt-1 text-xs leading-5 text-muted-foreground">{t('capabilities.statusLine.defaultCodex.body')}</p>
-      <div className="mt-2 flex flex-wrap gap-1.5">
-        {CODEX_DEFAULT_STATUS_LINE_ITEMS.map((item) => (
-          <span key={item} title={item} className="rounded-md border border-border bg-card px-2 py-1 text-xs font-medium text-foreground">
-            {formatCodexStatusLineItemLabel(t, item)}
-          </span>
-        ))}
-      </div>
     </div>
   )
 }
@@ -532,22 +513,16 @@ function StatusLineCard({ viewModel }: { viewModel: StatusLineViewModel }): Reac
 export function StatusLineSection({ assets, agentView }: { assets: Asset[]; agentView: AgentView }): React.ReactElement {
   const { t } = useTranslation()
   const viewModels = useMemo(() => buildStatusLineViewModels(assets), [assets])
-  const hasCodexAsset = assets.some((asset) => asset.agentId === 'codex')
-  // statusLine 是 claude-code/codex 特有概念; 任意其它 agent 归一到 'all' 显示口径 (空态文案/默认预览)
+  // statusLine 是 claude-code/codex 特有概念; 任意其它 agent 归一到 'all' 显示口径 (空态文案)
   const displayView = agentView === 'claude' || agentView === 'codex' ? agentView : 'all'
-  const showCodexDefault = displayView !== 'claude' && !hasCodexAsset
 
   return (
     <div className="flex flex-1 flex-col gap-3">
       {assets.length === 0 ? (
-        <>
-          <EmptyState fullHeight icon={Activity} message={t(`capabilities.statusLine.empty.${displayView}`)} />
-          {showCodexDefault && <CodexDefaultStatusLine />}
-        </>
+        <EmptyState fullHeight icon={Activity} message={t(`capabilities.statusLine.empty.${displayView}`)} />
       ) : (
         <>
           <StatusLineSummary viewModels={viewModels} />
-          {showCodexDefault && <CodexDefaultStatusLine />}
           <div className="space-y-2">
             {viewModels.map((viewModel) => <StatusLineCard key={viewModel.asset.id} viewModel={viewModel} />)}
           </div>

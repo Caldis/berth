@@ -112,9 +112,9 @@ describe('StatusLineSection', () => {
 
     expect(screen.queryByText('Status lines show live session state')).not.toBeInTheDocument()
     expect(screen.getByText(/No status line config was found/)).toBeInTheDocument()
-    expect(screen.getByText('Codex default footer')).toBeInTheDocument()
-    expect(screen.getByText('Model + reasoning')).toHaveAttribute('title', 'model-with-reasoning')
-    expect(screen.getByText('Current directory')).toHaveAttribute('title', 'current-dir')
+    // Codex 默认 footer 预览卡已移除 — 空态文案本身已解释默认回退, 常驻卡片是重复噪音
+    expect(screen.queryByText('Codex default footer')).not.toBeInTheDocument()
+    expect(screen.queryByText('Model + reasoning')).not.toBeInTheDocument()
   })
 
   it('localizes Codex footer item labels in Chinese', async () => {

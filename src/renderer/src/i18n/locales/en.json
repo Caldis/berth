@@ -1132,10 +1132,6 @@
         "missingCommand": "Claude Code statusLine does not contain a command.",
         "unresolvedEntry": "The command looks like a script path, but Berth did not confirm a readable local script."
       },
-      "defaultCodex": {
-        "title": "Codex default footer",
-        "body": "No tui.status_line setting was found, so Codex falls back to its built-in default footer items."
-      },
       "empty": {
         "all": "No status line config was found. Claude Code uses settings.json command config; Codex falls back to Model + reasoning and Current directory when tui.status_line is unset.",
         "claude": "No Claude Code statusLine or subagentStatusLine setting was found in the scanned settings files.",

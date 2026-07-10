@@ -1126,10 +1126,6 @@
         "missingCommand": "Claude Code statusLine 没有 command。",
         "unresolvedEntry": "命令看起来像脚本路径, 但 Berth 没有确认到可读取的本地脚本。"
       },
-      "defaultCodex": {
-        "title": "Codex 默认 footer",
-        "body": "没有发现 tui.status_line 设置, 因此 Codex 会使用内置默认 footer 项。"
-      },
       "empty": {
         "all": "没有发现状态栏配置。Claude Code 使用 settings.json 的命令配置；Codex 在 tui.status_line 未设置时会回退到“模型与推理”和“当前目录”。",
         "claude": "扫描到的 settings 文件里没有 Claude Code statusLine 或 subagentStatusLine 设置。",
