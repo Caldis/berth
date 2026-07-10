@@ -12,5 +12,6 @@
 # 实际结果
 - 每行都显示 `0 tok`。
 
-# 解决方案
-- 会话行组件对 tokens<=0 隐藏徽标; 若排查确认是 Codex usage 解析缺口, 拆分独立 BUG 跟进解析器。
+# 解决方案 (已完成 2026-07-10)
+- `SessionRow` 对 `tokenUsage.totalTokens <= 0` 不渲染 TokenSparkBar (列宽保留对齐), 与 cost 列缺数据留空一致; 补 sessions-pages 单测 (零 token 会话行无 `0 tok`), CDP 实测本机 Codex 会话列噪音消失 (commit 3fb51a49)。
+- 未覆盖的深挖项: 这些 Codex rollout 是否本应解析出 token — 如后续确认为解析缺口, 按原计划另立 BUG。
