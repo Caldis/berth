@@ -60,7 +60,8 @@ export function SessionRow({
             )}
           </span>
           <span className="hidden w-32 shrink-0 justify-end md:flex">
-            <TokenSparkBar usage={session.tokenUsage} className="text-xs" />
+            {/* 未解析出 token 的会话 (常见于 Codex rollout) 整列 "0 tok" 是纯噪音, 与 cost 列一样缺数据留空 */}
+            {session.tokenUsage.totalTokens > 0 && <TokenSparkBar usage={session.tokenUsage} className="text-xs" />}
           </span>
         </span>
         <span className="flex min-w-0 items-center gap-2 text-xs text-muted-foreground">

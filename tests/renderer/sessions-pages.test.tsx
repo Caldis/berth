@@ -459,6 +459,16 @@ describe('session pages', () => {
     expect(within(row).queryByText('$0.00')).not.toBeInTheDocument()
   })
 
+  it('hides the token badge on rows whose session resolved zero tokens', async () => {
+    mockSessionApis({ ...summary, tokenUsage: normalizeTokenUsage({}) })
+
+    renderSessionsPage()
+
+    expect(await screen.findByText('Fix session metadata')).toBeInTheDocument()
+    const row = screen.getByTestId('session-row-session-session-abc')
+    expect(within(row).queryByText('0 tok')).not.toBeInTheDocument()
+  })
+
   it('omits cost and empty-asset chips for codex sessions', async () => {
     const codexSession: SessionSummary = {
       ...summary,

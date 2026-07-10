@@ -153,26 +153,24 @@ function McpSummary({ assets }: { assets: Asset[] }): React.ReactElement {
     return counts
   }, [assets])
 
+  // 为 0 的统计项隐藏 (与状态栏摘要一致的口径)
+  const cards = [
+    { key: 'userScope', value: byScope.user },
+    { key: 'projectScope', value: byScope.project },
+    { key: 'enterpriseScope', value: byScope.enterprise },
+    { key: 'mergeConflicts', value: byScope.conflicts, alertClass: 'text-amber-500' }
+  ].filter(({ value }) => value > 0)
+
   return (
     <div className="rounded-lg border border-border bg-card p-4 mb-3">
       <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">{t('capabilities.mcp.byScope')}</h3>
       <div className="grid grid-cols-4 gap-3">
-        <div>
-          <p className="text-lg font-bold text-foreground">{byScope.user}</p>
-          <p className="text-xs text-muted-foreground">{t('capabilities.mcp.userScope')}</p>
-        </div>
-        <div>
-          <p className="text-lg font-bold text-foreground">{byScope.project}</p>
-          <p className="text-xs text-muted-foreground">{t('capabilities.mcp.projectScope')}</p>
-        </div>
-        <div>
-          <p className="text-lg font-bold text-foreground">{byScope.enterprise}</p>
-          <p className="text-xs text-muted-foreground">{t('capabilities.mcp.enterpriseScope')}</p>
-        </div>
-        <div>
-          <p className={cn('text-lg font-bold', byScope.conflicts > 0 ? 'text-amber-500' : 'text-foreground')}>{byScope.conflicts}</p>
-          <p className="text-xs text-muted-foreground">{t('capabilities.mcp.mergeConflicts')}</p>
-        </div>
+        {cards.map(({ key, value, alertClass }) => (
+          <div key={key}>
+            <p className={cn('text-lg font-bold', alertClass && value > 0 ? alertClass : 'text-foreground')}>{value}</p>
+            <p className="text-xs text-muted-foreground">{t(`capabilities.mcp.${key}`)}</p>
+          </div>
+        ))}
       </div>
     </div>
   )
@@ -218,7 +216,9 @@ function PluginCard({
 
   const enabled = plugin.meta.enabled !== false
   const marketplace = typeof plugin.meta.marketplace === 'string' ? plugin.meta.marketplace : undefined
-  const version = typeof plugin.meta.version === 'string' ? plugin.meta.version : undefined
+  const rawVersion = typeof plugin.meta.version === 'string' ? plugin.meta.version : undefined
+  // 版本目录名兜底值为 'unknown' 时不渲染 "vunknown" 徽标 (见 issues/2026-07-10 插件多版本缓存)
+  const version = rawVersion === 'unknown' ? undefined : rawVersion
 
   // When jumped-to from a component page: scroll into view + expand all groups.
   useEffect(() => {
@@ -605,13 +605,14 @@ function PermissionRuleList({
 function PermissionEffectiveSummary({ rows }: { rows: PermissionRuleRow[] }): React.ReactElement {
   const { t } = useTranslation()
   const summary = summarizePermissionRules(rows)
+  // 为 0 的统计项隐藏 (下方规则列表仍完整展示各类为空的事实)
   const items = [
     { key: 'allow', value: summary.allow },
     { key: 'ask', value: summary.ask },
     { key: 'deny', value: summary.deny },
     { key: 'broadAllow', value: summary.broadAllow },
     { key: 'bypass', value: summary.bypass }
-  ]
+  ].filter((item) => item.value > 0)
 
   return (
     <div className="rounded-lg border border-border bg-card px-4 py-3">
