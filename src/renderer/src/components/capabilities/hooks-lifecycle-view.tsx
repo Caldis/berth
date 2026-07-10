@@ -231,17 +231,31 @@ function useHookStageScrollSpy(
       .filter((element): element is HTMLElement => element != null)
     if (targets.length === 0) return undefined
 
+    const scrollRoot = findHookScrollRoot(targets[0])
+    const lastStageId = targets[targets.length - 1].getAttribute('data-hook-stage-target')
+
+    // 末尾 stage 高度不足时永远进不了激活带 (视口 18%-38%), 触底时强制选中它
+    const isScrolledToBottom = (): boolean => {
+      if (scrollRoot instanceof HTMLElement) {
+        return scrollRoot.scrollHeight > scrollRoot.clientHeight
+          && scrollRoot.scrollTop + scrollRoot.clientHeight >= scrollRoot.scrollHeight - 2
+      }
+      const doc = document.scrollingElement ?? document.documentElement
+      return doc.scrollHeight > window.innerHeight && window.scrollY + window.innerHeight >= doc.scrollHeight - 2
+    }
+
     let activeStageTimerId: number | null = null
     let pendingStageId: string | null = null
+    const commitActiveStage = (): void => {
+      activeStageTimerId = null
+      const nextStageId = isScrolledToBottom() ? lastStageId ?? pendingStageId : pendingStageId
+      pendingStageId = null
+      if (nextStageId) setActiveStageId(nextStageId)
+    }
     const scheduleActiveStage = (stageId: string): void => {
       pendingStageId = stageId
       if (activeStageTimerId != null) return
-      activeStageTimerId = window.setTimeout(() => {
-        activeStageTimerId = null
-        const nextStageId = pendingStageId
-        pendingStageId = null
-        if (nextStageId) setActiveStageId(nextStageId)
-      }, HOOK_ACTIVE_STAGE_SCROLL_THROTTLE_MS)
+      activeStageTimerId = window.setTimeout(commitActiveStage, HOOK_ACTIVE_STAGE_SCROLL_THROTTLE_MS)
     }
 
     const observer = new IntersectionObserver((entries) => {
@@ -254,14 +268,22 @@ function useHookStageScrollSpy(
       const stageId = visible[0]?.target.getAttribute('data-hook-stage-target')
       if (stageId) scheduleActiveStage(stageId)
     }, {
-      root: findHookScrollRoot(targets[0]),
+      root: scrollRoot,
       rootMargin: '-18% 0px -62% 0px',
       threshold: [0, 0.1, 0.25, 0.5, 0.75, 1]
     })
 
+    // 触底可能不伴随任何 intersection 变化 (末尾 stage 从未进入激活带), 需要独立的滚动兜底
+    const handleScroll = (): void => {
+      if (lastStageId && isScrolledToBottom()) scheduleActiveStage(lastStageId)
+    }
+    const scrollTarget = scrollRoot ?? window
+    scrollTarget.addEventListener('scroll', handleScroll, { passive: true })
+
     targets.forEach((target) => observer.observe(target))
     return () => {
       if (activeStageTimerId != null) window.clearTimeout(activeStageTimerId)
+      scrollTarget.removeEventListener('scroll', handleScroll)
       observer.disconnect()
     }
   }, [setActiveStageId, stageIds])

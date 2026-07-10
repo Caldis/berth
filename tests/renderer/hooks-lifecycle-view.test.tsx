@@ -831,6 +831,36 @@ describe('HooksLifecycleView', () => {
     }
   })
 
+  it('marks the last lifecycle stage active when scrolled to the bottom', async () => {
+    renderHooks('all', [
+      hookAsset('claude-pre', 'claude-code', 'PreToolUse'),
+      hookAsset('codex-stop', 'codex', 'Stop')
+    ])
+    await waitForHookHealthIdle()
+
+    const sidebar = screen.getByLabelText('Lifecycle')
+    const environmentButton = within(sidebar).getByRole('button', { name: /Environment events/ })
+    expect(environmentButton).not.toHaveAttribute('aria-current')
+
+    // 模拟窗口滚动到底: 末尾 stage 进不了激活带, 只能靠触底兜底选中
+    Object.defineProperty(document.documentElement, 'scrollHeight', { configurable: true, value: 2000 })
+    Object.defineProperty(window, 'scrollY', { configurable: true, value: 2000 - window.innerHeight })
+
+    vi.useFakeTimers()
+    try {
+      act(() => {
+        window.dispatchEvent(new Event('scroll'))
+        vi.advanceTimersByTime(100)
+      })
+
+      expect(environmentButton).toHaveAttribute('aria-current', 'true')
+    } finally {
+      vi.useRealTimers()
+      Reflect.deleteProperty(document.documentElement, 'scrollHeight')
+      Reflect.deleteProperty(window, 'scrollY')
+    }
+  })
+
   it('renders rounded SVG connectors between lifecycle items and stage sections', async () => {
     const originalGetBoundingClientRect = HTMLElement.prototype.getBoundingClientRect
     const mockedGetBoundingClientRect = function getBoundingClientRect(this: HTMLElement): DOMRect {
