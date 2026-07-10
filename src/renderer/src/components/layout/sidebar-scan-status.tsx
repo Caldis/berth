@@ -70,6 +70,11 @@ export function ScanProgressPanel(): React.ReactElement {
   const status = useAppStore((s) => s.assetRuntimeStatus)
   const assets = useAppStore((s) => s.assets)
   const errorCount = useAppStore((s) => s.assetErrors.length)
+  const scopeMode = useAppStore((s) => s.scopeSelection.mode)
+  const bgState = useAppStore((s) => s.assetRuntimeStatus.backgroundIndex?.state)
+  const bgIndexed = useAppStore((s) => s.assetRuntimeStatus.backgroundIndex?.indexedProjects ?? 0)
+  const bgTotal = useAppStore((s) => s.assetRuntimeStatus.backgroundIndex?.totalProjects ?? 0)
+  const bgIndexing = scopeMode === 'global' && bgState === 'indexing' && bgTotal > 0
   const { info, pause, resume, cancel } = useScanEngineInfo()
 
   const typeCounts = useMemo(() => {
@@ -131,6 +136,15 @@ export function ScanProgressPanel(): React.ReactElement {
             </span>
           )}
         </div>
+      )}
+
+      {/* GH-155 决策⑤: 后台 deep-index 首轮进度 (原每页横幅收敛至此) */}
+      {bgIndexing && (
+        <span className="text-xs text-muted-foreground tabular-nums">
+          {t('nav.scanStatus.backgroundIndexing', { indexed: bgIndexed, total: bgTotal })}
+          {' · '}
+          {t('nav.scanStatus.backgroundIndexingHint')}
+        </span>
       )}
 
       {!scanning && paused && (
@@ -209,6 +223,14 @@ export function SidebarScanStatus({ collapsed }: { collapsed: boolean }): React.
   const { t } = useTranslation()
   const status = useAppStore((s) => s.assetRuntimeStatus)
   const errorCount = useAppStore((s) => s.assetErrors.length)
+  // GH-155 决策⑤ 收敛: 后台 deep-index 首轮进度并入侧栏统一指示器 (原每页常驻的
+  // GlobalIndexingBanner 横幅被移除)。与横幅同口径: 仅 global scope + indexing 显示,
+  // 且只订阅队列级低频标量, 不订阅整个 status 对象。
+  const scopeMode = useAppStore((s) => s.scopeSelection.mode)
+  const bgState = useAppStore((s) => s.assetRuntimeStatus.backgroundIndex?.state)
+  const bgIndexed = useAppStore((s) => s.assetRuntimeStatus.backgroundIndex?.indexedProjects ?? 0)
+  const bgTotal = useAppStore((s) => s.assetRuntimeStatus.backgroundIndex?.totalProjects ?? 0)
+  const bgIndexing = scopeMode === 'global' && bgState === 'indexing' && bgTotal > 0
 
   const scanning = status.state === 'scanning'
   const stale = status.state === 'stale'
@@ -221,11 +243,11 @@ export function SidebarScanStatus({ collapsed }: { collapsed: boolean }): React.
   // BUT when collapsed the footer stacks vertically, so an empty slot becomes a
   // blank row that visibly inflates the footer (GH-135) — drop it there; reflow on
   // scan start only nudges the footer's own height, not the nav above it.
-  if (!scanning && !stale && !errored && errorCount === 0) {
+  if (!scanning && !stale && !errored && errorCount === 0 && !bgIndexing) {
     return collapsed ? null : <div data-sidebar-scan-slot className="h-8 w-8 shrink-0" aria-hidden="true" />
   }
 
-  const showSpinner = scanning || stale
+  const showSpinner = scanning || stale || (!errored && errorCount === 0 && bgIndexing)
   let label: string
   let iconClass = ''
   if (scanning) {
@@ -235,9 +257,11 @@ export function SidebarScanStatus({ collapsed }: { collapsed: boolean }): React.
   } else if (errored) {
     label = t('nav.scanStatus.error')
     iconClass = 'text-red-500'
-  } else {
+  } else if (errorCount > 0) {
     label = t('nav.scanStatus.issues', { count: errorCount })
     iconClass = 'text-amber-500'
+  } else {
+    label = t('nav.scanStatus.backgroundIndexing', { indexed: bgIndexed, total: bgTotal })
   }
 
   const icon = showSpinner ? (

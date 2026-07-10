@@ -22,7 +22,11 @@ function renderStatus(collapsed = false): ReturnType<typeof render> {
 
 describe('SidebarScanStatus (unified sidebar loading)', () => {
   beforeEach(() => {
-    useAppStore.setState({ assetRuntimeStatus: IDLE_ASSET_RUNTIME_STATUS, assetErrors: [] })
+    useAppStore.setState({
+      assetRuntimeStatus: IDLE_ASSET_RUNTIME_STATUS,
+      assetErrors: [],
+      scopeSelection: { mode: 'global' }
+    })
   })
 
   it('renders a layout-neutral reserved slot when idle (no scan, no issues)', () => {
@@ -73,6 +77,50 @@ describe('SidebarScanStatus (unified sidebar loading)', () => {
     })
     renderStatus()
     expect(screen.getByRole('status')).toHaveAttribute('aria-label', expect.stringContaining('Scan error'))
+  })
+
+  // GH-155 决策⑤ 收敛: 后台 deep-index 首轮进度并入侧栏指示器 (原每页 GlobalIndexingBanner 已移除)。
+  it('surfaces background deep-index progress while otherwise idle in global scope', () => {
+    useAppStore.setState({
+      scopeSelection: { mode: 'global' },
+      assetRuntimeStatus: {
+        ...IDLE_ASSET_RUNTIME_STATUS,
+        state: 'ready',
+        backgroundIndex: { state: 'indexing', indexedProjects: 2, totalProjects: 5 }
+      },
+      assetErrors: []
+    })
+    renderStatus()
+    expect(screen.getByRole('status')).toHaveAttribute('aria-label', 'Indexed 2/5 projects')
+  })
+
+  it.each([
+    ['done', { state: 'done', indexedProjects: 5, totalProjects: 5 }],
+    ['revalidating', { state: 'revalidating', indexedProjects: 5, totalProjects: 5 }],
+    ['M=0', { state: 'indexing', indexedProjects: 0, totalProjects: 0 }]
+  ] as const)('keeps the idle slot when background index is %s', (_label, backgroundIndex) => {
+    useAppStore.setState({
+      scopeSelection: { mode: 'global' },
+      assetRuntimeStatus: { ...IDLE_ASSET_RUNTIME_STATUS, state: 'ready', backgroundIndex },
+      assetErrors: []
+    })
+    const { container } = renderStatus()
+    expect(container.querySelector('[data-sidebar-scan-status]')).toBeNull()
+    expect(container.querySelector('[data-sidebar-scan-slot]')).not.toBeNull()
+  })
+
+  it('keeps the idle slot for background indexing outside global scope', () => {
+    useAppStore.setState({
+      scopeSelection: { mode: 'user' },
+      assetRuntimeStatus: {
+        ...IDLE_ASSET_RUNTIME_STATUS,
+        state: 'ready',
+        backgroundIndex: { state: 'indexing', indexedProjects: 1, totalProjects: 3 }
+      },
+      assetErrors: []
+    })
+    const { container } = renderStatus()
+    expect(container.querySelector('[data-sidebar-scan-status]')).toBeNull()
   })
 
   it('renders the scan failure message inside the progress panel (GH-115 T6: status.error 不再零渲染)', () => {
