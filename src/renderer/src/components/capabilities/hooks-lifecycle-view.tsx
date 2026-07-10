@@ -88,7 +88,8 @@ export function HooksLifecycleView({
   const [activeStageId, setActiveStageId] = useState<string | null>(null)
   const currentStageId = activeStageId ?? groups[0]?.id ?? null
   const connectorLayerRef = useRef<HTMLDivElement | null>(null)
-  const connectorLines = useHookStageConnectors(groups, connectorLayerRef)
+  const connectorPathRefs = useRef<Map<string, SVGPathElement>>(new Map())
+  useHookStageConnectors(groups, connectorLayerRef, connectorPathRefs)
   const { focusId, isFocused } = useFocusTarget()
 
   // Jumped-to from the plugin page: scroll the focused hook row into view (GH-112).
@@ -125,7 +126,7 @@ export function HooksLifecycleView({
         data-testid="hook-lifecycle-connector-layer"
         className="relative grid gap-4 lg:grid-cols-[300px_minmax(0,1fr)]"
       >
-        <HookLifecycleConnectors lines={connectorLines} activeStageId={currentStageId} />
+        <HookLifecycleConnectors groups={groups} activeStageId={currentStageId} pathRefs={connectorPathRefs} />
         <aside
           aria-label={t('capabilities.hooks.lifecycleIndex')}
           className="relative z-10 space-y-3 lg:sticky lg:top-[var(--berth-page-gutter,1.5rem)] lg:max-h-[calc(100dvh_-_var(--berth-page-top-offset,6rem)_-_var(--berth-page-gutter,1.5rem))] lg:self-start lg:overflow-y-auto lg:pr-1"
@@ -214,11 +215,6 @@ export function HooksLifecycleView({
   )
 }
 
-interface HookConnectorLine {
-  id: string
-  path: string
-}
-
 const HOOK_ACTIVE_STAGE_SCROLL_THROTTLE_MS = 100
 const HOOK_CONNECTOR_BEND_OFFSET_PX = -1
 
@@ -271,11 +267,14 @@ function useHookStageScrollSpy(
   }, [setActiveStageId, stageIds])
 }
 
+// 连接线跨越 sticky 侧栏与滚动内容两个滚动上下文, 滚动期间必须逐帧重算。
+// 抖动治理: 挂载时缓存锚点/目标元素 (热路径零 DOM 查询), 测量结果直接写 path 的
+// d 属性 (热路径零 React 渲染), 高亮切换交给 CSS 过渡。
 function useHookStageConnectors(
   groups: HookStageGroup[],
-  layerRef: RefObject<HTMLDivElement | null>
-): HookConnectorLine[] {
-  const [lines, setLines] = useState<HookConnectorLine[]>([])
+  layerRef: RefObject<HTMLDivElement | null>,
+  pathRefs: RefObject<Map<string, SVGPathElement>>
+): void {
   const stageIds = useMemo(() => groups.map((group) => group.id), [groups])
 
   useEffect(() => {
@@ -287,14 +286,31 @@ function useHookStageConnectors(
     const requestFrame = window.requestAnimationFrame ?? ((callback: FrameRequestCallback) => window.setTimeout(() => callback(performance.now()), 0))
     const cancelFrame = window.cancelAnimationFrame ?? ((id: number) => window.clearTimeout(id))
 
+    const idSet = new Set<string>(stageIds)
+    const collectStageElements = (attribute: string): Map<string, HTMLElement> => {
+      const elements = new Map<string, HTMLElement>()
+      layer.querySelectorAll<HTMLElement>(`[${attribute}]`).forEach((element) => {
+        const id = element.getAttribute(attribute)
+        if (id && idSet.has(id)) elements.set(id, element)
+      })
+      return elements
+    }
+    const anchors = collectStageElements('data-hook-stage-anchor')
+    const targets = collectStageElements('data-hook-stage-target')
+
     const measure = (): void => {
       frameId = null
       const layerRect = layer.getBoundingClientRect()
       const bendX = findConnectorGapCenterX(layer, layerRect)
-      const nextLines = stageIds.flatMap((id) => {
-        const anchor = findStageElement('data-hook-stage-anchor', id)
-        const target = findStageElement('data-hook-stage-target', id)
-        if (!anchor || !target) return []
+      for (const id of stageIds) {
+        const path = pathRefs.current.get(id)
+        if (!path) continue
+        const anchor = anchors.get(id)
+        const target = targets.get(id)
+        if (!anchor || !target) {
+          path.removeAttribute('d')
+          continue
+        }
 
         const anchorRect = anchor.getBoundingClientRect()
         const targetRect = target.getBoundingClientRect()
@@ -303,14 +319,12 @@ function useHookStageConnectors(
         const endX = targetRect.left - layerRect.left - 2
         const endY = targetRect.top + Math.min(36, Math.max(24, targetRect.height / 2)) - layerRect.top
 
-        if (![startX, startY, endX, endY].every(Number.isFinite) || endX <= startX + 4) return []
-        return [{
-          id,
-          path: buildRoundedConnectorPath(startX, startY, endX, endY, bendX)
-        }]
-      })
-
-      setLines((current) => connectorLinesEqual(current, nextLines) ? current : nextLines)
+        if (![startX, startY, endX, endY].every(Number.isFinite) || endX <= startX + 4) {
+          path.removeAttribute('d')
+          continue
+        }
+        path.setAttribute('d', buildRoundedConnectorPath(startX, startY, endX, endY, bendX))
+      }
     }
 
     const schedule = (): void => {
@@ -320,15 +334,14 @@ function useHookStageConnectors(
 
     const resizeObserver = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(schedule)
     resizeObserver?.observe(layer)
-    stageIds.forEach((id) => {
-      const anchor = findStageElement('data-hook-stage-anchor', id)
-      const target = findStageElement('data-hook-stage-target', id)
-      if (anchor) resizeObserver?.observe(anchor)
-      if (target) resizeObserver?.observe(target)
-    })
+    anchors.forEach((anchor) => resizeObserver?.observe(anchor))
+    targets.forEach((target) => resizeObserver?.observe(target))
 
     const scrollTarget = scrollRoot ?? window
+    // 侧栏自身在矮窗口下可内部滚动, 同样会移动锚点
+    const sidebar = layer.querySelector('aside')
     scrollTarget.addEventListener('scroll', schedule, { passive: true })
+    sidebar?.addEventListener('scroll', schedule, { passive: true })
     window.addEventListener('resize', schedule)
     schedule()
 
@@ -336,19 +349,20 @@ function useHookStageConnectors(
       if (frameId != null) cancelFrame(frameId)
       resizeObserver?.disconnect()
       scrollTarget.removeEventListener('scroll', schedule)
+      sidebar?.removeEventListener('scroll', schedule)
       window.removeEventListener('resize', schedule)
     }
-  }, [layerRef, stageIds])
-
-  return lines
+  }, [layerRef, pathRefs, stageIds])
 }
 
 function HookLifecycleConnectors({
-  lines,
-  activeStageId
+  groups,
+  activeStageId,
+  pathRefs
 }: {
-  lines: HookConnectorLine[]
+  groups: HookStageGroup[]
   activeStageId: string | null
+  pathRefs: RefObject<Map<string, SVGPathElement>>
 }): React.ReactElement {
   return (
     <svg
@@ -356,25 +370,30 @@ function HookLifecycleConnectors({
       aria-hidden="true"
       className="pointer-events-none absolute inset-0 z-0 hidden h-full w-full overflow-visible lg:block"
     >
-      {[...lines].sort((first, second) => {
+      {[...groups].sort((first, second) => {
         const firstActive = activeStageId === first.id
         const secondActive = activeStageId === second.id
         if (firstActive === secondActive) return 0
         return firstActive ? 1 : -1
-      }).map((line) => {
-        const active = activeStageId === line.id
+      }).map((group) => {
+        const active = activeStageId === group.id
         return (
           <path
-            key={line.id}
-            data-hook-connector-stage={line.id}
-            d={line.path}
+            key={group.id}
+            ref={(element) => {
+              if (element) pathRefs.current.set(group.id, element)
+              else pathRefs.current.delete(group.id)
+            }}
+            data-hook-connector-stage={group.id}
             fill="none"
             stroke="currentColor"
             strokeLinecap="round"
             strokeLinejoin="round"
-            strokeWidth={active ? 2.75 : 1}
             vectorEffect="non-scaling-stroke"
-            className={active ? 'text-foreground/70' : 'text-border/80'}
+            className={cn(
+              'transition-[color,stroke-width] duration-200',
+              active ? 'stroke-[2.75] text-foreground/70' : 'stroke-1 text-border/80'
+            )}
           />
         )
       })}
@@ -393,11 +412,6 @@ function findHookScrollRoot(element: Element): Element | null {
     parent = parent.parentElement
   }
   return null
-}
-
-function findStageElement(attribute: string, stageId: string): HTMLElement | null {
-  return Array.from(document.querySelectorAll<HTMLElement>(`[${attribute}]`))
-    .find((element) => element.getAttribute(attribute) === stageId) ?? null
 }
 
 function findConnectorGapCenterX(layer: HTMLElement, layerRect: DOMRect): number | null {
@@ -433,14 +447,6 @@ function buildRoundedConnectorPath(startX: number, startY: number, endX: number,
     `Q ${midX} ${endY} ${midX + radius} ${endY}`,
     `H ${balancedEndX}`
   ].join(' ')
-}
-
-function connectorLinesEqual(current: HookConnectorLine[], next: HookConnectorLine[]): boolean {
-  if (current.length !== next.length) return false
-  return current.every((line, index) => {
-    const candidate = next[index]
-    return line.id === candidate.id && line.path === candidate.path
-  })
 }
 
 function HookHealthSignal({

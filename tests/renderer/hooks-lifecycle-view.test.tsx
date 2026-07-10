@@ -874,8 +874,9 @@ describe('HooksLifecycleView', () => {
 
       const connectorSvg = await screen.findByTestId('hook-lifecycle-connectors')
 
+      // d 由测量帧直接写入 path 属性 (不经 React state), 等首帧测量完成
       await waitFor(() => {
-        expect(connectorSvg.querySelectorAll('path').length).toBeGreaterThan(0)
+        expect(connectorSvg.querySelector('[data-hook-connector-stage="session-start"]')?.getAttribute('d')).toBeTruthy()
       })
 
       const paths = Array.from(connectorSvg.querySelectorAll('path'))
@@ -886,9 +887,11 @@ describe('HooksLifecycleView', () => {
       expect(path).toHaveAttribute('stroke-linecap', 'round')
       expect(path).toHaveAttribute('stroke-linejoin', 'round')
       expect(path).toHaveAttribute('data-hook-connector-stage', 'session-start')
-      expect(path).toHaveAttribute('stroke-width', '2.75')
+      expect(path?.getAttribute('class')).toContain('stroke-[2.75]')
       expect(path?.getAttribute('class')).toContain('text-foreground/70')
-      expect(inactivePath).toHaveAttribute('stroke-width', '1')
+      expect(path?.getAttribute('class')).toContain('transition-[color,stroke-width]')
+      expect(inactivePath?.getAttribute('class')).toContain('stroke-1')
+      expect(inactivePath?.getAttribute('class')).toContain('text-border/80')
       expect(paths[paths.length - 1]).toBe(path)
       expect(path?.getAttribute('d')).toContain('Q')
       expect(path?.getAttribute('d')).toContain('Q 369')
