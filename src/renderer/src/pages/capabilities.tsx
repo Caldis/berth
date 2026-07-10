@@ -332,18 +332,20 @@ function StatusLineSummary({ viewModels }: { viewModels: StatusLineViewModel[] }
     { key: 'effective', value: effectiveCount },
     { key: 'claude', value: claudeCount },
     { key: 'codexItems', value: codexItemCount },
-    { key: 'warnings', value: warningCount },
-    { key: 'blocked', value: blockedCount }
+    { key: 'warnings', value: warningCount, alertClass: 'text-amber-500' },
+    { key: 'blocked', value: blockedCount, alertClass: 'text-destructive' }
   ]
 
   return (
-    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-      {cards.map(({ key, value }) => (
-        <div key={key} className="rounded-lg border border-border bg-card px-4 py-3">
-          <p className="text-lg font-bold text-foreground">{value}</p>
-          <p className="text-xs text-muted-foreground">{t(`capabilities.statusLine.summary.${key}`)}</p>
-        </div>
-      ))}
+    <div className="rounded-lg border border-border bg-card px-4 py-3">
+      <div className="grid grid-cols-3 gap-3 sm:grid-cols-6">
+        {cards.map(({ key, value, alertClass }) => (
+          <div key={key}>
+            <p className={cn('text-lg font-bold', alertClass && value > 0 ? alertClass : 'text-foreground')}>{value}</p>
+            <p className="text-xs text-muted-foreground">{t(`capabilities.statusLine.summary.${key}`)}</p>
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
@@ -413,31 +415,38 @@ function StatusLineCard({ viewModel }: { viewModel: StatusLineViewModel }): Reac
   const items = asStringArray(asset.meta.items)
   const unknownItems = asStringArray(asset.meta.unknownItems)
   const command = (asset.meta.command as string | undefined) ?? ''
+  // 命令原文里已出现的脚本路径不再单列, 避免「命令」与「引用脚本」重复展示同一路径
+  const extraEntryPaths = entryPaths.filter((entryPath) => !command.includes(entryPath))
   const settingKey = (asset.meta.settingKey as string | undefined) ?? ''
   const hidden = asset.meta.hidden === true
   const statusLevel = getWorstDiagnosticLevel(diagnostics)
 
   return (
     <div className="rounded-lg border border-border bg-card px-4 py-3">
-      <div className="flex flex-wrap items-center gap-2">
-        <Activity className="h-4 w-4 text-muted-foreground" />
-        <span className="text-sm font-medium text-foreground">{asset.name}</span>
-        <ProviderBadge agentId={asset.agentId} />
-        <ScopeBadge scope={asset.scope} />
-        <span className={cn(
-          'inline-flex items-center rounded-md px-1.5 py-0.5 text-[10px] font-medium',
-          effective ? 'bg-green-500/10 text-green-600 dark:text-green-400' : 'bg-muted text-muted-foreground'
-        )}>
-          {effective ? t('capabilities.statusLine.effective') : t('capabilities.statusLine.overridden')}
-        </span>
-        {statusLevel !== 'ok' && (
-          <span className="inline-flex items-center gap-1 rounded-md bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-medium text-amber-600 dark:text-amber-400">
-            <AlertTriangle className="h-3 w-3" />
-            {t(`capabilities.statusLine.health.${statusLevel}`)}
-          </span>
-        )}
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <Activity className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm font-medium text-foreground">{asset.name}</span>
+            <ProviderBadge agentId={asset.agentId} />
+            <ScopeBadge scope={asset.scope} />
+            <span className={cn(
+              'inline-flex items-center rounded-md px-1.5 py-0.5 text-[10px] font-medium',
+              effective ? 'bg-green-500/10 text-green-600 dark:text-green-400' : 'bg-muted text-muted-foreground'
+            )}>
+              {effective ? t('capabilities.statusLine.effective') : t('capabilities.statusLine.overridden')}
+            </span>
+            {statusLevel !== 'ok' && (
+              <span className="inline-flex items-center gap-1 rounded-md bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-medium text-amber-600 dark:text-amber-400">
+                <AlertTriangle className="h-3 w-3" />
+                {t(`capabilities.statusLine.health.${statusLevel}`)}
+              </span>
+            )}
+          </div>
+          <p className="mt-1 break-all font-mono text-xs text-muted-foreground">{asset.path}</p>
+        </div>
+        <ViewRawButton asset={asset} className="shrink-0" />
       </div>
-      <p className="mt-1 break-all font-mono text-xs text-muted-foreground">{asset.path}</p>
 
       <div className="mt-3 space-y-2">
         {settingKey && <DetailRow label={t('capabilities.statusLine.setting')} value={settingKey} mono />}
@@ -497,11 +506,11 @@ function StatusLineCard({ viewModel }: { viewModel: StatusLineViewModel }): Reac
                 value={asset.meta.hideVimModeIndicator ? t('common.yes') : t('common.no')}
               />
             )}
-            {entryPaths.length > 0 && (
+            {extraEntryPaths.length > 0 && (
               <div>
                 <p className="mb-1 text-xs font-medium text-muted-foreground">{t('capabilities.statusLine.entryPaths')}</p>
                 <div className="space-y-1">
-                  {entryPaths.map((entryPath) => (
+                  {extraEntryPaths.map((entryPath) => (
                     <p key={entryPath} className="break-all font-mono text-xs text-foreground">{entryPath}</p>
                   ))}
                 </div>
@@ -515,10 +524,6 @@ function StatusLineCard({ viewModel }: { viewModel: StatusLineViewModel }): Reac
             {t('capabilities.statusLine.overriddenBy', { scope: overriddenBy.scope })}
           </p>
         )}
-      </div>
-
-      <div className="flex gap-2 pt-3">
-        <ViewRawButton asset={asset} />
       </div>
     </div>
   )

@@ -46,7 +46,24 @@ describe('StatusLineSection', () => {
     expect(screen.getByText('statusLine')).toBeInTheDocument()
     expect(screen.getByText('pwsh C:\\Users\\test\\.claude\\statusline.ps1')).toBeInTheDocument()
     expect(screen.getByText('disableAllHooks is enabled in this settings file.')).toBeInTheDocument()
-    expect(screen.getByText('C:\\Users\\test\\.claude\\statusline.ps1')).toBeInTheDocument()
+    // 与命令原文重复的引用脚本不再单列
+    expect(screen.queryByText('Referenced scripts')).not.toBeInTheDocument()
+    expect(screen.queryByText('C:\\Users\\test\\.claude\\statusline.ps1')).not.toBeInTheDocument()
+  })
+
+  it('lists referenced scripts only when they add info beyond the command text', () => {
+    renderStatusLine('claude', [
+      statusLineAsset('resolved-status', 'claude-code', {
+        provider: 'claude-code',
+        settingKey: 'statusLine',
+        statusLineKind: 'main',
+        command: 'node statusline.js',
+        entryPaths: ['C:\\Users\\test\\.claude\\statusline.js']
+      })
+    ])
+
+    expect(screen.getByText('Referenced scripts')).toBeInTheDocument()
+    expect(screen.getByText('C:\\Users\\test\\.claude\\statusline.js')).toBeInTheDocument()
   })
 
   it('shows Codex footer items and unknown item warnings', () => {
