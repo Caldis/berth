@@ -442,7 +442,15 @@ export function Instructions({ activeSection }: { activeSection?: string } = {})
       if (shouldShowScanningState(scanning, runtimeState, assets.length)) {
         return <LoadingState title={t('nav.scanStatus.scanning')} icon={Icon} />
       }
-      return <EmptyState fullHeight icon={Icon} message={t('common.empty')} />
+      // 解释性空态: 该类资产是什么 + Berth 从哪里读取 (对齐 teams/statusLine 的空态口径)
+      return (
+        <EmptyState
+          fullHeight
+          icon={Icon}
+          title={t(`instructions.empty.${activeTab}.title`)}
+          description={t(`instructions.empty.${activeTab}.body`)}
+        />
+      )
     }
 
     switch (activeTab) {

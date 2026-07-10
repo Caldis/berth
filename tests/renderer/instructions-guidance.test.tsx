@@ -220,7 +220,7 @@ describe('Instructions guidance surfaces', () => {
     const scopeFilter = screen.getByTestId('instructions-scope-filter')
     fireEvent.click(within(scopeFilter).getByRole('button', { name: 'User 1' }))
 
-    expect(screen.getByText('Nothing here yet')).toBeInTheDocument()
+    expect(screen.getByText('No skills found')).toBeInTheDocument()
     expect(screen.queryByText('Project skill')).not.toBeInTheDocument()
   })
 

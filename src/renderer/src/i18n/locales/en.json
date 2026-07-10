@@ -894,6 +894,28 @@
       "commands": "Commands",
       "outputModes": "Output Modes"
     },
+    "empty": {
+      "conventions": {
+        "title": "No convention files found",
+        "body": "Conventions are project rule files like CLAUDE.md / AGENTS.md that agents read at session start. Create one in your home or project root and it will show up here."
+      },
+      "skills": {
+        "title": "No skills found",
+        "body": "Skills are reusable workflow guides from ~/.claude/skills/ and project .claude/skills/, and can also ship with plugins."
+      },
+      "subagents": {
+        "title": "No subagents found",
+        "body": "Subagents are dedicated agent roles with their own prompt and tool boundary, read from Markdown files in ~/.claude/agents/ and project .claude/agents/."
+      },
+      "commands": {
+        "title": "No slash commands found",
+        "body": "Slash commands are prompt templates invoked as /name in a conversation, read from ~/.claude/commands/ and project .claude/commands/."
+      },
+      "outputModes": {
+        "title": "No output styles found",
+        "body": "Output styles shape how Claude Code writes its replies, read from ~/.claude/output-styles/ and project .claude/output-styles/."
+      }
+    },
     "scope": "Scope",
     "path": "Path",
     "trigger": "Trigger",
@@ -1019,6 +1041,20 @@
       "statusLine": "Status Line",
       "permissions": "Permissions",
       "env": "Env"
+    },
+    "empty": {
+      "mcp": {
+        "title": "No MCP servers found",
+        "body": "MCP servers connect agents to external tools and data. Claude Code reads project .mcp.json and settings files, Codex reads config.toml; configured servers show up here."
+      },
+      "plugins": {
+        "title": "No plugins found",
+        "body": "Plugins bundle skills, commands, hooks and MCP servers. Install one from a marketplace with /plugin in Claude Code and it will show up here."
+      },
+      "env": {
+        "title": "No environment variables found",
+        "body": "Claude Code injects session environment variables from the env field of its settings files; once defined, sensitive values and inheritance show up here."
+      }
     },
     "mcp": {
       "effectiveConfig": "Effective configuration",

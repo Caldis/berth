@@ -720,7 +720,7 @@ function EnvSection({ assets }: { assets: Asset[] }): React.ReactElement {
   const sections = groupEnvVars(rows)
 
   if (rows.length === 0) {
-    return <EmptyState fullHeight icon={Variable} message={t('common.empty')} />
+    return <EmptyState fullHeight icon={Variable} title={t('capabilities.empty.env.title')} description={t('capabilities.empty.env.body')} />
   }
 
   return (
@@ -844,7 +844,9 @@ export function Capabilities({ activeSection }: { activeSection?: string } = {})
     }
     switch (activeTab) {
       case 'mcp':
-        if (filteredAssets.length === 0) return <EmptyState fullHeight icon={Plug} message={t('common.empty')} />
+        if (filteredAssets.length === 0) {
+          return <EmptyState fullHeight icon={Plug} title={t('capabilities.empty.mcp.title')} description={t('capabilities.empty.mcp.body')} />
+        }
         return (
           <div className="space-y-3">
             <McpSummary assets={filteredAssets} />
@@ -859,7 +861,9 @@ export function Capabilities({ activeSection }: { activeSection?: string } = {})
       }
 
       case 'plugins': {
-        if (filteredAssets.length === 0) return <EmptyState fullHeight icon={Puzzle} message={t('common.empty')} />
+        if (filteredAssets.length === 0) {
+          return <EmptyState fullHeight icon={Puzzle} title={t('capabilities.empty.plugins.title')} description={t('capabilities.empty.plugins.body')} />
+        }
         // Group bundled components (skills/agents/commands/hooks/mcp) under their plugin.
         const componentsByPlugin = new Map<string, Asset[]>()
         for (const candidate of visibleAssets) {

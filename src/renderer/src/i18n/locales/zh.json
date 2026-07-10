@@ -888,6 +888,28 @@
       "commands": "命令",
       "outputModes": "输出模式"
     },
+    "empty": {
+      "conventions": {
+        "title": "没有发现约定文件",
+        "body": "约定是 CLAUDE.md / AGENTS.md 这类项目规则文件, Agent 会在会话开始时读取。在用户目录或项目根目录创建后会显示在这里。"
+      },
+      "skills": {
+        "title": "没有发现 Skill",
+        "body": "Skill 是可复用的流程指南, 来自 ~/.claude/skills/ 与项目 .claude/skills/, 也可由插件提供。"
+      },
+      "subagents": {
+        "title": "没有发现子代理",
+        "body": "子代理是带独立提示词与工具边界的专用 Agent 角色, 来自 ~/.claude/agents/ 与项目 .claude/agents/ 的 Markdown 文件。"
+      },
+      "commands": {
+        "title": "没有发现斜杠命令",
+        "body": "斜杠命令是可在对话里用 /名称 调用的提示模板, 来自 ~/.claude/commands/ 与项目 .claude/commands/。"
+      },
+      "outputModes": {
+        "title": "没有发现输出模式",
+        "body": "输出模式 (output style) 控制 Claude Code 回复的行文风格, 来自 ~/.claude/output-styles/ 与项目 .claude/output-styles/。"
+      }
+    },
     "scope": "作用域",
     "path": "路径",
     "trigger": "触发条件",
@@ -1013,6 +1035,20 @@
       "statusLine": "状态栏",
       "permissions": "权限",
       "env": "环境变量"
+    },
+    "empty": {
+      "mcp": {
+        "title": "没有发现 MCP 服务器",
+        "body": "MCP 服务器为 Agent 提供外部工具与数据连接。Claude Code 读取项目 .mcp.json 与 settings 文件, Codex 读取 config.toml; 配置后会显示在这里。"
+      },
+      "plugins": {
+        "title": "没有发现插件",
+        "body": "插件打包 Skills、命令、Hooks 与 MCP 服务器等能力。在 Claude Code 里用 /plugin 从 marketplace 安装后会显示在这里。"
+      },
+      "env": {
+        "title": "没有发现环境变量",
+        "body": "Claude Code 在 settings 文件的 env 字段为会话注入环境变量; 定义后这里会展示敏感值与继承关系。"
+      }
     },
     "mcp": {
       "effectiveConfig": "生效配置",
