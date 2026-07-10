@@ -268,8 +268,11 @@ function useHookStageScrollSpy(
 }
 
 // 连接线跨越 sticky 侧栏与滚动内容两个滚动上下文, 滚动期间必须逐帧重算。
-// 抖动治理: 挂载时缓存锚点/目标元素 (热路径零 DOM 查询), 测量结果直接写 path 的
-// d 属性 (热路径零 React 渲染), 高亮切换交给 CSS 过渡。
+// 抖动/开销治理: 主内容滚动时, 层内坐标系里唯一变化的量是 aside 与层的相对纵向
+// 偏移 (锚点在 aside 内的位置、目标卡片、弯折 X 都不动)。因此把这些不变几何缓存
+// 为"布局纪元" (挂载/尺寸变化/侧栏内部滚动时全量重测), 滚动热路径每帧只读 2 个
+// 矩形 + 纯算术, 直接写 path 的 d 属性 (零 DOM 查询、零 React 渲染), 相对偏移
+// 无变化时整帧早退; 高亮切换交给 CSS 过渡。
 function useHookStageConnectors(
   groups: HookStageGroup[],
   layerRef: RefObject<HTMLDivElement | null>,
@@ -297,33 +300,65 @@ function useHookStageConnectors(
     }
     const anchors = collectStageElements('data-hook-stage-anchor')
     const targets = collectStageElements('data-hook-stage-target')
+    const sidebar = layer.querySelector('aside')
+
+    interface StageStaticGeometry {
+      startX: number
+      anchorOffsetY: number
+      endX: number
+      endY: number
+    }
+    const staticGeometry = new Map<string, StageStaticGeometry>()
+    const lastPathD = new Map<string, string>()
+    let bendX: number | null = null
+    let staticDirty = true
+    let lastRelativeTop: number | null = null
+
+    const rebuildStaticGeometry = (layerRect: DOMRect, sidebarRect: DOMRect): void => {
+      staticDirty = false
+      staticGeometry.clear()
+      bendX = findConnectorGapCenterX(layer, layerRect)
+      for (const id of stageIds) {
+        const anchor = anchors.get(id)
+        const target = targets.get(id)
+        if (!anchor || !target) continue
+        const anchorRect = anchor.getBoundingClientRect()
+        const targetRect = target.getBoundingClientRect()
+        staticGeometry.set(id, {
+          startX: anchorRect.right - layerRect.left + 2,
+          anchorOffsetY: anchorRect.top - sidebarRect.top + anchorRect.height / 2,
+          endX: targetRect.left - layerRect.left - 2,
+          endY: targetRect.top + Math.min(36, Math.max(24, targetRect.height / 2)) - layerRect.top
+        })
+      }
+    }
 
     const measure = (): void => {
       frameId = null
+      if (!sidebar) return
       const layerRect = layer.getBoundingClientRect()
-      const bendX = findConnectorGapCenterX(layer, layerRect)
+      const sidebarRect = sidebar.getBoundingClientRect()
+      const relativeTop = sidebarRect.top - layerRect.top
+      // aside 未进入 sticky 时随内容一起滚动, 相对偏移不变 → 整帧无事可做
+      if (!staticDirty && relativeTop === lastRelativeTop) return
+      if (staticDirty) rebuildStaticGeometry(layerRect, sidebarRect)
+      lastRelativeTop = relativeTop
+
       for (const id of stageIds) {
         const path = pathRefs.current.get(id)
         if (!path) continue
-        const anchor = anchors.get(id)
-        const target = targets.get(id)
-        if (!anchor || !target) {
+        const cached = staticGeometry.get(id)
+        const startY = cached ? relativeTop + cached.anchorOffsetY : Number.NaN
+        if (!cached || ![cached.startX, startY, cached.endX, cached.endY].every(Number.isFinite) || cached.endX <= cached.startX + 4) {
           path.removeAttribute('d')
+          lastPathD.delete(id)
           continue
         }
-
-        const anchorRect = anchor.getBoundingClientRect()
-        const targetRect = target.getBoundingClientRect()
-        const startX = anchorRect.right - layerRect.left + 2
-        const startY = anchorRect.top + anchorRect.height / 2 - layerRect.top
-        const endX = targetRect.left - layerRect.left - 2
-        const endY = targetRect.top + Math.min(36, Math.max(24, targetRect.height / 2)) - layerRect.top
-
-        if (![startX, startY, endX, endY].every(Number.isFinite) || endX <= startX + 4) {
-          path.removeAttribute('d')
-          continue
+        const nextD = buildRoundedConnectorPath(cached.startX, startY, cached.endX, cached.endY, bendX)
+        if (lastPathD.get(id) !== nextD) {
+          path.setAttribute('d', nextD)
+          lastPathD.set(id, nextD)
         }
-        path.setAttribute('d', buildRoundedConnectorPath(startX, startY, endX, endY, bendX))
       }
     }
 
@@ -331,26 +366,29 @@ function useHookStageConnectors(
       if (frameId != null) return
       frameId = requestFrame(measure)
     }
+    const invalidate = (): void => {
+      staticDirty = true
+      schedule()
+    }
 
-    const resizeObserver = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(schedule)
+    const resizeObserver = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(invalidate)
     resizeObserver?.observe(layer)
     anchors.forEach((anchor) => resizeObserver?.observe(anchor))
     targets.forEach((target) => resizeObserver?.observe(target))
 
     const scrollTarget = scrollRoot ?? window
-    // 侧栏自身在矮窗口下可内部滚动, 同样会移动锚点
-    const sidebar = layer.querySelector('aside')
     scrollTarget.addEventListener('scroll', schedule, { passive: true })
-    sidebar?.addEventListener('scroll', schedule, { passive: true })
-    window.addEventListener('resize', schedule)
+    // 侧栏自身在矮窗口下可内部滚动, 会改变锚点在 aside 内的偏移 → 走纪元重测
+    sidebar?.addEventListener('scroll', invalidate, { passive: true })
+    window.addEventListener('resize', invalidate)
     schedule()
 
     return () => {
       if (frameId != null) cancelFrame(frameId)
       resizeObserver?.disconnect()
       scrollTarget.removeEventListener('scroll', schedule)
-      sidebar?.removeEventListener('scroll', schedule)
-      window.removeEventListener('resize', schedule)
+      sidebar?.removeEventListener('scroll', invalidate)
+      window.removeEventListener('resize', invalidate)
     }
   }, [layerRef, pathRefs, stageIds])
 }
